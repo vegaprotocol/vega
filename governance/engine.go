@@ -34,8 +34,8 @@ type Broker interface {
 // Accounts ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
-	GetPartyTokenAccount(id string) (*types.Account, error)
-	GetTotalTokens() uint64
+	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetAssetTotalSupply(asset string) (uint64, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
@@ -200,8 +200,24 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	if len(e.activeProposals) > 0 {
 		now := t.Unix()
 
-		totalStake := e.accs.GetTotalTokens()
-		counter := newStakeCounter(e.log, e.accs)
+		// we can't reach a point where the vote asset would not
+		// so we can panic here if it were to happen
+		voteAsset, err := e.netp.Get(netparams.GovernanceVoteAsset)
+		if err != nil {
+			e.log.Panic("error trying to get the vote asset from network parameters",
+				logging.Error(err))
+		}
+
+		totalStake, err := e.accs.GetAssetTotalSupply(voteAsset)
+		if err != nil {
+			// an error here mean the asset has not been enabled,
+			// which might happen eventually, we can just continue
+			// return and do nothinbg for now I suppose
+			e.log.Debug("governance asset is not enabled yet",
+				logging.Error(err))
+			return nil, nil
+		}
+		counter := newStakeCounter(e.log, e.accs, voteAsset)
 
 		for _, proposal := range e.activeProposals {
 			// only enter this if the proposal state is OPEN
@@ -310,11 +326,15 @@ func (e *Engine) RejectProposal(
 		return ErrProposalDoesNotExists
 	}
 
+	e.rejectProposal(p, r)
+	e.broker.Send(events.NewProposalEvent(ctx, *p))
+	return nil
+}
+
+func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError) {
 	e.removeProposal(p.Id)
 	p.Reason = r
 	p.State = types.Proposal_STATE_REJECTED
-	e.broker.Send(events.NewProposalEvent(ctx, *p))
-	return nil
 }
 
 // toSubmit build the return response for the SubmitProposal
@@ -334,6 +354,7 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 
 		mkt, perr, err := createMarket(p.Id, change.NewMarket.Changes, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
 		if err != nil {
+			e.rejectProposal(p, perr)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
 		tsb.m = &ToSubmitNewMarket{
@@ -449,7 +470,15 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
 	}
 
-	proposerTokens, err := getGovernanceTokens(e.accs, proposal.PartyId)
+	// we can't reach a point where the vote asset would not
+	// so we can panic here if it were to happen
+	voteAsset, err := e.netp.Get(netparams.GovernanceVoteAsset)
+	if err != nil {
+		e.log.Panic("error trying to get the vote asset from network parameters",
+			logging.Error(err))
+	}
+
+	proposerTokens, err := getGovernanceTokens(e.accs, proposal.PartyId, voteAsset)
 	if err != nil {
 		e.log.Debug("proposer have no governance token",
 			logging.String("party-id", proposal.PartyId),
@@ -528,7 +557,15 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 		return nil, err
 	}
 
-	voterTokens, err := getGovernanceTokens(e.accs, vote.PartyId)
+	// we can't reach a point where the vote asset would not
+	// so we can panic here if it were to happen
+	voteAsset, err := e.netp.Get(netparams.GovernanceVoteAsset)
+	if err != nil {
+		e.log.Panic("error trying to get the vote asset from network parameters",
+			logging.Error(err))
+	}
+
+	voterTokens, err := getGovernanceTokens(e.accs, vote.PartyId, voteAsset)
 	if err != nil {
 		return nil, err
 	}
@@ -580,16 +617,18 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposalData, coun
 // stakeCounter caches token balance per party and counts votes
 // reads from accounts on every miss and does not have expiration policy
 type stakeCounter struct {
-	log      *logging.Logger
-	accounts Accounts
-	balances map[string]uint64
+	log       *logging.Logger
+	accounts  Accounts
+	voteAsset string
+	balances  map[string]uint64
 }
 
-func newStakeCounter(log *logging.Logger, accounts Accounts) *stakeCounter {
+func newStakeCounter(log *logging.Logger, accounts Accounts, voteAsset string) *stakeCounter {
 	return &stakeCounter{
-		log:      log,
-		accounts: accounts,
-		balances: map[string]uint64{},
+		log:       log,
+		accounts:  accounts,
+		balances:  map[string]uint64{},
+		voteAsset: voteAsset,
 	}
 }
 func (s *stakeCounter) countVotes(votes map[string]*types.Vote) uint64 {
@@ -604,7 +643,7 @@ func (s *stakeCounter) getTokens(partyID string) uint64 {
 	if balance, found := s.balances[partyID]; found {
 		return balance
 	}
-	balance, err := getGovernanceTokens(s.accounts, partyID)
+	balance, err := getGovernanceTokens(s.accounts, partyID, s.voteAsset)
 	if err != nil {
 		s.log.Error(
 			"Failed to get governance tokens balance for party",
@@ -618,8 +657,8 @@ func (s *stakeCounter) getTokens(partyID string) uint64 {
 	return balance
 }
 
-func getGovernanceTokens(accounts Accounts, partyID string) (uint64, error) {
-	account, err := accounts.GetPartyTokenAccount(partyID)
+func getGovernanceTokens(accounts Accounts, party, voteAsset string) (uint64, error) {
+	account, err := accounts.GetPartyGeneralAccount(party, voteAsset)
 	if err != nil {
 		return 0, err
 	}

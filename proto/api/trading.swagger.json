@@ -793,6 +793,75 @@
         ]
       }
     },
+    "/oracle-specs": {
+      "get": {
+        "summary": "Get the oracle specs",
+        "operationId": "OracleSpecs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OracleSpecsResponse"
+            }
+          }
+        },
+        "tags": [
+          "TradingDataService"
+        ]
+      }
+    },
+    "/oracle-specs/{id}": {
+      "get": {
+        "summary": "Get an oracle spec by ID",
+        "operationId": "OracleSpec",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OracleSpecResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "The id to get the oracle spec for",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TradingDataService"
+        ]
+      }
+    },
+    "/oracle-specs/{id}/oracle-data": {
+      "get": {
+        "summary": "Get all oracle data",
+        "operationId": "OracleDataBySpec",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OracleDataBySpecResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "The id to get the oracle spec for",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TradingDataService"
+        ]
+      }
+    },
     "/orders/fee/estimate": {
       "post": {
         "summary": "Get an estimate for the fee to be paid for a given order",
@@ -1545,6 +1614,19 @@
     }
   },
   "definitions": {
+    "ConditionOperator": {
+      "type": "string",
+      "enum": [
+        "OPERATOR_UNSPECIFIED",
+        "OPERATOR_EQUALS",
+        "OPERATOR_GREATER_THAN",
+        "OPERATOR_GREATER_THAN_OR_EQUAL",
+        "OPERATOR_LESS_THAN",
+        "OPERATOR_LESS_THAN_OR_EQUAL"
+      ],
+      "default": "OPERATOR_UNSPECIFIED",
+      "description": "Comparator describes the type of comparison.\n\n - OPERATOR_UNSPECIFIED: The default value\n - OPERATOR_EQUALS: Verify if the property values are strictly equal or not.\n - OPERATOR_GREATER_THAN: Verify if the oracle data value is greater than the Condition value.\n - OPERATOR_GREATER_THAN_OR_EQUAL: Verify if the oracle data value is greater than or equal to the Condition\nvalue.\n - OPERATOR_LESS_THAN: Verify if the oracle data value is less than the Condition value.\n - OPERATOR_LESS_THAN_OR_EQUAL: Verify if the oracle data value is less or equal to than the Condition\nvalue."
+    },
     "MarketTradingMode": {
       "type": "string",
       "enum": [
@@ -1673,6 +1755,20 @@
         }
       }
     },
+    "v1Condition": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "$ref": "#/definitions/ConditionOperator",
+          "description": "comparator is the type of comparison to make on the value."
+        },
+        "value": {
+          "type": "string",
+          "description": "value is used by the comparator."
+        }
+      },
+      "title": "Condition describes the condition that must be validated by the"
+    },
     "v1DepositResponse": {
       "type": "object",
       "properties": {
@@ -1775,6 +1871,23 @@
         }
       },
       "title": "Response for a list of infrastructure fee accounts"
+    },
+    "v1Filter": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "$ref": "#/definitions/v1PropertyKey",
+          "description": "key is the oracle data property key targeted by the filter."
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Condition"
+          },
+          "description": "conditions are the conditions that should be matched by the data to be\nconsidered of interest."
+        }
+      },
+      "description": "Filter describes the conditions under which an oracle data is considered of\ninterest or not."
     },
     "v1GetNetworkParametersProposalsResponse": {
       "type": "object",
@@ -2138,6 +2251,143 @@
       },
       "title": "Optional proposal state"
     },
+    "v1OracleData": {
+      "type": "object",
+      "properties": {
+        "pub_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "pubKeys is the list of authorized public keys that signed the data for this\noracle. All the public keys in the oracle data should be contained in these\npublic keys."
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Property"
+          },
+          "title": "data holds all the properties of the oracle data"
+        },
+        "matched_spec_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "matched_specs_ids lists all the oracle specs that matched this oracle data."
+        },
+        "broadcast_at": {
+          "type": "string",
+          "format": "int64",
+          "description": "broadcast_at is the time at which the data was broadcast for the first\ntime."
+        }
+      },
+      "description": "OracleData describes an oracle data that has been broadcast."
+    },
+    "v1OracleDataBySpecResponse": {
+      "type": "object",
+      "properties": {
+        "oracle_data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1OracleData"
+          },
+          "title": "The list of oracle data broadcast to a given spec"
+        }
+      },
+      "title": "The response for a list of all oracle data broadcast to a given spec"
+    },
+    "v1OracleSpec": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "id is a hash generated from the OracleSpec data."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "int64",
+          "title": "Creation Date time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "int64",
+          "title": "Last Updated timestamp"
+        },
+        "pub_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "pubKeys is the list of authorized public keys that signed the data for this\noracle. All the public keys in the oracle data should be contained in these\npublic keys."
+        },
+        "filters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Filter"
+          },
+          "description": "filters describes which oracle data are considered of interest or not for\nthe product (or the risk model)."
+        },
+        "status": {
+          "$ref": "#/definitions/v1OracleSpecStatus",
+          "title": "status describes the status of the oracle spec"
+        }
+      },
+      "description": "An oracle spec describe the oracle data that a product (or a risk model)\nwants to get from the oracle engine.\nThis message contains additional information used by the API."
+    },
+    "v1OracleSpecConfiguration": {
+      "type": "object",
+      "properties": {
+        "pub_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "pubKeys is the list of authorized public keys that signed the data for this\noracle. All the public keys in the oracle data should be contained in these\npublic keys."
+        },
+        "filters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Filter"
+          },
+          "description": "filters describes which oracle data are considered of interest or not for\nthe product (or the risk model)."
+        }
+      },
+      "description": "An oracle spec describe the oracle data that a product (or a risk model)\nwants to get from the oracle engine."
+    },
+    "v1OracleSpecResponse": {
+      "type": "object",
+      "properties": {
+        "oracle_spec": {
+          "$ref": "#/definitions/v1OracleSpec",
+          "title": "The withdrawal matching the identifier from the request"
+        }
+      },
+      "title": "A response for a oracle spec"
+    },
+    "v1OracleSpecStatus": {
+      "type": "string",
+      "enum": [
+        "STATUS_UNSPECIFIED",
+        "STATUS_ACTIVE",
+        "STATUS_DEACTIVATED"
+      ],
+      "default": "STATUS_UNSPECIFIED",
+      "description": "- STATUS_UNSPECIFIED: The default value.\n - STATUS_ACTIVE: STATUS_ACTIVE describes an active oracle spec.\n - STATUS_DEACTIVATED: STATUS_DEACTIVATED describes an oracle spec that is not listening to data\nanymore.",
+      "title": "Status describe the status of the oracle spec"
+    },
+    "v1OracleSpecsResponse": {
+      "type": "object",
+      "properties": {
+        "oracle_specs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1OracleSpec"
+          },
+          "title": "The list of oracle specs"
+        }
+      },
+      "title": "The response for a list of withdrawals"
+    },
     "v1OrderByIDResponse": {
       "type": "object",
       "properties": {
@@ -2473,6 +2723,48 @@
         }
       },
       "title": "Response for a new event sent by the blockchain queue to be propagated on Vega"
+    },
+    "v1Property": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is the name of the property."
+        },
+        "value": {
+          "type": "string",
+          "description": "value is the value of the property."
+        }
+      },
+      "description": "Property describes one property of an oracle spec with a key with its value."
+    },
+    "v1PropertyKey": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "name is the name of the property."
+        },
+        "type": {
+          "$ref": "#/definitions/v1PropertyKeyType",
+          "description": "type is the type of the property."
+        }
+      },
+      "description": "PropertyKey describes the property key contained in an oracle data."
+    },
+    "v1PropertyKeyType": {
+      "type": "string",
+      "enum": [
+        "TYPE_UNSPECIFIED",
+        "TYPE_EMPTY",
+        "TYPE_INTEGER",
+        "TYPE_STRING",
+        "TYPE_BOOLEAN",
+        "TYPE_DECIMAL",
+        "TYPE_TIMESTAMP"
+      ],
+      "default": "TYPE_UNSPECIFIED",
+      "description": "Type describes the type of properties that are supported by the oracle\nengine.\n\n - TYPE_UNSPECIFIED: The default value.\n - TYPE_EMPTY: Any type.\n - TYPE_INTEGER: Integer type.\n - TYPE_STRING: String type.\n - TYPE_BOOLEAN: Boolean type.\n - TYPE_DECIMAL: Any floating point decimal type.\n - TYPE_TIMESTAMP: Timestamp date type."
     },
     "v1StatisticsResponse": {
       "type": "object",
@@ -3038,6 +3330,14 @@
           "$ref": "#/definitions/vegaMarket",
           "title": "Market created events"
         },
+        "oracle_spec": {
+          "$ref": "#/definitions/v1OracleSpec",
+          "title": "OracleSpec events"
+        },
+        "oracle_data": {
+          "$ref": "#/definitions/v1OracleData",
+          "title": "OracleData events"
+        },
         "market": {
           "$ref": "#/definitions/vegaMarketEvent",
           "title": "Market tick events - See [MarketEvent](#vega.MarketEvent)"
@@ -3079,11 +3379,13 @@
         "BUS_EVENT_TYPE_NETWORK_PARAMETER",
         "BUS_EVENT_TYPE_LIQUIDITY_PROVISION",
         "BUS_EVENT_TYPE_MARKET_UPDATED",
+        "BUS_EVENT_TYPE_ORACLE_SPEC",
+        "BUS_EVENT_TYPE_ORACLE_DATA",
         "BUS_EVENT_TYPE_MARKET",
         "BUS_EVENT_TYPE_TX_ERROR"
       ],
       "default": "BUS_EVENT_TYPE_UNSPECIFIED",
-      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET_UPDATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens\n - BUS_EVENT_TYPE_TX_ERROR: Event used to report failed transactions back to a user, this is excluded from the ALL type",
+      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET_UPDATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ORACLE_SPEC: Event indicating an oracle spec has been created or updated\n - BUS_EVENT_TYPE_ORACLE_DATA: Event indicating that an oracle data has been broadcast\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens\n - BUS_EVENT_TYPE_TX_ERROR: Event used to report failed transactions back to a user, this is excluded from the ALL type",
       "title": "An (event) bus event type is used to specify a type of event\nIt has 2 styles of event:\nSingle values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item\nGroup values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items"
     },
     "vegaCandle": {
@@ -3372,25 +3674,6 @@
       },
       "title": "Used as a wrapper for an Ethereum address (wallet/contract)"
     },
-    "vegaEthereumEvent": {
-      "type": "object",
-      "properties": {
-        "contract_id": {
-          "type": "string",
-          "title": "Ethereum contract identifier"
-        },
-        "event": {
-          "type": "string",
-          "title": "Event"
-        },
-        "value": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Value"
-        }
-      },
-      "title": "Ethereum event (for oracles)"
-    },
     "vegaFee": {
       "type": "object",
       "properties": {
@@ -3455,9 +3738,13 @@
           "type": "string",
           "title": "Quote name of the instrument"
         },
-        "ethereum_event": {
-          "$ref": "#/definitions/vegaEthereumEvent",
-          "title": "Ethereum events"
+        "oracle_spec": {
+          "$ref": "#/definitions/v1OracleSpec",
+          "title": "The oracle spec describing the oracle data of interest"
+        },
+        "oracle_spec_binding": {
+          "$ref": "#/definitions/vegaOracleSpecToFutureBinding",
+          "title": "The binding between the oracle spec and the settlement price"
         }
       },
       "title": "Future product definition"
@@ -3476,6 +3763,14 @@
         "quote_name": {
           "type": "string",
           "title": "Product quote name"
+        },
+        "oracle_spec": {
+          "$ref": "#/definitions/v1OracleSpecConfiguration",
+          "title": "The oracle spec describing the oracle data of interest"
+        },
+        "oracle_spec_binding": {
+          "$ref": "#/definitions/vegaOracleSpecToFutureBinding",
+          "title": "The binding between the oracle spec and the settlement price"
         }
       },
       "title": "Future product configuration"
@@ -4372,6 +4667,16 @@
       "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: Represents an unspecified or missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: Represents a signature for a new asset allow-listing\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: Represents a signature for an asset withdrawal",
       "title": "The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc"
     },
+    "vegaOracleSpecToFutureBinding": {
+      "type": "object",
+      "properties": {
+        "settlement_price_property": {
+          "type": "string",
+          "description": "settlement_price_property holds the name of the property in the oracle data\nthat should be used as settlement price.\nIf it is set to \"prices.BTC.value\", then the Future will use the value of\nthis property as settlement price."
+        }
+      },
+      "description": "OracleSpecToFutureBinding tells on which property oracle data should be\nused as settlement price."
+    },
     "vegaOrder": {
       "type": "object",
       "properties": {
@@ -4924,10 +5229,11 @@
         "PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL",
         "PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE",
         "PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT",
-        "PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET"
+        "PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET",
+        "PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT"
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
-      "description": "- PROPOSAL_ERROR_UNSPECIFIED: Default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source\n - PROPOSAL_ERROR_INVALID_ASSET: The asset identifier is invalid or does not exist on the Vega network\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment)\n - PROPOSAL_ERROR_NO_RISK_PARAMETERS: No risk parameters were specified\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY: Invalid key in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE: Invalid valid in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED: Validation failed for network parameter proposal\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL: Opening auction duration is less than the network minimum opening auction time\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE: Opening auction duration is more than the network minimum opening auction time\n - PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT: Market proposal is missing a liquidity commitment\n - PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET: Market proposal market could not be instantiate in execution",
+      "description": "- PROPOSAL_ERROR_UNSPECIFIED: Default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source\n - PROPOSAL_ERROR_INVALID_ASSET: The asset identifier is invalid or does not exist on the Vega network\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment)\n - PROPOSAL_ERROR_NO_RISK_PARAMETERS: No risk parameters were specified\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY: Invalid key in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE: Invalid valid in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED: Validation failed for network parameter proposal\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL: Opening auction duration is less than the network minimum opening auction time\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE: Opening auction duration is more than the network minimum opening auction time\n - PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT: Market proposal is missing a liquidity commitment\n - PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET: Market proposal market could not be instantiate in execution\n - PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT: Market proposal market contained invalid product definition",
       "title": "A list of possible errors that can cause a proposal to be in state rejected or failed"
     },
     "vegaProposalState": {

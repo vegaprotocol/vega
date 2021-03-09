@@ -8,6 +8,7 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "markets.proto";
 import "vega.proto";
 import "assets.proto";
+import "oracles/v1/oracle_spec.proto";
 
 // Future product configuration
 message FutureProduct {
@@ -17,6 +18,10 @@ message FutureProduct {
   string settlement_asset = 2  [(validator.field) = {string_not_empty : true}];
   // Product quote name
   string quote_name = 3 [(validator.field) = {string_not_empty : true}];
+  // The oracle spec describing the oracle data of interest
+  oracles.v1.OracleSpecConfiguration oracle_spec = 5;
+  // The binding between the oracle spec and the settlement price
+  OracleSpecToFutureBinding oracle_spec_binding = 6;
 }
 
 // Instrument configuration
@@ -244,6 +249,8 @@ enum ProposalError {
   PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT = 24;
   // Market proposal market could not be instantiate in execution
   PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET = 25;
+  // Market proposal market contained invalid product definition
+  PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT = 26;
 }
 
 // Governance vote

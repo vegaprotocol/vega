@@ -66,7 +66,7 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 		proc.top,
 		proc.wallet,
 		proc.netp,
-		&processor.Oracles{
+		&processor.Oracle{
 			Engine:   proc.oracles.Engine,
 			Adaptors: proc.oracles.Adaptors,
 		},

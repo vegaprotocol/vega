@@ -5,6 +5,8 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
+import "oracles/v1/oracle_spec.proto";
+
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
 //   The auction will last for at least N seconds
@@ -41,22 +43,20 @@ message Future {
   string settlement_asset = 2;
   // Quote name of the instrument
   string quote_name = 4;
-
-  // Oracle configuration
-  oneof oracle {
-    // Ethereum events
-    EthereumEvent ethereum_event = 100;
-  }
+  // The oracle spec describing the oracle data of interest
+  oracles.v1.OracleSpec oracle_spec = 5;
+  // The binding between the oracle spec and the settlement price
+  OracleSpecToFutureBinding oracle_spec_binding = 6;
 }
 
-// Ethereum event (for oracles)
-message EthereumEvent {
-  // Ethereum contract identifier
-  string contract_id = 1;
-  // Event
-  string event = 2;
-  // Value
-  uint64 value = 3;
+// OracleSpecToFutureBinding tells on which property oracle data should be
+// used as settlement price.
+message OracleSpecToFutureBinding {
+  // settlement_price_property holds the name of the property in the oracle data
+  // that should be used as settlement price.
+  // If it is set to "prices.BTC.value", then the Future will use the value of
+  // this property as settlement price.
+  string settlement_price_property = 1;
 }
 
 // Instrument metadata definition

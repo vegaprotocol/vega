@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/proto"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/cucumber/godog/gherkin"
 )
@@ -98,6 +99,14 @@ func ordertypeval(rows *gherkin.TableRow, idx int) (proto.Order_Type, error) {
 		return proto.Order_Type(ty), fmt.Errorf("invalid order type: %v", rows.Cells[idx].Value)
 	}
 	return proto.Order_Type(ty), nil
+}
+
+func oracleSpecPropertyTypeVal(rows *gherkin.TableRow, idx int) (oraclesv1.PropertyKey_Type, error) {
+	ty, ok := oraclesv1.PropertyKey_Type_value[rows.Cells[idx].Value]
+	if !ok {
+		return oraclesv1.PropertyKey_Type(ty), fmt.Errorf("invalid oracle property type: %v", rows.Cells[idx].Value)
+	}
+	return oraclesv1.PropertyKey_Type(ty), nil
 }
 
 func boolval(rows *gherkin.TableRow, idx int) (bool, error) {

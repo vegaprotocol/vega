@@ -16,8 +16,10 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/monitor"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
 	types "code.vegaprotocol.io/vega/proto"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 
@@ -135,11 +137,13 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 		feeConfig        = fee.NewDefaultConfig()
 	)
 
+	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.now, tm.broker)
+
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas,
+		feeConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas,
 	)
 	require.NoError(tm.t, err)
 
@@ -173,7 +177,7 @@ func (tm *testMarket) WithAccountAndAmount(id string, amount uint64) *testMarket
 }
 
 func (tm *testMarket) PartyGeneralAccount(t *testing.T, party string) *types.Account {
-	acc, err := tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
+	acc, err := tm.collateralEngine.GetPartyGeneralAccount(party, tm.asset)
 	require.NoError(t, err)
 	require.NotNil(t, acc)
 	return acc
@@ -190,7 +194,14 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 	return getTestMarket2(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true)
 }
 
-func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, startOpeninAuction bool) *testMarket {
+func getTestMarket2(
+	t *testing.T,
+	now time.Time,
+	closingAt time.Time,
+	pMonitorSettings *types.PriceMonitoringSettings,
+	openingAuctionDuration *types.AuctionDuration,
+	startOpeningAuction bool,
+) *testMarket {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	riskConfig := risk.NewDefaultConfig()
@@ -225,6 +236,7 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 			}
 		},
 	)
+
 	broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(handleEvent)
 
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
@@ -233,6 +245,8 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 		Symbol: "ETH",
 		Id:     "ETH",
 	})
+
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker)
 
 	// add the token asset
 	tokAsset := types.Asset{
@@ -270,10 +284,10 @@ func getTestMarket2(t *testing.T, now time.Time, closingAt time.Time, pMonitorSe
 	mas := monitor.NewAuctionState(mktCfg, now)
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
+		feeConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
 	assert.NoError(t, err)
 
-	if startOpeninAuction {
+	if startOpeningAuction {
 		mktEngine.StartOpeningAuction(context.Background())
 	}
 
@@ -320,15 +334,24 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 				InitialMarkPrice: 99,
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity: closingAt.Format(time.RFC3339),
-						Oracle: &types.Future_EthereumEvent{
-							EthereumEvent: &types.EthereumEvent{
-								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-								Event:      "price_changed",
-							},
-						},
+						Maturity:        closingAt.Format(time.RFC3339),
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
+						OracleSpec: &oraclesv1.OracleSpec{
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "prices.ETH.value",
+										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
+							},
+						},
+						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+							SettlementPriceProperty: "prices.ETH.value",
+						},
 					},
 				},
 			},
@@ -368,11 +391,9 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 
 func addAccount(market *testMarket, party string) {
 	market.collateralEngine.Deposit(context.Background(), party, market.asset, 1000000000)
-	// market.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 }
 
 func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
-	// market.broker.EXPECT().Send(gomock.Any()).Times(3)
 	market.collateralEngine.Deposit(context.Background(), party, market.asset, amnt)
 }
 
@@ -486,7 +507,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		t.Fail()
 	}
 
-	// update collateral time first, normally done by execution engin
+	// update collateral time first, normally done by execution engine
 	futureTime := closingAt.Add(1 * time.Second)
 	tm.collateralEngine.OnChainTimeUpdate(context.Background(), futureTime)
 	closed := tm.market.OnChainTimeUpdate(context.Background(), futureTime)
@@ -653,14 +674,23 @@ func TestSetMarketID(t *testing.T) {
 					},
 					Product: &types.Instrument_Future{
 						Future: &types.Future{
-							Maturity: "2019-12-31T23:59:59Z",
-							Oracle: &types.Future_EthereumEvent{
-								EthereumEvent: &types.EthereumEvent{
-									ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-									Event:      "price_changed",
+							Maturity:        "2019-12-31T23:59:59Z",
+							SettlementAsset: "Ethereum/Ether",
+							OracleSpec: &oraclesv1.OracleSpec{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "prices.ETH.value",
+											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
 								},
 							},
-							SettlementAsset: "Ethereum/Ether",
+							OracleSpecBinding: &types.OracleSpecToFutureBinding{
+								SettlementPriceProperty: "prices.ETH.value",
+							},
 						},
 					},
 				},
@@ -819,7 +849,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	var auctionExtensionSeconds int64 = 45
 	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
-	afterAuciton := auctionEndTime.Add(time.Nanosecond)
+	afterAuction := auctionEndTime.Add(time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
@@ -963,7 +993,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 
-	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuciton)
+	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuction)
 	assert.False(t, closed)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
@@ -971,8 +1001,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 
 	//TODO: Check that `party2-sell-order-3` & `party1-buy-order-3` get matched in auction and a trade is generated
 
-	// Test that orders get matched as expected upon returning to continous trading
-	now = afterAuciton.Add(time.Second)
+	// Test that orders get matched as expected upon returning to continuous trading
+	now = afterAuction.Add(time.Second)
 	orderSell4 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -2290,7 +2320,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	openingAuctionEndTime := now.Add(time.Duration(openingAuctionDuration.Duration) * time.Second)
 	afterOpeningAuction := openingAuctionEndTime.Add(time.Nanosecond)
 	pMonitorAuctionEndTime := afterOpeningAuction.Add(time.Duration(auctionExtensionSeconds) * time.Second)
-	afterPMonitorAuciton := pMonitorAuctionEndTime.Add(time.Nanosecond)
+	afterPMonitorAuction := pMonitorAuctionEndTime.Add(time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
@@ -2442,7 +2472,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	closed = tm.market.OnChainTimeUpdate(context.Background(), pMonitorAuctionEndTime)
 	assert.False(t, closed)
 
-	closed = tm.market.OnChainTimeUpdate(context.Background(), afterPMonitorAuciton)
+	closed = tm.market.OnChainTimeUpdate(context.Background(), afterPMonitorAuction)
 	assert.False(t, closed)
 }
 
@@ -2935,16 +2965,16 @@ func TestOrderBook_CancelAll2771(t *testing.T) {
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_SELL, "trader-A", 1, 0)
 	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
-	assert.Equal(t, o1conf.Order.Status, types.Order_STATUS_PARKED)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
+	assert.Equal(t, o1conf.Order.Status, types.Order_STATUS_PARKED)
 
 	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-A", 1, 0)
 	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
-	assert.Equal(t, o2conf.Order.Status, types.Order_STATUS_PARKED)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
+	assert.Equal(t, o2conf.Order.Status, types.Order_STATUS_PARKED)
 
 	confs, err := tm.market.CancelAllOrders(ctx, "trader-A")
 	assert.NoError(t, err)
@@ -3015,7 +3045,7 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
 }
 
-func TestOrderBook_AmendExpPeristParkPeggedOrder(t *testing.T) {
+func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)

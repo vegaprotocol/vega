@@ -440,6 +440,21 @@ type Query {
   "a bunch of statistics about the node"
   statistics: Statistics!
 
+  "All registered oracle specs"
+  oracleSpecs: [OracleSpec!]
+
+  "An oracle spec for a given oracle spec ID"
+  oracleSpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+  ): OracleSpec
+
+  "All oracle data for a given oracle spec ID"
+  oracleDataBySpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+  ): [OracleData!]
+
   "An order in the VEGA network found by orderID"
   orderByID(
     "ID for an order"
@@ -795,8 +810,146 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle used for this product (Oracle union)"
-  oracle: Oracle!
+  "The oracle spec describing the oracle data of interest."
+  oracleSpec: OracleSpec!
+
+  "The binding between the oracle spec and the settlement price"
+  oracleSpecBinding: OracleSpecToFutureBinding!
+}
+
+"""
+OracleSpecToFutureBinding tells on which property oracle data should be
+used as settlement price.
+"""
+type OracleSpecToFutureBinding {
+  settlementPriceProperty: String!
+}
+
+"""
+An oracle spec describe the oracle data that a product (or a risk model)
+wants to get from the oracle engine.
+"""
+type OracleSpec {
+  "id is a hash generated from the OracleSpec data."
+  id: String!
+  "RFC3339Nano creation date time"
+  createdAt: String!
+  "RFC3339Nano last updated timestamp"
+  updatedAt: String
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [Filter!]
+  "status describes the status of the oracle spec"
+  status: OracleSpecStatus!
+  "data list all the oracle data broadcast to this spec"
+  data: [OracleData!]
+}
+
+"Status describe the status of the oracle spec"
+enum OracleSpecStatus {
+  "STATUS_ACTIVE describes an active oracle spec."
+  StatusActive
+  """
+  STATUS_ACTIVE describes an oracle spec that is not listening to data
+  anymore.
+  """
+  StatusUnused
+}
+
+"""
+Filter describes the conditions under which an oracle data is considered of
+interest or not.
+"""
+type Filter {
+  "key is the oracle data property key targeted by the filter."
+  key: PropertyKey!
+  """
+  conditions are the conditions that should be matched by the data to be
+  considered of interest.
+  """
+  conditions: [Condition!]
+}
+
+
+"PropertyKey describes the property key contained in an oracle data."
+type PropertyKey {
+  "name is the name of the property."
+  name: String
+  "type is the type of the property."
+  type: PropertyKeyType!
+}
+
+"""
+Type describes the type of properties that are supported by the oracle
+engine.
+"""
+enum PropertyKeyType {
+  "Any type."
+  TypeEmpty
+  "Integer type."
+  TypeInteger
+  "String type."
+  TypeString
+  "Boolean type."
+  TypeBoolean
+  "Any floating point decimal type."
+  TypeDecimal
+  "Timestamp date type."
+  TypeTimestamp
+}
+
+"""
+Condition describes the condition that must be validated by the
+"""
+type Condition {
+  "comparator is the type of comparison to make on the value."
+  operator: ConditionOperator!
+  "value is used by the comparator."
+  value: String
+}
+
+"Comparator describes the type of comparison."
+enum ConditionOperator {
+  "Verify if the property values are strictly equal or not."
+  OperatorEquals
+  "Verify if the oracle data value is greater than the Condition value."
+  OperatorGreaterThan
+  """
+  Verify if the oracle data value is greater than or equal to the Condition
+  value.
+  """
+  OperatorGreaterThanOrEqual
+  " Verify if the oracle data value is less than the Condition value."
+  OperatorLessThan
+  """
+  Verify if the oracle data value is less or equal to than the Condition
+  value.
+  """
+  OperatorLessThanOrEqual
+}
+
+"An oracle data contains the data sent by an oracle"
+type OracleData {
+  "pubKeys is the list of public keys that signed the data"
+  pubKeys: [String!]
+  "data contains all the properties send by an oracle"
+  data: [Property!]
+}
+
+"A property associates a name to a value"
+type Property {
+  "name of the property"
+  name: String!
+  "value of the property"
+  value: String!
 }
 
 union Product = Future
@@ -866,11 +1019,11 @@ type Fees {
 """
 An auction duration is used to configure 3 auction periods:
 1. `duration > 0`, `volume == 0`:
-  The auction will last for at least N seconds.
+The auction will last for at least N seconds.
 2. `duration == 0`, `volume > 0`:
-  The auction will end once we can close with given traded volume.
+The auction will end once we can close with given traded volume.
 3. `duration > 0`, `volume > 0`:
-  The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
 """
 type AuctionDuration {
   "Duration of the auction in seconds"
@@ -954,16 +1107,16 @@ type Market {
   number denominated in the currency of the Market. (uint64)
 
   Examples:
-    Currency     Balance  decimalPlaces  Real Balance
-    GBP              100              0       GBP 100
-    GBP              100              2       GBP   1.00
-    GBP              100              4       GBP   0.01
-    GBP                1              4       GBP   0.0001   (  0.01p  )
+  Currency     Balance  decimalPlaces  Real Balance
+  GBP              100              0       GBP 100
+  GBP              100              2       GBP   1.00
+  GBP              100              4       GBP   0.01
+  GBP                1              4       GBP   0.0001   (  0.01p  )
 
-    GBX (pence)      100              0       GBP   1.00     (100p     )
-    GBX (pence)      100              2       GBP   0.01     (  1p     )
-    GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
-    GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
+  GBX (pence)      100              0       GBP   1.00     (100p     )
+  GBX (pence)      100              2       GBP   0.01     (  1p     )
+  GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
+  GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
   """
   decimalPlaces: Int!
 
@@ -1579,6 +1732,9 @@ enum ProposalRejectionReason {
   MarketMissingLiquidityCommitment
   "Market proposal market could not be instantiate in execution"
   CouldNotInstantiateMarket
+  "Market proposal market contained invalid product definition"
+  InvalidFuturProduct
+
 }
 
 "Reason for the order being rejected by the core node"
@@ -1869,6 +2025,69 @@ input FutureProductInput {
   settlementAsset: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
+  "The oracle spec describing the oracle data of interest."
+  oracleSpec: OracleSpecConfigurationInput!
+  "The binding between the oracle spec and the settlement price"
+  oracleSpecBinding: OracleSpecToFutureBindingInput!
+}
+
+"""
+OracleSpecToFutureBindingInput tells on which property oracle data should be
+used as settlement price.
+"""
+input OracleSpecToFutureBindingInput {
+  settlementPriceProperty: String!
+}
+
+"""
+An oracle spec describe the oracle data that a product (or a risk model)
+wants to get from the oracle engine.
+"""
+input OracleSpecConfigurationInput {
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [FilterInput!]
+}
+
+"""
+Filter describes the conditions under which an oracle data is considered of
+interest or not.
+"""
+input FilterInput {
+  "key is the oracle data property key targeted by the filter."
+  key: PropertyKeyInput!
+  """
+  conditions are the conditions that should be matched by the data to be
+  considered of interest.
+  """
+  conditions: [ConditionInput!]
+}
+
+
+"PropertyKey describes the property key contained in an oracle data."
+input PropertyKeyInput {
+  "name is the name of the property."
+  name: String!
+  "type is the type of the property."
+  type: PropertyKeyType!
+}
+
+"""
+Condition describes the condition that must be validated by the
+"""
+input ConditionInput {
+  "comparator is the type of comparison to make on the value."
+  operator: ConditionOperator!
+  "value is used by the comparator."
+  value: String!
 }
 
 type FutureProduct {
@@ -2117,10 +2336,10 @@ input BuiltinAssetInput {
 
 """
 Various states a proposal can transition through:
-  Open ->
-      - Passed -> Enacted.
-      - Rejected.
-  Proposal can enter Failed state from any other state.
+Open ->
+- Passed -> Enacted.
+- Rejected.
+Proposal can enter Failed state from any other state.
 """
 enum ProposalState {
   "Proposal became invalid and cannot be processed"
@@ -2384,6 +2603,8 @@ enum BusEventType {
   Deposit
   "Collateral has been withdrawn from this Vega network via the bridge"
   Withdrawal
+  "An oracle spec has been registered"
+  OracleSpec
   "constant for market events - mainly used for logging"
   Market
 }
@@ -2413,6 +2634,7 @@ union Event =
   | RiskFactor
   | Deposit
   | Withdrawal
+  | OracleSpec
 
 type BusEvent {
   "the id for this event"

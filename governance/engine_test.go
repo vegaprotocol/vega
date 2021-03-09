@@ -2,6 +2,7 @@ package governance_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -12,9 +13,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -244,7 +245,7 @@ func testProposerStake(t *testing.T) {
 	noAccountPartyID := "party"
 
 	notFoundError := errors.New("account not found")
-	eng.accs.EXPECT().GetPartyTokenAccount(noAccountPartyID).Times(1).Return(nil, notFoundError)
+	eng.accs.EXPECT().GetPartyGeneralAccount(noAccountPartyID, gomock.Any()).Times(1).Return(nil, notFoundError)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		pe, ok := e.(*events.Proposal)
@@ -378,7 +379,7 @@ func testValidateTimestamps(t *testing.T) {
 	// for some unknown reason this previous utilities expect a mock assertion while doing
 	// nothing. basically this test utilities contaminates the other tests
 	// this will need to be refactored
-	eng.accs.GetPartyTokenAccount(party.Id)
+	eng.accs.GetPartyGeneralAccount(party.Id, "VOTE")
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 
@@ -524,7 +525,7 @@ func testVoterStake(t *testing.T) {
 
 	voterNoAccount := "voter-no-account"
 	notFoundError := errors.New("account not found")
-	eng.accs.EXPECT().GetPartyTokenAccount(voterNoAccount).Times(1).Return(nil, notFoundError)
+	eng.accs.EXPECT().GetPartyGeneralAccount(voterNoAccount, gomock.Any()).Times(1).Return(nil, notFoundError)
 	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyId:    voterNoAccount,
@@ -571,7 +572,7 @@ func testVotingDeclinedProposal(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(2))
+	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).Return(uint64(2), nil)
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
@@ -614,7 +615,7 @@ func testVotingPassedProposal(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(9))
+	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(2).Return(uint64(9), nil)
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
@@ -691,7 +692,7 @@ func testProposalDeclined(t *testing.T) {
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(200))
+	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).Return(uint64(200), nil)
 	proposer := eng.makeValidParty("proposer", 100)
 	voter := eng.makeValidPartyTimes("voter", 100, 3)
 
@@ -755,7 +756,7 @@ func testProposalPassed(t *testing.T) {
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.accs.EXPECT().GetTotalTokens().Times(2).Return(uint64(100))
+	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(2).Return(uint64(100), nil)
 	proposerVoter := eng.makeValidPartyTimes("proposer-and-voter", 100, 3)
 
 	proposal := eng.newOpenProposal(proposerVoter.Id, now)
@@ -819,14 +820,14 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 
 	partyA := "party-A"
-	eng.accs.EXPECT().GetTotalTokens().AnyTimes().Return(uint64(300))
+	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).AnyTimes().Return(uint64(300), nil)
 	accountA := types.Account{
 		Id:      partyA + "-account",
 		Owner:   partyA,
 		Balance: 200,
 		Asset:   "VOTE",
 	}
-	eng.accs.EXPECT().GetPartyTokenAccount(accountA.Owner).AnyTimes().Return(&accountA, nil)
+	eng.accs.EXPECT().GetPartyGeneralAccount(accountA.Owner, "VOTE").AnyTimes().Return(&accountA, nil)
 	partyB := "party-B"
 	accountB := types.Account{
 		Id:      partyB + "-account",
@@ -834,7 +835,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		Balance: 100,
 		Asset:   "VOTE",
 	}
-	eng.accs.EXPECT().GetPartyTokenAccount(accountB.Owner).AnyTimes().Return(&accountB, nil)
+	eng.accs.EXPECT().GetPartyGeneralAccount(accountB.Owner, "VOTE").AnyTimes().Return(&accountB, nil)
 
 	const howMany = 100
 	now := time.Now()
@@ -981,6 +982,21 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 							Maturity:        "2030-06-30T22:59:59Z",
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
+							OracleSpec: &oraclesv1.OracleSpecConfiguration{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "prices.ETH.value",
+											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
+								},
+							},
+							OracleSpecBinding: &types.OracleSpecToFutureBinding{
+								SettlementPriceProperty: "prices.ETH.value",
+							},
 						},
 					},
 				},
@@ -1014,7 +1030,7 @@ func (e *tstEngine) makeValidPartyTimes(partyID string, balance uint64, times in
 		Balance: balance,
 		Asset:   "VOTE",
 	}
-	e.accs.EXPECT().GetPartyTokenAccount(partyID).Times(times).Return(&account, nil)
+	e.accs.EXPECT().GetPartyGeneralAccount(partyID, "VOTE").Times(times).Return(&account, nil)
 	return &types.Party{Id: partyID}
 }
 
