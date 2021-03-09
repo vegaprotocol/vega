@@ -6309,7 +6309,7 @@ enum ProposalRejectionReason {
   "Market proposal market could not be instantiate in execution"
   CouldNotInstantiateMarket
   "Market proposal market contained invalid product definition"
-  InvalidFuturProduct
+  InvalidFutureProduct
 
 }
 
