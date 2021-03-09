@@ -645,6 +645,13 @@ func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
 	return mkt.GetMarketData(), nil
 }
 
+func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, v float64) error {
+	for _, mkt := range e.markets {
+		mkt.BondPenaltyFactorUpdate(ctx, v)
+	}
+	return nil
+}
+
 func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v interface{}) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market scaling factors",

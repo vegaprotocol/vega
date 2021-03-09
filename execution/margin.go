@@ -110,14 +110,33 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	if err != nil {
 		return nil, err
 	}
-	if closed != nil && closed.MarginShortFall() > 0 {
-		// @TODO handle closed
-		return nil, nil
+	responses := make([]*types.TransferResponse, 0, 2)
+	if tr != nil {
+		responses = append(responses, tr)
 	}
+	// margin shortfall && liquidity provider -> bond slashing
+	if closed != nil && m.liquidity.IsLiquidityProvider(mpos.Party()) && closed.MarginShortFall() > 0 {
+		// get bond penalty
+		penalty := m.bondPenaltyFactor * float64(closed.MarginShortFall())
+		tr := types.Transfer{
+			Owner: mpos.Party(),
+			Amount: &types.FinancialAmount{
+				Amount: int64(penalty),
+				Asset:  asset,
+			},
+			Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+			MinAmount: int64(penalty),
+		}
+		resp, err := m.collateral.BondUpdate(ctx, mID, mpos.Party(), &tr)
+		if err != nil {
+			return nil, err
+		}
+		responses = append(responses, resp)
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, responses))
 	if tr == nil {
 		return nil, nil
 	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
 	// create the rollback transaction
 	// for some reason, we can get a transfer object returned, but no actual transfers?
 	var riskRollback *types.Transfer

@@ -187,6 +187,7 @@ type Market struct {
 	lastMidSellPrice uint64
 
 	lastMarketValueProxy    float64
+	bondPenaltyFactor       float64
 	marketValueWindowLength time.Duration
 
 	// Liquidity Fee
@@ -2952,6 +2953,10 @@ func (m *Market) getTargetStake() float64 {
 
 func (m *Market) getSuppliedStake() uint64 {
 	return m.liquidity.CalculateSuppliedStake()
+}
+
+func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, v float64) {
+	m.bondPenaltyFactor = v
 }
 
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
