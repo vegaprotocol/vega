@@ -228,5 +228,13 @@ func (this *Market) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("TargetStakeParameters", err)
 		}
 	}
+	if this.MarketTimestamps != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarketTimestamps); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarketTimestamps", err)
+		}
+	}
+	return nil
+}
+func (this *MarketTimestamps) Validate() error {
 	return nil
 }

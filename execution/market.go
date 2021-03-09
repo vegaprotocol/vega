@@ -299,6 +299,15 @@ func NewMarket(
 	mkt.State = types.Market_STATE_PROPOSED
 	mkt.TradingMode = types.Market_TRADING_MODE_CONTINUOUS
 
+	// Populate the market timestamps
+	ts := &types.MarketTimestamps{
+		Pending: now.Unix(),
+		Open:    now.Unix() + mkt.OpeningAuction.Duration,
+		Close:   closingAt.Unix(),
+	}
+
+	mkt.MarketTimestamps = ts
+
 	market := &Market{
 		log:                log,
 		idgen:              idgen,
@@ -382,14 +391,6 @@ func (m *Market) GetMarketData() types.MarketData {
 		staticMidPrice = (bestStaticBidPrice + bestStaticOfferPrice) / 2
 	}
 
-	timestamps := &types.MarketTimestamps{
-		Prepare: 1111,
-		Pending: 2222,
-		Open:    3333,
-		Close:   4444,
-		Settled: 5555,
-	}
-
 	return types.MarketData{
 		Market:                    m.GetID(),
 		BestBidPrice:              bestBidPrice,
@@ -416,7 +417,6 @@ func (m *Market) GetMarketData() types.MarketData {
 		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
 		MarketValueProxy:          strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
-		MarketTimestamps:          timestamps,
 	}
 }
 
