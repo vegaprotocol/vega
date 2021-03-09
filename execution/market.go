@@ -3182,6 +3182,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
+	// add the party to the list of all parties involved with
+	// this markt
+	m.addParty(party)
+
 	defer func() {
 		if err == nil || !needsCancel {
 			return

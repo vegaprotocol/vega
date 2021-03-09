@@ -35,7 +35,7 @@ var (
 	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
 	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
-	ErrAccountDoesNotExist                     = errors.New("account do not exists")
+	ErrAccountDoesNotExist                     = errors.New("account does not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrNoGeneralAccountWhenCreateBondAccount   = errors.New("party general account missing when trying to create a bond account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
@@ -1379,6 +1379,44 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 	return &ret, nil
 }
 
+func (e *Engine) clearAccount(
+	ctx context.Context, req *types.TransferRequest,
+	party, asset, market string,
+) (*types.TransferResponse, error) {
+	ledgerEntries, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		e.log.Error(
+			"Failed to move monies from margin to general account",
+			logging.PartyID(party),
+			logging.MarketID(market),
+			logging.AssetID(asset),
+			logging.Error(err))
+		return nil, err
+	}
+
+	for _, v := range ledgerEntries.Transfers {
+		// increment the to account
+		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
+			e.log.Error(
+				"Failed to increment balance for account",
+				logging.String("account-id", v.ToAccount),
+				logging.Uint64("amount", v.Amount),
+				logging.Error(err),
+			)
+			return nil, err
+		}
+	}
+
+	// we remove the margin account
+	if err := e.removeAccount(req.FromAccount[0].Id); err != nil {
+		return nil, err
+	}
+	// remove account from balances tracking
+	e.rmPartyAccount(party, req.FromAccount[0].Id)
+
+	return ledgerEntries, nil
+}
+
 // ClearMarket will remove all monies or accounts for parties allocated for a market (margin accounts)
 // when the market reach end of life (maturity)
 func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.TransferResponse, error) {
@@ -1387,6 +1425,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		FromAccount: make([]*types.Account, 1),
 		ToAccount:   make([]*types.Account, 1),
 		Asset:       asset,
+		Reference:   "clear-market",
 	}
 
 	// assume we have as much transfer response than parties
@@ -1394,21 +1433,9 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 
 	for _, v := range parties {
 
-		marginAcc, err := e.GetAccountByID(e.accountID(mktID, v, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
-		if err != nil {
-			e.log.Error(
-				"Failed to get the margin account",
-				logging.String("trader-id", v),
-				logging.String("market-id", mktID),
-				logging.String("asset", asset),
-				logging.Error(err))
-			// just try to do other traders
-			continue
-		}
-
 		generalAcc, err := e.GetAccountByID(e.accountID("", v, asset, types.AccountType_ACCOUNT_TYPE_GENERAL))
 		if err != nil {
-			e.log.Error(
+			e.log.Debug(
 				"Failed to get the general account",
 				logging.String("trader-id", v),
 				logging.String("market-id", mktID),
@@ -1418,55 +1445,40 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 			continue
 		}
 
-		req.FromAccount[0] = marginAcc
-		req.ToAccount[0] = generalAcc
-		req.Amount = marginAcc.Balance
-
-		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("Clearing party margin account",
-				logging.String("market-id", mktID),
-				logging.String("asset", asset),
-				logging.String("party", v),
-				logging.Uint64("margin-before", marginAcc.Balance),
-				logging.Uint64("general-before", generalAcc.Balance),
-				logging.Uint64("general-after", generalAcc.Balance+marginAcc.Balance))
-		}
-
-		ledgerEntries, err := e.getLedgerEntries(ctx, req)
+		// we start first with the margin account if it exists
+		marginAcc, err := e.GetAccountByID(e.accountID(mktID, v, asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
-			e.log.Error(
-				"Failed to move monies from margin to general account",
-				logging.String("party", v),
+			e.log.Debug(
+				"Failed to get the margin account",
+				logging.String("trader-id", v),
 				logging.String("market-id", mktID),
 				logging.String("asset", asset),
 				logging.Error(err))
-			// just try to do other traders
-			continue
-		}
+		} else {
+			req.FromAccount[0] = marginAcc
+			req.ToAccount[0] = generalAcc
+			req.Amount = marginAcc.Balance
 
-		for _, v := range ledgerEntries.Transfers {
-			// increment the to account
-			if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
-				e.log.Error(
-					"Failed to increment balance for account",
-					logging.String("account-id", v.ToAccount),
-					logging.Uint64("amount", v.Amount),
-					logging.Error(err),
-				)
-				return nil, err
+			if e.log.GetLevel() == logging.DebugLevel {
+				e.log.Debug("Clearing party margin account",
+					logging.String("market-id", mktID),
+					logging.String("asset", asset),
+					logging.String("party", v),
+					logging.Uint64("margin-before", marginAcc.Balance),
+					logging.Uint64("general-before", generalAcc.Balance),
+					logging.Uint64("general-after", generalAcc.Balance+marginAcc.Balance))
 			}
+
+			ledgerEntries, err := e.clearAccount(ctx, req, v, asset, mktID)
+			if err != nil {
+				e.log.Panic("unable to clear party account", logging.Error(err))
+			}
+
+			// as the entries to the response
+			resps = append(resps, ledgerEntries)
 		}
 
-		// we remove the margin account
-		if err := e.removeAccount(marginAcc.Id); err != nil {
-			return nil, err
-		}
-		// remove account from balances tracking
-		e.rmPartyAccount(v, marginAcc.Id)
-
-		// as the entries to the response
-		resps = append(resps, ledgerEntries)
-
+		// Then we do bond account
 		bondAcc, err := e.GetAccountByID(e.accountID(mktID, v, asset, types.AccountType_ACCOUNT_TYPE_BOND))
 		if err != nil {
 			// this not an actual error
@@ -1477,7 +1489,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 
 		req.FromAccount[0] = bondAcc
 		req.ToAccount[0] = generalAcc
-		req.Amount = marginAcc.Balance
+		req.Amount = bondAcc.Balance
 
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("Clearing party bond account",
@@ -1489,37 +1501,10 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 				logging.Uint64("general-after", generalAcc.Balance+marginAcc.Balance))
 		}
 
-		ledgerEntries, err = e.getLedgerEntries(ctx, req)
+		ledgerEntries, err := e.clearAccount(ctx, req, v, asset, mktID)
 		if err != nil {
-			e.log.Error(
-				"Failed to move monies from bond to general account",
-				logging.String("party", v),
-				logging.String("market-id", mktID),
-				logging.String("asset", asset),
-				logging.Error(err))
-			// just try to do other traders
-			continue
+			e.log.Panic("unable to clear party account", logging.Error(err))
 		}
-
-		for _, v := range ledgerEntries.Transfers {
-			// increment the to account
-			if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
-				e.log.Error(
-					"Failed to increment balance for account",
-					logging.String("account-id", v.ToAccount),
-					logging.Uint64("amount", v.Amount),
-					logging.Error(err),
-				)
-				return nil, err
-			}
-		}
-
-		// we remove the bond account
-		if err := e.removeAccount(bondAcc.Id); err != nil {
-			return nil, err
-		}
-		// remove account from balances tracking
-		e.rmPartyAccount(v, bondAcc.Id)
 
 		// add entries to the response
 		resps = append(resps, ledgerEntries)
