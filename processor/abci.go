@@ -460,7 +460,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		err := app.exec.SubmitMarketWithLiquidityProvision(
 			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), prop.PartyId, lpid)
 		if err != nil {
-			app.log.Panic("unable to submit new market with liquidity submission",
+			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().Id),
 				logging.Error(err))
 			// an error happened when submitting the market + liquidity
