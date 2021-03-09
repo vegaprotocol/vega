@@ -8,13 +8,21 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
+      | aux     | ETH   | 100000000000|
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -52,7 +60,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
+      | aux     | ETH   | 100000000000|
 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -87,7 +103,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
+      | aux     | ETH   | 100000000000|
 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -128,7 +152,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
+      | aux     | ETH   | 100000000000|
 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -168,7 +200,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
+      | aux     | ETH   | 100000000000|
 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -208,7 +248,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
+      | aux     | ETH   | 100000000000|
 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -267,7 +315,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
+      | aux     | ETH   | 100000000000|
 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |

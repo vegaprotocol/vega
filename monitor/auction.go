@@ -188,7 +188,11 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 // AuctionEnded is called by execution to update internal state indicating this auction was closed
 func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.Auction {
 	// the end-of-auction event
-	evt := events.NewAuctionEvent(ctx, a.m.Id, true, a.begin.UnixNano(), now.UnixNano(), a.trigger)
+	var start int64 = 0
+	if a.begin != nil {
+		start = a.begin.UnixNano()
+	}
+	evt := events.NewAuctionEvent(ctx, a.m.Id, true, start, now.UnixNano(), a.trigger)
 	a.start, a.stop = false, false
 	a.begin, a.end = nil, nil
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
