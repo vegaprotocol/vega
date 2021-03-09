@@ -42,6 +42,8 @@ var (
 	ErrMissingOracleSpec = errors.New("missing oracle spec")
 	// ErrMissingFutureProduct is return when future product is absent from the instrument.
 	ErrMissingFutureProduct = errors.New("missing future product")
+	// ErrInvalidOracleSpecBinding ...
+	ErrInvalidOracleSpecBinding = errors.New("invalid oracle spec binding")
 )
 
 func assignProduct(
@@ -248,7 +250,7 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 	}
 	if !ospec.CanBindProperty(future.OracleSpecBinding.SettlementPriceProperty) {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT,
-			errors.New("invalid oracle spec binding")
+			ErrInvalidOracleSpecBinding
 	}
 
 	return validateAsset(future.SettlementAsset, assets, deepCheck)
