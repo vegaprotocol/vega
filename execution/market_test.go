@@ -1637,74 +1637,74 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	addAccount(tm, party3)
 	addAccount(tm, party4)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	price := uint64(99)
 
 	order1 := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid123",
-		Side:        types.Side_SIDE_BUY,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid3",
+		Side:        types.Side_SIDE_SELL,
 		PartyId:     party3,
 		MarketId:    tm.market.GetID(),
-		Size:        100,
-		Price:       100,
-		Remaining:   100,
+		Size:        1,
+		Price:       price,
+		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
-		Reference:   "party3-buy-order",
+		Reference:   "party3-sell-order-1",
 	}
 	order2 := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid1234",
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid4",
+		Side:        types.Side_SIDE_BUY,
 		PartyId:     party4,
 		MarketId:    tm.market.GetID(),
-		Size:        100,
-		Price:       100,
-		Remaining:   100,
+		Size:        1,
+		Price:       price,
+		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
-		Reference:   "party4-buy-order",
+		Reference:   "party4-sell-order-1",
 	}
 	_, err := tm.market.SubmitOrder(context.TODO(), order1)
 	assert.NoError(t, err)
-	confirmation, err := tm.market.SubmitOrder(context.TODO(), order2)
+	confirmationSell, err := tm.market.SubmitOrder(ctx, order2)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(confirmation.Trades))
-
+	require.Equal(t, 1, len(confirmationSell.Trades))
 	order1 = &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid1233",
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid5",
 		Side:        types.Side_SIDE_SELL,
-		PartyId:     party3,
-		MarketId:    tm.market.GetID(),
-		Size:        100,
-		Price:       100,
-		Remaining:   100,
-		CreatedAt:   now.UnixNano(),
-		Reference:   "party33-buy-order",
-	}
-	order2 = &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid12344",
-		Side:        types.Side_SIDE_BUY,
 		PartyId:     party4,
 		MarketId:    tm.market.GetID(),
-		Size:        100,
-		Price:       100,
-		Remaining:   100,
+		Size:        1,
+		Price:       price,
+		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
-		Reference:   "party44-buy-order",
+		Reference:   "party5-sell-order-1",
+	}
+	order2 = &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid6",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party3,
+		MarketId:    tm.market.GetID(),
+		Size:        1,
+		Price:       price,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party6-sell-order-1",
 	}
 	_, err = tm.market.SubmitOrder(context.TODO(), order1)
 	assert.NoError(t, err)
-	confirmation, err = tm.market.SubmitOrder(context.TODO(), order2)
+	confirmationSell, err = tm.market.SubmitOrder(ctx, order2)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(confirmation.Trades))
+	require.Equal(t, 1, len(confirmationSell.Trades))
 
 	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
@@ -1722,7 +1722,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party2-sell-order-1",
 	}
-	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	confirmationSell, err = tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
