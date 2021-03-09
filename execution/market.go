@@ -323,7 +323,7 @@ func NewMarket(
 		tsCalc:             tsCalc,
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
-		equityShares:       NewEquityShares(1),
+		equityShares:       NewEquityShares(0),
 	}
 
 	return market, nil
@@ -460,6 +460,11 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil
+}
+
+func (m *Market) isInOpeningAuction() bool {
+	return m.mkt.State == types.Market_STATE_PROPOSED ||
+		m.mkt.State == types.Market_STATE_PENDING
 }
 
 // GetID returns the id of the given market
@@ -3263,6 +3268,13 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		// liquidty provision in, even if orders are not deployed, we should
 		// be able to calculate the shars etc
 		if !needsCancel && !needsBondRollback {
+			// if we are still in opening auction, mvp can only be total stake
+			// so we'll use that to update the equity shares
+			if m.isInOpeningAuction() {
+				m.equityShares.WithMVP(
+					float64(m.liquidity.ProvisionsPerParty().TotalStake()),
+				)
+			}
 			m.updateLiquidityFee(ctx)
 			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 			// force update of shares so they are updated for all

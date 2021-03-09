@@ -4598,3 +4598,109 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	})
 
 }
+
+func TestAverageEntryValuation(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	// auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+	lpparty2 := "lp-party-2"
+	lpparty3 := "lp-party-3"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 500000000000).
+		WithAccountAndAmount(lpparty2, 500000000000).
+		WithAccountAndAmount(lpparty3, 500000000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(.2)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 8000,
+		Fee:              "0.01",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+		},
+	}
+
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, &lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	lpSubmission2 := lpSubmission
+	lpSubmission2.Reference = "lp-submission-2"
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, &lpSubmission2, lpparty2, "liquidity-submission-2"),
+	)
+
+	lpSubmission3 := lpSubmission
+	lpSubmission3.Reference = "lp-submission-3"
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, &lpSubmission3, lpparty3, "liquidity-submission-3"),
+	)
+
+	marketData := tm.market.GetMarketData()
+	expects := map[string]struct {
+		found bool
+		value string
+	}{
+		lpparty:  {value: "0.5454545454545454"},
+		lpparty2: {value: "0.2727272727272727"},
+		lpparty3: {value: "0.18181818181818182"},
+	}
+
+	for _, v := range marketData.LiquidityProviderFeeShare {
+		expv, ok := expects[v.Party]
+		assert.True(t, ok, "unexpected lp provider in market data", v.Party)
+		assert.Equal(t, expv.value, v.EquityLikeShare)
+		expv.found = true
+		expects[v.Party] = expv
+	}
+
+	// now ensure all are found
+	for k, v := range expects {
+		assert.True(t, v.found, "was not in the list of lp providers", k)
+	}
+}
