@@ -331,7 +331,6 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 						"product:futures",
 					},
 				},
-				InitialMarkPrice: 99,
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
 						Maturity:        closingAt.Format(time.RFC3339),
@@ -556,7 +555,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 }
 
 func TestMarketGetMarginOnFailNoFund(t *testing.T) {
-	party1 := "party1"
+	party1, party2, party3 := "party1", "party2", "party3"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
@@ -565,6 +564,42 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
 	addAccountWithAmount(tm, party1, 0)
+	addAccountWithAmount(tm, party2, 1000000)
+	addAccountWithAmount(tm, party3, 1000000)
+
+	order1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid12",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party2-buy-order",
+	}
+	order2 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid123",
+		Side:        types.Side_SIDE_SELL,
+		PartyId:     party3,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party3-buy-order",
+	}
+	_, err := tm.market.SubmitOrder(context.TODO(), order1)
+	assert.NoError(t, err)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), order2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(confirmation.Trades))
 
 	// submit orders
 	// party1 buys
@@ -589,7 +624,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
+	_, err = tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "margin check failed")
 }
@@ -1590,6 +1625,8 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	ctx := context.Background()
 	party1 := "party1"
 	party2 := "party2"
+	party3 := "party3"
+	party4 := "party4"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
@@ -1597,7 +1634,77 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
+	addAccount(tm, party3)
+	addAccount(tm, party4)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	order1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid123",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party3,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party3-buy-order",
+	}
+	order2 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid1234",
+		Side:        types.Side_SIDE_SELL,
+		PartyId:     party4,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party4-buy-order",
+	}
+	_, err := tm.market.SubmitOrder(context.TODO(), order1)
+	assert.NoError(t, err)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), order2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(confirmation.Trades))
+
+	order1 = &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid1233",
+		Side:        types.Side_SIDE_SELL,
+		PartyId:     party3,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party33-buy-order",
+	}
+	order2 = &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid12344",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party4,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party44-buy-order",
+	}
+	_, err = tm.market.SubmitOrder(context.TODO(), order1)
+	assert.NoError(t, err)
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), order2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(confirmation.Trades))
 
 	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{

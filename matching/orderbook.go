@@ -53,16 +53,10 @@ func (b *OrderBook) Hash() []byte {
 	return crypto.Hash(append(b.buy.Hash(), b.sell.Hash()...))
 }
 
-// NewOrderBook create an order book with a given name
-// TODO(jeremy): At the moment it takes as a parameter the initialMarkPrice from the market
-// framework. This is used in order to calculate the CloseoutPNL when there's no volume in the
-// book. It's currently set to the lastTradedPrice, so once a trade happen it naturally get
-// updated and the new markPrice will be used there.
-func NewOrderBook(log *logging.Logger, config Config, marketID string,
-	initialMarkPrice uint64, auction bool) *OrderBook {
+// NewOrderBook create an order book with a given name.
+func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
-	// log.SetLevel(config.Level.Get())
 	log.SetLevel(logging.DebugLevel)
 
 	return &OrderBook{
@@ -72,7 +66,6 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		buy:             &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
 		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
 		Config:          config,
-		lastTradedPrice: initialMarkPrice,
 		ordersByID:      map[string]*types.Order{},
 		auction:         auction,
 		batchID:         0,

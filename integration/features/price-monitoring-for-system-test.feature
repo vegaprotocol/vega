@@ -3,8 +3,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
     And the execution engine have these markets:
-      | name      | quote name | asset | mark price | risk model | lamd/long | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC20 |  ETH        | ETH   | 900000     | forward    | 0.000001  | 0.00011407711613050422 | 0              | 0.016           | 2.0   | 1.4            | 1.2            | 1.1           | 42               | 5                |  0         | 0                  | 0             | 4                  | 5,10           | 0.95,0.99   | 6,8             | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset |  risk model | lamd/long | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC20 |  ETH        | ETH   |  forward    | 0.000001  | 0.00011407711613050422 | 0              | 0.016           | 2.0   | 1.4            | 1.2            | 1.1           | 42               | 5                |  0         | 0                  | 0             | 4                  | 5,10           | 0.95,0.99   | 6,8             | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -28,7 +28,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader3 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader3_buy_1  |
       | trader4 | ETH/DEC20 | sell | 1      | 105000 | 0                | TYPE_LIMIT | TIF_GTC | trader4_sell_1 |
 
-    And the mark price for the market "ETH/DEC20" is "900000"
+    And the mark price for the market "ETH/DEC20" is "0"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
 
@@ -64,8 +64,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     Then traders cancels the following orders reference:
-      | trader   |       reference |
-      | trader1  |  trader1_sell_1 |
+      | trader  | reference      |
+      | trader1 | trader1_sell_1 |
 
     # T + 4s
     Then the time is updated to "2020-10-16T00:00:10Z"
@@ -74,9 +74,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # 2nd trigger breached with persistent order -> auction extended by 8s (total auction time no 14s).
     Then traders place following orders:
-      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100291  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100291  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # T + 10s (last second of the auciton)
     Then the time is updated to "2020-10-16T00:00:20Z"
@@ -96,9 +96,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # 100291 is the new reference price, we get the following valid price ranges for the 2 triggers: [100135, 100447] & [100001, 100582]
     Then traders place following orders:
-      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100447  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100447  |                1 | TYPE_LIMIT | TIF_GTC |
+      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell | 1      | 100447 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100447 | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC20" is "100447"
 
@@ -109,9 +109,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:00:26Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100448  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100448  |                1 | TYPE_LIMIT | TIF_GTC |
+      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell | 1      | 100448 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100448 | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC20" is "100448"
 
@@ -119,9 +119,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # Now, we have the following valid price ranges for the 2 triggers: [100213, 100525] & [100079, 100660]
     Then traders place following orders:
-      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader2 | ETH/DEC20 | buy  |      2 |   100213  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100050  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader2 | ETH/DEC20 | buy  | 2      | 100213 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100050 | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the mark price for the market "ETH/DEC20" is "100448"
 
@@ -133,8 +133,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # Both triggers breached with market order -> 14s auction
     Then traders place following orders:
-      | trader  | id        | type  | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell  |      3 |        0  |                0 | TYPE_MARKET | TIF_FOK |
+      | trader  | id        | type | volume | price | resulting trades | type        | tif     |
+      | trader1 | ETH/DEC20 | sell | 3      | 0     | 0                | TYPE_MARKET | TIF_FOK |
 
 
     And the mark price for the market "ETH/DEC20" is "100448"
@@ -158,9 +158,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # 100213 is the new reference price, we get the following valid price ranges for the 2 triggers: [100057, 100369] & [99923, 100503]
 
     Then traders place following orders:
-      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100292  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100292  |                1 | TYPE_LIMIT | TIF_GTC |
+      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell | 1      | 100292 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100292 | 1                | TYPE_LIMIT | TIF_GTC |
 
 
     And the mark price for the market "ETH/DEC20" is "100292"
@@ -173,9 +173,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
      # Both triggers breached with persistent order -> auction with duration of 10s starts
     Then traders place following orders:
-      | trader  | id        | type | volume |    price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell |      1 |   100650  |                0 | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  |      1 |   100650  |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC20 | sell | 1      | 100650 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100650 | 0                | TYPE_LIMIT | TIF_GTC |
 
 
     And the mark price for the market "ETH/DEC20" is "100292"

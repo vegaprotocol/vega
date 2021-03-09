@@ -75,8 +75,6 @@ message Instrument {
   string name = 3;
   // A collection of instrument meta-data
   InstrumentMetadata metadata = 4;
-  // An initial mark price for the instrument
-  uint64 initial_mark_price = 5;
   // The product the instrument is composed of
   oneof product {
     // Future

@@ -91,18 +91,15 @@ func assignTradingMode(definition *types.NewMarketConfiguration, target *types.M
 }
 
 func createInstrument(
-	netp NetParams,
 	input *types.InstrumentConfiguration,
 	tags []string,
 ) (*types.Instrument, types.ProposalError, error) {
-	initialMarkPrice, _ := netp.GetInt(netparams.MarketInitialMarkPrice)
 	result := &types.Instrument{
 		Name: input.Name,
 		Code: input.Code,
 		Metadata: &types.InstrumentMetadata{
 			Tags: tags,
 		},
-		InitialMarkPrice: uint64(initialMarkPrice),
 	}
 
 	if perr, err := assignProduct(input, result); err != nil {
@@ -140,7 +137,7 @@ func createMarket(
 	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp, openingAuctionDuration); err != nil {
 		return nil, perr, err
 	}
-	instrument, perr, err := createInstrument(netp, definition.Instrument, definition.Metadata)
+	instrument, perr, err := createInstrument(definition.Instrument, definition.Metadata)
 	if err != nil {
 		return nil, perr, err
 	}

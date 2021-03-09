@@ -3846,11 +3846,6 @@
           "$ref": "#/definitions/vegaInstrumentMetadata",
           "title": "A collection of instrument meta-data"
         },
-        "initial_mark_price": {
-          "type": "string",
-          "format": "uint64",
-          "title": "An initial mark price for the instrument"
-        },
         "future": {
           "$ref": "#/definitions/vegaFuture",
           "title": "Future"

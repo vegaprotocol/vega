@@ -333,8 +333,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice), false)
+	book := matching.NewOrderBook(log, conf.Matching, marketID, false)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -408,8 +407,6 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		},
 	}
 
-	var markPrice int64 = 94
-
 	// list of order in the book before the test happen
 	ordersInBook := []struct {
 		volume int64
@@ -441,8 +438,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	as.EXPECT().InAuction().AnyTimes().Return(false)
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice), false)
+	book := matching.NewOrderBook(log, conf.Matching, marketID, false)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{

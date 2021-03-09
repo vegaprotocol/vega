@@ -4,8 +4,8 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | quote name | asset | mark price | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 |  BTC        | BTC   | 100        | simple     | 0.1       | 0.1       | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 100              | 0                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 |  BTC        | BTC   |  simple     | 0.1       | 0.1       | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 100              | 1                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
@@ -13,27 +13,41 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
     Given the following traders:
-      | name   | amount    |
-      | tt_4   | 500000    |
-      | tt_5_0 | 123       |
-      | tt_5_1 | 122       |
-      | tt_5_2 | 121       |
-      | tt_5_3 | 120       |
-      | tt_5_4 | 119       |
-      | tt_6   | 100000000 |
-      | tt_10  | 10000000  |
-      | tt_11  | 10000000  |
+      | name    | amount    |
+      | tt_4    | 500000    |
+      | tt_5_0  | 123       |
+      | tt_5_1  | 122       |
+      | tt_5_2  | 121       |
+      | tt_5_3  | 120       |
+      | tt_5_4  | 119       |
+      | tt_6    | 100000000 |
+      | tt_10   | 10000000  |
+      | tt_11   | 10000000  |
+      | trader1 | 100000000 |
+      | trader2 | 100000000 |
     Then I Expect the traders to have new general account:
-      | name   | asset |
-      | tt_4   | BTC   |
-      | tt_5_0 | BTC   |
-      | tt_5_1 | BTC   |
-      | tt_5_2 | BTC   |
-      | tt_5_3 | BTC   |
-      | tt_5_4 | BTC   |
-      | tt_6   | BTC   |
-      | tt_10  | BTC   |
-      | tt_11  | BTC   |
+      | name    | asset |
+      | tt_4    | BTC   |
+      | tt_5_0  | BTC   |
+      | tt_5_1  | BTC   |
+      | tt_5_2  | BTC   |
+      | tt_5_3  | BTC   |
+      | tt_5_4  | BTC   |
+      | tt_6    | BTC   |
+      | tt_10   | BTC   |
+      | tt_11   | BTC   |
+      | trader1 | BTC   |
+      | trader2 | BTC   |
+
+    Then traders place following orders with references:
+      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | t1-s-1    |
+      | trader2 | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
+      | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
+      | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | t2-s-1    |
+
+    Then the opening auction period for market "ETH/DEC19" ends
+    And the mark price for the market "ETH/DEC19" is "100"
 
     # place orders and generate trades
     Then traders place following orders with references:
