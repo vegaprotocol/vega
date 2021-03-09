@@ -17,34 +17,39 @@ Feature: Regression test for issue 596
       | chris   | BTC   | 10000   |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
+      | aux     | BTC   | 1000    |
+
+  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC | 
+
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
-      | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    Then traders cancel the following orders:
-      | trader  | reference |
-      | trader1 | trader1-1 |
-      | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     |
-      | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 15     | 104   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 30     | 105   | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 20     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 12     | 98    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
-    Then traders have the following account balances:
-      | trader | asset | market id | margin | general |
+      | trader | id        | type | volume | price | resulting trades | type  | tif |
+      | edd    | ETH/DEC19 | sell |     20 |   101 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     20 |   102 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     10 |   103 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     15 |   104 |                0 | TYPE_LIMIT | TIF_GTC |
+      | edd    | ETH/DEC19 | sell |     30 |   105 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     20 |    99 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     12 |    98 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     14 |    97 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     20 |    96 |                0 | TYPE_LIMIT | TIF_GTC |
+      | barney | ETH/DEC19 | buy  |     5  |    95 |                0 | TYPE_LIMIT | TIF_GTC |
+
+And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+
+    Then I expect the trader to have a margin:
+      | trader | asset | id        | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 9152    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     Then traders place following orders:
@@ -76,20 +81,21 @@ Feature: Regression test for issue 596
       | chris   | BTC   | 10000   |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
+      | aux     | BTC   | 1000    |
+
+  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
-      | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    Then traders cancel the following orders:
-      | trader  | reference |
-      | trader1 | trader1-1 |
-      | trader2 | trader2-1 |
 
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |

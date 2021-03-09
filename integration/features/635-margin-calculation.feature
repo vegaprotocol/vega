@@ -10,18 +10,27 @@ Feature: Regression test for issue 596
       | prices.ETH.value | 42    |
 
   Scenario: Traded out position but monies left in margin account
-# setup accounts
+    # setup accounts
     Given the traders make the following deposits on asset's general account:
       | trader           | asset | amount     |
       | traderGuy        | BTC   | 1000000000 |
       | sellSideProvider | BTC   | 1000000000 |
       | buySideProvider  | BTC   | 1000000000 |
-# setup previous mark price
+      | aux              | BTC   | 1000000000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 8700000    | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 1      | 25000000   | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+
+    # setup previous mark price
     Then traders place following orders:
       | trader           | market id | side | volume | price    | resulting trades | type       | tif     |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC |
-# setup orderbook
+    # setup orderbook
     Then traders place following orders:
       | trader           | market id | side | volume | price    | resulting trades | type       | tif     |
       | sellSideProvider | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC |
