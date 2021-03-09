@@ -109,7 +109,7 @@ type ConditionInput struct {
 	Value string `json:"value"`
 }
 
-// A mode where Vega try to execute order as soon as they are received
+// A mode where Vega tries to execute orders as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
 	TickSize string `json:"tickSize"`
@@ -968,7 +968,7 @@ const (
 	DepositStatusOpen DepositStatus = "Open"
 	// The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
 	DepositStatusCancelled DepositStatus = "Cancelled"
-	// The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
+	// The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts
 	DepositStatusFinalized DepositStatus = "Finalized"
 )
 
