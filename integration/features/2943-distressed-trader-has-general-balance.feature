@@ -3,8 +3,8 @@ Feature: Distressed traders should not have general balance left
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
     And the execution engine have these markets:
-      | name      | base name | quote name | asset | mark price | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC20 | BTC       | ETH        | ETH   | 1000       | simple     | 0.11      | 0.1       | 0              | 0               | 0     | 1.4            | 1.2            | 1.1           | 42               | 0                | continuous   | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset | mark price | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC20 |  ETH        | ETH   | 1000       | simple     | 0.11      | 0.1       | 0              | 0               | 0     | 1.4            | 1.2            | 1.1           | 42               | 0                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -63,10 +63,6 @@ Feature: Distressed traders should not have general balance left
       | trader  | id        | side | volume | reference | offset | price | status        |
       | trader3 | ETH/DEC20 | buy  | 989    | BID       | -10    | 100   | STATUS_ACTIVE |
       | trader3 | ETH/DEC20 | sell | 760    | ASK       | 10     | 130   | STATUS_ACTIVE |
-      # | trader3 | ETH/DEC20 | sell |    582 |      ASK  | 50     | 170   | STATUS_ACTIVE |
-      # | trader3 | ETH/DEC20 | sell |    791 |      ASK  | 5      | 125   | STATUS_ACTIVE |
-      # | trader3 | ETH/DEC20 | sell |    507 |      ASK  | 75     | 195   | STATUS_ACTIVE |
-      # | trader3 | ETH/DEC20 | sell |    520 |      MID  | 75     | 190   | STATUS_ACTIVE |
     ## The sum of the margin + general account == 10000 - 10000 (commitment amount)
     And I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
