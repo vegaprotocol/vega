@@ -243,7 +243,8 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		// e.addAccountToHashableSlice(externalAcc)
 	}
 	e.log.Info("new asset added successfully",
-		logging.String("asset-id", asset.Id))
+		logging.String("asset-id", asset.Id),
+	)
 	return nil
 }
 
@@ -348,8 +349,7 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 }
 
 func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
-	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(
-		marketID, assetID)
+	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(marketID, assetID)
 	if err != nil {
 		return nil, err
 	}
@@ -1175,7 +1175,7 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 }
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
-func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
+func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
 	var (
 		asset = p.Amount.Asset
 		err   error

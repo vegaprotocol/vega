@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
+	"code.vegaprotocol.io/vega/products"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
@@ -231,6 +232,7 @@ func NewMarket(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	collateralEngine *collateral.Engine,
+	oracleEngine products.OracleEngine,
 	mkt *types.Market,
 	now time.Time,
 	broker Broker,
@@ -242,7 +244,7 @@ func NewMarket(
 		return nil, ErrEmptyMarketID
 	}
 
-	tradableInstrument, err := markets.NewTradableInstrument(log, mkt.TradableInstrument)
+	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate a new market")
 	}

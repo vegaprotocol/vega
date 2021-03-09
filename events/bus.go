@@ -87,6 +87,8 @@ const (
 	RiskFactorEvent
 	NetworkParameterEvent
 	TxErrEvent
+	OracleSpecEvent
+	OracleDataEvent
 )
 
 var (
@@ -127,6 +129,8 @@ var (
 		types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:   NetworkParameterEvent,
 		types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION: LiquidityProvisionEvent,
 		types.BusEventType_BUS_EVENT_TYPE_TX_ERROR:            TxErrEvent,
+		types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:         OracleSpecEvent,
+		types.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA:         OracleDataEvent,
 	}
 
 	toProto = map[Type]types.BusEventType{
@@ -157,6 +161,8 @@ var (
 		NetworkParameterEvent:   types.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER,
 		LiquidityProvisionEvent: types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION,
 		TxErrEvent:              types.BusEventType_BUS_EVENT_TYPE_TX_ERROR,
+		OracleSpecEvent:         types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC,
+		OracleDataEvent:         types.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA,
 	}
 
 	eventStrings = map[Type]string{
@@ -188,6 +194,8 @@ var (
 		NetworkParameterEvent:   "NetworkParameterEvent",
 		LiquidityProvisionEvent: "LiquidityProvisionEvent",
 		TxErrEvent:              "TxErrEvent",
+		OracleSpecEvent:         "OracleSpecEvent",
+		OracleDataEvent:         "OracleDataEvent",
 	}
 )
 

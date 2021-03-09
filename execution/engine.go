@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"time"
 
@@ -11,9 +12,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
+	"code.vegaprotocol.io/vega/products"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
 )
 
 var (
@@ -54,6 +54,8 @@ type Engine struct {
 	broker Broker
 	time   TimeService
 
+	oracle products.OracleEngine
+
 	npv netParamsValues
 }
 
@@ -92,6 +94,7 @@ func NewEngine(
 	executionConfig Config,
 	ts TimeService,
 	collateral *collateral.Engine,
+	oracle products.OracleEngine,
 	broker Broker,
 ) *Engine {
 	// setup logger
@@ -105,6 +108,7 @@ func NewEngine(
 		collateral: collateral,
 		idgen:      NewIDGen(),
 		broker:     broker,
+		oracle:     oracle,
 		npv:        defaultNetParamsValues(),
 	}
 
@@ -300,6 +304,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.Config.Matching,
 		e.Config.Fee,
 		e.collateral,
+		e.oracle,
 		marketConfig,
 		now,
 		e.broker,
@@ -311,6 +316,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 			logging.MarketID(marketConfig.Id),
 			logging.Error(err),
 		)
+		return err
 	}
 
 	e.markets[marketConfig.Id] = mkt
@@ -789,7 +795,7 @@ func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
 	}
 
 	for _, mkt := range e.marketsCpy {
-		mkt.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
+		_ = mkt.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 	}
 
 	e.npv.shapesMaxSize = v
@@ -812,5 +818,4 @@ func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
 	e.npv.maxLiquidityFee = f
 
 	return nil
-
 }

@@ -310,11 +310,15 @@ func (e *Engine) RejectProposal(
 		return ErrProposalDoesNotExists
 	}
 
+	e.rejectProposal(p, r)
+	e.broker.Send(events.NewProposalEvent(ctx, *p))
+	return nil
+}
+
+func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError) {
 	e.removeProposal(p.Id)
 	p.Reason = r
 	p.State = types.Proposal_STATE_REJECTED
-	e.broker.Send(events.NewProposalEvent(ctx, *p))
-	return nil
 }
 
 // toSubmit build the return response for the SubmitProposal
@@ -334,6 +338,7 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 
 		mkt, perr, err := createMarket(p.Id, change.NewMarket.Changes, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
 		if err != nil {
+			e.rejectProposal(p, perr)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
 		tsb.m = &ToSubmitNewMarket{

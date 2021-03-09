@@ -20,7 +20,7 @@ func TestAdaptors(t *testing.T) {
 
 func testCreatingAdaptorsSucceeds(t *testing.T) {
 	// when
-	adaptors := NewAdaptors()
+	adaptors := New()
 
 	// then
 	assert.NotNil(t, adaptors)

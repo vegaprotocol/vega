@@ -164,7 +164,7 @@ type NetworkParameters interface {
 	DispatchChanges(ctx context.Context)
 }
 
-type Oracles struct {
+type Oracle struct {
 	Engine   OraclesEngine
 	Adaptors OracleAdaptors
 }

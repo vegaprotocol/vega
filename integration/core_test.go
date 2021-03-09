@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/proto"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 
@@ -119,11 +120,20 @@ func theMarket(mSetup *gherkin.DataTable) error {
 				Product: &proto.Instrument_Future{
 					Future: &proto.Future{
 						Maturity: "2019-12-31T00:00:00Z",
-						Oracle: &proto.Future_EthereumEvent{
-							EthereumEvent: &proto.EthereumEvent{
-								ContractId: "0x0B484706fdAF3A4F24b2266446B1cb6d648E3cC1",
-								Event:      "price_changed",
+						OracleSpec: &oraclesv1.OracleSpec{
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "prices.ETH.value",
+										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
 							},
+						},
+						OracleSpecBinding: &proto.OracleSpecToFutureBinding{
+							SettlementPriceProperty: "prices.ETH.value",
 						},
 					},
 				},
@@ -167,6 +177,7 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		matching.NewDefaultConfig(),
 		fee.NewDefaultConfig(),
 		mktsetup.colE,
+		mktsetup.oracleEngine,
 		mkt,
 		time.Now(),
 		mktsetup.broker,
@@ -177,13 +188,13 @@ func theMarket(mSetup *gherkin.DataTable) error {
 		return err
 	}
 
-	m.StartOpeningAuction(context.Background())
+	_ = m.StartOpeningAuction(context.Background())
 	mktsetup.core = m
 	core = m
 	return nil
 }
 
-func theSystemAccounts(systemAccounts *gherkin.DataTable) error {
+func theSystemAccounts(_ *gherkin.DataTable) error {
 	// we currently have N accounts, creating system accounts should create 2 more accounts
 	current := len(mktsetup.broker.GetAccounts())
 	// this should create market accounts, currently same way it's done in execution engine (register market)
@@ -314,8 +325,8 @@ func theFollowingOrders(orderT *gherkin.DataTable) error {
 	return nil
 }
 
-func tradersLiability(liablityTbl *gherkin.DataTable) error {
-	for _, row := range liablityTbl.Rows {
+func tradersLiability(liabilityTbl *gherkin.DataTable) error {
+	for _, row := range liabilityTbl.Rows {
 		// skip header
 		if row.Cells[0].Value == "trader" {
 			continue

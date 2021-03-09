@@ -3,6 +3,7 @@ package gql
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -15,9 +16,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/vegatime"
-
-	"github.com/pkg/errors"
 )
 
 var (
@@ -229,6 +229,18 @@ func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
 	return (*myPeggedOrderResolver)(r)
 }
 
+func (r *VegaResolverRoot) OracleSpec() OracleSpecResolver {
+	return (*oracleSpecResolver)(r)
+}
+
+func (r *VegaResolverRoot) PropertyKey() PropertyKeyResolver {
+	return (*propertyKeyResolver)(r)
+}
+
+func (r *VegaResolverRoot) Condition() ConditionResolver {
+	return (*conditionResolver)(r)
+}
+
 func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
 	return (*auctionEventResolver)(r)
 
@@ -249,7 +261,7 @@ func (r *myLiquidityOrderResolver) Reference(ctx context.Context, obj *types.Liq
 	return convertPeggedReferenceFromProto(obj.Reference)
 }
 
-// LiquidityOrderRefernce resolver
+// LiquidityOrderReference resolver
 
 type myLiquidityOrderReferenceResolver VegaResolverRoot
 
@@ -327,6 +339,39 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) OracleSpecs(ctx context.Context) ([]*oraclespb.OracleSpec, error) {
+	res, err := r.tradingDataClient.OracleSpecs(
+		ctx, &protoapi.OracleSpecsRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.OracleSpecs, nil
+}
+
+func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*oraclespb.OracleSpec, error) {
+	res, err := r.tradingDataClient.OracleSpec(
+		ctx, &protoapi.OracleSpecRequest{Id: id},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.OracleSpec, nil
+}
+
+func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string) ([]*oraclespb.OracleData, error) {
+	res, err := r.tradingDataClient.OracleDataBySpec(
+		ctx, &protoapi.OracleDataBySpecRequest{Id: id},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.OracleData, nil
+}
 
 func (r *myQueryResolver) NetworkParameters(ctx context.Context) ([]*types.NetworkParameter, error) {
 	res, err := r.tradingDataClient.NetworkParameters(

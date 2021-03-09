@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/positions"
@@ -58,6 +59,7 @@ type Config struct {
 	Logging           logging.Config     `group:"Logging" namespace:"logging"`
 	Matching          matching.Config    `group:"Matching" namespace:"matching"`
 	Markets           markets.Config     `group:"Markets" namespace:"markets"`
+	Oracles           oracles.Config     `group:"Oracles" namespace:"oracles"`
 	Orders            orders.Config      `group:"Orders" namespace:"orders"`
 	Liquidity         liquidity.Config   `group:"Liquidity" namespace:"liquidity"`
 	Parties           parties.Config     `group:"Parties" namespace:"parties"`
@@ -99,6 +101,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Processor:         processor.NewDefaultConfig(),
 		API:               api.NewDefaultConfig(),
 		Accounts:          accounts.NewDefaultConfig(),
+		Oracles:           oracles.NewDefaultConfig(),
 		Orders:            orders.NewDefaultConfig(),
 		Liquidity:         liquidity.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),

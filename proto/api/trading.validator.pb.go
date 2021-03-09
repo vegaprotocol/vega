@@ -8,6 +8,7 @@ import (
 	math "math"
 
 	_ "code.vegaprotocol.io/vega/proto"
+	_ "code.vegaprotocol.io/vega/proto/oracles/v1"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
@@ -1044,6 +1045,49 @@ func (this *LiquidityProvisionsResponse) Validate() error {
 		if item != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("LiquidityProvisions", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *OracleSpecRequest) Validate() error {
+	if this.Id == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Id", fmt.Errorf(`value '%v' must not be an empty string`, this.Id))
+	}
+	return nil
+}
+func (this *OracleSpecResponse) Validate() error {
+	if this.OracleSpec != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OracleSpec); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("OracleSpec", err)
+		}
+	}
+	return nil
+}
+func (this *OracleSpecsRequest) Validate() error {
+	return nil
+}
+func (this *OracleSpecsResponse) Validate() error {
+	for _, item := range this.OracleSpecs {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("OracleSpecs", err)
+			}
+		}
+	}
+	return nil
+}
+func (this *OracleDataBySpecRequest) Validate() error {
+	if this.Id == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("Id", fmt.Errorf(`value '%v' must not be an empty string`, this.Id))
+	}
+	return nil
+}
+func (this *OracleDataBySpecResponse) Validate() error {
+	for _, item := range this.OracleData {
+		if item != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("OracleData", err)
 			}
 		}
 	}
