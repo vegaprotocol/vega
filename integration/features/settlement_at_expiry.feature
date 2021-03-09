@@ -8,12 +8,22 @@ Feature: Test mark to market settlement
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-
+    
   Scenario: Order cannot be placed once the market is expired
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount |
       | trader1 | ETH   | 10000  |
-    Then time is updated to "2020-01-01T01:01:01Z"
+      | aux     | ETH   | 100000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume  | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 10      |  999  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 10      | 1001  | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+
+    Then the time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
       | trader  | market id | side | volume | price | resulting trades | error                         |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
@@ -24,25 +34,38 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | 10000  |
       | trader2 | ETH   | 1000   |
       | trader3 | ETH   | 5000   |
+      | aux     | ETH   | 100000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-      | trader3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-    Then traders have the following account balances:
-      | trader  | asset | market id | margin | general |
+      | trader  | id        | type | volume  | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 10      |  999  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 10      | 1001  | 0                | TYPE_LIMIT  | TIF_GTC | 
+
+    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type  | tif |
+      | trader1 | ETH/DEC19 | sell |      2 |  1000 |                0 | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  |      1 |  1000 |                1 | TYPE_LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC19 | buy  |      1 |  1000 |                1 | TYPE_LIMIT | TIF_GTC |
+
+    Then dump trades
+
+    Then I expect the trader to have a margin:
+      | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 | 240    | 9760    |
       | trader2 | ETH   | ETH/DEC19 | 132    | 868     |
       | trader3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    And Cumulated balance for all accounts is worth "16000"
-    Then time is updated to "2020-01-01T01:01:01Z"
+    And All balances cumulated are worth "116000"
+    Then the time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
       | trader  | market id | side | volume | price | resulting trades | error                         |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
-    Then traders have the following account balances:
-      | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 | 0      | 8084    |
-      | trader2 | ETH   | ETH/DEC19 | 0      | 2784    |
-      | trader3 | ETH   | ETH/DEC19 | 0      | 4868    |
-    And Cumulated balance for all accounts is worth "15736"
+    Then I expect the trader to have a margin:
+      | trader  | asset | id        | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |      0 |   11676 |
+      | trader2 | ETH   | ETH/DEC19 |      0 |      42 |
+      | trader3 | ETH   | ETH/DEC19 |      0 |    4042 |
+    And All balances cumulated are worth "114802"
