@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/oracles"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/pkg/errors"
@@ -237,8 +238,17 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 	if future.OracleSpec == nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT, ErrMissingOracleSpec
 	}
+	// ensure the oracle spec can be constructed
+	ospec, err := oracles.NewOracleSpec(*future.OracleSpec.ToOracleSpec())
+	if err != nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT, err
+	}
 	if future.OracleSpecBinding == nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT, ErrMissingOracleSpecBinding
+	}
+	if !ospec.CanBindProperty(future.OracleSpecBinding.SettlementPriceProperty) {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTUR_PRODUCT,
+			errors.New("invalid oracle spec binding")
 	}
 
 	return validateAsset(future.SettlementAsset, assets, deepCheck)
