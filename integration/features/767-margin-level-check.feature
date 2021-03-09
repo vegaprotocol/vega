@@ -8,7 +8,7 @@ Feature: Regression test for issue 767
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-
+   
   Scenario: Traders place orders meeting the maintenance margin, but not the initial margin requirements, and can close out
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount  |
@@ -16,6 +16,13 @@ Feature: Regression test for issue 767
       | barney  | BTC   | 1000    |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
+      | aux     | BTC   | 100000  |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
     Then traders place following orders:
@@ -54,7 +61,7 @@ Feature: Regression test for issue 767
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    And Cumulated balance for all accounts is worth "2002000"
+    And All balances cumulated are worth "2102000"
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -62,4 +69,4 @@ Feature: Regression test for issue 767
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    And Cumulated balance for all accounts is worth "2002000"
+    And All balances cumulated are worth "2102000"

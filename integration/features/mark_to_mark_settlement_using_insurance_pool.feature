@@ -15,32 +15,43 @@ Feature: Test mark to market settlement with insurance pool
       | trader1 | ETH   | 121    |
       | trader2 | ETH   | 10000  |
       | trader3 | ETH   | 10000  |
-    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
+      | aux     | ETH   | 10000  |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-    Then traders have the following account balances:
-      | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 | 120    | 1       |
-      | trader2 | ETH   | ETH/DEC19 | 132    | 9868    |
+      | trader  | id        | type | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 6001  | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader2 | ETH/DEC19 | buy  | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    Then traders have the following account balances:
-      | trader  | asset | market id | margin | general |
-      | trader2 | ETH   | ETH/DEC19 | 264    | 9736    |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then I expect the trader to have a margin:
+      | trader  | asset | id        | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |   5122 |       0 |
+      | trader2 | ETH   | ETH/DEC19 |    132 |    9868 |
+
+    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader2 | ETH/DEC19 | buy  | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then I expect the trader to have a margin:
+      | trader  | asset |        id | margin | general |
+      | trader2 | ETH   | ETH/DEC19 |    265 |    9735 |
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader3 | ETH/DEC19 | sell | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    Then traders have the following account balances:
-      | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 | 0      | 0       |
-      | trader2 | ETH   | ETH/DEC19 | 1584   | 13416   |
-      | trader3 | ETH   | ETH/DEC19 | 720    | 9280    |
-    And Cumulated balance for all accounts is worth "30121"
-    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    And the insurance pool balance is "5121" for the market "ETH/DEC19"
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3 | ETH/DEC19 | sell | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
+    Then I expect the trader to have a margin:
+      | trader  | asset | id        | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |      0 |       0 |
+      | trader2 | ETH   | ETH/DEC19 |  13586 |    1414 |
+      | trader3 | ETH   | ETH/DEC19 |    721 |    9279 |
+
+   And All balances cumulated are worth "45122"
+   And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
+   And the insurance pool balance is "10122" for the market "ETH/DEC19"
