@@ -61,7 +61,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following traders:$`, theFollowingTraders)
 	s.Step(`^I Expect the traders to have new general account:$`, iExpectTheTradersToHaveNewGeneralAccount)
 	s.Step(`^"([^"]*)" general accounts balance is "([^"]*)"$`, generalAccountsBalanceIs)
-	s.Step(`^the execution engine have these markets:$`, theExecutionEngineHaveTheseMarkets)
+	s.Step(`^the execution engine have these markets:$`, TheMarket)
 	s.Step(`^traders place following orders:$`, tradersPlaceFollowingOrders)
 	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
 	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
