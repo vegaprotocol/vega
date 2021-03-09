@@ -92,7 +92,7 @@ type BuiltinAssetInput struct {
 
 type BusEvent struct {
 	// the id for this event
-	EventID string `json:"eventID"`
+	EventID string `json:"eventId"`
 	// the block hash
 	Block string `json:"block"`
 	// the type of event we're dealing with
@@ -282,9 +282,9 @@ type LogNormalRiskModelInput struct {
 
 type LossSocialization struct {
 	// the market ID where loss socialization happened
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party that was part of the loss socialization
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the amount lost
 	Amount int `json:"amount"`
 }
@@ -301,7 +301,7 @@ type MarketDataCommitments struct {
 
 type MarketEvent struct {
 	// the market ID
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the message - market events are used for logging
 	Payload string `json:"payload"`
 }
@@ -310,7 +310,7 @@ func (MarketEvent) IsEvent() {}
 
 type MarketTick struct {
 	// the market ID
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the block time
 	Time string `json:"time"`
 }
@@ -406,7 +406,7 @@ type PeggedOrderInput struct {
 
 type PositionResolution struct {
 	// the market ID where position resolution happened
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// number of distressed traders on market
 	Distressed int `json:"distressed"`
 	// number of traders closed out
@@ -569,9 +569,9 @@ type RiskParametersInput struct {
 
 type SettleDistressed struct {
 	// the market in which a position was closed out
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party who closed out
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the margin taken from distressed trader
 	Margin int `json:"margin"`
 	// the price at which position was closed out
@@ -582,9 +582,9 @@ func (SettleDistressed) IsEvent() {}
 
 type SettlePosition struct {
 	// the market in which a position was settled
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party who settled a position
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the settle price
 	Price int `json:"price"`
 	// the trades that were settled to close the overall position
