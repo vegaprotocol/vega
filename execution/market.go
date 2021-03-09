@@ -304,8 +304,13 @@ func NewMarket(
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
 		Pending: now.Unix(),
-		Open:    now.Unix() + mkt.OpeningAuction.Duration,
 		Close:   closingAt.Unix(),
+	}
+
+	if mkt.OpeningAuction != nil {
+		ts.Open = now.Unix() + mkt.OpeningAuction.Duration
+	} else {
+		ts.Open = now.Unix()
 	}
 
 	mkt.MarketTimestamps = ts
