@@ -148,3 +148,5 @@ models:
     model: code.vegaprotocol.io/vega/proto.MarginCalculator
   Vote:
     model: code.vegaprotocol.io/vega/proto.Vote
+  MarketTimestamps:
+    model: code.vegaprotocol.io/vega/proto.MarketTimestamps

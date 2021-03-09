@@ -4506,19 +4506,20 @@
     "vegaMarketTimestamps": {
       "type": "object",
       "properties": {
+        "proposed": {
+          "type": "string",
+          "title": "Time when the market is first proposed"
+        },
         "pending": {
           "type": "string",
-          "format": "int64",
           "title": "Time when the market has been voted in and is created into an opening auction"
         },
         "open": {
           "type": "string",
-          "format": "int64",
           "title": "Time when the market has left the opening auction and is ready to accept trades"
         },
         "close": {
           "type": "string",
-          "format": "int64",
           "title": "Time when the market is closed"
         }
       },

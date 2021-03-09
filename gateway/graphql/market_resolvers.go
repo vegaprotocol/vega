@@ -227,11 +227,11 @@ func (r *myMarketResolver) Proposal(ctx context.Context, obj *types.Market) (*ty
 	return resp.Data, nil
 }
 
-func (r *myMarketResolver) MarketTimestamps(ctx context.Context, obj *types.Market) (*MarketTimestamps, error) {
+/*func (r *myMarketResolver) MarketTimestamps(ctx context.Context, obj *types.Market) (*MarketTimestamps, error) {
 	mts := &MarketTimestamps{
 		Pending: vegatime.Format(vegatime.Unix(obj.MarketTimestamps.Pending, 0)),
 		Open:    vegatime.Format(vegatime.Unix(obj.MarketTimestamps.Open, 0)),
 		Close:   vegatime.Format(vegatime.Unix(obj.MarketTimestamps.Close, 0)),
 	}
 	return mts, nil
-}
+}*/

@@ -392,9 +392,10 @@ type ComplexityRoot struct {
 	}
 
 	MarketTimestamps struct {
-		Close   func(childComplexity int) int
-		Open    func(childComplexity int) int
-		Pending func(childComplexity int) int
+		Close    func(childComplexity int) int
+		Open     func(childComplexity int) int
+		Pending  func(childComplexity int) int
+		Proposed func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -900,7 +901,6 @@ type MarketResolver interface {
 	Candles(ctx context.Context, obj *proto.Market, since string, interval Interval) ([]*proto.Candle, error)
 	Data(ctx context.Context, obj *proto.Market) (*proto.MarketData, error)
 	LiquidityProvisions(ctx context.Context, obj *proto.Market, party *string) ([]*proto.LiquidityProvision, error)
-	MarketTimestamps(ctx context.Context, obj *proto.Market) (*MarketTimestamps, error)
 }
 type MarketDataResolver interface {
 	Market(ctx context.Context, obj *proto.MarketData) (*proto.Market, error)
@@ -2522,6 +2522,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketTimestamps.Pending(childComplexity), true
+
+	case "MarketTimestamps.proposed":
+		if e.complexity.MarketTimestamps.Proposed == nil {
+			break
+		}
+
+		return e.complexity.MarketTimestamps.Proposed(childComplexity), true
 
 	case "Mutation.prepareLiquidityProvision":
 		if e.complexity.Mutation.PrepareLiquidityProvision == nil {
@@ -4942,6 +4949,8 @@ type MarketData {
 
 "timestamps for when the market changes state"
 type MarketTimestamps {
+  "Time when the market is first proposed"
+  proposed: String!
   "Time when the market has been voted in and waiting to be created"
   pending: String!
   "Time when the market is open and ready to accept trades"
@@ -13593,13 +13602,13 @@ func (ec *executionContext) _Market_marketTimestamps(ctx context.Context, field 
 		Object:   "Market",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().MarketTimestamps(rctx, obj)
+		return obj.MarketTimestamps, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13611,9 +13620,9 @@ func (ec *executionContext) _Market_marketTimestamps(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*MarketTimestamps)
+	res := resTmp.(*proto.MarketTimestamps)
 	fc.Result = res
-	return ec.marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketTimestamps(ctx, field.Selections, res)
+	return ec.marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketTimestamps(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketData_market(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
@@ -14971,7 +14980,41 @@ func (ec *executionContext) _MarketTick_time(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field graphql.CollectedField, obj *MarketTimestamps) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketTimestamps_proposed(ctx context.Context, field graphql.CollectedField, obj *proto.MarketTimestamps) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketTimestamps",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Proposed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field graphql.CollectedField, obj *proto.MarketTimestamps) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -15005,7 +15048,7 @@ func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field graphql.CollectedField, obj *MarketTimestamps) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field graphql.CollectedField, obj *proto.MarketTimestamps) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -15039,7 +15082,7 @@ func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field graphql.CollectedField, obj *MarketTimestamps) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field graphql.CollectedField, obj *proto.MarketTimestamps) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -27887,19 +27930,10 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				return res
 			})
 		case "marketTimestamps":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_marketTimestamps(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Market_marketTimestamps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -28463,7 +28497,7 @@ func (ec *executionContext) _MarketTick(ctx context.Context, sel ast.SelectionSe
 
 var marketTimestampsImplementors = []string{"MarketTimestamps"}
 
-func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.SelectionSet, obj *MarketTimestamps) graphql.Marshaler {
+func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.SelectionSet, obj *proto.MarketTimestamps) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, marketTimestampsImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -28472,6 +28506,11 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketTimestamps")
+		case "proposed":
+			out.Values[i] = ec._MarketTimestamps_proposed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "pending":
 			out.Values[i] = ec._MarketTimestamps_pending(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -32862,11 +32901,11 @@ func (ec *executionContext) marshalNMarketState2codeᚗvegaprotocolᚗioᚋvega�
 	return v
 }
 
-func (ec *executionContext) marshalNMarketTimestamps2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketTimestamps(ctx context.Context, sel ast.SelectionSet, v MarketTimestamps) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketTimestamps2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketTimestamps(ctx context.Context, sel ast.SelectionSet, v proto.MarketTimestamps) graphql.Marshaler {
 	return ec._MarketTimestamps(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐMarketTimestamps(ctx context.Context, sel ast.SelectionSet, v *MarketTimestamps) graphql.Marshaler {
+func (ec *executionContext) marshalNMarketTimestamps2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketTimestamps(ctx context.Context, sel ast.SelectionSet, v *proto.MarketTimestamps) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
