@@ -6,6 +6,7 @@ import (
 
 	"github.com/cucumber/godog/gherkin"
 
+	"code.vegaprotocol.io/vega/integration/steps"
 	types "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
@@ -13,7 +14,7 @@ import (
 func TheMarket(table *gherkin.DataTable) error {
 	markets := []types.Market{}
 
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range steps.TableWrapper(*table).Parse() {
 		market := newMarket(marketRow{row: row})
 		markets = append(markets, market)
 	}
@@ -176,7 +177,7 @@ func priceMonitoringTriggers(row marketRow) []*types.PriceMonitoringTrigger {
 
 // marketRow wraps the declaration of the properties of an oracle data
 type marketRow struct {
-	row RowWrapper
+	row steps.RowWrapper
 }
 
 func (r marketRow) name() string {

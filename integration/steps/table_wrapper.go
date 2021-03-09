@@ -1,9 +1,12 @@
-package core_test
+package steps
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+
+	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
 )
@@ -114,4 +117,31 @@ func (r RowWrapper) Bool(name string) (bool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("invalid bool value: %v", name)
+}
+
+func (r RowWrapper) OrderType(name string) (types.Order_Type, error) {
+	ty, ok := types.Order_Type_value[r.values[name]]
+	if !ok {
+		return types.Order_Type(ty), fmt.Errorf("invalid order type: %v", r.values[name])
+	}
+	return types.Order_Type(ty), nil
+}
+
+func (r RowWrapper) TIF(name string) (types.Order_TimeInForce, error) {
+	tif, ok := types.Order_TimeInForce_value[strings.ReplaceAll(r.values[name], "TIF_", "TIME_IN_FORCE_")]
+	if !ok {
+		return types.Order_TimeInForce(tif), fmt.Errorf("invalid time in force: %v", r.values[name])
+	}
+	return types.Order_TimeInForce(tif), nil
+}
+
+func (r RowWrapper) Side(name string) (types.Side, error) {
+	switch r.values[name] {
+	case "sell":
+		return types.Side_SIDE_SELL, nil
+	case "buy":
+		return types.Side_SIDE_BUY, nil
+	default:
+		return types.Side_SIDE_UNSPECIFIED, errors.New("invalid side")
+	}
 }

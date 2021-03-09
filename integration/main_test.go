@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"code.vegaprotocol.io/vega/integration/steps"
+
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/cucumber/godog/gherkin"
@@ -62,7 +64,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I Expect the traders to have new general account:$`, iExpectTheTradersToHaveNewGeneralAccount)
 	s.Step(`^"([^"]*)" general accounts balance is "([^"]*)"$`, generalAccountsBalanceIs)
 	s.Step(`^the execution engine have these markets:$`, TheMarket)
-	s.Step(`^traders place following orders:$`, tradersPlaceFollowingOrders)
+	s.Step(`^traders place following orders:$`, func(orders *gherkin.DataTable) error {
+		return steps.TradersPlaceFollowingOrders(execsetup.engine, orders)
+	})
 	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
 	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
 	s.Step(`^the following transfers happened:$`, theFollowingTransfersHappened)
