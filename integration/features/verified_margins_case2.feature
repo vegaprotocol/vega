@@ -4,8 +4,8 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | tau/short | lamd/long | mu | r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
-      | ETH/DEC19 | BTC      | ETH       | ETH   | 9400000   | simple     | 0.1       | 0.2       | 0  | 0 | 0     | 5              | 4              | 3.2           | 9400000         | 0           | continuous   | 0        | 0                 | 0            | 0                  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
+      | name      | base name | quote name | asset | mark price | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 | BTC       | ETH        | ETH   | 9400000    | simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 9400000          | 0                | continuous   | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value   |
       | prices.ETH.value | 9400000 |
@@ -42,9 +42,9 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     And "trader1" have only one account per asset
     # placing test order
     Then traders place following orders:
-      | trader  | market id | type | volume | price    | trades | type  | tif |
+      | trader  | market id | type | volume | price    | trades | type       | tif     |
       | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2      | TYPE_LIMIT | TIF_GTC |
-    And "trader1" general account for asset "ETH" balance is "647999952"
+    And "trader1" general account for asset "ETH" balance is "575199952"
     And executed trades:
       | buyer   | price    | size | seller     |
       | trader1 | 11200000 | 2    | sellSideMM |
@@ -56,10 +56,10 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 357600048 | 647999952 |
+      | trader1 | ETH   | ETH/DEC19 | 430400048 | 575199952 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 89400012    | 286080038 | 357600048 | 447000060 |
+      | trader1 | ETH/DEC19 | 107600012   | 344320038 | 430400048 | 538000060 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | 13     | 5600000       | 0           |
@@ -72,10 +72,10 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 357600048 | 647999952 |
+      | trader1 | ETH   | ETH/DEC19 | 430400048 | 575199952 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 89400012    | 286080038 | 357600048 | 447000060 |
+      | trader1 | ETH/DEC19 | 107600012   | 344320038 | 430400048 | 538000060 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | 13     | 5600000       | 0           |
@@ -93,10 +93,10 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 156000000 | 797600000 |
+      | trader1 | ETH   | ETH/DEC19 | 208000000 | 745600000 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 39000000    | 124800000 | 156000000 | 195000000 |
+      | trader1 | ETH/DEC19 | 52000000    | 166400000 | 208000000 | 260000000 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | 13     | -46400000     | 0           |
@@ -107,10 +107,10 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | trader1 | ETH/DEC19 | sell | 10     | 8000000 | 1      | TYPE_LIMIT | TIF_GTC |
     And I expect the trader to have a margin:
       | trader  | asset | market id | margin  | general   |
-      | trader1 | ETH   | ETH/DEC19 | 9600000 | 918000000 |
+      | trader1 | ETH   | ETH/DEC19 | 19200000 | 908400000 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search  | initial | release  |
-      | trader1 | ETH/DEC19 | 2400000     | 7680000 | 9600000 | 12000000 |
+      | trader1 | ETH/DEC19 | 4800000     | 15360000 | 19200000 | 24000000 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
       | trader1 | 3      | -16707692     | -55692308   |

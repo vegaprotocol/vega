@@ -3,11 +3,11 @@ Feature: Amend orders
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r     | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
-      | ETH/DEC19 | ETH      | BTC       | BTC   | 94        | simple     | 0         | 0         | 0  | 0.016 | 2.0   | 5              | 4              | 3.2           | 42              | 0           | continuous   | 0        | 0                 | 0            | 0                  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
+      | name      | base name | quote name | asset | mark price | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 | ETH       | BTC        | BTC   | 94         | simple     | 0         | 0         | 0              | 0.016           | 2.0   | 5              | 4              | 3.2           | 42               | 0                | continuous   | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
-      | prices.ETH.value | 42   |
+      | prices.ETH.value | 42    |
 
   Scenario: Amend rejected for non existing order
 # setup accounts
@@ -58,8 +58,6 @@ Feature: Amend orders
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
       | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
-
-# Then the following trades happend
       Then the following trades happened:
         | buyer | seller | price | volume |
         | myboi3 | myboi  |     1 |      3 |
@@ -90,12 +88,9 @@ Feature: Amend orders
     Then traders place following orders with references:
       | trader | id        | type | volume | price | resulting trades | type  | tif | reference   |
       | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
-
-
-# Then the following trades happend
-      Then the following trades happened:
-        | buyer  | seller | price | volume |
-        | myboi3 | myboi2 |     1 |      3 |
+    Then the following trades happened:
+      | buyer  | seller | price | volume |
+      | myboi3 | myboi2 |     1 |      3 |
 
   Scenario: Reduce size success and order cancelled as  < to remaining
 # setup accounts

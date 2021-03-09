@@ -14,7 +14,6 @@ var (
 	gdOpts = godog.Options{
 		Output: colors.Colored(os.Stdout),
 		Format: "progress",
-		// Format: "pretty", // default to pretty output so we can diagnose failed CI builds more easily
 	}
 )
 
@@ -62,16 +61,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following traders:$`, theFollowingTraders)
 	s.Step(`^I Expect the traders to have new general account:$`, iExpectTheTradersToHaveNewGeneralAccount)
 	s.Step(`^"([^"]*)" general accounts balance is "([^"]*)"$`, generalAccountsBalanceIs)
-
-	s.Step(`^the market:$`, theMarket)
-	s.Step(`^the system accounts:$`, theSystemAccounts)
-	s.Step(`^traders have the following state:$`, tradersHaveTheFollowingState)
-	s.Step(`^the following orders:$`, theFollowingOrders)
-	s.Step(`^I place the following orders:$`, theFollowingOrders)
-	s.Step(`^I expect the trader to have a margin liability:$`, tradersLiability)
-	s.Step(`^"([^"]*)" has not been added to the market$`, hasNotBeenAddedToTheMarket)
-	s.Step(`^the mark price is "([^"]+)"$`, theMarkPriceIs)
-	s.Step(`^the execution engine have these markets:$`, theExecutionEngineHaveTheseMarkets)
+	s.Step(`^the execution engine have these markets:$`, TheMarket)
 	s.Step(`^traders place following orders:$`, tradersPlaceFollowingOrders)
 	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
 	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
@@ -105,7 +95,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I see the following order events:$`, seeTheFollowingOrderEvents)
 	s.Step(`^clear order events by reference:$`, clearOrdersByRef)
 	s.Step(`^clear transfer events$`, clearTransferEvents)
-	s.Step(`^traders cancel pegged orders:$`, tradersCancelPeggedOrders)
 	s.Step(`^traders cancel pegged orders and clear:$`, tradersCancelPeggedOrdersAndClear)
 	s.Step(`^the trader submits LP:$`, submitLP)
 	s.Step(`^I see the LP events:$`, seeLPEvents)

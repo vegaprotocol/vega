@@ -4,8 +4,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long              | tau/short              | mu | r  | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
-      | ETH/DEC20 | ETH      | ETH       | ETH   | 100       | simple     | 0.08628781058136630000 | 0.09370922348428490000 | -1 | -1 | -1    | 1.4            | 1.2            | 1.1           | 100             | 1           | continuous   | 0.004    | 0.001             | 0.3          | 0                  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
+      | name      | base name | quote name | asset | mark price | risk model | lamd/long              | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC20 | ETH       | ETH        | ETH   | 100        | simple     | 0.08628781058136630000 | 0.09370922348428490000 | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 100              | 1                | continuous   | 0.004     | 0.001              | 0.3           | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
@@ -69,7 +69,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1949413 | 993000587 |
-    # And dump transfers
+
     # MTM loss + margin low
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -91,7 +91,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |
-    # And dump transfers
+
     # Check MTM Loss transfer happened
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -112,7 +112,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
-    # And dump transfers
+
     # Check MTM Loss transfer happened
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -134,7 +134,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 2624120 | 986325880 |
-    # And dump transfers
+
     # Check MTM Loss transfer happened
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -157,7 +157,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |
-    # And dump transfers
+
     # Check MTM Loss transfer happened
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -180,7 +180,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1949413 | 993000587 |
-    # And dump transfers
+
     # Check MTM Loss transfer happened
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -203,7 +203,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1836962 | 994113038 |
-    # And dump transfers
+
     # Check MTM Loss transfer happened
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -226,7 +226,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1724511 | 995225489 |
-    # And dump transfers
+
     # Check MTM Loss transfer happened
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
@@ -242,7 +242,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 0       | 993900000 |
-    # And dump transfers
+
     And the following transfers happened:
       | from    | to      | fromType                | toType                           | id        | amount  | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 |   40000 | ETH   |

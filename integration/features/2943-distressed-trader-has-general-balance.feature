@@ -3,11 +3,11 @@ Feature: Distressed traders should not have general balance left
   Background:
     Given the markets starts on "2020-10-16T00:00:00Z" and expires on "2020-12-31T23:59:59Z"
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
-      | ETH/DEC20 | BTC      | ETH       | ETH   | 1000      | simple     | 0.11      | 0.1       | 0  | 0 | 0     | 1.4            | 1.2            | 1.1           | 42              | 0           | continuous   | 0        | 0                 | 0            | 0                  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
+      | name      | base name | quote name | asset | mark price | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC20 | BTC       | ETH        | ETH   | 1000       | simple     | 0.11      | 0.1       | 0              | 0               | 0     | 1.4            | 1.2            | 1.1           | 42               | 0                | continuous   | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
-      | prices.ETH.value | 42   |
+      | prices.ETH.value | 42    |
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached
@@ -49,16 +49,11 @@ Feature: Distressed traders should not have general balance left
       | trader  | asset | id        | margin | general       |
       | trader4 | ETH   | ETH/DEC20 | 360    | 9999999999640 |
       | trader5 | ETH   | ETH/DEC20 | 372    | 9999999999628 |
-      # And clear order events
     And clear order events
     Then the trader submits LP:
       | id  | party   | market    | commitment amount | fee | order side | order reference | order proportion | order offset |
       | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | buy        | BID             | 10               | -10          |
       | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | sell       | ASK             | 10               | 10           |
-      # | lp1 | trader3 | ETH/DEC20 | 10000              | 0.1 | sell       | ASK             | 10               | 50           |
-      # | lp1 | trader3 | ETH/DEC20 | 10000              | 0.1 | sell       | ASK             | 10               | 5            |
-      # | lp1 | trader3 | ETH/DEC20 | 10000              | 0.1 | sell       | ASK             | 10               | 75           |
-      # | lp1 | trader3 | ETH/DEC20 | 10000              | 0.1 | sell       | MID             | 10               | 75           |
     Then I see the LP events:
       | id  | party   | market    | commitment amount |
       | lp1 | trader3 | ETH/DEC20 | 10000             |
