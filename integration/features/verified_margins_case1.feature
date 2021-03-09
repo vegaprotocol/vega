@@ -4,8 +4,8 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | base name | quote name | asset | mark price | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | trading mode | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading |
-      | ETH/DEC19 | BTC       | ETH        | ETH   | 9400000    | simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 9400000          | 0                | continuous   | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              |
+      | name      | quote name | asset | mark price | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading |
+      | ETH/DEC19 | ETH        | ETH   | 9400000    | simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 9400000          | 0                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              |
     And the following traders:
       | name       | amount     |
       | trader1    | 1000000000 |
