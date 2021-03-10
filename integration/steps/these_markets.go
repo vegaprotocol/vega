@@ -1,35 +1,26 @@
-package core_test
+package steps
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/integration/steps"
 	types "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
-func TheMarket(table *gherkin.DataTable) error {
+func TheMarkets(expiry string, table *gherkin.DataTable) []types.Market {
 	markets := []types.Market{}
 
-	for _, row := range steps.TableWrapper(*table).Parse() {
-		market := newMarket(marketRow{row: row})
+	for _, row := range TableWrapper(*table).Parse() {
+		market := newMarket(expiry, marketRow{row: row})
 		markets = append(markets, market)
 	}
 
-	t, _ := time.Parse("2006-01-02T15:04:05Z", marketStart)
-	execsetup = getExecutionTestSetup(t, markets)
-
-	// reset market start time and expiry for next run
-	marketExpiry = defaultMarketExpiry
-	marketStart = defaultMarketStart
-
-	return nil
+	return markets
 }
 
-func newMarket(row marketRow) types.Market {
+func newMarket(marketExpiry string, row marketRow) types.Market {
 	market := types.Market{
 		TradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
 		State:         types.Market_STATE_ACTIVE,
@@ -177,7 +168,7 @@ func priceMonitoringTriggers(row marketRow) []*types.PriceMonitoringTrigger {
 
 // marketRow wraps the declaration of the properties of an oracle data
 type marketRow struct {
-	row steps.RowWrapper
+	row RowWrapper
 }
 
 func (r marketRow) name() string {
