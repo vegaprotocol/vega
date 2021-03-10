@@ -527,7 +527,7 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 
 	for _, mkt := range e.marketsCpy {
 		confs, err := mkt.CancelAllOrders(ctx, party)
-		if err != nil {
+		if err != nil && err != ErrTradingNotAllowed {
 			return nil, err
 		}
 		confirmations = append(confirmations, confs...)
