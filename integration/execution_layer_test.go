@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/oracles"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
@@ -1170,18 +1169,4 @@ func tradersWithdrawBalance(in *gherkin.DataTable) error {
 		}
 	}
 	return nil
-}
-
-func oraclesBroadcastData(rawPubKeys string, rawProperties *gherkin.DataTable) error {
-	pubKeys := ParseOracleDataPubKeys(rawPubKeys)
-
-	properties, err := ParseOracleDataProperties(rawProperties)
-	if err != nil {
-		return err
-	}
-
-	return execsetup.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
-		PubKeys: pubKeys,
-		Data:    properties,
-	})
 }
