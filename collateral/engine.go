@@ -481,7 +481,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 
 	var (
 		winidx          int
-		expectCollected int64
+		expectCollected uint64
 	)
 
 	// create batch of events
@@ -537,7 +537,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			return nil, nil, err
 		}
 		// accumulate the expected transfer size
-		expectCollected += int64(req.Amount)
+		expectCollected += req.Amount
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
 		res, err := e.getLedgerEntries(ctx, req)
@@ -633,7 +633,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		log:             e.log,
 		marketID:        settle.MarketId,
 		expectCollected: expectCollected,
-		collected:       int64(settle.Balance),
+		collected:       settle.Balance,
 		requests:        []request{},
 		ts:              e.currentTime,
 	}
@@ -642,7 +642,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		e.log.Warn("Entering loss socialization",
 			logging.String("market-id", marketID),
 			logging.String("asset", asset),
-			logging.Int64("expect-collected", expectCollected),
+			logging.Uint64("expect-collected", expectCollected),
 			logging.Uint64("collected", settle.Balance))
 		for _, evt := range transfers[winidx:] {
 			transfer := evt.Transfer()
@@ -823,7 +823,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		//   InitialMargin
 		// In both case either the order will not be accepted, or the trader will be closed
 		if transfer.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW &&
-			int64(res.Balances[0].Account.Balance) < (int64(update.MarginBalance())+transfer.MinAmount) {
+			res.Balances[0].Account.Balance < (update.MarginBalance()+transfer.MinAmount) {
 			closed = append(closed, mevt)
 		} else if mevt.marginShortFall > 0 {
 			// party not closed out, but could also not fullfill it's margin requirement
@@ -1216,7 +1216,7 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 		req.ToAccount = []*types.Account{
 			settle,
 		}
-		req.Amount = uint64(-p.Amount.Amount)
+		req.Amount = p.Amount.Amount
 		req.MinAmount = 0 // default value, but keep it here explicitly
 	case types.TransferType_TRANSFER_TYPE_WIN, types.TransferType_TRANSFER_TYPE_MTM_WIN:
 		// the insurance pool in the Req.FromAccountAccount is not used ATM (losses should fully cover wins
@@ -1924,11 +1924,11 @@ func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string
 	transf := types.Transfer{
 		Owner: partyID,
 		Amount: &types.FinancialAmount{
-			Amount: int64(amount),
+			Amount: amount,
 			Asset:  asset,
 		},
 		Type:      types.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK,
-		MinAmount: int64(amount),
+		MinAmount: amount,
 	}
 	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
 	if err != nil {
@@ -1966,11 +1966,11 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount uin
 	transf := types.Transfer{
 		Owner: partyID,
 		Amount: &types.FinancialAmount{
-			Amount: int64(amount),
+			Amount: amount,
 			Asset:  asset,
 		},
 		Type:      types.TransferType_TRANSFER_TYPE_WITHDRAW,
-		MinAmount: int64(amount),
+		MinAmount: amount,
 	}
 	mEvt := marginUpdate{
 		lock: acc,
@@ -2007,11 +2007,11 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount uint
 	transf := types.Transfer{
 		Owner: partyID,
 		Amount: &types.FinancialAmount{
-			Amount: int64(amount),
+			Amount: amount,
 			Asset:  asset,
 		},
 		Type:      types.TransferType_TRANSFER_TYPE_DEPOSIT,
-		MinAmount: int64(amount),
+		MinAmount: amount,
 	}
 	mEvt := marginUpdate{
 		general: acc,

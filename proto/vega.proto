@@ -867,7 +867,7 @@ message Account {
 // Asset value information used within a transfer
 message FinancialAmount {
   // A signed integer amount of asset
-  int64 amount = 1;
+  uint64 amount = 1;
   // Asset identifier
   string asset = 2;
 }
@@ -927,7 +927,7 @@ message Transfer {
   // The type of transfer, gives the reason for the transfer
   TransferType type = 3;
   // A minimum amount
-  int64 min_amount = 4;
+  uint64 min_amount = 4;
 }
 
 // Represents a request to transfer from one set of accounts to another
