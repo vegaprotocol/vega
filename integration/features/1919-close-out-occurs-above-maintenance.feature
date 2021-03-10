@@ -40,7 +40,7 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
       | trader2 | BTC   |
 
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | id        | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | t1-s-1    |
       | trader2 | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
@@ -51,7 +51,7 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
 
     # place orders and generate trades
     Then traders place following orders with references:
-      | trader | id        | type | volume | price | resulting trades | type        | tif     | reference |
+      | trader | id        | side | volume | price | resulting trades | type        | tif     | reference |
       | tt_10  | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT  | TIF_GTT | tt_10-1   |
       | tt_11  | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT  | TIF_GTT | tt_11-1   |
       | tt_4   | ETH/DEC19 | buy  | 5      | 150   | 0                | TYPE_LIMIT  | TIF_GTC | tt_4-1    |
@@ -91,4 +91,3 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
       | tt_5_2 | BTC   | ETH/DEC19 | 21     | 0       |
       | tt_5_3 | BTC   | ETH/DEC19 | 20     | 0       |
       | tt_5_4 | BTC   | ETH/DEC19 | 0      | 0       |
-

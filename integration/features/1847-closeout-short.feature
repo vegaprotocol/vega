@@ -28,7 +28,7 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
 
     # place orders and generate trades
     Then traders place following orders with references:
-      | trader | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader | id        | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_12  | ETH/DEC19 | buy  | 5      | 20    | 0                | TYPE_LIMIT | TIF_GTT | tt_12-1   |
       | tt_13  | ETH/DEC19 | sell | 5      | 20    | 1                | TYPE_LIMIT | TIF_GTT | tt_13-1   |
       | tt_14  | ETH/DEC19 | sell | 2      | 50    | 0                | TYPE_LIMIT | TIF_GTC | tt_14-1   |
@@ -57,4 +57,3 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | tt_14  | -4     | 120           | 0           |
       | tt_15  | 0      | 0             | -100        |
       | tt_16  | 4      | 0             | 0           |
-

@@ -23,12 +23,12 @@ Feature: Regression test for issue 596
       | buySideProvider  | BTC   |
 # setup previous mark price
     Then traders place following orders:
-      | trader           | id        | type | volume | price    | resulting trades | type       | tif     |
+      | trader           | id        | side | volume | price    | resulting trades | type       | tif     |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC |
 # setup orderbook
     Then traders place following orders:
-      | trader           | id        | type | volume | price    | resulting trades | type       | tif     |
+      | trader           | id        | side | volume | price    | resulting trades | type       | tif     |
       | sellSideProvider | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC |
       | sellSideProvider | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -38,7 +38,7 @@ Feature: Regression test for issue 596
       | buySideProvider  | ETH/DEC19 | buy  | 50     | 8700000  | 0                | TYPE_LIMIT | TIF_GTC |
 # buy 13@150
     Then traders place following orders:
-      | trader    | id        | type | volume | price    | resulting trades | type       | tif     |
+      | trader    | id        | side | volume | price    | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC |
 # checking margins
     Then I expect the trader to have a margin:

@@ -40,7 +40,7 @@ Feature: Test market depth events for pegged orders
     And clear order events
 # setup orderbook
     Then traders place following orders with references:
-      | trader           | id        | type | volume | price | resulting trades | type       | tif     | reference       |
+      | trader           | id        | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
     Then I see the following order events:

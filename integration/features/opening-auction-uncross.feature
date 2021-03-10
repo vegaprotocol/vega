@@ -26,7 +26,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # place orders and generate trades
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | id        | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
       | trader4 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GTC | t4-s-1    |
       | trader1 | ETH/DEC19 | buy  | 5      | 10000 | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |

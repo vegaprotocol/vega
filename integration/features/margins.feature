@@ -22,7 +22,7 @@ Feature: Test trader accounts
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | id        | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
@@ -39,7 +39,7 @@ Feature: Test trader accounts
       | traderGuy | ETH   |
     And "traderGuy" general accounts balance is "10000"
     Then traders place following orders:
-      | trader    | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader    | id        | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the margins levels for the traders are:
       | trader    | id        | maintenance | search | initial | release |
@@ -62,7 +62,7 @@ Feature: Test trader accounts
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | id        | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
