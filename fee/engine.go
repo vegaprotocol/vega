@@ -429,7 +429,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]float64
 				Amount: uint64(cs),
 				Asset:  acc.Asset,
 			},
-			MinAmount: int64(cs),
+			MinAmount: uint64(cs),
 			Type:      types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE,
 		})
 	}

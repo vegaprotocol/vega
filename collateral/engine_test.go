@@ -2266,7 +2266,7 @@ type riskFake struct {
 	price           uint64
 	vwBuy, vwSell   uint64
 	margins         *types.MarginLevels
-	amount          int64
+	amount          uint64
 	transfer        *types.Transfer
 	asset           string
 	marginShortFall uint64
@@ -2281,7 +2281,7 @@ func (m riskFake) VWBuy() uint64                     { return m.vwBuy }
 func (m riskFake) VWSell() uint64                    { return m.vwSell }
 func (m riskFake) ClearPotentials()                  {}
 func (m riskFake) Transfer() *types.Transfer         { return m.transfer }
-func (m riskFake) Amount() int64                     { return m.amount }
+func (m riskFake) Amount() uint64                    { return m.amount }
 func (m riskFake) MarginLevels() *types.MarginLevels { return m.margins }
 func (m riskFake) Asset() string                     { return m.asset }
 func (m riskFake) MarketID() string                  { return "" }

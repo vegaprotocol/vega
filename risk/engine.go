@@ -202,7 +202,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		if curMargin >= levels.InitialMargin {
 			continue
 		}
-		minAmount := max(int64(levels.MaintenanceMargin)-int64(curMargin), 0)
+		minAmount := maxUint(levels.MaintenanceMargin-curMargin, 0)
 		t := &types.Transfer{
 			Owner: evt.Party(),
 			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
@@ -336,12 +336,12 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		var trnsfr *types.Transfer
 		// case 2 -> not enough margin
 		if curMargin < margins.SearchLevel {
-			var minAmount int64
+			var minAmount uint64
 
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			if curMargin < margins.MaintenanceMargin {
-				minAmount = int64(margins.MaintenanceMargin - curMargin)
+				minAmount = margins.MaintenanceMargin - curMargin
 			}
 
 			// then the rest is common if we are before or after MaintenanceLevel,
@@ -419,7 +419,7 @@ func (e *Engine) ExpectMargins(
 	return
 }
 
-func (m marginChange) Amount() int64 {
+func (m marginChange) Amount() uint64 {
 	if m.transfer == nil {
 		return 0
 	}
