@@ -57,7 +57,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 933    | 9007    |
       | chris  | BTC   | ETH/DEC19 | 790    | 9270    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    And Cumulated balance for all accounts is worth "2030000"
+    And All balances cumulated are worth "2031000"
 # then chris is trading out
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -67,7 +67,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 1283   | 9007    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9808    |
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
-    And Cumulated balance for all accounts is worth "2030000"
+    And All balances cumulated are worth "2031000"
 
 
   Scenario: Traded out position, with cancelled half traded order, but monies left in margin account
@@ -119,8 +119,8 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 961    | 9019    |
       | chris  | BTC   | ETH/DEC19 | 607    | 9413    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    And Cumulated balance for all accounts is worth "2030000"
-    Then traders cancel the following orders:
+    And All balances cumulated are worth "2031000"
+    Then traders cancels the following orders reference:
       | trader | reference            |
       | chris  | chris-id-1-to-cancel |
 # then chris is trading out
@@ -132,7 +132,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 1161   | 9019    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9872    |
       | barney | BTC   | ETH/DEC19 | 624    | 9324    |
-    And Cumulated balance for all accounts is worth "2030000"
+    And All balances cumulated are worth "2031000"
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | barney | ETH/DEC19 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -141,4 +141,4 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 921    | 9019    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9872    |
       | barney | BTC   | ETH/DEC19 | 964    | 9224    |
-    And Cumulated balance for all accounts is worth "2030000"
+    And All balances cumulated are worth "2031000"

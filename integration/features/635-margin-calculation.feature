@@ -24,7 +24,6 @@ Feature: Regression test for issue 596
       | aux     | ETH/DEC19 | buy  | 1      | 8700000    | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 25000000   | 0                | TYPE_LIMIT  | TIF_GTC |
 
-
     # setup previous mark price
     Then traders place following orders:
       | trader           | market id | side | volume | price    | resulting trades | type       | tif     | reference |

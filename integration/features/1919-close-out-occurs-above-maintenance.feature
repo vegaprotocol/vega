@@ -29,7 +29,7 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
       | tt_aux  | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
       | tt_aux  | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | 
 

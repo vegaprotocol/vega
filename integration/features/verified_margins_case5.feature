@@ -21,7 +21,6 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | aux     | ETH/DEC19 | buy  | 1      |  6999999 | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 50000001 | 0                | TYPE_LIMIT  | TIF_GTC |
 
-
     # setting mark price
     And traders place following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
