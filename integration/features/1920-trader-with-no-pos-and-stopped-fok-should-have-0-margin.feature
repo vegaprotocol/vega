@@ -24,7 +24,7 @@ Feature: test for issue 1920
       | trader4 | ETH   |
     And "trader1" general accounts balance is "10000"
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader2 | ETH/DEC19 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GFA |
       | trader3 | ETH/DEC19 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GFA |
       | trader4 | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -34,7 +34,7 @@ Feature: test for issue 1920
     And the mark price for the market "ETH/DEC19" is "1000"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK |
 
     Then the margins levels for the traders are:

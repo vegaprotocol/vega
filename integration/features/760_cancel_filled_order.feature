@@ -21,7 +21,7 @@ Feature: Close a filled order twice
       | buySideProvider  | BTC   |
 # setup orderbook
     Then traders place following orders with references:
-      | trader           | id        | type | volume | price | resulting trades | type       | tif     | reference       |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 10     | 120   | 1                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
     Then traders cancels the following filled orders reference:

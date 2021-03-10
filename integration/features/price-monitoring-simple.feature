@@ -17,14 +17,14 @@ Feature: Price monitoring test using simple risk model
       | trader2 | 10000  |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK |
 
     And the mark price for the market "ETH/DEC20" is "100"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -51,18 +51,18 @@ Feature: Price monitoring test using simple risk model
       | trader2 | 10000  |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK |
 
     And the mark price for the market "ETH/DEC20" is "100"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then traders place following failing orders:
-      | trader  | id        | type | volume | price | error                             | type       | tif     |
+      | trader  | market id | side | volume | price | error                             | type       | tif     |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | OrderError: invalid time in force | TYPE_LIMIT | TIF_GFN |
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
@@ -74,14 +74,14 @@ Feature: Price monitoring test using simple risk model
       | trader2 | 10000  |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK |
 
     And the mark price for the market "ETH/DEC20" is "100"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -109,14 +109,14 @@ Feature: Price monitoring test using simple risk model
       | trader2 | 10000  |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK |
 
     And the mark price for the market "ETH/DEC20" is "100"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -125,7 +125,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "100"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader2 | ETH/DEC20 | buy  | 1      | 112   | 0                | TYPE_LIMIT | TIF_GTC |
 
     #T0 + 10min
@@ -150,7 +150,7 @@ Feature: Price monitoring test using simple risk model
       | trader2 | 10000  |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -162,7 +162,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -174,7 +174,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:01:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -186,7 +186,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -228,7 +228,7 @@ Feature: Price monitoring test using simple risk model
       | trader2 | 10000  |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -240,7 +240,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -252,7 +252,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:01:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -264,7 +264,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -292,7 +292,7 @@ Feature: Price monitoring test using simple risk model
       | trader2 | 10000  |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -304,7 +304,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -316,7 +316,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:01:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -328,7 +328,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -340,7 +340,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:06:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 2      | 133   | 0                | TYPE_LIMIT | TIF_GFA |
       | trader2 | ETH/DEC20 | buy  | 2      | 133   | 0                | TYPE_LIMIT | TIF_GFA |
 
@@ -375,7 +375,7 @@ Feature: Price monitoring test using simple risk model
       | trader2 | 10000  |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -387,7 +387,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -399,7 +399,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:01:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -411,7 +411,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -423,7 +423,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:06:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 2      | 133   | 0                | TYPE_LIMIT | TIF_GFA |
       | trader2 | ETH/DEC20 | buy  | 2      | 133   | 0                | TYPE_LIMIT | TIF_GFA |
 
@@ -440,7 +440,7 @@ Feature: Price monitoring test using simple risk model
     Then the time is updated to "2020-10-16T00:12:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 10     | 303   | 0                | TYPE_LIMIT | TIF_GFA |
       | trader2 | ETH/DEC20 | buy  | 10     | 303   | 0                | TYPE_LIMIT | TIF_GFA |
 

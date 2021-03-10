@@ -18,7 +18,7 @@ Feature: Test mark to market settlement
     And "trader1" general accounts balance is "10000"
     Then the time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
-      | trader  | id        | type | volume | price | resulting trades | error                         |
+      | trader  | market id | side | volume | price | resulting trades | error                         |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
 
   Scenario: Settlement happened when market is being closed
@@ -36,7 +36,7 @@ Feature: Test mark to market settlement
     And "trader2" general accounts balance is "1000"
     And "trader3" general accounts balance is "5000"
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -49,7 +49,7 @@ Feature: Test mark to market settlement
     And All balances cumulated are worth "16000"
     Then the time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
-      | trader  | id        | type | volume | price | resulting trades | error                         |
+      | trader  | market id | side | volume | price | resulting trades | error                         |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |

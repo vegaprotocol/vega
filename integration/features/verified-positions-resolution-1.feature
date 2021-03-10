@@ -24,13 +24,13 @@ Feature: Position resolution case 1
 
 # insurance pool generation - setup orderbook
     Then traders place following orders with references:
-      | trader           | id        | type | volume | price | resulting trades | type       | tif     | reference       |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
 # insurance pool generation - trade
     Then traders place following orders:
-      | trader           | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC |
 
 # insurance pool generation - modify order book
@@ -38,12 +38,12 @@ Feature: Position resolution case 1
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
     Then traders place following orders with references:
-      | trader          | id        | type | volume | price | resulting trades | type       | tif     | reference      |
+      | trader          | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 1      | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:
-      | trader           | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
 
@@ -66,7 +66,7 @@ Feature: Position resolution case 1
 # then try to sell 1 again with low price -> result in no trades -> buy side empty
 # We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
     Then traders place following orders:
-      | trader           | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 40    | 1                | TYPE_LIMIT | TIF_FOK |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_FOK |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK |

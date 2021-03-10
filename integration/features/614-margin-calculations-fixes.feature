@@ -36,7 +36,7 @@ Feature: test bugfix 614 for margin calculations
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
@@ -49,7 +49,7 @@ Feature: test bugfix 614 for margin calculations
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | chris   | ETH/DEC19 | sell | 100    | 250   | 0                | TYPE_LIMIT | TIF_GTC |
       | edd     | ETH/DEC19 | sell | 11     | 140   | 0                | TYPE_LIMIT | TIF_GTC |
       | barney  | ETH/DEC19 | sell | 2      | 112   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -59,7 +59,7 @@ Feature: test bugfix 614 for margin calculations
       | rebecca | ETH/DEC19 | buy  | 50     | 87    | 0                | TYPE_LIMIT | TIF_GTC |
       # this is now the actual trader that we are testing
     Then traders place following orders:
-      | trader | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC |
     Then the margins levels for the traders are:
       | trader | id        | maintenance | search | initial | release |
