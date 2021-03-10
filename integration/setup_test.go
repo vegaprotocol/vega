@@ -58,7 +58,6 @@ type executionTestSetup struct {
 	broker *brokerStub
 
 	// save trader accounts state
-	accs map[string][]account
 	mkts []types.Market
 
 	InsurancePoolInitialBalance uint64
@@ -84,7 +83,6 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	execsetup.cfg = execution.NewDefaultConfig("")
 	execsetup.cfg.InsurancePoolInitialBalance = execsetup.InsurancePoolInitialBalance
 	execsetup.log = logging.NewTestLogger()
-	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
 	execsetup.timesvc = &timeStub{now: startTime}
 	execsetup.broker = NewBrokerStub()
@@ -140,20 +138,4 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
 	return execsetup
-}
-
-type account struct {
-	Balance uint64
-	Type    types.AccountType
-	Market  string
-	Asset   string
-}
-
-func traderHaveGeneralAccount(accs []account, asset string) bool {
-	for _, v := range accs {
-		if v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
-			return true
-		}
-	}
-	return false
 }
