@@ -150,14 +150,16 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	}
 
 	if err := s.blockchain.SubmitTransaction(ctx, req.Tx, ty); err != nil {
-		s.log.Error("unable to submit transaction", logging.Error(err))
+		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
 			Code() uint32
 			Details() string
 			Error() string
 		}); ok {
+			s.log.Debug("unable to submit transaction", logging.Error(err))
 			return nil, apiError(codes.InvalidArgument, err)
 		}
+		s.log.Error("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
 

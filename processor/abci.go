@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	ErrPublicKeyExceededRateLimit                    = errors.New("public key excedeed the rate limit")
+	ErrPublicKeyExceededRateLimit                    = errors.New("public key exceeded the rate limit")
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
 )
 
@@ -298,7 +298,7 @@ func (app *App) limitPubkey(pk []byte) (limit bool, isValidator bool) {
 
 	key := ratelimit.Key(pk).String()
 	if !app.rates.Allow(key) {
-		app.log.Error("Rate limit exceeded", logging.String("key", key))
+		app.log.Debug("Rate limit exceeded", logging.String("key", key))
 		return true, false
 	}
 
