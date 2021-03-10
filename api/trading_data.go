@@ -233,8 +233,6 @@ type tradingDataService struct {
 	LiquidityService        LiquidityService
 	oracleService           OracleService
 
-	ctx context.Context
-
 	chainID                  string
 	genesisTime              time.Time
 	hasGenesisTimeAndChainID uint32
@@ -830,26 +828,26 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 	}
 
 	stats := &types.Statistics{
-		BlockHeight:           t.Stats.Blockchain.Height(),
-		BacklogLength:         uint64(backlogLength),
-		TotalPeers:            uint64(numPeers),
-		GenesisTime:           genesisTime,
-		CurrentTime:           vegatime.Format(vegatime.Now()),
-		VegaTime:              vegatime.Format(epochTime),
-		Uptime:                vegatime.Format(t.Stats.GetUptime()),
-		TxPerBlock:            t.Stats.Blockchain.TotalTxLastBatch(),
-		AverageTxBytes:        t.Stats.Blockchain.AverageTxSizeBytes(),
-		AverageOrdersPerBlock: t.Stats.Blockchain.AverageOrdersPerBatch(),
-		TradesPerSecond:       t.Stats.Blockchain.TradesPerSecond(),
-		OrdersPerSecond:       t.Stats.Blockchain.OrdersPerSecond(),
-		Status:                t.statusChecker.ChainStatus(),
-		TotalMarkets:          uint64(len(m)),
-		AppVersionHash:        t.Stats.GetVersionHash(),
-		AppVersion:            t.Stats.GetVersion(),
-		ChainVersion:          t.Stats.GetChainVersion(),
-		TotalAmendOrder:       t.Stats.Blockchain.TotalAmendOrder(),
-		TotalCancelOrder:      t.Stats.Blockchain.TotalCancelOrder(),
-		TotalCreateOrder:      t.Stats.Blockchain.TotalCreateOrder(),
+		BlockHeight:              t.Stats.Blockchain.Height(),
+		BacklogLength:            uint64(backlogLength),
+		TotalPeers:               uint64(numPeers),
+		GenesisTime:              genesisTime,
+		CurrentTime:              vegatime.Format(vegatime.Now()),
+		VegaTime:                 vegatime.Format(epochTime),
+		Uptime:                   vegatime.Format(t.Stats.GetUptime()),
+		TxPerBlock:               t.Stats.Blockchain.TotalTxLastBatch(),
+		AverageTxBytes:           t.Stats.Blockchain.AverageTxSizeBytes(),
+		AverageOrdersPerBlock:    t.Stats.Blockchain.AverageOrdersPerBatch(),
+		TradesPerSecond:          t.Stats.Blockchain.TradesPerSecond(),
+		OrdersPerSecond:          t.Stats.Blockchain.OrdersPerSecond(),
+		Status:                   t.statusChecker.ChainStatus(),
+		TotalMarkets:             uint64(len(m)),
+		AppVersionHash:           t.Stats.GetVersionHash(),
+		AppVersion:               t.Stats.GetVersion(),
+		ChainVersion:             t.Stats.GetChainVersion(),
+		TotalAmendOrder:          t.Stats.Blockchain.TotalAmendOrder(),
+		TotalCancelOrder:         t.Stats.Blockchain.TotalCancelOrder(),
+		TotalCreateOrder:         t.Stats.Blockchain.TotalCreateOrder(),
 		TotalOrders:              t.Stats.Blockchain.TotalOrders(),
 		TotalTrades:              t.Stats.Blockchain.TotalTrades(),
 		BlockDuration:            t.Stats.Blockchain.BlockDuration(),
@@ -929,8 +927,6 @@ func (t *tradingDataService) TransferResponsesSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if transferResponsesChan == nil {
@@ -991,8 +987,6 @@ func (t *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubsc
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if marketsDataChan == nil {
@@ -1055,8 +1049,6 @@ func (t *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if marginLevelsChan == nil {
@@ -1120,8 +1112,6 @@ func (t *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if accountsChan == nil {
@@ -1196,8 +1186,6 @@ func (t *tradingDataService) OrdersSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if ordersChan == nil {
@@ -1269,8 +1257,6 @@ func (t *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 		if tradesChan == nil {
 			if t.log.GetLevel() == logging.DebugLevel {
@@ -1335,8 +1321,6 @@ func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if candlesChan == nil {
@@ -1402,8 +1386,6 @@ func (t *tradingDataService) MarketDepthSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if depthChan == nil {
@@ -1471,8 +1453,6 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if depthChan == nil {
@@ -1530,8 +1510,6 @@ func (t *tradingDataService) PositionsSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if positionsChan == nil {
@@ -2017,8 +1995,6 @@ func (t *tradingDataService) ObserveGovernance(
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2057,8 +2033,6 @@ func (t *tradingDataService) ObservePartyProposals(
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2098,8 +2072,6 @@ func (t *tradingDataService) ObservePartyVotes(
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2139,8 +2111,6 @@ func (t *tradingDataService) ObserveProposalVotes(
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2225,8 +2195,6 @@ func (t *tradingDataService) observeEvents(
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2281,8 +2249,6 @@ func (t *tradingDataService) observeEventsWithAck(
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 
 		// now we try to read again the new size / ack
