@@ -86,7 +86,7 @@ func iExpectTheTradersToHaveNewGeneralAccount(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		_, err := execsetup.broker.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		_, err := execsetup.broker.GetTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return fmt.Errorf("missing general account for trader=%v asset=%v", val(row, 0), val(row, 1))
 		}
@@ -98,7 +98,7 @@ func generalAccountsBalanceIs(arg1, arg2 string) error {
 	balance, _ := strconv.ParseUint(arg2, 10, 0)
 	for _, mkt := range execsetup.mkts {
 		asset, _ := mkt.GetAsset()
-		acc, err := execsetup.broker.getTraderGeneralAccount(arg1, asset)
+		acc, err := execsetup.broker.GetTraderGeneralAccount(arg1, asset)
 		if err != nil {
 			return err
 		}
@@ -128,25 +128,6 @@ func haveOnlyOneAccountPerAsset(arg1 string) error {
 	return nil
 }
 
-func haveOnlyOnMarginAccountPerMarket(arg1 string) error {
-	assets := map[string]struct{}{}
-
-	accs := execsetup.broker.GetAccounts()
-	data := make([]types.Account, 0, len(accs))
-	for _, a := range accs {
-		data = append(data, a.Account())
-	}
-	for _, acc := range data {
-		if acc.Owner == arg1 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			if _, ok := assets[acc.MarketId]; ok {
-				return fmt.Errorf("trader=%v have multiple account for market=%v", arg1, acc.MarketId)
-			}
-			assets[acc.MarketId] = struct{}{}
-		}
-	}
-	return nil
-}
-
 func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
@@ -159,7 +140,7 @@ func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 	balance, _ := strconv.ParseUint(balancestr, 10, 0)
-	acc, err := execsetup.broker.getTraderGeneralAccount(trader, asset)
+	acc, err := execsetup.broker.GetTraderGeneralAccount(trader, asset)
 	if err != nil {
 		return err
 	}
@@ -286,7 +267,7 @@ func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) er
 			continue
 		}
 
-		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.GetByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -311,7 +292,7 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 			continue
 		}
 
-		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.GetByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -336,7 +317,7 @@ func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.broker.getFirstByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.GetFirstByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -364,7 +345,7 @@ func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 			continue
 		}
 		mkt := val(row, 1)
-		orders := execsetup.broker.getOrdersByPartyAndMarket(trader, mkt)
+		orders := execsetup.broker.GetOrdersByPartyAndMarket(trader, mkt)
 		if len(orders) == 0 {
 			return fmt.Errorf("no orders found for party %s on market %s", trader, mkt)
 		}
@@ -403,7 +384,7 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 			continue
 		}
 
-		generalAccount, err := execsetup.broker.getTraderGeneralAccount(val(row, 0), val(row, 1))
+		generalAccount, err := execsetup.broker.GetTraderGeneralAccount(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -413,7 +394,7 @@ func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
 		if generalAccount.GetBalance() != u64val(row, 4) {
 			hasError = true
 		}
-		marginAccount, err := execsetup.broker.getTraderMarginAccount(val(row, 0), val(row, 2))
+		marginAccount, err := execsetup.broker.GetTraderMarginAccount(val(row, 0), val(row, 2))
 		if err != nil {
 			return err
 		}
@@ -500,7 +481,7 @@ func theFollowingTransfersHappened(arg1 *gherkin.DataTable) error {
 
 func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.broker.getMarketSettlementAccount(market)
+	acc, err := execsetup.broker.GetMarketSettlementAccount(market)
 	if err != nil {
 		return err
 	}
@@ -512,7 +493,7 @@ func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string
 
 func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.broker.getMarketInsurancePoolAccount(market)
+	acc, err := execsetup.broker.GetMarketInsurancePoolAccount(market)
 	if err != nil {
 		return err
 	}
@@ -569,7 +550,7 @@ func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
 		}
 
 		partyID, marketID := val(row, 0), val(row, 1)
-		ml, err := execsetup.broker.getMarginByPartyAndMarket(partyID, marketID)
+		ml, err := execsetup.broker.GetMarginByPartyAndMarket(partyID, marketID)
 		if err != nil {
 			return err
 		}
@@ -751,7 +732,7 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 		}
 		ok := false
 		party, side, volume := val(row, 0), sideval(row, 1), u64val(row, 2)
-		data := execsetup.broker.getTrades()
+		data := execsetup.broker.GetTrades()
 		for _, v := range data {
 			if (v.Buyer == party || v.Seller == party) && v.Aggressor == side && v.Size == volume {
 				ok = true
@@ -775,7 +756,7 @@ func theFollowingTradesHappened(trades *gherkin.DataTable) error {
 			continue
 		}
 		buyer, seller, price, volume := val(row, 0), val(row, 1), u64val(row, 2), u64val(row, 3)
-		data := execsetup.broker.getTrades()
+		data := execsetup.broker.GetTrades()
 		for _, v := range data {
 			if v.Buyer == buyer && v.Seller == seller && v.Price == price && v.Size == volume {
 				return nil
@@ -794,7 +775,7 @@ func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.broker.getByReference(val(row, 0), val(row, 1))
+		o, err := execsetup.broker.GetByReference(val(row, 0), val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -845,7 +826,7 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 			continue
 		}
 
-		o, err := execsetup.broker.getByReference(trader, val(row, 1))
+		o, err := execsetup.broker.GetByReference(trader, val(row, 1))
 		if err != nil {
 			return err
 		}
@@ -916,7 +897,7 @@ func executedTrades(trades *gherkin.DataTable) error {
 			size := u64val(row, 2)
 			counterparty := val(row, 3)
 			var found = false
-			data := execsetup.broker.getTrades()
+			data := execsetup.broker.GetTrades()
 			for _, v := range data {
 				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
 					found = true
@@ -946,7 +927,7 @@ func dumpOrders() error {
 
 func dumpTrades() error {
 	fmt.Println("DUMPING TRADES")
-	data := execsetup.broker.getTrades()
+	data := execsetup.broker.GetTrades()
 	for _, t := range data {
 		fmt.Printf("trade %s, %#v\n", t.Id, t)
 	}
@@ -1040,12 +1021,12 @@ func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
 }
 
 func clearTransferEvents() error {
-	execsetup.broker.clearTransferEvents()
+	execsetup.broker.ClearTransferEvents()
 	return nil
 }
 
 func clearOrderEvents() error {
-	execsetup.broker.clearOrderEvents()
+	execsetup.broker.ClearOrderEvents()
 	return nil
 }
 
@@ -1056,7 +1037,7 @@ func clearOrdersByRef(in *gherkin.DataTable) error {
 			continue
 		}
 		ref := val(row, 1)
-		if err := execsetup.broker.clearOrderByReference(trader, ref); err != nil {
+		if err := execsetup.broker.ClearOrderByReference(trader, ref); err != nil {
 			return err
 		}
 	}
@@ -1148,10 +1129,10 @@ func theOpeningAuctionPeriodEnds(mktName string) error {
 		return fmt.Errorf("market %s not found", mktName)
 	}
 	// double the time, so it's definitely past opening auction time
-	now := execsetup.timesvc.now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second)
-	execsetup.timesvc.now = now
+	now := execsetup.timesvc.Now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second)
+	execsetup.timesvc.Now = now
 	// notify markets
-	execsetup.timesvc.notify(context.Background(), now)
+	execsetup.timesvc.Notify(context.Background(), now)
 	return nil
 }
 
