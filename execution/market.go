@@ -1212,7 +1212,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
 	if checkMargin {
-		if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
+		if err := m.checkMarginForOrder(ctx, pos, order); err != nil {
 			if _, err := m.position.UnregisterOrder(order); err != nil {
 				m.log.Error("Unable to unregister potential trader positions",
 					logging.String("market-id", m.GetID()),
@@ -1942,10 +1942,24 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
-	return m.calcMargins(ctx, pos, order)
+	risk, closed, err := m.calcMargins(ctx, pos, order)
+	// margin error
+	if err != nil {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
+		if err == ErrMarginCheckFailed {
+			order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
+		}
+		// this order was rejected, remove the position
+		m.position.UnregisterOrder(order)
+		return err
+	}
+	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those traders are distressed
+	// the risk slice are risk events, that we must use to transfer funds
+	return m.transferMargins(ctx, risk, closed)
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -2427,7 +2441,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// will be updated later on for sure.
 
 	if priceIncrease || sizeIncrease {
-		if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+		if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 			// Undo the position registering
 			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 			if err1 != nil {
