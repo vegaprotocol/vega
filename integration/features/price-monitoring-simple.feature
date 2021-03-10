@@ -19,7 +19,7 @@ Feature: Price monitoring test using simple risk model
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type        | tif     | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 

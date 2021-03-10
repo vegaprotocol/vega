@@ -21,7 +21,7 @@ Feature: Regression test for issue 596
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
@@ -33,8 +33,8 @@ Feature: Regression test for issue 596
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
 
-    Then traders place following orders:
-      | trader | id        | type | volume | price | resulting trades | type  | tif |
+      Then traders place following orders:
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | edd    | ETH/DEC19 | sell |     20 |   101 |                0 | TYPE_LIMIT | TIF_GTC |
       | edd    | ETH/DEC19 | sell |     20 |   102 |                0 | TYPE_LIMIT | TIF_GTC |
       | edd    | ETH/DEC19 | sell |     10 |   103 |                0 | TYPE_LIMIT | TIF_GTC |
@@ -60,7 +60,7 @@ And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUO
       | edd    | BTC   | ETH/DEC19 | 933    | 9007    |
       | chris  | BTC   | ETH/DEC19 | 790    | 9270    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    And Cumulated balance for all accounts is worth "2030000"
+    And All balances cumulated are worth "2031000"
 # then chris is trading out
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
@@ -70,7 +70,7 @@ And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUO
       | edd    | BTC   | ETH/DEC19 | 1283   | 9007    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9808    |
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
-    And Cumulated balance for all accounts is worth "2030000"
+    And All balances cumulated are worth "2031000"
 
 
   Scenario: Traded out position, with cancelled half traded order, but monies left in margin account
@@ -122,8 +122,8 @@ And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUO
       | edd    | BTC   | ETH/DEC19 | 961    | 9019    |
       | chris  | BTC   | ETH/DEC19 | 607    | 9413    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    And Cumulated balance for all accounts is worth "2030000"
-    Then traders cancel the following orders:
+    And All balances cumulated are worth "2031000"
+    Then traders cancels the following orders reference:
       | trader | reference            |
       | chris  | chris-id-1-to-cancel |
 # then chris is trading out
@@ -135,7 +135,7 @@ And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUO
       | edd    | BTC   | ETH/DEC19 | 1161   | 9019    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9872    |
       | barney | BTC   | ETH/DEC19 | 624    | 9324    |
-    And Cumulated balance for all accounts is worth "2030000"
+    And All balances cumulated are worth "2031000"
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | barney | ETH/DEC19 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_GTC |
@@ -144,4 +144,4 @@ And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUO
       | edd    | BTC   | ETH/DEC19 | 921    | 9019    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9872    |
       | barney | BTC   | ETH/DEC19 | 964    | 9224    |
-    And Cumulated balance for all accounts is worth "2030000"
+    And All balances cumulated are worth "2031000"

@@ -16,6 +16,14 @@ Feature: Test trader accounts
       | trader1   | ETH   | 1000000 |
       | trader2   | ETH   | 1000000 |
 
+    Given the following traders:
+      | aux    |    100000000000 |
+     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC | 
+
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -24,6 +32,7 @@ Feature: Test trader accounts
       | trader1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
+    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
     And the mark price for the market "ETH/DEC19" is "1000"
     Then traders cancel the following orders:
       | trader  | reference |
@@ -33,6 +42,7 @@ Feature: Test trader accounts
     Then traders place following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
     Then the margins levels for the traders are:
       | trader    | market id | maintenance | search | initial | release |
       | traderGuy | ETH/DEC19 | 100         | 110    | 120     | 140     |
