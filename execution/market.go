@@ -3404,9 +3404,6 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	m.updateLiquidityFee(ctx)
-	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
-
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)
 
