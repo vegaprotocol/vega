@@ -748,26 +748,6 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	return err
 }
 
-func theFollowingTradesHappened(trades *gherkin.DataTable) error {
-	var err error
-	for _, row := range trades.Rows {
-		if val(row, 0) == "buyer" {
-			continue
-		}
-		buyer, seller, price, volume := val(row, 0), val(row, 1), u64val(row, 2), u64val(row, 3)
-		data := execsetup.broker.GetTrades()
-		for _, v := range data {
-			if v.Buyer == buyer && v.Seller == seller && v.Price == price && v.Size == volume {
-				return nil
-			}
-		}
-
-		return fmt.Errorf("expecting trade was missing: buyer(%v), seller(%v), price(%v), volume(%v)", buyer, seller, price, volume)
-	}
-
-	return err
-}
-
 func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 	for _, row := range refs.Rows {
 		if val(row, 0) == "trader" {
