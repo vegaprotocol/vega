@@ -569,3 +569,11 @@ func (s *OrderBookSide) getOrderCount() int64 {
 	}
 	return orderCount
 }
+
+func (s *OrderBookSide) getTotalVolume() int64 {
+	var volume int64
+	for _, level := range s.levels {
+		volume = volume + int64(level.volume)
+	}
+	return volume
+}

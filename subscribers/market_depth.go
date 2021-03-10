@@ -387,10 +387,25 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 /*****************************************************************************/
 
 // GetOrderCount returns the number of live orders for the given market
-func (mdb *MarketDepthBuilder) GetOrderCount(market string) int {
+func (mdb *MarketDepthBuilder) GetOrderCount(market string) int64 {
+	var liveOrders int64
+	var bookOrders uint64
 	md := mdb.marketDepths[market]
 	if md != nil {
-		return len(md.liveOrders)
+		liveOrders = int64(len(md.liveOrders))
+
+		for _, pl := range md.buySide {
+			bookOrders += pl.totalOrders
+		}
+
+		for _, pl := range md.sellSide {
+			bookOrders += pl.totalOrders
+		}
+
+		if liveOrders != int64(bookOrders) {
+			return -1
+		}
+		return liveOrders
 	}
 	return 0
 }
@@ -404,6 +419,23 @@ func (mdb *MarketDepthBuilder) GetVolumeAtPrice(market string, side types.Side, 
 			return 0
 		}
 		return pl.totalVolume
+	}
+	return 0
+}
+
+// GetTotalVolume returns the total volume in the order book
+func (mdb *MarketDepthBuilder) GetTotalVolume(market string) int64 {
+	var volume int64
+	md := mdb.marketDepths[market]
+	if md != nil {
+		for _, pl := range md.buySide {
+			volume += int64(pl.totalVolume)
+		}
+
+		for _, pl := range md.sellSide {
+			volume += int64(pl.totalVolume)
+		}
+		return volume
 	}
 	return 0
 }
@@ -424,6 +456,28 @@ func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(market string, side types.Si
 // GetPriceLevels returns the number of non empty price levels
 func (mdb *MarketDepthBuilder) GetPriceLevels(market string) int {
 	return mdb.GetBuyPriceLevels(market) + mdb.GetSellPriceLevels(market)
+}
+
+// GetBestBidPrice returns the highest bid price in the book
+func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) uint64 {
+	md := mdb.marketDepths[market]
+	if md != nil {
+		if len(md.buySide) > 0 {
+			return md.buySide[0].price
+		}
+	}
+	return 0
+}
+
+// GetBestAskPrice returns the highest bid price in the book
+func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) uint64 {
+	md := mdb.marketDepths[market]
+	if md != nil {
+		if len(md.sellSide) > 0 {
+			return md.sellSide[0].price
+		}
+	}
+	return 0
 }
 
 // GetBuyPriceLevels returns the number of non empty buy price levels

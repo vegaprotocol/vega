@@ -33,6 +33,11 @@ func (m *Market) GetOrdersOnBookCount() int64 {
 	return m.matching.GetTotalNumberOfOrders()
 }
 
+// GetVolumeOnBook returns the volume of orders on one side of the book
+func (m *Market) GetVolumeOnBook() int64 {
+	return m.matching.GetTotalVolume()
+}
+
 // StartPriceAuction initialises the market to handle a price auction
 func (m *Market) StartPriceAuction(now time.Time) {
 	end := types.AuctionDuration{
