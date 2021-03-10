@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/integration/steps"
 
@@ -63,7 +64,18 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following traders:$`, theFollowingTraders)
 	s.Step(`^I Expect the traders to have new general account:$`, iExpectTheTradersToHaveNewGeneralAccount)
 	s.Step(`^"([^"]*)" general accounts balance is "([^"]*)"$`, generalAccountsBalanceIs)
-	s.Step(`^the execution engine have these markets:$`, TheMarket)
+	s.Step(`^the execution engine have these markets:$`, func(rawMarkets *gherkin.DataTable) error {
+		markets := steps.TheMarkets(marketExpiry, rawMarkets)
+
+		t, _ := time.Parse("2006-01-02T15:04:05Z", marketStart)
+		execsetup = getExecutionTestSetup(t, markets)
+
+		// reset market start time and expiry for next run
+		marketExpiry = defaultMarketExpiry
+		marketStart = defaultMarketStart
+
+		return nil
+	})
 	s.Step(`^traders place following orders:$`, func(orders *gherkin.DataTable) error {
 		return steps.TradersPlaceFollowingOrders(execsetup.engine, orders)
 	})
