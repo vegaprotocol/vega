@@ -16,6 +16,13 @@ Feature: Position resolution case 2
       | sellSideProvider | BTC   | 1000000000000 |
       | buySideProvider  | BTC   | 1000000000000 |
       | designatedLooser | BTC   | 12000         |
+      | aux              | BTC   | 100000        |
+
+# place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | id        | type | volume  | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1       |    1  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1       |   151 | 0                | TYPE_LIMIT  | TIF_GTC |
 
 # insurance pool generation - setup orderbook
     Then traders place following orders:
@@ -37,9 +44,9 @@ Feature: Position resolution case 2
       | buySideProvider | ETH/DEC19 | buy  | 1      | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # check the trader accounts
-    Then traders have the following account balances:
-      | trader           | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 11600  | 400     |
+    Then I expect the trader to have a margin:
+      | trader           | asset | id        | margin | general |
+      | designatedLooser | BTC   | ETH/DEC19 |  12000 |      0 |
 
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:
@@ -68,5 +75,5 @@ Feature: Position resolution case 2
     Then traders place following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 40    | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 150  | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
