@@ -476,6 +476,21 @@ func TestEvents_SelfTrading(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
+
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+
+	auxParty := "aux"
+	addAccount(tm, auxParty)
+	auxOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderBuy", types.Side_SIDE_BUY, auxParty, 1, 1)
+	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
+	auxOrder2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderSell", types.Side_SIDE_SELL, auxParty, 1, 101)
+	conf, err = tm.market.SubmitOrder(ctx, auxOrder2)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
 	leaveAuction(tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-C", 1, 10)
@@ -494,12 +509,12 @@ func TestEvents_SelfTrading(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(4), tm.orderEventCount)
-	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(6), tm.orderEventCount)
+	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(1), mdb.GetOrderCount(tm.market.GetID()))
-	assert.Equal(t, 1, mdb.GetPriceLevels(tm.market.GetID()))
+	assert.Equal(t, 3, mdb.GetOrderCount(tm.market.GetID()))
+	assert.Equal(t, 3, mdb.GetPriceLevels(tm.market.GetID()))
 }
 
 func TestEvents_Amending(t *testing.T) {
@@ -561,6 +576,21 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
+
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+
+	auxParty := "aux"
+	addAccount(tm, auxParty)
+	auxOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderBuy", types.Side_SIDE_BUY, auxParty, 1, 1)
+	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
+	auxOrder2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderSell", types.Side_SIDE_SELL, auxParty, 1, 101)
+	conf, err = tm.market.SubmitOrder(ctx, auxOrder2)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
 	leaveAuction(tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_SELL, "trader-C", 1, 20)
@@ -601,12 +631,12 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(10), tm.orderEventCount)
-	assert.Equal(t, int64(0), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(12), tm.orderEventCount)
+	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(0), mdb.GetOrderCount(tm.market.GetID()))
-	assert.Equal(t, 0, mdb.GetPriceLevels(tm.market.GetID()))
+	assert.Equal(t, 2, mdb.GetOrderCount(tm.market.GetID()))
+	assert.Equal(t, 2, mdb.GetPriceLevels(tm.market.GetID()))
 }
 
 func TestEvents_MovingPegsAround2(t *testing.T) {
@@ -614,6 +644,21 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
+
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+
+	auxParty := "aux"
+	addAccount(tm, auxParty)
+	auxOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderBuy", types.Side_SIDE_BUY, auxParty, 1, 1)
+	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
+	auxOrder2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderSell", types.Side_SIDE_SELL, auxParty, 1, 101)
+	conf, err = tm.market.SubmitOrder(ctx, auxOrder2)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
 	leaveAuction(tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_SELL, "trader-C", 2, 20)
@@ -644,12 +689,12 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(6), tm.orderEventCount)
-	assert.Equal(t, int64(0), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(8), tm.orderEventCount)
+	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(0), mdb.GetOrderCount(tm.market.GetID()))
-	assert.Equal(t, 0, mdb.GetPriceLevels(tm.market.GetID()))
+	assert.Equal(t, 2, mdb.GetOrderCount(tm.market.GetID()))
+	assert.Equal(t, 2, mdb.GetPriceLevels(tm.market.GetID()))
 }
 
 func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
@@ -657,6 +702,21 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
+
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+
+	auxParty := "aux"
+	addAccount(tm, auxParty)
+	auxOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderBuy", types.Side_SIDE_BUY, auxParty, 1, 1)
+	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
+	auxOrder2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderSell", types.Side_SIDE_SELL, auxParty, 1, 101)
+	conf, err = tm.market.SubmitOrder(ctx, auxOrder2)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
 	leaveAuction(tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-C", 1, 10)
@@ -686,12 +746,13 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(5), tm.orderEventCount)
-	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(7), tm.orderEventCount)
+	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(1), mdb.GetOrderCount(tm.market.GetID()))
-	assert.Equal(t, 1, mdb.GetPriceLevels(tm.market.GetID()))
+	mdb := processEvents(t, tm, ctx)
+	assert.Equal(t, 3, mdb.GetOrderCount(tm.market.GetID()))
+	assert.Equal(t, 3, mdb.GetPriceLevels(tm.market.GetID()))
 }
 
 func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
@@ -699,6 +760,21 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
+
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+
+	auxParty := "aux"
+	addAccount(tm, auxParty)
+	auxOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderBuy", types.Side_SIDE_BUY, auxParty, 1, 1)
+	conf, err := tm.market.SubmitOrder(ctx, auxOrder1)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
+	auxOrder2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "AuxOrderSell", types.Side_SIDE_SELL, auxParty, 1, 101)
+	conf, err = tm.market.SubmitOrder(ctx, auxOrder2)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+
 	leaveAuction(tm, ctx, &now)
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-C", 5, 10)
@@ -729,12 +805,12 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(5), tm.orderEventCount)
-	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(7), tm.orderEventCount)
+	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
-	assert.Equal(t, 2, mdb.GetPriceLevels(tm.market.GetID()))
+	assert.Equal(t, 4, mdb.GetOrderCount(tm.market.GetID()))
+	assert.Equal(t, 4, mdb.GetPriceLevels(tm.market.GetID()))
 }
 
 func TestEvents_CloseOutTraderWithNotEnoughLiquidity(t *testing.T) {
