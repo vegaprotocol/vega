@@ -15,10 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	markPrice = 10
-)
-
 // launch aggressiveOrder orders from both sides to fully clear the order book
 type aggressiveOrderScenario struct {
 	aggressiveOrder               *types.Order
@@ -43,7 +39,7 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice, false)
+	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, false)
 
 	tob.OrderBook.LogRemovedOrdersDebug = true
 	return &tob

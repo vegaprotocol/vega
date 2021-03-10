@@ -52,7 +52,6 @@ func newMarket(row marketRow) types.Market {
 						"product:futures",
 					},
 				},
-				InitialMarkPrice: row.markPrice(),
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
 						Maturity:        marketExpiry,
@@ -190,14 +189,6 @@ func (r marketRow) quoteName() string {
 
 func (r marketRow) asset() string {
 	return r.row.Str("asset")
-}
-
-func (r marketRow) markPrice() uint64 {
-	value, err := r.row.U64("mark price")
-	if err != nil {
-		panic(err)
-	}
-	return value
 }
 
 func (r marketRow) riskModel() string {

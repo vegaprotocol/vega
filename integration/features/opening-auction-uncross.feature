@@ -3,8 +3,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | quote name | asset | mark price | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 |  BTC        | BTC   | 100        | simple     | 0.1       | 0.1       | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 100              | 1                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 |  BTC        | BTC   |  simple     | 0.1       | 0.1       | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 100              | 1                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
@@ -37,7 +37,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     Then the margins levels for the traders are:
       | trader  | id        | maintenance | search | initial | release |
-      | trader1 | ETH/DEC19 |       25201 |  27721 |   30241 |   65521 |
+      | trader1 | ETH/DEC19 | 25201       | 27721  | 30241   | 65521   |
       | trader2 | ETH/DEC19 |       23899 |  26289 |   28679 |   57458 |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general  |

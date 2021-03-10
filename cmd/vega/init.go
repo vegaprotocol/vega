@@ -174,7 +174,6 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 		settlementAsset        string
 		quoteName              string
 		maturity               time.Time
-		initialMarkPrice       uint64
 		settlementValue        uint64
 		sigma                  float64
 		riskAversionParameter  float64
@@ -187,7 +186,6 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			quoteName:              "VUSD",
 			settlementAsset:        "VUSD",
 			maturity:               time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
-			initialMarkPrice:       1410000,
 			settlementValue:        1500000,
 			riskAversionParameter:  0.001,
 			sigma:                  1.5,
@@ -200,7 +198,6 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			quoteName:              "VUSD",
 			settlementAsset:        "VUSD",
 			maturity:               time.Date(2020, 10, 30, 22, 59, 59, 0, time.UTC),
-			initialMarkPrice:       130000,
 			settlementValue:        126000,
 			riskAversionParameter:  0.01,
 			sigma:                  0.09,
@@ -213,7 +210,6 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 			quoteName:              "BTC",
 			settlementAsset:        "BTC",
 			maturity:               time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
-			initialMarkPrice:       10000,
 			settlementValue:        98123,
 			riskAversionParameter:  0.001,
 			sigma:                  2.0,
@@ -252,7 +248,6 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 							"product:futures",
 						},
 					},
-					InitialMarkPrice: skel.initialMarkPrice,
 					Product: &proto.Instrument_Future{
 						Future: &proto.Future{
 							QuoteName:       skel.quoteName,

@@ -4,8 +4,8 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | quote name | asset | mark price | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 | ETH        | ETH   | 9400000    | simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 9400000          | 0                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 | ETH        | ETH   |  simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 9400000          | 0                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value   |
       | prices.ETH.value | 9400000 |
@@ -16,14 +16,14 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | buySideMM  | 1000000000 |
     # setting mark price
     And traders place following orders:
-      | trader     | market id | type | volume | price    | trades | type  | tif |
+      | trader     | market id | type | volume | price    | trades | type       | tif     |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1      | TYPE_LIMIT | TIF_GTC |
 
 
     # setting order book
     And traders place following orders with references:
-      | trader     | market id | type | volume | price    | trades | type  | tif | reference |
+      | trader     | market id | type | volume | price    | trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0      | TYPE_LIMIT | TIF_GTC | _sell1    |
       | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC | _sell2    |
       | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | TYPE_LIMIT | TIF_GTC | _sell3    |
@@ -71,7 +71,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | buySideMM | buy2      |
       | buySideMM | buy3      |
     Then traders place following orders:
-      | trader    | market id | type | volume | price    | trades | type  | tif |
+      | trader    | market id | type | volume | price    | trades | type       | tif     |
       | buySideMM | ETH/DEC19 | buy  | 1      | 19000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM | ETH/DEC19 | buy  | 3      | 18000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM | ETH/DEC19 | buy  | 15     | 17000000 | 0      | TYPE_LIMIT | TIF_GTC |
@@ -89,7 +89,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 200
     Then traders place following orders:
-      | trader     | market id | type | volume | price    | trades | type  | tif |
+      | trader     | market id | type | volume | price    | trades | type       | tif     |
       | sellSideMM | ETH/DEC19 | sell | 1      | 20000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 20000000 | 1      | TYPE_LIMIT | TIF_GTC |
 
@@ -109,7 +109,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     # FULL CLOSEOUT BY TRADER
     Then traders place following orders:
-      | trader  | market id | type | volume | price    | trades | type  | tif |
+      | trader  | market id | type | volume | price    | trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 13     | 16500000 | 3      | TYPE_LIMIT | TIF_GTC |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |

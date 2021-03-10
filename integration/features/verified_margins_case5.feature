@@ -4,8 +4,8 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | quote name | asset | mark price | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 |  ETH        | ETH   | 9400000    | simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 940000           | 0                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 |  ETH        | ETH   |  simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 940000           | 0                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value   |
       | prices.ETH.value | 9400000 |
@@ -23,7 +23,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # setting order book
     And traders place following orders with references:
-      | trader     | market id | type | volume | price    | trades | type  | tif | reference |
+      | trader     | market id | type | volume | price    | trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 10     | 15000000 | 0      | TYPE_LIMIT | TIF_GTC | sell1     |
       | sellSideMM | ETH/DEC19 | sell | 14     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC | sell2     |
       | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | TYPE_LIMIT | TIF_GTC | sell3     |
@@ -71,7 +71,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | sellSideMM | sell2     |
       | sellSideMM | sell3     |
     And traders place following orders:
-      | trader     | market id | type | volume | price    | trades | type  | tif |
+      | trader     | market id | type | volume | price    | trades | type       | tif     |
       | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0      | TYPE_LIMIT | TIF_GTC |
       | sellSideMM | ETH/DEC19 | sell | 14     | 10000000 | 0      | TYPE_LIMIT | TIF_GTC |
@@ -89,7 +89,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 300
     Then traders place following orders:
-      | trader     | market id | type | volume | price    | trades | type  | tif |
+      | trader     | market id | type | volume | price    | trades | type       | tif     |
       | sellSideMM | ETH/DEC19 | sell | 50     | 30000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 27     | 30000000 | 4      | TYPE_LIMIT | TIF_GTC |
 
@@ -111,7 +111,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # ENTER SEARCH LEVEL (& DEPLEAT GENERAL ACCOUNT)
     Then traders place following orders:
-      | trader     | market id | type | volume | price    | trades | type  | tif |
+      | trader     | market id | type | volume | price    | trades | type       | tif     |
       | sellSideMM | ETH/DEC19 | sell | 11     | 50000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 50000000 | 2      | TYPE_LIMIT | TIF_GTC |
     And the margins levels for the traders are:
@@ -123,7 +123,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # FORCED CLOSEOUT
     Then traders place following orders:
-      | trader     | market id | type | volume | price    | trades | type  | tif |
+      | trader     | market id | type | volume | price    | trades | type       | tif     |
       | sellSideMM | ETH/DEC19 | sell | 21     | 80000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 11     | 80000000 | 2      | TYPE_LIMIT | TIF_GTC |
     And the margins levels for the traders are:

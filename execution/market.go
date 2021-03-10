@@ -58,8 +58,6 @@ var (
 	ErrMarginCheckFailed = errors.New("margin check failed")
 	// ErrMarginCheckInsufficient signals that a margin had not enough funds
 	ErrMarginCheckInsufficient = errors.New("insufficient margin")
-	// ErrInvalidInitialMarkPrice signals that the initial mark price for a market is invalid
-	ErrInvalidInitialMarkPrice = errors.New("invalid initial mark price (mkprice <= 0)")
 	// ErrMissingGeneralAccountForParty ...
 	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
 	// ErrNotEnoughVolumeToZeroOutNetworkOrder ...
@@ -249,10 +247,6 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate a new market")
 	}
 
-	if tradableInstrument.Instrument.InitialMarkPrice == 0 {
-		return nil, ErrInvalidInitialMarkPrice
-	}
-
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get market closing time")
@@ -260,8 +254,7 @@ func NewMarket(
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
-	book := matching.NewOrderBook(log, matchingConfig, mkt.Id,
-		tradableInstrument.Instrument.InitialMarkPrice, as.InAuction())
+	book := matching.NewOrderBook(log, matchingConfig, mkt.Id, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(
 		log,
@@ -307,7 +300,6 @@ func NewMarket(
 		mkt:                mkt,
 		closingAt:          closingAt,
 		currentTime:        now,
-		markPrice:          tradableInstrument.Instrument.InitialMarkPrice,
 		matching:           book,
 		tradableInstrument: tradableInstrument,
 		risk:               riskEngine,

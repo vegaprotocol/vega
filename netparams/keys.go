@@ -8,7 +8,6 @@ const (
 	MarketFeeFactorsLiquidityFee                    = "market.fee.factors.liquidityFee"
 	MarketAuctionMinimumDuration                    = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
-	MarketInitialMarkPrice                          = "market.initialMarkPrice"
 	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
 	MarketLiquidityStakeToCCYSiskas                 = "market.liquidity.stakeToCcySiskas"
@@ -73,7 +72,6 @@ var AllKeys = map[string]struct{}{
 	MarketFeeFactorsLiquidityFee:                          {},
 	MarketAuctionMinimumDuration:                          {},
 	MarketAuctionMaximumDuration:                          {},
-	MarketInitialMarkPrice:                                {},
 	MarketLiquidityBondPenaltyParameter:                   {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:         {},
 	MarketLiquidityStakeToCCYSiskas:                       {},
