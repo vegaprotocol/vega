@@ -39,8 +39,9 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
     Then dump transfers
 
     Then traders place following orders with references:
-      | tt_15 | ETH/DEC19 | sell | 2 | 20 | 0 | TYPE_LIMIT | TIF_GTC | tt_15-2 |
-      | tt_16 | ETH/DEC19 | buy  | 2 | 20 | 1 | TYPE_LIMIT | TIF_GTC | tt_16-2 |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_15  | ETH/DEC19 | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | tt_15-2   |
+      | tt_16  | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-2   |
 
     And the mark price for the market "ETH/DEC19" is "20"
 

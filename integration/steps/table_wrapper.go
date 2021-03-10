@@ -145,3 +145,9 @@ func (r RowWrapper) Side(name string) (types.Side, error) {
 		return types.Side_SIDE_UNSPECIFIED, errors.New("invalid side")
 	}
 }
+
+func panicW(err error) {
+	if err != nil {
+		panic(err)
+	}
+}

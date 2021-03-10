@@ -12,12 +12,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func panicW(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func TradersPlaceFollowingOrders(
 	exec *execution.Engine,
 	orders *gherkin.DataTable,
