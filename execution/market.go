@@ -3034,11 +3034,11 @@ func (m *Market) cancelLiquidityProvision(
 		transfer := &types.Transfer{
 			Owner: party,
 			Amount: &types.FinancialAmount{
-				Amount: int64(bondAcc.Balance),
+				Amount: bondAcc.Balance,
 				Asset:  asset,
 			},
 			Type:      types.TransferType_TRANSFER_TYPE_BOND_HIGH,
-			MinAmount: int64(bondAcc.Balance),
+			MinAmount: bondAcc.Balance,
 		}
 
 		tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
@@ -3217,11 +3217,11 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	transfer := &types.Transfer{
 		Owner: party,
 		Amount: &types.FinancialAmount{
-			Amount: amount,
+			Amount: uint64(amount),
 			Asset:  asset,
 		},
 		Type:      ty,
-		MinAmount: amount,
+		MinAmount: uint64(amount),
 	}
 
 	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)

@@ -202,7 +202,10 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		if curMargin >= levels.InitialMargin {
 			continue
 		}
-		minAmount := maxUint(levels.MaintenanceMargin-curMargin, 0)
+		var minAmount uint64
+		if levels.MaintenanceMargin > curMargin {
+			minAmount = maxUint(levels.MaintenanceMargin-curMargin, 0)
+		}
 		t := &types.Transfer{
 			Owner: evt.Party(),
 			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
@@ -262,7 +265,11 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	if curBalance >= margins.InitialMargin {
 		return nil, nil
 	}
-	minAmount := maxUint(margins.MaintenanceMargin-curBalance, 0)
+
+	var minAmount uint64
+	if margins.MaintenanceMargin > curBalance {
+		minAmount = maxUint(margins.MaintenanceMargin-curBalance, 0)
+	}
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
 	trnsfr := &types.Transfer{
