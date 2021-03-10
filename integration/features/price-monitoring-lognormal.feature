@@ -17,7 +17,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader2 | 10000000000 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -26,7 +26,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -54,14 +54,14 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader2 | 10000000000 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK |
 
     And the mark price for the market "ETH/DEC20" is "100000"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -89,14 +89,14 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader2 | 10000000000 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK |
 
     And the mark price for the market "ETH/DEC20" is "100000"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -105,7 +105,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price for the market "ETH/DEC20" is "100000"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader2 | ETH/DEC20 | buy  | 1      | 112000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     #T0 + 10min
@@ -130,7 +130,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader2 | 10000000000 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -142,7 +142,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -170,7 +170,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader2 | 10000000000 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -182,7 +182,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -210,7 +210,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader2 | 10000000000 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -222,7 +222,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -234,7 +234,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:04:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA |
       | trader2 | ETH/DEC20 | buy  | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA |
 
@@ -269,7 +269,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader2 | 10000000000 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -281,7 +281,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK |
 
@@ -293,7 +293,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:04:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA |
       | trader2 | ETH/DEC20 | buy  | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA |
 
@@ -310,7 +310,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the time is updated to "2020-10-16T00:10:10Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price  | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA |
       | trader2 | ETH/DEC20 | buy  | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA |
 

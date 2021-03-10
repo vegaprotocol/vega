@@ -23,7 +23,7 @@ Feature: Test margins releases on position = 0
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
@@ -36,7 +36,7 @@ Feature: Test margins releases on position = 0
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader    | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_FOK |
     Then I expect the trader to have a margin:
       | trader    | asset | id        | margin | general    |
@@ -56,7 +56,7 @@ Feature: Test margins releases on position = 0
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
@@ -69,7 +69,7 @@ Feature: Test margins releases on position = 0
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader    | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader    | asset | id        | margin | general   |
@@ -77,7 +77,7 @@ Feature: Test margins releases on position = 0
 
 # now we place an order which would wash trade and see
     Then traders place following orders:
-      | trader    | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
 
 # checking margins, should have the margins required for the current order
@@ -99,7 +99,7 @@ Feature: Test margins releases on position = 0
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
@@ -112,7 +112,7 @@ Feature: Test margins releases on position = 0
       | trader2 | trader2-1 |
 
     Then traders place following orders with references:
-      | trader    | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     Then I expect the trader to have a margin:
@@ -141,7 +141,7 @@ Feature: Test margins releases on position = 0
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
@@ -154,7 +154,7 @@ Feature: Test margins releases on position = 0
       | trader2 | trader2-1 |
 
     Then traders place following orders with references:
-      | trader    | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     Then I expect the trader to have a margin:
@@ -163,7 +163,7 @@ Feature: Test margins releases on position = 0
 
 # now we place an order which would wash trade and see
     Then traders place following orders:
-      | trader    | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
 
 # checking margins, should have the margins required for the current order

@@ -999,7 +999,7 @@ func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
 		if trader == "trader" {
 			continue
 		}
-		// | trader   | id        | side | volume | reference | offset |
+		// | trader  | market id | side | volume | reference | offset |
 		id, sside, vol, ref, offset, price := val(row, 1),
 			val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
 		status, err := orderstatusval(row, 7)

@@ -27,7 +27,7 @@ Feature: Regression test for issue 767
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
@@ -40,7 +40,7 @@ Feature: Regression test for issue 767
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC |
       | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC |
       | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -56,7 +56,7 @@ Feature: Regression test for issue 767
       | edd    | BTC   | ETH/DEC19 | 848    | 152     |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
     Then traders place following orders:
-      | trader | id      2 | type | volume | price | resulting trades | type       | tif     |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |
@@ -64,7 +64,7 @@ Feature: Regression test for issue 767
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
     And All balances cumulated are worth "2002000"
     Then traders place following orders:
-      | trader | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | edd    | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader | asset | id        | margin | general |

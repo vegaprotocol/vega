@@ -17,7 +17,7 @@ Feature: Price monitoring test for issue 2681
       | trader2 | 10000000000 |
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price   | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -29,7 +29,7 @@ Feature: Price monitoring test for issue 2681
     Then the time is updated to "2020-10-16T00:01:00Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price   | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 4850000 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -41,7 +41,7 @@ Feature: Price monitoring test for issue 2681
     Then the time is updated to "2020-10-16T00:02:00Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price   | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 6490000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 6490000 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -54,7 +54,7 @@ Feature: Price monitoring test for issue 2681
     Then the time is updated to "2020-10-16T00:03:00Z"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price   | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 6635392 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 6635392 | 1                | TYPE_LIMIT | TIF_FOK |
 
@@ -63,7 +63,7 @@ Feature: Price monitoring test for issue 2681
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
-      | trader  | id        | type | volume | price   | resulting trades | type       | tif     |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | buy  | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_FOK |
 

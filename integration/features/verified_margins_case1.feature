@@ -16,14 +16,14 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | buySideMM  | 1000000000 |
     # setting mark price
     And traders place following orders:
-      | trader     | market id | type | volume | price    | trades | type       | tif     |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1      | TYPE_LIMIT | TIF_GTC |
 
 
     # setting order book
     And traders place following orders with references:
-      | trader     | market id | side | volume | price    | trades | type       | tif     | reference |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0      | TYPE_LIMIT | TIF_GTC | _sell1    |
       | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC | _sell2    |
       | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | TYPE_LIMIT | TIF_GTC | _sell3    |
@@ -42,7 +42,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     And "trader1" have only one account per asset
     # placing test order
     Then traders place following orders:
-      | trader  | market id | side | volume | price    | trades | type       | tif     |
+      | trader  | market id | side | volume | price    | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2      | TYPE_LIMIT | TIF_GTC |
     And "trader1" general account for asset "ETH" balance is "611199968"
     And executed trades:
@@ -71,7 +71,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | buySideMM | buy2      |
       | buySideMM | buy3      |
     Then traders place following orders:
-      | trader    | market id | side | volume | price    | trades | type       | tif     |
+      | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
       | buySideMM | ETH/DEC19 | buy  | 1      | 19000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM | ETH/DEC19 | buy  | 3      | 18000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM | ETH/DEC19 | buy  | 15     | 17000000 | 0      | TYPE_LIMIT | TIF_GTC |
@@ -89,7 +89,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 200
     Then traders place following orders:
-      | trader     | market id | side | volume | price    | trades | type       | tif     |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
       | sellSideMM | ETH/DEC19 | sell | 1      | 20000000 | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 20000000 | 1      | TYPE_LIMIT | TIF_GTC |
 
@@ -109,7 +109,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     # FULL CLOSEOUT BY TRADER
     Then traders place following orders:
-      | trader  | market id | side | volume | price    | trades | type       | tif     |
+      | trader  | market id | side | volume | price    | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 13     | 16500000 | 3      | TYPE_LIMIT | TIF_GTC |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |

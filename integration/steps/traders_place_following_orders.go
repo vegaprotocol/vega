@@ -42,7 +42,7 @@ func TradersPlaceFollowingOrders(
 		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
-			MarketId:    row.Str("id"), // this is actually the market id
+			MarketId:    row.Str("market id"),
 			PartyId:     row.Str("trader"),
 			Side:        side,
 			Price:       price,
@@ -58,11 +58,11 @@ func TradersPlaceFollowingOrders(
 			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, row.Str("trader"))
 		}
 
-		resultinTrades, err := row.U64("resulting trades")
+		resultingTrades, err := row.U64("resulting trades")
 		panicW(err)
 
-		if uint64(len(result.Trades)) != resultinTrades {
-			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", resultinTrades, len(result.Trades), *result)
+		if uint64(len(result.Trades)) != resultingTrades {
+			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", resultingTrades, len(result.Trades), *result)
 		}
 	}
 	return nil

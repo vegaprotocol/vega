@@ -28,7 +28,7 @@ Feature: Regression test for issue 630
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
@@ -42,7 +42,7 @@ Feature: Regression test for issue 630
 
 # setup orderbook
     Then traders place following orders:
-      | trader           | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
       | sellSideProvider | ETH/DEC19 | sell | 200    | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
       | buySideProvider  | ETH/DEC19 | buy  | 200    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
     And All balances cumulated are worth "4240000"
@@ -50,7 +50,7 @@ Feature: Regression test for issue 630
       | trader           | id        | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 | 2000        | 2200   | 2400    | 2800    |
     Then traders place following orders:
-      | trader    | id        | type | volume | price | resulting trades | type       | tif     |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 100    | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
     Then I expect the trader to have a margin:
       | trader           | asset | id        | margin | general |
