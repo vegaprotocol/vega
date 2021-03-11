@@ -213,9 +213,11 @@ type ComplexityRoot struct {
 	}
 
 	FutureProduct struct {
-		Maturity        func(childComplexity int) int
-		QuoteName       func(childComplexity int) int
-		SettlementAsset func(childComplexity int) int
+		Maturity          func(childComplexity int) int
+		OracleSpec        func(childComplexity int) int
+		OracleSpecBinding func(childComplexity int) int
+		QuoteName         func(childComplexity int) int
+		SettlementAsset   func(childComplexity int) int
 	}
 
 	Instrument struct {
@@ -447,6 +449,11 @@ type ComplexityRoot struct {
 		PubKeys   func(childComplexity int) int
 		Status    func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
+	}
+
+	OracleSpecConfiguration struct {
+		Filters func(childComplexity int) int
+		PubKeys func(childComplexity int) int
 	}
 
 	OracleSpecToFutureBinding struct {
@@ -1666,6 +1673,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FutureProduct.Maturity(childComplexity), true
 
+	case "FutureProduct.oracleSpec":
+		if e.complexity.FutureProduct.OracleSpec == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.OracleSpec(childComplexity), true
+
+	case "FutureProduct.oracleSpecBinding":
+		if e.complexity.FutureProduct.OracleSpecBinding == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.OracleSpecBinding(childComplexity), true
+
 	case "FutureProduct.quoteName":
 		if e.complexity.FutureProduct.QuoteName == nil {
 			break
@@ -2778,6 +2799,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OracleSpec.UpdatedAt(childComplexity), true
+
+	case "OracleSpecConfiguration.filters":
+		if e.complexity.OracleSpecConfiguration.Filters == nil {
+			break
+		}
+
+		return e.complexity.OracleSpecConfiguration.Filters(childComplexity), true
+
+	case "OracleSpecConfiguration.pubKeys":
+		if e.complexity.OracleSpecConfiguration.PubKeys == nil {
+			break
+		}
+
+		return e.complexity.OracleSpecConfiguration.PubKeys(childComplexity), true
 
 	case "OracleSpecToFutureBinding.settlementPriceProperty":
 		if e.complexity.OracleSpecToFutureBinding.SettlementPriceProperty == nil {
@@ -6673,6 +6708,33 @@ type FutureProduct {
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
+  """
+  Describes the oracle data that an instrument wants to get from the oracle engine.
+  """
+  oracleSpec: OracleSpecConfiguration!
+  """
+  OracleSpecToFutureBinding tells on which property oracle data should be
+  used as settlement price.
+  """
+  oracleSpecBinding: OracleSpecToFutureBinding!
+}
+
+"""
+An oracle spec describe the oracle data that an instrument wants to get from the
+oracle engine.
+"""
+type OracleSpecConfiguration {
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [Filter!]
 }
 
 input InstrumentConfigurationInput {
@@ -11171,6 +11233,74 @@ func (ec *executionContext) _FutureProduct_quoteName(ctx context.Context, field 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FutureProduct_oracleSpec(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FutureProduct",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleSpec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v1.OracleSpecConfiguration)
+	fc.Result = res
+	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FutureProduct_oracleSpecBinding(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FutureProduct",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleSpecBinding, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.OracleSpecToFutureBinding)
+	fc.Result = res
+	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *proto.Instrument) (ret graphql.Marshaler) {
@@ -16153,6 +16283,68 @@ func (ec *executionContext) _OracleSpec_data(ctx context.Context, field graphql.
 	res := resTmp.([]*v1.OracleData)
 	fc.Result = res
 	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OracleSpecConfiguration_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v1.OracleSpecConfiguration) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OracleSpecConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PubKeys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OracleSpecConfiguration_filters(ctx context.Context, field graphql.CollectedField, obj *v1.OracleSpecConfiguration) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OracleSpecConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.Filter)
+	fc.Result = res
+	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpecToFutureBinding_settlementPriceProperty(ctx context.Context, field graphql.CollectedField, obj *proto.OracleSpecToFutureBinding) (ret graphql.Marshaler) {
@@ -27088,6 +27280,16 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "oracleSpec":
+			out.Values[i] = ec._FutureProduct_oracleSpec(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "oracleSpecBinding":
+			out.Values[i] = ec._FutureProduct_oracleSpecBinding(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -29022,6 +29224,32 @@ func (ec *executionContext) _OracleSpec(ctx context.Context, sel ast.SelectionSe
 				res = ec._OracleSpec_data(ctx, field, obj)
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var oracleSpecConfigurationImplementors = []string{"OracleSpecConfiguration"}
+
+func (ec *executionContext) _OracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, obj *v1.OracleSpecConfiguration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, oracleSpecConfigurationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OracleSpecConfiguration")
+		case "pubKeys":
+			out.Values[i] = ec._OracleSpecConfiguration_pubKeys(ctx, field, obj)
+		case "filters":
+			out.Values[i] = ec._OracleSpecConfiguration_filters(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -33093,6 +33321,20 @@ func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋveg
 		return graphql.Null
 	}
 	return ec._OracleSpec(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOracleSpecConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, v v1.OracleSpecConfiguration) graphql.Marshaler {
+	return ec._OracleSpecConfiguration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, v *v1.OracleSpecConfiguration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OracleSpecConfiguration(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNOracleSpecConfigurationInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx context.Context, v interface{}) (OracleSpecConfigurationInput, error) {

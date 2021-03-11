@@ -2083,6 +2083,33 @@ type FutureProduct {
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
+  """
+  Describes the oracle data that an instrument wants to get from the oracle engine.
+  """
+  oracleSpec: OracleSpecConfiguration!
+  """
+  OracleSpecToFutureBinding tells on which property oracle data should be
+  used as settlement price.
+  """
+  oracleSpecBinding: OracleSpecToFutureBinding!
+}
+
+"""
+An oracle spec describe the oracle data that an instrument wants to get from the
+oracle engine.
+"""
+type OracleSpecConfiguration {
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [Filter!]
 }
 
 input InstrumentConfigurationInput {
