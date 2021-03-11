@@ -103,52 +103,6 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 	return nil
 }
 
-func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error {
-	for _, row := range orders.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		oty, err := ordertypeval(row, 6)
-		if err != nil {
-			return err
-		}
-		tif, err := tifval(row, 7)
-		if err != nil {
-			return err
-		}
-
-		var expiresAt int64
-		if oty != types.Order_TYPE_MARKET {
-			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
-		}
-
-		order := types.Order{
-			Status:      types.Order_STATUS_ACTIVE,
-			Id:          uuid.NewV4().String(),
-			MarketId:    val(row, 1),
-			PartyId:     val(row, 0),
-			Side:        sideval(row, 2),
-			Price:       u64val(row, 4),
-			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
-			ExpiresAt:   expiresAt,
-			Type:        oty,
-			TimeInForce: tif,
-			CreatedAt:   time.Now().UnixNano(),
-			Reference:   val(row, 8),
-		}
-		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
-		if err != nil {
-			return fmt.Errorf("err(%v), trader(%v), ref(%v)", err, order.PartyId, order.Reference)
-		}
-		if int64(len(result.Trades)) != i64val(row, 5) {
-			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
-		}
-	}
-	return nil
-}
-
 func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 	for _, row := range refs.Rows {
 		if val(row, 0) == "trader" {
