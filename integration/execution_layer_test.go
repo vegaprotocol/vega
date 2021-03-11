@@ -380,18 +380,6 @@ func theFollowingTransfersHappened(arg1 *gherkin.DataTable) error {
 	return nil
 }
 
-func theSettlementAccountBalanceIsForTheMarketBeforeMTM(amountstr, market string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.broker.GetMarketSettlementAccount(market)
-	if err != nil {
-		return err
-	}
-	if amount != acc.Balance {
-		return fmt.Errorf("invalid balance for market settlement account, expected %v, got %v", amount, acc.Balance)
-	}
-	return nil
-}
-
 func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	acc, err := execsetup.broker.GetMarketInsurancePoolAccount(market)
