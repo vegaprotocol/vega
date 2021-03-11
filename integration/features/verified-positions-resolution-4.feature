@@ -79,7 +79,7 @@ Feature: Position resolution case 4
 # then try to buy 1 again -> result in no trades -> sell side empty.
 # Try to sell one for low price -> no trades -> buy side empty -> order book empty.
    Then traders place following orders:
-      | trader          | id        | type   | volume | price | resulting trades | type  | tif |
-      | buySideProvider | ETH/DEC19 | buy    |     50 |   350 |                1 | TYPE_LIMIT | TIF_FOK |
-      | buySideProvider | ETH/DEC19 | buy    |      1 |   350 |                0 | TYPE_LIMIT | TIF_FOK |
-      | sellSideProvider | ETH/DEC19 | sell  |      1 |   2   |                0 | TYPE_LIMIT | TIF_FOK |
+      | trader           | market id | side | volume | price | resulting trades | type  | tif |
+      | buySideProvider  | ETH/DEC19 | buy  |     50 |   350 |                1 | TYPE_LIMIT | TIF_FOK |
+      | buySideProvider  | ETH/DEC19 | buy  |      1 |   350 |                0 | TYPE_LIMIT | TIF_FOK |
+      | sellSideProvider | ETH/DEC19 | sell |      1 |   2   |                0 | TYPE_LIMIT | TIF_FOK |
