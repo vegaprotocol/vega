@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -121,4 +122,22 @@ func (m *Market) GetTotalAccountBalance(ctx context.Context, partyID, marketID, 
 // Return the current liquidity fee value for a market
 func (m *Market) GetLiquidityFee() float64 {
 	return m.fee.GetLiquidityFee()
+}
+
+// Log out orders that don't match
+func (m *Market) ValidateOrder(order *types.Order) bool {
+	order2, err := m.matching.GetOrderByID(order.Id)
+	if err != nil {
+		return false
+	}
+	if order.Price != order2.Price ||
+		order.Size != order2.Size ||
+		order.Remaining != order2.Remaining ||
+		order.Status != order2.Status {
+		fmt.Println("Orders do not match")
+		fmt.Println("OrderBook  :", order2)
+		fmt.Println("MarketDepth:", order)
+		return false
+	}
+	return true
 }

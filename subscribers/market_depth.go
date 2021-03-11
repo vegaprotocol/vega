@@ -386,6 +386,14 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 /*                 FUNCTIONS TO HELP WITH UNIT TESTING                       */
 /*****************************************************************************/
 
+func (mdb *MarketDepthBuilder) GetAllOrders(market string) map[string]*types.Order {
+	md := mdb.marketDepths[market]
+	if md != nil {
+		return md.liveOrders
+	}
+	return nil
+}
+
 // GetOrderCount returns the number of live orders for the given market
 func (mdb *MarketDepthBuilder) GetOrderCount(market string) int64 {
 	var liveOrders int64

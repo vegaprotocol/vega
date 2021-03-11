@@ -2,6 +2,7 @@ package execution_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -51,31 +52,98 @@ func leaveAuction(tm *testMarket, ctx context.Context, now *time.Time) {
 	tm.market.LeaveAuction(ctx, *now)
 }
 
-func processEvents(t *testing.T, tm *testMarket, ctx context.Context) *subscribers.MarketDepthBuilder {
-	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
-
+func processEvents2(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder, i int) {
 	for _, event := range tm.orderEvents {
 		mdb.Push(event)
 	}
-	checkConsistency(t, tm, mdb)
-	return mdb
+	needToQuit := false
+	orders := mdb.GetAllOrders(tm.market.GetID())
+	for _, order := range orders {
+		if !tm.market.ValidateOrder(order) {
+			needToQuit = true
+		}
+	}
+
+	if !checkConsistency(t, tm, mdb) {
+		// We had an error, lets dump all the events
+		for i, event := range tm.orderEvents {
+			switch te := event.(type) {
+			case subscribers.OE:
+				fmt.Println("Event:", i, te.Order())
+			}
+		}
+		needToQuit = true
+	}
+
+	if needToQuit {
+		fmt.Println("About to exit after finding an issue on iteration", i)
+		require.Equal(t, true, false)
+	}
+}
+
+func processEvents(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) {
+	processEvents2(t, tm, mdb, 0)
+}
+
+func clearEvents(tm *testMarket) {
+	// Reset the event counter
+	tm.eventCount = 0
+	tm.orderEventCount = 0
+	tm.events = nil
+	tm.orderEvents = nil
 }
 
 // Check that the orders in the matching engine are the same as the orders in the market depth
-func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) {
+func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) bool {
+	correct := true
 	// Do we have the same number of orders in each?
-	require.Equal(t, tm.market.GetOrdersOnBookCount(), mdb.GetOrderCount(tm.market.GetID()))
+	if !assert.Equal(t, tm.market.GetOrdersOnBookCount(), mdb.GetOrderCount(tm.market.GetID())) {
+		fmt.Println("Market Order On Book:", tm.market.GetOrdersOnBookCount())
+		fmt.Println("Market Depth Orders :", mdb.GetOrderCount(tm.market.GetID()))
+		correct = false
+	}
 	// Do we have the same volume in each?
-	require.Equal(t, tm.market.GetVolumeOnBook(), mdb.GetTotalVolume(tm.market.GetID()))
+	if !assert.Equal(t, tm.market.GetVolumeOnBook(), mdb.GetTotalVolume(tm.market.GetID())) {
+		fmt.Println("Market Volume On Book:", tm.market.GetVolumeOnBook())
+		fmt.Println("Market Depth Volume  :", mdb.GetTotalVolume(tm.market.GetID()))
+		correct = false
+	}
 	// Do we have the same best bid price?
-	require.Equal(t, tm.market.GetMarketData().BestBidPrice, mdb.GetBestBidPrice(tm.market.GetID()))
+	if !assert.Equal(t, tm.market.GetMarketData().BestBidPrice, mdb.GetBestBidPrice(tm.market.GetID())) {
+		fmt.Println("Market Best Bid:", tm.market.GetMarketData().BestBidPrice)
+		fmt.Println("Market Depth BB:", mdb.GetBestBidPrice(tm.market.GetID()))
+		correct = false
+	}
 	// Do we have the same best ask price?
-	require.Equal(t, tm.market.GetMarketData().BestOfferPrice, mdb.GetBestAskPrice(tm.market.GetID()))
+	if !assert.Equal(t, tm.market.GetMarketData().BestOfferPrice, mdb.GetBestAskPrice(tm.market.GetID())) {
+		fmt.Println("Market Best Ask:", tm.market.GetMarketData().BestOfferPrice)
+		fmt.Println("Market Depth BA:", mdb.GetBestAskPrice(tm.market.GetID()))
+		correct = false
+	}
+
+	// Check volume at each level is correct
+	bestBid := tm.market.GetMarketData().BestBidPrice
+	bestAsk := tm.market.GetMarketData().BestOfferPrice
+
+	if !assert.Equal(t, tm.market.GetMarketData().BestBidVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_BUY, bestBid)) {
+		fmt.Println("BestBidVolume in OB:", tm.market.GetMarketData().BestBidVolume)
+		fmt.Println("BestBidVolume in MD:", mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_BUY, bestBid))
+		correct = false
+	}
+
+	if !assert.Equal(t, tm.market.GetMarketData().BestOfferVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, bestAsk)) {
+		fmt.Println("BestAskVolume in OB:", tm.market.GetMarketData().BestOfferVolume)
+		fmt.Println("BestAskVolume in MD:", mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, bestAsk))
+		correct = false
+	}
+
+	return correct
 }
 
 func TestEvents_LeavingAuctionCancelsGFAOrders(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
 	// Add a GFA order
@@ -90,13 +158,14 @@ func TestEvents_LeavingAuctionCancelsGFAOrders(t *testing.T) {
 	// Check we have 2 events
 	assert.Equal(t, uint64(2), tm.orderEventCount)
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(0), mdb.GetOrderCount(tm.market.GetID()))
 }
 
 func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -130,13 +199,14 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	assert.Equal(t, uint64(6), tm.orderEventCount)
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 }
 
 func TestEvents_CloseOutTrader(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -172,7 +242,7 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 	assert.Equal(t, uint64(12), tm.orderEventCount)
 	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(1), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
 	assert.Equal(t, uint64(69), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
@@ -181,6 +251,7 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 func TestEvents_CloseOutTraderWithPeggedOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -207,10 +278,16 @@ func TestEvents_CloseOutTraderWithPeggedOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	// Place the pegged order
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-A", 1, 10)
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-A", 1, 0)
 	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
+	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order07", types.Side_SIDE_BUY, "trader-A", 1, 0)
+	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -110}
+	o7conf, err := tm.market.SubmitOrder(ctx, o7)
+	require.NotNil(t, o7conf)
 	require.NoError(t, err)
 
 	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 100, 100)
@@ -219,10 +296,10 @@ func TestEvents_CloseOutTraderWithPeggedOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(13), tm.orderEventCount)
+	assert.Equal(t, uint64(15), tm.orderEventCount)
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
 	assert.Equal(t, uint64(69), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
@@ -233,6 +310,7 @@ func TestEvents_CloseOutTraderWithPeggedOrder(t *testing.T) {
 func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -270,7 +348,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	assert.Equal(t, uint64(8), tm.orderEventCount)
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(3), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 3, mdb.GetPriceLevels(tm.market.GetID()))
 }
@@ -278,6 +356,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 func TestEvents_SelfTrading(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -300,7 +379,7 @@ func TestEvents_SelfTrading(t *testing.T) {
 	assert.Equal(t, uint64(4), tm.orderEventCount)
 	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(1), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 1, mdb.GetPriceLevels(tm.market.GetID()))
 }
@@ -308,6 +387,7 @@ func TestEvents_SelfTrading(t *testing.T) {
 func TestEvents_Amending(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -353,7 +433,7 @@ func TestEvents_Amending(t *testing.T) {
 	assert.Equal(t, uint64(6), tm.orderEventCount)
 	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(1), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 1, mdb.GetPriceLevels(tm.market.GetID()))
 }
@@ -361,6 +441,7 @@ func TestEvents_Amending(t *testing.T) {
 func TestEvents_MovingPegsAround(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -405,7 +486,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	assert.Equal(t, uint64(10), tm.orderEventCount)
 	assert.Equal(t, int64(0), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(0), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 0, mdb.GetPriceLevels(tm.market.GetID()))
 }
@@ -413,6 +494,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 func TestEvents_MovingPegsAround2(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -447,7 +529,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	assert.Equal(t, uint64(6), tm.orderEventCount)
 	assert.Equal(t, int64(0), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(0), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 0, mdb.GetPriceLevels(tm.market.GetID()))
 }
@@ -455,6 +537,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -488,7 +571,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	assert.Equal(t, uint64(5), tm.orderEventCount)
 	assert.Equal(t, int64(1), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(1), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 1, mdb.GetPriceLevels(tm.market.GetID()))
 }
@@ -496,6 +579,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -530,7 +614,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	assert.Equal(t, uint64(5), tm.orderEventCount)
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 2, mdb.GetPriceLevels(tm.market.GetID()))
 }
@@ -538,6 +622,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 func TestEvents_CloseOutTraderWithNotEnoughLiquidity(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
 	leaveAuction(tm, ctx, &now)
@@ -580,7 +665,7 @@ func TestEvents_CloseOutTraderWithNotEnoughLiquidity(t *testing.T) {
 	assert.Equal(t, uint64(10), tm.orderEventCount)
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
 	assert.Equal(t, uint64(9), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
@@ -591,6 +676,7 @@ func TestEvents_CloseOutTraderWithNotEnoughLiquidity(t *testing.T) {
 func TestEvents_CloseOutTraderWithLPOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	addAccountWithAmount(tm, "trader-Z", 4000)
 
@@ -648,7 +734,7 @@ func TestEvents_CloseOutTraderWithLPOrder(t *testing.T) {
 	assert.Equal(t, uint64(13), tm.orderEventCount)
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(3), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
 	assert.Equal(t, uint64(9), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
@@ -659,6 +745,7 @@ func TestEvents_CloseOutTraderWithLPOrder(t *testing.T) {
 func TestEvents_LPOrderRecalcDueToFill(t *testing.T) {
 	now := time.Unix(10, 0)
 	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 	leaveAuction(tm, ctx, &now)
 
@@ -704,8 +791,133 @@ func TestEvents_LPOrderRecalcDueToFill(t *testing.T) {
 	assert.Equal(t, uint64(11), tm.orderEventCount)
 	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+}
+
+func TestEvents_PeggedOrders(t *testing.T) {
+	now := time.Unix(10, 0)
+	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
+	tm := startMarketInAuction(t, ctx, &now)
+	leaveAuction(tm, ctx, &now)
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFN, "Order01", types.Side_SIDE_BUY, "trader-B", 2, 100)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 2, 98)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 110)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+
+	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order06", types.Side_SIDE_SELL, "trader-C", 2, 112)
+	o6conf, err := tm.market.SubmitOrder(ctx, o6)
+	require.NotNil(t, o6conf)
+	require.NoError(t, err)
+
+	// Place the pegged order
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-A", 1, 0)
+	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
+	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order07", types.Side_SIDE_BUY, "trader-A", 1, 0)
+	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -99}
+	o7conf, err := tm.market.SubmitOrder(ctx, o7)
+	require.NotNil(t, o7conf)
+	require.NoError(t, err)
+
+	// Now cause the best bid to drop and cause a reprice
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 2, 100)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	// Check we have the right amount of events
+	assert.Equal(t, uint64(10), tm.orderEventCount)
+	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
+
+	processEvents(t, tm, mdb)
+	assert.Equal(t, 2, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
+}
+
+func TestEvents_Fuzzing(t *testing.T) {
+	/*	now := time.Unix(10, 0)
+		ctx := context.Background()
+		mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
+		tm := startMarketInAuction(t, ctx, &now)
+		leaveAuction(tm, ctx, &now)
+
+		r := rand.New(rand.NewSource(99))
+
+		var (
+			traderCount int = 10
+			side        types.Side
+			price       uint64
+			size        uint64
+		)
+
+		// Create the traders
+		for i := 0; i < traderCount; i++ {
+			traderName := fmt.Sprintf("Trader%02d", i)
+			addAccountWithAmount(tm, traderName, 1000000000)
+		}
+
+		for i := 1; i < 110000; i++ {
+			//		if i%1000 == 0 {
+			fmt.Println("Processing ", i)
+			//		}
+
+			if i == 101625 || i == 43056 {
+				fmt.Println("Interesting stuff happens here", i)
+			}
+
+			randomTrader := r.Intn(traderCount)
+			traderName := fmt.Sprintf("Trader%02d", randomTrader)
+			orderID := fmt.Sprintf("Order%8d", i)
+			action := r.Intn(10)
+
+			if r.Intn(2) == 0 {
+				side = types.Side_SIDE_BUY
+			} else {
+				side = types.Side_SIDE_SELL
+			}
+
+			size = uint64(r.Int63n(100) + 1)
+
+			if action <= 2 && i > 20 {
+				// Pegged order
+				po := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, 0)
+				if side == types.Side_SIDE_BUY {
+					po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1 - r.Int63n(10)}
+				} else {
+					po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: r.Int63n(10) + 1}
+				}
+				_, _ = tm.market.SubmitOrder(ctx, po)
+				processEvents2(t, tm, mdb, i)
+				clearEvents(tm)
+			} else {
+				// Normal order
+				if side == types.Side_SIDE_BUY {
+					price = uint64(50 + r.Intn(60))
+				} else {
+					price = uint64(90 + r.Intn(60))
+				}
+				o := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, price)
+				_, _ = tm.market.SubmitOrder(ctx, o)
+				processEvents2(t, tm, mdb, i)
+				clearEvents(tm)
+			}
+		}*/
 }
