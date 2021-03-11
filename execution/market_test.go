@@ -24,9 +24,9 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/mock/gomock"
+	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const MAXMOVEUP = 1000

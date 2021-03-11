@@ -7,9 +7,8 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 
-	"google.golang.org/protobuf/types/known/wrapperspb"
-
 	"github.com/golang/mock/gomock"
+	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
