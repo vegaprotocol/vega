@@ -35,50 +35,6 @@ func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	return nil
 }
 
-func theFollowingTraders(arg1 *gherkin.DataTable) error {
-	// create the trader from the table using NotifyTraderAccount
-	for _, row := range arg1.Rows {
-		if val(row, 0) == "name" {
-			continue
-		}
-
-		partyID := val(row, 0)
-		amount := u64val(row, 1)
-
-		// expected general accounts for the trader
-		// added expected market margin accounts
-		for _, mkt := range execsetup.mkts {
-			asset, err := mkt.GetAsset()
-			if err != nil {
-				return err
-			}
-			_, err = execsetup.collateral.Deposit(context.Background(), partyID, asset, amount)
-			if err != nil {
-				return err
-			}
-
-			if !traderHaveGeneralAccount(execsetup.accs[val(row, 0)], asset) {
-				acc := account{
-					Type:    types.AccountType_ACCOUNT_TYPE_GENERAL,
-					Balance: u64val(row, 1),
-					Asset:   asset,
-				}
-				execsetup.accs[val(row, 0)] = append(execsetup.accs[val(row, 0)], acc)
-			}
-
-			acc := account{
-				Type:    types.AccountType_ACCOUNT_TYPE_MARGIN,
-				Balance: 0,
-				Market:  mkt.Id,
-				Asset:   asset,
-			}
-			execsetup.accs[val(row, 0)] = append(execsetup.accs[val(row, 0)], acc)
-		}
-
-	}
-	return nil
-}
-
 func iExpectTheTradersToHaveNewGeneralAccount(arg1 *gherkin.DataTable) error {
 	for _, row := range arg1.Rows {
 		if val(row, 0) == "name" {
