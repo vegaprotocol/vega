@@ -15,7 +15,6 @@ Feature: Test trader accounts
       | trader  | asset | amount |
       | trader1 | ETH   | 100    |
       | trader1 | VUSD  | 100    |
-    And "trader1" general accounts balance is "100"
     And "trader1" have only one account per asset
     And "trader1" have only one margin account per market
 
@@ -24,7 +23,6 @@ Feature: Test trader accounts
       | trader  | asset | amount |
       | trader1 | ETH   | 100    |
       | trader1 | VUSD  | 100    |
-    And "trader1" general accounts balance is "100"
     And "trader1" have only one account per asset
     Then The "trader1" makes a deposit of "200" into the "VUSD" account
     And "trader1" general account for asset "VUSD" balance is "300"
@@ -34,7 +32,6 @@ Feature: Test trader accounts
       | trader  | asset | amount |
       | trader1 | ETH   | 100    |
       | trader1 | VUSD  | 100    |
-    And "trader1" general accounts balance is "100"
     And "trader1" have only one account per asset
     Then The "trader1" withdraw "70" from the "VUSD" account
     And "trader1" general account for asset "VUSD" balance is "30"

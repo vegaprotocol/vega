@@ -15,9 +15,6 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | 10000  |
       | trader2 | ETH   | 10000  |
       | trader3 | ETH   | 10000  |
-    And "trader1" general accounts balance is "10000"
-    And "trader2" general accounts balance is "10000"
-    And "trader3" general accounts balance is "10000"
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -56,9 +53,6 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | 10000  |
       | trader2 | ETH   | 10000  |
       | trader3 | ETH   | 10000  |
-    And "trader1" general accounts balance is "10000"
-    And "trader2" general accounts balance is "10000"
-    And "trader3" general accounts balance is "10000"
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -114,9 +108,6 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | 10000  |
       | trader2 | ETH   | 10000  |
       | trader3 | ETH   | 10000  |
-    And "trader1" general accounts balance is "10000"
-    And "trader2" general accounts balance is "10000"
-    And "trader3" general accounts balance is "10000"
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |

@@ -15,7 +15,6 @@ Feature: Test LP orders
       | trader1          | ETH   | 100000000 |
       | sellSideProvider | ETH   | 100000000 |
       | buySideProvider  | ETH   | 100000000 |
-    And "trader1" general accounts balance is "100000000"
     Then traders place following orders with references:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |

@@ -17,11 +17,6 @@ Feature: Regression test for issue 596
       | chris   | BTC   | 10000   |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
-
-    And "edd" general accounts balance is "10000"
-    And "barney" general accounts balance is "10000"
-    And "chris" general accounts balance is "10000"
-
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -81,9 +76,6 @@ Feature: Regression test for issue 596
       | chris   | BTC   | 10000   |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
-    And "edd" general accounts balance is "10000"
-    And "barney" general accounts balance is "10000"
-    And "chris" general accounts balance is "10000"
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:

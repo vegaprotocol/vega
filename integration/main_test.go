@@ -66,7 +66,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the traders make the following deposits on asset's general account:$`, func(table *gherkin.DataTable) error {
 		return steps.TheTradersDepositAssets(execsetup.collateral, execsetup.broker, table)
 	})
-	s.Step(`^"([^"]*)" general accounts balance is "([^"]*)"$`, generalAccountsBalanceIs)
 	s.Step(`^the execution engine have these markets:$`, func(table *gherkin.DataTable) error {
 		markets := steps.TheMarkets(marketExpiry, table)
 

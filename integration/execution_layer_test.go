@@ -35,21 +35,6 @@ func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	return nil
 }
 
-func generalAccountsBalanceIs(arg1, arg2 string) error {
-	balance, _ := strconv.ParseUint(arg2, 10, 0)
-	for _, mkt := range execsetup.mkts {
-		asset, _ := mkt.GetAsset()
-		acc, err := execsetup.broker.GetTraderGeneralAccount(arg1, asset)
-		if err != nil {
-			return err
-		}
-		if acc.Balance != balance {
-			return fmt.Errorf("invalid general account balance, expected %v got %v", arg2, acc.Balance)
-		}
-	}
-	return nil
-}
-
 func haveOnlyOneAccountPerAsset(arg1 string) error {
 	assets := map[string]struct{}{}
 

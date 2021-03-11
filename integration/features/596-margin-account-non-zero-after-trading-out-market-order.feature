@@ -18,9 +18,6 @@ Feature: Regression test for issue 596
       | tamlyn  | BTC   | 10000   |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
-    And "edd" general accounts balance is "10000"
-    And "barney" general accounts balance is "10000"
-    And "chris" general accounts balance is "10000"
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -105,9 +102,6 @@ Feature: Regression test for issue 596
       | tamlyn  | BTC   | 10000   |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
-    And "edd" general accounts balance is "10000"
-    And "barney" general accounts balance is "10000"
-    And "chris" general accounts balance is "10000"
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:

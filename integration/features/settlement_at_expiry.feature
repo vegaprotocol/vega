@@ -13,7 +13,6 @@ Feature: Test mark to market settlement
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount |
       | trader1 | ETH   | 10000  |
-    And "trader1" general accounts balance is "10000"
     Then the time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
       | trader  | market id | side | volume | price | resulting trades | error                         |
@@ -25,9 +24,6 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | 10000  |
       | trader2 | ETH   | 1000   |
       | trader3 | ETH   | 5000   |
-    And "trader1" general accounts balance is "10000"
-    And "trader2" general accounts balance is "1000"
-    And "trader3" general accounts balance is "5000"
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |

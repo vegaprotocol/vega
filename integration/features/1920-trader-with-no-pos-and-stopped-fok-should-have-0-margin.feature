@@ -16,7 +16,6 @@ Feature: test for issue 1920
       | trader2 | ETH   | 100000000 |
       | trader3 | ETH   | 100000000 |
       | trader4 | ETH   | 100000000 |
-    And "trader1" general accounts balance is "10000"
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader2 | ETH/DEC19 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GFA |

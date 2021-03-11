@@ -30,7 +30,6 @@ Feature: Test trader accounts
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
 
-    And "traderGuy" general accounts balance is "10000"
     Then traders place following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -62,7 +61,6 @@ Feature: Test trader accounts
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
 
-    And "traderGuy" general accounts balance is "1"
     Then traders place following failing orders:
       | trader    | market id | side | volume | price | error               | type       |
       | traderGuy | ETH/DEC19 | sell | 1      | 1000  | margin check failed | TYPE_LIMIT |

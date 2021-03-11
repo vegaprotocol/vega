@@ -19,11 +19,6 @@ Feature: test bugfix 614 for margin calculations
       | tamlyn  | ETH   | 10000   |
       | trader1 | ETH   | 1000000 |
       | trader2 | ETH   | 1000000 |
-    And "chris" general accounts balance is "10000"
-    And "edd" general accounts balance is "10000"
-    And "barney" general accounts balance is "10000"
-    And "rebecca" general accounts balance is "10000"
-    And "tamlyn" general accounts balance is "10000"
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:

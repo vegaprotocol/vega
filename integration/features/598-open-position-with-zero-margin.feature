@@ -17,9 +17,6 @@ Feature: Regression test for issue 598
       | chris   | BTC   | 1000    |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
-    And "edd" general accounts balance is "1000"
-    And "barney" general accounts balance is "1000"
-    And "chris" general accounts balance is "1000"
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
