@@ -62,7 +62,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^The "([^"]*)" withdraw "([^"]*)" from the "([^"]*)" account$`, theWithdrawFromTheAccount)
 	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, theMakesADepositOfIntoTheAccount)
 	s.Step(`^"([^"]*)" general account for asset "([^"]*)" balance is "([^"]*)"$`, generalAccountForAssetBalanceIs)
-	s.Step(`^"([^"]*)" have only one account per asset$`, haveOnlyOneAccountPerAsset)
+	s.Step(`^"([^"]*)" have only one account per asset$`, func(owner string) error {
+		return steps.HaveOnlyOneAccountPerAsset(execsetup.broker, owner)
+	})
 	s.Step(`^the traders make the following deposits on asset's general account:$`, func(table *gherkin.DataTable) error {
 		return steps.TheTradersDepositAssets(execsetup.collateral, execsetup.broker, table)
 	})

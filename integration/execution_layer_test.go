@@ -35,25 +35,6 @@ func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	return nil
 }
 
-func haveOnlyOneAccountPerAsset(arg1 string) error {
-	assets := map[string]struct{}{}
-
-	accs := execsetup.broker.GetAccounts()
-	data := make([]types.Account, 0, len(accs))
-	for _, a := range accs {
-		data = append(data, a.Account())
-	}
-	for _, acc := range data {
-		if acc.Owner == arg1 && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
-			if _, ok := assets[acc.Asset]; ok {
-				return fmt.Errorf("trader=%v have multiple account for asset=%v", arg1, acc.Asset)
-			}
-			assets[acc.Asset] = struct{}{}
-		}
-	}
-	return nil
-}
-
 func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	// row.0 = traderID, row.1 = amount to topup
