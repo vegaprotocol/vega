@@ -1,11 +1,9 @@
 package stubs
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
@@ -103,7 +101,6 @@ func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 	return r
 }
 
-// utility func:
 func (b *BrokerStub) GetTransferResponses() []events.TransferResponse {
 	batch := b.GetBatch(events.TransferResponses)
 	if len(batch) == 0 {
@@ -286,7 +283,7 @@ func (b *BrokerStub) GetMarketSettlementAccount(market string) (types.Account, e
 	return types.Account{}, errors.New("account does not exist")
 }
 
-// returns the latest event WRT the trader's general account
+// GetTraderGeneralAccount returns the latest event WRT the trader's general account
 func (b *BrokerStub) GetTraderGeneralAccount(trader, asset string) (ga types.Account, err error) {
 	batch := b.GetAccounts()
 	err = errors.New("account does not exist")
@@ -347,7 +344,7 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 			matched = true
 		}
 	}
-	if matched == true {
+	if matched {
 		return last, nil
 	}
 	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
@@ -367,59 +364,3 @@ func (b *BrokerStub) ResetType(t events.Type) {
 	b.data[t] = []events.Event{}
 	b.mu.Unlock()
 }
-
-func (b *BrokerStub) Reset() {
-	b.mu.Lock()
-	b.data = map[events.Type][]events.Event{}
-	b.mu.Unlock()
-}
-
-type TimeStub struct {
-	Now    time.Time
-	Notify func(context.Context, time.Time)
-}
-
-func (t *TimeStub) GetTimeNow() (time.Time, error) {
-	return t.Now, nil
-}
-
-func (t *TimeStub) SetTime(newNow time.Time) {
-	t.Now = newNow
-	t.Notify(context.Background(), t.Now)
-}
-
-func (t *TimeStub) NotifyOnTick(f func(context.Context, time.Time)) {
-	t.Notify = f
-}
-
-type ProposalStub struct {
-	data []types.Proposal
-}
-
-func NewProposalStub() *ProposalStub {
-	return &ProposalStub{
-		data: []types.Proposal{},
-	}
-}
-
-func (p *ProposalStub) Add(v types.Proposal) {
-	p.data = append(p.data, v)
-}
-
-func (p *ProposalStub) Flush() {}
-
-type VoteStub struct {
-	data []types.Vote
-}
-
-func NewVoteStub() *VoteStub {
-	return &VoteStub{
-		data: []types.Vote{},
-	}
-}
-
-func (v *VoteStub) Add(vote types.Vote) {
-	v.data = append(v.data, vote)
-}
-
-func (v *VoteStub) Flush() {}
