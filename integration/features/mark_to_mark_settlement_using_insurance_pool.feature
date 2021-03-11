@@ -33,7 +33,7 @@ Feature: Test mark to market settlement with insurance pool
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |   5122 |       0 |
-      | trader2 | ETH   | ETH/DEC19 |    132 |    9868 |
+      | trader2 | ETH   | ETH/DEC19 |    133 |    9867 |
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
