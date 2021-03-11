@@ -31,7 +31,7 @@ Feature: test for issue 1920
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK |
 
     Then the margins levels for the traders are:
-      | trader  | id        | maintenance | search | initial | release |
+      | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 100         | 110    | 120     | 140     |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |

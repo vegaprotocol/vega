@@ -94,7 +94,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the markets starts on "([^"]*)" and expires on "([^"]*)"$`, theMarketsStartsOnAndExpiresOn)
 	s.Step(`^the time is updated to "([^"]*)"$`, theTimeIsUpdatedTo)
 	s.Step(`^traders cannot place the following orders anymore:$`, tradersCannotPlaceTheFollowingOrdersAnymore)
-	s.Step(`^the margins levels for the traders are:$`, theMarginsLevelsForTheTradersAre)
+	s.Step(`^the margins levels for the traders are:$`, func(table *gherkin.DataTable) error {
+		return steps.TheMarginsLevelsForTheTradersAre(execsetup.broker, table)
+	})
 	s.Step(`^traders place following failing orders:$`, tradersPlaceFollowingFailingOrders)
 	s.Step(`^the following orders are rejected:$`, theFollowingOrdersAreRejected)
 	s.Step(`^traders place following orders with references:$`, tradersPlaceFollowingOrdersWithReferences)

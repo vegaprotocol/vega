@@ -29,7 +29,7 @@ Feature: Position resolution case 3
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC |
 
     Then the margins levels for the traders are:
-      | trader           | id        | maintenance | search | initial | release |
+      | trader           | market id | maintenance | search | initial | release |
       | designatedLooser | ETH/DEC19 | 2900        | 9280   | 11600   | 14500   |
 
 # insurance pool generation - modify order book
@@ -42,7 +42,7 @@ Feature: Position resolution case 3
 
 # check the trader accounts
     Then I expect the trader to have a margin:
-      | trader           | asset | id        | margin | general |
+      | trader           | asset | market id | margin | general |
       | designatedLooser | BTC   | ETH/DEC19 | 11600  | 400     |
 
 # insurance pool generation - set new mark price (and trigger closeout)
@@ -58,7 +58,7 @@ Feature: Position resolution case 3
 
 # checking margins
     Then I expect the trader to have a margin:
-      | trader           | asset | id        | margin | general |
+      | trader           | asset | market id | margin | general |
       | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
 # then we make sure the insurance pool collected the funds

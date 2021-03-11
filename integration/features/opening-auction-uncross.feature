@@ -30,11 +30,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | trader2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     Then the margins levels for the traders are:
-      | trader  | id        | maintenance | search | initial | release |
+      | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 25201       | 27721  | 30241   | 65521   |
       | trader2 | ETH/DEC19 |       23899 |  26289 |   28679 |   57458 |
     Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general  |
+      | trader  | asset | market id | margin | general  |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
       | trader2 | BTC   | ETH/DEC19 | 28679  | 99971321 |
     And traders withdraw balance:
@@ -42,7 +42,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | BTC   | 99969759 |
       | trader2 | BTC   | 99971321 |
     Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+      | trader  | asset | market id | margin | general |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0       |
       | trader2 | BTC   | ETH/DEC19 | 28679  | 0       |
     Then the opening auction period for market "ETH/DEC19" ends
@@ -66,6 +66,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | from    | to      | from account type   | to account type      | market ID | amount | asset |
       | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9479   | BTC   |
     Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+      | trader  | asset | market id | margin | general |
       | trader2 | BTC   | ETH/DEC19 | 19200  | 9479    |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0       |

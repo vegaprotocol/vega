@@ -48,7 +48,7 @@ Feature: test bugfix 614 for margin calculations
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC |
     Then the margins levels for the traders are:
-      | trader | id        | maintenance | search | initial | release |
+      | trader | market id | maintenance | search | initial | release |
       | tamlyn | ETH/DEC19 | 988         | 3161   | 3952    | 4940    |
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
