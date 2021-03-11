@@ -3,6 +3,7 @@ package execution_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -852,72 +853,90 @@ func TestEvents_PeggedOrders(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 }
 
+func TestEventStream(t *testing.T) {
+	now := time.Unix(10, 0)
+	ctx := context.Background()
+	tm := startMarketInAuction(t, ctx, &now)
+	leaveAuction(tm, ctx, &now)
+	r := rand.New(rand.NewSource(99))
+	loopCount := 100000
+
+	for i := 0; i < loopCount; i++ {
+		orderCount := r.Intn(100000) + 1
+		clearEvents(tm)
+		fmt.Printf("Testing event bus with %d messages\n", orderCount)
+		tm.market.SendEvents(ctx, orderCount)
+		require.Equal(t, uint64(orderCount), tm.orderEventCount)
+	}
+}
+
 func TestEvents_Fuzzing(t *testing.T) {
-	/*	now := time.Unix(10, 0)
-		ctx := context.Background()
-		mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
-		tm := startMarketInAuction(t, ctx, &now)
-		leaveAuction(tm, ctx, &now)
+	now := time.Unix(10, 0)
+	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
+	tm := startMarketInAuction(t, ctx, &now)
+	leaveAuction(tm, ctx, &now)
 
-		r := rand.New(rand.NewSource(99))
+	r := rand.New(rand.NewSource(99))
 
-		var (
-			traderCount int = 10
-			side        types.Side
-			price       uint64
-			size        uint64
-		)
+	var (
+		traderCount int = 10
+		side        types.Side
+		price       uint64
+		size        uint64
+	)
 
-		// Create the traders
-		for i := 0; i < traderCount; i++ {
-			traderName := fmt.Sprintf("Trader%02d", i)
-			addAccountWithAmount(tm, traderName, 1000000000)
+	// Create the traders
+	for i := 0; i < traderCount; i++ {
+		traderName := fmt.Sprintf("Trader%02d", i)
+		addAccountWithAmount(tm, traderName, 1000000000)
+	}
+
+	for i := 1; i < 10000000; i++ {
+		if i%10000 == 0 {
+			fmt.Println("Processing ", i)
 		}
 
-		for i := 1; i < 110000; i++ {
-			//		if i%1000 == 0 {
-			fmt.Println("Processing ", i)
-			//		}
+		randomTrader := r.Intn(traderCount)
+		traderName := fmt.Sprintf("Trader%02d", randomTrader)
+		orderID := fmt.Sprintf("Order%8d", i)
+		action := r.Intn(1000)
 
-			if i == 101625 || i == 43056 {
-				fmt.Println("Interesting stuff happens here", i)
-			}
+		if r.Intn(2) == 0 {
+			side = types.Side_SIDE_BUY
+		} else {
+			side = types.Side_SIDE_SELL
+		}
 
-			randomTrader := r.Intn(traderCount)
-			traderName := fmt.Sprintf("Trader%02d", randomTrader)
-			orderID := fmt.Sprintf("Order%8d", i)
-			action := r.Intn(10)
+		size = uint64(r.Int63n(100) + 1)
 
-			if r.Intn(2) == 0 {
-				side = types.Side_SIDE_BUY
+		if action <= 200 && i > 20 {
+			// Pegged order
+			po := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, 0)
+			if side == types.Side_SIDE_BUY {
+				po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1 - r.Int63n(10)}
 			} else {
-				side = types.Side_SIDE_SELL
+				po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: r.Int63n(10) + 1}
 			}
-
-			size = uint64(r.Int63n(100) + 1)
-
-			if action <= 2 && i > 20 {
-				// Pegged order
-				po := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, 0)
-				if side == types.Side_SIDE_BUY {
-					po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1 - r.Int63n(10)}
-				} else {
-					po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: r.Int63n(10) + 1}
-				}
-				_, _ = tm.market.SubmitOrder(ctx, po)
-				processEvents2(t, tm, mdb, i)
-				clearEvents(tm)
+			_, _ = tm.market.SubmitOrder(ctx, po)
+			processEvents2(t, tm, mdb, i)
+			clearEvents(tm)
+		} else if action < 999 {
+			// Normal order
+			if side == types.Side_SIDE_BUY {
+				price = uint64(50 + r.Intn(60))
 			} else {
-				// Normal order
-				if side == types.Side_SIDE_BUY {
-					price = uint64(50 + r.Intn(60))
-				} else {
-					price = uint64(90 + r.Intn(60))
-				}
-				o := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, price)
-				_, _ = tm.market.SubmitOrder(ctx, o)
-				processEvents2(t, tm, mdb, i)
-				clearEvents(tm)
+				price = uint64(90 + r.Intn(60))
 			}
-		}*/
+			o := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, price)
+			_, _ = tm.market.SubmitOrder(ctx, o)
+			processEvents2(t, tm, mdb, i)
+			clearEvents(tm)
+		} else {
+			// Cancel all the order for a trader
+			tm.market.CancelAllOrders(ctx, traderName)
+			processEvents2(t, tm, mdb, i)
+			clearEvents(tm)
+		}
+	}
 }

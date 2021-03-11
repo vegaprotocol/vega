@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -140,4 +141,18 @@ func (m *Market) ValidateOrder(order *types.Order) bool {
 		return false
 	}
 	return true
+}
+
+func (m *Market) SendEvents(ctx context.Context, orderCount int) {
+	order := &types.Order{
+		Price:     1111,
+		Size:      2222,
+		Remaining: 3333,
+		Id:        "wiqoweqoiwopqiweuoiwe",
+	}
+
+	for i := 0; i < orderCount; i++ {
+		order.UpdatedAt = int64(i)
+		m.broker.Send(events.NewOrderEvent(ctx, order))
+	}
 }
