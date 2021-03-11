@@ -2287,6 +2287,7 @@ func (m riskFake) Asset() string                     { return m.asset }
 func (m riskFake) MarketID() string                  { return "" }
 func (m riskFake) MarginBalance() uint64             { return 0 }
 func (m riskFake) GeneralBalance() uint64            { return 0 }
+func (m riskFake) BondBalance() uint64               { return 0 }
 func (m riskFake) MarginShortFall() uint64           { return m.marginShortFall }
 
 type transferFees struct {
