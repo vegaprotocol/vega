@@ -19,7 +19,7 @@ Feature: Test mark to market settlement with insurance pool
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 1      | 6001  | 0                | TYPE_LIMIT  | TIF_GTC | 
 
@@ -33,7 +33,7 @@ Feature: Test mark to market settlement with insurance pool
     Then I expect the trader to have a margin:
       | trader  | asset | id        | margin | general |
       | trader1 | ETH   | ETH/DEC19 |   5122 |       0 |
-      | trader2 | ETH   | ETH/DEC19 |    132 |    9868 |
+      | trader2 | ETH   | ETH/DEC19 |    133 |    9867 |
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
