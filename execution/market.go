@@ -1948,13 +1948,6 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	risk, closed, err := m.calcMargins(ctx, pos, order)
 	// margin error
 	if err != nil {
-		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
-		if err == ErrMarginCheckFailed {
-			order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
-		}
-		// this order was rejected, remove the position
-		m.position.UnregisterOrder(order)
 		return err
 	}
 	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those traders are distressed

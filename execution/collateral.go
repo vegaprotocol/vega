@@ -12,7 +12,7 @@ func (m *Market) transferMargins(ctx context.Context, risk []events.Risk, closed
 	if m.as.InAuction() {
 		return m.transferMarginsAuction(ctx, risk, closed)
 	}
-	return nil
+	return m.transferMarginsContinuous(ctx, risk, closed)
 }
 
 func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk, distressed []events.MarketPosition) error {

@@ -731,7 +731,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailAfte
 	tm.EndOpeningAuction(t, auctionEnd, false)
 
 	t.Run("margin account is updated with margins", func(t *testing.T) {
-		acc, err := tm.collateralEngine.GetPartyMarginAccount(
+		acc, err := tm.collateralEngine.GetPartyBondAccount(
+			tm.market.GetID(), lpparty, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, 150000, int(acc.Balance))
+		// acc, err := tm.collateralEngine.GetPartyMarginAccount(
+		acc, err = tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
 		assert.Equal(t, 581648, int(acc.Balance))
