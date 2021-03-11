@@ -92,7 +92,9 @@ func FeatureContext(s *godog.Suite) {
 		return steps.SettlementAccountBalanceIsForMarket(execsetup.broker, amountStr, market)
 	})
 	s.Step(`^the insurance pool initial balance for the markets is "([^"]*)":$`, theInsurancePoolInitialBalanceForTheMarketsIs)
-	s.Step(`^the insurance pool balance is "([^"]*)" for the market "([^"]*)"$`, theInsurancePoolBalanceIsForTheMarket)
+	s.Step(`^the insurance pool balance is "([^"]*)" for the market "([^"]*)"$`, func(amountStr, market string) error {
+		return steps.TheInsurancePoolBalanceIsForTheMarket(execsetup.broker, amountStr, market)
+	})
 	s.Step(`^the markets starts on "([^"]*)" and expires on "([^"]*)"$`, theMarketsStartsOnAndExpiresOn)
 	s.Step(`^the time is updated to "([^"]*)"$`, theTimeIsUpdatedTo)
 	s.Step(`^traders cannot place the following orders anymore:$`, tradersCannotPlaceTheFollowingOrdersAnymore)

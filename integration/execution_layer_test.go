@@ -342,18 +342,6 @@ func theFollowingTransfersHappened(arg1 *gherkin.DataTable) error {
 	return nil
 }
 
-func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.broker.GetMarketInsurancePoolAccount(market)
-	if err != nil {
-		return err
-	}
-	if amount != acc.Balance {
-		return fmt.Errorf("invalid balance for market insurance pool, expected %v, got %v", amount, acc.Balance)
-	}
-	return nil
-}
-
 func theTimeIsUpdatedTo(newTime string) error {
 	t, err := time.Parse("2006-01-02T15:04:05Z", newTime)
 	if err != nil {
