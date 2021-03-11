@@ -17,8 +17,8 @@ type request struct {
 type simpleDistributor struct {
 	log             *logging.Logger
 	marketID        string
-	expectCollected int64
-	collected       int64
+	expectCollected uint64
+	collected       uint64
 	requests        []request
 	ts              int64
 }
@@ -40,14 +40,14 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	}
 
 	var (
-		totalamount int64
+		totalamount uint64
 		evts        = make([]events.Event, 0, len(s.requests))
 		evt         *events.LossSoc
 	)
 	for _, v := range s.requests {
-		totalamount += int64(math.Floor(v.amount))
-		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, int64(math.Floor(v.amount))-v.request.Amount.Amount, s.ts)
-		v.request.Amount.Amount = int64(math.Floor(v.amount))
+		totalamount += uint64(math.Floor(v.amount))
+		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, int64(math.Floor(v.amount))-int64(v.request.Amount.Amount), s.ts)
+		v.request.Amount.Amount = uint64(math.Floor(v.amount))
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
 			logging.Int64("amount", evt.AmountLost()),
@@ -64,7 +64,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 			evt.Context(),
 			evt.PartyID(),
 			evt.MarketID(),
-			evt.AmountLost()+mismatch,
+			evt.AmountLost()+int64(mismatch),
 			s.ts)
 	}
 

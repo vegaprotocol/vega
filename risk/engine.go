@@ -202,13 +202,16 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		if curMargin >= levels.InitialMargin {
 			continue
 		}
-		minAmount := max(int64(levels.MaintenanceMargin)-int64(curMargin), 0)
+		var minAmount uint64
+		if levels.MaintenanceMargin > curMargin {
+			minAmount = maxUint(levels.MaintenanceMargin-curMargin, 0)
+		}
 		t := &types.Transfer{
 			Owner: evt.Party(),
 			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 			Amount: &types.FinancialAmount{
 				Asset:  asset,
-				Amount: int64(levels.InitialMargin - curMargin), // we know curBalance is less than initial
+				Amount: levels.InitialMargin - curMargin, // we know curBalance is less than initial
 			},
 			MinAmount: minAmount,
 		}
@@ -262,7 +265,11 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	if curBalance >= margins.InitialMargin {
 		return nil, nil
 	}
-	minAmount := max(int64(margins.MaintenanceMargin)-int64(curBalance), 0)
+
+	var minAmount uint64
+	if margins.MaintenanceMargin > curBalance {
+		minAmount = maxUint(margins.MaintenanceMargin-curBalance, 0)
+	}
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
 	trnsfr := &types.Transfer{
@@ -270,7 +277,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: int64(margins.InitialMargin - curBalance),
+			Amount: margins.InitialMargin - curBalance,
 		},
 		MinAmount: minAmount, // minimal amount == maintenance
 	}
@@ -336,12 +343,12 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		var trnsfr *types.Transfer
 		// case 2 -> not enough margin
 		if curMargin < margins.SearchLevel {
-			var minAmount int64
+			var minAmount uint64
 
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			if curMargin < margins.MaintenanceMargin {
-				minAmount = int64(margins.MaintenanceMargin - curMargin)
+				minAmount = margins.MaintenanceMargin - curMargin
 			}
 
 			// then the rest is common if we are before or after MaintenanceLevel,
@@ -351,7 +358,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
-					Amount: int64(margins.InitialMargin - curMargin),
+					Amount: margins.InitialMargin - curMargin,
 				},
 				MinAmount: minAmount,
 			}
@@ -362,7 +369,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
-					Amount: int64(curMargin - margins.InitialMargin),
+					Amount: curMargin - margins.InitialMargin,
 				},
 				MinAmount: 0,
 			}
@@ -419,7 +426,7 @@ func (e *Engine) ExpectMargins(
 	return
 }
 
-func (m marginChange) Amount() int64 {
+func (m marginChange) Amount() uint64 {
 	if m.transfer == nil {
 		return 0
 	}
@@ -433,4 +440,11 @@ func (m marginChange) Transfer() *types.Transfer {
 
 func (m marginChange) MarginLevels() *types.MarginLevels {
 	return m.margins
+}
+
+func maxUint(a, b uint64) uint64 {
+	if a > b {
+		return a
+	}
+	return b
 }

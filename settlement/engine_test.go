@@ -78,14 +78,14 @@ func testSettleExpiredSuccess(t *testing.T) {
 		{
 			Owner: data[1].trader,
 			Amount: &types.FinancialAmount{
-				Amount: -500,
+				Amount: 500,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
-				Amount: -500,
+				Amount: 500,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
@@ -99,9 +99,11 @@ func testSettleExpiredSuccess(t *testing.T) {
 	} // }}}
 	oraclePrice := uint64(1100)
 	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
-		sp := int64(oraclePrice - price) * size
+		if size < 0 {
+			size *= -1
+		}
 		return &types.FinancialAmount{
-			Amount: sp,
+			Amount: (oraclePrice - price) * uint64(size),
 		}, nil
 	}
 	positions := engine.getExpiryPositions(data...)
@@ -147,14 +149,14 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 		{
 			Owner: data[1].trader,
 			Amount: &types.FinancialAmount{
-				Amount: -500,
+				Amount: 500,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
-				Amount: -500,
+				Amount: 500,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},

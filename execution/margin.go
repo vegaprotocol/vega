@@ -125,11 +125,11 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		riskRollback = &types.Transfer{
 			Owner: risk.Party(),
 			Amount: &types.FinancialAmount{
-				Amount: int64(tr.Transfers[0].Amount),
+				Amount: tr.Transfers[0].Amount,
 				Asset:  asset,
 			},
 			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
-			MinAmount: int64(tr.Transfers[0].Amount),
+			MinAmount: tr.Transfers[0].Amount,
 		}
 	}
 	return riskRollback, nil
