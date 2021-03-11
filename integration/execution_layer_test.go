@@ -260,31 +260,6 @@ func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error 
 	return nil
 }
 
-func tradersCancelsTheFollowingFilledOrdersReference(refs *gherkin.DataTable) error {
-	for _, row := range refs.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		o, err := execsetup.broker.GetByReference(val(row, 0), val(row, 1))
-		if err != nil {
-			return err
-		}
-
-		cancel := types.OrderCancellation{
-			OrderId:  o.Id,
-			PartyId:  o.PartyId,
-			MarketId: o.MarketId,
-		}
-
-		if _, err = execsetup.engine.CancelOrder(context.Background(), &cancel); err == nil {
-			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyId, o.Reference)
-		}
-	}
-
-	return nil
-}
-
 func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 	for _, row := range refs.Rows {
 		if val(row, 0) == "trader" {
