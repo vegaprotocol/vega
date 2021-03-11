@@ -11,16 +11,11 @@ Feature: Position resolution case 1
 
   Scenario: https://docs.google.com/spreadsheets/d/1D433fpt7FUCk04dZ9FHDVy-4hA6Bw_a2/edit#gid=956988479
 # setup accounts
-    Given the following traders:
-      | name             | amount        |
-      | sellSideProvider | 1000000000000 |
-      | buySideProvider  | 1000000000000 |
-      | designatedLooser | 11600         |
-    Then I Expect the traders to have new general account:
-      | name             | asset |
-      | designatedLooser | BTC   |
-      | sellSideProvider | BTC   |
-      | buySideProvider  | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader           | asset | amount        |
+      | sellSideProvider | BTC   | 1000000000000 |
+      | buySideProvider  | BTC   | 1000000000000 |
+      | designatedLooser | BTC   | 11600         |
 
 # insurance pool generation - setup orderbook
     Then traders place following orders with references:

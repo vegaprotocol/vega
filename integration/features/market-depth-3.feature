@@ -11,22 +11,14 @@ Feature: Test market depth events for pegged orders (with BID and ASK price)
 
   Scenario: Ensure the expect order events for pegged orders are produced for all references
 # setup accounts
-    Given the following traders:
-      | name             | amount    |
-      | sellSideProvider | 100000000 |
-      | buySideProvider  | 100000000 |
-      | pegged1          | 5000000   |
-      | pegged2          | 5000000   |
-      | pegged3          | 5000000   |
-      | pegged4          | 5000000   |
-    Then I Expect the traders to have new general account:
-      | name             | asset |
-      | pegged1          | BTC   |
-      | pegged2          | BTC   |
-      | pegged3          | BTC   |
-      | pegged4          | BTC   |
-      | sellSideProvider | BTC   |
-      | buySideProvider  | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader           | asset | amount    |
+      | sellSideProvider | BTC   | 100000000 |
+      | buySideProvider  | BTC   | 100000000 |
+      | pegged1          | BTC   | 5000000   |
+      | pegged2          | BTC   | 5000000   |
+      | pegged3          | BTC   | 5000000   |
+      | pegged4          | BTC   | 5000000   |
 # setup pegged orders
     Then traders place pegged orders:
       | trader  | market id | side | volume | reference | offset | price |

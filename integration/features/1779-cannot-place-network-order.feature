@@ -10,12 +10,9 @@ Feature: Cannot place an network order
       | prices.ETH.value | 42    |
 
   Scenario: an order is rejected if a trader try to place an order with type NETWORK
-    Given the following traders:
-      | name    | amount |
-      | trader1 | 1      |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount |
+      | trader1 | ETH   | 1      |
     And "trader1" general accounts balance is "1"
     Then traders place following failing orders:
       | trader  | market id | side | volume | price | error              | type         |

@@ -11,16 +11,11 @@ Feature: Regression test for issue 596
 
   Scenario: Traded out position but monies left in margin account
 # setup accounts
-    Given the following traders:
-      | name             | amount     |
-      | traderGuy        | 1000000000 |
-      | sellSideProvider | 1000000000 |
-      | buySideProvider  | 1000000000 |
-    Then I Expect the traders to have new general account:
-      | name             | asset |
-      | traderGuy        | BTC   |
-      | sellSideProvider | BTC   |
-      | buySideProvider  | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader           | asset | amount     |
+      | traderGuy        | BTC   | 1000000000 |
+      | sellSideProvider | BTC   | 1000000000 |
+      | buySideProvider  | BTC   | 1000000000 |
 # setup previous mark price
     Then traders place following orders:
       | trader           | market id | side | volume | price    | resulting trades | type       | tif     |

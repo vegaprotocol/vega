@@ -12,22 +12,14 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
 
   Scenario: Check order events with larger pegged orders, and lower balance
 # setup accounts
-    Given the following traders:
-      | name             | amount    |
-      | sellSideProvider | 100000000 |
-      | buySideProvider  | 100000000 |
-      | pegged1          | 50000     |
-      | pegged2          | 50000     |
-      | pegged3          | 50000     |
-      | pegged4          | 50000     |
-    Then I Expect the traders to have new general account:
-      | name             | asset |
-      | pegged1          | BTC   |
-      | pegged2          | BTC   |
-      | pegged3          | BTC   |
-      | pegged4          | BTC   |
-      | sellSideProvider | BTC   |
-      | buySideProvider  | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader           | asset | amount    |
+      | sellSideProvider | BTC   | 100000000 |
+      | buySideProvider  | BTC   | 100000000 |
+      | pegged1          | BTC   | 50000     |
+      | pegged2          | BTC   | 50000     |
+      | pegged3          | BTC   | 50000     |
+      | pegged4          | BTC   | 50000     |
 # setup pegged orders
     Then traders place pegged orders:
       | trader  | market id | side | volume | reference | offset | price |

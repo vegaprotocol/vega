@@ -11,13 +11,13 @@ Feature: Distressed traders should not have general balance left
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached
-    Given the following traders:
-      | name    | amount         |
-      | trader1 | 10000000000000 |
-      | trader2 | 10000000000000 |
-      | trader3 | 24000          |
-      | trader4 | 10000000000000 |
-      | trader5 | 10000000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount         |
+      | trader1 | ETH   | 10000000000000 |
+      | trader2 | ETH   | 10000000000000 |
+      | trader3 | ETH   | 24000          |
+      | trader4 | ETH   | 10000000000000 |
+      | trader5 | ETH   | 10000000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |

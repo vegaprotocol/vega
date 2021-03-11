@@ -12,16 +12,11 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
 
   Scenario: set up 2 traders with balance
     # setup accounts
-    Given the following traders:
-      | name    | amount     |
-      | trader1 | 1000000000 |
-      | trader2 | 1000000000 |
-      | trader3 | 1000000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
-      | trader2 | ETH   |
-      | trader3 | ETH   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount     |
+      | trader1 | ETH   | 1000000000 |
+      | trader2 | ETH   | 1000000000 |
+      | trader3 | ETH   | 1000000000 |
 
     # place orders and generate trades - slippage 100
     Then traders place following orders with references:

@@ -10,18 +10,12 @@ Feature: Regression test for issue 767
       | prices.ETH.value | 42    |
 
   Scenario: Traders place orders meeting the maintenance margin, but not the initial margin requirements, and can close out
-    Given the following traders:
-      | name    | amount  |
-      | edd     | 1000    |
-      | barney  | 1000    |
-      | trader1 | 1000000 |
-      | trader2 | 1000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | edd     | BTC   |
-      | barney  | BTC   |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount  |
+      | edd     | BTC   | 1000    |
+      | barney  | BTC   | 1000    |
+      | trader1 | BTC   | 1000000 |
+      | trader2 | BTC   | 1000000 |
     And "edd" general accounts balance is "1000"
     And "barney" general accounts balance is "1000"
 

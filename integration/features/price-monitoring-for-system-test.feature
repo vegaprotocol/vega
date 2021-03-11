@@ -11,12 +11,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
 
   Scenario: Scenario for the system test with opening auction
-    Given the following traders:
-      | name    | amount       |
-      | trader1 | 100000000000 |
-      | trader2 | 100000000000 |
-      | trader3 | 100000000000 |
-      | trader4 | 100000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 100000000000 |
+      | trader2 | ETH   | 100000000000 |
+      | trader3 | ETH   | 100000000000 |
+      | trader4 | ETH   | 100000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |

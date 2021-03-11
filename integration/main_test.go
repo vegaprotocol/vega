@@ -63,10 +63,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, theMakesADepositOfIntoTheAccount)
 	s.Step(`^"([^"]*)" general account for asset "([^"]*)" balance is "([^"]*)"$`, generalAccountForAssetBalanceIs)
 	s.Step(`^"([^"]*)" have only one account per asset$`, haveOnlyOneAccountPerAsset)
-	s.Step(`^the following traders:$`, func(table *gherkin.DataTable) error {
-		return steps.TheFollowingTraders(execsetup.collateral, execsetup.mkts, table)
+	s.Step(`^the traders make the following deposits on asset's general account:$`, func(table *gherkin.DataTable) error {
+		return steps.TheTradersDepositAssets(execsetup.collateral, execsetup.broker, table)
 	})
-	s.Step(`^I Expect the traders to have new general account:$`, iExpectTheTradersToHaveNewGeneralAccount)
 	s.Step(`^"([^"]*)" general accounts balance is "([^"]*)"$`, generalAccountsBalanceIs)
 	s.Step(`^the execution engine have these markets:$`, func(table *gherkin.DataTable) error {
 		markets := steps.TheMarkets(marketExpiry, table)

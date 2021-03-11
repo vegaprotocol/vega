@@ -10,12 +10,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | prices.ETH.value | 42    |
 
   Scenario: Auction triggered by 1st trigger (lower bound breached)
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
-      | trader3 | 10000000000 |
-      | trader4 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
+      | trader3 | ETH   | 10000000000 |
+      | trader4 | ETH   | 10000000000 |
 
     # Trigger an auction to set the mark price
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
@@ -83,12 +83,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price for the market "ETH/DEC20" is "104251"
 
   Scenario: Auction triggered by 1st trigger, upper bound
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
-      | trader3 | 10000000000 |
-      | trader4 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
+      | trader3 | ETH   | 10000000000 |
+      | trader4 | ETH   | 10000000000 |
 
     # Trigger an auction to set the mark price
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
@@ -156,12 +156,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price for the market "ETH/DEC20" is "104251"
 
   Scenario: Auction triggered by 1 trigger (upper bound breached)
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
-      | trader3 | 10000000000 |
-      | trader4 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
+      | trader3 | ETH   | 10000000000 |
+      | trader4 | ETH   | 10000000000 |
 
     # Trigger an auction to set the mark price
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
@@ -227,12 +227,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price for the market "ETH/DEC20" is "104251"
 
   Scenario: Auction triggered by both triggers (lower bound breached)
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
-      | trader3 | 10000000000 |
-      | trader4 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
+      | trader3 | ETH   | 10000000000 |
+      | trader4 | ETH   | 10000000000 |
 
     # Trigger an auction to set the mark price
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
@@ -310,12 +310,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price for the market "ETH/DEC20" is "104251"
 
   Scenario: Auction triggered by both triggers, upper bound
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
-      | trader3 | 10000000000 |
-      | trader4 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
+      | trader3 | ETH   | 10000000000 |
+      | trader4 | ETH   | 10000000000 |
 
     # Trigger an auction to set the mark price
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
@@ -393,12 +393,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price for the market "ETH/DEC20" is "104251"
 
   Scenario: Auction triggered by 1st trigger (lower bound breached), extended by second (upper bound)
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
-      | trader3 | 10000000000 |
-      | trader4 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
+      | trader3 | ETH   | 10000000000 |
+      | trader4 | ETH   | 10000000000 |
 
     # Trigger an auction to set the mark price
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"

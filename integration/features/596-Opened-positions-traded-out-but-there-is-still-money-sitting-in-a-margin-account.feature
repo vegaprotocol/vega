@@ -3,26 +3,21 @@ Feature: Regression test for issue 596
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | quote name | asset |  risk model | lamd/long | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading |  | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 | BTC        | BTC   |  forward    | 0.001     | 0.00011407711613050422 | 0              | 0.016           | 2.0   | 1.4            | 1.2            | 1.1           | 42               | 1                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              |  | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset | risk model | lamd/long | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading |  | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 | BTC        | BTC   | forward    | 0.001     | 0.00011407711613050422 | 0              | 0.016           | 2.0   | 1.4            | 1.2            | 1.1           | 42               | 1                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              |  | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
+
   Scenario: Traded out position but monies left in margin account
-    Given the following traders:
-      | name    | amount  |
-      | edd     | 10000   |
-      | barney  | 10000   |
-      | chris   | 10000   |
-      | trader1 | 1000000 |
-      | trader2 | 1000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | edd     | BTC   |
-      | barney  | BTC   |
-      | chris   | BTC   |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount  |
+      | edd     | BTC   | 10000   |
+      | barney  | BTC   | 10000   |
+      | chris   | BTC   | 10000   |
+      | trader1 | BTC   | 1000000 |
+      | trader2 | BTC   | 1000000 |
+
     And "edd" general accounts balance is "10000"
     And "barney" general accounts balance is "10000"
     And "chris" general accounts balance is "10000"
@@ -79,20 +74,13 @@ Feature: Regression test for issue 596
 
 
   Scenario: Traded out position, with cancelled half traded order, but monies left in margin account
-    Given the following traders:
-      | name    | amount  |
-      | edd     | 10000   |
-      | barney  | 10000   |
-      | chris   | 10000   |
-      | trader1 | 1000000 |
-      | trader2 | 1000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | edd     | BTC   |
-      | barney  | BTC   |
-      | chris   | BTC   |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount  |
+      | edd     | BTC   | 10000   |
+      | barney  | BTC   | 10000   |
+      | chris   | BTC   | 10000   |
+      | trader1 | BTC   | 1000000 |
+      | trader2 | BTC   | 1000000 |
     And "edd" general accounts balance is "10000"
     And "barney" general accounts balance is "10000"
     And "chris" general accounts balance is "10000"

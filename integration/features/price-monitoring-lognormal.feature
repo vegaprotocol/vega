@@ -11,10 +11,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -48,10 +48,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
 
   Scenario: Non-persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates.
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -83,10 +83,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.
 
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -124,10 +124,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Persistent order results in an auction (one trigger breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
 
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -164,10 +164,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Non-persistent order results in an auction (one trigger breached), no orders placed during auction and auction terminates
 
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -204,10 +204,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in a trade with indicative price outside the price monitoring bounds, hence auction get extended, no further orders placed, auction concludes.
 
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -263,10 +263,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes.
 
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |

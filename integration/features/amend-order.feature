@@ -11,12 +11,9 @@ Feature: Amend orders
 
   Scenario: Amend rejected for non existing order
 # setup accounts
-    Given the following traders:
-      | name  | amount |
-      | myboi | 10000  |
-    Then I Expect the traders to have new general account:
-      | name  | asset |
-      | myboi | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader | asset | amount |
+      | myboi  | BTC   | 10000  |
 
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -33,15 +30,11 @@ Feature: Amend orders
 
   Scenario: Reduce size success and not loosing position in order book
 # setup accounts
-    Given the following traders:
-      | name   | amount |
-      | myboi  | 10000  |
-      | myboi2 | 10000  |
-      | myboi3 | 10000  |
-    Then I Expect the traders to have new general account:
-      | name  | asset |
-      | myboi | BTC   |
-
+    Given the traders make the following deposits on asset's general account:
+      | trader | asset | amount |
+      | myboi  | BTC   | 10000  |
+      | myboi2 | BTC   | 10000  |
+      | myboi3 | BTC   | 10000  |
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
@@ -58,21 +51,17 @@ Feature: Amend orders
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  | 3      | 1     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
-      Then the following trades happened:
-        | buyer | seller | price | volume |
-        | myboi3 | myboi  |     1 |      3 |
+    Then the following trades happened:
+      | buyer  | seller | price | volume |
+      | myboi3 | myboi  | 1     | 3      |
 
   Scenario: Increase size success and loosing position in order book
 # setup accounts
-    Given the following traders:
-      | name   | amount |
-      | myboi  | 10000  |
-      | myboi2 | 10000  |
-      | myboi3 | 10000  |
-    Then I Expect the traders to have new general account:
-      | name  | asset |
-      | myboi | BTC   |
-
+    Given the traders make the following deposits on asset's general account:
+      | trader | asset | amount |
+      | myboi  | BTC   | 10000  |
+      | myboi2 | BTC   | 10000  |
+      | myboi3 | BTC   | 10000  |
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
@@ -94,15 +83,11 @@ Feature: Amend orders
 
   Scenario: Reduce size success and order cancelled as  < to remaining
 # setup accounts
-    Given the following traders:
-      | name   | amount |
-      | myboi  | 10000  |
-      | myboi2 | 10000  |
-      | myboi3 | 10000  |
-    Then I Expect the traders to have new general account:
-      | name  | asset |
-      | myboi | BTC   |
-
+    Given the traders make the following deposits on asset's general account:
+      | trader | asset | amount |
+      | myboi  | BTC   | 10000  |
+      | myboi2 | BTC   | 10000  |
+      | myboi3 | BTC   | 10000  |
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
@@ -126,13 +111,9 @@ Feature: Amend orders
 
   Scenario: Amend to invalid tif is rejected
 # setup accounts
-    Given the following traders:
-      | name  | amount |
-      | myboi | 10000  |
-    Then I Expect the traders to have new general account:
-      | name  | asset |
-      | myboi | BTC   |
-
+    Given the traders make the following deposits on asset's general account:
+      | trader | asset | amount |
+      | myboi  | BTC   | 10000  |
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
@@ -145,13 +126,9 @@ Feature: Amend orders
 
   Scenario: TIF_GTC to TIF_GTT rejected without expiry
 # setup accounts
-    Given the following traders:
-      | name  | amount |
-      | myboi | 10000  |
-    Then I Expect the traders to have new general account:
-      | name  | asset |
-      | myboi | BTC   |
-
+    Given the traders make the following deposits on asset's general account:
+      | trader | asset | amount |
+      | myboi  | BTC   | 10000  |
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
@@ -164,13 +141,9 @@ Feature: Amend orders
 
   Scenario: TIF_GTC to TIF_GTT with time in the past
 # setup accounts
-    Given the following traders:
-      | name  | amount |
-      | myboi | 10000  |
-    Then I Expect the traders to have new general account:
-      | name  | asset |
-      | myboi | BTC   |
-
+    Given the traders make the following deposits on asset's general account:
+      | trader | asset | amount |
+      | myboi  | BTC   | 10000  |
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |

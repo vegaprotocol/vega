@@ -3,18 +3,16 @@ Feature: Test mark to market settlement
   Background:
     Given the markets starts on "2019-11-30T00:00:00Z" and expires on "2019-12-31T23:59:59Z"
     And the execution engine have these markets:
-      | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 |  ETH        | ETH   |  simple     | 0.11      | 0.1       | 0              | 0               | 0     | 1.4            | 1.2            | 1.1           | 42               | 0                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 | ETH        | ETH   | simple     | 0.11      | 0.1       | 0              | 0               | 0     | 1.4            | 1.2            | 1.1           | 42               | 0                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
+
   Scenario: Order cannot be placed once the market is expired
-    Given the following traders:
-      | name    | amount |
-      | trader1 | 10000  |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount |
+      | trader1 | ETH   | 10000  |
     And "trader1" general accounts balance is "10000"
     Then the time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
@@ -22,16 +20,11 @@ Feature: Test mark to market settlement
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
 
   Scenario: Settlement happened when market is being closed
-    Given the following traders:
-      | name    | amount |
-      | trader1 | 10000  |
-      | trader2 | 1000   |
-      | trader3 | 5000   |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
-      | trader2 | ETH   |
-      | trader3 | ETH   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount |
+      | trader1 | ETH   | 10000  |
+      | trader2 | ETH   | 1000   |
+      | trader3 | ETH   | 5000   |
     And "trader1" general accounts balance is "10000"
     And "trader2" general accounts balance is "1000"
     And "trader3" general accounts balance is "5000"

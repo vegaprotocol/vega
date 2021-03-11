@@ -35,20 +35,6 @@ func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	return nil
 }
 
-func iExpectTheTradersToHaveNewGeneralAccount(arg1 *gherkin.DataTable) error {
-	for _, row := range arg1.Rows {
-		if val(row, 0) == "name" {
-			continue
-		}
-
-		_, err := execsetup.broker.GetTraderGeneralAccount(val(row, 0), val(row, 1))
-		if err != nil {
-			return fmt.Errorf("missing general account for trader=%v asset=%v", val(row, 0), val(row, 1))
-		}
-	}
-	return nil
-}
-
 func generalAccountsBalanceIs(arg1, arg2 string) error {
 	balance, _ := strconv.ParseUint(arg2, 10, 0)
 	for _, mkt := range execsetup.mkts {

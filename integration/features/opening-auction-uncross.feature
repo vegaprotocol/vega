@@ -11,18 +11,12 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
   Scenario: set up 2 traders with balance
     # setup accounts
-    Given the following traders:
-      | name    | amount    |
-      | trader1 | 100000000 |
-      | trader2 | 100000000 |
-      | trader3 | 100000000 |
-      | trader4 | 100000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader3 | BTC   |
-      | trader4 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount    |
+      | trader1 | BTC   | 100000000 |
+      | trader2 | BTC   | 100000000 |
+      | trader3 | BTC   | 100000000 |
+      | trader4 | BTC   | 100000000 |
 
     # place orders and generate trades
     Then traders place following orders with references:
