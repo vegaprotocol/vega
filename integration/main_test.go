@@ -62,7 +62,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^The "([^"]*)" withdraw "([^"]*)" from the "([^"]*)" account$`, func(owner, amountStr, asset string) error {
 		return steps.WithdrawFromAccount(execsetup.collateral, owner, amountStr, asset)
 	})
-	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, theMakesADepositOfIntoTheAccount)
+	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, func(owner, amountstr, asset string) error {
+		return steps.DepositIntoAccount(execsetup.collateral, owner, amountstr, asset)
+	})
 	s.Step(`^"([^"]*)" general account for asset "([^"]*)" balance is "([^"]*)"$`, generalAccountForAssetBalanceIs)
 	s.Step(`^"([^"]*)" have only one account per asset$`, func(owner string) error {
 		return steps.HaveOnlyOneAccountPerAsset(execsetup.broker, owner)

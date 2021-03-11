@@ -35,16 +35,6 @@ func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	return nil
 }
 
-func theMakesADepositOfIntoTheAccount(trader, amountstr, asset string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	// row.0 = traderID, row.1 = amount to topup
-
-	_, err := execsetup.collateral.Deposit(
-		context.Background(), trader, asset, amount,
-	)
-	return err
-}
-
 func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 	balance, _ := strconv.ParseUint(balancestr, 10, 0)
 	acc, err := execsetup.broker.GetTraderGeneralAccount(trader, asset)
