@@ -12,32 +12,19 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
-    Given the following traders:
-      | name    | amount    |
-      | tt_4    | 500000    |
-      | tt_5_0  | 123       |
-      | tt_5_1  | 122       |
-      | tt_5_2  | 121       |
-      | tt_5_3  | 120       |
-      | tt_5_4  | 119       |
-      | tt_6    | 100000000 |
-      | tt_10   | 10000000  |
-      | tt_11   | 10000000  |
-      | trader1 | 100000000 |
-      | trader2 | 100000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | tt_4    | BTC   |
-      | tt_5_0  | BTC   |
-      | tt_5_1  | BTC   |
-      | tt_5_2  | BTC   |
-      | tt_5_3  | BTC   |
-      | tt_5_4  | BTC   |
-      | tt_6    | BTC   |
-      | tt_10   | BTC   |
-      | tt_11   | BTC   |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount    |
+      | tt_4    | BTC   | 500000    |
+      | tt_5_0  | BTC   | 123       |
+      | tt_5_1  | BTC   | 122       |
+      | tt_5_2  | BTC   | 121       |
+      | tt_5_3  | BTC   | 120       |
+      | tt_5_4  | BTC   | 119       |
+      | tt_6    | BTC   | 100000000 |
+      | tt_10   | BTC   | 10000000  |
+      | tt_11   | BTC   | 10000000  |
+      | trader1 | BTC   | 100000000 |
+      | trader2 | BTC   | 100000000 |
 
     Then traders place following orders with references:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |

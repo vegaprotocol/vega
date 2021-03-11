@@ -11,14 +11,10 @@ Feature: Close a filled order twice
 
   Scenario: Traders place an order, a trade happens, and orders are cancelled after being filled
 # setup accounts
-    Given the following traders:
-      | name             | amount    |
-      | sellSideProvider | 100000000 |
-      | buySideProvider  | 100000000 |
-    Then I Expect the traders to have new general account:
-      | name             | asset |
-      | sellSideProvider | BTC   |
-      | buySideProvider  | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader           | asset | amount    |
+      | sellSideProvider | BTC   | 100000000 |
+      | buySideProvider  | BTC   | 100000000 |
 # setup orderbook
     Then traders place following orders with references:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |

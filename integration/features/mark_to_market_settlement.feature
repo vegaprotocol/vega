@@ -10,19 +10,11 @@ Feature: Test mark to market settlement
       | prices.ETH.value | 42    |
 
   Scenario: If settlement amount <= the trader’s margin account balance entire settlement amount is transferred from trader’s margin account to the market’s temporary settlement account
-    Given the following traders:
-      | name    | amount |
-      | trader1 | 10000  |
-      | trader2 | 10000  |
-      | trader3 | 10000  |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
-      | trader2 | ETH   |
-      | trader3 | ETH   |
-    And "trader1" general accounts balance is "10000"
-    And "trader2" general accounts balance is "10000"
-    And "trader3" general accounts balance is "10000"
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount |
+      | trader1 | ETH   | 10000  |
+      | trader2 | ETH   | 10000  |
+      | trader3 | ETH   | 10000  |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -56,19 +48,11 @@ Feature: Test mark to market settlement
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
 
   Scenario: If settlement amount > trader’s margin account balance  and <= trader's margin account balance + general account balance for the asset, he full balance of the trader’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the trader’s general account for the asset to the market’s temporary settlement account
-    Given the following traders:
-      | name    | amount |
-      | trader1 | 10000  |
-      | trader2 | 10000  |
-      | trader3 | 10000  |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
-      | trader2 | ETH   |
-      | trader3 | ETH   |
-    And "trader1" general accounts balance is "10000"
-    And "trader2" general accounts balance is "10000"
-    And "trader3" general accounts balance is "10000"
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount |
+      | trader1 | ETH   | 10000  |
+      | trader2 | ETH   | 10000  |
+      | trader3 | ETH   | 10000  |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -119,19 +103,11 @@ Feature: Test mark to market settlement
     And All balances cumulated are worth "30000"
 
   Scenario: If the mark price hasn’t changed, A trader with no change in open position size has no transfers in or out of their margin account, A trader with no change in open volume
-    Given the following traders:
-      | name    | amount |
-      | trader1 | 10000  |
-      | trader2 | 10000  |
-      | trader3 | 10000  |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
-      | trader2 | ETH   |
-      | trader3 | ETH   |
-    And "trader1" general accounts balance is "10000"
-    And "trader2" general accounts balance is "10000"
-    And "trader3" general accounts balance is "10000"
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount |
+      | trader1 | ETH   | 10000  |
+      | trader2 | ETH   | 10000  |
+      | trader3 | ETH   | 10000  |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |

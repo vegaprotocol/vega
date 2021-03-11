@@ -10,29 +10,15 @@ Feature: test bugfix 614 for margin calculations
       | prices.ETH.value | 100   |
 
   Scenario: CASE-1: Trader submits long order that will trade - new formula & high exit price
-    Given the following traders:
-      | name    | amount  |
-      | chris   | 10000   |
-      | edd     | 10000   |
-      | barney  | 10000   |
-      | rebecca | 10000   |
-      | tamlyn  | 10000   |
-      | trader1 | 1000000 |
-      | trader2 | 1000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | chris   | ETH   |
-      | edd     | ETH   |
-      | barney  | ETH   |
-      | rebecca | ETH   |
-      | tamlyn  | ETH   |
-      | trader1 | ETH   |
-      | trader2 | ETH   |
-    And "chris" general accounts balance is "10000"
-    And "edd" general accounts balance is "10000"
-    And "barney" general accounts balance is "10000"
-    And "rebecca" general accounts balance is "10000"
-    And "tamlyn" general accounts balance is "10000"
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount  |
+      | chris   | ETH   | 10000   |
+      | edd     | ETH   | 10000   |
+      | barney  | ETH   | 10000   |
+      | rebecca | ETH   | 10000   |
+      | tamlyn  | ETH   | 10000   |
+      | trader1 | ETH   | 1000000 |
+      | trader2 | ETH   | 1000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:

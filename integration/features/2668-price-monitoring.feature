@@ -11,10 +11,10 @@ Feature: Price monitoring test for issue 2668
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -67,10 +67,10 @@ Feature: Price monitoring test for issue 2668
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Lower bound breached
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -123,10 +123,10 @@ Feature: Price monitoring test for issue 2668
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached (scale prices down by 10000)
-    Given the following traders:
-      | name    | amount      |
-      | trader1 | 10000000000 |
-      | trader2 | 10000000000 |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount      |
+      | trader1 | ETH   | 10000000000 |
+      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |

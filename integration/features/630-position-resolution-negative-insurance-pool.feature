@@ -11,20 +11,13 @@ Feature: Regression test for issue 630
 
   Scenario: Trader is being closed out.
 # setup accounts
-    Given the following traders:
-      | name             | amount  |
-      | sellSideProvider | 1000000 |
-      | buySideProvider  | 1000000 |
-      | traderGuy        | 240000  |
-      | trader1          | 1000000 |
-      | trader2          | 1000000 |
-    Then I Expect the traders to have new general account:
-      | name             | asset |
-      | traderGuy        | BTC   |
-      | sellSideProvider | BTC   |
-      | buySideProvider  | BTC   |
-      | trader1          | BTC   |
-      | trader2          | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader           | asset | amount  |
+      | sellSideProvider | BTC   | 1000000 |
+      | buySideProvider  | BTC   | 1000000 |
+      | traderGuy        | BTC   | 240000  |
+      | trader1          | BTC   | 1000000 |
+      | trader2          | BTC   | 1000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:

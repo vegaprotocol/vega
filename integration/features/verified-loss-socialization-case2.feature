@@ -11,21 +11,14 @@ Feature: Test loss socialization case 2
 
   Scenario: case 2 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 # setup accounts
-    Given the following traders:
-      | name             | amount    |
-      | sellSideProvider | 100000000 |
-      | buySideProvider  | 100000000 |
-      | trader1          | 2500      |
-      | trader2          | 10000     |
-      | trader3          | 10000     |
-      | trader4          | 10000     |
-    Then I Expect the traders to have new general account:
-      | name             | asset |
-      | trader1          | BTC   |
-      | trader2          | BTC   |
-      | trader3          | BTC   |
-      | sellSideProvider | BTC   |
-      | buySideProvider  | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader           | asset | amount    |
+      | sellSideProvider | BTC   | 100000000 |
+      | buySideProvider  | BTC   | 100000000 |
+      | trader1          | BTC   | 2500      |
+      | trader2          | BTC   | 10000     |
+      | trader3          | BTC   | 10000     |
+      | trader4          | BTC   | 10000     |
 # setup orderbook
     Then traders place following orders with references:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |

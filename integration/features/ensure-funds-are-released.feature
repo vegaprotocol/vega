@@ -10,16 +10,11 @@ Feature: Test margins releases on position = 0
       | prices.ETH.value | 42    |
 
   Scenario: No margin left for fok order as first order
-    Given the following traders:
-      | name      | amount     |
-      | traderGuy | 1000000000 |
-      | trader1   | 1000000    |
-      | trader2   | 1000000    |
-    Then I Expect the traders to have new general account:
-      | name      | asset |
-      | traderGuy | BTC   |
-      | trader1   | BTC   |
-      | trader2   | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount     |
+      | traderGuy | BTC   | 1000000000 |
+      | trader1   | BTC   | 1000000    |
+      | trader2   | BTC   | 1000000    |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -43,16 +38,11 @@ Feature: Test margins releases on position = 0
       | traderGuy | BTC   | ETH/DEC19 | 0      | 1000000000 |
 
   Scenario: No margin left for wash trade
-    Given the following traders:
-      | name      | amount     |
-      | traderGuy | 1000000000 |
-      | trader1   | 1000000    |
-      | trader2   | 1000000    |
-    Then I Expect the traders to have new general account:
-      | name      | asset |
-      | traderGuy | BTC   |
-      | trader1   | BTC   |
-      | trader2   | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount     |
+      | traderGuy | BTC   | 1000000000 |
+      | trader1   | BTC   | 1000000    |
+      | trader2   | BTC   | 1000000    |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -86,16 +76,11 @@ Feature: Test margins releases on position = 0
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
   Scenario: No margin left after cancelling order and getting back to 0 position
-    Given the following traders:
-      | name      | amount     |
-      | traderGuy | 1000000000 |
-      | trader1   | 1000000    |
-      | trader2   | 1000000    |
-    Then I Expect the traders to have new general account:
-      | name      | asset |
-      | traderGuy | BTC   |
-      | trader1   | BTC   |
-      | trader2   | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount     |
+      | traderGuy | BTC   | 1000000000 |
+      | trader1   | BTC   | 1000000    |
+      | trader2   | BTC   | 1000000    |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -128,16 +113,11 @@ Feature: Test margins releases on position = 0
       | traderGuy | BTC   | ETH/DEC19 | 0      | 1000000000 |
 
   Scenario: No margin left for wash trade after cancelling first order
-    Given the following traders:
-      | name      | amount     |
-      | traderGuy | 1000000000 |
-      | trader1   | 1000000    |
-      | trader2   | 1000000    |
-    Then I Expect the traders to have new general account:
-      | name      | asset |
-      | traderGuy | BTC   |
-      | trader1   | BTC   |
-      | trader2   | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount     |
+      | traderGuy | BTC   | 1000000000 |
+      | trader1   | BTC   | 1000000    |
+      | trader2   | BTC   | 1000000    |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:

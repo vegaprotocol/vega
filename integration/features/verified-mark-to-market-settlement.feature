@@ -10,20 +10,13 @@ Feature: MTM settlement tests
 
   Scenario: case 1 - LONG - MORE LONG - one trade
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader3 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader3 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader3 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -74,20 +67,13 @@ Feature: MTM settlement tests
 
   Scenario: case 2 - LONG - MORE LONG - multiple trades
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader3 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader3 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader3 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -146,20 +132,13 @@ Feature: MTM settlement tests
 
   Scenario: case 3 - LONG - LESS LONG - one trade
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader3 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader3 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader3 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -210,20 +189,13 @@ Feature: MTM settlement tests
 
   Scenario: case 4 - LONG - LESS LONG - multiple trades
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader3 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader3 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader3 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -282,18 +254,12 @@ Feature: MTM settlement tests
 
   Scenario: case 5 - LONG - ZERO - one trade
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -330,19 +296,12 @@ Feature: MTM settlement tests
 
   Scenario: case 6 - LONG - ZERO - multiple trades
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
-
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -387,18 +346,12 @@ Feature: MTM settlement tests
 
   Scenario: case 7 - LONG - SHORT - one trade
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -435,21 +388,13 @@ Feature: MTM settlement tests
 
   Scenario: case 7 - LONG - SHORT - multiple trades
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader3 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader3 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader3 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -508,20 +453,13 @@ Feature: MTM settlement tests
 
   Scenario: case 8 - LONG - SAME AMOUNT - multiple trades
 # setup accounts
-    Given the following traders:
-      | name    | amount   |
-      | trader1 | 10000    |
-      | trader2 | 10000    |
-      | trader3 | 10000    |
-      | trader4 | 10000000 |
-      | trader5 | 10000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader3 | BTC   |
-      | trader4 | BTC   |
-      | trader5 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 10000    |
+      | trader2 | BTC   | 10000    |
+      | trader3 | BTC   | 10000    |
+      | trader4 | BTC   | 10000000 |
+      | trader5 | BTC   | 10000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:

@@ -11,20 +11,13 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
-    Given the following traders:
-      | name  | amount    |
-      | tt_4  | 500000    |
-      | tt_5  | 100       |
-      | tt_6  | 100000000 |
-      | tt_10 | 10000000  |
-      | tt_11 | 10000000  |
-    Then I Expect the traders to have new general account:
-      | name  | asset |
-      | tt_4  | BTC   |
-      | tt_5  | BTC   |
-      | tt_6  | BTC   |
-      | tt_10 | BTC   |
-      | tt_11 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader | asset | amount    |
+      | tt_4   | BTC   | 500000    |
+      | tt_5   | BTC   | 100       |
+      | tt_6   | BTC   | 100000000 |
+      | tt_10  | BTC   | 10000000  |
+      | tt_11  | BTC   | 10000000  |
 
     # place orders and generate trades
     Then traders place following orders with references:

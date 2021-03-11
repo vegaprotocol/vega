@@ -10,25 +10,14 @@ Feature: Regression test for issue 596
       | prices.ETH.value | 42    |
 
   Scenario: Traded out position but monies left in margin account
-    Given the following traders:
-      | name    | amount  |
-      | edd     | 10000   |
-      | barney  | 10000   |
-      | chris   | 10000   |
-      | tamlyn  | 10000   |
-      | trader1 | 1000000 |
-      | trader2 | 1000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | edd     | BTC   |
-      | barney  | BTC   |
-      | chris   | BTC   |
-      | tamlyn  | BTC   |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-    And "edd" general accounts balance is "10000"
-    And "barney" general accounts balance is "10000"
-    And "chris" general accounts balance is "10000"
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount  |
+      | edd     | BTC   | 10000   |
+      | barney  | BTC   | 10000   |
+      | chris   | BTC   | 10000   |
+      | tamlyn  | BTC   | 10000   |
+      | trader1 | BTC   | 1000000 |
+      | trader2 | BTC   | 1000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:
@@ -105,25 +94,14 @@ Feature: Regression test for issue 596
     And All balances cumulated are worth "2040000"
 
   Scenario: Traded out position but monies left in margin account if trade which trade out do not update the markprice
-    Given the following traders:
-      | name    | amount  |
-      | edd     | 10000   |
-      | barney  | 10000   |
-      | chris   | 10000   |
-      | tamlyn  | 10000   |
-      | trader1 | 1000000 |
-      | trader2 | 1000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | edd     | BTC   |
-      | barney  | BTC   |
-      | chris   | BTC   |
-      | tamlyn  | BTC   |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-    And "edd" general accounts balance is "10000"
-    And "barney" general accounts balance is "10000"
-    And "chris" general accounts balance is "10000"
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount  |
+      | edd     | BTC   | 10000   |
+      | barney  | BTC   | 10000   |
+      | chris   | BTC   | 10000   |
+      | tamlyn  | BTC   | 10000   |
+      | trader1 | BTC   | 1000000 |
+      | trader2 | BTC   | 1000000 |
 
     # Trigger an auction to set the mark price
     Then traders place following orders with references:

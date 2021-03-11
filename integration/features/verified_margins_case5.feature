@@ -4,21 +4,21 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | quote name | asset | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 |  ETH        | ETH   |  simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 940000           | 0                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | name      | quote name | asset | risk model | tau/short | lamd/long | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 | ETH        | ETH   | simple     | 0.1       | 0.2       | 0              | 0               | 0     | 5              | 4              | 3.2           | 940000           | 0                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value   |
       | prices.ETH.value | 9400000 |
-    And the following traders:
-      | name       | amount       |
-      | trader1    | 1000000000   |
-      | sellSideMM | 100000000000 |
-      | buySideMM  | 100000000000 |
+    And the traders make the following deposits on asset's general account:
+      | trader     | asset | amount       |
+      | trader1    | ETH   | 1000000000   |
+      | sellSideMM | ETH   | 100000000000 |
+      | buySideMM  | ETH   | 100000000000 |
     # setting mark price
     And traders place following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC |
 
 
     # setting order book
@@ -34,10 +34,6 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
 
   Scenario:
-    # MAKE TRADES
-    Given I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
     # no margin account created for trader1, just general account
     And "trader1" have only one account per asset
     # placing test order

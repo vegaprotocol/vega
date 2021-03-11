@@ -10,19 +10,12 @@ Feature: test for issue 1920
       | prices.ETH.value | 42    |
 
   Scenario: a trader place a new order in the system, margin are calculated, then the order is stopped, the margin is released
-    Given the following traders:
-      | name    | amount    |
-      | trader1 | 10000     |
-      | trader2 | 100000000 |
-      | trader3 | 100000000 |
-      | trader4 | 100000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | ETH   |
-      | trader2 | ETH   |
-      | trader3 | ETH   |
-      | trader4 | ETH   |
-    And "trader1" general accounts balance is "10000"
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount    |
+      | trader1 | ETH   | 10000     |
+      | trader2 | ETH   | 100000000 |
+      | trader3 | ETH   | 100000000 |
+      | trader4 | ETH   | 100000000 |
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader2 | ETH/DEC19 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GFA |
