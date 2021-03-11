@@ -59,7 +59,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^"([^"]*)" have only one margin account per market$`, func(owner string) error {
 		return steps.HaveOnlyOneMarginAccountPerMarket(execsetup.broker, owner)
 	})
-	s.Step(`^The "([^"]*)" withdraw "([^"]*)" from the "([^"]*)" account$`, theWithdrawFromTheAccount)
+	s.Step(`^The "([^"]*)" withdraw "([^"]*)" from the "([^"]*)" account$`, func(owner, amountStr, asset string) error {
+		return steps.WithdrawFromAccount(execsetup.collateral, owner, amountStr, asset)
+	})
 	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, theMakesADepositOfIntoTheAccount)
 	s.Step(`^"([^"]*)" general account for asset "([^"]*)" balance is "([^"]*)"$`, generalAccountForAssetBalanceIs)
 	s.Step(`^"([^"]*)" have only one account per asset$`, func(owner string) error {

@@ -61,25 +61,6 @@ func generalAccountForAssetBalanceIs(trader, asset, balancestr string) error {
 	return nil
 }
 
-func theWithdrawFromTheAccount(trader, amountstr, asset string) error {
-	amount, err := strconv.ParseUint(amountstr, 10, 0)
-	// row.0 = traderID, row.1 = amount to topup
-	if err != nil {
-		return err
-	}
-
-	if _, err := execsetup.collateral.LockFundsForWithdraw(
-		context.Background(), trader, asset, amount,
-	); err != nil {
-		return err
-	}
-
-	_, err = execsetup.collateral.Withdraw(
-		context.Background(), trader, asset, amount,
-	)
-	return err
-}
-
 func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error {
 	for _, row := range orders.Rows {
 		if val(row, 0) == "trader" {
