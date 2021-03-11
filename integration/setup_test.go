@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/plugins"
@@ -49,13 +50,13 @@ type executionTestSetup struct {
 	cfg          execution.Config
 	log          *logging.Logger
 	ctrl         *gomock.Controller
-	timesvc      *timeStub
+	timesvc      *stubs.TimeStub
 	collateral   *collateral.Engine
 	oracleEngine *oracles.Engine
 
 	positionPlugin *plugins.Positions
 
-	broker *brokerStub
+	broker *stubs.BrokerStub
 
 	// save trader accounts state
 	accs map[string][]account
@@ -86,8 +87,8 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	execsetup.log = logging.NewTestLogger()
 	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
-	execsetup.timesvc = &timeStub{now: startTime}
-	execsetup.broker = NewBrokerStub()
+	execsetup.timesvc = &stubs.TimeStub{Now: startTime}
+	execsetup.broker = stubs.NewBrokerStub()
 	currentTime := time.Now()
 	execsetup.collateral, _ = collateral.New(
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,

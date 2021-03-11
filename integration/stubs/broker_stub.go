@@ -1,31 +1,29 @@
-package core_test
+package stubs
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-type brokerStub struct {
+type BrokerStub struct {
 	mu   sync.Mutex
 	data map[events.Type][]events.Event
 	subT map[events.Type][]broker.Subscriber
 }
 
-func NewBrokerStub() *brokerStub {
-	return &brokerStub{
+func NewBrokerStub() *BrokerStub {
+	return &BrokerStub{
 		data: map[events.Type][]events.Event{},
 		subT: map[events.Type][]broker.Subscriber{},
 	}
 }
 
-func (b *brokerStub) Subscribe(sub broker.Subscriber) {
+func (b *BrokerStub) Subscribe(sub broker.Subscriber) {
 	b.mu.Lock()
 	types := sub.Types()
 	for _, t := range types {
@@ -37,7 +35,7 @@ func (b *brokerStub) Subscribe(sub broker.Subscriber) {
 	b.mu.Unlock()
 }
 
-func (b *brokerStub) SendBatch(evts []events.Event) {
+func (b *BrokerStub) SendBatch(evts []events.Event) {
 	if len(evts) == 0 {
 		return
 	}
@@ -68,7 +66,7 @@ func (b *brokerStub) SendBatch(evts []events.Event) {
 	b.mu.Unlock()
 }
 
-func (b *brokerStub) Send(e events.Event) {
+func (b *BrokerStub) Send(e events.Event) {
 	b.mu.Lock()
 	t := e.Type()
 	if subs, ok := b.subT[t]; ok {
@@ -96,15 +94,14 @@ func (b *brokerStub) Send(e events.Event) {
 	b.mu.Unlock()
 }
 
-func (b *brokerStub) GetBatch(t events.Type) []events.Event {
+func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 	b.mu.Lock()
 	r := b.data[t]
 	b.mu.Unlock()
 	return r
 }
 
-// utility func:
-func (b *brokerStub) GetTransferResponses() []events.TransferResponse {
+func (b *BrokerStub) GetTransferResponses() []events.TransferResponse {
 	batch := b.GetBatch(events.TransferResponses)
 	if len(batch) == 0 {
 		return nil
@@ -123,7 +120,7 @@ func (b *brokerStub) GetTransferResponses() []events.TransferResponse {
 	return ret
 }
 
-func (b *brokerStub) clearTransferEvents() {
+func (b *BrokerStub) ClearTransferEvents() {
 	t := events.TransferResponses
 	b.mu.Lock()
 	r := b.data[t]
@@ -131,7 +128,7 @@ func (b *brokerStub) clearTransferEvents() {
 	b.mu.Unlock()
 }
 
-func (b *brokerStub) clearOrderEvents() {
+func (b *BrokerStub) ClearOrderEvents() {
 	t := events.OrderEvent
 	b.mu.Lock()
 	r := b.data[t]
@@ -140,7 +137,7 @@ func (b *brokerStub) clearOrderEvents() {
 	b.mu.Unlock()
 }
 
-func (b *brokerStub) getOrdersByPartyAndMarket(party, market string) []types.Order {
+func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []types.Order {
 	orders := b.GetOrderEvents()
 	ret := []types.Order{}
 	for _, oe := range orders {
@@ -151,7 +148,7 @@ func (b *brokerStub) getOrdersByPartyAndMarket(party, market string) []types.Ord
 	return ret
 }
 
-func (b *brokerStub) GetOrderEvents() []events.Order {
+func (b *BrokerStub) GetOrderEvents() []events.Order {
 	batch := b.GetBatch(events.OrderEvent)
 	if len(batch) == 0 {
 		return nil
@@ -168,7 +165,7 @@ func (b *brokerStub) GetOrderEvents() []events.Order {
 	return ret
 }
 
-func (b *brokerStub) GetLPEvents() []events.LiquidityProvision {
+func (b *BrokerStub) GetLPEvents() []events.LiquidityProvision {
 	batch := b.GetBatch(events.LiquidityProvisionEvent)
 	if len(batch) == 0 {
 		return nil
@@ -185,7 +182,7 @@ func (b *brokerStub) GetLPEvents() []events.LiquidityProvision {
 	return ret
 }
 
-func (b *brokerStub) GetTradeEvents() []events.Trade {
+func (b *BrokerStub) GetTradeEvents() []events.Trade {
 	batch := b.GetBatch(events.TradeEvent)
 	if len(batch) == 0 {
 		return nil
@@ -202,7 +199,7 @@ func (b *brokerStub) GetTradeEvents() []events.Trade {
 	return ret
 }
 
-func (b *brokerStub) GetAccounts() []events.Acc {
+func (b *BrokerStub) GetAccounts() []events.Acc {
 	batch := b.GetBatch(events.AccountEvent)
 	if len(batch) == 0 {
 		return nil
@@ -223,7 +220,7 @@ func (b *brokerStub) GetAccounts() []events.Acc {
 	return s
 }
 
-func (b *brokerStub) getMarginByPartyAndMarket(partyID, marketID string) (types.MarginLevels, error) {
+func (b *BrokerStub) GetMarginByPartyAndMarket(partyID, marketID string) (types.MarginLevels, error) {
 	batch := b.GetBatch(events.MarginLevelsEvent)
 	mapped := map[string]map[string]types.MarginLevels{}
 	for _, e := range batch {
@@ -253,7 +250,7 @@ func (b *brokerStub) getMarginByPartyAndMarket(partyID, marketID string) (types.
 	return ml, nil
 }
 
-func (b *brokerStub) getMarketInsurancePoolAccount(market string) (types.Account, error) {
+func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
@@ -264,7 +261,7 @@ func (b *brokerStub) getMarketInsurancePoolAccount(market string) (types.Account
 	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *brokerStub) getTraderMarginAccount(trader, market string) (types.Account, error) {
+func (b *BrokerStub) GetTraderMarginAccount(trader, market string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
@@ -275,7 +272,7 @@ func (b *brokerStub) getTraderMarginAccount(trader, market string) (types.Accoun
 	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *brokerStub) getMarketSettlementAccount(market string) (types.Account, error) {
+func (b *BrokerStub) GetMarketSettlementAccount(market string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {
 		v := e.Account()
@@ -286,8 +283,8 @@ func (b *brokerStub) getMarketSettlementAccount(market string) (types.Account, e
 	return types.Account{}, errors.New("account does not exist")
 }
 
-// returns the latest event WRT the trader's general account
-func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (ga types.Account, err error) {
+// GetTraderGeneralAccount returns the latest event WRT the trader's general account
+func (b *BrokerStub) GetTraderGeneralAccount(trader, asset string) (ga types.Account, err error) {
 	batch := b.GetAccounts()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
@@ -301,7 +298,7 @@ func (b *brokerStub) getTraderGeneralAccount(trader, asset string) (ga types.Acc
 	return
 }
 
-func (b *brokerStub) clearOrderByReference(party, ref string) error {
+func (b *BrokerStub) ClearOrderByReference(party, ref string) error {
 	b.mu.Lock()
 	data := b.data[events.OrderEvent]
 	cleared := make([]events.Event, 0, cap(data))
@@ -324,7 +321,7 @@ func (b *brokerStub) clearOrderByReference(party, ref string) error {
 	return nil
 }
 
-func (b *brokerStub) getFirstByReference(party, ref string) (types.Order, error) {
+func (b *BrokerStub) GetFirstByReference(party, ref string) (types.Order, error) {
 	data := b.GetOrderEvents()
 	for _, o := range data {
 		v := o.Order()
@@ -335,7 +332,7 @@ func (b *brokerStub) getFirstByReference(party, ref string) (types.Order, error)
 	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
 }
 
-func (b *brokerStub) getByReference(party, ref string) (types.Order, error) {
+func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 	data := b.GetOrderEvents()
 
 	var last types.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
@@ -347,13 +344,13 @@ func (b *brokerStub) getByReference(party, ref string) (types.Order, error) {
 			matched = true
 		}
 	}
-	if matched == true {
+	if matched {
 		return last, nil
 	}
 	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
 }
 
-func (b *brokerStub) getTrades() []types.Trade {
+func (b *BrokerStub) GetTrades() []types.Trade {
 	data := b.GetTradeEvents()
 	trades := make([]types.Trade, 0, len(data))
 	for _, t := range data {
@@ -362,64 +359,8 @@ func (b *brokerStub) getTrades() []types.Trade {
 	return trades
 }
 
-func (b *brokerStub) ResetType(t events.Type) {
+func (b *BrokerStub) ResetType(t events.Type) {
 	b.mu.Lock()
 	b.data[t] = []events.Event{}
 	b.mu.Unlock()
 }
-
-func (b *brokerStub) Reset() {
-	b.mu.Lock()
-	b.data = map[events.Type][]events.Event{}
-	b.mu.Unlock()
-}
-
-type timeStub struct {
-	now    time.Time
-	notify func(context.Context, time.Time)
-}
-
-func (t *timeStub) GetTimeNow() (time.Time, error) {
-	return t.now, nil
-}
-
-func (t *timeStub) SetTime(newNow time.Time) {
-	t.now = newNow
-	t.notify(context.Background(), t.now)
-}
-
-func (t *timeStub) NotifyOnTick(f func(context.Context, time.Time)) {
-	t.notify = f
-}
-
-type ProposalStub struct {
-	data []types.Proposal
-}
-
-func NewProposalStub() *ProposalStub {
-	return &ProposalStub{
-		data: []types.Proposal{},
-	}
-}
-
-func (p *ProposalStub) Add(v types.Proposal) {
-	p.data = append(p.data, v)
-}
-
-func (p *ProposalStub) Flush() {}
-
-type VoteStub struct {
-	data []types.Vote
-}
-
-func NewVoteStub() *VoteStub {
-	return &VoteStub{
-		data: []types.Vote{},
-	}
-}
-
-func (v *VoteStub) Add(vote types.Vote) {
-	v.data = append(v.data, vote)
-}
-
-func (v *VoteStub) Flush() {}

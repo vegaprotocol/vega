@@ -20,7 +20,7 @@ Feature: Test trader accounts
       | trader1 | VUSD  |
     And "trader1" general accounts balance is "100"
     And "trader1" have only one account per asset
-    And "trader1" have only on margin account per market
+    And "trader1" have only one margin account per market
 
   Scenario: a trader deposit collateral onto Vega. The general account for this asset increase
     Given the following traders:
