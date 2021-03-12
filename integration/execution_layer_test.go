@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
@@ -245,54 +244,6 @@ func allBalancesCumulatedAreWorth(amountstr string) error {
 	if amount != cumul {
 		return fmt.Errorf("expected cumul balances to be %v but found %v", amount, cumul)
 	}
-	return nil
-}
-
-func theFollowingTransfersHappened(arg1 *gherkin.DataTable) error {
-	for _, row := range arg1.Rows {
-		from := val(row, 0)
-		if from == "from" {
-			continue
-		}
-
-		fromAccountID := accountID(val(row, 4), from, val(row, 6), types.AccountType_value[val(row, 2)])
-		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), types.AccountType_value[val(row, 3)])
-
-		var ledgerEntry *types.LedgerEntry
-		transferEvents := execsetup.broker.GetTransferResponses()
-		data := make([]*types.TransferResponse, 0, len(transferEvents))
-		for _, e := range transferEvents {
-			data = append(data, e.TransferResponses()...)
-		}
-
-		var foundButNotMatched uint64
-		for _, v := range data {
-			for _, _v := range v.GetTransfers() {
-				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
-					if _v.Amount != u64val(row, 5) {
-						foundButNotMatched = _v.Amount
-						continue
-					}
-					ledgerEntry = _v
-					break
-				}
-			}
-			if ledgerEntry != nil {
-				break
-			}
-		}
-
-		if ledgerEntry == nil {
-			return fmt.Errorf("missing transfers between %v and %v for amount %v, found %v",
-				fromAccountID, toAccountID, i64val(row, 5), foundButNotMatched,
-			)
-		}
-		if ledgerEntry.Amount != u64val(row, 5) {
-			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
-		}
-	}
-
-	execsetup.broker.ResetType(events.TransferResponses)
 	return nil
 }
 
@@ -575,38 +526,6 @@ func dumpTransfers() error {
 		}
 	}
 	return nil
-}
-
-func accountID(marketID, partyID, asset string, _ty int32) string {
-	ty := types.AccountType(_ty)
-	idbuf := make([]byte, 256)
-	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
-		marketID = ""
-	}
-	if partyID == "market" {
-		partyID = ""
-	}
-	const (
-		systemOwner = "*"
-		noMarket    = "!"
-	)
-	if len(marketID) <= 0 {
-		marketID = noMarket
-	}
-
-	// market account
-	if len(partyID) <= 0 {
-		partyID = systemOwner
-	}
-
-	copy(idbuf, marketID)
-	ln := len(marketID)
-	copy(idbuf[ln:], partyID)
-	ln += len(partyID)
-	copy(idbuf[ln:], asset)
-	ln += len(asset)
-	idbuf[ln] = byte(ty + 48)
-	return string(idbuf[:ln+1])
 }
 
 func executedTrades(trades *gherkin.DataTable) error {

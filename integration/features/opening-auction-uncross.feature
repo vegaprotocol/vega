@@ -63,7 +63,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-b-3    | STATUS_CANCELLED |
       | trader2 | t2-s-3    | STATUS_FILLED    |
     And the following transfers happened:
-      | from    | to      | from account type   | to account type      | market ID | amount | asset |
+      | from    | to      | from account   | to account      | market id | amount | asset |
       | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9479   | BTC   |
     Then I expect the trader to have a margin:
       | trader  | asset | market id | margin | general |

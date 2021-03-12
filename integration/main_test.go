@@ -87,9 +87,11 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
 	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
-	s.Step(`^the following transfers happened:$`, theFollowingTransfersHappened)
 	s.Step(`^the settlement account balance is "([^"]*)" for the market "([^"]*)" before MTM$`, func(amountStr, market string) error {
 		return steps.SettlementAccountBalanceIsForMarket(execsetup.broker, amountStr, market)
+	})
+	s.Step(`^the following transfers happened:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingTransfersHappened(execsetup.broker, table)
 	})
 	s.Step(`^the insurance pool initial balance for the markets is "([^"]*)":$`, theInsurancePoolInitialBalanceForTheMarketsIs)
 	s.Step(`^the insurance pool balance is "([^"]*)" for the market "([^"]*)"$`, func(amountStr, market string) error {

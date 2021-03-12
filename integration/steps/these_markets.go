@@ -166,7 +166,6 @@ func priceMonitoringTriggers(row marketRow) []*types.PriceMonitoringTrigger {
 	return triggers
 }
 
-// marketRow wraps the declaration of the properties of an oracle data
 type marketRow struct {
 	row RowWrapper
 }

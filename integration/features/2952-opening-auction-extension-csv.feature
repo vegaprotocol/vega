@@ -43,7 +43,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader3 | ETH   | ETH/DEC20 | 1724511 | 995225489 |
     And dump transfers
     And the following transfers happened:
-      | from    | to      | fromType                | toType                           | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |
       | trader3 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 10000   | ETH   |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC20 | 3000000 | ETH   |
@@ -67,7 +67,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # MTM loss + margin low
     And the following transfers happened:
-      | from    | to      | fromType             | toType                  | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 275489  | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1949413 | ETH   |
     And clear transfer events
@@ -89,7 +89,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to     | fromType             | toType                  | id        | amount | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 50587  | ETH   |
     And clear transfer events
 
@@ -110,7 +110,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType             | toType                  | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224901 | ETH   |
     And clear transfer events
@@ -132,7 +132,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType             | toType                  | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224903 | ETH   |
     And clear transfer events
@@ -155,7 +155,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType                | toType               | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 4000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 4449804 | ETH   |
     And clear transfer events
@@ -178,7 +178,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType                | toType               | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 2000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 2224903 | ETH   |
     And clear transfer events
@@ -201,7 +201,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType                | toType               | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 1000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1112451 | ETH   |
     And clear transfer events
@@ -224,7 +224,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType                | toType               | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 1000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1112451 | ETH   |
     And clear transfer events
@@ -238,7 +238,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | asset | id        | margin | general   |
       | trader3 | ETH   | ETH/DEC20 | 0      | 993900000 |
     And the following transfers happened:
-      | from    | to      | fromType                | toType                           | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |
       | trader3 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 10000   | ETH   |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC20 | 3000000 | ETH   |

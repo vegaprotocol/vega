@@ -146,6 +146,49 @@ func (r RowWrapper) Side(name string) (types.Side, error) {
 	}
 }
 
+func (r RowWrapper) Account(name string) types.AccountType {
+	return account(r.Str(name))
+}
+
+func account(name string) types.AccountType {
+	value := types.AccountType(types.AccountType_value[name])
+
+	if value == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+		panic(fmt.Sprintf("invalid account type %s", name))
+	}
+
+	return value
+}
+
+func accountID(marketID, partyID, asset string, ty types.AccountType) string {
+	idBuf := make([]byte, 256)
+
+	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
+		marketID = ""
+	}
+
+	if partyID == "market" {
+		partyID = ""
+	}
+
+	if len(marketID) == 0 {
+		marketID = "!"
+	}
+
+	if len(partyID) == 0 {
+		partyID = "*"
+	}
+
+	copy(idBuf, marketID)
+	ln := len(marketID)
+	copy(idBuf[ln:], partyID)
+	ln += len(partyID)
+	copy(idBuf[ln:], asset)
+	ln += len(asset)
+	idBuf[ln] = byte(ty + 48)
+	return string(idBuf[:ln+1])
+}
+
 func panicW(err error) {
 	if err != nil {
 		panic(err)

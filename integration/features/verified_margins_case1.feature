@@ -47,7 +47,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | trader1 | 14000000 | 11   | sellSideMM |
 
     Then the following transfers happened:
-      | from   | to      | fromType                | toType              | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
     And I expect the trader to have a margin:
@@ -90,7 +90,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | buySideMM  | ETH/DEC19 | buy  | 1      | 20000000 | 1      | TYPE_LIMIT | TIF_GTC |
 
     And the following transfers happened:
-      | from   | to      | fromType                | toType              | id        | amount   | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 78000000 | ETH   |
 
     And I expect the trader to have a margin:
