@@ -39,9 +39,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 	tm.market.EnterAuction(ctx)
 
 	// Reset the event counter
-	tm.eventCount = 0
-	tm.orderEventCount = 0
-	tm.events = nil
+	clearEvents(tm)
 
 	return tm
 }
