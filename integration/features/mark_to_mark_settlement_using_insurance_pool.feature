@@ -12,7 +12,7 @@ Feature: Test mark to market settlement with insurance pool
   Scenario: If settlement amount > trader’s margin account balance + trader’s general account balance for the asset, the full balance of the trader’s margin account is transferred to the market’s temporary settlement account, the full balance of the trader’s general account for the assets are transferred to the market’s temporary settlement account, the minimum insurance pool account balance for the market & asset, and the remainder, i.e. the difference between the total amount transferred from the trader’s margin + general accounts and the settlement amount, is transferred from the insurance pool account for the market to the temporary settlement account for the market
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount |
-      | trader1 | ETH   | 121    |
+      | trader1 | ETH   | 5122   |
       | trader2 | ETH   | 10000  |
       | trader3 | ETH   | 10000  |
       | aux     | ETH   | 10000  |
