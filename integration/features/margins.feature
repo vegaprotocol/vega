@@ -25,7 +25,7 @@ Feature: Test trader accounts
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "1000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -56,7 +56,7 @@ Feature: Test trader accounts
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "1000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |

@@ -118,32 +118,6 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 	return nil
 }
 
-func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
-	for _, row := range refs.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		o, err := execsetup.broker.GetFirstByReference(val(row, 0), val(row, 1))
-		if err != nil {
-			return err
-		}
-
-		cancel := types.OrderCancellation{
-			OrderId:  o.Id,
-			PartyId:  o.PartyId,
-			MarketId: o.MarketId,
-		}
-
-		_, err = execsetup.engine.CancelOrder(context.Background(), &cancel)
-		if err != nil {
-			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyId, o.Reference)
-		}
-	}
-
-	return nil
-}
-
 func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 	cancellations := make([]types.OrderCancellation, 0, len(data.Rows))
 	for _, row := range data.Rows {

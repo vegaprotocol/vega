@@ -33,7 +33,7 @@ Feature: Test loss socialization case 1
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader2 | ETH/DEC19 | buy  | 100    | 100   | 1                | TYPE_LIMIT | TIF_GTC |
 # then we change the volume in the book
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |

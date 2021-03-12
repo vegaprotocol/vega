@@ -62,7 +62,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | trader1 | 13     | 5600000       | 0           |
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader    | reference |
       | buySideMM | buy1      |
       | buySideMM | buy2      |

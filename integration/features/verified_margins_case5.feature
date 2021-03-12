@@ -61,7 +61,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | trader1 | -13    | 2800000       | 0           |
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader     | reference |
       | buySideMM  | buy4      |
       | sellSideMM | sell2     |

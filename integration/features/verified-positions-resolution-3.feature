@@ -33,7 +33,7 @@ Feature: Position resolution case 3
       | designatedLooser | ETH/DEC19 | 2900        | 9280   | 11600   | 14500   |
 
 # insurance pool generation - modify order book
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
     Then traders place following orders with references:

@@ -11,7 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TradersAttemptToCancelTheFollowingFilledOrders(
+func TradersCancelTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
 	table *gherkin.DataTable,
@@ -31,17 +31,16 @@ func TradersAttemptToCancelTheFollowingFilledOrders(
 			MarketId: o.MarketId,
 		}
 
-		if _, err = exec.CancelOrder(context.Background(), &cancel); err == nil {
-			return errCanceledFilledOrder(o)
+		if _, err = exec.CancelOrder(context.Background(), &cancel); err != nil {
+			return errCannotCancelOrder(o)
 		}
 	}
 
 	return nil
 }
 
-
-func errCanceledFilledOrder(o types.Order) error {
-	return fmt.Errorf("trader(%s) succesfully canceled the uncancelable order with reference(%s)",
+func errCannotCancelOrder(o types.Order) error {
+	return fmt.Errorf("trader(%s) couldn't canceled the order with reference(%s)",
 		o.PartyId, o.Reference,
 	)
 }

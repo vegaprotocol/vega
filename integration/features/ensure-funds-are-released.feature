@@ -25,7 +25,7 @@ Feature: Test margins releases on position = 0
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -53,7 +53,7 @@ Feature: Test margins releases on position = 0
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -91,7 +91,7 @@ Feature: Test margins releases on position = 0
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -104,7 +104,7 @@ Feature: Test margins releases on position = 0
       | trader    | asset | market id | margin | general   |
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader    | reference |
       | traderGuy | ref-1     |
 
@@ -128,7 +128,7 @@ Feature: Test margins releases on position = 0
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -152,7 +152,7 @@ Feature: Test margins releases on position = 0
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
 # cancel the first order
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader    | reference |
       | traderGuy | ref-1     |
 

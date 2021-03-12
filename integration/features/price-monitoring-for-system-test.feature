@@ -45,7 +45,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # We've left opening auction, cancel the orders we had to place on the book to allow for this to happen
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference      |
       | trader3 | trader3_buy_1  |
       | trader4 | trader4_sell_1 |
@@ -63,7 +63,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference      |
       | trader1 | trader1_sell_1 |
 

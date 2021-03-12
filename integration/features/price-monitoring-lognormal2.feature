@@ -27,7 +27,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
     Then the opening auction period for market "ETH/DEC20" ends
     And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
@@ -100,7 +100,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
     Then the opening auction period for market "ETH/DEC20" ends
     And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
@@ -173,7 +173,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
     Then the opening auction period for market "ETH/DEC20" ends
     And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
@@ -244,7 +244,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
     Then the opening auction period for market "ETH/DEC20" ends
     And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
@@ -327,7 +327,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
     Then the opening auction period for market "ETH/DEC20" ends
     And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
@@ -410,7 +410,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
     Then the opening auction period for market "ETH/DEC20" ends
     And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
@@ -458,7 +458,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | cancel-me |
 

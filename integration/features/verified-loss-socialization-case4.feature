@@ -31,7 +31,7 @@ Feature: Test loss socialization case 4
       | trader6 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader6-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader5 | trader5-1 |
       | trader6 | trader6-1 |
@@ -58,7 +58,7 @@ Feature: Test loss socialization case 4
       | trader4 | ETH/DEC19 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |
 
 # order book volume change
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |

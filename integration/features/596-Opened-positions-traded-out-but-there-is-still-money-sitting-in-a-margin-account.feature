@@ -26,7 +26,7 @@ Feature: Regression test for issue 596
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -86,7 +86,7 @@ Feature: Regression test for issue 596
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -117,7 +117,7 @@ Feature: Regression test for issue 596
       | chris  | BTC   | ETH/DEC19 | 607    | 9413    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And All balances cumulated are worth "2030000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader | reference            |
       | chris  | chris-id-1-to-cancel |
 # then chris is trading out
