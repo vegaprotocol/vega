@@ -2,10 +2,8 @@ package execution
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -135,24 +133,7 @@ func (m *Market) ValidateOrder(order *types.Order) bool {
 		order.Size != order2.Size ||
 		order.Remaining != order2.Remaining ||
 		order.Status != order2.Status {
-		fmt.Println("Orders do not match")
-		fmt.Println("OrderBook  :", order2)
-		fmt.Println("MarketDepth:", order)
 		return false
 	}
 	return true
-}
-
-func (m *Market) SendEvents(ctx context.Context, orderCount int) {
-	order := &types.Order{
-		Price:     1111,
-		Size:      2222,
-		Remaining: 3333,
-		Id:        "wiqoweqoiwopqiweuoiwe",
-	}
-
-	for i := 0; i < orderCount; i++ {
-		order.UpdatedAt = int64(i)
-		m.broker.Send(events.NewOrderEvent(ctx, order))
-	}
 }
