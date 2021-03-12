@@ -8,6 +8,11 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+var (
+	// ErrBondSlashing - just indicates that we had to penalize the trader due to insufficient funds, and as such, we have to cancel their LP
+	ErrBondSlashing = errors.New("bond slashing")
+)
+
 func (m *Market) transferMargins(ctx context.Context, risk []events.Risk, closed []events.MarketPosition) error {
 	if m.as.InAuction() {
 		return m.transferMarginsAuction(ctx, risk, closed)
@@ -66,18 +71,20 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 	if tr != nil {
 		responses = append(responses, tr)
 	}
+	var rerr error
 	// margin shortfall && liquidity provider -> bond slashing
 	if closed != nil && len(lpShortfall) != 0 {
 		// get bond penalty
+		rerr = ErrBondSlashing
 		penalty := m.bondPenaltyFactor * float64(closed.MarginShortFall())
 		tr := types.Transfer{
 			Owner: rEvt.Party(),
 			Amount: &types.FinancialAmount{
-				Amount: int64(penalty),
+				Amount: uint64(penalty),
 				Asset:  asset,
 			},
 			Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
-			MinAmount: int64(penalty),
+			MinAmount: uint64(penalty),
 		}
 		resp, err := m.collateral.BondUpdate(ctx, mID, rEvt.Party(), &tr)
 		if err != nil {
@@ -86,5 +93,5 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 		responses = append(responses, resp)
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
-	return nil
+	return rerr
 }

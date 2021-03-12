@@ -1601,6 +1601,15 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			o.Status = types.Order_STATUS_STOPPED // closing out = status STOPPED
 			evts = append(evts, events.NewOrderEvent(ctx, o))
 		}
+		if m.liquidity.IsLiquidityProvider(v.Party()) {
+			if err := m.cancelLiquidityProvisionAndConfiscateBondAccount(ctx, v.Party()); err != nil {
+				m.log.Error("unable to cancel liquidity provision for a distressed party",
+					logging.String("party-id", o.PartyId),
+					logging.String("market-id", mktID),
+				)
+				return err
+			}
+		}
 
 		// add all pegged orders too to the orderUpdates
 		orderUpdates = append(orderUpdates, orders...)
@@ -1832,6 +1841,44 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
 
 	return err
+}
+
+func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Context, partyID string) error {
+	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, partyID)
+	if err != nil {
+		return err
+	}
+	for _, o := range cancelOrders {
+		if _, err := m.cancelOrder(ctx, partyID, o.Id); err != nil {
+			m.log.Debug("unable cancel liquidity order",
+				logging.String("party", partyID),
+				logging.String("order-id", o.Id),
+				logging.Error(err))
+		}
+	}
+	asset, err := m.mkt.GetAsset()
+	if err != nil {
+		return err
+	}
+	bacc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, m.mkt.Id, asset)
+	if err != nil {
+		return err
+	}
+	transfer := &types.Transfer{
+		Owner: partyID,
+		Amount: &types.FinancialAmount{
+			Amount: bacc.Balance,
+			Asset:  asset,
+		},
+		Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+		MinAmount: bacc.Balance,
+	}
+	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, partyID, transfer)
+	if err != nil {
+		return err
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+	return nil
 }
 
 func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) error {

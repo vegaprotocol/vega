@@ -88,6 +88,9 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 		require.NoError(t, err)
 	}
 	// opening auction ended, mark-price set
+	mktData := mkt.market.GetMarketData()
+	require.NotNil(t, mktData)
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, mktData.MarketTradingMode)
 }
 
 func TestRejectLiquidityProvisionWithInsufficientMargin(t *testing.T) {
@@ -106,7 +109,8 @@ func TestRejectLiquidityProvisionWithInsufficientMargin(t *testing.T) {
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
-	var mainPartyInitialDeposit uint64 = 793 // 794 is the minimum required amount to submitt the two liquidity orders and LP provision
+	// var mainPartyInitialDeposit uint64 = 793 // 794 is the minimum required amount to submitt the two liquidity orders and LP provision
+	mainPartyInitialDeposit := uint64(200) // 794 is the minimum required amount to submitt the two liquidity orders and LP provision
 	addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -238,7 +242,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	require.Greater(t, insurancePoolBalanceAfterLPCloseout, insurancePoolBalanceBeforeLPCloseout)
 }
 
-func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.T) {
+func testBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -327,7 +331,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	require.Equal(t, zero, insurancePoolBalanceAfterMarketMove)
 }
 
-func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.T) {
+func testBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -449,7 +453,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.Equal(t, expectedBondAccBalance, int64(bondAccBalanceAfterMarketMove))
 }
 
-func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseout(t *testing.T) {
+func testBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseout(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -573,7 +577,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	require.Equal(t, lp.CommitmentAmount, suppliedStake)
 }
 
-func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t *testing.T) {
+func testBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -696,7 +700,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t 
 	require.Equal(t, suppliedStake, zero)
 }
 
-func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t *testing.T) {
+func testBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
