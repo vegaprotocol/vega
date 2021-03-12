@@ -288,7 +288,9 @@ func (o ConditionOperator) IntoProto() (oraclesv1.Condition_Operator, error) {
 
 // IntoProto ...
 func (o *OracleSpecToFutureBindingInput) IntoProto() (*types.OracleSpecToFutureBinding, error) {
-	return nil, nil
+	return &types.OracleSpecToFutureBinding{
+		SettlementPriceProperty: o.SettlementPriceProperty,
+	}, nil
 }
 
 // IntoProto ...
