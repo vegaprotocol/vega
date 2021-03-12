@@ -10,9 +10,15 @@ Feature: Distressed traders should not have general balance left
       | prices.ETH.value | 42    |
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
-    Given the following traders:
-      | name      |      amount  |
-      | auxiliary | 100000000000 |
+  Scenario: Upper bound breached
+    Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount         |
+      | trader1   | ETH   | 10000000000000 |
+      | trader2   | ETH   | 10000000000000 |
+      | trader3   | ETH   | 24000          |
+      | trader4   | ETH   | 10000000000000 |
+      | trader5   | ETH   | 10000000000000 |
+      | auxiliary | ETH   | 100000000000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
@@ -20,24 +26,12 @@ Feature: Distressed traders should not have general balance left
       | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
       | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
-
-  Scenario: Upper bound breached
-    Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount         |
-      | trader1 | ETH   | 10000000000000 |
-      | trader2 | ETH   | 10000000000000 |
-      | trader3 | ETH   | 24000          |
-      | trader4 | ETH   | 10000000000000 |
-      | trader5 | ETH   | 10000000000000 |
-
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | trader1 | ETH/DEC20 | sell | 20     | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | trader2 | ETH/DEC20 | buy  | 20     | 80    | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
-
 
     And the mark price for the market "ETH/DEC20" is "100"
 
