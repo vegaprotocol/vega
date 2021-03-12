@@ -35,7 +35,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
   Scenario:
     # no margin account created for trader1, just general account
-    And "trader1" have only one account per asset
+    And "trader1" has only one account per asset
     # placing test order
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |

@@ -36,7 +36,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
   Scenario:
     # MAKE TRADES
     # no margin account created for trader1, just general account
-    And "trader1" have only one account per asset
+    And "trader1" has only one account per asset
     # placing test order
     Then traders place following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     |

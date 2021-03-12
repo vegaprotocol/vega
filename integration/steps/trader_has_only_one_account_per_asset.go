@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func HaveOnlyOneAccountPerAsset(
+func TraderHasOnlyOneAccountPerAsset(
 	broker *stubs.BrokerStub,
 	owner string,
 ) error {

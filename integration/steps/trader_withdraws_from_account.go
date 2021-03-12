@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 )
 
-func WithdrawFromAccount(
+func TraderWithdrawsFromAccount(
 	collateral *collateral.Engine,
 	trader, amountStr, asset string,
 ) error {

@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
-func TheTradersDepositAssets(
+func TradersDepositAssets(
 	collateralEngine *collateral.Engine,
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,

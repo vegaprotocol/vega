@@ -56,21 +56,21 @@ func FeatureContext(s *godog.Suite) {
 		}
 	})
 
-	s.Step(`^"([^"]*)" have only one margin account per market$`, func(owner string) error {
-		return steps.HaveOnlyOneMarginAccountPerMarket(execsetup.broker, owner)
+	s.Step(`^"([^"]*)" has only one margin account per market$`, func(owner string) error {
+		return steps.TraderHasOnlyOneMarginAccountPerMarket(execsetup.broker, owner)
 	})
-	s.Step(`^The "([^"]*)" withdraw "([^"]*)" from the "([^"]*)" account$`, func(owner, amountStr, asset string) error {
-		return steps.WithdrawFromAccount(execsetup.collateral, owner, amountStr, asset)
+	s.Step(`^"([^"]*)" withdraws "([^"]*)" from the "([^"]*)" account$`, func(owner, amountStr, asset string) error {
+		return steps.TraderWithdrawsFromAccount(execsetup.collateral, owner, amountStr, asset)
 	})
 	s.Step(`^The "([^"]*)" makes a deposit of "([^"]*)" into the "([^"]*)" account$`, func(owner, amountstr, asset string) error {
 		return steps.DepositIntoAccount(execsetup.collateral, owner, amountstr, asset)
 	})
 	s.Step(`^"([^"]*)" general account for asset "([^"]*)" balance is "([^"]*)"$`, generalAccountForAssetBalanceIs)
-	s.Step(`^"([^"]*)" have only one account per asset$`, func(owner string) error {
-		return steps.HaveOnlyOneAccountPerAsset(execsetup.broker, owner)
+	s.Step(`^"([^"]*)" has only one account per asset$`, func(owner string) error {
+		return steps.TraderHasOnlyOneAccountPerAsset(execsetup.broker, owner)
 	})
 	s.Step(`^the traders make the following deposits on asset's general account:$`, func(table *gherkin.DataTable) error {
-		return steps.TheTradersDepositAssets(execsetup.collateral, execsetup.broker, table)
+		return steps.TradersDepositAssets(execsetup.collateral, execsetup.broker, table)
 	})
 	s.Step(`^the execution engine have these markets:$`, func(table *gherkin.DataTable) error {
 		markets := steps.TheMarkets(marketExpiry, table)
