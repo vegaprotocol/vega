@@ -92,14 +92,18 @@ func FeatureContext(s *godog.Suite) {
 		return steps.SettlementAccountBalanceIsForMarket(execsetup.broker, amountStr, market)
 	})
 	s.Step(`^the insurance pool initial balance for the markets is "([^"]*)":$`, theInsurancePoolInitialBalanceForTheMarketsIs)
-	s.Step(`^the insurance pool balance is "([^"]*)" for the market "([^"]*)"$`, theInsurancePoolBalanceIsForTheMarket)
+	s.Step(`^the insurance pool balance is "([^"]*)" for the market "([^"]*)"$`, func(amountStr, market string) error {
+		return steps.TheInsurancePoolBalanceIsForTheMarket(execsetup.broker, amountStr, market)
+	})
 	s.Step(`^the markets starts on "([^"]*)" and expires on "([^"]*)"$`, theMarketsStartsOnAndExpiresOn)
 	s.Step(`^the time is updated to "([^"]*)"$`, theTimeIsUpdatedTo)
 	s.Step(`^traders cannot place the following orders anymore:$`, tradersCannotPlaceTheFollowingOrdersAnymore)
 	s.Step(`^the margins levels for the traders are:$`, theMarginsLevelsForTheTradersAre)
 	s.Step(`^traders place following failing orders:$`, tradersPlaceFollowingFailingOrders)
 	s.Step(`^the following orders are rejected:$`, theFollowingOrdersAreRejected)
-	s.Step(`^traders place following orders with references:$`, tradersPlaceFollowingOrdersWithReferences)
+	s.Step(`^traders place following orders with references:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersPlaceFollowingOrdersWithReferences(execsetup.engine, table)
+	})
 	s.Step(`^missing traders place following orders with references:$`, missingTradersPlaceFollowingOrdersWithReferences)
 	s.Step(`^traders cancels the following orders reference:$`, tradersCancelsTheFollowingOrdersReference)
 	s.Step(`^traders cancels the following filled orders reference:$`, func(table *gherkin.DataTable) error {
@@ -108,7 +112,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^missing traders cancels the following orders reference:$`, missingTradersCancelsTheFollowingOrdersReference)
 	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)
 	s.Step(`^dump transfers$`, dumpTransfers)
-	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, theMarkPriceForTheMarketIs)
+	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, func(market, markPriceStr string) error {
+		return steps.TheMarkPriceForTheMarketIs(execsetup.engine, market, markPriceStr)
+	})
 	s.Step(`^the market trading mode for the market "([^"]*)" is "([^"]*)"$`, theMarketTradingModeIs)
 	s.Step(`^the following network trades happened:$`, theFollowingNetworkTradesHappened)
 	s.Step(`^traders amends the following orders reference:$`, tradersAmendsTheFollowingOrdersReference)

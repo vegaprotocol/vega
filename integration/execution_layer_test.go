@@ -103,52 +103,6 @@ func missingTradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable)
 	return nil
 }
 
-func tradersPlaceFollowingOrdersWithReferences(orders *gherkin.DataTable) error {
-	for _, row := range orders.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		oty, err := ordertypeval(row, 6)
-		if err != nil {
-			return err
-		}
-		tif, err := tifval(row, 7)
-		if err != nil {
-			return err
-		}
-
-		var expiresAt int64
-		if oty != types.Order_TYPE_MARKET {
-			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
-		}
-
-		order := types.Order{
-			Status:      types.Order_STATUS_ACTIVE,
-			Id:          uuid.NewV4().String(),
-			MarketId:    val(row, 1),
-			PartyId:     val(row, 0),
-			Side:        sideval(row, 2),
-			Price:       u64val(row, 4),
-			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
-			ExpiresAt:   expiresAt,
-			Type:        oty,
-			TimeInForce: tif,
-			CreatedAt:   time.Now().UnixNano(),
-			Reference:   val(row, 8),
-		}
-		result, err := execsetup.engine.SubmitOrder(context.Background(), &order)
-		if err != nil {
-			return fmt.Errorf("err(%v), trader(%v), ref(%v)", err, order.PartyId, order.Reference)
-		}
-		if int64(len(result.Trades)) != i64val(row, 5) {
-			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", i64val(row, 5), len(result.Trades), *result)
-		}
-	}
-	return nil
-}
-
 func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
 	for _, row := range refs.Rows {
 		if val(row, 0) == "trader" {
@@ -342,18 +296,6 @@ func theFollowingTransfersHappened(arg1 *gherkin.DataTable) error {
 	return nil
 }
 
-func theInsurancePoolBalanceIsForTheMarket(amountstr, market string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	acc, err := execsetup.broker.GetMarketInsurancePoolAccount(market)
-	if err != nil {
-		return err
-	}
-	if amount != acc.Balance {
-		return fmt.Errorf("invalid balance for market insurance pool, expected %v, got %v", amount, acc.Balance)
-	}
-	return nil
-}
-
 func theTimeIsUpdatedTo(newTime string) error {
 	t, err := time.Parse("2006-01-02T15:04:05Z", newTime)
 	if err != nil {
@@ -536,24 +478,6 @@ func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
 			return err
 		}
 	}
-	return nil
-}
-
-func theMarkPriceForTheMarketIs(market, markPriceStr string) error {
-	markPrice, err := strconv.ParseUint(markPriceStr, 10, 0)
-	if err != nil {
-		return fmt.Errorf("markPrice is not a integer: markPrice(%v), err(%v)", markPriceStr, err)
-	}
-
-	mktdata, err := execsetup.engine.GetMarketData(market)
-	if err != nil {
-		return fmt.Errorf("unable to get mark price for market(%v), err(%v)", markPriceStr, err)
-	}
-
-	if mktdata.MarkPrice != markPrice {
-		return fmt.Errorf("mark price if wrong for market(%v), expected(%v) got(%v)", market, markPrice, mktdata.MarkPrice)
-	}
-
 	return nil
 }
 
