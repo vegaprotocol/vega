@@ -268,49 +268,6 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 	return nil
 }
 
-func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
-	for _, row := range orders.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		oty, err := ordertypeval(row, 6)
-		if err != nil {
-			return err
-		}
-
-		tif := types.Order_TIME_IN_FORCE_GTT
-		if len(row.Cells) > 7 {
-			tif, err = tifval(row, 7)
-			if err != nil {
-				return err
-			}
-		}
-
-		order := types.Order{
-			Id:          uuid.NewV4().String(),
-			MarketId:    val(row, 1),
-			PartyId:     val(row, 0),
-			Side:        sideval(row, 2),
-			Price:       u64val(row, 4),
-			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
-			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        oty,
-			TimeInForce: tif,
-			CreatedAt:   time.Now().UnixNano(),
-		}
-		_, err = execsetup.engine.SubmitOrder(context.Background(), &order)
-		if err == nil {
-			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
-		}
-		if err.Error() != val(row, 5) {
-			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
-		}
-	}
-	return nil
-}
-
 func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 	ordCnt := len(orders.Rows) - 1
 	for _, row := range orders.Rows {

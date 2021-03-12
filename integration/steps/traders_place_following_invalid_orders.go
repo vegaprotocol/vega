@@ -6,18 +6,18 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
-
 	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
+
+	"code.vegaprotocol.io/vega/execution"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TradersPlaceFollowingOrders(
+func TradersPlaceFollowingInvalidOrders(
 	exec *execution.Engine,
-	orders *gherkin.DataTable,
+	table *gherkin.DataTable,
 ) error {
-	for _, row := range TableWrapper(*orders).Parse() {
+	for _, row := range TableWrapper(*table).Parse() {
 		oty := row.OrderType("type")
 		tif := row.TIF("tif")
 		side := row.Side("side")
@@ -25,6 +25,7 @@ func TradersPlaceFollowingOrders(
 		volume := row.U64("volume")
 		trader := row.Str("trader")
 		reference := strconv.FormatInt(time.Now().UnixNano(), 10)
+		expectedError := row.Str("error")
 
 		var expiresAt int64
 		if oty != types.Order_TYPE_MARKET {
@@ -46,20 +47,23 @@ func TradersPlaceFollowingOrders(
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   reference,
 		}
-		result, err := exec.SubmitOrder(context.Background(), &order)
-		if err != nil {
-			return errUnableToPlaceOrder(trader, reference, err)
+
+		_, err := exec.SubmitOrder(context.Background(), &order)
+
+		if err == nil {
+			return errUnexpectedSuccessfulOrder(expectedError, err)
 		}
-
-		resultingTrades := row.U64("resulting trades")
-
-		if uint64(len(result.Trades)) != resultingTrades {
-			return errUnexpectedNumberOfTrades(resultingTrades, result)
+		if err.Error() != expectedError {
+			return errMismatchedErrorMessage(expectedError, err)
 		}
 	}
 	return nil
 }
 
-func errUnexpectedNumberOfTrades(resultingTrades uint64, result *types.OrderConfirmation) error {
-	return fmt.Errorf("expected %d trades, instead saw %d (%#v)", resultingTrades, len(result.Trades), *result)
+func errMismatchedErrorMessage(expectedError string, err error) error {
+	return fmt.Errorf("expected error (%v) but got (%v)", expectedError, err)
+}
+
+func errUnexpectedSuccessfulOrder(expectedError string, err error) error {
+	return fmt.Errorf("expected error (%v) but got (%v)", expectedError, err)
 }

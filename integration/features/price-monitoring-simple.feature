@@ -61,7 +61,7 @@ Feature: Price monitoring test using simple risk model
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC |
 
-    Then traders place following failing orders:
+    Then traders place the following invalid orders:
       | trader  | market id | side | volume | price | error                             | type       | tif     |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | OrderError: invalid time in force | TYPE_LIMIT | TIF_GFN |
 

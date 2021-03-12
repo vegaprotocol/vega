@@ -61,9 +61,9 @@ Feature: Test trader accounts
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
 
-    Then traders place following failing orders:
-      | trader    | market id | side | volume | price | error               | type       |
-      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | margin check failed | TYPE_LIMIT |
+    Then traders place the following invalid orders:
+      | trader    | market id | side | volume | price | error               | type       | tif      |
+      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | margin check failed | TYPE_LIMIT |  TIF_GTC |
     Then the following orders are rejected:
       | trader    | id        | reason                          |
       | traderGuy | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |
