@@ -3106,8 +3106,9 @@ func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64
 	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(v)
 }
 
-func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(v float64) {
+func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
 	m.targetStakeTriggeringRatio = v
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.

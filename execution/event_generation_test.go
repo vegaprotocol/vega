@@ -154,7 +154,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -215,7 +215,7 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -289,7 +289,7 @@ func TestEvents_CloseOutTraderWithPeggedOrder(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -411,7 +411,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -477,7 +477,7 @@ func TestEvents_SelfTrading(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -577,7 +577,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -645,7 +645,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -703,7 +703,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
@@ -761,7 +761,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
 
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	auxParty := "aux"
 	addAccount(tm, auxParty)
