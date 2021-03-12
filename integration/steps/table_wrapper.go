@@ -222,20 +222,19 @@ func OracleSpecPropertyType(name string) (oraclesv1.PropertyKey_Type, error) {
 	return oraclesv1.PropertyKey_Type(ty), nil
 }
 
+
 func (r RowWrapper) Account(name string) types.AccountType {
-	accountType, err := account(r.Str(name))
-	panicW(name, err)
-	return accountType
+	return account(r.Str(name))
 }
 
-func account(name string) (types.AccountType, error) {
+func account(name string) types.AccountType {
 	value := types.AccountType(types.AccountType_value[name])
 
 	if value == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
-		return value, fmt.Errorf("invalid account type %s", name)
+		panic(fmt.Sprintf("invalid account type %s", name))
 	}
 
-	return value, nil
+	return value
 }
 
 func accountID(marketID, partyID, asset string, ty types.AccountType) string {

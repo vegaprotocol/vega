@@ -43,7 +43,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | trader1 | 14000000 | 11   | sellSideMM |
 
     Then the following transfers happened:
-      | from   | to      | fromType                | toType              | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
     Then traders have the following account balances:
@@ -64,7 +64,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1      | TYPE_LIMIT | TIF_GTC |
 
     And the following transfers happened:
-      | from   | to      | fromType                | toType              | id        | amount   | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 26000000 | ETH   |
 
     Then traders have the following account balances:

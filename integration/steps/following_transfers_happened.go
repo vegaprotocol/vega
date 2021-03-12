@@ -81,16 +81,16 @@ func (r transferRow) from() string {
 	return r.row.Str("from")
 }
 
-func (r transferRow) to() string {
-	return r.row.Str("to")
-}
-
 func (r transferRow) fromAccount() types.AccountType {
 	return r.row.Account("from account")
 }
 
 func (r transferRow) fromAccountID() string {
 	return accountID(r.marketID(), r.from(), r.asset(), r.fromAccount())
+}
+
+func (r transferRow) to() string {
+	return r.row.Str("to")
 }
 
 func (r transferRow) toAccount() types.AccountType {
