@@ -242,6 +242,14 @@ type LedgerEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// Configuration of a market liquidity monitoring parameters
+type LiquidityMonitoringParameters struct {
+	// Specifies parameters related to target stake calculation
+	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters"`
+	// Specifies the triggering ratio for entering liquidity auction
+	TriggeringRatio float64 `json:"triggeringRatio"`
+}
+
 // A special order type for liquidity providers
 type LiquidityOrderInput struct {
 	// The value to which this order is tied
