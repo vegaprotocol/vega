@@ -209,18 +209,18 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 				// this is the first update indicating the order
 				// was matched
 				types.Order_STATUS_ACTIVE,
-				0x595, // size - 20
+				0x1df, // size - 20
 			},
 			{
 				// this is the replacement order created
 				// by engine.
 				types.Order_STATUS_CANCELLED,
-				0x595, // size
+				0x1df, // size
 			},
 			{
 				// this is the cancellation
 				types.Order_STATUS_ACTIVE,
-				0x5a9, // cancelled
+				0x1f3, // cancelled
 			},
 		}
 

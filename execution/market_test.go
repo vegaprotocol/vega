@@ -3785,7 +3785,13 @@ func TestLPOrdersRollback(t *testing.T) {
 		// the first order we try to place, the party does
 		// not have enough funds
 		expectedStatus := []types.Order_Status{
-			types.Order_STATUS_REJECTED, // second gets rejected
+			types.Order_STATUS_ACTIVE,
+			types.Order_STATUS_ACTIVE,
+			types.Order_STATUS_ACTIVE,
+			types.Order_STATUS_REJECTED,
+			types.Order_STATUS_CANCELLED,
+			types.Order_STATUS_CANCELLED,
+			types.Order_STATUS_CANCELLED,
 		}
 
 		require.Len(t, found, len(expectedStatus))

@@ -347,18 +347,29 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 
 // CreateInitialOrders returns two slices of orders, one for orders to be
 // created and the other for orders to be updated.
-func (e *Engine) CreateInitialOrders(markPrice uint64, party string, orders []*types.Order, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
+func (e *Engine) CreateInitialOrders(
+	midPriceBid, midPriceAsk uint64,
+	party string,
+	orders []*types.Order,
+	repriceFn RepricePeggedOrder,
+) ([]*types.Order, []*types.OrderAmendment, error) {
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
 	kills := e.killExistingLiquidityOrders(party)
 	// ignoring amends as there won't be any since we kill all the orders first
-	creates, _, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
+	creates, _, err := e.createOrUpdateForParty(
+		midPriceBid, midPriceAsk, party, repriceFn)
 	return creates, kills, err
 }
 
 // Update gets the order changes.
 // It keeps track of all LP orders.
-func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn RepricePeggedOrder, orders []*types.Order) ([]*types.Order, []*types.OrderAmendment, error) {
+func (e *Engine) Update(
+	ctx context.Context,
+	midPriceBid, midPriceAsk uint64,
+	repriceFn RepricePeggedOrder,
+	orders []*types.Order,
+) ([]*types.Order, []*types.OrderAmendment, error) {
 	var (
 		newOrders        []*types.Order
 		amendments       []*types.OrderAmendment
@@ -374,7 +385,7 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 		// update our internal orders
 		e.updatePartyOrders(po.Party, po.Orders)
 
-		creates, updates, err := e.createOrUpdateForParty(markPrice, po.Party, repriceFn)
+		creates, updates, err := e.createOrUpdateForParty(midPriceBid, midPriceAsk, party, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -384,26 +395,27 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 	}
 
 	if e.undeployedProvisions {
-		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try an deploy now.
-		stillUndeployed := false
-		// call slice to ensure these lp provisions are properly sorted
+		// There are some provisions that haven't been cancelled or rejected,
+		// but haven't yet been deployed, try an deploy now.
+		e.undeployedProvisions = false
 		for _, lp := range e.provisions.slice() {
 			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED {
-				creates, updates, err := e.createOrUpdateForParty(markPrice, lp.PartyId, repriceFn)
+				creates, updates, err := e.createOrUpdateForParty(midPriceBid, midPriceAsk, lp.PartyId, repriceFn)
 				if err != nil {
 					return nil, nil, err
 				}
+				updatedLPParties = append(updatedLPParties, lp.PartyId)
 				newOrders = append(newOrders, creates...)
 				amendments = append(amendments, updates...)
-				stillUndeployed = stillUndeployed || lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED
-
+				if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED {
+					e.undeployedProvisions = true
+				}
 			}
 		}
-		e.undeployedProvisions = stillUndeployed
 	}
 
 	// send a batch of updates
-	evts := []events.Event{}
+	evts := make([]events.Event, 0, len(updatedLPParties))
 	for _, party := range updatedLPParties {
 		evts = append(evts, events.NewLiquidityProvisionEvent(
 			ctx, e.provisions[party]))
@@ -434,7 +446,11 @@ func (e *Engine) killExistingLiquidityOrders(party string) []*types.OrderAmendme
 	return amendments
 }
 
-func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceFn RepricePeggedOrder) ([]*types.Order, []*types.OrderAmendment, error) {
+func (e *Engine) createOrUpdateForParty(
+	midPriceBid, midPriceAsk uint64,
+	party string,
+	repriceFn RepricePeggedOrder,
+) ([]*types.Order, []*types.OrderAmendment, error) {
 	lp := e.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return nil, nil, nil
@@ -446,13 +462,13 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		orders = append(orders, order)
 	}
 
-	obligation := float64(lp.CommitmentAmount) * e.stakeToObligationFactor
 	var (
-		buysShape  = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
-		sellsShape = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
+		obligation     = float64(lp.CommitmentAmount) * e.stakeToObligationFactor
+		buysShape      = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
+		sellsShape     = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
+		repriceFailure bool
 	)
 
-	repriceFailure := false
 	for _, buy := range lp.Buys {
 		pegged := &types.PeggedOrder{
 			Reference: buy.LiquidityOrder.Reference,
@@ -495,7 +511,6 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 	)
 
 	if repriceFailure {
-
 		needsUpdateBuys = e.undeployOrdersFromShape(
 			party, buysShape, types.Side_SIDE_BUY)
 		needsUpdateSells = e.undeployOrdersFromShape(
@@ -504,9 +519,8 @@ func (e *Engine) createOrUpdateForParty(markPrice uint64, party string, repriceF
 		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
 		e.undeployedProvisions = true
 	} else {
-
 		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
-			float64(markPrice),
+			float64(midPriceBid), float64(midPriceAsk),
 			obligation,
 			orders,
 			buysShape, sellsShape,
@@ -556,19 +570,19 @@ func (e *Engine) undeployOrdersFromShape(
 			e.orders[party] = map[string]*types.Order{}
 		}
 	}
-	lp := e.LiquidityProvisionByPartyID(party)
 
 	var (
 		amendments []*types.OrderAmendment
+		lp         = e.LiquidityProvisionByPartyID(party)
 	)
 
 	for i, o := range supplied {
-		order := lm[o.OrderID]
-		var ref *types.LiquidityOrderReference
+		var (
+			order                                = lm[o.OrderID]
+			ref   *types.LiquidityOrderReference = lp.Sells[i]
+		)
 		if side == types.Side_SIDE_BUY {
 			ref = lp.Buys[i]
-		} else {
-			ref = lp.Sells[i]
 		}
 
 		if order != nil {
