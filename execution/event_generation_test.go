@@ -3,7 +3,6 @@ package execution_test
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
@@ -53,7 +52,7 @@ func leaveAuction(tm *testMarket, ctx context.Context, now *time.Time) {
 	tm.market.LeaveAuction(ctx, *now)
 }
 
-func processEvents2(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder, i int) {
+func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder, i int) {
 	for _, event := range tm.orderEvents {
 		mdb.Push(event)
 	}
@@ -66,24 +65,23 @@ func processEvents2(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBu
 	}
 
 	if !checkConsistency(t, tm, mdb) {
-		// We had an error, lets dump all the events
+		/*// We had an error, lets dump all the events
 		for i, event := range tm.orderEvents {
 			switch te := event.(type) {
 			case subscribers.OE:
 				fmt.Println("Event:", i, te.Order())
 			}
-		}
+		}*/
 		needToQuit = true
 	}
 
 	if needToQuit {
-		fmt.Println("About to exit after finding an issue on iteration", i)
 		require.Equal(t, true, false)
 	}
 }
 
 func processEvents(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) {
-	processEvents2(t, tm, mdb, 0)
+	processEventsWithCounter(t, tm, mdb, 0)
 }
 
 func clearEvents(tm *testMarket) {
@@ -99,26 +97,18 @@ func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepth
 	correct := true
 	// Do we have the same number of orders in each?
 	if !assert.Equal(t, tm.market.GetOrdersOnBookCount(), mdb.GetOrderCount(tm.market.GetID())) {
-		fmt.Println("Market Order On Book:", tm.market.GetOrdersOnBookCount())
-		fmt.Println("Market Depth Orders :", mdb.GetOrderCount(tm.market.GetID()))
 		correct = false
 	}
 	// Do we have the same volume in each?
 	if !assert.Equal(t, tm.market.GetVolumeOnBook(), mdb.GetTotalVolume(tm.market.GetID())) {
-		fmt.Println("Market Volume On Book:", tm.market.GetVolumeOnBook())
-		fmt.Println("Market Depth Volume  :", mdb.GetTotalVolume(tm.market.GetID()))
 		correct = false
 	}
 	// Do we have the same best bid price?
 	if !assert.Equal(t, tm.market.GetMarketData().BestBidPrice, mdb.GetBestBidPrice(tm.market.GetID())) {
-		fmt.Println("Market Best Bid:", tm.market.GetMarketData().BestBidPrice)
-		fmt.Println("Market Depth BB:", mdb.GetBestBidPrice(tm.market.GetID()))
 		correct = false
 	}
 	// Do we have the same best ask price?
 	if !assert.Equal(t, tm.market.GetMarketData().BestOfferPrice, mdb.GetBestAskPrice(tm.market.GetID())) {
-		fmt.Println("Market Best Ask:", tm.market.GetMarketData().BestOfferPrice)
-		fmt.Println("Market Depth BA:", mdb.GetBestAskPrice(tm.market.GetID()))
 		correct = false
 	}
 
@@ -127,8 +117,6 @@ func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepth
 	bestAsk := tm.market.GetMarketData().BestOfferPrice
 
 	if !assert.Equal(t, tm.market.GetMarketData().BestBidVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_BUY, bestBid)) {
-		fmt.Println("BestBidVolume in OB:", tm.market.GetMarketData().BestBidVolume)
-		fmt.Println("BestBidVolume in MD:", mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_BUY, bestBid))
 		correct = false
 	}
 
@@ -304,6 +292,47 @@ func TestEvents_CloseOutTraderWithPeggedOrder(t *testing.T) {
 	assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
 	assert.Equal(t, uint64(69), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
+	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+}
+
+func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
+	now := time.Unix(10, 0)
+	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
+	tm := startMarketInAuction(t, ctx, &now)
+	leaveAuction(tm, ctx, &now)
+
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_SELL, "trader-C", 1, 200)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	// Fill some of it to set the mark price
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 1, 100)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	// Place the pegged order
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-A", 50, 0)
+	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
+	// Move the best bid price up so that the pegged order cannot reprice
+	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order07", types.Side_SIDE_BUY, "trader-B", 2, 200)
+	o7conf, err := tm.market.SubmitOrder(ctx, o7)
+	require.NotNil(t, o7conf)
+	require.NoError(t, err)
+
+	// Check we have the right amount of events
+	assert.Equal(t, uint64(6), tm.orderEventCount)
+	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+
+	processEvents(t, tm, mdb)
+	assert.Equal(t, int64(2), mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
@@ -853,90 +882,91 @@ func TestEvents_PeggedOrders(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 }
 
-func TestEventStream(t *testing.T) {
-	now := time.Unix(10, 0)
-	ctx := context.Background()
-	tm := startMarketInAuction(t, ctx, &now)
-	leaveAuction(tm, ctx, &now)
-	r := rand.New(rand.NewSource(99))
-	loopCount := 100000
-
-	for i := 0; i < loopCount; i++ {
-		orderCount := r.Intn(100000) + 1
-		clearEvents(tm)
-		fmt.Printf("Testing event bus with %d messages\n", orderCount)
-		tm.market.SendEvents(ctx, orderCount)
-		require.Equal(t, uint64(orderCount), tm.orderEventCount)
-	}
-}
-
 func TestEvents_Fuzzing(t *testing.T) {
-	now := time.Unix(10, 0)
-	ctx := context.Background()
-	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
-	tm := startMarketInAuction(t, ctx, &now)
-	leaveAuction(tm, ctx, &now)
+	/*	now := time.Unix(10, 0)
+		ctx := context.Background()
+		mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
+		tm := startMarketInAuction(t, ctx, &now)
+		leaveAuction(tm, ctx, &now)
 
-	r := rand.New(rand.NewSource(99))
+		seed := int64(1) //time.Now().UnixNano()
+		r := rand.New(rand.NewSource(seed))
+		fmt.Println("Seed", seed)
 
-	var (
-		traderCount int = 10
-		side        types.Side
-		price       uint64
-		size        uint64
-	)
+		var (
+			traderCount int = 10
+			side        types.Side
+			price       uint64
+			size        uint64
+		)
 
-	// Create the traders
-	for i := 0; i < traderCount; i++ {
-		traderName := fmt.Sprintf("Trader%02d", i)
-		addAccountWithAmount(tm, traderName, 1000000000)
-	}
-
-	for i := 1; i < 10000000; i++ {
-		if i%10000 == 0 {
-			fmt.Println("Processing ", i)
+		// Create the traders
+		for i := 0; i < traderCount; i++ {
+			traderName := fmt.Sprintf("Trader%02d", i)
+			addAccountWithAmount(tm, traderName, 1000)
 		}
 
-		randomTrader := r.Intn(traderCount)
-		traderName := fmt.Sprintf("Trader%02d", randomTrader)
-		orderID := fmt.Sprintf("Order%8d", i)
-		action := r.Intn(1000)
-
-		if r.Intn(2) == 0 {
-			side = types.Side_SIDE_BUY
-		} else {
-			side = types.Side_SIDE_SELL
-		}
-
-		size = uint64(r.Int63n(100) + 1)
-
-		if action <= 200 && i > 20 {
-			// Pegged order
-			po := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, 0)
-			if side == types.Side_SIDE_BUY {
-				po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1 - r.Int63n(10)}
-			} else {
-				po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: r.Int63n(10) + 1}
+		for i := 1; i < 10000000; i++ {
+			if i%10000 == 0 {
+				fmt.Println("Processing ", i)
 			}
-			_, _ = tm.market.SubmitOrder(ctx, po)
-			processEvents2(t, tm, mdb, i)
-			clearEvents(tm)
-		} else if action < 999 {
-			// Normal order
-			if side == types.Side_SIDE_BUY {
-				price = uint64(50 + r.Intn(60))
-			} else {
-				price = uint64(90 + r.Intn(60))
+
+			if i == 75 {
+				fmt.Println("Something fishy....")
 			}
-			o := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, price)
-			_, _ = tm.market.SubmitOrder(ctx, o)
-			processEvents2(t, tm, mdb, i)
-			clearEvents(tm)
-		} else {
-			// Cancel all the order for a trader
-			tm.market.CancelAllOrders(ctx, traderName)
-			processEvents2(t, tm, mdb, i)
-			clearEvents(tm)
-		}
-	}
+
+			randomTrader := r.Intn(traderCount)
+			traderName := fmt.Sprintf("Trader%02d", randomTrader)
+			orderID := fmt.Sprintf("Order%8d", i)
+			action := r.Intn(1000)
+
+			if r.Intn(2) == 0 {
+				side = types.Side_SIDE_BUY
+			} else {
+				side = types.Side_SIDE_SELL
+			}
+
+			size = uint64(r.Int63n(100) + 1)
+
+			if action <= 200 {
+				// Pegged order
+				po := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, 0)
+				ref := r.Intn(2)
+				if side == types.Side_SIDE_BUY {
+					if ref == 0 {
+						po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -1 - r.Int63n(10)}
+					} else {
+						po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1 - r.Int63n(10)}
+					}
+				} else {
+					if ref == 0 {
+						po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: r.Int63n(10) + 1}
+					} else {
+						po.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: r.Int63n(10) + 1}
+					}
+				}
+				_, _ = tm.market.SubmitOrder(ctx, po)
+				processEventsWithCounter(t, tm, mdb, i)
+				clearEvents(tm)
+			} else if action < 999 {
+				// Normal order
+				if side == types.Side_SIDE_BUY {
+					price = uint64(50 + r.Intn(60))
+				} else {
+					price = uint64(90 + r.Intn(60))
+				}
+				o := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, orderID, side, traderName, size, price)
+				_, _ = tm.market.SubmitOrder(ctx, o)
+				processEventsWithCounter(t, tm, mdb, i)
+				clearEvents(tm)
+			} else {
+				// Cancel all the order for a trader
+				tm.market.CancelAllOrders(ctx, traderName)
+				processEventsWithCounter(t, tm, mdb, i)
+				clearEvents(tm)
+			}
+			// Move time forward
+			now = now.Add(1 * time.Second)
+			tm.market.OnChainTimeUpdate(ctx, now)
+		}*/
 }

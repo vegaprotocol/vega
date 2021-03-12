@@ -253,8 +253,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	}
 
 	// Orders that where not valid are ignored
-	if order.Status == types.Order_STATUS_UNSPECIFIED ||
-		order.Status == types.Order_STATUS_REJECTED {
+	if order.Status == types.Order_STATUS_UNSPECIFIED {
 		return
 	}
 
@@ -282,6 +281,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 			order.Status == types.Order_STATUS_STOPPED ||
 			order.Status == types.Order_STATUS_FILLED ||
 			order.Status == types.Order_STATUS_PARTIALLY_FILLED ||
+			order.Status == types.Order_STATUS_REJECTED ||
 			order.Status == types.Order_STATUS_PARKED {
 			md.removeOrder(originalOrder)
 		} else {
@@ -291,6 +291,11 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		if order.Remaining > 0 && order.Status == types.Order_STATUS_ACTIVE {
 			md.addOrder(order)
 		}
+	}
+
+	// If nothing changed we can stop here
+	if len(md.changes) == 0 {
+		return
 	}
 
 	buyPtr := []*types.PriceLevel{}
