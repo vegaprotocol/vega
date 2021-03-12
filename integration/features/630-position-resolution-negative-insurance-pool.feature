@@ -40,7 +40,7 @@ Feature: Regression test for issue 630
       | buySideProvider  | ETH/DEC19 | buy  | 200    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
     And All balances cumulated are worth "4240000"
     Then the margins levels for the traders are:
-      | trader           | id        | maintenance | search | initial | release |
+      | trader           | market id | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 | 2000        | 2200   | 2400    | 2800    |
     Then traders place following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     |

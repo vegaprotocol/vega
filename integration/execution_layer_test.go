@@ -336,40 +336,6 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 	return nil
 }
 
-func theMarginsLevelsForTheTradersAre(traders *gherkin.DataTable) error {
-	for _, row := range traders.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		partyID, marketID := val(row, 0), val(row, 1)
-		ml, err := execsetup.broker.GetMarginByPartyAndMarket(partyID, marketID)
-		if err != nil {
-			return err
-		}
-
-		var hasError bool
-
-		if ml.MaintenanceMargin != u64val(row, 2) {
-			hasError = true
-		}
-		if ml.SearchLevel != u64val(row, 3) {
-			hasError = true
-		}
-		if ml.InitialMargin != u64val(row, 4) {
-			hasError = true
-		}
-		if ml.CollateralReleaseLevel != u64val(row, 5) {
-			hasError = true
-		}
-		if hasError {
-			return fmt.Errorf(
-				"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)", i64val(row, 2), i64val(row, 3), i64val(row, 4), i64val(row, 5), ml.MaintenanceMargin, ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, val(row, 0))
-		}
-	}
-	return nil
-}
-
 func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
 	for _, row := range orders.Rows {
 		if val(row, 0) == "trader" {

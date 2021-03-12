@@ -30,7 +30,7 @@ Feature: Position resolution case 4
       | designatedLooser | ETH/DEC19 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC |
 
     Then the margins levels for the traders are:
-      | trader           | id        | maintenance | search | initial | release |
+      | trader           | market id | maintenance | search | initial | release |
       | designatedLooser | ETH/DEC19 | 2000        | 6400   | 8000    | 10000   |
 
 # insurance pool generation - modify order book
