@@ -69,7 +69,7 @@ Feature: Test mark to market settlement
       | trader3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
 
-    And Cumulated balance for all accounts is worth "216000"
+    And Cumulated balance for all accounts is worth "116000"
     Then time is updated to "2020-01-01T01:01:01Z"
     When traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
