@@ -1342,10 +1342,10 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	// start the  monitoring auction if required?
 	if m.as.AuctionStart() {
 		m.EnterAuction(ctx)
-		return nil, err
+		return nil, nil
 	}
 
-	return trades, err
+	return trades, nil
 }
 
 func (m *Market) addParty(party string) {
