@@ -111,7 +111,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^missing traders place following orders with references:$`, missingTradersPlaceFollowingOrdersWithReferences)
 	s.Step(`^traders cancels the following orders reference:$`, tradersCancelsTheFollowingOrdersReference)
 	s.Step(`^traders cancels the following filled orders reference:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelsTheFollowingFilledOrdersReference(execsetup.broker, execsetup.engine, table)
+		return steps.TradersAttemptToCancelTheFollowingFilledOrders(execsetup.broker, execsetup.engine, table)
 	})
 	s.Step(`^missing traders cancels the following orders reference:$`, missingTradersCancelsTheFollowingOrdersReference)
 	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)

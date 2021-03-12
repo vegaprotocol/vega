@@ -26,18 +26,27 @@ func TheTradersDepositAssets(
 			trader.generalAccountBalance(),
 		)
 		if err != nil {
-			return err
+			return errCannotDeposit(trader.trader(), trader.asset(), err)
 		}
 
 		_, err = broker.GetTraderGeneralAccount(trader.trader(), trader.asset())
 		if err != nil {
-			return fmt.Errorf("trader(%v) has no general account for asset(%v)",
-				trader.trader(),
-				trader.asset(),
-			)
+			return errNoGeneralAccountForTrader(trader, err)
 		}
 	}
 	return nil
+}
+
+func errNoGeneralAccountForTrader(trader traderRow, err error) error {
+	return fmt.Errorf("trader(%v) has no general account for asset(%v): %s",
+		trader.trader(),
+		trader.asset(),
+		err.Error(),
+	)
+}
+
+func errCannotDeposit(partyID, asset string, err error) error {
+	return fmt.Errorf("couldn't deposit for party(%s) and asset(%s): %s", partyID, asset, err.Error())
 }
 
 type traderRow struct {
@@ -53,9 +62,5 @@ func (r traderRow) asset() string {
 }
 
 func (r traderRow) generalAccountBalance() uint64 {
-	value, err := r.row.U64("amount")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.U64("amount")
 }
