@@ -41,7 +41,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then traders have the following account balances:
       | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1724511 | 995225489 |
-    And dump transfers
     And the following transfers happened:
       | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |

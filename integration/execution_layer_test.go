@@ -404,19 +404,6 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 	return nil
 }
 
-func dumpTransfers() error {
-	fmt.Println("DUMPING TRANSFERS")
-	transferEvents := execsetup.broker.GetTransferResponses()
-	for _, e := range transferEvents {
-		for _, t := range e.TransferResponses() {
-			for _, v := range t.GetTransfers() {
-				fmt.Printf("transfer: %v\n", *v)
-			}
-		}
-	}
-	return nil
-}
-
 func executedTrades(trades *gherkin.DataTable) error {
 	var err error
 	for i, row := range trades.Rows {
@@ -442,25 +429,6 @@ func executedTrades(trades *gherkin.DataTable) error {
 	}
 
 	return err
-}
-
-func dumpOrders() error {
-	fmt.Println("DUMPING ORDERS")
-	data := execsetup.broker.GetOrderEvents()
-	for _, v := range data {
-		o := *v.Order()
-		fmt.Printf("order %s: %v\n", o.Id, o)
-	}
-	return nil
-}
-
-func dumpTrades() error {
-	fmt.Println("DUMPING TRADES")
-	data := execsetup.broker.GetTrades()
-	for _, t := range data {
-		fmt.Printf("trade %s, %#v\n", t.Id, t)
-	}
-	return nil
 }
 
 func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {

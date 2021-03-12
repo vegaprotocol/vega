@@ -123,7 +123,6 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^missing traders cancels the following orders reference:$`, missingTradersCancelsTheFollowingOrdersReference)
 	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)
-	s.Step(`^dump transfers$`, dumpTransfers)
 	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, func(market, markPriceStr string) error {
 		return steps.TheMarkPriceForTheMarketIs(execsetup.engine, market, markPriceStr)
 	})
@@ -135,7 +134,6 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^verify the status of the order reference:$`, verifyTheStatusOfTheOrderReference)
 	s.Step(`^executed trades:$`, executedTrades)
-	s.Step(`^dump orders$`, dumpOrders)
 	s.Step(`^clear order events$`, clearOrderEvents)
 	s.Step(`^traders place pegged orders:$`, tradersPlacePeggedOrders)
 	s.Step(`^I see the following order events:$`, seeTheFollowingOrderEvents)
@@ -146,8 +144,18 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I see the LP events:$`, seeLPEvents)
 	s.Step(`^the opening auction period for market "([^"]+)" ends$`, theOpeningAuctionPeriodEnds)
 	s.Step(`^traders withdraw balance:$`, tradersWithdrawBalance)
-	s.Step(`^dump trades$`, dumpTrades)
 	s.Step(`^oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *gherkin.DataTable) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
+	})
+
+	// Debug steps
+	s.Step(`^debug transfers$`, func() error {
+		return steps.DebugTransfers(execsetup.broker)
+	})
+	s.Step(`^debug trades$`, func() error {
+		return steps.DebugTrades(execsetup.broker)
+	})
+	s.Step(`^debug orders$`, func() error {
+		return steps.DebugOrders(execsetup.broker)
 	})
 }

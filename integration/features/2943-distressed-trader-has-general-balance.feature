@@ -43,7 +43,6 @@ Feature: Distressed traders should not have general balance left
       | trader5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK |
       | trader3 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC20 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC |
-    And dump orders
 
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general       |
@@ -57,7 +56,6 @@ Feature: Distressed traders should not have general balance left
     Then I see the LP events:
       | id  | party   | market    | commitment amount |
       | lp1 | trader3 | ETH/DEC20 | 10000             |
-    And dump orders
 
     Then I see the following order events:
       | trader  | market id | side | volume | reference | offset | price | status        |

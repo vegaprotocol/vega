@@ -70,8 +70,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # T + 4s
     Then the time is updated to "2020-10-16T00:00:10Z"
 
-    Then dump orders
-
     # 2nd trigger breached with persistent order -> auction extended by 8s (total auction time no 14s).
     Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -91,8 +89,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price for the market "ETH/DEC20" is "100291"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
-
-    And dump transfers
 
     # 100291 is the new reference price, we get the following valid price ranges for the 2 triggers: [100135, 100447] & [100001, 100582]
     Then traders place following orders:
