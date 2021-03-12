@@ -11,13 +11,13 @@ Feature: Test trader accounts
 
   Scenario: a trader place a new order in the system, margin are calculated
     Given the traders make the following deposits on asset's general account:
-      | trader    | asset | amount  |
-      | traderGuy | ETH   | 10000   |
-      | trader1   | ETH   | 1000000 |
-      | trader2   | ETH   | 1000000 |
+      | trader    | asset | amount       |
+      | traderGuy | ETH   | 10000        |
+      | trader1   | ETH   | 1000000      |
+      | trader2   | ETH   | 1000000      |
+      | aux       | ETH   | 100000000000 |
 
-    Given the following traders:
-      | aux    |    100000000000 |
+  
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type        | tif     | 

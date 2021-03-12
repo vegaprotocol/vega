@@ -8,23 +8,19 @@ Feature: Price monitoring test for issue 2668
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
-
-    Given the following traders:
-      | name      |      amount  |
-      | auxiliary | 100000000000 |
+    
+  Scenario: Upper bound breached
+    Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount       |
+      | trader1   | ETH   | 10000000000  |
+      | trader2   | ETH   | 10000000000  | 
+      | auxiliary | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
       | trader     | market id | side | volume | price    | resulting trades | type        | tif     | 
       | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
       | auxiliary  | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC | 
-
-  Scenario: Upper bound breached
-    Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -77,10 +73,17 @@ Feature: Price monitoring test for issue 2668
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Lower bound breached
-    Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
+   Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount       |
+      | trader1   | ETH   | 10000000000  |
+      | trader2   | ETH   | 10000000000  | 
+      | auxiliary | ETH   | 100000000000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader     | market id | side | volume | price    | resulting trades | type        | tif     | 
+      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | auxiliary  | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -133,10 +136,17 @@ Feature: Price monitoring test for issue 2668
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached (scale prices down by 10000)
-    Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
+  Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount       |
+      | trader1   | ETH   | 10000000000  |
+      | trader2   | ETH   | 10000000000  | 
+      | auxiliary | ETH   | 100000000000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader     | market id | side | volume | price    | resulting trades | type        | tif     | 
+      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | auxiliary  | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |

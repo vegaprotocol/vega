@@ -10,23 +10,20 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | name             | value |
       | prices.ETH.value | 100   |
 
-    Given the following traders:
-      | name      |      amount  |
-      | auxiliary | 100000000000 |
+  Scenario: set up 2 traders with balance
+    # setup accounts
+    Given the traders make the following deposits on asset's general account:
+      | trader    | asset | amount       |
+      | trader1   | ETH   | 1000000000   |
+      | trader2   | ETH   | 1000000000   |
+      | trader3   | ETH   | 1000000000   |
+      | auxiliary | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
       | trader     | market id | side | volume | price      | resulting trades | type        | tif     | 
       | auxiliary  | ETH/DEC20 | buy  | 1      | 1          | 0                | TYPE_LIMIT  | TIF_GTC | 
       | auxiliary  | ETH/DEC20 | sell | 1      | 100000000  | 0                | TYPE_LIMIT  | TIF_GTC | 
-
-  Scenario: set up 2 traders with balance
-    # setup accounts
-    Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount     |
-      | trader1 | ETH   | 1000000000 |
-      | trader2 | ETH   | 1000000000 |
-      | trader3 | ETH   | 1000000000 |
 
     # place orders and generate trades - slippage 100
     Then traders place following orders with references:
