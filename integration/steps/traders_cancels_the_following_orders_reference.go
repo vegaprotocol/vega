@@ -4,23 +4,25 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
 	"github.com/cucumber/godog/gherkin"
+
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/integration/stubs"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TradersCancelsTheFollowingFilledOrdersReference(
-	broker interface {
-		GetByReference(string, string) (types.Order, error)
-	},
+func TradersAttemptToCancelTheFollowingFilledOrders(
+	broker *stubs.BrokerStub,
 	exec *execution.Engine,
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
-		o, err := broker.GetByReference(
-			row.Str("trader"), row.Str("reference"))
+		trader := row.Str("trader")
+		reference := row.Str("reference")
+
+		o, err := broker.GetByReference(trader, reference)
 		if err != nil {
-			return err
+			return errCannotGetOrderForParty(trader, reference, err)
 		}
 
 		cancel := types.OrderCancellation{
@@ -30,9 +32,19 @@ func TradersCancelsTheFollowingFilledOrdersReference(
 		}
 
 		if _, err = exec.CancelOrder(context.Background(), &cancel); err == nil {
-			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyId, o.Reference)
+			return errCanceledFilledOrder(o)
 		}
 	}
 
 	return nil
+}
+
+func errCannotGetOrderForParty(partyID, reference string, err error) error {
+	return fmt.Errorf("couldn't get order for party(%s) and reference(%s): %s", partyID, reference, err.Error())
+}
+
+func errCanceledFilledOrder(o types.Order) error {
+	return fmt.Errorf("trader(%s) succesfully canceled an uncancelable order with reference(%s)",
+		o.PartyId, o.Reference,
+	)
 }

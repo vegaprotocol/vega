@@ -10,7 +10,10 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheFollowingTransfersHappened(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheFollowingTransfersHappened(
+	broker *stubs.BrokerStub,
+	table *gherkin.DataTable,
+) error {
 	transfers := getTransfers(broker)
 
 	for _, r := range TableWrapper(*table).Parse() {
@@ -23,19 +26,27 @@ func TheFollowingTransfersHappened(broker *stubs.BrokerStub, table *gherkin.Data
 		}
 
 		if len(divergingAmounts) == 0 {
-			return fmt.Errorf("missing transfers between %v and %v for amount %v",
-				row.fromAccountID(), row.toAccountID(), row.amount(),
-			)
+			return errMissingTransfer(row)
 		} else {
-			return fmt.Errorf("invalid amount for transfer from %v to %v, expected(%d) got(%v)",
-				row.fromAccountID(), row.toAccountID(), row.amount(), divergingAmounts,
-			)
+			return errTransferFoundButNotRightAmount(row, divergingAmounts)
 		}
 	}
 
 	broker.ResetType(events.TransferResponses)
 
 	return nil
+}
+
+func errTransferFoundButNotRightAmount(row transferRow, divergingAmounts []uint64) error {
+	return fmt.Errorf("invalid amount for transfer from %v to %v, expected(%d) got(%v)",
+		row.fromAccountID(), row.toAccountID(), row.amount(), divergingAmounts,
+	)
+}
+
+func errMissingTransfer(row transferRow) error {
+	return fmt.Errorf("missing transfers between %v and %v for amount %v",
+		row.fromAccountID(), row.toAccountID(), row.amount(),
+	)
 }
 
 func matchTransfers(transfers []*types.LedgerEntry, row transferRow) (bool, []uint64) {
@@ -75,7 +86,7 @@ func (r transferRow) to() string {
 }
 
 func (r transferRow) fromAccount() types.AccountType {
-	return account(r.row.Str("from account"))
+	return r.row.Account("from account")
 }
 
 func (r transferRow) fromAccountID() string {
@@ -83,7 +94,7 @@ func (r transferRow) fromAccountID() string {
 }
 
 func (r transferRow) toAccount() types.AccountType {
-	return account(r.row.Str("to account"))
+	return r.row.Account("to account")
 }
 
 func (r transferRow) toAccountID() string {
@@ -95,11 +106,7 @@ func (r transferRow) marketID() string {
 }
 
 func (r transferRow) amount() uint64 {
-	value, err := r.row.U64("amount")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.U64("amount")
 }
 
 func (r transferRow) asset() string {

@@ -7,21 +7,25 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func HaveOnlyOneAccountPerAsset(broker *stubs.BrokerStub, owner string) error {
+func HaveOnlyOneAccountPerAsset(
+	broker *stubs.BrokerStub,
+	owner string,
+) error {
 	assets := map[string]struct{}{}
 
-	accs := broker.GetAccounts()
-	data := make([]types.Account, 0, len(accs))
-	for _, a := range accs {
-		data = append(data, a.Account())
-	}
-	for _, acc := range data {
+	accounts := getAccounts(broker)
+
+	for _, acc := range accounts {
 		if acc.Owner == owner && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			if _, ok := assets[acc.Asset]; ok {
-				return fmt.Errorf("trader=%v have multiple account for asset=%v", owner, acc.Asset)
+				return errMultipleGeneralAccountForAsset(owner, acc)
 			}
 			assets[acc.Asset] = struct{}{}
 		}
 	}
 	return nil
+}
+
+func errMultipleGeneralAccountForAsset(owner string, acc types.Account) error {
+	return fmt.Errorf("trader=%v have multiple account for asset=%v", owner, acc.Asset)
 }

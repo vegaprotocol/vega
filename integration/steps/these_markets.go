@@ -9,7 +9,10 @@ import (
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
-func TheMarkets(expiry string, table *gherkin.DataTable) []types.Market {
+func TheMarkets(
+	expiry string,
+	table *gherkin.DataTable,
+) []types.Market {
 	markets := []types.Market{}
 
 	for _, row := range TableWrapper(*table).Parse() {
@@ -191,75 +194,39 @@ func (r marketRow) isLogNormalRiskModel() bool {
 }
 
 func (r marketRow) riskAversion() float64 {
-	value, err := r.row.F64("lamd/long")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("lamd/long")
 }
 
 func (r marketRow) tau() float64 {
-	value, err := r.row.F64("tau/short")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("tau/short")
 }
 
 func (r marketRow) mu() float64 {
-	value, err := r.row.F64("mu/max move up")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("mu/max move up")
 }
 
 func (r marketRow) r() float64 {
-	value, err := r.row.F64("r/min move down")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("r/min move down")
 }
 
 func (r marketRow) sigma() float64 {
-	value, err := r.row.F64("sigma")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("sigma")
 }
 
 func (r marketRow) collateralReleaseFactor() float64 {
-	value, err := r.row.F64("release factor")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("release factor")
 }
 
 func (r marketRow) initialMarginFactor() float64 {
-	value, err := r.row.F64("initial factor")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("initial factor")
 }
 
 func (r marketRow) searchLevelFactor() float64 {
-	value, err := r.row.F64("search factor")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("search factor")
 }
 
 func (r marketRow) auctionDuration() int64 {
-	value, err := r.row.I64("auction duration")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.I64("auction duration")
 }
 
 func (r marketRow) makerFee() string {
@@ -275,43 +242,23 @@ func (r marketRow) liquidityFee() string {
 }
 
 func (r marketRow) priceMonitoringUpdateFrequency() int64 {
-	value, err := r.row.I64("p. m. update freq.")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.I64("p. m. update freq.")
 }
 
 func (r marketRow) priceMonitoringHorizons() []int64 {
-	value, err := r.row.I64Slice("p. m. horizons", ",")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.I64Slice("p. m. horizons", ",")
 }
 
 func (r marketRow) priceMonitoringProbabilities() []float64 {
-	value, err := r.row.F64Slice("p. m. probs", ",")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64Slice("p. m. probs", ",")
 }
 
 func (r marketRow) priceMonitoringDurations() []int64 {
-	value, err := r.row.I64Slice("p. m. durations", ",")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.I64Slice("p. m. durations", ",")
 }
 
 func (r marketRow) probabilityOfTrading() float64 {
-	value, err := r.row.F64("prob. of trading")
-	if err != nil {
-		panic(err)
-	}
-	return value
+	return r.row.F64("prob. of trading")
 }
 
 func (r marketRow) oracleSpecPubKeys() []string {
@@ -323,13 +270,7 @@ func (r marketRow) oracleSpecProperty() string {
 }
 
 func (r marketRow) oracleSpecPropertyType() oraclesv1.PropertyKey_Type {
-	rawType := r.row.Str("oracle spec property type")
-	ty, ok := oraclesv1.PropertyKey_Type_value[rawType]
-
-	if !ok {
-		panic(fmt.Sprintf("invalid oracle property type: %v", rawType))
-	}
-	return oraclesv1.PropertyKey_Type(ty)
+	return r.row.OracleSpecPropertyType("oracle spec property type")
 }
 
 func (r marketRow) oracleSpecBinding() string {
