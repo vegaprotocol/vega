@@ -51,7 +51,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | from   | to      | fromType                | toType              | id        | amount  | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 2800000 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the margins levels for the traders are:
@@ -76,7 +76,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | sellSideMM | ETH/DEC19 | sell | 14     | 8800000  | 0      | TYPE_LIMIT | TIF_GTC |
       | sellSideMM | ETH/DEC19 | sell | 2      | 8400000  | 0      | TYPE_LIMIT | TIF_GTC |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the margins levels for the traders are:
@@ -98,11 +98,11 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | from   | to      | fromType                | toType              | id        | amount   | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 13000000 | ETH   |
 
-    And I expect the trader to have a margin:
-      | trader  | asset | market id | margin    | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin   | general   |
       | trader1 | ETH   | ETH/DEC19 | 79999972 | 935800028 |
     And the margins levels for the traders are:
-      | trader  | market id | maintenance | search   | initial   | release   |
+      | trader  | market id | maintenance | search   | initial  | release  |
       | trader1 | ETH/DEC19 | 19999993    | 63999977 | 79999972 | 99999965 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |

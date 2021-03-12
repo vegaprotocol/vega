@@ -58,8 +58,8 @@ Feature: Position resolution case 4
       | buySideProvider  | 101    | 11500         | -1500       |
 
 # checking margins
-    Then I expect the trader to have a margin:
-      | trader           | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader           | asset | market id | margin | general |
       | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
 # then we make sure the insurance pool collected the funds

@@ -50,8 +50,8 @@ Feature: test bugfix 614 for margin calculations
     Then the margins levels for the traders are:
       | trader | market id | maintenance | search | initial | release |
       | tamlyn | ETH/DEC19 | 988         | 3161   | 3952    | 4940    |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
       | tamlyn  | ETH   | ETH/DEC19 | 3952   | 6104    |
       | chris   | ETH   | ETH/DEC19 | 3760   | 6240    |
       | edd     | ETH   | ETH/DEC19 | 5456   | 4544    |

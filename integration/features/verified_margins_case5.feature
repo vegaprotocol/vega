@@ -50,7 +50,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | from   | to      | fromType                | toType              | id        | amount  | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 2800000 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the margins levels for the traders are:
@@ -68,11 +68,11 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | sellSideMM | sell3     |
     And traders place following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0      | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0      | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 14     | 10000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 2      | 8000000  | 0      | TYPE_LIMIT | TIF_GTC |
-    And I expect the trader to have a margin:
+      | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 14     | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 2      | 8000000  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the margins levels for the traders are:
@@ -95,7 +95,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | trader1 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 273000000 | ETH   |
       | trader1 | trader1 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 144600040 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 156000000 | 573800000 |
     And the margins levels for the traders are:

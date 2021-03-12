@@ -35,8 +35,8 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
     And the mark price for the market "ETH/DEC19" is "20"
 
     # checking margins
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | tt_15  | BTC   | ETH/DEC19 | 0      | 0       |
 
     # then we make sure the insurance pool collected the funds

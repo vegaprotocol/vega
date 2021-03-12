@@ -87,7 +87,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders place following orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersPlaceFollowingOrders(execsetup.engine, table)
 	})
-	s.Step(`^I expect the trader to have a margin:$`, iExpectTheTraderToHaveAMargin)
+	s.Step(`^traders have the following account balances:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersHaveTheFollowingAccountBalances(execsetup.broker, table)
+	})
 	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
 	s.Step(`^the following transfers happened:$`, theFollowingTransfersHappened)
 	s.Step(`^the settlement account balance is "([^"]*)" for the market "([^"]*)" before MTM$`, func(amountStr, market string) error {

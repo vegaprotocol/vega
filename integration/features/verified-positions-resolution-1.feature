@@ -48,8 +48,8 @@ Feature: Position resolution case 1
       | designatedLooser | 290    | -8700         | 0           |
 
 # checking margins
-    Then I expect the trader to have a margin:
-      | trader           | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader           | asset | market id | margin | general |
       | designatedLooser | BTC   | ETH/DEC19 | 2900   | 0       |
 
 # then we make sure the insurance pool collected the funds

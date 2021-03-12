@@ -185,38 +185,6 @@ func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 	return nil
 }
 
-func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
-	for _, row := range arg1.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		generalAccount, err := execsetup.broker.GetTraderGeneralAccount(val(row, 0), val(row, 1))
-		if err != nil {
-			return err
-		}
-
-		var hasError bool
-
-		if generalAccount.GetBalance() != u64val(row, 4) {
-			hasError = true
-		}
-		marginAccount, err := execsetup.broker.GetTraderMarginAccount(val(row, 0), val(row, 2))
-		if err != nil {
-			return err
-		}
-		if marginAccount.GetBalance() != u64val(row, 3) {
-			hasError = true
-		}
-
-		if hasError {
-			return fmt.Errorf("expected balances to be margin(%d) general(%v), instead saw margin(%v), general(%v), (trader: %v)", i64val(row, 3), i64val(row, 4), marginAccount.GetBalance(), generalAccount.GetBalance(), val(row, 0))
-		}
-
-	}
-	return nil
-}
-
 func allBalancesCumulatedAreWorth(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	var cumul uint64

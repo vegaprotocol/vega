@@ -44,24 +44,24 @@ Feature: Regression test for issue 598
       | barney | ETH/DEC19 | buy  | 13     | 97    | 0                | TYPE_LIMIT | TIF_GTC |
       | barney | ETH/DEC19 | buy  | 14     | 96    | 0                | TYPE_LIMIT | TIF_GTC |
       | barney | ETH/DEC19 | buy  | 15     | 95    | 0                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 571    | 429     |
       | barney | BTC   | ETH/DEC19 | 535    | 465     |
 # next instruction will trade with edd
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
       | chris  | ETH/DEC19 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 571    | 429     |
       | chris  | BTC   | ETH/DEC19 | 109    | 891     |
 # next instruction will trade with barney
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
       | chris  | ETH/DEC19 | sell | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | chris  | BTC   | ETH/DEC19 | 0      | 980     |
       | barney | BTC   | ETH/DEC19 | 535    | 465     |
       | edd    | BTC   | ETH/DEC19 | 591    | 429     |

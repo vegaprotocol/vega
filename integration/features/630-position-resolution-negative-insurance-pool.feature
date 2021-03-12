@@ -45,8 +45,8 @@ Feature: Regression test for issue 630
     Then traders place following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 100    | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader           | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader           | asset | market id | margin | general |
       | traderGuy        | BTC   | ETH/DEC19 | 0      | 0       |
       | sellSideProvider | BTC   | ETH/DEC19 | 240000 | 760000  |
     And the insurance pool balance is "240000" for the market "ETH/DEC19"

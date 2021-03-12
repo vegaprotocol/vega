@@ -51,7 +51,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | from   | to      | fromType                | toType              | id        | amount  | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 430400048 | 575199952 |
     And the margins levels for the traders are:
@@ -67,7 +67,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | buySideMM | buy1      |
       | buySideMM | buy2      |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 430400048 | 575199952 |
     And the margins levels for the traders are:
@@ -88,7 +88,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | from    | to     | fromType            | toType                  | id        | amount   | asset |
       | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 52000000 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 208000000 | 745600000 |
     And the margins levels for the traders are:
@@ -101,12 +101,12 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     # PARTIAL CLOSEOUT BY TRADER
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 10     | 8000000 | 1      | TYPE_LIMIT | TIF_GTC |
-    And I expect the trader to have a margin:
-      | trader  | asset | market id | margin  | general   |
+      | trader1 | ETH/DEC19 | sell | 10     | 8000000 | 1                | TYPE_LIMIT | TIF_GTC |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin   | general   |
       | trader1 | ETH   | ETH/DEC19 | 19200000 | 908400000 |
     And the margins levels for the traders are:
-      | trader  | market id | maintenance | search  | initial | release  |
+      | trader  | market id | maintenance | search   | initial  | release  |
       | trader1 | ETH/DEC19 | 4800000     | 15360000 | 19200000 | 24000000 |
     And position API produce the following:
       | trader  | volume | unrealisedPNL | realisedPNL |
@@ -115,8 +115,8 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     # FULL CLOSEOUT BY TRADER
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 3      | 7000000 | 1      | TYPE_LIMIT | TIF_GTC |
-    And I expect the trader to have a margin:
+      | trader1 | ETH/DEC19 | sell | 3      | 7000000 | 1                | TYPE_LIMIT | TIF_GTC |
+    Then traders have the following account balances:
       | trader  | asset | market id | margin | general   |
       | trader1 | ETH   | ETH/DEC19 | 0      | 927600000 |
     And the margins levels for the traders are:

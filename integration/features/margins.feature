@@ -36,8 +36,8 @@ Feature: Test trader accounts
     Then the margins levels for the traders are:
       | trader    | market id | maintenance | search | initial | release |
       | traderGuy | ETH/DEC19 | 100         | 110    | 120     | 140     |
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general |
       | traderGuy | ETH   | ETH/DEC19 | 120    | 9880    |
 
   Scenario: an order is rejected if a trader have insufficient margin

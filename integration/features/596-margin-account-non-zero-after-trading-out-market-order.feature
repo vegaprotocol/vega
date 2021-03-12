@@ -45,15 +45,15 @@ Feature: Regression test for issue 596
       | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC |
       | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC |
       | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 9152    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
       | chris  | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 933    | 9007    |
       | chris  | BTC   | ETH/DEC19 | 790    | 9270    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
@@ -62,8 +62,8 @@ Feature: Regression test for issue 596
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
       | chris  | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1283   | 9007    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9808    |
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
@@ -88,8 +88,8 @@ Feature: Regression test for issue 596
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
       | chris  | ETH/DEC19 | sell | 5      | 0     | 2                | TYPE_MARKET | TIF_IOC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | chris  | BTC   | ETH/DEC19 | 0      | 9767    |
     And All balances cumulated are worth "2040000"
 
@@ -129,15 +129,15 @@ Feature: Regression test for issue 596
       | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC |
       | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC |
       | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 9152    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
       | chris  | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 933    | 9007    |
       | chris  | BTC   | ETH/DEC19 | 790    | 9270    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
@@ -146,8 +146,8 @@ Feature: Regression test for issue 596
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
       | chris  | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1283   | 9007    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9808    |
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
@@ -172,7 +172,7 @@ Feature: Regression test for issue 596
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
       | chris  | ETH/DEC19 | sell | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC |
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | chris  | BTC   | ETH/DEC19 | 0      | 9768    |
     And All balances cumulated are worth "2040000"
