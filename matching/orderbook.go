@@ -977,6 +977,12 @@ func (b *OrderBook) PrintState(types string) {
 	b.log.Debug("------------------------------------------------------------")
 }
 
+// GetTotalNumberOfOrders is a debug/testing function to return the total number of orders in the book
 func (b *OrderBook) GetTotalNumberOfOrders() int64 {
 	return b.buy.getOrderCount() + b.sell.getOrderCount()
+}
+
+// GetTotalVolume is a debug/testing function to return the total volume in the order book
+func (b *OrderBook) GetTotalVolume() int64 {
+	return b.buy.getTotalVolume() + b.sell.getTotalVolume()
 }

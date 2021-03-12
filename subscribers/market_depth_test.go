@@ -51,7 +51,7 @@ func TestBuyPriceLevels(t *testing.T) {
 
 	assert.Equal(t, 4, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 4, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(4), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(7), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 102))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 102))
@@ -88,7 +88,7 @@ func TestSellPriceLevels(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 4, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 4, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(4), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(7), mdb.GetVolumeAtPrice("M", types.Side_SIDE_SELL, 102))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_SELL, 102))
@@ -113,7 +113,7 @@ func TestAddOrderToEmptyBook(t *testing.T) {
 
 	assert.Equal(t, 1, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 1, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(1), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(10), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -134,7 +134,7 @@ func TestCancelOrder(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -155,7 +155,7 @@ func TestStoppedOrder(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -176,7 +176,7 @@ func TestExpiredOrder(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -202,7 +202,7 @@ func TestAmendOrderPrice(t *testing.T) {
 
 	assert.Equal(t, 2, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 2, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(2), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(10), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(10), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 90))
@@ -226,7 +226,7 @@ func TestAmendOrderVolumeUp(t *testing.T) {
 
 	assert.Equal(t, 1, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 1, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(1), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(20), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -248,7 +248,7 @@ func TestAmendOrderVolumeDown(t *testing.T) {
 
 	assert.Equal(t, 1, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 1, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(1), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(5), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -270,7 +270,7 @@ func TestAmendOrderVolumeDownToZero(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -291,7 +291,7 @@ func TestPartialFill(t *testing.T) {
 
 	assert.Equal(t, 1, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 1, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(1), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(5), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -309,7 +309,7 @@ func TestIOCPartialFill(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -331,7 +331,7 @@ func TestFullyFill(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -348,7 +348,7 @@ func TestMarketOrder(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -366,7 +366,7 @@ func TestFOKOrder(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -384,7 +384,7 @@ func TestIOCOrder(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -402,7 +402,7 @@ func TestRejectedOrder(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -420,7 +420,7 @@ func TestInvalidOrder(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -446,7 +446,7 @@ func TestPartialMatchOrders(t *testing.T) {
 
 	assert.Equal(t, 1, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 1, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(1), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(1), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -473,7 +473,7 @@ func TestFullyMatchOrders(t *testing.T) {
 
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 0, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 100))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 100))
@@ -500,7 +500,7 @@ func TestRemovingPriceLevels(t *testing.T) {
 
 	assert.Equal(t, 2, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, 2, mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(2), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.Side_SIDE_BUY, 101))
 	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.Side_SIDE_BUY, 101))

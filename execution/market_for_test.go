@@ -33,6 +33,11 @@ func (m *Market) GetOrdersOnBookCount() int64 {
 	return m.matching.GetTotalNumberOfOrders()
 }
 
+// GetVolumeOnBook returns the volume of orders on one side of the book
+func (m *Market) GetVolumeOnBook() int64 {
+	return m.matching.GetTotalVolume()
+}
+
 // StartPriceAuction initialises the market to handle a price auction
 func (m *Market) StartPriceAuction(now time.Time) {
 	end := types.AuctionDuration{
@@ -116,4 +121,19 @@ func (m *Market) GetTotalAccountBalance(ctx context.Context, partyID, marketID, 
 // Return the current liquidity fee value for a market
 func (m *Market) GetLiquidityFee() float64 {
 	return m.fee.GetLiquidityFee()
+}
+
+// Log out orders that don't match
+func (m *Market) ValidateOrder(order *types.Order) bool {
+	order2, err := m.matching.GetOrderByID(order.Id)
+	if err != nil {
+		return false
+	}
+	if order.Price != order2.Price ||
+		order.Size != order2.Size ||
+		order.Remaining != order2.Remaining ||
+		order.Status != order2.Status {
+		return false
+	}
+	return true
 }
