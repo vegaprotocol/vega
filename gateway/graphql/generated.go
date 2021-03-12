@@ -248,6 +248,11 @@ type ComplexityRoot struct {
 		Type        func(childComplexity int) int
 	}
 
+	LiquidityMonitoringParameters struct {
+		TargetStakeParameters func(childComplexity int) int
+		TriggeringRatio       func(childComplexity int) int
+	}
+
 	LiquidityOrder struct {
 		Offset     func(childComplexity int) int
 		Proportion func(childComplexity int) int
@@ -314,26 +319,26 @@ type ComplexityRoot struct {
 	}
 
 	Market struct {
-		Accounts                func(childComplexity int, partyID *string) int
-		Candles                 func(childComplexity int, since string, interval Interval) int
-		Data                    func(childComplexity int) int
-		DecimalPlaces           func(childComplexity int) int
-		Depth                   func(childComplexity int, maxDepth *int) int
-		Fees                    func(childComplexity int) int
-		Id                      func(childComplexity int) int
-		LiquidityProvisions     func(childComplexity int, party *string) int
-		MarketTimestamps        func(childComplexity int) int
-		Name                    func(childComplexity int) int
-		OpeningAuction          func(childComplexity int) int
-		Orders                  func(childComplexity int, skip *int, first *int, last *int) int
-		PriceMonitoringSettings func(childComplexity int) int
-		Proposal                func(childComplexity int) int
-		State                   func(childComplexity int) int
-		TargetStakeParameters   func(childComplexity int) int
-		TradableInstrument      func(childComplexity int) int
-		Trades                  func(childComplexity int, skip *int, first *int, last *int) int
-		TradingMode             func(childComplexity int) int
-		TradingModeConfig       func(childComplexity int) int
+		Accounts                      func(childComplexity int, partyID *string) int
+		Candles                       func(childComplexity int, since string, interval Interval) int
+		Data                          func(childComplexity int) int
+		DecimalPlaces                 func(childComplexity int) int
+		Depth                         func(childComplexity int, maxDepth *int) int
+		Fees                          func(childComplexity int) int
+		Id                            func(childComplexity int) int
+		LiquidityMonitoringParameters func(childComplexity int) int
+		LiquidityProvisions           func(childComplexity int, party *string) int
+		MarketTimestamps              func(childComplexity int) int
+		Name                          func(childComplexity int) int
+		OpeningAuction                func(childComplexity int) int
+		Orders                        func(childComplexity int, skip *int, first *int, last *int) int
+		PriceMonitoringSettings       func(childComplexity int) int
+		Proposal                      func(childComplexity int) int
+		State                         func(childComplexity int) int
+		TradableInstrument            func(childComplexity int) int
+		Trades                        func(childComplexity int, skip *int, first *int, last *int) int
+		TradingMode                   func(childComplexity int) int
+		TradingModeConfig             func(childComplexity int) int
 	}
 
 	MarketData struct {
@@ -908,7 +913,7 @@ type MarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *proto.Market) (int, error)
 	OpeningAuction(ctx context.Context, obj *proto.Market) (*AuctionDuration, error)
 	PriceMonitoringSettings(ctx context.Context, obj *proto.Market) (*PriceMonitoringSettings, error)
-	TargetStakeParameters(ctx context.Context, obj *proto.Market) (*TargetStakeParameters, error)
+	LiquidityMonitoringParameters(ctx context.Context, obj *proto.Market) (*LiquidityMonitoringParameters, error)
 	TradingMode(ctx context.Context, obj *proto.Market) (MarketTradingMode, error)
 	State(ctx context.Context, obj *proto.Market) (MarketState, error)
 	Proposal(ctx context.Context, obj *proto.Market) (*proto.GovernanceData, error)
@@ -1821,6 +1826,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LedgerEntry.Type(childComplexity), true
 
+	case "LiquidityMonitoringParameters.targetStakeParameters":
+		if e.complexity.LiquidityMonitoringParameters.TargetStakeParameters == nil {
+			break
+		}
+
+		return e.complexity.LiquidityMonitoringParameters.TargetStakeParameters(childComplexity), true
+
+	case "LiquidityMonitoringParameters.triggeringRatio":
+		if e.complexity.LiquidityMonitoringParameters.TriggeringRatio == nil {
+			break
+		}
+
+		return e.complexity.LiquidityMonitoringParameters.TriggeringRatio(childComplexity), true
+
 	case "LiquidityOrder.offset":
 		if e.complexity.LiquidityOrder.Offset == nil {
 			break
@@ -2151,6 +2170,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.Id(childComplexity), true
 
+	case "Market.liquidityMonitoringParameters":
+		if e.complexity.Market.LiquidityMonitoringParameters == nil {
+			break
+		}
+
+		return e.complexity.Market.LiquidityMonitoringParameters(childComplexity), true
+
 	case "Market.liquidityProvisions":
 		if e.complexity.Market.LiquidityProvisions == nil {
 			break
@@ -2216,13 +2242,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.State(childComplexity), true
-
-	case "Market.targetStakeParameters":
-		if e.complexity.Market.TargetStakeParameters == nil {
-			break
-		}
-
-		return e.complexity.Market.TargetStakeParameters(childComplexity), true
 
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
@@ -5762,6 +5781,14 @@ type TargetStakeParameters {
   scalingFactor: Float!
 }
 
+"Configuration of a market liquidity monitoring parameters"
+type LiquidityMonitoringParameters {
+  "Specifies parameters related to target stake calculation"
+  targetStakeParameters: TargetStakeParameters!
+  "Specifies the triggering ratio for entering liquidity auction"
+  triggeringRatio: Float!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
   "Market ID"
@@ -5806,8 +5833,8 @@ type Market {
   "Price monitoring settings for the market"
   priceMonitoringSettings: PriceMonitoringSettings!
 
-  "Taget stake parameter"
-  targetStakeParameters: TargetStakeParameters!
+  "Liquidity monitoring parameters for the market"
+  liquidityMonitoringParameters: LiquidityMonitoringParameters!
 
   "Current mode of execution of the market"
   tradingMode: MarketTradingMode!
@@ -11879,6 +11906,74 @@ func (ec *executionContext) _LedgerEntry_timestamp(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _LiquidityMonitoringParameters_targetStakeParameters(ctx context.Context, field graphql.CollectedField, obj *LiquidityMonitoringParameters) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityMonitoringParameters",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TargetStakeParameters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*TargetStakeParameters)
+	fc.Result = res
+	return ec.marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LiquidityMonitoringParameters_triggeringRatio(ctx context.Context, field graphql.CollectedField, obj *LiquidityMonitoringParameters) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "LiquidityMonitoringParameters",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TriggeringRatio, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _LiquidityOrder_reference(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityOrder) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -13431,7 +13526,7 @@ func (ec *executionContext) _Market_priceMonitoringSettings(ctx context.Context,
 	return ec.marshalNPriceMonitoringSettings2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringSettings(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Market_targetStakeParameters(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
+func (ec *executionContext) _Market_liquidityMonitoringParameters(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -13448,7 +13543,7 @@ func (ec *executionContext) _Market_targetStakeParameters(ctx context.Context, f
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().TargetStakeParameters(rctx, obj)
+		return ec.resolvers.Market().LiquidityMonitoringParameters(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13460,9 +13555,9 @@ func (ec *executionContext) _Market_targetStakeParameters(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*TargetStakeParameters)
+	res := resTmp.(*LiquidityMonitoringParameters)
 	fc.Result = res
-	return ec.marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx, field.Selections, res)
+	return ec.marshalNLiquidityMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityMonitoringParameters(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_tradingMode(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
@@ -27706,6 +27801,38 @@ func (ec *executionContext) _LedgerEntry(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
+var liquidityMonitoringParametersImplementors = []string{"LiquidityMonitoringParameters"}
+
+func (ec *executionContext) _LiquidityMonitoringParameters(ctx context.Context, sel ast.SelectionSet, obj *LiquidityMonitoringParameters) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityMonitoringParametersImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LiquidityMonitoringParameters")
+		case "targetStakeParameters":
+			out.Values[i] = ec._LiquidityMonitoringParameters_targetStakeParameters(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "triggeringRatio":
+			out.Values[i] = ec._LiquidityMonitoringParameters_triggeringRatio(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var liquidityOrderImplementors = []string{"LiquidityOrder"}
 
 func (ec *executionContext) _LiquidityOrder(ctx context.Context, sel ast.SelectionSet, obj *proto.LiquidityOrder) graphql.Marshaler {
@@ -28331,7 +28458,7 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 				}
 				return res
 			})
-		case "targetStakeParameters":
+		case "liquidityMonitoringParameters":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -28339,7 +28466,7 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Market_targetStakeParameters(ctx, field, obj)
+				res = ec._Market_liquidityMonitoringParameters(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -33292,6 +33419,20 @@ func (ec *executionContext) marshalNLedgerEntry2ᚖcodeᚗvegaprotocolᚗioᚋve
 		return graphql.Null
 	}
 	return ec._LedgerEntry(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLiquidityMonitoringParameters2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityMonitoringParameters(ctx context.Context, sel ast.SelectionSet, v LiquidityMonitoringParameters) graphql.Marshaler {
+	return ec._LiquidityMonitoringParameters(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLiquidityMonitoringParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityMonitoringParameters(ctx context.Context, sel ast.SelectionSet, v *LiquidityMonitoringParameters) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._LiquidityMonitoringParameters(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNLiquidityOrder2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx context.Context, sel ast.SelectionSet, v proto.LiquidityOrder) graphql.Marshaler {
