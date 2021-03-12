@@ -1331,8 +1331,8 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	}
 
 	for _, t := range trades {
-		if err := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); err != nil {
-			m.log.Error("Price monitoring error", logging.Error(err))
+		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); merr != nil {
+			m.log.Error("Price monitoring error", logging.Error(merr))
 			// @TODO handle or panic? (panic is last resort)
 		}
 	}
@@ -1341,10 +1341,10 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	// start the  monitoring auction if required?
 	if m.as.AuctionStart() {
 		m.EnterAuction(ctx)
-		return nil, nil
+		return nil, err
 	}
 
-	return trades, nil
+	return trades, err
 }
 
 func (m *Market) addParty(party string) {
