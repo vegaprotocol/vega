@@ -15,7 +15,7 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | 10000  |
       | trader2 | ETH   | 10000  |
       | trader3 | ETH   | 10000  |
-      | aux     | ETH   | 100000  |
+      | aux     | ETH   | 100000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
@@ -64,12 +64,12 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | 10000  |
       | trader2 | ETH   | 10000  |
       | trader3 | ETH   | 10000  |
-      | aux     | ETH   | 100000  |
+      | aux     | ETH   | 100000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
@@ -132,8 +132,8 @@ Feature: Test mark to market settlement
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM

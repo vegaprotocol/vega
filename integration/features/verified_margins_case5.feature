@@ -11,7 +11,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | prices.ETH.value | 9400000 |
     And the traders make the following deposits on asset's general account:
       | trader     | asset | amount       |
-      | trader1    | ETH   | 1000000000   |
+      | trader1    | ETH   | 980000000   |
       | sellSideMM | ETH   | 100000000000 |
       | buySideMM  | ETH   | 100000000000 |
       | aux        | ETH   | 1000000000   |
