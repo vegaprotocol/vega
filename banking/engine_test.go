@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/banking/mocks"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/golang/mock/gomock"

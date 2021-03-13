@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
