@@ -6,6 +6,8 @@ import "code.vegaprotocol.io/vega/proto"
 
 type Order = proto.Order
 type OrderConfirmation = proto.OrderConfirmation
+type OrderAmendment = proto.OrderAmendment
+type OrderCancellation = proto.OrderCancellation
 type OrderCancellationConfirmation = proto.OrderCancellationConfirmation
 type PeggedOrder = proto.PeggedOrder
 type Trade = proto.Trade

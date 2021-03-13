@@ -3,7 +3,7 @@ package liquidity
 import (
 	"sort"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type ToCancel struct {
