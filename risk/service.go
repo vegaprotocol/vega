@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/storage"
 
-	"code.vegaprotocol.io/vega/types"
+	ptypes "code.vegaprotocol.io/vega/proto"
 )
 
 var (
@@ -20,22 +20,22 @@ var (
 // RiskStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/risk RiskStore
 type RiskStore interface {
-	GetMarginLevelsByID(partyID string, marketID string) ([]types.MarginLevels, error)
-	GetMarketRiskFactors(marketID string) (types.RiskFactor, error)
-	Subscribe(c chan []types.MarginLevels) uint64
+	GetMarginLevelsByID(partyID string, marketID string) ([]ptypes.MarginLevels, error)
+	GetMarketRiskFactors(marketID string) (ptypes.RiskFactor, error)
+	Subscribe(c chan []ptypes.MarginLevels) uint64
 	Unsubscribe(id uint64) error
 }
 
 // MarketDataStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/vega/risk MarketDataStore
 type MarketDataStore interface {
-	GetByID(string) (types.MarketData, error)
+	GetByID(string) (ptypes.MarketData, error)
 }
 
 // MarketStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/risk MarketStore
 type MarketStore interface {
-	GetByID(string) (*types.Market, error)
+	GetByID(string) (*ptypes.Market, error)
 }
 
 // Svc represent the market service
@@ -82,7 +82,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 }
 
 // GetMarginLevelsByID returns the margin levels for a given party
-func (s *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error) {
+func (s *Svc) GetMarginLevelsByID(partyID, marketID string) ([]ptypes.MarginLevels, error) {
 	marginLevels, err := s.store.GetMarginLevelsByID(partyID, marketID)
 	// Searching for margin-levels by party, should return without error in this case
 	// as just because a party has not traded does not mean they don't exist in vega
@@ -93,7 +93,7 @@ func (s *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevel
 	}
 }
 
-func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.MarginLevels, error) {
+func (s *Svc) EstimateMargin(ctx context.Context, order *ptypes.Order) (*ptypes.MarginLevels, error) {
 	// first get the risk factors and market data (marketdata->markprice)
 	rf, err := s.store.GetMarketRiskFactors(order.MarketId)
 	if err != nil {
@@ -108,12 +108,12 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.Ma
 		return nil, err
 	}
 
-	if order.Side == types.Side_SIDE_UNSPECIFIED {
+	if order.Side == ptypes.Side_SIDE_UNSPECIFIED {
 		return nil, ErrInvalidOrderSide
 	}
 
 	f := rf.Short
-	if order.Side == types.Side_SIDE_BUY {
+	if order.Side == ptypes.Side_SIDE_BUY {
 		f = rf.Long
 	}
 
@@ -125,7 +125,7 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.Ma
 	// now calculate margin maintenance
 	maintenanceMargin := float64(order.Size) * f * float64(mktData.MarkPrice)
 	// now we use the risk factors
-	return &types.MarginLevels{
+	return &ptypes.MarginLevels{
 		PartyId:                order.PartyId,
 		MarketId:               mkt.GetId(),
 		Asset:                  asset,
@@ -139,10 +139,10 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *types.Order) (*types.Ma
 
 func (s *Svc) ObserveMarginLevels(
 	ctx context.Context, retries int, partyID, marketID string,
-) (accountCh <-chan []types.MarginLevels, ref uint64) {
+) (accountCh <-chan []ptypes.MarginLevels, ref uint64) {
 
-	margins := make(chan []types.MarginLevels)
-	internal := make(chan []types.MarginLevels)
+	margins := make(chan []ptypes.MarginLevels)
+	internal := make(chan []ptypes.MarginLevels)
 	ref = s.store.Subscribe(internal)
 
 	var cancel func()
@@ -174,7 +174,7 @@ func (s *Svc) ObserveMarginLevels(
 				close(margins)
 				return
 			case accs := <-internal:
-				filtered := make([]types.MarginLevels, 0, len(accs))
+				filtered := make([]ptypes.MarginLevels, 0, len(accs))
 				for _, acc := range accs {
 					acc := acc
 					if (len(marketID) <= 0 || marketID == acc.MarketId) &&

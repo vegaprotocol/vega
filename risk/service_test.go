@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/risk/mocks"
 
@@ -47,32 +47,32 @@ func testMarginEstimateSuccess(t *testing.T) {
 	svc := getTestSvc(t)
 	defer svc.ctrl.Finish()
 
-	order := &types.Order{
+	order := &ptypes.Order{
 		Size:  10,
-		Side:  types.Side_SIDE_BUY,
+		Side:  ptypes.Side_SIDE_BUY,
 		Price: 10,
 	}
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
-		types.RiskFactor{
+		ptypes.RiskFactor{
 			Long:  0.5,
 			Short: 0.5,
 		},
 		nil,
 	)
 	svc.mktstore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
-		&types.Market{
+		&ptypes.Market{
 			Id: "mktid",
-			TradableInstrument: &types.TradableInstrument{
-				Instrument: &types.Instrument{
-					Product: &types.Instrument_Future{
-						Future: &types.Future{
+			TradableInstrument: &ptypes.TradableInstrument{
+				Instrument: &ptypes.Instrument{
+					Product: &ptypes.Instrument_Future{
+						Future: &ptypes.Future{
 							SettlementAsset: "assetid",
 						},
 					},
 				},
-				MarginCalculator: &types.MarginCalculator{
-					ScalingFactors: &types.ScalingFactors{
+				MarginCalculator: &ptypes.MarginCalculator{
+					ScalingFactors: &ptypes.ScalingFactors{
 						SearchLevel:       1.1,
 						InitialMargin:     1.2,
 						CollateralRelease: 1.3,
@@ -83,7 +83,7 @@ func testMarginEstimateSuccess(t *testing.T) {
 		nil,
 	)
 	svc.mktdatastore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
-		types.MarketData{
+		ptypes.MarketData{
 			MarkPrice: 200,
 		},
 		nil,
@@ -102,7 +102,7 @@ func testMarginEstimateErrors(t *testing.T) {
 	svc := getTestSvc(t)
 	defer svc.ctrl.Finish()
 
-	order := &types.Order{
+	order := &ptypes.Order{
 		Size:  10,
 		Price: 10,
 	}
@@ -110,7 +110,7 @@ func testMarginEstimateErrors(t *testing.T) {
 	// first test no risk factors
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
-		types.RiskFactor{},
+		ptypes.RiskFactor{},
 		errors.New("no risk factors"),
 	)
 
@@ -121,7 +121,7 @@ func testMarginEstimateErrors(t *testing.T) {
 	// then test not mkt
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
-		types.RiskFactor{
+		ptypes.RiskFactor{
 			Long:  0.5,
 			Short: 0.5,
 		},
@@ -139,7 +139,7 @@ func testMarginEstimateErrors(t *testing.T) {
 	// then no market data
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
-		types.RiskFactor{
+		ptypes.RiskFactor{
 			Long:  0.5,
 			Short: 0.5,
 		},
@@ -147,10 +147,10 @@ func testMarginEstimateErrors(t *testing.T) {
 	)
 
 	svc.mktstore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
-		&types.Market{
-			TradableInstrument: &types.TradableInstrument{
-				MarginCalculator: &types.MarginCalculator{
-					ScalingFactors: &types.ScalingFactors{
+		&ptypes.Market{
+			TradableInstrument: &ptypes.TradableInstrument{
+				MarginCalculator: &ptypes.MarginCalculator{
+					ScalingFactors: &ptypes.ScalingFactors{
 						SearchLevel:       1.1,
 						InitialMargin:     1.2,
 						CollateralRelease: 1.3,
@@ -161,7 +161,7 @@ func testMarginEstimateErrors(t *testing.T) {
 		nil,
 	)
 	svc.mktdatastore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
-		types.MarketData{},
+		ptypes.MarketData{},
 		errors.New("no market data"),
 	)
 
@@ -172,7 +172,7 @@ func testMarginEstimateErrors(t *testing.T) {
 	// then order is invalid
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
-		types.RiskFactor{
+		ptypes.RiskFactor{
 			Long:  0.5,
 			Short: 0.5,
 		},
@@ -180,10 +180,10 @@ func testMarginEstimateErrors(t *testing.T) {
 	)
 
 	svc.mktstore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
-		&types.Market{
-			TradableInstrument: &types.TradableInstrument{
-				MarginCalculator: &types.MarginCalculator{
-					ScalingFactors: &types.ScalingFactors{
+		&ptypes.Market{
+			TradableInstrument: &ptypes.TradableInstrument{
+				MarginCalculator: &ptypes.MarginCalculator{
+					ScalingFactors: &ptypes.ScalingFactors{
 						SearchLevel:       1.1,
 						InitialMargin:     1.2,
 						CollateralRelease: 1.3,
@@ -194,7 +194,7 @@ func testMarginEstimateErrors(t *testing.T) {
 		nil,
 	)
 	svc.mktdatastore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
-		types.MarketData{
+		ptypes.MarketData{
 			MarkPrice: 200,
 		},
 		nil,
