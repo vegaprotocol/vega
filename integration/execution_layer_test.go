@@ -321,20 +321,6 @@ func clearOrderEvents() error {
 	return nil
 }
 
-func clearOrdersByRef(in *gherkin.DataTable) error {
-	for _, row := range in.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		ref := val(row, 1)
-		if err := execsetup.broker.ClearOrderByReference(trader, ref); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // liquidity provisioning
 func submitLP(in *gherkin.DataTable) error {
 	lps := map[string]*types.LiquidityProvisionSubmission{}
