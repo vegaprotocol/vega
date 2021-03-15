@@ -1085,6 +1085,9 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	if !m.canTrade() {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
+		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrTradingNotAllowed
 	}
 	conf, err := m.submitOrder(ctx, order, true)
