@@ -241,24 +241,6 @@ func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
 	return nil
 }
 
-func theMarketTradingModeIs(market, marketTradingModeStr string) error {
-	ms, ok := types.Market_TradingMode_value[marketTradingModeStr]
-	if !ok {
-		return fmt.Errorf("invalid market state: %v", marketTradingModeStr)
-	}
-	marketTradingMode := types.Market_TradingMode(ms)
-
-	mktdata, err := execsetup.engine.GetMarketData(market)
-	if err != nil {
-		return fmt.Errorf("unable to get marked data for market(%v), err(%v)", market, err)
-	}
-
-	if mktdata.MarketTradingMode != marketTradingMode {
-		return fmt.Errorf("market trading mode is wrong for market(%v), expected(%v) got(%v)", market, marketTradingMode, mktdata.MarketTradingMode)
-	}
-	return nil
-}
-
 func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	var err error
 	for _, row := range trades.Rows {

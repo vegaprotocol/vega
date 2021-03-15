@@ -8,7 +8,7 @@ Feature: Price monitoring test for issue 2681
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached
     Given the traders make the following deposits on asset's general account:
@@ -23,7 +23,7 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "5670000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # T0 + 1min - this causes the price for comparison of the bounds to be 567
     Then time is updated to "2020-10-16T00:01:00Z"
@@ -35,7 +35,7 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "4850000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # T0 + 2min
     Then time is updated to "2020-10-16T00:02:00Z"
@@ -47,7 +47,7 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "6490000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # T0 + 3min
     # The reference price is still 5670000
@@ -60,7 +60,7 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "6635392"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -69,4 +69,4 @@ Feature: Price monitoring test for issue 2681
 
     And the mark price for the market "ETH/DEC20" is "6635392"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"

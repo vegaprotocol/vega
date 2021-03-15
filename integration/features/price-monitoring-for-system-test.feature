@@ -8,7 +8,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
 
   Scenario: Scenario for the system test with opening auction
     Given the traders make the following deposits on asset's general account:
@@ -30,19 +30,19 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "0"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
 
     # T + 5s
     Then time is updated to "2020-10-16T00:00:05Z"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
 
     # T + 1s
     Then time is updated to "2020-10-16T00:00:06Z"
 
     And the mark price for the market "ETH/DEC20" is "100000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # We've left opening auction, cancel the orders we had to place on the book to allow for this to happen
     Then traders cancel the following orders:
@@ -61,7 +61,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     Then traders cancel the following orders:
       | trader  | reference      |
@@ -81,14 +81,14 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T + 1s (auction ended)
     Then time is updated to "2020-10-16T00:00:21Z"
 
     And the mark price for the market "ETH/DEC20" is "100291"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # 100291 is the new reference price, we get the following valid price ranges for the 2 triggers: [100135, 100447] & [100001, 100582]
     Then traders place following orders:
@@ -98,7 +98,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100447"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # Now we should be after update and the bounds should change
     # T + 5s
@@ -111,7 +111,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100448"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # Now, we have the following valid price ranges for the 2 triggers: [100213, 100525] & [100079, 100660]
     Then traders place following orders:
@@ -121,7 +121,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100448"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
 
     # T + 2s
@@ -135,21 +135,21 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100448"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T + 7s
     Then time is updated to "2020-10-16T00:00:35Z"
 
     And the mark price for the market "ETH/DEC20" is "100448"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T + 8s
     Then time is updated to "2020-10-16T00:00:43Z"
 
     And the mark price for the market "ETH/DEC20" is "100448"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # 100213 is the new reference price, we get the following valid price ranges for the 2 triggers: [100057, 100369] & [99923, 100503]
 
@@ -161,7 +161,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100292"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
 
     # T + 12s
@@ -176,25 +176,25 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100292"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T + 6s
     Then time is updated to "2020-10-16T00:01:01Z"
 
     And the mark price for the market "ETH/DEC20" is "100292"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T + 1s
     Then time is updated to "2020-10-16T00:01:02Z"
 
     And the mark price for the market "ETH/DEC20" is "100292"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T + 8s
     Then time is updated to "2020-10-16T00:01:10Z"
 
     And the mark price for the market "ETH/DEC20" is "100650"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"

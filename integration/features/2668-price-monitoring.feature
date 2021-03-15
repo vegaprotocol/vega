@@ -8,7 +8,7 @@ Feature: Price monitoring test for issue 2668
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached
     Given the traders make the following deposits on asset's general account:
@@ -23,7 +23,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "5670000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -32,7 +32,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "4850000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -41,7 +41,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -50,21 +50,21 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min
     Then time is updated to "2020-10-16T00:05:00Z"
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min01s
     Then time is updated to "2020-10-16T00:05:01Z"
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Lower bound breached
     Given the traders make the following deposits on asset's general account:
@@ -79,7 +79,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "5670000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -88,7 +88,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "4850000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -97,7 +97,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -106,21 +106,21 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min
     Then time is updated to "2020-10-16T00:05:00Z"
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min01s
     Then time is updated to "2020-10-16T00:05:01Z"
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached (scale prices down by 10000)
     Given the traders make the following deposits on asset's general account:
@@ -135,7 +135,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "567"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -144,7 +144,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "485"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -153,7 +153,7 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "663"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -162,18 +162,18 @@ Feature: Price monitoring test for issue 2668
 
     And the mark price for the market "ETH/DEC20" is "663"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min
     Then time is updated to "2020-10-16T00:05:00Z"
 
     And the mark price for the market "ETH/DEC20" is "663"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min01s
     Then time is updated to "2020-10-16T00:05:01Z"
 
     And the mark price for the market "ETH/DEC20" is "663"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"

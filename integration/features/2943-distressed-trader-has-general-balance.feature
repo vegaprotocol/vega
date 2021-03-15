@@ -8,7 +8,7 @@ Feature: Distressed traders should not have general balance left
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
   Scenario: Upper bound breached
     Given the traders make the following deposits on asset's general account:
@@ -29,7 +29,7 @@ Feature: Distressed traders should not have general balance left
 
     And the mark price for the market "ETH/DEC20" is "100"
 
-    And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # T0 + 1min - this causes the price for comparison of the bounds to be 567
     Then time is updated to "2020-10-16T00:01:00Z"

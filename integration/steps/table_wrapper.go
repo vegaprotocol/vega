@@ -237,6 +237,20 @@ func OracleSpecPropertyType(name string) (oraclesv1.PropertyKey_Type, error) {
 	return oraclesv1.PropertyKey_Type(ty), nil
 }
 
+func (r RowWrapper) TradingMode(name string) types.Market_TradingMode {
+	ty, err := TradingMode(r.Str(name))
+	panicW(name, err)
+	return ty
+}
+
+func TradingMode(name string) (types.Market_TradingMode, error) {
+	ty, ok := types.Market_TradingMode_value[name]
+
+	if !ok {
+		return types.Market_TRADING_MODE_UNSPECIFIED, fmt.Errorf("couldn't find %s as trading_mode", name)
+	}
+	return types.Market_TradingMode(ty), nil
+}
 
 func (r RowWrapper) Account(name string) types.AccountType {
 	return account(r.Str(name))
