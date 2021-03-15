@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegatypes.ol.io/vega/events"
-	types "code.vegatypes.ol.io/vega/types.
+	"code.vegaprotocol.io/vega/events"
+	types "code.vegaprotocol.io/vega/proto"
 
-	"code.vegatypes.ol.io/vega/logging"
-	"code.vegatypes.ol.io/vega/positions"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/positions"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
