@@ -166,7 +166,10 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^clear order events by reference:$`, func(table *gherkin.DataTable) error {
 		return steps.ClearOrdersByReference(execsetup.broker, table)
 	})
-	s.Step(`^clear transfer events$`, clearTransferEvents)
+	s.Step(`^clear transfer events$`, func() error {
+		steps.ClearTransferEvents(execsetup.broker)
+		return nil
+	})
 	s.Step(`^traders cancel pegged orders and clear:$`, tradersCancelPeggedOrdersAndClear)
 	s.Step(`^the trader submits LP:$`, submitLP)
 	s.Step(`^I see the LP events:$`, seeLPEvents)

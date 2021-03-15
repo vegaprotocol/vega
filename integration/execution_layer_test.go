@@ -311,11 +311,6 @@ func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 	return nil
 }
 
-func clearTransferEvents() error {
-	execsetup.broker.ClearTransferEvents()
-	return nil
-}
-
 func clearOrderEvents() error {
 	execsetup.broker.ClearOrderEvents()
 	return nil
