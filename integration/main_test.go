@@ -164,12 +164,12 @@ func FeatureContext(s *godog.Suite) {
 
 	// Debug steps
 	s.Step(`^debug transfers$`, func() error {
-		return steps.DebugTransfers(execsetup.broker)
+		return steps.DebugTransfers(execsetup.broker, execsetup.log)
 	})
 	s.Step(`^debug trades$`, func() error {
-		return steps.DebugTrades(execsetup.broker)
+		return steps.DebugTrades(execsetup.broker, execsetup.log)
 	})
 	s.Step(`^debug orders$`, func() error {
-		return steps.DebugOrders(execsetup.broker)
+		return steps.DebugOrders(execsetup.broker, execsetup.log)
 	})
 }

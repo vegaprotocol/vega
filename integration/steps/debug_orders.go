@@ -4,14 +4,15 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/logging"
 )
 
-func DebugOrders(broker *stubs.BrokerStub) error {
-	fmt.Println("DUMPING ORDERS")
+func DebugOrders(broker *stubs.BrokerStub, log *logging.Logger) error {
+	log.Info("DUMPING ORDERS")
 	data := broker.GetOrderEvents()
 	for _, v := range data {
 		o := *v.Order()
-		fmt.Printf("order %s: %v\n", o.Id, o)
+		log.Info(fmt.Sprintf("order %s: %v\n", o.Id, o))
 	}
 	return nil
 }
