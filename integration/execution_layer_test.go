@@ -568,20 +568,3 @@ func theOpeningAuctionPeriodEnds(mktName string) error {
 	execsetup.timesvc.Notify(context.Background(), now)
 	return nil
 }
-
-func tradersWithdrawBalance(in *gherkin.DataTable) error {
-	for _, row := range in.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		asset, amount := val(row, 1), u64val(row, 2)
-		if _, err := execsetup.collateral.LockFundsForWithdraw(context.Background(), trader, asset, amount); err != nil {
-			return err
-		}
-		if _, err := execsetup.collateral.Withdraw(context.Background(), trader, asset, amount); err != nil {
-			return err
-		}
-	}
-	return nil
-}

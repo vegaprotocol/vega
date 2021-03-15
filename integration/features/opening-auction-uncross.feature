@@ -37,10 +37,8 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | asset | market id | margin | general  |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
       | trader2 | BTC   | ETH/DEC19 | 28679  | 99971321 |
-    And traders withdraw balance:
-      | trader  | asset | amount   |
-      | trader1 | BTC   | 99969759 |
-      | trader2 | BTC   | 99971321 |
+    And "trader1" withdraws "99969759" from the "BTC" account
+    And "trader2" withdraws "99971321" from the "BTC" account
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0       |

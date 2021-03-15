@@ -156,7 +156,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the trader submits LP:$`, submitLP)
 	s.Step(`^I see the LP events:$`, seeLPEvents)
 	s.Step(`^the opening auction period for market "([^"]+)" ends$`, theOpeningAuctionPeriodEnds)
-	s.Step(`^traders withdraw balance:$`, tradersWithdrawBalance)
 	s.Step(`^oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *gherkin.DataTable) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
 	})
