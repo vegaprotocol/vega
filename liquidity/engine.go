@@ -177,7 +177,6 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 }
 
 func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
-
 	// we check if the commitment is 0 which would mean this is a cancel
 	// a cancel does not need validations
 	if lp.CommitmentAmount == 0 {
@@ -366,16 +365,16 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 		updatedLPParties []string
 	)
 
-	for party, orders := range Orders(orders).ByParty() {
-		if !e.IsLiquidityProvider(party) {
+	for _, po := range Orders(orders).ByParty() {
+		if !e.IsLiquidityProvider(po.Party) {
 			continue
 		}
 
-		updatedLPParties = append(updatedLPParties, party)
+		updatedLPParties = append(updatedLPParties, po.Party)
 		// update our internal orders
-		e.updatePartyOrders(party, orders)
+		e.updatePartyOrders(po.Party, po.Orders)
 
-		creates, updates, err := e.createOrUpdateForParty(markPrice, party, repriceFn)
+		creates, updates, err := e.createOrUpdateForParty(markPrice, po.Party, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -387,7 +386,8 @@ func (e *Engine) Update(ctx context.Context, markPrice uint64, repriceFn Reprice
 	if e.undeployedProvisions {
 		// There are some provisions that haven't been cancelled or rejected, but haven't yet been deployed, try an deploy now.
 		stillUndeployed := false
-		for _, lp := range e.provisions {
+		// call slice to ensure these lp provisions are properly sorted
+		for _, lp := range e.provisions.slice() {
 			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED {
 				creates, updates, err := e.createOrUpdateForParty(markPrice, lp.PartyId, repriceFn)
 				if err != nil {
