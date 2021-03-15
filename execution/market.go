@@ -536,7 +536,9 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				// mark opening auction as ending
 				// Prime price monitoring engine with the uncrossing price of the opening auction
 				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
-					m.log.Error("Price monitoring error", logging.Error(err))
+					m.log.Panic("unable to run check price with price monitor",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
 				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
@@ -550,8 +552,9 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			}
 		} else if m.as.IsPriceAuction() {
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
-				m.log.Error("Price monitoring error", logging.Error(err))
-				// @TODO handle or panic? (panic is last resort)
+				m.log.Panic("unable to run check price with price monitor",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
 			}
 			m.checkLiquidity(ctx, nil)
 			// price monitoring engine and liquidity monitoring engine both indicated auction can end
@@ -1332,8 +1335,9 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 
 	for _, t := range trades {
 		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); merr != nil {
-			m.log.Error("Price monitoring error", logging.Error(merr))
-			// @TODO handle or panic? (panic is last resort)
+			m.log.Panic("unable to run check price with price monitor",
+				logging.String("market-id", m.GetID()),
+				logging.Error(merr))
 		}
 	}
 	m.checkLiquidity(ctx, trades)
@@ -3440,7 +3444,9 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	if m.as.InAuction() && m.as.AuctionEnd() && !m.as.IsOpeningAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime); err != nil {
-			m.log.Error("Price monitoring error", logging.Error(err))
+			m.log.Panic("unable to run check price with price monitor",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
 		}
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
