@@ -643,6 +643,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 		repriceCount uint64
 		toRemove     []*types.Order
 	)
+	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "repriceAllPeggedOrders")
 
 	// Go through all the pegged orders and remove from the order book
 	for _, order := range m.peggedOrders {
@@ -712,6 +713,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 		m.removePeggedOrder(o)
 	}
 
+	timer.EngineTimeCounterAdd()
 	return updatedOrders, repriceCount
 }
 
@@ -3315,11 +3317,13 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
+	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "liquidityUpdate")
 	newOrders, amendments, err := m.liquidity.Update(ctx, m.markPrice, m.repriceFuncW, orders)
 	if err != nil {
 		return err
 	}
 
+	timer.EngineTimeCounterAdd()
 	return m.updateAndCreateOrders(ctx, newOrders, amendments)
 }
 
