@@ -13,21 +13,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func theMarketsStartsOnAndExpiresOn(start, expires string) error {
-	_, err := time.Parse("2006-01-02T15:04:05Z", start)
-	if err != nil {
-		return fmt.Errorf("invalid start date %v", err)
-	}
-	_, err = time.Parse("2006-01-02T15:04:05Z", expires)
-	if err != nil {
-		return fmt.Errorf("invalid expiry date %v", err)
-	}
-	marketStart = start
-	marketExpiry = expires
-
-	return nil
-}
-
 func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
 	execsetup = getExecutionSetupEmptyWithInsurancePoolBalance(amount)

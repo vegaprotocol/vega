@@ -15,7 +15,7 @@ func TheMarkPriceForTheMarketIs(
 
 	marketData, err := exec.GetMarketData(market)
 	if err != nil {
-		return errMarkPriceNotFound(markPriceStr, err)
+		return errMarkPriceNotFound(market, err)
 	}
 
 	if marketData.MarkPrice != markPrice {
@@ -37,6 +37,6 @@ func errWrongMarkPrice(market string, markPrice uint64, marketData types.MarketD
 	)
 }
 
-func errMarkPriceNotFound(markPriceStr string, err error) error {
-	return fmt.Errorf("unable to get mark price for market(%v), err(%v)", markPriceStr, err)
+func errMarkPriceNotFound(market string, err error) error {
+	return fmt.Errorf("unable to get mark price for market(%v), err(%v)", market, err)
 }

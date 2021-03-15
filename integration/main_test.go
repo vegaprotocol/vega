@@ -101,7 +101,14 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the insurance pool balance is "([^"]*)" for the market "([^"]*)"$`, func(amountStr, market string) error {
 		return steps.TheInsurancePoolBalanceIsForTheMarket(execsetup.broker, amountStr, market)
 	})
-	s.Step(`^the markets starts on "([^"]*)" and expires on "([^"]*)"$`, theMarketsStartsOnAndExpiresOn)
+	s.Step(`^the markets start on "([^"]*)" and expire on "([^"]*)"$`, func(startDate, expiryDate string) error {
+		start, expiry, err := steps.MarketsStartOnAndExpireOn(startDate, expiryDate)
+		if err == nil {
+			marketExpiry = expiry
+			marketStart = start
+		}
+		return err
+	})
 	s.Step(`^the time is updated to "([^"]*)"$`, theTimeIsUpdatedTo)
 	s.Step(`^traders cannot place the following orders anymore:$`, tradersCannotPlaceTheFollowingOrdersAnymore)
 	s.Step(`^the margins levels for the traders are:$`, func(table *gherkin.DataTable) error {
