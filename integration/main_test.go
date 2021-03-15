@@ -149,7 +149,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following trades were executed:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingTradesWereExecuted(execsetup.broker, table)
 	})
-	s.Step(`^verify the status of the order reference:$`, verifyTheStatusOfTheOrderReference)
+	s.Step(`^verify the status of the order reference:$`, func(table *gherkin.DataTable) error {
+		return steps.TheStatusOfOrderWithReference(execsetup.broker, table)
+	})
 	s.Step(`^executed trades:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingTradesWereExecuted(execsetup.broker, table)
 	})

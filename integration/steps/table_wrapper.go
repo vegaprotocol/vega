@@ -191,6 +191,20 @@ func OrderType(rawValue string) (types.Order_Type, error) {
 	return types.Order_Type(ty), nil
 }
 
+func (r RowWrapper) OrderStatus(name string) types.Order_Status {
+	s, err := OrderStatus(r.values[name])
+	panicW(name, err)
+	return s
+}
+
+func OrderStatus(rawValue string) (types.Order_Status, error) {
+	ty, ok := types.Order_Status_value[rawValue]
+	if !ok {
+		return types.Order_Status(ty), fmt.Errorf("invalid order status: %v", rawValue)
+	}
+	return types.Order_Status(ty), nil
+}
+
 func (r RowWrapper) TIF(name string) types.Order_TimeInForce {
 	tif, err := TIF(r.values[name])
 	panicW(name, err)
