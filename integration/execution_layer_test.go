@@ -154,28 +154,3 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 	}
 	return nil
 }
-
-func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
-	var err error
-	for _, row := range trades.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-		ok := false
-		party, side, volume := val(row, 0), sideval(row, 1), u64val(row, 2)
-		data := execsetup.broker.GetTrades()
-		for _, v := range data {
-			if (v.Buyer == party || v.Seller == party) && v.Aggressor == side && v.Size == volume {
-				ok = true
-				break
-			}
-		}
-
-		if !ok {
-			err = fmt.Errorf("expecting trade was missing: %v, %v, %v", party, side, volume)
-			break
-		}
-	}
-
-	return err
-}
