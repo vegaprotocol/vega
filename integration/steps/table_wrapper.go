@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
@@ -160,6 +161,20 @@ func Bool(rawValue string) (bool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("invalid bool value: %v", rawValue)
+}
+
+func (r RowWrapper) Time(name string) time.Time {
+	t, err := Time(r.values[name])
+	panicW(name, err)
+	return t
+}
+
+func Time(rawTime string) (time.Time, error) {
+	parsedTime, err := time.Parse("2006-01-02T15:04:05Z", rawTime)
+	if err != nil {
+		return parsedTime, fmt.Errorf("invalid date value: %v", err)
+	}
+	return parsedTime, nil
 }
 
 func (r RowWrapper) OrderType(name string) types.Order_Type {
