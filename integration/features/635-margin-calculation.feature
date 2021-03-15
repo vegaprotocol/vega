@@ -36,7 +36,7 @@ Feature: Regression test for issue 596
       | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC |
 # checking margins
-    Then I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader    | asset | market id | margin    | general   |
       | traderGuy | BTC   | ETH/DEC19 | 394400032 | 611199968 |
 # checking margins levels

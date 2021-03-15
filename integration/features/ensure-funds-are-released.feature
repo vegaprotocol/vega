@@ -25,7 +25,7 @@ Feature: Test margins releases on position = 0
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -33,8 +33,8 @@ Feature: Test margins releases on position = 0
     Then traders place following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_FOK |
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general    |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general    |
       | traderGuy | BTC   | ETH/DEC19 | 0      | 1000000000 |
 
   Scenario: No margin left for wash trade
@@ -53,7 +53,7 @@ Feature: Test margins releases on position = 0
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -61,8 +61,8 @@ Feature: Test margins releases on position = 0
     Then traders place following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general   |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general   |
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
 # now we place an order which would wash trade and see
@@ -71,8 +71,8 @@ Feature: Test margins releases on position = 0
       | traderGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
 
 # checking margins, should have the margins required for the current order
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general   |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general   |
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
   Scenario: No margin left after cancelling order and getting back to 0 position
@@ -91,7 +91,7 @@ Feature: Test margins releases on position = 0
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -100,16 +100,16 @@ Feature: Test margins releases on position = 0
       | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general   |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general   |
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader    | reference |
       | traderGuy | ref-1     |
 
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general    |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general    |
       | traderGuy | BTC   | ETH/DEC19 | 0      | 1000000000 |
 
   Scenario: No margin left for wash trade after cancelling first order
@@ -128,7 +128,7 @@ Feature: Test margins releases on position = 0
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -137,8 +137,8 @@ Feature: Test margins releases on position = 0
       | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general   |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general   |
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
 # now we place an order which would wash trade and see
@@ -147,15 +147,15 @@ Feature: Test margins releases on position = 0
       | traderGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
 
 # checking margins, should have the margins required for the current order
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general   |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general   |
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
 # cancel the first order
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader    | reference |
       | traderGuy | ref-1     |
 
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general    |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general    |
       | traderGuy | BTC   | ETH/DEC19 | 0      | 1000000000 |

@@ -32,16 +32,14 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 25201       | 27721  | 30241   | 65521   |
-      | trader2 | ETH/DEC19 |       23899 |  26289 |   28679 |   57458 |
-    Then I expect the trader to have a margin:
+      | trader2 | ETH/DEC19 | 23899       | 26289  | 28679   | 57458   |
+    Then traders have the following account balances:
       | trader  | asset | market id | margin | general  |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
       | trader2 | BTC   | ETH/DEC19 | 28679  | 99971321 |
-    And traders withdraw balance:
-      | trader  | asset | amount   |
-      | trader1 | BTC   | 99969759 |
-      | trader2 | BTC   | 99971321 |
-    Then I expect the trader to have a margin:
+    And "trader1" withdraws "99969759" from the "BTC" account
+    And "trader2" withdraws "99971321" from the "BTC" account
+    Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0       |
       | trader2 | BTC   | ETH/DEC19 | 28679  | 0       |
@@ -63,9 +61,9 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-b-3    | STATUS_CANCELLED |
       | trader2 | t2-s-3    | STATUS_FILLED    |
     And the following transfers happened:
-      | from    | to      | from account type   | to account type      | market ID | amount | asset |
+      | from    | to      | from account   | to account      | market id | amount | asset |
       | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9479   | BTC   |
-    Then I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader2 | BTC   | ETH/DEC19 | 19200  | 9479    |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0       |

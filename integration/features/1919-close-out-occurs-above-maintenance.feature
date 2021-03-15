@@ -71,8 +71,8 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
       | tt_5_4 | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     # checking balances
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | tt_5_0 | BTC   | ETH/DEC19 | 23     | 0       |
       | tt_5_1 | BTC   | ETH/DEC19 | 22     | 0       |
       | tt_5_2 | BTC   | ETH/DEC19 | 21     | 0       |

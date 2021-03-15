@@ -29,7 +29,7 @@ Feature: test bugfix 614 for margin calculations
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -50,11 +50,11 @@ Feature: test bugfix 614 for margin calculations
     Then the margins levels for the traders are:
       | trader | market id | maintenance | search | initial | release |
       | tamlyn | ETH/DEC19 | 988         | 3161   | 3952    | 4940    |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
       | tamlyn  | ETH   | ETH/DEC19 | 3952   | 6104    |
       | chris   | ETH   | ETH/DEC19 | 3760   | 6240    |
       | edd     | ETH   | ETH/DEC19 | 5456   | 4544    |
       | barney  | ETH   | ETH/DEC19 | 992    | 8952    |
       | rebecca | ETH   | ETH/DEC19 | 3760   | 6240    |
-    And All balances cumulated are worth "2050000"
+    And Cumulated balance for all accounts is worth "2050000"

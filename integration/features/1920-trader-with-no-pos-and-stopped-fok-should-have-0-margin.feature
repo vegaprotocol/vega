@@ -33,6 +33,6 @@ Feature: test for issue 1920
     Then the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 100         | 110    | 120     | 140     |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 | 0      | 10000   |

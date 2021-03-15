@@ -31,7 +31,7 @@ Feature: Test loss socialization case 4
       | trader6 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader6-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader5 | trader5-1 |
       | trader6 | trader6-1 |
@@ -58,7 +58,7 @@ Feature: Test loss socialization case 4
       | trader4 | ETH/DEC19 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC |
 
 # order book volume change
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |
@@ -74,10 +74,10 @@ Feature: Test loss socialization case 4
       | trader4 | ETH/DEC19 | sell | 10     | 180   | 1                | TYPE_LIMIT | TIF_GTC |
 
 # check positions
-    Then position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 0      | 0             | -2000       |
-      | trader2 | 100    | 7200          | -90         |
-      | trader3 | 0      | 0             | -3000       |
-      | trader4 | 0      |               | 791         |
+    Then traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 0      | 0              | -2000        |
+      | trader2 | 100    | 7200           | -90          |
+      | trader3 | 0      | 0              | -3000        |
+      | trader4 | 0      | 0              | 791          |
     And the insurance pool balance is "0" for the market "ETH/DEC19"
