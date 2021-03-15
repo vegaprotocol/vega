@@ -558,6 +558,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) {
+	m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+
 	// market is closed, final settlement
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.markPrice)
