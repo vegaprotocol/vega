@@ -25,10 +25,10 @@ Feature: Test market depth events for pegged orders
       | pegged2 | ETH/DEC19 | buy  | 5      | MID       | -15    | 100   |
       | pegged3 | ETH/DEC19 | buy  | 5      | MID       | -10    | 100   |
     Then I see the following order events:
-      | trader  | market id | side | volume | reference | offset | price | status        |
-      | pegged1 | ETH/DEC19 | sell | 10     | MID       | 10     | 100   | STATUS_PARKED |
-      | pegged2 | ETH/DEC19 | buy  | 5      | MID       | -15    | 100   | STATUS_PARKED |
-      | pegged3 | ETH/DEC19 | buy  | 5      | MID       | -10    | 100   | STATUS_PARKED |
+      | trader  | market id | side      | volume | reference            | offset | price | status        |
+      | pegged1 | ETH/DEC19 | SIDE_SELL | 10     | PEGGED_REFERENCE_MID | 10     | 100   | STATUS_PARKED |
+      | pegged2 | ETH/DEC19 | SIDE_BUY  | 5      | PEGGED_REFERENCE_MID | -15    | 100   | STATUS_PARKED |
+      | pegged3 | ETH/DEC19 | SIDE_BUY  | 5      | PEGGED_REFERENCE_MID | -10    | 100   | STATUS_PARKED |
 # keep things simple: remove the events we've just verified
     And clear order events
     Then traders place following orders with references:
@@ -36,9 +36,9 @@ Feature: Test market depth events for pegged orders
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
     Then I see the following order events:
-      | trader           | market id | side | volume | reference | offset | price | status        |
-      | sellSideProvider | ETH/DEC19 | sell | 1000   |           | 0      | 120   | STATUS_ACTIVE |
-      | buySideProvider  | ETH/DEC19 | buy  | 1000   |           | 0      | 80    | STATUS_ACTIVE |
+      | trader           | market id | side      | volume | reference | offset | price | status        |
+      | sellSideProvider | ETH/DEC19 | SIDE_SELL | 1000   |           | 0      | 120   | STATUS_ACTIVE |
+      | buySideProvider  | ETH/DEC19 | SIDE_BUY  | 1000   |           | 0      | 80    | STATUS_ACTIVE |
 # Checked out, remove the order events we've checked, now let's have a look at the pegged order events
     And clear order events by reference:
       | trader           | reference       |
@@ -46,7 +46,7 @@ Feature: Test market depth events for pegged orders
       | buySideProvider  | buy-provider-1  |
 # Now check what happened to our pegged orders
     Then I see the following order events:
-      | trader  | market id | side | volume | reference | offset | price | status        |
-      | pegged1 | ETH/DEC19 | sell | 10     | MID       | 10     | 110   | STATUS_ACTIVE |
-      | pegged2 | ETH/DEC19 | buy  | 5      | MID       | -15    | 85    | STATUS_ACTIVE |
-      | pegged3 | ETH/DEC19 | buy  | 5      | MID       | -10    | 90    | STATUS_ACTIVE |
+      | trader  | market id | side      | volume | reference            | offset | price | status        |
+      | pegged1 | ETH/DEC19 | SIDE_SELL | 10     | PEGGED_REFERENCE_MID | 10     | 110   | STATUS_ACTIVE |
+      | pegged2 | ETH/DEC19 | SIDE_BUY  | 5      | PEGGED_REFERENCE_MID | -15    | 85    | STATUS_ACTIVE |
+      | pegged3 | ETH/DEC19 | SIDE_BUY  | 5      | PEGGED_REFERENCE_MID | -10    | 90    | STATUS_ACTIVE |

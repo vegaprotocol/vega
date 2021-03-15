@@ -311,53 +311,6 @@ func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 	return nil
 }
 
-func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
-	data := execsetup.broker.GetOrderEvents()
-	for _, row := range evts.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		// | trader  | market id | side | volume | reference | offset |
-		id, sside, vol, ref, offset, price := val(row, 1),
-			val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
-		status, err := orderstatusval(row, 7)
-		if err != nil {
-			return err
-		}
-		side := types.Side_SIDE_BUY
-		if sside == "sell" {
-			side = types.Side_SIDE_SELL
-		}
-		match := false
-		for _, e := range data {
-			o := e.Order()
-			if o.PartyId != trader || o.Status != status || o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
-				// if o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
-				continue
-			}
-			// check if pegged:
-			if offset != 0 {
-				// nope
-				if o.PeggedOrder == nil {
-					continue
-				}
-				if o.PeggedOrder.Offset != offset || o.PeggedOrder.Reference != ref {
-					continue
-				}
-				// this matches
-			}
-			// we've checked all fields and found this order to be a match
-			match = true
-			break
-		}
-		if !match {
-			return errors.New("no matching order event found")
-		}
-	}
-	return nil
-}
-
 func clearTransferEvents() error {
 	execsetup.broker.ClearTransferEvents()
 	return nil

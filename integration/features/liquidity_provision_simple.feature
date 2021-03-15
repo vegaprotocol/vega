@@ -22,9 +22,9 @@ Feature: Test LP orders
       | trader1          | ETH/DEC19 | buy  | 500    | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-1        |
       | trader1          | ETH/DEC19 | sell | 500    | 120   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-2        |
     Then I see the following order events:
-      | trader           | market id | side | volume | reference | offset | price | status        |
-      | sellSideProvider | ETH/DEC19 | sell | 1000   |           | 0      | 120   | STATUS_ACTIVE |
-      | buySideProvider  | ETH/DEC19 | buy  | 1000   |           | 0      | 80    | STATUS_ACTIVE |
+      | trader           | market id | side           | volume | reference | offset | price | status        |
+      | sellSideProvider | ETH/DEC19 | SIDE_SELL | 1000   |           | 0      | 120   | STATUS_ACTIVE |
+      | buySideProvider  | ETH/DEC19 | SIDE_BUY  | 1000   |           | 0      | 80    | STATUS_ACTIVE |
     And clear order events
     Then the trader submits LP:
       | id  | party   | market    | commitment amount | fee | order side | order reference | order proportion | order offset |
@@ -34,6 +34,6 @@ Feature: Test LP orders
       | id  | party   | market    | commitment amount |
       | lp1 | trader1 | ETH/DEC19 | 10000             |
     Then I see the following order events:
-      | trader  | market id | side | volume | reference | offset | price | status        |
-      | trader1 | ETH/DEC19 | buy  | 450    |           | 0      | 100   | STATUS_ACTIVE |
-      | trader1 | ETH/DEC19 | sell | 308    |           | 0      | 130   | STATUS_ACTIVE |
+      | trader  | market id | side           | volume | reference | offset | price | status        |
+      | trader1 | ETH/DEC19 | SIDE_BUY  | 450    |           | 0      | 100   | STATUS_ACTIVE |
+      | trader1 | ETH/DEC19 | SIDE_SELL | 308    |           | 0      | 130   | STATUS_ACTIVE |
