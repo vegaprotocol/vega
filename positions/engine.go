@@ -395,23 +395,27 @@ func (e *Engine) GetOpenInterest() uint64 {
 }
 
 func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
-	oi := int64(e.GetOpenInterest())
+	oi := e.GetOpenInterest()
+	d := int64(0)
 	for _, t := range trades {
-		var bPosSizeOld int64 = 0
-		var sPosSizeOld int64 = 0
-		bPos, bOk := e.positions[t.Buyer]
-		sPos, sOk := e.positions[t.Seller]
-
-		if bOk {
-			bPosSizeOld = bPos.size
+		bSize, sSize := int64(0), int64(0)
+		if p, ok := e.positions[t.Buyer]; ok {
+			bSize = p.size
 		}
-		if sOk {
-			sPosSizeOld = sPos.size
+		if p, ok := e.positions[t.Seller]; ok {
+			sSize = p.size
 		}
 		// Change in open interest due to trades equals change in longs
-		oi += max(0, bPosSizeOld+int64(t.Size)) - max(0, bPosSizeOld) + max(0, sPosSizeOld-int64(t.Size)) - max(0, sPosSizeOld)
+		d += max(0, bSize+int64(t.Size)) - max(0, bSize) + max(0, sSize-int64(t.Size)) - max(0, sSize)
 	}
-	return uint64(oi)
+	if d > 0 {
+		oi += uint64(d)
+	}
+	if d < 0 {
+		oi -= uint64(-d)
+	}
+
+	return oi
 }
 
 func max(a int64, b int64) int64 {
