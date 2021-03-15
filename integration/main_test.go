@@ -133,7 +133,9 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TradersAttemptToCancelTheFollowingFilledOrders(execsetup.broker, execsetup.engine, table)
 	})
 	s.Step(`^missing traders cancels the following orders reference:$`, missingTradersCancelsTheFollowingOrdersReference)
-	s.Step(`^position API produce the following:$`, positionAPIProduceTheFollowing)
+	s.Step(`^traders have the following profit and loss:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
+	})
 	s.Step(`^the mark price for the market "([^"]*)" is "([^"]*)"$`, func(market, markPriceStr string) error {
 		return steps.TheMarkPriceForTheMarketIs(execsetup.engine, market, markPriceStr)
 	})

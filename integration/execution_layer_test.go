@@ -196,51 +196,6 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 	return nil
 }
 
-func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
-	var retries = 2
-
-	party, volume, realisedPNL, unrealisedPNL := val(row, 0), i64val(row, 1), i64val(row, 3), i64val(row, 2)
-
-	var pos []*types.Position
-	sleepTime := 100 // milliseconds
-	for retries > 0 {
-		pos, err = execsetup.positionPlugin.GetPositionsByParty(party)
-		if err != nil {
-			// Do not retry. Fail immediately.
-			return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
-		}
-
-		if len(pos) == 1 && pos[0].OpenVolume == volume && pos[0].RealisedPnl == realisedPNL && pos[0].UnrealisedPnl == unrealisedPNL {
-			return nil
-		}
-
-		// The positions engine runs asynchronously, so wait for the right numbers to show up.
-		// Sleep times: 100ms, 200ms, 400ms, ..., 51.2s, then give up.
-		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
-		sleepTime *= 2
-		retries--
-	}
-
-	if len(pos) == 0 {
-		return fmt.Errorf("party do not have a position, party(%v)", party)
-	}
-
-	return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
-		party, volume, pos[0].OpenVolume, unrealisedPNL, pos[0].UnrealisedPnl, realisedPNL, pos[0].RealisedPnl)
-}
-
-func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
-	for _, row := range table.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-		if err := positionAPIProduceTheFollowingRow(row); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	var err error
 	for _, row := range trades.Rows {

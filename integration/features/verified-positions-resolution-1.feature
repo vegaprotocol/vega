@@ -43,9 +43,9 @@ Feature: Position resolution case 1
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
 
 # check positions
-    Then position API produce the following:
-      | trader           | volume | unrealisedPNL | realisedPNL |
-      | designatedLooser | 290    | -8700         | 0           |
+    Then traders have the following profit and loss:
+      | trader           | volume | unrealised pnl | realised pnl |
+      | designatedLooser | 290    | -8700          | 0            |
 
 # checking margins
     Then traders have the following account balances:

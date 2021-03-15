@@ -57,10 +57,10 @@ Feature: Test loss socialization case 5
       | trader4 | ETH/DEC19 | sell | 10     | 180   | 1                | TYPE_LIMIT | TIF_GTC |
 
 # check positions
-    Then position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 0      | 0             | -2000       |
-      | trader2 | 100    | 7200          | 0           |
-      | trader3 | 0      | 0             | -3000       |
-      | trader4 | 0      | 0             | 800         |
+    Then traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 0      | 0              | -2000        |
+      | trader2 | 100    | 7200           | 0            |
+      | trader3 | 0      | 0              | -3000        |
+      | trader4 | 0      | 0              | 800          |
     And the insurance pool balance is "0" for the market "ETH/DEC19"

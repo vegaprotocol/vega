@@ -43,7 +43,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | trader1 | 14000000 | 11   | sellSideMM |
 
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount  | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
     Then traders have the following account balances:
@@ -52,19 +52,19 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 36400000    | 116480000 | 145600000 | 182000000 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 5600000       | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 5600000        | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 160
     Then traders place following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 16000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 16000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount   | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 26000000 | ETH   |
 
     Then traders have the following account balances:
@@ -73,9 +73,9 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 41600000    | 133120000 | 166400000 | 208000000 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 31600000      | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 31600000       | 0            |
 
     # CLOSEOUT ATTEMPT (FAILED, no buy-side in order book) BY TRADER
     Then traders place following orders:
@@ -87,6 +87,6 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 41600000    | 133120000 | 166400000 | 208000000 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 31600000      | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 31600000       | 0            |

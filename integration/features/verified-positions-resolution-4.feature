@@ -52,10 +52,10 @@ Feature: Position resolution case 4
     And the mark price for the market "ETH/DEC19" is "300"
 
 #check positions
-    Then position API produce the following:
-      | trader           | volume | unrealisedPNL | realisedPNL |
-      | designatedLooser | 0      | 0             | -10000      |
-      | buySideProvider  | 101    | 11500         | -1500       |
+    Then traders have the following profit and loss:
+      | trader           | volume | unrealised pnl | realised pnl |
+      | designatedLooser | 0      | 0              | -10000       |
+      | buySideProvider  | 101    | 11500          | -1500        |
 
 # checking margins
     Then traders have the following account balances:

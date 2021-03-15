@@ -45,10 +45,10 @@ Feature: Test loss socialization case 1
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader2 | ETH/DEC19 | buy  | 100    | 180   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC19 | sell | 100    | 180   | 1                | TYPE_LIMIT | TIF_GTC |
-    Then position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 0      | 0             | -5000       |
-      | trader2 | 200    | 8000          | -3000       |
-      | trader3 | -100   | 0             | 0           |
+    Then traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 0      | 0              | -5000        |
+      | trader2 | 200    | 8000           | -3000        |
+      | trader3 | -100   | 0              | 0            |
     And the insurance pool balance is "0" for the market "ETH/DEC19"
     And Cumulated balance for all accounts is worth "200105000"
