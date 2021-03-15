@@ -361,30 +361,21 @@ func submitLP(in *gherkin.DataTable) error {
 	return nil
 }
 
-func seeLPEvents(in *gherkin.DataTable) error {
-	evts := execsetup.broker.GetLPEvents()
-	evtByID := func(id string) *types.LiquidityProvision {
-		for _, e := range evts {
-			if lp := e.LiquidityProvision(); lp.Id == id {
-				return &lp
-			}
-		}
-		return nil
-	}
-	for _, row := range in.Rows {
-		id := val(row, 0)
-		if id == "id" {
-			continue
-		}
-		// find event
-		e := evtByID(id)
-		if e == nil {
-			return errors.New("no LP for id found")
-		}
-		party, market, commitment := val(row, 1), val(row, 2), u64val(row, 3)
-		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment {
-			return errors.New("party,  market ID, or commitment amount mismatch")
+func theOpeningAuctionPeriodEnds(mktName string) error {
+	var mkt *types.Market
+	for _, m := range execsetup.mkts {
+		if m.Id == mktName {
+			mkt = &m
+			break
 		}
 	}
+	if mkt == nil {
+		return fmt.Errorf("market %s not found", mktName)
+	}
+	// double the time, so it's definitely past opening auction time
+	now := execsetup.timesvc.Now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second)
+	execsetup.timesvc.Now = now
+	// notify markets
+	execsetup.timesvc.Notify(context.Background(), now)
 	return nil
 }

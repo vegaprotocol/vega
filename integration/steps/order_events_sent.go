@@ -11,7 +11,7 @@ func OrderEventsSent(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	data := broker.GetOrderEvents()
 	for _, row := range TableWrapper(*table).Parse() {
 		trader := row.Str("trader")
-		marketId := row.Str("market id")
+		marketID := row.Str("market id")
 		side := row.Str("side")
 		size := row.U64("volume")
 		reference := row.Str("reference")
@@ -26,7 +26,7 @@ func OrderEventsSent(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.PartyId != trader || o.Status != status || o.MarketId != marketId || o.Side.String() != side || o.Size != size || o.Price != price {
+			if o.PartyId != trader || o.Status != status || o.MarketId != marketID || o.Side.String() != side || o.Size != size || o.Price != price {
 				// if o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
 				continue
 			}
