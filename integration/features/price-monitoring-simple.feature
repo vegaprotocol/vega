@@ -33,12 +33,12 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "100"
 
     #T0 + 10min
-    Then the time is updated to "2020-10-16T00:10:00Z"
+    Then time is updated to "2020-10-16T00:10:00Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 10min01s
-    Then the time is updated to "2020-10-16T00:10:01Z"
+    Then time is updated to "2020-10-16T00:10:01Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -90,12 +90,12 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "100"
 
     #T0 + 10min
-    Then the time is updated to "2020-10-16T00:10:00Z"
+    Then time is updated to "2020-10-16T00:10:00Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 10min01s
-    Then the time is updated to "2020-10-16T00:10:01Z"
+    Then time is updated to "2020-10-16T00:10:01Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -129,14 +129,14 @@ Feature: Price monitoring test using simple risk model
       | trader2 | ETH/DEC20 | buy  | 1      | 112   | 0                | TYPE_LIMIT | TIF_GTC |
 
     #T0 + 10min
-    Then the time is updated to "2020-10-16T00:10:00Z"
+    Then time is updated to "2020-10-16T00:10:00Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "100"
 
     #T0 + 10min01s
-    Then the time is updated to "2020-10-16T00:10:01Z"
+    Then time is updated to "2020-10-16T00:10:01Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -159,7 +159,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "110"
 
     #T0 + 10s
-    Then the time is updated to "2020-10-16T00:00:10Z"
+    Then time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -171,7 +171,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "115"
 
     #T0 + 01min10s
-    Then the time is updated to "2020-10-16T00:01:10Z"
+    Then time is updated to "2020-10-16T00:01:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -183,7 +183,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 = T0 + 02min10s (auction start)
-    Then the time is updated to "2020-10-16T00:02:10Z"
+    Then time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -195,26 +195,26 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 04min00s (last second of the initial auction)
-    Then the time is updated to "2020-10-16T00:06:10Z"
+    Then time is updated to "2020-10-16T00:06:10Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T1 + 04min01s (auction extended due to 2nd trigger)
-    Then the time is updated to "2020-10-16T00:06:11Z"
+    Then time is updated to "2020-10-16T00:06:11Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 10min00s (last second of the extended auction)
-    Then the time is updated to "2020-10-16T00:12:10Z"
+    Then time is updated to "2020-10-16T00:12:10Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 10min01s (extended auction finished)
-    Then the time is updated to "2020-10-16T00:12:11Z"
+    Then time is updated to "2020-10-16T00:12:11Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -237,7 +237,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "110"
 
     #T0 + 10s
-    Then the time is updated to "2020-10-16T00:00:10Z"
+    Then time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -249,7 +249,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "115"
 
     #T0 + 01min10s
-    Then the time is updated to "2020-10-16T00:01:10Z"
+    Then time is updated to "2020-10-16T00:01:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -261,7 +261,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 = T0 + 02min10s (auction start)
-    Then the time is updated to "2020-10-16T00:02:10Z"
+    Then time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -273,12 +273,12 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 04min00s (last second of the auction)
-    Then the time is updated to "2020-10-16T00:06:10Z"
+    Then time is updated to "2020-10-16T00:06:10Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T1 + 04min01s
-    Then the time is updated to "2020-10-16T00:06:11Z"
+    Then time is updated to "2020-10-16T00:06:11Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -301,7 +301,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "110"
 
     #T0 + 10s
-    Then the time is updated to "2020-10-16T00:00:10Z"
+    Then time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -313,7 +313,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "115"
 
     #T0 + 01min10s
-    Then the time is updated to "2020-10-16T00:01:10Z"
+    Then time is updated to "2020-10-16T00:01:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -325,7 +325,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 = T0 + 02min10s (auction start)
-    Then the time is updated to "2020-10-16T00:02:10Z"
+    Then time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -337,7 +337,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 04min00s (last second of the auction)
-    Then the time is updated to "2020-10-16T00:06:10Z"
+    Then time is updated to "2020-10-16T00:06:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -347,21 +347,21 @@ Feature: Price monitoring test using simple risk model
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T1 + 04min01s (auction extended due to 2nd trigger)
-    Then the time is updated to "2020-10-16T00:06:11Z"
+    Then time is updated to "2020-10-16T00:06:11Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 10min00s (last second of the extended auction)
-    Then the time is updated to "2020-10-16T00:12:10Z"
+    Then time is updated to "2020-10-16T00:12:10Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 10min01s (extended auction finished)
-    Then the time is updated to "2020-10-16T00:12:11Z"
+    Then time is updated to "2020-10-16T00:12:11Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -384,7 +384,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "110"
 
     #T0 + 10s
-    Then the time is updated to "2020-10-16T00:00:10Z"
+    Then time is updated to "2020-10-16T00:00:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -396,7 +396,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "115"
 
     #T0 + 01min10s
-    Then the time is updated to "2020-10-16T00:01:10Z"
+    Then time is updated to "2020-10-16T00:01:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -408,7 +408,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 = T0 + 02min10s (auction start)
-    Then the time is updated to "2020-10-16T00:02:10Z"
+    Then time is updated to "2020-10-16T00:02:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -420,7 +420,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 04min00s (last second of the auction)
-    Then the time is updated to "2020-10-16T00:06:10Z"
+    Then time is updated to "2020-10-16T00:06:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -430,14 +430,14 @@ Feature: Price monitoring test using simple risk model
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T1 + 04min01s (auction extended due to 2nd trigger)
-    Then the time is updated to "2020-10-16T00:06:11Z"
+    Then time is updated to "2020-10-16T00:06:11Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 10min00s (last second of the extended auction)
-    Then the time is updated to "2020-10-16T00:12:10Z"
+    Then time is updated to "2020-10-16T00:12:10Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -449,7 +449,7 @@ Feature: Price monitoring test using simple risk model
     And the mark price for the market "ETH/DEC20" is "105"
 
     #T1 + 10min01s (extended auction finished)
-    Then the time is updated to "2020-10-16T00:12:11Z"
+    Then time is updated to "2020-10-16T00:12:11Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 

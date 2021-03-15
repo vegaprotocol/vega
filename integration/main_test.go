@@ -111,7 +111,9 @@ func FeatureContext(s *godog.Suite) {
 		}
 		return err
 	})
-	s.Step(`^the time is updated to "([^"]*)"$`, theTimeIsUpdatedTo)
+	s.Step(`^time is updated to "([^"]*)"$`, func(rawTime string) error {
+		return steps.TimeIsUpdatedTo(execsetup.timesvc, rawTime)
+	})
 	s.Step(`^traders cannot place the following orders anymore:$`, tradersCannotPlaceTheFollowingOrdersAnymore)
 	s.Step(`^the margins levels for the traders are:$`, func(table *gherkin.DataTable) error {
 		return steps.TheMarginsLevelsForTheTradersAre(execsetup.broker, table)

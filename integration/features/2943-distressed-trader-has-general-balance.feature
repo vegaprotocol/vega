@@ -32,7 +32,7 @@ Feature: Distressed traders should not have general balance left
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     # T0 + 1min - this causes the price for comparison of the bounds to be 567
-    Then the time is updated to "2020-10-16T00:01:00Z"
+    Then time is updated to "2020-10-16T00:01:00Z"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |

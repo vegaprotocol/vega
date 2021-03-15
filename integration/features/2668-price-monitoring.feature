@@ -53,14 +53,14 @@ Feature: Price monitoring test for issue 2668
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min
-    Then the time is updated to "2020-10-16T00:05:00Z"
+    Then time is updated to "2020-10-16T00:05:00Z"
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min01s
-    Then the time is updated to "2020-10-16T00:05:01Z"
+    Then time is updated to "2020-10-16T00:05:01Z"
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
@@ -109,14 +109,14 @@ Feature: Price monitoring test for issue 2668
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min
-    Then the time is updated to "2020-10-16T00:05:00Z"
+    Then time is updated to "2020-10-16T00:05:00Z"
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min01s
-    Then the time is updated to "2020-10-16T00:05:01Z"
+    Then time is updated to "2020-10-16T00:05:01Z"
 
     And the mark price for the market "ETH/DEC20" is "6630000"
 
@@ -165,14 +165,14 @@ Feature: Price monitoring test for issue 2668
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min
-    Then the time is updated to "2020-10-16T00:05:00Z"
+    Then time is updated to "2020-10-16T00:05:00Z"
 
     And the mark price for the market "ETH/DEC20" is "663"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T0 + 5min01s
-    Then the time is updated to "2020-10-16T00:05:01Z"
+    Then time is updated to "2020-10-16T00:05:01Z"
 
     And the mark price for the market "ETH/DEC20" is "663"
 

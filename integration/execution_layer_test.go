@@ -143,16 +143,6 @@ func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 	return nil
 }
 
-func theTimeIsUpdatedTo(newTime string) error {
-	t, err := time.Parse("2006-01-02T15:04:05Z", newTime)
-	if err != nil {
-		return fmt.Errorf("invalid start date %v", err)
-	}
-
-	execsetup.timesvc.SetTime(t)
-	return nil
-}
-
 func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) error {
 	for _, row := range orders.Rows {
 		if val(row, 0) == "trader" {

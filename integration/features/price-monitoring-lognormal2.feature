@@ -71,12 +71,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min + 2 second opening auction
-    Then the time is updated to "2020-10-16T00:04:02Z"
+    Then time is updated to "2020-10-16T00:04:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min03s
-    Then the time is updated to "2020-10-16T00:04:03Z"
+    Then time is updated to "2020-10-16T00:04:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -144,12 +144,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min + 2 second opening auction
-    Then the time is updated to "2020-10-16T00:04:02Z"
+    Then time is updated to "2020-10-16T00:04:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min03s
-    Then the time is updated to "2020-10-16T00:04:03Z"
+    Then time is updated to "2020-10-16T00:04:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -215,12 +215,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min + 2 second opening auction
-    Then the time is updated to "2020-10-16T00:04:02Z"
+    Then time is updated to "2020-10-16T00:04:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min03s
-    Then the time is updated to "2020-10-16T00:04:03Z"
+    Then time is updated to "2020-10-16T00:04:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -286,24 +286,24 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min + 2 second opening auction
-    Then the time is updated to "2020-10-16T00:04:02Z"
+    Then time is updated to "2020-10-16T00:04:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min03s
-    Then the time is updated to "2020-10-16T00:04:03Z"
+    Then time is updated to "2020-10-16T00:04:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "104251"
 
     #T0 + 10min + 2 second opening auction
-    Then the time is updated to "2020-10-16T00:10:02Z"
+    Then time is updated to "2020-10-16T00:10:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 10min03s
-    Then the time is updated to "2020-10-16T00:10:03Z"
+    Then time is updated to "2020-10-16T00:10:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -369,24 +369,24 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min + 2 second opening auction
-    Then the time is updated to "2020-10-16T00:04:02Z"
+    Then time is updated to "2020-10-16T00:04:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min03s
-    Then the time is updated to "2020-10-16T00:04:03Z"
+    Then time is updated to "2020-10-16T00:04:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "104251"
 
     #T0 + 10min + 2 second opening auction
-    Then the time is updated to "2020-10-16T00:10:01Z"
+    Then time is updated to "2020-10-16T00:10:01Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 10min03s
-    Then the time is updated to "2020-10-16T00:10:03Z"
+    Then time is updated to "2020-10-16T00:10:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -422,7 +422,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price for the market "ETH/DEC20" is "100000"
 
-    Then the time is updated to "2020-10-16T00:00:02Z"
+    Then time is updated to "2020-10-16T00:00:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
@@ -454,7 +454,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     #T0 + 4min
-    Then the time is updated to "2020-10-16T00:04:02Z"
+    Then time is updated to "2020-10-16T00:04:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
@@ -468,21 +468,21 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader2 | ETH/DEC20 | buy  | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC |
 
     #T0 + 4min01s
-    Then the time is updated to "2020-10-16T00:04:03Z"
+    Then time is updated to "2020-10-16T00:04:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "104251"
 
     #T0 + 10min
-    Then the time is updated to "2020-10-16T00:10:02Z"
+    Then time is updated to "2020-10-16T00:10:02Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     And the mark price for the market "ETH/DEC20" is "104251"
 
     #T0 + 10min01sec
-    Then the time is updated to "2020-10-16T00:10:03Z"
+    Then time is updated to "2020-10-16T00:10:03Z"
 
     And the market trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 

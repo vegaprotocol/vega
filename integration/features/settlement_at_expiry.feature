@@ -13,7 +13,7 @@ Feature: Test mark to market settlement
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount |
       | trader1 | ETH   | 10000  |
-    Then the time is updated to "2020-01-01T01:01:01Z"
+    Then time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
       | trader  | market id | side | volume | price | resulting trades | error                         |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
@@ -36,7 +36,7 @@ Feature: Test mark to market settlement
       | trader3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     And Cumulated balance for all accounts is worth "16000"
-    Then the time is updated to "2020-01-01T01:01:01Z"
+    Then time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
       | trader  | market id | side | volume | price | resulting trades | error                         |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
