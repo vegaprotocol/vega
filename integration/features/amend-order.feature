@@ -51,8 +51,8 @@ Feature: Amend orders
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  | 3      | 1     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
-    Then the following trades happened:
-      | buyer  | seller | price | volume |
+    Then the following trades were executed:
+      | buyer  | seller | price | size |
       | myboi3 | myboi  | 1     | 3      |
 
   Scenario: Increase size success and loosing position in order book
@@ -77,8 +77,8 @@ Feature: Amend orders
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
-    Then the following trades happened:
-      | buyer  | seller | price | volume |
+    Then the following trades were executed:
+      | buyer  | seller | price | size   |
       | myboi3 | myboi2 |     1 |      3 |
 
   Scenario: Reduce size success and order cancelled as  < to remaining

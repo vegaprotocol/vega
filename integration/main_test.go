@@ -144,11 +144,13 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^the following network trades happened:$`, theFollowingNetworkTradesHappened)
 	s.Step(`^traders amends the following orders reference:$`, tradersAmendsTheFollowingOrdersReference)
-	s.Step(`^the following trades happened:$`, func(table *gherkin.DataTable) error {
-		return steps.TheFollowingTradesHappened(execsetup.broker, table)
+	s.Step(`^the following trades were executed:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingTradesWereExecuted(execsetup.broker, table)
 	})
 	s.Step(`^verify the status of the order reference:$`, verifyTheStatusOfTheOrderReference)
-	s.Step(`^executed trades:$`, executedTrades)
+	s.Step(`^executed trades:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingTradesWereExecuted(execsetup.broker, table)
+	})
 	s.Step(`^clear order events$`, clearOrderEvents)
 	s.Step(`^traders place pegged orders:$`, tradersPlacePeggedOrders)
 	s.Step(`^I see the following order events:$`, seeTheFollowingOrderEvents)

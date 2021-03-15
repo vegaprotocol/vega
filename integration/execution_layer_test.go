@@ -295,33 +295,6 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 	return nil
 }
 
-func executedTrades(trades *gherkin.DataTable) error {
-	var err error
-	for i, row := range trades.Rows {
-		if i > 0 {
-			trader := val(row, 0)
-			price := u64val(row, 1)
-			size := u64val(row, 2)
-			counterparty := val(row, 3)
-			var found = false
-			data := execsetup.broker.GetTrades()
-			for _, v := range data {
-				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				err = fmt.Errorf("expected trade is missing: %v, %v, %v, %v", trader, price, size, counterparty)
-				break
-			}
-		}
-	}
-
-	return err
-}
-
 func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 	for i, row := range orders.Rows {
 		trader := val(row, 0)
