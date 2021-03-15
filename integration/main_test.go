@@ -90,7 +90,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders have the following account balances:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingAccountBalances(execsetup.broker, table)
 	})
-	s.Step(`^All balances cumulated are worth "([^"]*)"$`, allBalancesCumulatedAreWorth)
+	s.Step(`^Cumulated balance for all accounts is worth "([^"]*)"$`, func(rawAmount string) error {
+		return steps.CumulatedBalanceForAllAccountsIsWorth(execsetup.broker, rawAmount)
+	})
 	s.Step(`^the settlement account balance is "([^"]*)" for the market "([^"]*)" before MTM$`, func(amountStr, market string) error {
 		return steps.SettlementAccountBalanceIsForMarket(execsetup.broker, amountStr, market)
 	})

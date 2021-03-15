@@ -51,4 +51,4 @@ Feature: Test loss socialization case 1
       | trader2 | 200    | 8000          | -3000       |
       | trader3 | -100   | 0             | 0           |
     And the insurance pool balance is "0" for the market "ETH/DEC19"
-    And All balances cumulated are worth "200105000"
+    And Cumulated balance for all accounts is worth "200105000"

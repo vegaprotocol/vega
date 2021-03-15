@@ -143,27 +143,6 @@ func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 	return nil
 }
 
-func allBalancesCumulatedAreWorth(amountstr string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	var cumul uint64
-	batch := execsetup.broker.GetAccounts()
-	data := make([]types.Account, 0, len(batch))
-	for _, e := range batch {
-		data = append(data, e.Account())
-	}
-	for _, v := range data {
-		// remove vote token
-		if v.Asset != "VOTE" {
-			cumul += v.Balance
-		}
-	}
-
-	if amount != cumul {
-		return fmt.Errorf("expected cumul balances to be %v but found %v", amount, cumul)
-	}
-	return nil
-}
-
 func theTimeIsUpdatedTo(newTime string) error {
 	t, err := time.Parse("2006-01-02T15:04:05Z", newTime)
 	if err != nil {

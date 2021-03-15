@@ -30,5 +30,5 @@ Feature: Close a filled order twice
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
     And the insurance pool balance is "0" for the market "ETH/DEC19"
-    And All balances cumulated are worth "200000000"
+    And Cumulated balance for all accounts is worth "200000000"
 

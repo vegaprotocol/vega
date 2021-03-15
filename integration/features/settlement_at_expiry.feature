@@ -35,7 +35,7 @@ Feature: Test mark to market settlement
       | trader2 | ETH   | ETH/DEC19 | 132    | 868     |
       | trader3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    And All balances cumulated are worth "16000"
+    And Cumulated balance for all accounts is worth "16000"
     Then the time is updated to "2020-01-01T01:01:01Z"
     Then traders cannot place the following orders anymore:
       | trader  | market id | side | volume | price | resulting trades | error                         |
@@ -45,4 +45,4 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | ETH/DEC19 | 0      | 8084    |
       | trader2 | ETH   | ETH/DEC19 | 0      | 2784    |
       | trader3 | ETH   | ETH/DEC19 | 0      | 4868    |
-    And All balances cumulated are worth "15736"
+    And Cumulated balance for all accounts is worth "15736"

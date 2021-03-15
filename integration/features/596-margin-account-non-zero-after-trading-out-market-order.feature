@@ -57,7 +57,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 933    | 9007    |
       | chris  | BTC   | ETH/DEC19 | 790    | 9270    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    And All balances cumulated are worth "2040000"
+    And Cumulated balance for all accounts is worth "2040000"
 # then chris is trading out
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
@@ -67,7 +67,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 1283   | 9007    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9808    |
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
-    And All balances cumulated are worth "2040000"
+    And Cumulated balance for all accounts is worth "2040000"
 # placing new orders to trade out
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
@@ -91,7 +91,7 @@ Feature: Regression test for issue 596
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | chris  | BTC   | ETH/DEC19 | 0      | 9767    |
-    And All balances cumulated are worth "2040000"
+    And Cumulated balance for all accounts is worth "2040000"
 
   Scenario: Traded out position but monies left in margin account if trade which trade out do not update the markprice
     Given the traders make the following deposits on asset's general account:
@@ -141,7 +141,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 933    | 9007    |
       | chris  | BTC   | ETH/DEC19 | 790    | 9270    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    And All balances cumulated are worth "2040000"
+    And Cumulated balance for all accounts is worth "2040000"
 # then chris is trading out
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
@@ -151,7 +151,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 1283   | 9007    |
       | chris  | BTC   | ETH/DEC19 | 0      | 9808    |
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
-    And All balances cumulated are worth "2040000"
+    And Cumulated balance for all accounts is worth "2040000"
 # placing new orders to trade out
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     |
@@ -175,4 +175,4 @@ Feature: Regression test for issue 596
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | chris  | BTC   | ETH/DEC19 | 0      | 9768    |
-    And All balances cumulated are worth "2040000"
+    And Cumulated balance for all accounts is worth "2040000"

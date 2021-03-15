@@ -54,7 +54,7 @@ Feature: Regression test for issue 767
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    And All balances cumulated are worth "2002000"
+    And Cumulated balance for all accounts is worth "2002000"
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | edd    | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -62,4 +62,4 @@ Feature: Regression test for issue 767
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    And All balances cumulated are worth "2002000"
+    And Cumulated balance for all accounts is worth "2002000"
