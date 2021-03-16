@@ -406,7 +406,7 @@ func (e *Engine) Update(
 	if e.undeployedProvisions {
 		// There are some provisions that haven't been cancelled or rejected,
 		// but haven't yet been deployed, try an deploy now.
-		e.undeployedProvisions = false
+		stillUndeployed := false
 		for _, lp := range e.provisions.slice() {
 			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED {
 				creates, updates, err := e.createOrUpdateForParty(midPriceBid, midPriceAsk, lp.PartyId, repriceFn)
@@ -416,11 +416,10 @@ func (e *Engine) Update(
 				updatedLPParties = append(updatedLPParties, lp.PartyId)
 				newOrders = append(newOrders, creates...)
 				amendments = append(amendments, updates...)
-				if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED {
-					e.undeployedProvisions = true
-				}
+				stillUndeployed = stillUndeployed || lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED
 			}
 		}
+		e.undeployedProvisions = stillUndeployed
 	}
 
 	// send a batch of updates

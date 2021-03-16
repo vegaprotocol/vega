@@ -455,3 +455,92 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	}
 
 }
+
+func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
+	var (
+		party0 = "clearing-auction-party0"
+		party1 = "clearing-auction-party1"
+	)
+
+	// parties used for clearing opening auction
+	tm.WithAccountAndAmount(party0, 1000000).
+		WithAccountAndAmount(party1, 1000000)
+
+	var auctionOrders = []*types.Order{
+		// Limit Orders
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        5,
+			Remaining:   5,
+			Price:       1000,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     party0,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        5,
+			Remaining:   5,
+			Price:       1000,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     party1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1,
+			Remaining:   1,
+			Price:       900,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     party0,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1,
+			Remaining:   1,
+			Price:       1200,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     party1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	// submit the auctions orders
+	tm.WithSubmittedOrders(t, auctionOrders...)
+
+	// update the time to get out of auction
+	tm.market.OnChainTimeUpdate(context.Background(), auctionEnd)
+
+	assert.Equal(t,
+		tm.market.GetMarketData().MarketTradingMode,
+		types.Market_TRADING_MODE_CONTINUOUS,
+	)
+
+	if setMarkPrice {
+		// now set the markprice
+		mpOrders := []*types.Order{
+			{
+				Type:        types.Order_TYPE_LIMIT,
+				Size:        1,
+				Remaining:   1,
+				Price:       900,
+				Side:        types.Side_SIDE_SELL,
+				PartyId:     party1,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			},
+			{
+				Type:        types.Order_TYPE_LIMIT,
+				Size:        1,
+				Remaining:   1,
+				Price:       1200,
+				Side:        types.Side_SIDE_BUY,
+				PartyId:     party0,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			},
+		}
+		// submit the auctions orders
+		tm.WithSubmittedOrders(t, mpOrders...)
+	}
+
+}
