@@ -46,3 +46,7 @@ func TradersAmendOrdersByReference(broker *stubs.BrokerStub, exec *execution.Eng
 
 	return nil
 }
+
+func errAmendingOrder(o types.Order, err error) error {
+	return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyId, o.Reference, err)
+}
