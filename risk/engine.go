@@ -252,7 +252,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 	curBalance := evt.MarginBalance()
 
-	// there's not enought monies in the accounts of the party,
+	// there's not enough monies in the accounts of the party,
 	// we break from here. The minimum requires is MAINTENANCE, not INITIAL here!
 	if curBalance+evt.GeneralBalance() < margins.MaintenanceMargin {
 		return nil, ErrInsufficientFundsForInitialMargin
@@ -293,7 +293,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 // margins updates are based on the following requirement
 //  ---------------------------------------------------------------------------------------
 // | 1 | SearchLevel < CurMargin < InitialMargin | nothing to do / no risk for the network |
-// | 2 | CurMargin < SearchLevel                 | set margin to InitalLevel               |
+// | 2 | CurMargin < SearchLevel                 | set margin to InitialLevel              |
 // | 3 | CurMargin > ReleaseLevel                | release up to the InitialLevel          |
 //  ---------------------------------------------------------------------------------------
 // In the case where the CurMargin is smaller to the MaintenanceLevel after trying to
