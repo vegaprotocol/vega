@@ -225,7 +225,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 		order.Id = uuid.NewV4().String()
 	}).AnyTimes()
 
-	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, fn, []*types.Order{})
+	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, markPrice, fn, []*types.Order{})
 	require.NoError(t, err)
 	require.Len(t, newOrders, 3)
 	require.Len(t, amendments, 0)
@@ -438,14 +438,14 @@ func TestUpdate(t *testing.T) {
 		{Id: "2", PartyId: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
-	creates, _, err := tng.engine.CreateInitialOrders(markPrice, party, orders, fn)
+	creates, _, err := tng.engine.CreateInitialOrders(markPrice, markPrice, party, orders, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, fn, orders)
+	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 3)
@@ -455,7 +455,7 @@ func TestUpdate(t *testing.T) {
 		)
 	}
 
-	newOrders, amendments, err = tng.engine.Update(context.Background(), markPrice, fn, orders)
+	newOrders, amendments, err = tng.engine.Update(context.Background(), markPrice, markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
 	require.Len(t, amendments, 0)
