@@ -1616,6 +1616,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 				)
 				return err
 			}
+			m.equityShares.SetPartyStake(v.Party(), 0)
 		}
 
 		// add all pegged orders too to the orderUpdates
@@ -1851,18 +1852,6 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 }
 
 func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Context, partyID string) error {
-	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, partyID)
-	if err != nil {
-		return err
-	}
-	for _, o := range cancelOrders {
-		if _, err := m.cancelOrder(ctx, partyID, o.Id); err != nil {
-			m.log.Debug("unable cancel liquidity order",
-				logging.String("party", partyID),
-				logging.String("order-id", o.Id),
-				logging.Error(err))
-		}
-	}
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return err

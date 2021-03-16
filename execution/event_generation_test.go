@@ -710,12 +710,12 @@ func TestEvents_CloseOutTraderWithLPOrder(t *testing.T) {
 
 	leaveAuction(tm, ctx, &now)
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFN, "Order01", types.Side_SIDE_SELL, "trader-Z", 35, 1)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFN, "Order01", types.Side_SIDE_SELL, "trader-Z", 30, 1)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 35, 1)
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 30, 1)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -745,21 +745,23 @@ func TestEvents_CloseOutTraderWithLPOrder(t *testing.T) {
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              "0.05",
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1,
+		CommitmentAmount: 1000,
 		Buys:             buys,
 		Sells:            sells}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-Z", "LPOrder01")
 	require.NoError(t, err)
-	assert.Equal(t, 1, tm.market.GetLPSCount())
+	require.Equal(t, 1, tm.market.GetLPSCount())
 
+	// Change mark price to force Trader-Z to be closed out
 	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order06", types.Side_SIDE_SELL, "trader-C", 10, 100)
 	o6conf, err := tm.market.SubmitOrder(ctx, o6)
 	require.NotNil(t, o6conf)
 	require.NoError(t, err)
+	require.Equal(t, 0, tm.market.GetLPSCount())
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(13), tm.orderEventCount)
+	assert.Equal(t, uint64(12), tm.orderEventCount)
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
