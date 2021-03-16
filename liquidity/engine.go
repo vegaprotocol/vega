@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
@@ -142,6 +143,14 @@ func (e *Engine) stopLiquidityProvision(
 	for _, o := range e.liquidityOrders[party] {
 		orders = append(orders, o)
 	}
+
+	// FIXME(JEREMY): if sorting them is the actual solution
+	// review the implementation to make some eventually more efficient
+	// we sort this here to make sure that all orders are always
+	// cancelled in the same order
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].Id < orders[j].Id
+	})
 
 	// now delete all stuff
 	delete(e.liquidityOrders, party)
@@ -385,7 +394,7 @@ func (e *Engine) Update(
 		// update our internal orders
 		e.updatePartyOrders(po.Party, po.Orders)
 
-		creates, updates, err := e.createOrUpdateForParty(midPriceBid, midPriceAsk, party, repriceFn)
+		creates, updates, err := e.createOrUpdateForParty(midPriceBid, midPriceAsk, po.Party, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -456,12 +465,6 @@ func (e *Engine) createOrUpdateForParty(
 		return nil, nil, nil
 	}
 
-	// Create a slice shaped copy of the orders
-	orders := make([]*types.Order, 0, len(e.orders[party]))
-	for _, order := range e.orders[party] {
-		orders = append(orders, order)
-	}
-
 	var (
 		obligation     = float64(lp.CommitmentAmount) * e.stakeToObligationFactor
 		buysShape      = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
@@ -519,6 +522,12 @@ func (e *Engine) createOrUpdateForParty(
 		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
 		e.undeployedProvisions = true
 	} else {
+		// Create a slice shaped copy of the orders
+		orders := make([]*types.Order, 0, len(e.orders[party]))
+		for _, order := range e.orders[party] {
+			orders = append(orders, order)
+		}
+
 		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
 			float64(midPriceBid), float64(midPriceAsk),
 			obligation,

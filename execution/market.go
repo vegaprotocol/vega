@@ -2721,7 +2721,7 @@ func (m *Market) RemoveExpiredOrders(
 				logging.MarketID(m.GetID()),
 				logging.Error(err))
 		}
-		m.checkForReferenceMoves(context.Background())
+		m.checkForReferenceMoves(ctx)
 	}
 
 	return expired, nil

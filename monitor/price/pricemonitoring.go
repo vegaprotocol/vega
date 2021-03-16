@@ -116,15 +116,12 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		})
 
 	h := map[int64]float64{}
-	for _, p := range parameters {
-		if _, ok := h[p.Horizon]; !ok {
-			h[p.Horizon] = float64(p.Horizon) / secondsPerYear
-		}
-	}
-
 	bounds := make([]*bound, 0, len(parameters))
 	for _, p := range parameters {
 		bounds = append(bounds, &bound{Active: true, Trigger: p})
+		if _, ok := h[p.Horizon]; !ok {
+			h[p.Horizon] = float64(p.Horizon) / secondsPerYear
+		}
 	}
 
 	e := &Engine{
