@@ -29,8 +29,6 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | tt_15  | ETH/DEC19 | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | tt_15-1   |
       | tt_16  | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-1   |
 
-    Then dump transfers
-
     Then traders place following orders with references:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_15  | ETH/DEC19 | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | tt_15-2   |
@@ -39,8 +37,8 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
     And the mark price for the market "ETH/DEC19" is "20"
 
     # checking margins
-    Then I expect the trader to have a margin:
-      | trader | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader | asset | market id | margin | general |
       | tt_15  | BTC   | ETH/DEC19 | 0      | 0       |
 
     # then we make sure the insurance pool collected the funds
@@ -49,12 +47,12 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
     And the insurance pool balance is "96" for the market "ETH/DEC19"
 
     #check positions
-    #   Note that the realisedPNL for tt_15 is -102 as additional 2 was made
+    #   Note that the realised pnl for tt_15 is -102 as additional 2 was made
     #   on top of initial deposit by earning maker fee on passive orders.
-    Then position API produce the following:
-      | trader | volume | unrealisedPNL | realisedPNL |
-      | tt_12  | 5      | 0             | 0           |
-      | tt_13  | -5     | 0             | 0           |
-      | tt_14  | -4     | 120           | 0           |
-      | tt_15  | 0      | 0             | -102        |
-      | tt_16  | 4      | 0             | 0           |
+    Then traders have the following profit and loss:
+      | trader | volume | unrealised pnl | realised pnl |
+      | tt_12  | 5      | 0              | 0            |
+      | tt_13  | -5     | 0              | 0            |
+      | tt_14  | -4     | 120            | 0            |
+      | tt_15  | 0      | 0              | -102         |
+      | tt_16  | 4      | 0              | 0            |

@@ -28,7 +28,7 @@ Feature: Regression test for issue 630
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -38,16 +38,16 @@ Feature: Regression test for issue 630
       | trader           | market id | side | volume | price | resulting trades | type       | tif     |
       | sellSideProvider | ETH/DEC19 | sell | 200    | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
       | buySideProvider  | ETH/DEC19 | buy  | 200    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-    And All balances cumulated are worth "4240000"
+    And Cumulated balance for all accounts is worth "4240000"
     Then the margins levels for the traders are:
       | trader           | market id | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 | 2000        | 2200   | 2400    | 2800    |
     Then traders place following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     |
       | traderGuy | ETH/DEC19 | buy  | 100    | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader           | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader           | asset | market id | margin | general |
       | traderGuy        | BTC   | ETH/DEC19 | 0      | 0       |
       | sellSideProvider | BTC   | ETH/DEC19 | 240000 | 760000  |
     And the insurance pool balance is "240000" for the market "ETH/DEC19"
-    And All balances cumulated are worth "4240000"
+    And Cumulated balance for all accounts is worth "4240000"

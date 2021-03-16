@@ -35,7 +35,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
   Scenario:
     # no margin account created for trader1, just general account
-    And "trader1" have only one account per asset
+    And "trader1" has only one account per asset
     # placing test order
     Then traders place following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     |
@@ -47,69 +47,69 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | trader1 | 14000000 | 11   | sellSideMM |
 
     Then the following transfers happened:
-      | from   | to      | fromType                | toType              | id        | amount  | asset |
+      | from   | to      | from account            | to account          | market id | amount  | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 394400032 | 611199968 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 98600008    | 315520025 | 394400032 | 493000040 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 5600000       | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 5600000        | 0            |
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader    | reference |
       | buySideMM | buy1      |
       | buySideMM | buy2      |
       | buySideMM | buy3      |
     Then traders place following orders:
       | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
-      | buySideMM | ETH/DEC19 | buy  | 1      | 19000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | buySideMM | ETH/DEC19 | buy  | 3      | 18000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | buySideMM | ETH/DEC19 | buy  | 15     | 17000000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | buySideMM | ETH/DEC19 | buy  | 1      | 19000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | buySideMM | ETH/DEC19 | buy  | 3      | 18000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | buySideMM | ETH/DEC19 | buy  | 15     | 17000000 | 0                | TYPE_LIMIT | TIF_GTC |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 394400032 | 611199968 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 98600008    | 315520025 | 394400032 | 493000040 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 5600000       | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 5600000        | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 200
     Then traders place following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 20000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 20000000 | 1      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 20000000 | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the following transfers happened:
-      | from   | to      | fromType                | toType              | id        | amount   | asset |
+      | from   | to      | from account            | to account          | market id | amount   | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 78000000 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 344000020 | 739599980 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 86000005    | 275200016 | 344000020 | 430000025 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 83600000      | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 83600000       | 0            |
 
     # FULL CLOSEOUT BY TRADER
     Then traders place following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 13     | 16500000 | 3      | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC19 | sell | 13     | 16500000 | 3                | TYPE_LIMIT | TIF_GTC |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 0      | 0             | 49600000    |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 0      | 0              | 49600000     |

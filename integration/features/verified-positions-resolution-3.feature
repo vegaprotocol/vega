@@ -33,7 +33,7 @@ Feature: Position resolution case 3
       | designatedLooser | ETH/DEC19 | 2900        | 9280   | 11600   | 14500   |
 
 # insurance pool generation - modify order book
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
     Then traders place following orders with references:
@@ -41,7 +41,7 @@ Feature: Position resolution case 3
       | buySideProvider | ETH/DEC19 | buy  | 300    | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # check the trader accounts
-    Then I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader           | asset | market id | margin | general |
       | designatedLooser | BTC   | ETH/DEC19 | 11600  | 400     |
 
@@ -52,12 +52,12 @@ Feature: Position resolution case 3
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
 
 # check positions
-    Then position API produce the following:
-      | trader           | volume | unrealisedPNL | realisedPNL |
-      | designatedLooser | 0      | 0             | -12000      |
+    Then traders have the following profit and loss:
+      | trader           | volume | unrealised pnl | realised pnl |
+      | designatedLooser | 0      | 0              | -12000       |
 
 # checking margins
-    Then I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader           | asset | market id | margin | general |
       | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 

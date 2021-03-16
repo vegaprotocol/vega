@@ -3,51 +3,59 @@ package steps
 import (
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
-
 	"github.com/cucumber/godog/gherkin"
+
+	"code.vegaprotocol.io/vega/integration/stubs"
+	types "code.vegaprotocol.io/vega/proto"
 )
 
 func TheMarginsLevelsForTheTradersAre(
-	broker interface {
-		GetMarginByPartyAndMarket(string, string) (types.MarginLevels, error)
-	},
+	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
-		partyID, marketID := row.Str("trader"), row.Str("market id")
-		ml, err := broker.GetMarginByPartyAndMarket(partyID, marketID)
-		if err != nil {
-			return err
-		}
+		partyID := row.Str("trader")
+		marketID := row.Str("market id")
+		maintenance := row.U64("maintenance")
+		search := row.U64("search")
+		initial := row.U64("initial")
+		release := row.U64("release")
 
-		maintenance, err := row.U64("maintenance")
-		panicW(err)
-		search, err := row.U64("search")
-		panicW(err)
-		initial, err := row.U64("initial")
-		panicW(err)
-		release, err := row.U64("release")
-		panicW(err)
+		levels, err := broker.GetMarginByPartyAndMarket(partyID, marketID)
+		if err != nil {
+			return errCannotGetMarginLevelsForPartyAndMarket(partyID, marketID, err)
+		}
 
 		var hasError bool
-		if ml.MaintenanceMargin != maintenance {
+		if levels.MaintenanceMargin != maintenance {
 			hasError = true
 		}
-		if ml.SearchLevel != search {
+		if levels.SearchLevel != search {
 			hasError = true
 		}
-		if ml.InitialMargin != initial {
+		if levels.InitialMargin != initial {
 			hasError = true
 		}
-		if ml.CollateralReleaseLevel != release {
+		if levels.CollateralReleaseLevel != release {
 			hasError = true
 		}
 		if hasError {
-			return fmt.Errorf(
-				"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)",
-				maintenance, search, initial, release, ml.MaintenanceMargin, ml.SearchLevel, ml.InitialMargin, ml.CollateralReleaseLevel, partyID)
+			return errInvalidMargins(maintenance, search, initial, release, levels, partyID)
 		}
 	}
 	return nil
+}
+
+func errCannotGetMarginLevelsForPartyAndMarket(partyID, market string, err error) error {
+	return fmt.Errorf("couldn't get margin levels for party(%s) and market(%s): %s", partyID, market, err.Error())
+}
+
+func errInvalidMargins(
+	maintenance, search, initial, release uint64,
+	levels types.MarginLevels,
+	partyID string,
+) error {
+	return fmt.Errorf(
+		"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)",
+		maintenance, search, initial, release, levels.MaintenanceMargin, levels.SearchLevel, levels.InitialMargin, levels.CollateralReleaseLevel, partyID)
 }

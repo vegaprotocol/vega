@@ -25,7 +25,7 @@ Feature: Test trader accounts
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "1000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
@@ -36,8 +36,8 @@ Feature: Test trader accounts
     Then the margins levels for the traders are:
       | trader    | market id | maintenance | search | initial | release |
       | traderGuy | ETH/DEC19 | 100         | 110    | 120     | 140     |
-    Then I expect the trader to have a margin:
-      | trader    | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader    | asset | market id | margin | general |
       | traderGuy | ETH   | ETH/DEC19 | 120    | 9880    |
 
   Scenario: an order is rejected if a trader have insufficient margin
@@ -56,14 +56,14 @@ Feature: Test trader accounts
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "1000"
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader  | reference |
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
 
-    Then traders place following failing orders:
-      | trader    | market id | side | volume | price | error               | type       |
-      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | margin check failed | TYPE_LIMIT |
+    Then traders place the following invalid orders:
+      | trader    | market id | side | volume | price | error               | type       | tif      |
+      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | margin check failed | TYPE_LIMIT |  TIF_GTC |
     Then the following orders are rejected:
       | trader    | id        | reason                          |
       | traderGuy | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |

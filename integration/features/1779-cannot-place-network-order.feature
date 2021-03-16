@@ -13,6 +13,6 @@ Feature: Cannot place an network order
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount |
       | trader1 | ETH   | 1      |
-    Then traders place following failing orders:
-      | trader  | market id | side | volume | price | error              | type         |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | invalid order type | TYPE_NETWORK |
+    Then traders place the following invalid orders:
+      | trader  | market id | side | volume | price | error              | type         | tif     |
+      | trader1 | ETH/DEC19 | sell | 1      | 1000  | invalid order type | TYPE_NETWORK | TIF_GTC |

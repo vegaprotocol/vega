@@ -3,7 +3,6 @@ package steps
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/cucumber/godog/gherkin"
 
@@ -29,10 +28,7 @@ func OraclesBroadcastDataSignedWithKeys(
 }
 
 func parseOracleDataPubKeys(rawPubKeys string) []string {
-	if len(rawPubKeys) == 0 {
-		return nil
-	}
-	return strings.Split(rawPubKeys, ",")
+	return StrSlice(rawPubKeys, ",")
 }
 
 func parseOracleDataProperties(table *gherkin.DataTable) (map[string]string, error) {
@@ -49,11 +45,11 @@ func parseOracleDataProperties(table *gherkin.DataTable) (map[string]string, err
 
 	return properties, nil
 }
+
 func errPropertyRedeclared(name string) error {
 	return fmt.Errorf("property %s has been declared multiple times", name)
 }
 
-// propertyRow wraps the declaration of the properties of an oracle data
 type propertyRow struct {
 	row RowWrapper
 }

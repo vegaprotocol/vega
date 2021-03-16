@@ -38,12 +38,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | post-oa-1 |
       | trader3 | ETH/DEC20 | sell | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | post-oa-2 |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1724511 | 995225489 |
-    And dump transfers
     And the following transfers happened:
-      | from    | to      | fromType                | toType                           | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |
       | trader3 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 10000   | ETH   |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC20 | 3000000 | ETH   |
@@ -61,13 +60,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-2    |
       | trader2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-3    |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1949413 | 993000587 |
 
     # MTM loss + margin low
     And the following transfers happened:
-      | from    | to      | fromType             | toType                  | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 275489  | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1949413 | ETH   |
     And clear transfer events
@@ -83,13 +82,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-3    |
       | trader2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-4    |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to     | fromType             | toType                  | id        | amount | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 50587  | ETH   |
     And clear transfer events
 
@@ -104,13 +103,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 16000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | trader2 | ETH/DEC20 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-5    |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType             | toType                  | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224901 | ETH   |
     And clear transfer events
@@ -126,13 +125,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 18000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-3    |
       | trader2 | ETH/DEC20 | buy  | 1      | 18000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-6    |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 2624120 | 986325880 |
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType             | toType                  | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224903 | ETH   |
     And clear transfer events
@@ -149,13 +148,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | trader2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-7    |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 2174316 | 990775684 |
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType                | toType               | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 4000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 4449804 | ETH   |
     And clear transfer events
@@ -172,13 +171,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
       | trader2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-8    |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1949413 | 993000587 |
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType                | toType               | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 2000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 2224903 | ETH   |
     And clear transfer events
@@ -195,13 +194,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 11000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-6    |
       | trader2 | ETH/DEC20 | buy  | 1      | 11000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-9    |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1836962 | 994113038 |
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType                | toType               | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 1000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1112451 | ETH   |
     And clear transfer events
@@ -218,13 +217,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-7    |
       | trader2 | ETH/DEC20 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-10   |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin  | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1724511 | 995225489 |
 
     # Check MTM Loss transfer happened
     And the following transfers happened:
-      | from    | to      | fromType                | toType               | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 1000000 | ETH   |
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1112451 | ETH   |
     And clear transfer events
@@ -234,11 +233,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | post-oa-3 |
       | trader3 | ETH/DEC20 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | post-oa-4 |
 
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general   |
       | trader3 | ETH   | ETH/DEC20 | 0      | 993900000 |
     And the following transfers happened:
-      | from    | to      | fromType                | toType                           | id        | amount  | asset |
+      | from | to | from account | to account | market id | amount | asset |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC20 | 40000   | ETH   |
       | trader3 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 10000   | ETH   |
       | trader3 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC20 | 3000000 | ETH   |

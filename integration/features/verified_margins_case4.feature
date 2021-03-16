@@ -35,7 +35,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
 
   Scenario:
     # no margin account created for trader1, just general account
-    And "trader1" have only one account per asset
+    And "trader1" has only one account per asset
     # placing test order
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
@@ -48,21 +48,21 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | buySideMM | 9000000  | 9    | trader1 |
 
     Then the following transfers happened:
-      | from   | to      | fromType                | toType              | id        | amount  | asset |
+      | from   | to      | from account            | to account          | market id | amount  | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 2800000 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | -13    | 2800000       | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | -13    | 2800000        | 0            |
 
     # NEW ORDERS ADDED WITHOUT ANOTHER TRADE HAPPENING
-    And traders cancels the following orders reference:
+    And traders cancel the following orders:
       | trader     | reference |
       | buySideMM  | buy4      |
       | sellSideMM | sell1     |
@@ -72,46 +72,46 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
       | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0      | TYPE_LIMIT | TIF_GTC |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0      | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 10     | 10000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 14     | 8800000  | 0      | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 2      | 8400000  | 0      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 10     | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 14     | 8800000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 2      | 8400000  | 0                | TYPE_LIMIT | TIF_GTC |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | -13    | 2800000       | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | -13    | 2800000        | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 80
     Then traders place following orders:
       | trader     | market id | side | volume | price   | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 8000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 8000000 | 1      | TYPE_LIMIT | TIF_GTC |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 8000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 8000000 | 1                | TYPE_LIMIT | TIF_GTC |
 
     # MTM
     And the following transfers happened:
-      | from   | to      | fromType                | toType              | id        | amount   | asset |
+      | from   | to      | from account            | to account          | market id | amount   | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 13000000 | ETH   |
 
-    And I expect the trader to have a margin:
-      | trader  | asset | market id | margin    | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin   | general   |
       | trader1 | ETH   | ETH/DEC19 | 79999972 | 935800028 |
     And the margins levels for the traders are:
-      | trader  | market id | maintenance | search   | initial   | release   |
+      | trader  | market id | maintenance | search   | initial  | release  |
       | trader1 | ETH/DEC19 | 19999993    | 63999977 | 79999972 | 99999965 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | -13    | 15800000      | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | -13    | 15800000       | 0            |
 
     # FULL CLOSEOUT BY TRADER
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | buy  | 13     | 9000000 | 2      | TYPE_LIMIT | TIF_GTC |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 0      | 0             | 6200000     |
+      | trader1 | ETH/DEC19 | buy  | 13     | 9000000 | 2                | TYPE_LIMIT | TIF_GTC |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 0      | 0              | 6200000      |

@@ -20,15 +20,15 @@ Feature: Close a filled order twice
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 10     | 120   | 1                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-    Then traders cancels the following filled orders reference:
+    Then traders attempt to cancel the following filled orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
-    Then traders cancels the following filled orders reference:
+    Then traders attempt to cancel the following filled orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
-    Then traders cancels the following filled orders reference:
+    Then traders attempt to cancel the following filled orders:
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
     And the insurance pool balance is "0" for the market "ETH/DEC19"
-    And All balances cumulated are worth "200000000"
+    And Cumulated balance for all accounts is worth "200000000"
 
