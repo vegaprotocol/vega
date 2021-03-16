@@ -221,56 +221,6 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	return err
 }
 
-func tradersAmendsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
-	for _, row := range refs.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		o, err := execsetup.broker.GetByReference(val(row, 0), val(row, 1))
-		if err != nil {
-			return err
-		}
-
-		tif, err := tifval(row, 5)
-		if err != nil {
-			return fmt.Errorf("invalid time in for ref(%v)", val(row, 5))
-		}
-
-		success, err := boolval(row, 6)
-		if err != nil {
-			return err
-		}
-
-		value := u64val(row, 2)
-		var price *types.Price
-		if value != 0 {
-			price = &types.Price{Value: value}
-		}
-
-		amend := types.OrderAmendment{
-			OrderId:     o.Id,
-			PartyId:     o.PartyId,
-			MarketId:    o.MarketId,
-			Price:       price,
-			SizeDelta:   i64val(row, 3),
-			TimeInForce: tif,
-		}
-
-		_, err = execsetup.engine.AmendOrder(context.Background(), &amend)
-		if err != nil && success {
-			return fmt.Errorf("expected to succeed amending but failed for trader %s (reference %s, err %v)", o.PartyId, o.Reference, err)
-		}
-
-		if err == nil && !success {
-			return fmt.Errorf("expected to failed amending but succeed for trader %s (reference %s)", o.PartyId, o.Reference)
-		}
-
-	}
-
-	return nil
-}
-
 func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 	for _, row := range refs.Rows {
 		trader := val(row, 0)
