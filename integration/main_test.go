@@ -159,6 +159,9 @@ func FeatureContext(s *godog.Suite) {
 		steps.ClearOrderEvents(execsetup.broker)
 		return nil
 	})
+	s.Step(`^traders place pegged orders:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersPlacePeggedOrders(execsetup.engine, table)
+	})	
 	s.Step(`^I see the following order events:$`, func(table *gherkin.DataTable) error {
 		return steps.OrderEventsSent(execsetup.broker, table)
 	})
