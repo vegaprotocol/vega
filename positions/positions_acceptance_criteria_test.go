@@ -35,7 +35,7 @@ func TestPositionsEngineAcceptanceCriteria(t *testing.T) {
 	t.Run("Active buy orders, an existing order is cancelled", testOrderCancelled)
 	t.Run("Active sell orders, an existing order is cancelled", testOrderCancelled)
 
-	// NOTE: these nexts tests needs the integration test to be ran
+	// NOTE: these next tests needs the integration test to be ran
 	// Active buy orders, an existing buy order is amended which increases its size.
 	// Active buy orders, an existing buy order is amended which decreases its size.
 	// Active buy orders, an existing buy order's price is amended such that it trades a partial amount.
@@ -457,7 +457,7 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 			expectedSizeTraderA: +10,
 			expectedSizeTraderB: -10,
 		},
-		// trader A trade with himsef, no positions changes
+		// trader A trade with himsefl, no positions changes
 		{
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
@@ -517,7 +517,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			expectedSize: 0,
 		},
 		{
-			// add and originak sell order for B
+			// add and original sell order for B
 			order: types.Order{
 				Size:      16,
 				Remaining: 16,

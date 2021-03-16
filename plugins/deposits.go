@@ -83,7 +83,7 @@ func (d *Deposit) GetByID(id string) (types.Deposit, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	// FIXME(jeremy): this is very naive, and will require
-	// a lookup table over the dephposit id -> party
+	// a lookup table over the deposit id -> party
 	for _, deposits := range d.deposits {
 		for did, deposit := range deposits {
 			if did == id {

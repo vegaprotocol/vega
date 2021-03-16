@@ -2627,7 +2627,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		if err != nil {
 			m.log.Panic("unable to submit order", logging.Error(err))
 		}
-		// replace thetrades in the confirmation to have
+		// replace the trades in the confirmation to have
 		// the ones with the fees embedded
 		conf.Trades = trades
 	}

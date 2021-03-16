@@ -158,7 +158,7 @@ func TestRemoveDistressedEmpty(t *testing.T) {
 	assert.Empty(t, ret)
 }
 
-func TestRegisterUnregiserOrder(t *testing.T) {
+func TestRegisterUnregisterOrder(t *testing.T) {
 	t.Run("Test successful order register", testRegisterOrderSuccessful)
 	t.Run("Test successful order unregister", testUnregisterOrderSuccessful)
 	t.Run("Test unsuccessful order unregister", testUnregisterOrderUnsuccessful)

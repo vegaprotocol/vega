@@ -615,7 +615,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 
 	// if this is a builtin asset nothing needs to be done, just start the asset
-	// straigh away
+	// straight away
 	if asset.IsBuiltinAsset() {
 		err = app.banking.EnableBuiltinAsset(ctx, asset.ProtoAsset().Id)
 		if err != nil {
