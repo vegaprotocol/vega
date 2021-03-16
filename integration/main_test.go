@@ -175,7 +175,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders cancel pegged orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersCancelPeggedOrders(execsetup.broker, execsetup.engine, table)
 	})
-	s.Step(`^the trader submits LP:$`, submitLP)
+	s.Step(`^the trader submits LP:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersSubmitLiquidityProvision(execsetup.engine, table)
+	})
 	s.Step(`^I see the LP events:$`, func(table *gherkin.DataTable) error {
 		return steps.LiquidityProvisionEventsSent(execsetup.broker, table)
 	})

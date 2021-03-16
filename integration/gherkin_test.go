@@ -20,12 +20,6 @@ func u64val(rows *gherkin.TableRow, idx int) uint64 {
 	return ret
 }
 
-func i64val(rows *gherkin.TableRow, idx int) int64 {
-	s := rows.Cells[idx].Value
-	ret, _ := strconv.ParseInt(s, 10, 0)
-	return ret
-}
-
 func sideval(rows *gherkin.TableRow, idx int) proto.Side {
 	s := rows.Cells[idx].Value
 	if s == "sell" {
@@ -48,16 +42,4 @@ func ordertypeval(rows *gherkin.TableRow, idx int) (proto.Order_Type, error) {
 		return proto.Order_Type(ty), fmt.Errorf("invalid order type: %v", rows.Cells[idx].Value)
 	}
 	return proto.Order_Type(ty), nil
-}
-
-func peggedRef(rows *gherkin.TableRow, i int) proto.PeggedReference {
-	switch rows.Cells[i].Value {
-	case "MID":
-		return proto.PeggedReference_PEGGED_REFERENCE_MID
-	case "ASK":
-		return proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK
-	case "BID":
-		return proto.PeggedReference_PEGGED_REFERENCE_BEST_BID
-	}
-	return proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
 }
