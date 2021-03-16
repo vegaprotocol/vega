@@ -32,7 +32,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/prometheus/common/log"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network
@@ -3124,7 +3123,7 @@ func (m *Market) amendLiquidityProvision(
 		return nil
 	}
 
-	log.Debugf("could not cancel and replace liquidity provision",
+	m.log.Debug("could not cancel and replace liquidity provision",
 		logging.MarketID(m.GetID()),
 		logging.PartyID(party),
 		logging.Error(err))
