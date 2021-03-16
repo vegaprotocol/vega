@@ -60,12 +60,10 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 		return nil
 	}
 	mID := m.GetID()
-	asset, _ := m.mkt.GetAsset()
 	tr, closed, err := m.collateral.MarginUpdateOnOrder(ctx, mID, risk[0])
 	if err != nil {
 		return err
 	}
-	rEvt := risk[0]
 	// if LP shortfall is not empty, this trader will have to pay the LP penalty
 	responses := make([]*types.TransferResponse, 0, len(risk)+len(lpShortfall))
 	if tr != nil {
@@ -76,22 +74,35 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 	if closed != nil && len(lpShortfall) != 0 {
 		// get bond penalty
 		rerr = ErrBondSlashing
-		penalty := m.bondPenaltyFactor * float64(closed.MarginShortFall())
-		tr := types.Transfer{
-			Owner: rEvt.Party(),
-			Amount: &types.FinancialAmount{
-				Amount: uint64(penalty),
-				Asset:  asset,
-			},
-			Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
-			MinAmount: uint64(penalty),
-		}
-		resp, err := m.collateral.BondUpdate(ctx, mID, rEvt.Party(), &tr)
+		resp, err := m.bondSlashing(ctx, closed)
 		if err != nil {
 			return err
 		}
-		responses = append(responses, resp)
+		responses = append(responses, resp...)
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
 	return rerr
+}
+
+func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*types.TransferResponse, error) {
+	mID := m.GetID()
+	asset, _ := m.mkt.GetAsset()
+	ret := make([]*types.TransferResponse, 0, len(closed))
+	for _, c := range closed {
+		penalty := uint64(m.bondPenaltyFactor * float64(c.MarginShortFall()))
+		resp, err := m.collateral.BondUpdate(ctx, mID, c.Party(), &types.Transfer{
+			Owner: c.Party(),
+			Amount: &types.FinancialAmount{
+				Amount: penalty,
+				Asset:  asset,
+			},
+			Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+			MinAmount: penalty,
+		})
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, resp)
+	}
+	return ret, nil
 }

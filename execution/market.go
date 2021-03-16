@@ -1466,11 +1466,18 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
 	if len(margins) > 0 {
-		// TODO(): handle market makers penalties
-		transfers, closed, _, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
+		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 		if err == nil && len(transfers) > 0 {
 			evt := events.NewTransferResponse(ctx, transfers)
 			m.broker.Send(evt)
+		}
+		if len(bondPenalties) > 0 {
+			transfers, err := m.bondSlashing(ctx, bondPenalties...)
+			if err != nil {
+				m.log.Error("Failed to perform bond slashing",
+					logging.Error(err))
+			}
+			m.broker.Send(events.NewTransferResponse(ctx, transfers))
 		}
 		if len(closed) > 0 {
 			err = m.resolveClosedOutTraders(ctx, closed, order)
