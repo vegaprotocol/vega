@@ -20,7 +20,7 @@ Feature: Amend orders
       | myboi  | ETH/DEC19 | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # cancel the order, so we cannot edit it.
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader | reference   |
       | myboi  | myboi-ref-1 |
 

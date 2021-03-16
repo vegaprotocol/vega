@@ -3,25 +3,21 @@ package steps
 import (
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
-
 	"github.com/cucumber/godog/gherkin"
+
+	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
 func TheFollowingTradesHappened(
-	broker interface{ GetTrades() []types.Trade },
+	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {
 	var err error
 	for _, row := range TableWrapper(*table).Parse() {
-		var (
-			buyer        = row.Str("buyer")
-			seller       = row.Str("seller")
-			price, perr  = row.U64("price")
-			volume, verr = row.U64("volume")
-		)
-		panicW(perr)
-		panicW(verr)
+		buyer := row.Str("buyer")
+		seller := row.Str("seller")
+		price := row.U64("price")
+		volume := row.U64("volume")
 
 		data := broker.GetTrades()
 		var found bool
@@ -32,12 +28,16 @@ func TheFollowingTradesHappened(
 		}
 
 		if !found {
-			return fmt.Errorf(
-				"expecting trade was missing: buyer(%v), seller(%v), price(%v), volume(%v)",
-				buyer, seller, price, volume,
-			)
+			return errMissingTrade(buyer, seller, price, volume)
 		}
 	}
 
 	return err
+}
+
+func errMissingTrade(buyer string, seller string, price uint64, volume uint64) error {
+	return fmt.Errorf(
+		"expecting trade was missing: buyer(%v), seller(%v), price(%v), volume(%v)",
+		buyer, seller, price, volume,
+	)
 }

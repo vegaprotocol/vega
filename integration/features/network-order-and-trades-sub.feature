@@ -29,7 +29,7 @@ Feature: Ensure network trader are generated
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC |
 
 # insurance pool generation - modify order book
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
     Then traders place following orders with references:

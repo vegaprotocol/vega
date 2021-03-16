@@ -7,27 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 )
-
-func theMarketsStartsOnAndExpiresOn(start, expires string) error {
-	_, err := time.Parse("2006-01-02T15:04:05Z", start)
-	if err != nil {
-		return fmt.Errorf("invalid start date %v", err)
-	}
-	_, err = time.Parse("2006-01-02T15:04:05Z", expires)
-	if err != nil {
-		return fmt.Errorf("invalid expiry date %v", err)
-	}
-	marketStart = start
-	marketExpiry = expires
-
-	return nil
-}
 
 func theInsurancePoolInitialBalanceForTheMarketsIs(amountstr string) error {
 	amount, _ := strconv.ParseUint(amountstr, 10, 0)
@@ -118,32 +102,6 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 	return nil
 }
 
-func tradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) error {
-	for _, row := range refs.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		o, err := execsetup.broker.GetFirstByReference(val(row, 0), val(row, 1))
-		if err != nil {
-			return err
-		}
-
-		cancel := types.OrderCancellation{
-			OrderId:  o.Id,
-			PartyId:  o.PartyId,
-			MarketId: o.MarketId,
-		}
-
-		_, err = execsetup.engine.CancelOrder(context.Background(), &cancel)
-		if err != nil {
-			return fmt.Errorf("unable to cancel order for trader %s, reference %s", o.PartyId, o.Reference)
-		}
-	}
-
-	return nil
-}
-
 func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 	cancellations := make([]types.OrderCancellation, 0, len(data.Rows))
 	for _, row := range data.Rows {
@@ -185,117 +143,6 @@ func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
 	return nil
 }
 
-func iExpectTheTraderToHaveAMargin(arg1 *gherkin.DataTable) error {
-	for _, row := range arg1.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		generalAccount, err := execsetup.broker.GetTraderGeneralAccount(val(row, 0), val(row, 1))
-		if err != nil {
-			return err
-		}
-
-		var hasError bool
-
-		if generalAccount.GetBalance() != u64val(row, 4) {
-			hasError = true
-		}
-		marginAccount, err := execsetup.broker.GetTraderMarginAccount(val(row, 0), val(row, 2))
-		if err != nil {
-			return err
-		}
-		if marginAccount.GetBalance() != u64val(row, 3) {
-			hasError = true
-		}
-
-		if hasError {
-			return fmt.Errorf("expected balances to be margin(%d) general(%v), instead saw margin(%v), general(%v), (trader: %v)", i64val(row, 3), i64val(row, 4), marginAccount.GetBalance(), generalAccount.GetBalance(), val(row, 0))
-		}
-
-	}
-	return nil
-}
-
-func allBalancesCumulatedAreWorth(amountstr string) error {
-	amount, _ := strconv.ParseUint(amountstr, 10, 0)
-	var cumul uint64
-	batch := execsetup.broker.GetAccounts()
-	data := make([]types.Account, 0, len(batch))
-	for _, e := range batch {
-		data = append(data, e.Account())
-	}
-	for _, v := range data {
-		// remove vote token
-		if v.Asset != "VOTE" {
-			cumul += v.Balance
-		}
-	}
-
-	if amount != cumul {
-		return fmt.Errorf("expected cumul balances to be %v but found %v", amount, cumul)
-	}
-	return nil
-}
-
-func theFollowingTransfersHappened(arg1 *gherkin.DataTable) error {
-	for _, row := range arg1.Rows {
-		from := val(row, 0)
-		if from == "from" {
-			continue
-		}
-
-		fromAccountID := accountID(val(row, 4), from, val(row, 6), types.AccountType_value[val(row, 2)])
-		toAccountID := accountID(val(row, 4), val(row, 1), val(row, 6), types.AccountType_value[val(row, 3)])
-
-		var ledgerEntry *types.LedgerEntry
-		transferEvents := execsetup.broker.GetTransferResponses()
-		data := make([]*types.TransferResponse, 0, len(transferEvents))
-		for _, e := range transferEvents {
-			data = append(data, e.TransferResponses()...)
-		}
-
-		var foundButNotMatched uint64
-		for _, v := range data {
-			for _, _v := range v.GetTransfers() {
-				if _v.FromAccount == fromAccountID && _v.ToAccount == toAccountID {
-					if _v.Amount != u64val(row, 5) {
-						foundButNotMatched = _v.Amount
-						continue
-					}
-					ledgerEntry = _v
-					break
-				}
-			}
-			if ledgerEntry != nil {
-				break
-			}
-		}
-
-		if ledgerEntry == nil {
-			return fmt.Errorf("missing transfers between %v and %v for amount %v, found %v",
-				fromAccountID, toAccountID, i64val(row, 5), foundButNotMatched,
-			)
-		}
-		if ledgerEntry.Amount != u64val(row, 5) {
-			return fmt.Errorf("invalid amount transfer %v and %v", ledgerEntry.Amount, i64val(row, 5))
-		}
-	}
-
-	execsetup.broker.ResetType(events.TransferResponses)
-	return nil
-}
-
-func theTimeIsUpdatedTo(newTime string) error {
-	t, err := time.Parse("2006-01-02T15:04:05Z", newTime)
-	if err != nil {
-		return fmt.Errorf("invalid start date %v", err)
-	}
-
-	execsetup.timesvc.SetTime(t)
-	return nil
-}
-
 func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) error {
 	for _, row := range orders.Rows {
 		if val(row, 0) == "trader" {
@@ -326,49 +173,6 @@ func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) erro
 	return nil
 }
 
-func tradersPlaceFollowingFailingOrders(orders *gherkin.DataTable) error {
-	for _, row := range orders.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-
-		oty, err := ordertypeval(row, 6)
-		if err != nil {
-			return err
-		}
-
-		tif := types.Order_TIME_IN_FORCE_GTT
-		if len(row.Cells) > 7 {
-			tif, err = tifval(row, 7)
-			if err != nil {
-				return err
-			}
-		}
-
-		order := types.Order{
-			Id:          uuid.NewV4().String(),
-			MarketId:    val(row, 1),
-			PartyId:     val(row, 0),
-			Side:        sideval(row, 2),
-			Price:       u64val(row, 4),
-			Size:        u64val(row, 3),
-			Remaining:   u64val(row, 3),
-			ExpiresAt:   time.Now().Add(24 * time.Hour).UnixNano(),
-			Type:        oty,
-			TimeInForce: tif,
-			CreatedAt:   time.Now().UnixNano(),
-		}
-		_, err = execsetup.engine.SubmitOrder(context.Background(), &order)
-		if err == nil {
-			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
-		}
-		if err.Error() != val(row, 5) {
-			return fmt.Errorf("expected error (%v) but got (%v)", val(row, 5), err)
-		}
-	}
-	return nil
-}
-
 func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 	ordCnt := len(orders.Rows) - 1
 	for _, row := range orders.Rows {
@@ -388,69 +192,6 @@ func theFollowingOrdersAreRejected(orders *gherkin.DataTable) error {
 
 	if ordCnt > 0 {
 		return errors.New("some orders were not rejected")
-	}
-	return nil
-}
-
-func positionAPIProduceTheFollowingRow(row *gherkin.TableRow) (err error) {
-	var retries = 2
-
-	party, volume, realisedPNL, unrealisedPNL := val(row, 0), i64val(row, 1), i64val(row, 3), i64val(row, 2)
-
-	var pos []*types.Position
-	sleepTime := 100 // milliseconds
-	for retries > 0 {
-		pos, err = execsetup.positionPlugin.GetPositionsByParty(party)
-		if err != nil {
-			// Do not retry. Fail immediately.
-			return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
-		}
-
-		if len(pos) == 1 && pos[0].OpenVolume == volume && pos[0].RealisedPnl == realisedPNL && pos[0].UnrealisedPnl == unrealisedPNL {
-			return nil
-		}
-
-		// The positions engine runs asynchronously, so wait for the right numbers to show up.
-		// Sleep times: 100ms, 200ms, 400ms, ..., 51.2s, then give up.
-		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
-		sleepTime *= 2
-		retries--
-	}
-
-	if len(pos) == 0 {
-		return fmt.Errorf("party do not have a position, party(%v)", party)
-	}
-
-	return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
-		party, volume, pos[0].OpenVolume, unrealisedPNL, pos[0].UnrealisedPnl, realisedPNL, pos[0].RealisedPnl)
-}
-
-func positionAPIProduceTheFollowing(table *gherkin.DataTable) error {
-	for _, row := range table.Rows {
-		if val(row, 0) == "trader" {
-			continue
-		}
-		if err := positionAPIProduceTheFollowingRow(row); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func theMarketTradingModeIs(market, marketTradingModeStr string) error {
-	ms, ok := types.Market_TradingMode_value[marketTradingModeStr]
-	if !ok {
-		return fmt.Errorf("invalid market state: %v", marketTradingModeStr)
-	}
-	marketTradingMode := types.Market_TradingMode(ms)
-
-	mktdata, err := execsetup.engine.GetMarketData(market)
-	if err != nil {
-		return fmt.Errorf("unable to get marked data for market(%v), err(%v)", market, err)
-	}
-
-	if mktdata.MarketTradingMode != marketTradingMode {
-		return fmt.Errorf("market trading mode is wrong for market(%v), expected(%v) got(%v)", market, marketTradingMode, mktdata.MarketTradingMode)
 	}
 	return nil
 }
@@ -554,51 +295,6 @@ func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
 	return nil
 }
 
-func dumpTransfers() error {
-	fmt.Println("DUMPING TRANSFERS")
-	transferEvents := execsetup.broker.GetTransferResponses()
-	for _, e := range transferEvents {
-		for _, t := range e.TransferResponses() {
-			for _, v := range t.GetTransfers() {
-				fmt.Printf("transfer: %v\n", *v)
-			}
-		}
-	}
-	return nil
-}
-
-func accountID(marketID, partyID, asset string, _ty int32) string {
-	ty := types.AccountType(_ty)
-	idbuf := make([]byte, 256)
-	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
-		marketID = ""
-	}
-	if partyID == "market" {
-		partyID = ""
-	}
-	const (
-		systemOwner = "*"
-		noMarket    = "!"
-	)
-	if len(marketID) <= 0 {
-		marketID = noMarket
-	}
-
-	// market account
-	if len(partyID) <= 0 {
-		partyID = systemOwner
-	}
-
-	copy(idbuf, marketID)
-	ln := len(marketID)
-	copy(idbuf[ln:], partyID)
-	ln += len(partyID)
-	copy(idbuf[ln:], asset)
-	ln += len(asset)
-	idbuf[ln] = byte(ty + 48)
-	return string(idbuf[:ln+1])
-}
-
 func executedTrades(trades *gherkin.DataTable) error {
 	var err error
 	for i, row := range trades.Rows {
@@ -624,25 +320,6 @@ func executedTrades(trades *gherkin.DataTable) error {
 	}
 
 	return err
-}
-
-func dumpOrders() error {
-	fmt.Println("DUMPING ORDERS")
-	data := execsetup.broker.GetOrderEvents()
-	for _, v := range data {
-		o := *v.Order()
-		fmt.Printf("order %s: %v\n", o.Id, o)
-	}
-	return nil
-}
-
-func dumpTrades() error {
-	fmt.Println("DUMPING TRADES")
-	data := execsetup.broker.GetTrades()
-	for _, t := range data {
-		fmt.Printf("trade %s, %#v\n", t.Id, t)
-	}
-	return nil
 }
 
 func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
@@ -844,22 +521,5 @@ func theOpeningAuctionPeriodEnds(mktName string) error {
 	execsetup.timesvc.Now = now
 	// notify markets
 	execsetup.timesvc.Notify(context.Background(), now)
-	return nil
-}
-
-func tradersWithdrawBalance(in *gherkin.DataTable) error {
-	for _, row := range in.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		asset, amount := val(row, 1), u64val(row, 2)
-		if _, err := execsetup.collateral.LockFundsForWithdraw(context.Background(), trader, asset, amount); err != nil {
-			return err
-		}
-		if _, err := execsetup.collateral.Withdraw(context.Background(), trader, asset, amount); err != nil {
-			return err
-		}
-	}
 	return nil
 }

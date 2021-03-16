@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/execution"
@@ -17,16 +18,13 @@ func TradersPlaceFollowingOrders(
 	orders *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*orders).Parse() {
-		oty, err := row.OrderType("type")
-		panicW(err)
-		tif, err := row.TIF("tif")
-		panicW(err)
-		side, err := row.Side("side")
-		panicW(err)
-		price, err := row.U64("price")
-		panicW(err)
-		volume, err := row.U64("volume")
-		panicW(err)
+		oty := row.OrderType("type")
+		tif := row.TIF("tif")
+		side := row.Side("side")
+		price := row.U64("price")
+		volume := row.U64("volume")
+		trader := row.Str("trader")
+		reference := strconv.FormatInt(time.Now().UnixNano(), 10)
 
 		var expiresAt int64
 		if oty != types.Order_TYPE_MARKET {
@@ -37,7 +35,7 @@ func TradersPlaceFollowingOrders(
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
 			MarketId:    row.Str("market id"),
-			PartyId:     row.Str("trader"),
+			PartyId:     trader,
 			Side:        side,
 			Price:       price,
 			Size:        volume,
@@ -46,18 +44,22 @@ func TradersPlaceFollowingOrders(
 			Type:        oty,
 			TimeInForce: tif,
 			CreatedAt:   time.Now().UnixNano(),
+			Reference:   reference,
 		}
 		result, err := exec.SubmitOrder(context.Background(), &order)
 		if err != nil {
-			return fmt.Errorf("unable to place order, err=%v (trader=%v)", err, row.Str("trader"))
+			return errUnableToPlaceOrder(trader, reference, err)
 		}
 
-		resultingTrades, err := row.U64("resulting trades")
-		panicW(err)
+		resultingTrades := row.U64("resulting trades")
 
 		if uint64(len(result.Trades)) != resultingTrades {
-			return fmt.Errorf("expected %d trades, instead saw %d (%#v)", resultingTrades, len(result.Trades), *result)
+			return errUnexpectedNumberOfTrades(resultingTrades, result)
 		}
 	}
 	return nil
+}
+
+func errUnexpectedNumberOfTrades(resultingTrades uint64, result *types.OrderConfirmation) error {
+	return fmt.Errorf("expected %d trades, instead saw %d (%#v)", resultingTrades, len(result.Trades), *result)
 }
