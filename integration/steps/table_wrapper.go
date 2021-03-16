@@ -252,22 +252,6 @@ func Side(rawValue string) (types.Side, error) {
 	}
 }
 
-func (r RowWrapper) PeggedReference(name string) types.PeggedReference {
-	return peggedReference(r.values[name])
-}
-
-func peggedReference(rawValue string) types.PeggedReference {
-	switch rawValue {
-	case "MID":
-		return types.PeggedReference_PEGGED_REFERENCE_MID
-	case "ASK":
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK
-	case "BID":
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID
-	}
-	return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
-}
-
 func (r RowWrapper) OracleSpecPropertyType(name string) oraclesv1.PropertyKey_Type {
 	ty, err := OracleSpecPropertyType(r.Str(name))
 	panicW(name, err)

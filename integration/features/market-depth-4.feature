@@ -59,8 +59,8 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    | 70    | STATUS_ACTIVE |
       | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    | 90    | STATUS_ACTIVE |
 ##  Cancel some pegged events, and clear order event buffer so we can ignore the events we checked above
-    Then traders cancel pegged orders and clear:
-      | trader  | MarketID  |
+    Then traders cancel pegged orders:
+      | trader  | market id  |
       | pegged1 | ETH/DEC19 |
       | pegged3 | ETH/DEC19 |
       | pegged2 | ETH/DEC19 |
