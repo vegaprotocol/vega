@@ -221,50 +221,6 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	return err
 }
 
-func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
-	for i, row := range orders.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		id, side, vol, ref, offset, price := val(row, 1), val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
-		o := &types.Order{
-			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_TYPE_LIMIT,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-			Id:          "someid",
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     trader,
-			MarketId:    id,
-			Size:        vol,
-			Price:       price,
-			Remaining:   vol,
-			Reference:   fmt.Sprintf("%s-pegged-order-%d", trader, i),
-			PeggedOrder: &types.PeggedOrder{
-				Reference: ref,
-				Offset:    offset,
-			},
-		}
-		if side == "sell" {
-			o.Side = types.Side_SIDE_SELL
-		}
-		_, err := execsetup.engine.SubmitOrder(context.Background(), o)
-		if err != nil {
-			fmt.Println("DUMP ORDER ERROR")
-			fmt.Printf("Error: %v\n", err)
-			fmt.Println("DUMP ORDER")
-			fmt.Printf("%#v\n", *o)
-			return err
-		}
-	}
-	return nil
-}
-
-func clearOrderEvents() error {
-	execsetup.broker.ClearOrderEvents()
-	return nil
-}
-
 // liquidity provisioning
 func submitLP(in *gherkin.DataTable) error {
 	lps := map[string]*types.LiquidityProvisionSubmission{}
