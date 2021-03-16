@@ -29,7 +29,7 @@ func (i *IDgenerator) SetID(o *types.Order) {
 	o.Id = fmt.Sprintf("V%010d-%010d", i.batches, i.orders)
 }
 
-// SetProposalID sets proposal ID and incrememts total proposal count
+// SetProposalID sets proposal ID and increments total proposal count
 func (i *IDgenerator) SetProposalID(p *types.Proposal) {
 	i.proposals++
 	p.Id = fmt.Sprintf("P%010d-%010d", i.batches, i.proposals)

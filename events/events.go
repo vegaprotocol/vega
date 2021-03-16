@@ -44,7 +44,7 @@ type FeesTransfer interface {
 	Transfers() []*types.Transfer
 	// The total amount of fees to be payed (all cumulated)
 	// per party if all the  transfers are to be executed
-	// map is party id -> total amount of fees to be transfered
+	// map is party id -> total amount of fees to be transferred
 	TotalFeesAmountPerParty() map[string]uint64
 }
 

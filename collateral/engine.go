@@ -289,7 +289,7 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 	if len(ft.Transfers()) <= 0 {
 		return nil, nil
 	}
-	// check quickly that all traders have enough monies in their accoutns
+	// check quickly that all traders have enough monies in their accounts
 	// this may be done only in case of continuous trading
 	for party, amount := range ft.TotalFeesAmountPerParty() {
 		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, party, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
@@ -627,7 +627,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		return nil, nil, err
 	}
 
-	// now compare what's in the settlement account what we expect initialy to redistribute.
+	// now compare what's in the settlement account what we expect initially to redistribute.
 	// if there's not enough we enter loss socialization
 	distr := simpleDistributor{
 		log:             e.log,
@@ -1558,7 +1558,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 	bondID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_BOND)
 	if _, ok := e.accs[bondID]; !ok {
 		// OK no bond ID, so let's try to get the general id then
-		// first check if generak account exists
+		// first check if general account exists
 		generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 		if _, ok := e.accs[generalID]; !ok {
 			e.log.Error("Tried to create a bond account for a party with no general account",
@@ -1595,7 +1595,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	marginID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_MARGIN)
 	if _, ok := e.accs[marginID]; !ok {
 		// OK no margin ID, so let's try to get the general id then
-		// first check if generak account exists
+		// first check if general account exists
 		generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 		if _, ok := e.accs[generalID]; !ok {
 			e.log.Error("Tried to create a margin account for a party with no general account",
@@ -1668,7 +1668,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	return generalID, nil
 }
 
-// GetOrCreatePartyLockWithdrawAccount gets or creates an account to lock funds to be withrawn by a party
+// GetOrCreatePartyLockWithdrawAccount gets or creates an account to lock funds to be withdrawn by a party
 func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyID, asset string) (*types.Account, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID

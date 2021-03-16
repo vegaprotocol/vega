@@ -72,7 +72,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.Nil(t, amendConf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
-	// but can place liqui submission
+	// but can place liquidity submission
 	lpsub := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1,
@@ -162,7 +162,7 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 		assert.NotNil(t, conf)
 		assert.NoError(t, err)
 	}
-	// now move to after the opening auctuon in tiem
+	// now move to after the opening auction time
 	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
 	assert.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
 }
@@ -197,7 +197,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 		assert.NotNil(t, conf)
 		assert.NoError(t, err)
 	}
-	// now move to after the opening auctuon in tiem
+	// now move to after the opening auction time
 	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
 	assert.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
 

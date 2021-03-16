@@ -299,7 +299,7 @@ func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, 
 		return err
 	}
 
-	// checkec straight away if the withdrawal is signed
+	// check straight away if the withdrawal is signed
 	nonce := &big.Int{}
 	nonce.SetString(w.ReferenceNonce, 10)
 	withd, err := e.getWithdrawalFromRef(nonce)
@@ -480,7 +480,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	case aa.IsERC20Withdrawal():
 		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
 		if err != nil {
-			// Nothing to do, withrawal does not exists
+			// Nothing to do, withdrawal does not exists
 			return err
 		}
 		if w.Status != types.Withdrawal_STATUS_OPEN {
