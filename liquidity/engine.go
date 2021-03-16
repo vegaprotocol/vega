@@ -165,7 +165,7 @@ func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) err
 }
 
 // CancelLiquidityProvision removes a parties commitment of liquidity
-// Returns the liqudityOrders if any
+// Returns the liquidityOrders if any
 func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
 	return e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvision_STATUS_CANCELLED)
@@ -640,7 +640,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			ref.OrderId = ""
 		}
 
-		// We eithere don't need this order anymore or
+		// We either don't need this order anymore or
 		// we have just nothing to do about it.
 		// we check o.Price == 0 just to make sure we are able to price
 		// the order, in which case the size will have been calculated

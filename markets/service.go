@@ -242,7 +242,7 @@ func (s *Svc) ObserveDepthUpdates(ctx context.Context, retries int, market strin
 				go func() {
 					// here we just discard all event coming in, until the
 					// channel is actually properly closed.
-					// this is kind of necessary as we wait first to unsusubscribe
+					// this is kind of necessary as we wait first to unsubscribe
 					// which is locking in the subscriber, while the subscriber
 					// may be still sending us some data
 					for range internal {

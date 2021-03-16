@@ -60,16 +60,16 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 	log.SetLevel(logging.DebugLevel)
 
 	return &OrderBook{
-		log:             log,
-		marketID:        marketID,
-		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
-		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
-		Config:          config,
-		ordersByID:      map[string]*types.Order{},
-		auction:         auction,
-		batchID:         0,
-		ordersPerParty:  map[string]map[string]struct{}{},
+		log:            log,
+		marketID:       marketID,
+		cfgMu:          &sync.Mutex{},
+		buy:            &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
+		sell:           &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
+		Config:         config,
+		ordersByID:     map[string]*types.Order{},
+		auction:        auction,
+		batchID:        0,
+		ordersPerParty: map[string]map[string]struct{}{},
 	}
 }
 
@@ -498,7 +498,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	var uncrossedOrder *types.OrderConfirmation
 	var allOrders []*types.OrderConfirmation
 
-	// Remove all the orders from that side of the book upto the given volume
+	// Remove all the orders from that side of the book up to the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
 		// Pull out the trades we want to process
 		uncrossOrders, err := b.buy.ExtractOrders(price, volume)

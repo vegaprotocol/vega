@@ -5,4 +5,4 @@ The Liquidity Engine handles Liquidity Provisions
 
 
 A `LiquidityProvisionSubmission` specifies how to match a given liquidity by defining a shape of orders to be created.
-These shape is updated eachtime there is a change in the book.
+These shape is updated each time there is a change in the book.

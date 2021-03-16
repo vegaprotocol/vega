@@ -75,7 +75,7 @@ func (l Level) String() string {
 	case FatalLevel:
 		return "Fatal"
 	default:
-		return "Unknow"
+		return "Unknown"
 	}
 }
 

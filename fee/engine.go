@@ -302,7 +302,7 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 }
 
 func (e *Engine) CalculateFeeForPositionResolution(
-	// the trade from the good traders which 0 out the networl order
+	// the trade from the good traders which 0 out the network order
 	trades []*types.Trade,
 	// the positions of the traders being closed out.
 	closedMPs []events.MarketPosition,

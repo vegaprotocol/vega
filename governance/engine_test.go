@@ -225,7 +225,7 @@ func testProposalDuplicate(t *testing.T) {
 	aCopy.State = types.Proposal_STATE_PASSED
 	_, err = eng.SubmitProposal(context.Background(), aCopy, "proposal-id")
 	assert.Error(t, err)
-	assert.EqualError(t, governance.ErrProposalIsDuplicate, err.Error(), "reject atempt to change state indirectly")
+	assert.EqualError(t, governance.ErrProposalIsDuplicate, err.Error(), "reject attempt to change state indirectly")
 }
 
 func testProposerStake(t *testing.T) {
@@ -670,9 +670,9 @@ func testVotingPassedProposal(t *testing.T) {
 
 	afterEnactment := time.Unix(passed.Terms.EnactmentTimestamp, 0).Add(time.Second)
 	// no calculations, no state change, simply removed from governance engine
-	tobeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
-	assert.Len(t, tobeEnacted, 1)
-	assert.Equal(t, "proposal-id1", tobeEnacted[0].Proposal().Id)
+	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	assert.Len(t, toBeEnacted, 1)
+	assert.Equal(t, "proposal-id1", toBeEnacted[0].Proposal().Id)
 
 	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 	err = eng.AddVote(context.Background(), types.Vote{
@@ -744,8 +744,8 @@ func testProposalDeclined(t *testing.T) {
 	assert.True(t, vc.NewMarket().Rejected())
 
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
-	tobeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
-	assert.Empty(t, tobeEnacted)
+	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	assert.Empty(t, toBeEnacted)
 }
 
 func testProposalPassed(t *testing.T) {
@@ -807,9 +807,9 @@ func testProposalPassed(t *testing.T) {
 
 	eng.makeValidPartyTimes(proposerVoter.Id, 0, 0) // effectively draining proposerVoter
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
-	tobeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
-	assert.Len(t, tobeEnacted, 1)
-	assert.Equal(t, proposal.Id, tobeEnacted[0].Proposal().Id)
+	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	assert.Len(t, toBeEnacted, 1)
+	assert.Equal(t, proposal.Id, toBeEnacted[0].Proposal().Id)
 }
 
 func testMultipleProposalsLifecycle(t *testing.T) {
@@ -934,10 +934,10 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	assert.Equal(t, howMany, howManyPassed)
 	assert.Equal(t, howMany, howManyDeclined)
 
-	tobeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
-	assert.Len(t, tobeEnacted, howMany)
+	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+	assert.Len(t, toBeEnacted, howMany)
 	for i := 0; i < howMany; i++ {
-		_, found := passed[tobeEnacted[i].Proposal().Id]
+		_, found := passed[toBeEnacted[i].Proposal().Id]
 		assert.True(t, found)
 	}
 }
