@@ -25,11 +25,6 @@ func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataT
 		market := row.Str("market")
 		commitment := row.U64("commitment amount")
 
-		if id == "id" {
-			continue
-		}
-
-		// find event
 		e := evtByID(id)
 		if e == nil {
 			return errLiquidityProvisionEventNotFound()

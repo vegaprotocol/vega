@@ -22,7 +22,7 @@ func TradersAttemptToCancelTheFollowingFilledOrders(
 
 		o, err := broker.GetByReference(trader, reference)
 		if err != nil {
-			return errCannotGetOrderForParty(trader, reference, err)
+			return errOrderNotFound(trader, reference, err)
 		}
 
 		cancel := types.OrderCancellation{

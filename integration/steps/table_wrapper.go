@@ -225,6 +225,22 @@ func (r RowWrapper) Side(name string) types.Side {
 	return side
 }
 
+func (r RowWrapper) PeggedReference(name string) types.PeggedReference {
+	return peggedReference(r.values[name])
+}
+
+func peggedReference(rawValue string) types.PeggedReference {
+	switch rawValue {
+	case "MID":
+		return types.PeggedReference_PEGGED_REFERENCE_MID
+	case "ASK":
+		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+	case "BID":
+		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID
+	}
+	return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
+}
+
 func Side(rawValue string) (types.Side, error) {
 	switch rawValue {
 	case "sell":

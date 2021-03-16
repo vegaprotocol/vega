@@ -221,57 +221,6 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	return err
 }
 
-func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
-	for _, row := range refs.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-
-		o, err := execsetup.broker.GetByReference(trader, val(row, 1))
-		if err != nil {
-			return err
-		}
-
-		status, err := orderstatusval(row, 2)
-		if err != nil {
-			return err
-		}
-		if status != o.Status {
-			return fmt.Errorf("invalid order status for order ref %v, expected %v got %v", o.Reference, status.String(), o.Status.String())
-		}
-	}
-
-	return nil
-}
-
-func executedTrades(trades *gherkin.DataTable) error {
-	var err error
-	for i, row := range trades.Rows {
-		if i > 0 {
-			trader := val(row, 0)
-			price := u64val(row, 1)
-			size := u64val(row, 2)
-			counterparty := val(row, 3)
-			var found = false
-			data := execsetup.broker.GetTrades()
-			for _, v := range data {
-				if v.Buyer == trader && v.Seller == counterparty && v.Price == price && v.Size == size {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				err = fmt.Errorf("expected trade is missing: %v, %v, %v, %v", trader, price, size, counterparty)
-				break
-			}
-		}
-	}
-
-	return err
-}
-
 func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 	for i, row := range orders.Rows {
 		trader := val(row, 0)
@@ -358,24 +307,5 @@ func submitLP(in *gherkin.DataTable) error {
 			return err
 		}
 	}
-	return nil
-}
-
-func theOpeningAuctionPeriodEnds(mktName string) error {
-	var mkt *types.Market
-	for _, m := range execsetup.mkts {
-		if m.Id == mktName {
-			mkt = &m
-			break
-		}
-	}
-	if mkt == nil {
-		return fmt.Errorf("market %s not found", mktName)
-	}
-	// double the time, so it's definitely past opening auction time
-	now := execsetup.timesvc.Now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second)
-	execsetup.timesvc.Now = now
-	// notify markets
-	execsetup.timesvc.Notify(context.Background(), now)
 	return nil
 }

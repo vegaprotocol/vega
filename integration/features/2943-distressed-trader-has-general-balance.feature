@@ -58,9 +58,9 @@ Feature: Distressed traders should not have general balance left
       | lp1 | trader3 | ETH/DEC20 | 10000             |
 
     Then I see the following order events:
-      | trader  | market id | side           | volume | reference | offset | price | status        |
-      | trader3 | ETH/DEC20 | SIDE_BUY  | 989    | PEGGED_REFERENCE_BEST_BID       | -10    | 100   | STATUS_ACTIVE |
-      | trader3 | ETH/DEC20 | SIDE_SELL | 760    | PEGGED_REFERENCE_BEST_ASK       | 10     | 130   | STATUS_ACTIVE |
+      | trader  | market id | side | volume | reference | offset | price | status        |
+      | trader3 | ETH/DEC20 | buy  | 989    | BID       | -10    | 100   | STATUS_ACTIVE |
+      | trader3 | ETH/DEC20 | sell | 760    | ASK       | 10     | 130   | STATUS_ACTIVE |
     ## The sum of the margin + general account == 10000 - 10000 (commitment amount)
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general |

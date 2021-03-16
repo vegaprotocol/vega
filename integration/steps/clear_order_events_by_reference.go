@@ -1,6 +1,8 @@
 package steps
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"github.com/cucumber/godog/gherkin"
 )
@@ -9,12 +11,13 @@ func ClearOrdersByReference(broker *stubs.BrokerStub, table *gherkin.DataTable) 
 	for _, row := range TableWrapper(*table).Parse() {
 		trader := row.Str("trader")
 		reference := row.Str("reference")
-		if trader == "trader" {
-			continue
-		}
 		if err := broker.ClearOrderByReference(trader, reference); err != nil {
-			return err
+			return errClearingOrder(trader, reference, err)
 		}
 	}
 	return nil
+}
+
+func errClearingOrder(trader, reference string, err error) error {
+	return fmt.Errorf("failed to clear order for trader %s with reference %s: %v", trader, reference, err)
 }

@@ -14,13 +14,9 @@ func TheStatusOfOrderWithReference(broker *stubs.BrokerStub, table *gherkin.Data
 		reference := row.Str("reference")
 		status := row.OrderStatus("status")
 
-		if trader == "trader" {
-			continue
-		}
-
 		o, err := broker.GetByReference(trader, reference)
 		if err != nil {
-			return err
+			return errOrderNotFound(reference, trader, err)
 		}
 
 		if status != o.Status {
