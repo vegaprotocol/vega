@@ -396,6 +396,10 @@ func addAccountWithAmount(market *testMarket, party string, amnt uint64) {
 	market.collateralEngine.Deposit(context.Background(), party, market.asset, amnt)
 }
 
+func topUpAccount(market *testMarket, party string, amount uint64) {
+	market.collateralEngine.Deposit(context.Background(), party, market.asset, amount)
+}
+
 // WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors
 func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string,
 	buys, sells []*types.LiquidityOrder) *testMarket {

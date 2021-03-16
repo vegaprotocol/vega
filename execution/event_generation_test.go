@@ -880,6 +880,84 @@ func TestEvents_PeggedOrders(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 }
 
+func TestEvents_CloseOutTraderThenTopUp(t *testing.T) {
+	now := time.Unix(10, 0)
+	ctx := context.Background()
+	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
+	tm := startMarketInAuction(t, ctx, &now)
+	leaveAuction(tm, ctx, &now)
+
+	// Submit a LP order for the closed out trader
+	buys := []*types.LiquidityOrder{
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50},
+	}
+	sells := []*types.LiquidityOrder{
+		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50},
+	}
+
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              "0.05",
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 10,
+		Buys:             buys,
+		Sells:            sells}
+
+	// Add a GFN order
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFN, "Order01", types.Side_SIDE_SELL, "trader-A", 10, 1)
+	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.NotNil(t, o1conf)
+	require.NoError(t, err)
+
+	// Fill some of it to set the mark price
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 10, 1)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-A", 1, 10)
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 2, 100)
+	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+	require.NotNil(t, o3conf)
+	require.NoError(t, err)
+
+	// Register for LP
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	require.NoError(t, err)
+	assert.Equal(t, 1, tm.market.GetLPSCount())
+
+	// Move price high to force a close out
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-B", 1, 100)
+	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+	require.NotNil(t, o2conf)
+	require.NoError(t, err)
+	assert.Equal(t, 0, tm.market.GetLPSCount())
+
+	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order06", types.Side_SIDE_BUY, "trader-B", 1, 98)
+	o6conf, err := tm.market.SubmitOrder(ctx, o6)
+	require.NotNil(t, o6conf)
+	require.NoError(t, err)
+
+	// Top up the closed out trader
+	topUpAccount(tm, "trader-A", 100000000)
+
+	// Increase commitment and submit again
+	lps.CommitmentAmount = 1000
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	require.NoError(t, err)
+	assert.Equal(t, 1, tm.market.GetLPSCount())
+
+	// Check we have the right amount of events
+	assert.Equal(t, uint64(16), tm.orderEventCount)
+	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
+
+	processEvents(t, tm, mdb)
+	assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
+}
+
 func TestEvents_Fuzzing(t *testing.T) {
 	/*	now := time.Unix(10, 0)
 		ctx := context.Background()
