@@ -32,6 +32,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/prometheus/common/log"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network
@@ -3078,7 +3079,6 @@ func (m *Market) cancelLiquidityProvision(
 func (m *Market) amendLiquidityProvision(
 	ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string,
 ) error {
-
 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
@@ -3090,7 +3090,7 @@ func (m *Market) amendLiquidityProvision(
 	// rejected.
 	if sub.CommitmentAmount < lp.CommitmentAmount {
 		// first - does the market have enought stake
-		if uint64(m.getTargetStake()) > m.getSuppliedStake() {
+		if uint64(m.getTargetStake()) >= m.getSuppliedStake() {
 			return ErrNotEnoughStake
 		}
 
@@ -3123,6 +3123,11 @@ func (m *Market) amendLiquidityProvision(
 		// no errors, all went well, nothing to do.
 		return nil
 	}
+
+	log.Debugf("could not cancel and replace liquidity provision",
+		logging.MarketID(m.GetID()),
+		logging.PartyID(party),
+		logging.Error(err))
 
 	// so, we haven't been able to submit the new lp provision
 	// now we want to resubmit the previous one
@@ -3351,6 +3356,7 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 	if err != nil {
 		m.log.Debug("could not get one of the static mid prices",
 			logging.Error(err))
+		// we do not return here, we could not get one of the prices eventually
 	}
 	newOrders, amendments, err := m.liquidity.Update(
 		ctx, midPriceBid, midPriceAsk, m.repriceFuncW, orders)

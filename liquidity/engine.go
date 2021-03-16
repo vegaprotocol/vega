@@ -145,8 +145,8 @@ func (e *Engine) stopLiquidityProvision(
 	}
 
 	// FIXME(JEREMY): if sorting them is the actual solution
-	// review the implementation to make some eventually more efficient
-	// we sort this here to make sure that all orders are always
+	// review the implementation to write some eventually more efficient
+	// way to sort this here and make sure that all orders are always
 	// cancelled in the same order
 	sort.Slice(orders, func(i, j int) bool {
 		return orders[i].Id < orders[j].Id
@@ -587,11 +587,13 @@ func (e *Engine) undeployOrdersFromShape(
 
 	for i, o := range supplied {
 		var (
-			order                                = lm[o.OrderID]
-			ref   *types.LiquidityOrderReference = lp.Sells[i]
+			order = lm[o.OrderID]
+			ref   *types.LiquidityOrderReference
 		)
 		if side == types.Side_SIDE_BUY {
 			ref = lp.Buys[i]
+		} else {
+			ref = lp.Sells[i]
 		}
 
 		if order != nil {
