@@ -928,6 +928,7 @@ func TestEvents_CloseOutTraderThenTopUp(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
+	assert.LessOrEqual(t, uint64(0), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
 
 	// Move price high to force a close out
 	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-B", 1, 100)
@@ -935,6 +936,7 @@ func TestEvents_CloseOutTraderThenTopUp(t *testing.T) {
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
+	assert.Equal(t, uint64(0), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
 
 	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order06", types.Side_SIDE_BUY, "trader-B", 1, 98)
 	o6conf, err := tm.market.SubmitOrder(ctx, o6)
@@ -949,6 +951,7 @@ func TestEvents_CloseOutTraderThenTopUp(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
+	assert.LessOrEqual(t, uint64(0), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
 
 	// Check we have the right amount of events
 	assert.Equal(t, uint64(16), tm.orderEventCount)
