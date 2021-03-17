@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
+
 	"github.com/cucumber/godog/gherkin"
 )
 
