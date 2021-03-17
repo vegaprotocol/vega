@@ -16,6 +16,22 @@ type TradableInstrument_LogNormalRiskModel = proto.TradableInstrument_LogNormalR
 type TradableInstrument_SimpleRiskModel = proto.TradableInstrument_SimpleRiskModel
 type PriceMonitoringBounds = proto.PriceMonitoringBounds
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
+type AuctionDuration = proto.AuctionDuration
+type Fees = proto.Fees
+type LogNormalRiskModel = proto.LogNormalRiskModel
+type FeeFactors = proto.FeeFactors
+type PriceMonitoringSettings = proto.PriceMonitoringSettings
+type LogNormalModelParams = proto.LogNormalModelParams
+type PriceMonitoringParameters = proto.PriceMonitoringParameters
+type Price = proto.Price
+type PriceMonitoringTrigger = proto.PriceMonitoringTrigger
+type Timestamp = proto.Timestamp
+type InstrumentMetadata = proto.InstrumentMetadata
+type OracleSpecToFutureBinding = proto.OracleSpecToFutureBinding
+type SimpleRiskModel = proto.SimpleRiskModel
+type ContinuousTrading = proto.ContinuousTrading
+type SimpleModelParams = proto.SimpleModelParams
+type TargetStakeParameters = proto.TargetStakeParameters
 
 type Market_TradingMode = proto.Market_TradingMode
 
