@@ -959,10 +959,10 @@ type MarketDepthUpdateResolver interface {
 	SequenceNumber(ctx context.Context, obj *proto.MarketDepthUpdate) (string, error)
 }
 type MarketTimestampsResolver interface {
-	Proposed(ctx context.Context, obj *proto.MarketTimestamps) (string, error)
-	Pending(ctx context.Context, obj *proto.MarketTimestamps) (string, error)
-	Open(ctx context.Context, obj *proto.MarketTimestamps) (string, error)
-	Close(ctx context.Context, obj *proto.MarketTimestamps) (string, error)
+	Proposed(ctx context.Context, obj *proto.MarketTimestamps) (*string, error)
+	Pending(ctx context.Context, obj *proto.MarketTimestamps) (*string, error)
+	Open(ctx context.Context, obj *proto.MarketTimestamps) (*string, error)
+	Close(ctx context.Context, obj *proto.MarketTimestamps) (*string, error)
 }
 type MutationResolver interface {
 	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) (*PreparedSubmitOrder, error)
@@ -5048,13 +5048,13 @@ type MarketData {
 "timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
-  proposed: String!
+  proposed: String
   "Time when the market has been voted in and waiting to be created"
-  pending: String!
+  pending: String
   "Time when the market is open and ready to accept trades"
-  open: String!
+  open: String
   "Time when the market is closed"
-  close: String!
+  close: String
 }
 
 
@@ -15236,14 +15236,11 @@ func (ec *executionContext) _MarketTimestamps_proposed(ctx context.Context, fiel
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field graphql.CollectedField, obj *proto.MarketTimestamps) (ret graphql.Marshaler) {
@@ -15270,14 +15267,11 @@ func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field graphql.CollectedField, obj *proto.MarketTimestamps) (ret graphql.Marshaler) {
@@ -15304,14 +15298,11 @@ func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field gr
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field graphql.CollectedField, obj *proto.MarketTimestamps) (ret graphql.Marshaler) {
@@ -15338,14 +15329,11 @@ func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field g
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_prepareOrderSubmit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -29059,9 +29047,6 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 					}
 				}()
 				res = ec._MarketTimestamps_proposed(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "pending":
@@ -29073,9 +29058,6 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 					}
 				}()
 				res = ec._MarketTimestamps_pending(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "open":
@@ -29087,9 +29069,6 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 					}
 				}()
 				res = ec._MarketTimestamps_open(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "close":
@@ -29101,9 +29080,6 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 					}
 				}()
 				res = ec._MarketTimestamps_close(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:

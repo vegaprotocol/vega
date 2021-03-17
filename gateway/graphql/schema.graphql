@@ -373,13 +373,13 @@ type MarketData {
 "timestamps for when the market changes state"
 type MarketTimestamps {
   "Time when the market is first proposed"
-  proposed: String!
+  proposed: String
   "Time when the market has been voted in and waiting to be created"
-  pending: String!
+  pending: String
   "Time when the market is open and ready to accept trades"
-  open: String!
+  open: String
   "Time when the market is closed"
-  close: String!
+  close: String
 }
 
 
