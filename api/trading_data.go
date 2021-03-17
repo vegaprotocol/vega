@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -166,6 +167,14 @@ type WithdrawalService interface {
 	GetByParty(party string, openOnly bool) []types.Withdrawal
 }
 
+// OracleService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_service_mock.go -package mocks code.vegaprotocol.io/vega/api  OracleService
+type OracleService interface {
+	GetSpecByID(id string) (oraclespb.OracleSpec, error)
+	GetSpecs() []oraclespb.OracleSpec
+	GetOracleDataBySpecID(string) ([]oraclespb.OracleData, error)
+}
+
 // Deposit ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/deposit_service_mock.go -package mocks code.vegaprotocol.io/vega/api  DepositService
 type DepositService interface {
@@ -222,7 +231,7 @@ type tradingDataService struct {
 	MarketDepthService      *subscribers.MarketDepthBuilder
 	NetParamsService        NetParamsService
 	LiquidityService        LiquidityService
-	ctx                     context.Context
+	oracleService           OracleService
 
 	chainID                  string
 	genesisTime              time.Time
@@ -376,6 +385,52 @@ func (t *tradingDataService) Withdrawals(ctx context.Context, req *protoapi.With
 	}
 	return &protoapi.WithdrawalsResponse{
 		Withdrawals: out,
+	}, nil
+}
+
+func (t *tradingDataService) OracleSpec(_ context.Context, req *protoapi.OracleSpecRequest) (*protoapi.OracleSpecResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("OracleSpec")()
+	if len(req.Id) <= 0 {
+		return nil, ErrMissingOracleSpecID
+	}
+	spec, err := t.oracleService.GetSpecByID(req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	return &protoapi.OracleSpecResponse{
+		OracleSpec: &spec,
+	}, nil
+}
+
+func (t *tradingDataService) OracleSpecs(_ context.Context, _ *protoapi.OracleSpecsRequest) (*protoapi.OracleSpecsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("OracleSpecs")()
+	specs := t.oracleService.GetSpecs()
+	out := make([]*oraclespb.OracleSpec, 0, len(specs))
+	for _, v := range specs {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.OracleSpecsResponse{
+		OracleSpecs: out,
+	}, nil
+}
+
+func (t *tradingDataService) OracleDataBySpec(_ context.Context, req *protoapi.OracleDataBySpecRequest) (*protoapi.OracleDataBySpecResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("OracleDataBySpec")()
+	if len(req.Id) <= 0 {
+		return nil, ErrMissingOracleSpecID
+	}
+	data, err := t.oracleService.GetOracleDataBySpecID(req.Id)
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+	out := make([]*oraclespb.OracleData, 0, len(data))
+	for _, v := range data {
+		v := v
+		out = append(out, &v)
+	}
+	return &protoapi.OracleDataBySpecResponse{
+		OracleData: out,
 	}, nil
 }
 
@@ -748,9 +803,16 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 	}
 
 	// Call tendermint via rpc client
-	backlogLength, numPeers, gt, chainID, err := t.getTendermintStats(ctx)
+	var (
+		backlogLength, numPeers int
+		gt                      *time.Time
+		chainID                 string
+	)
+
+	backlogLength, numPeers, gt, chainID, err = t.getTendermintStats(ctx)
 	if err != nil {
-		return nil, err // getTendermintStats already returns an API error
+		// do not return an error, let just eventually log it
+		t.log.Debug("could not load tendermint stats", logging.Error(err))
 	}
 
 	// If the chain is replaying then genesis time can be nil
@@ -773,9 +835,9 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 		CurrentTime:              vegatime.Format(vegatime.Now()),
 		VegaTime:                 vegatime.Format(epochTime),
 		Uptime:                   vegatime.Format(t.Stats.GetUptime()),
-		TxPerBlock:               uint64(t.Stats.Blockchain.TotalTxLastBatch()),
-		AverageTxBytes:           uint64(t.Stats.Blockchain.AverageTxSizeBytes()),
-		AverageOrdersPerBlock:    uint64(t.Stats.Blockchain.AverageOrdersPerBatch()),
+		TxPerBlock:               t.Stats.Blockchain.TotalTxLastBatch(),
+		AverageTxBytes:           t.Stats.Blockchain.AverageTxSizeBytes(),
+		AverageOrdersPerBlock:    t.Stats.Blockchain.AverageOrdersPerBatch(),
 		TradesPerSecond:          t.Stats.Blockchain.TradesPerSecond(),
 		OrdersPerSecond:          t.Stats.Blockchain.OrdersPerSecond(),
 		Status:                   t.statusChecker.ChainStatus(),
@@ -865,8 +927,6 @@ func (t *tradingDataService) TransferResponsesSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if transferResponsesChan == nil {
@@ -927,8 +987,6 @@ func (t *tradingDataService) MarketsDataSubscribe(req *protoapi.MarketsDataSubsc
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if marketsDataChan == nil {
@@ -991,8 +1049,6 @@ func (t *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if marginLevelsChan == nil {
@@ -1056,8 +1112,6 @@ func (t *tradingDataService) AccountsSubscribe(req *protoapi.AccountsSubscribeRe
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if accountsChan == nil {
@@ -1132,8 +1186,6 @@ func (t *tradingDataService) OrdersSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if ordersChan == nil {
@@ -1205,8 +1257,6 @@ func (t *tradingDataService) TradesSubscribe(req *protoapi.TradesSubscribeReques
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 		if tradesChan == nil {
 			if t.log.GetLevel() == logging.DebugLevel {
@@ -1271,8 +1321,6 @@ func (t *tradingDataService) CandlesSubscribe(req *protoapi.CandlesSubscribeRequ
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if candlesChan == nil {
@@ -1338,8 +1386,6 @@ func (t *tradingDataService) MarketDepthSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if depthChan == nil {
@@ -1407,8 +1453,6 @@ func (t *tradingDataService) MarketDepthUpdatesSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if depthChan == nil {
@@ -1466,8 +1510,6 @@ func (t *tradingDataService) PositionsSubscribe(
 				)
 			}
 			return apiError(codes.Internal, ErrStreamInternal, err)
-		case <-t.ctx.Done():
-			return apiError(codes.Internal, ErrServerShutdown)
 		}
 
 		if positionsChan == nil {
@@ -1948,13 +1990,11 @@ func (t *tradingDataService) ObserveGovernance(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send governance data into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -1988,13 +2028,11 @@ func (t *tradingDataService) ObservePartyProposals(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send party proposal into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2034,8 +2072,6 @@ func (t *tradingDataService) ObservePartyVotes(
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2070,13 +2106,11 @@ func (t *tradingDataService) ObserveProposalVotes(
 				if err := stream.Send(resp); err != nil {
 					t.log.Error("failed to send proposal vote into stream",
 						logging.Error(err))
-					return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+					return apiError(codes.Internal, ErrStreamInternal, err)
 				}
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2157,12 +2191,10 @@ func (t *tradingDataService) observeEvents(
 			}
 			if err := stream.Send(resp); err != nil {
 				t.log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 	}
 }
@@ -2213,12 +2245,10 @@ func (t *tradingDataService) observeEventsWithAck(
 			}
 			if err := stream.Send(resp); err != nil {
 				t.log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
 		case <-ctx.Done():
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
-		case <-t.ctx.Done():
-			return apiError(codes.Aborted, ErrServerShutdown)
 		}
 
 		// now we try to read again the new size / ack

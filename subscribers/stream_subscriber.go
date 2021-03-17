@@ -74,7 +74,7 @@ func NewStreamSub(ctx context.Context, types []events.Type, batchSize int, filte
 	if batchSize == -1 {
 		batchSize = 0
 	}
-	meo := (len(types) == 1 && types[0] == events.MarketEvent)
+	meo := len(types) == 1 && types[0] == events.MarketEvent
 	expandedTypes := make([]events.Type, 0, len(types))
 	for _, t := range types {
 		if t == events.All {

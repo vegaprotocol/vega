@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"strconv"
+	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -16,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -60,6 +62,7 @@ type GRPCServer struct {
 	withdrawalService       *plugins.Withdrawal
 	depositService          *plugins.Deposit
 	netParamsService        *netparams.Service
+	oracleService           *oracles.Service
 
 	tradingService     *tradingService
 	tradingDataService *tradingDataService
@@ -95,6 +98,7 @@ func NewGRPCServer(
 	assetService *assets.Svc,
 	feeService *fee.Svc,
 	eventService *subscribers.Service,
+	oracleService *oracles.Service,
 	withdrawalService *plugins.Withdrawal,
 	depositService *plugins.Deposit,
 	marketDepthService *subscribers.MarketDepthBuilder,
@@ -132,6 +136,7 @@ func NewGRPCServer(
 		marketDepthService:      marketDepthService,
 		statusChecker:           statusChecker,
 		netParamsService:        netParamsService,
+		oracleService:           oracleService,
 		ctx:                     ctx,
 		cfunc:                   cfunc,
 	}
@@ -256,7 +261,7 @@ func (g *GRPCServer) Start() {
 		MarketDepthService:      g.marketDepthService,
 		NetParamsService:        g.netParamsService,
 		LiquidityService:        g.liquidityService,
-		ctx:                     g.ctx,
+		oracleService:           g.oracleService,
 	}
 	go tradingDataSvc.updateNetInfo(g.ctx)
 	g.tradingDataService = tradingDataSvc
@@ -270,9 +275,21 @@ func (g *GRPCServer) Start() {
 
 // Stop stops the GRPC server
 func (g *GRPCServer) Stop() {
-	if g.srv != nil {
-		g.log.Info("Stopping gRPC based API")
-		g.cfunc()
+	if g.srv == nil {
+		return
+	}
+
+	done := make(chan struct{})
+	go func() {
+		g.log.Info("Gracefully stopping gRPC based API")
 		g.srv.GracefulStop()
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		g.log.Info("Force stopping gRPC based API")
+		g.srv.Stop()
 	}
 }

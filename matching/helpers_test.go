@@ -16,11 +16,11 @@ func (t *tstOB) Finish() {
 	t.log.Sync()
 }
 
-func getTestOrderBook(t *testing.T, market string) *tstOB {
+func getTestOrderBook(_ *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, 100, false)
+	tob.OrderBook = NewOrderBook(tob.log, NewDefaultConfig(), market, false)
 
 	// Turn on all the debug levels so we can cover more lines of code
 	tob.OrderBook.LogPriceLevelsDebug = true

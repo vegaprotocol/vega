@@ -46,34 +46,17 @@ type WithdrawalDetails interface {
 
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
-//   The auction will last for at least N seconds.
+// The auction will last for at least N seconds.
 // 2. `duration == 0`, `volume > 0`:
-//   The auction will end once we can close with given traded volume.
+// The auction will end once we can close with given traded volume.
 // 3. `duration > 0`, `volume > 0`:
-//   The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+// The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
 type AuctionDuration struct {
 	// Duration of the auction in seconds
 	DurationSecs int `json:"durationSecs"`
 	// Target uncrossing trading volume
 	Volume int `json:"volume"`
 }
-
-type AuctionEvent struct {
-	// the market ID
-	MarketID string `json:"marketID"`
-	// event fired because of auction end
-	Leave bool `json:"leave"`
-	// event related to opening auction
-	OpeningAuction bool `json:"openingAuction"`
-	// RFC3339Nano start time of auction
-	AuctionStart string `json:"auctionStart"`
-	// RFC3339Nano optional end time of auction
-	AuctionEnd string `json:"auctionEnd"`
-	// What triggered the auction
-	Trigger AuctionTrigger `json:"trigger"`
-}
-
-func (AuctionEvent) IsEvent() {}
 
 // A vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
@@ -109,7 +92,7 @@ type BuiltinAssetInput struct {
 
 type BusEvent struct {
 	// the id for this event
-	EventID string `json:"eventID"`
+	EventID string `json:"eventId"`
 	// the block hash
 	Block string `json:"block"`
 	// the type of event we're dealing with
@@ -118,7 +101,15 @@ type BusEvent struct {
 	Event Event `json:"event"`
 }
 
-// A mode where Vega try to execute order as soon as they are received
+// Condition describes the condition that must be validated by the
+type ConditionInput struct {
+	// comparator is the type of comparison to make on the value.
+	Operator ConditionOperator `json:"operator"`
+	// value is used by the comparator.
+	Value string `json:"value"`
+}
+
+// A mode where Vega tries to execute orders as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
 	TickSize string `json:"tickSize"`
@@ -203,20 +194,14 @@ type EthereumEvent struct {
 
 func (EthereumEvent) IsOracle() {}
 
-// The factors applied to calculate the fees
-type FeeFactors struct {
-	// The factor applied to calculate MakerFees, a non-negative float
-	MakerFee string `json:"makerFee"`
-	// The factor applied to calculate InfrastructureFees, a non-negative float
-	InfrastructureFee string `json:"infrastructureFee"`
-	// The factor applied to calculate LiquidityFees, a non-negative float
-	LiquidityFee string `json:"liquidityFee"`
-}
-
-// The fees applicable to a market
-type Fees struct {
-	// The factors used to calculate the different fees
-	Factors *FeeFactors `json:"factors"`
+// Filter describes the conditions under which an oracle data is considered of
+// interest or not.
+type FilterInput struct {
+	// key is the oracle data property key targeted by the filter.
+	Key *PropertyKeyInput `json:"key"`
+	// conditions are the conditions that should be matched by the data to be
+	// considered of interest.
+	Conditions []*ConditionInput `json:"conditions"`
 }
 
 // Future product configuration
@@ -227,6 +212,10 @@ type FutureProductInput struct {
 	SettlementAsset string `json:"settlementAsset"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
+	// The oracle spec describing the oracle data of interest.
+	OracleSpec *OracleSpecConfigurationInput `json:"oracleSpec"`
+	// The binding between the oracle spec and the settlement price
+	OracleSpecBinding *OracleSpecToFutureBindingInput `json:"oracleSpecBinding"`
 }
 
 type InstrumentConfigurationInput struct {
@@ -236,12 +225,6 @@ type InstrumentConfigurationInput struct {
 	Code string `json:"code"`
 	// Future product specification
 	FutureProduct *FutureProductInput `json:"futureProduct"`
-}
-
-// A set of metadata to associate to an instruments
-type InstrumentMetadata struct {
-	// An arbitrary list of tags to associated to associate to the Instrument (string list)
-	Tags []string `json:"tags"`
 }
 
 type LedgerEntry struct {
@@ -279,16 +262,6 @@ type LiquidityProviderFeeShare struct {
 	AverageEntryValuation string `json:"averageEntryValuation"`
 }
 
-// Parameters for the log normal risk model
-type LogNormalModelParams struct {
-	// mu parameter
-	Mu float64 `json:"mu"`
-	// r parameter
-	R float64 `json:"r"`
-	// sigma parameter
-	Sigma float64 `json:"sigma"`
-}
-
 type LogNormalModelParamsInput struct {
 	// mu parameter
 	Mu float64 `json:"mu"`
@@ -297,18 +270,6 @@ type LogNormalModelParamsInput struct {
 	// sigma parameter
 	Sigma float64 `json:"sigma"`
 }
-
-// A type of risk model for futures trading
-type LogNormalRiskModel struct {
-	// Lambda parameter of the risk model
-	RiskAversionParameter float64 `json:"riskAversionParameter"`
-	// Tau parameter of the risk model
-	Tau float64 `json:"tau"`
-	// Params for the log normal risk model
-	Params *LogNormalModelParams `json:"params"`
-}
-
-func (LogNormalRiskModel) IsRiskModel() {}
 
 type LogNormalRiskModelInput struct {
 	// Lambda parameter of the risk model
@@ -321,19 +282,14 @@ type LogNormalRiskModelInput struct {
 
 type LossSocialization struct {
 	// the market ID where loss socialization happened
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party that was part of the loss socialization
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the amount lost
 	Amount int `json:"amount"`
 }
 
 func (LossSocialization) IsEvent() {}
-
-type MarginCalculator struct {
-	// The scaling factors that will be used for margin calculation
-	ScalingFactors *ScalingFactors `json:"scalingFactors"`
-}
 
 // The MM commitments for this market
 type MarketDataCommitments struct {
@@ -345,7 +301,7 @@ type MarketDataCommitments struct {
 
 type MarketEvent struct {
 	// the market ID
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the message - market events are used for logging
 	Payload string `json:"payload"`
 }
@@ -354,7 +310,7 @@ func (MarketEvent) IsEvent() {}
 
 type MarketTick struct {
 	// the market ID
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the block time
 	Time string `json:"time"`
 }
@@ -377,6 +333,21 @@ type NewAssetInput struct {
 	Erc20 *ERC20Input `json:"erc20"`
 }
 
+// A commitment of liquidity to be made by the party which proposes a market
+type NewMarketCommitmentInput struct {
+	// Specified as a unitless number that represents the amount of settlement asset of the market
+	CommitmentAmount string `json:"commitmentAmount"`
+	// Nominated liquidity fee factor, which is an input to the calculation of
+	// taker fees on the market, as per setting fees and rewarding liquidity provider
+	Fee string `json:"fee"`
+	// A set of liquidity sell orders to meet the liquidity provision obligation
+	Sells []*LiquidityOrderInput `json:"sells"`
+	// A set of liquidity buy orders to meet the liquidity provision obligation
+	Buys []*LiquidityOrderInput `json:"buys"`
+	// A reference to be associated to all orders created from this commitment
+	Reference *string `json:"reference"`
+}
+
 // Allows creating new markets on the network
 type NewMarketInput struct {
 	// New market instrument configuration
@@ -393,6 +364,26 @@ type NewMarketInput struct {
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
 	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
+	// The liquidity commitment submitted with the new market
+	Commitment *NewMarketCommitmentInput `json:"commitment"`
+}
+
+// An oracle spec describe the oracle data that a product (or a risk model)
+// wants to get from the oracle engine.
+type OracleSpecConfigurationInput struct {
+	// pubKeys is the list of authorized public keys that signed the data for this
+	// oracle. All the public keys in the oracle data should be contained in these
+	// public keys.
+	PubKeys []string `json:"pubKeys"`
+	// filters describes which oracle data are considered of interest or not for
+	// the product (or the risk model).
+	Filters []*FilterInput `json:"filters"`
+}
+
+// OracleSpecToFutureBindingInput tells on which property oracle data should be
+// used as settlement price.
+type OracleSpecToFutureBindingInput struct {
+	SettlementPriceProperty string `json:"settlementPriceProperty"`
 }
 
 // An estimate of the fee to be paid by the order
@@ -415,7 +406,7 @@ type PeggedOrderInput struct {
 
 type PositionResolution struct {
 	// the market ID where position resolution happened
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// number of distressed traders on market
 	Distressed int `json:"distressed"`
 	// number of traders closed out
@@ -530,6 +521,14 @@ type PriceMonitoringTriggerInput struct {
 	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
 
+// PropertyKey describes the property key contained in an oracle data.
+type PropertyKeyInput struct {
+	// name is the name of the property.
+	Name string `json:"name"`
+	// type is the type of the property.
+	Type PropertyKeyType `json:"type"`
+}
+
 // Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
 type ProposalTermsInput struct {
 	// RFC3339Nano/ISO-8601 time and date when voting closes for this proposal.
@@ -556,7 +555,7 @@ type ProposalTermsInput struct {
 
 type ProposalVote struct {
 	// Cast vote
-	Vote *Vote `json:"vote"`
+	Vote *proto.Vote `json:"vote"`
 	// Proposal casting the vote on
 	ProposalID string `json:"proposalId"`
 }
@@ -568,20 +567,11 @@ type RiskParametersInput struct {
 	LogNormal *LogNormalRiskModelInput `json:"logNormal"`
 }
 
-type ScalingFactors struct {
-	// the scaling factor that determines the margin level at which we have to search for more money
-	SearchLevel float64 `json:"searchLevel"`
-	// the scaling factor that determines the optimal margin level
-	InitialMargin float64 `json:"initialMargin"`
-	// The scaling factor that determines the overflow margin level
-	CollateralRelease float64 `json:"collateralRelease"`
-}
-
 type SettleDistressed struct {
 	// the market in which a position was closed out
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party who closed out
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the margin taken from distressed trader
 	Margin int `json:"margin"`
 	// the price at which position was closed out
@@ -592,9 +582,9 @@ func (SettleDistressed) IsEvent() {}
 
 type SettlePosition struct {
 	// the market in which a position was settled
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party who settled a position
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the settle price
 	Price int `json:"price"`
 	// the trades that were settled to close the overall position
@@ -611,22 +601,6 @@ type SignatureInput struct {
 	Algo string `json:"algo"`
 	// The version of the signature
 	Version int `json:"version"`
-}
-
-// A type of simple/dummy risk model where we can specify the risk factor long and short in params
-type SimpleRiskModel struct {
-	// Params for the simple risk model
-	Params *SimpleRiskModelParams `json:"params"`
-}
-
-func (SimpleRiskModel) IsRiskModel() {}
-
-// Parameters for the simple risk model
-type SimpleRiskModelParams struct {
-	// Risk factor for long
-	FactorLong float64 `json:"factorLong"`
-	// Risk factor for short
-	FactorShort float64 `json:"factorShort"`
 }
 
 type SimpleRiskModelParamsInput struct {
@@ -701,19 +675,6 @@ type UpdateMarketInput struct {
 type UpdateNetworkParameterInput struct {
 	NetworkParameter *NetworkParameterInput `json:"networkParameter"`
 }
-
-type Vote struct {
-	// The vote value cast
-	Value VoteValue `json:"value"`
-	// The party casting the vote
-	Party *proto.Party `json:"party"`
-	// RFC3339Nano time and date when the vote reached Vega network
-	Datetime string `json:"datetime"`
-	// The ID of the proposal this vote applies to
-	ProposalID string `json:"proposalId"`
-}
-
-func (Vote) IsEvent() {}
 
 // The various account types we have (used by collateral)
 type AccountType string
@@ -880,6 +841,8 @@ const (
 	BusEventTypeDeposit BusEventType = "Deposit"
 	// Collateral has been withdrawn from this Vega network via the bridge
 	BusEventTypeWithdrawal BusEventType = "Withdrawal"
+	// An oracle spec has been registered
+	BusEventTypeOracleSpec BusEventType = "OracleSpec"
 	// constant for market events - mainly used for logging
 	BusEventTypeMarket BusEventType = "Market"
 )
@@ -909,12 +872,13 @@ var AllBusEventType = []BusEventType{
 	BusEventTypeLiquidityProvision,
 	BusEventTypeDeposit,
 	BusEventTypeWithdrawal,
+	BusEventTypeOracleSpec,
 	BusEventTypeMarket,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeMarket:
+	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket:
 		return true
 	}
 	return false
@@ -941,6 +905,61 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Comparator describes the type of comparison.
+type ConditionOperator string
+
+const (
+	// Verify if the property values are strictly equal or not.
+	ConditionOperatorOperatorEquals ConditionOperator = "OperatorEquals"
+	// Verify if the oracle data value is greater than the Condition value.
+	ConditionOperatorOperatorGreaterThan ConditionOperator = "OperatorGreaterThan"
+	// Verify if the oracle data value is greater than or equal to the Condition
+	// value.
+	ConditionOperatorOperatorGreaterThanOrEqual ConditionOperator = "OperatorGreaterThanOrEqual"
+	//  Verify if the oracle data value is less than the Condition value.
+	ConditionOperatorOperatorLessThan ConditionOperator = "OperatorLessThan"
+	// Verify if the oracle data value is less or equal to than the Condition
+	// value.
+	ConditionOperatorOperatorLessThanOrEqual ConditionOperator = "OperatorLessThanOrEqual"
+)
+
+var AllConditionOperator = []ConditionOperator{
+	ConditionOperatorOperatorEquals,
+	ConditionOperatorOperatorGreaterThan,
+	ConditionOperatorOperatorGreaterThanOrEqual,
+	ConditionOperatorOperatorLessThan,
+	ConditionOperatorOperatorLessThanOrEqual,
+}
+
+func (e ConditionOperator) IsValid() bool {
+	switch e {
+	case ConditionOperatorOperatorEquals, ConditionOperatorOperatorGreaterThan, ConditionOperatorOperatorGreaterThanOrEqual, ConditionOperatorOperatorLessThan, ConditionOperatorOperatorLessThanOrEqual:
+		return true
+	}
+	return false
+}
+
+func (e ConditionOperator) String() string {
+	return string(e)
+}
+
+func (e *ConditionOperator) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConditionOperator(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConditionOperator", str)
+	}
+	return nil
+}
+
+func (e ConditionOperator) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // The status of a deposit
 type DepositStatus string
 
@@ -949,7 +968,7 @@ const (
 	DepositStatusOpen DepositStatus = "Open"
 	// The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
 	DepositStatusCancelled DepositStatus = "Cancelled"
-	// The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
+	// The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts
 	DepositStatusFinalized DepositStatus = "Finalized"
 )
 
@@ -1255,6 +1274,51 @@ func (e *NodeSignatureKind) UnmarshalGQL(v interface{}) error {
 }
 
 func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Status describe the status of the oracle spec
+type OracleSpecStatus string
+
+const (
+	// STATUS_ACTIVE describes an active oracle spec.
+	OracleSpecStatusStatusActive OracleSpecStatus = "StatusActive"
+	// STATUS_ACTIVE describes an oracle spec that is not listening to data
+	// anymore.
+	OracleSpecStatusStatusUnused OracleSpecStatus = "StatusUnused"
+)
+
+var AllOracleSpecStatus = []OracleSpecStatus{
+	OracleSpecStatusStatusActive,
+	OracleSpecStatusStatusUnused,
+}
+
+func (e OracleSpecStatus) IsValid() bool {
+	switch e {
+	case OracleSpecStatusStatusActive, OracleSpecStatusStatusUnused:
+		return true
+	}
+	return false
+}
+
+func (e OracleSpecStatus) String() string {
+	return string(e)
+}
+
+func (e *OracleSpecStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OracleSpecStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OracleSpecStatus", str)
+	}
+	return nil
+}
+
+func (e OracleSpecStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1648,6 +1712,63 @@ func (e PeggedReference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// Type describes the type of properties that are supported by the oracle
+// engine.
+type PropertyKeyType string
+
+const (
+	// Any type.
+	PropertyKeyTypeTypeEmpty PropertyKeyType = "TypeEmpty"
+	// Integer type.
+	PropertyKeyTypeTypeInteger PropertyKeyType = "TypeInteger"
+	// String type.
+	PropertyKeyTypeTypeString PropertyKeyType = "TypeString"
+	// Boolean type.
+	PropertyKeyTypeTypeBoolean PropertyKeyType = "TypeBoolean"
+	// Any floating point decimal type.
+	PropertyKeyTypeTypeDecimal PropertyKeyType = "TypeDecimal"
+	// Timestamp date type.
+	PropertyKeyTypeTypeTimestamp PropertyKeyType = "TypeTimestamp"
+)
+
+var AllPropertyKeyType = []PropertyKeyType{
+	PropertyKeyTypeTypeEmpty,
+	PropertyKeyTypeTypeInteger,
+	PropertyKeyTypeTypeString,
+	PropertyKeyTypeTypeBoolean,
+	PropertyKeyTypeTypeDecimal,
+	PropertyKeyTypeTypeTimestamp,
+}
+
+func (e PropertyKeyType) IsValid() bool {
+	switch e {
+	case PropertyKeyTypeTypeEmpty, PropertyKeyTypeTypeInteger, PropertyKeyTypeTypeString, PropertyKeyTypeTypeBoolean, PropertyKeyTypeTypeDecimal, PropertyKeyTypeTypeTimestamp:
+		return true
+	}
+	return false
+}
+
+func (e PropertyKeyType) String() string {
+	return string(e)
+}
+
+func (e *PropertyKeyType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PropertyKeyType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PropertyKeyType", str)
+	}
+	return nil
+}
+
+func (e PropertyKeyType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Reason for the proposal being rejected by the core node
 type ProposalRejectionReason string
 
@@ -1702,6 +1823,8 @@ const (
 	ProposalRejectionReasonMarketMissingLiquidityCommitment ProposalRejectionReason = "MarketMissingLiquidityCommitment"
 	// Market proposal market could not be instantiate in execution
 	ProposalRejectionReasonCouldNotInstantiateMarket ProposalRejectionReason = "CouldNotInstantiateMarket"
+	// Market proposal market contained invalid product definition
+	ProposalRejectionReasonInvalidFutureProduct ProposalRejectionReason = "InvalidFutureProduct"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1730,11 +1853,12 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonOpeningAuctionDurationTooLarge,
 	ProposalRejectionReasonMarketMissingLiquidityCommitment,
 	ProposalRejectionReasonCouldNotInstantiateMarket,
+	ProposalRejectionReasonInvalidFutureProduct,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket, ProposalRejectionReasonInvalidFutureProduct:
 		return true
 	}
 	return false
@@ -1762,10 +1886,10 @@ func (e ProposalRejectionReason) MarshalGQL(w io.Writer) {
 }
 
 // Various states a proposal can transition through:
-//   Open ->
-//       - Passed -> Enacted.
-//       - Rejected.
-//   Proposal can enter Failed state from any other state.
+// Open ->
+// - Passed -> Enacted.
+// - Rejected.
+// Proposal can enter Failed state from any other state.
 type ProposalState string
 
 const (

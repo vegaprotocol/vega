@@ -46,8 +46,8 @@ func testAddKeyForKOResource(t *testing.T) {
 	notr := getTestNotary(t)
 	kind := types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
 	resID := "resid"
-	key := []byte(string("123456"))
-	sig := []byte(string("123456"))
+	key := []byte(("123456"))
+	sig := []byte(("123456"))
 
 	ns := types.NodeSignature{
 		Sig:  sig,
@@ -72,8 +72,8 @@ func testAddKeyForOKResource(t *testing.T) {
 
 	kind := types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
 	resID := "resid"
-	key := []byte(string("123456"))
-	sig := []byte(string("123456"))
+	key := []byte(("123456"))
+	sig := []byte(("123456"))
 
 	err := notr.StartAggregate(resID, kind)
 	assert.NoError(t, err)
@@ -97,8 +97,8 @@ func testAddKeyFinalize(t *testing.T) {
 
 	kind := types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
 	resID := "resid"
-	key := []byte(string("123456"))
-	sig := []byte(string("123456"))
+	key := []byte(("123456"))
+	sig := []byte(("123456"))
 
 	// add a valid node
 	notr.top.EXPECT().Len().AnyTimes().Return(1)

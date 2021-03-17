@@ -57,7 +57,7 @@ const (
 const (
 	minValidationPeriod = 1         // sec minutes
 	maxValidationPeriod = 48 * 3600 // 2 days
-	nodeApproval        = 1         // float for percentage
+
 )
 
 func init() {

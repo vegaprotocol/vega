@@ -78,14 +78,14 @@ func testSettleExpiredSuccess(t *testing.T) {
 		{
 			Owner: data[1].trader,
 			Amount: &types.FinancialAmount{
-				Amount: -500,
+				Amount: 500,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
-				Amount: -500,
+				Amount: 500,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
@@ -99,9 +99,11 @@ func testSettleExpiredSuccess(t *testing.T) {
 	} // }}}
 	oraclePrice := uint64(1100)
 	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
-		sp := int64((oraclePrice - price)) * size
+		if size < 0 {
+			size *= -1
+		}
 		return &types.FinancialAmount{
-			Amount: sp,
+			Amount: (oraclePrice - price) * uint64(size),
 		}, nil
 	}
 	positions := engine.getExpiryPositions(data...)
@@ -147,14 +149,14 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 		{
 			Owner: data[1].trader,
 			Amount: &types.FinancialAmount{
-				Amount: -500,
+				Amount: 500,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
-				Amount: -500,
+				Amount: 500,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
@@ -193,7 +195,7 @@ func testSettleExpiredSuccessErrorInvalidSettlementMethod(t *testing.T) {
 	// settlement price at markPrice
 	var markPrice uint64 = 1100
 	// set the FinalSettlement to the MarkPrice method
-	engine.Engine.Config.FinalSettlement.FinalSettlement = settlement.FinalSettlement("not a settlement")
+	engine.Engine.Config.FinalSettlement.FinalSettlement = "not a settlement"
 	// now settle:
 	_, err := engine.Settle(time.Now(), markPrice)
 	assert.Error(t, err)
@@ -372,12 +374,12 @@ func testMarkToMarketOrdered(t *testing.T) {
 	long = append(long, neutral)
 	// we have a long and short trade example
 	trades := map[string]*types.Trade{
-		"long": &types.Trade{
+		"long": {
 			Price: markPrice,
 			Size:  1,
 		},
 		// to go short, the trade has to be 2
-		"short": &types.Trade{
+		"short": {
 			Price: markPrice,
 			Size:  2,
 		},

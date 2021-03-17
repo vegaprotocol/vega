@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"code.vegaprotocol.io/vega/proto"
-
 	"github.com/cucumber/godog/gherkin"
+
+	"code.vegaprotocol.io/vega/proto"
 )
 
 func val(rows *gherkin.TableRow, idx int) string {
@@ -24,48 +24,6 @@ func i64val(rows *gherkin.TableRow, idx int) int64 {
 	s := rows.Cells[idx].Value
 	ret, _ := strconv.ParseInt(s, 10, 0)
 	return ret
-}
-
-func f64val(rows *gherkin.TableRow, idx int) float64 {
-	s := rows.Cells[idx].Value
-	ret, _ := strconv.ParseFloat(s, 10)
-	return ret
-}
-
-func f64arr(rows *gherkin.TableRow, idx int, sep string) ([]float64, error) {
-	rawString := rows.Cells[idx].Value
-	sArr := strings.Split(rawString, sep)
-	n := len(sArr)
-	if len(rawString) == 0 {
-		n = 0
-	}
-	f64arr := make([]float64, 0, len(sArr))
-	for i := 0; i < n; i++ {
-		f64, err := strconv.ParseFloat(sArr[i], 10)
-		if err != nil {
-			return nil, err
-		}
-		f64arr = append(f64arr, f64)
-	}
-	return f64arr, nil
-}
-
-func i64arr(rows *gherkin.TableRow, idx int, sep string) ([]int64, error) {
-	rawString := rows.Cells[idx].Value
-	sArr := strings.Split(rawString, sep)
-	n := len(sArr)
-	if len(rawString) == 0 {
-		n = 0
-	}
-	i64arr := make([]int64, 0, n)
-	for i := 0; i < n; i++ {
-		i64, err := strconv.ParseInt(sArr[i], 10, 0)
-		if err != nil {
-			return nil, err
-		}
-		i64arr = append(i64arr, i64)
-	}
-	return i64arr, nil
 }
 
 func sideval(rows *gherkin.TableRow, idx int) proto.Side {

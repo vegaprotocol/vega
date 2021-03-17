@@ -29,6 +29,7 @@ type testEngine struct {
 	model     *mocks.MockModel
 	orderbook *mocks.MockOrderbook
 	broker    *mocks.MockBroker
+	as        *mocks.MockAuctionState
 }
 
 // implements the events.Margin interface
@@ -74,6 +75,7 @@ func TestUpdateMargins(t *testing.T) {
 	t.Run("Top up margin test", testMarginTopup)
 	t.Run("Noop margin test", testMarginNoop)
 	t.Run("Margin too high (overflow)", testMarginOverflow)
+	t.Run("Margin too high (overflow) - auction ending", testMarginOverflowAuctionEnd)
 	t.Run("Update Margin with orders in book", testMarginWithOrderInBook)
 	t.Run("Update Margin with orders in book 2", testMarginWithOrderInBook2)
 	t.Run("Top up fail on new order", testMarginTopupOnOrderFailInsufficientFunds)
@@ -99,7 +101,7 @@ func testMarginLevelsTS(t *testing.T) {
 			return markPrice, nil
 		})
 
-	eng.orderbook.EXPECT().InAuction().AnyTimes().Return(false)
+	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	ts := time.Date(2018, time.January, 23, 0, 0, 0, 0, time.UTC)
 	eng.OnTimeUpdate(ts)
 
@@ -115,9 +117,9 @@ func testMarginLevelsTS(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(20), trans.Amount.Amount)
+	assert.Equal(t, 20, int(trans.Amount.Amount))
 	// min = 15 so we go back to maintenance level
-	assert.Equal(t, int64(15), trans.MinAmount)
+	assert.Equal(t, 15, int(trans.MinAmount))
 	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, trans.Type)
 }
 
@@ -136,7 +138,7 @@ func testMarginTopup(t *testing.T) {
 		market:  "ETH/DEC19",
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.orderbook.EXPECT().InAuction().AnyTimes().Return(false)
+	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -146,9 +148,9 @@ func testMarginTopup(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(20), trans.Amount.Amount)
+	assert.Equal(t, 20, int(trans.Amount.Amount))
 	// min = 15 so we go back to maintenance level
-	assert.Equal(t, int64(15), trans.MinAmount)
+	assert.Equal(t, 15, int(trans.MinAmount))
 	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, trans.Type)
 }
 
@@ -166,12 +168,12 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		general: 10,
 		market:  "ETH/DEC19",
 	}
-	eng.orderbook.EXPECT().InAuction().AnyTimes().Return(false)
+	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
 		})
-	riskevt, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, uint64(markPrice))
+	riskevt, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
 	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
@@ -192,7 +194,7 @@ func testMarginNoop(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
-	eng.orderbook.EXPECT().InAuction().AnyTimes().Return(false)
+	eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -218,7 +220,8 @@ func testMarginOverflow(t *testing.T) {
 		general: 100000, // plenty of balance for the transfer anyway
 		market:  "ETH/DEC19",
 	}
-	eng.orderbook.EXPECT().InAuction().AnyTimes().Return(false)
+	eng.as.EXPECT().InAuction().Times(1).Return(false)
+	// eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
@@ -229,7 +232,42 @@ func testMarginOverflow(t *testing.T) {
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(470), trans.Amount.Amount)
+	assert.Equal(t, 470, int(trans.Amount.Amount))
+	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
+	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, trans.Type)
+}
+
+func testMarginOverflowAuctionEnd(t *testing.T) {
+	eng := getTestEngine(t, nil)
+	defer eng.ctrl.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
+	evt := testMargin{
+		party:   "trader1",
+		size:    1,
+		price:   1000,
+		asset:   "ETH",
+		margin:  500,    // required margin will be > 35 (release), so ensure we don't have enough
+		general: 100000, // plenty of balance for the transfer anyway
+		market:  "ETH/DEC19",
+	}
+	// we're still in auction...
+	eng.as.EXPECT().InAuction().Times(1).Return(true)
+	// but the auction is ending
+	eng.as.EXPECT().AuctionEnd().Times(1).Return(true)
+	// eng.as.EXPECT().InAuction().AnyTimes().Return(false)
+	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
+		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
+			return markPrice, nil
+		})
+	evts := []events.Margin{evt}
+	resp := eng.UpdateMarginsOnSettlement(ctx, evts, markPrice)
+	assert.Equal(t, 1, len(resp))
+
+	// ensure we get the correct transfer request back, correct amount etc...
+	trans := resp[0].Transfer()
+	assert.Equal(t, 470, int(trans.Amount.Amount))
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, trans.Type)
 }
@@ -290,12 +328,12 @@ func testMarginWithOrderInBook(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	as := mocks.NewMockAuctionState(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice), false)
+	book := matching.NewOrderBook(log, conf.Matching, marketID, false)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -315,7 +353,8 @@ func testMarginWithOrderInBook(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, broker, 0, "mktid")
+	as.EXPECT().InAuction().AnyTimes().Return(false)
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, as, broker, 0, "mktid")
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -368,8 +407,6 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		},
 	}
 
-	var markPrice int64 = 94
-
 	// list of order in the book before the test happen
 	ordersInBook := []struct {
 		volume int64
@@ -395,12 +432,13 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	as := mocks.NewMockAuctionState(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
+	as.EXPECT().InAuction().AnyTimes().Return(false)
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice), false)
+	book := matching.NewOrderBook(log, conf.Matching, marketID, false)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -420,7 +458,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, broker, 0, "mktid")
+	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, as, broker, 0, "mktid")
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
@@ -458,6 +496,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	conf := risk.NewDefaultConfig()
 	ob := mocks.NewMockOrderbook(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
+	as := mocks.NewMockAuctionState(ctrl)
 
 	engine := risk.NewEngine(
 		logging.NewTestLogger(),
@@ -466,6 +505,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 		model,
 		initialRisk,
 		ob,
+		as,
 		broker,
 		0,
 		"mktid",
@@ -476,6 +516,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 		model:     model,
 		orderbook: ob,
 		broker:    broker,
+		as:        as,
 	}
 }
 

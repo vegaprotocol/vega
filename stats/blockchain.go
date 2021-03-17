@@ -55,7 +55,7 @@ func (b *Blockchain) IncCurrentOrdersInBatch() {
 }
 
 func (b *Blockchain) AddCurrentTradesInBatch(i uint64) {
-	b.currentTradesInBatch += uint64(i)
+	b.currentTradesInBatch += i
 }
 
 func (b Blockchain) CurrentOrdersInBatch() uint64 {

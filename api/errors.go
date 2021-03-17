@@ -62,8 +62,6 @@ var (
 	ErrOrderServiceGetByParty       = errors.New("failed to get orders for party")
 	ErrOrderServiceGetByReference   = errors.New("failed to get orders for reference")
 	ErrMissingOrderIDParameter      = errors.New("missing orderID parameter")
-	ErrMissingReferenceIDParameter  = errors.New("missing referenceID parameter")
-	ErrOrderAndReferenceMismatch    = errors.New("referenceID and orderID do not match up")
 	ErrOrderNotFound                = errors.New("order not found")
 	// TradeService...
 	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")
@@ -105,6 +103,8 @@ var (
 	ErrMissingProposalReference = errors.New("failed to find proposal with the reference")
 	// ErrMissingWithdrawalID is returned when the ID is missing from the request
 	ErrMissingWithdrawalID = errors.New("missing withdrawal ID")
+	// ErrMissingOracleSpecID is returned when the ID is missing from the request
+	ErrMissingOracleSpecID = errors.New("missing oracle spec ID")
 	// ErrMissingDepositID is returned when the ID is missing from the request
 	ErrMissingDepositID = errors.New("missing deposit ID")
 )

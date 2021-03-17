@@ -191,18 +191,8 @@ steps:
         from_secret: DEVNET_DEPLOY_HOSTS_NONVALIDATORS
       DEVNET_DEPLOY_SSH_KNOWN_HOSTS:
         from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
-      DEVNET_FAUCET_SERVER:
-        from_secret: DEVNET_FAUCET_SERVER
-      DEVNET_VEGA_GRPCNODE:
-        from_secret: DEVNET_VEGA_GRPCNODE
-      DEVNET_WALLET_PASSPHRASE:
-        from_secret: DEVNET_WALLET_PASSPHRASE
-      DEVNET_WALLET_SERVER:
-        from_secret: DEVNET_WALLET_SERVER
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
-      VEGANET_USERS:
-        from_secret: VEGANET_USERS
     commands:
       # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
       - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
@@ -219,13 +209,7 @@ steps:
             exit 1 ;
           fi ;
           cp -a cmd/vega/vega-linux-amd64 cmd/vega/vega &&
-          /usr/local/bin/deploy-trading-core.sh devnet vega &&
-          /usr/local/bin/init-wallets-tokenbalances.py
-            --faucetserver "$$DEVNET_FAUCET_SERVER"
-            --wallets "$$(echo "$$VEGANET_USERS" | tr " " ",")"
-            --walletserver "$$DEVNET_WALLET_SERVER"
-            --passphrase "$$DEVNET_WALLET_PASSPHRASE"
-            --veganode "$$DEVNET_VEGA_GRPCNODE"
+          /usr/local/bin/deploy-trading-core.sh devnet vega
        ) 9>/mutex/devnet_deploy
     depends_on:
       - build-branch
@@ -308,7 +292,6 @@ steps:
         from_secret: GITHUB_API_TOKEN
       files:
         - cmd/vega/vega-*
-        - cmd/vegastream/vegastream-*
     when:
       event: tag
     depends_on:

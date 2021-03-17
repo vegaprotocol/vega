@@ -4,7 +4,58 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
+	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
+
+func convertOracleSpecStatusFromProto(s oraclesv1.OracleSpec_Status) (OracleSpecStatus, error) {
+	switch s {
+	case oraclesv1.OracleSpec_STATUS_ACTIVE:
+		return OracleSpecStatusStatusActive, nil
+	case oraclesv1.OracleSpec_STATUS_DEACTIVATED:
+		return OracleSpecStatusStatusUnused, nil
+	default:
+		err := fmt.Errorf("failed to convert OracleSpecStatus from Proto to GraphQL: %v", s)
+		return OracleSpecStatusStatusUnused, err
+	}
+}
+
+func convertPropertyKeyTypeFromProto(t oraclesv1.PropertyKey_Type) (PropertyKeyType, error) {
+	switch t {
+	case oraclesv1.PropertyKey_TYPE_EMPTY:
+		return PropertyKeyTypeTypeEmpty, nil
+	case oraclesv1.PropertyKey_TYPE_INTEGER:
+		return PropertyKeyTypeTypeInteger, nil
+	case oraclesv1.PropertyKey_TYPE_DECIMAL:
+		return PropertyKeyTypeTypeDecimal, nil
+	case oraclesv1.PropertyKey_TYPE_BOOLEAN:
+		return PropertyKeyTypeTypeBoolean, nil
+	case oraclesv1.PropertyKey_TYPE_TIMESTAMP:
+		return PropertyKeyTypeTypeTimestamp, nil
+	case oraclesv1.PropertyKey_TYPE_STRING:
+		return PropertyKeyTypeTypeString, nil
+	default:
+		err := fmt.Errorf("failed to convert PropertyKeyType from Proto to GraphQL: %v", t)
+		return PropertyKeyTypeTypeEmpty, err
+	}
+}
+
+func convertConditionOperatorFromProto(o oraclesv1.Condition_Operator) (ConditionOperator, error) {
+	switch o {
+	case oraclesv1.Condition_OPERATOR_EQUALS:
+		return ConditionOperatorOperatorEquals, nil
+	case oraclesv1.Condition_OPERATOR_GREATER_THAN:
+		return ConditionOperatorOperatorGreaterThan, nil
+	case oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL:
+		return ConditionOperatorOperatorGreaterThanOrEqual, nil
+	case oraclesv1.Condition_OPERATOR_LESS_THAN:
+		return ConditionOperatorOperatorLessThan, nil
+	case oraclesv1.Condition_OPERATOR_LESS_THAN_OR_EQUAL:
+		return ConditionOperatorOperatorLessThanOrEqual, nil
+	default:
+		err := fmt.Errorf("failed to convert ConditionOperator from Proto to GraphQL: %v", o)
+		return ConditionOperatorOperatorEquals, err
+	}
+}
 
 func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status) (LiquidityProvisionStatus, error) {
 	switch x {
@@ -396,9 +447,11 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonMarketMissingLiquidityCommitment, nil
 	case types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET:
 		return ProposalRejectionReasonCouldNotInstantiateMarket, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT:
+		return ProposalRejectionReasonInvalidFutureProduct, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
-		return ProposalRejectionReason(""), err
+		return "", err
 	}
 }
 

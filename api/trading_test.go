@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/notary"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
@@ -108,7 +109,7 @@ func getTestGRPCServer(
 	path := fmt.Sprintf("vegatest-%d-", port)
 	tempDir, tidyTempDir, err := storage.TempDir(path)
 	if err != nil {
-		err = fmt.Errorf("Failed to create tmp dir: %s", err.Error())
+		err = fmt.Errorf("failed to create tmp dir: %s", err.Error())
 		return
 	}
 
@@ -262,6 +263,7 @@ func getTestGRPCServer(
 	withdrawal := plugins.NewWithdrawal(ctx)
 	deposit := plugins.NewDeposit(ctx)
 	netparams := netparams.NewService(ctx)
+	oracleService := oracles.NewService(ctx)
 
 	g = api.NewGRPCServer(
 		logger,
@@ -284,6 +286,7 @@ func getTestGRPCServer(
 		assetService,
 		feeService,
 		eventService,
+		oracleService,
 		withdrawal,
 		deposit,
 		marketDepth,
@@ -291,7 +294,7 @@ func getTestGRPCServer(
 		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if g == nil {
-		err = fmt.Errorf("Failed to create gRPC server")
+		err = fmt.Errorf("failed to create gRPC server")
 		return
 	}
 

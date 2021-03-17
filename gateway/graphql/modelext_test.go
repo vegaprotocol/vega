@@ -5,34 +5,14 @@ import (
 
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
 	"code.vegaprotocol.io/vega/proto"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestModelConverters(t *testing.T) {
 
-	t.Run("DiscreteTrading.IntoProto", func(t *testing.T) {
-
-		dt := &gql.DiscreteTrading{
-			Duration: 123,
-			TickSize: "0.1",
-		}
-		pdt, err := dt.IntoProto()
-		assert.NotNil(t, pdt)
-		assert.Nil(t, err)
-		assert.Equal(t, int64(dt.Duration), pdt.Discrete.DurationNs)
-	})
-
-	t.Run("InstrumentMetadata.IntoProto", func(t *testing.T) {
-		im := gql.InstrumentMetadata{Tags: []string{"tag:1", "tag:2"}}
-		pim, err := im.IntoProto()
-		assert.Nil(t, err)
-		assert.NotNil(t, pim)
-		assert.NotNil(t, pim.Tags)
-		assert.Len(t, pim.Tags, 2)
-	})
-
 	t.Run("TradingModeFromProto unimplemented", func(t *testing.T) {
-		ptm := int(0)
+		ptm := 0
 		tm, err := gql.TradingModeConfigFromProto(ptm)
 		assert.Nil(t, tm)
 		assert.NotNil(t, err)
@@ -72,97 +52,6 @@ func TestModelConverters(t *testing.T) {
 		assert.True(t, ok)
 	})
 
-	t.Run("InstrumentMetadataFromProto nil", func(t *testing.T) {
-		im, err := gql.InstrumentMetadataFromProto(nil)
-		assert.Nil(t, im)
-		assert.NotNil(t, err)
-		assert.Equal(t, gql.ErrNilInstrumentMetadata, err)
-	})
-
-	t.Run("InstrumentMetadataFromProto", func(t *testing.T) {
-		pim := &proto.InstrumentMetadata{
-			Tags: []string{"tag:1", "tag:2"},
-		}
-		im, err := gql.InstrumentMetadataFromProto(pim)
-		assert.NotNil(t, im)
-		assert.Nil(t, err)
-		assert.Len(t, im.Tags, 2)
-		assert.Equal(t, pim.Tags[0], (im.Tags[0]))
-		assert.Equal(t, pim.Tags[1], (im.Tags[1]))
-	})
-
-	t.Run("EthereumEventFromproto nil", func(t *testing.T) {
-		ee, err := gql.EthereumEventFromProto(nil)
-		assert.Nil(t, ee)
-		assert.NotNil(t, err)
-		assert.Equal(t, err, gql.ErrNilEthereumEvent)
-	})
-
-	t.Run("EthereumEventFromproto", func(t *testing.T) {
-		pee := &proto.EthereumEvent{}
-		ee, err := gql.EthereumEventFromProto(pee)
-		assert.NotNil(t, ee)
-		assert.Nil(t, err)
-	})
-
-	t.Run("OracleFromProto nil", func(t *testing.T) {
-		o, err := gql.OracleFromProto(nil)
-		assert.Nil(t, o)
-		assert.NotNil(t, err)
-		assert.Equal(t, err, gql.ErrNilOracle)
-	})
-
-	t.Run("OracleFromProto unimplemented", func(t *testing.T) {
-		o, err := gql.OracleFromProto(struct{}{})
-		assert.Nil(t, o)
-		assert.NotNil(t, err)
-		assert.Equal(t, err, gql.ErrUnimplementedOracle)
-	})
-
-	t.Run("OracleFromProto EthereumEvent", func(t *testing.T) {
-		po := &proto.Future_EthereumEvent{
-			EthereumEvent: &proto.EthereumEvent{},
-		}
-		o, err := gql.OracleFromProto(po)
-		assert.NotNil(t, o)
-		assert.Nil(t, err)
-		_, ok := o.(*gql.EthereumEvent)
-		assert.True(t, ok)
-	})
-
-	t.Run("RiskModelFromProto nil", func(t *testing.T) {
-		rm, err := gql.RiskModelFromProto(nil)
-		assert.Nil(t, rm)
-		assert.NotNil(t, err)
-		assert.Equal(t, err, gql.ErrNilRiskModel)
-	})
-
-	t.Run("RiskModelFromProto unimplemented", func(t *testing.T) {
-		rm, err := gql.RiskModelFromProto(struct{}{})
-		assert.Nil(t, rm)
-		assert.NotNil(t, err)
-		assert.Equal(t, err, gql.ErrUnimplementedRiskModel)
-	})
-
-	t.Run("RiskModelFromProto", func(t *testing.T) {
-		prm := &proto.TradableInstrument_LogNormalRiskModel{
-			LogNormalRiskModel: &proto.LogNormalRiskModel{
-				RiskAversionParameter: 0.01,
-				Tau:                   1.0 / 365.25 / 24,
-				Params: &proto.LogNormalModelParams{
-					Mu:    0,
-					R:     0.016,
-					Sigma: 0.09,
-				},
-			},
-		}
-		rm, err := gql.RiskModelFromProto(prm)
-		assert.NotNil(t, rm)
-		assert.Nil(t, err)
-		_, ok := rm.(*gql.LogNormalRiskModel)
-		assert.True(t, ok)
-	})
-
 	t.Run("NewMarketInput.IntoProto", func(t *testing.T) {
 
 		mkt := gql.NewMarketInput{
@@ -173,6 +62,28 @@ func TestModelConverters(t *testing.T) {
 					Maturity:        "asdasdas",
 					SettlementAsset: "Ethereum/Ether",
 					QuoteName:       "Xyz",
+					OracleSpec: &gql.OracleSpecConfigurationInput{
+						PubKeys: []string{
+							"0xDEADBEEF",
+						},
+						Filters: []*gql.FilterInput{
+							{
+								Key: &gql.PropertyKeyInput{
+									Name: "prices.BTC.value",
+									Type: gql.PropertyKeyTypeTypeInteger,
+								},
+								Conditions: []*gql.ConditionInput{
+									{
+										Operator: gql.ConditionOperatorOperatorEquals,
+										Value:    "42",
+									},
+								},
+							},
+						},
+					},
+					OracleSpecBinding: &gql.OracleSpecToFutureBindingInput{
+						SettlementPriceProperty: "prices.BTC.value",
+					},
 				},
 			},
 			RiskParameters: &gql.RiskParametersInput{
@@ -214,6 +125,28 @@ func TestModelConverters(t *testing.T) {
 					Maturity:        "asdasdas",
 					SettlementAsset: "Ethereum/Ether",
 					QuoteName:       "Xyz",
+					OracleSpec: &gql.OracleSpecConfigurationInput{
+						PubKeys: []string{
+							"0xDEADBEEF",
+						},
+						Filters: []*gql.FilterInput{
+							{
+								Key: &gql.PropertyKeyInput{
+									Name: "prices.BTC.value",
+									Type: gql.PropertyKeyTypeTypeInteger,
+								},
+								Conditions: []*gql.ConditionInput{
+									{
+										Operator: gql.ConditionOperatorOperatorEquals,
+										Value:    "42",
+									},
+								},
+							},
+						},
+					},
+					OracleSpecBinding: &gql.OracleSpecToFutureBindingInput{
+						SettlementPriceProperty: "prices.BTC.value",
+					},
 				},
 			},
 			RiskParameters: &gql.RiskParametersInput{

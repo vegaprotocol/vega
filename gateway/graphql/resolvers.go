@@ -3,28 +3,24 @@ package gql
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"time"
 
+	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/vegatime"
-
-	"github.com/pkg/errors"
 )
 
 var (
-	// ErrNilPendingOrder a pending order was nil when expected not to be
-	ErrNilPendingOrder = errors.New("nil pending order")
-	// ErrUnknownAccountType a account type specified does not exist
-	ErrUnknownAccountType = errors.New("unknown account type")
 	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
 	ErrMissingIDOrReference = errors.New("missing id or reference")
 	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
@@ -36,94 +32,13 @@ var (
 // TradingServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/vega/gateway/graphql TradingServiceClient
 type TradingServiceClient interface {
-	// prepare calls (unary-like calls)
-	PrepareSubmitOrder(ctx context.Context, in *protoapi.PrepareSubmitOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareSubmitOrderResponse, error)
-	PrepareAmendOrder(ctx context.Context, in *protoapi.PrepareAmendOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareAmendOrderResponse, error)
-	PrepareCancelOrder(ctx context.Context, in *protoapi.PrepareCancelOrderRequest, opts ...grpc.CallOption) (*protoapi.PrepareCancelOrderResponse, error)
-	PrepareProposal(ctx context.Context, in *protoapi.PrepareProposalRequest, opts ...grpc.CallOption) (*protoapi.PrepareProposalResponse, error)
-
-	PrepareVote(ctx context.Context, in *protoapi.PrepareVoteRequest, opts ...grpc.CallOption) (*protoapi.PrepareVoteResponse, error)
-	PrepareLiquidityProvision(ctx context.Context, in *protoapi.PrepareLiquidityProvisionRequest, opts ...grpc.CallOption) (*protoapi.PrepareLiquidityProvisionResponse, error)
-	PrepareWithdraw(ctx context.Context, in *protoapi.PrepareWithdrawRequest, opts ...grpc.CallOption) (*protoapi.PrepareWithdrawResponse, error)
-	// unary calls - writes
-	SubmitTransaction(ctx context.Context, in *protoapi.SubmitTransactionRequest, opts ...grpc.CallOption) (*protoapi.SubmitTransactionResponse, error)
+	protoapi.TradingServiceClient
 }
 
 // TradingDataServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_mock.go -package mocks code.vegaprotocol.io/vega/gateway/graphql TradingDataServiceClient
 type TradingDataServiceClient interface {
-	// orders
-	OrdersByMarket(ctx context.Context, in *protoapi.OrdersByMarketRequest, opts ...grpc.CallOption) (*protoapi.OrdersByMarketResponse, error)
-	OrderByReference(ctx context.Context, in *protoapi.OrderByReferenceRequest, opts ...grpc.CallOption) (*protoapi.OrderByReferenceResponse, error)
-	OrdersByParty(ctx context.Context, in *protoapi.OrdersByPartyRequest, opts ...grpc.CallOption) (*protoapi.OrdersByPartyResponse, error)
-	OrderByMarketAndID(ctx context.Context, in *protoapi.OrderByMarketAndIDRequest, opts ...grpc.CallOption) (*protoapi.OrderByMarketAndIDResponse, error)
-	OrderByID(ctx context.Context, in *protoapi.OrderByIDRequest, opts ...grpc.CallOption) (*protoapi.OrderByIDResponse, error)
-	OrderVersionsByID(ctx context.Context, in *protoapi.OrderVersionsByIDRequest, opts ...grpc.CallOption) (*protoapi.OrderVersionsByIDResponse, error)
-	// markets
-	MarketByID(ctx context.Context, in *protoapi.MarketByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketByIDResponse, error)
-	Markets(ctx context.Context, in *protoapi.MarketsRequest, opts ...grpc.CallOption) (*protoapi.MarketsResponse, error)
-	MarketDepth(ctx context.Context, in *protoapi.MarketDepthRequest, opts ...grpc.CallOption) (*protoapi.MarketDepthResponse, error)
-	LastTrade(ctx context.Context, in *protoapi.LastTradeRequest, opts ...grpc.CallOption) (*protoapi.LastTradeResponse, error)
-	MarketDataByID(ctx context.Context, in *protoapi.MarketDataByIDRequest, opts ...grpc.CallOption) (*protoapi.MarketDataByIDResponse, error)
-	// parties
-	PartyByID(ctx context.Context, in *protoapi.PartyByIDRequest, opts ...grpc.CallOption) (*protoapi.PartyByIDResponse, error)
-	Parties(ctx context.Context, in *protoapi.PartiesRequest, opts ...grpc.CallOption) (*protoapi.PartiesResponse, error)
-	// trades
-	TradesByMarket(ctx context.Context, in *protoapi.TradesByMarketRequest, opts ...grpc.CallOption) (*protoapi.TradesByMarketResponse, error)
-	TradesByParty(ctx context.Context, in *protoapi.TradesByPartyRequest, opts ...grpc.CallOption) (*protoapi.TradesByPartyResponse, error)
-	TradesByOrder(ctx context.Context, in *protoapi.TradesByOrderRequest, opts ...grpc.CallOption) (*protoapi.TradesByOrderResponse, error)
-	// positions
-	PositionsByParty(ctx context.Context, in *protoapi.PositionsByPartyRequest, opts ...grpc.CallOption) (*protoapi.PositionsByPartyResponse, error)
-	// candles
-	Candles(ctx context.Context, in *protoapi.CandlesRequest, opts ...grpc.CallOption) (*protoapi.CandlesResponse, error)
-	// metrics
-	Statistics(ctx context.Context, in *protoapi.StatisticsRequest, opts ...grpc.CallOption) (*protoapi.StatisticsResponse, error)
-	GetVegaTime(ctx context.Context, in *protoapi.GetVegaTimeRequest, opts ...grpc.CallOption) (*protoapi.GetVegaTimeResponse, error)
-	// streams
-	AccountsSubscribe(ctx context.Context, in *protoapi.AccountsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_AccountsSubscribeClient, error)
-	OrdersSubscribe(ctx context.Context, in *protoapi.OrdersSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_OrdersSubscribeClient, error)
-	TradesSubscribe(ctx context.Context, in *protoapi.TradesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_TradesSubscribeClient, error)
-	CandlesSubscribe(ctx context.Context, in *protoapi.CandlesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_CandlesSubscribeClient, error)
-	MarketDepthSubscribe(ctx context.Context, in *protoapi.MarketDepthSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_MarketDepthSubscribeClient, error)
-	MarketDepthUpdatesSubscribe(ctx context.Context, in *protoapi.MarketDepthUpdatesSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_MarketDepthUpdatesSubscribeClient, error)
-	PositionsSubscribe(ctx context.Context, in *protoapi.PositionsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_PositionsSubscribeClient, error)
-	MarketsDataSubscribe(ctx context.Context, in *protoapi.MarketsDataSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_MarketsDataSubscribeClient, error)
-	MarginLevelsSubscribe(ctx context.Context, in *protoapi.MarginLevelsSubscribeRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_MarginLevelsSubscribeClient, error)
-	// accounts
-	PartyAccounts(ctx context.Context, req *protoapi.PartyAccountsRequest, opts ...grpc.CallOption) (*protoapi.PartyAccountsResponse, error)
-	MarketAccounts(ctx context.Context, req *protoapi.MarketAccountsRequest, opts ...grpc.CallOption) (*protoapi.MarketAccountsResponse, error)
-	// margins
-	MarginLevels(ctx context.Context, in *protoapi.MarginLevelsRequest, opts ...grpc.CallOption) (*protoapi.MarginLevelsResponse, error)
-	// governance
-	GetProposals(ctx context.Context, in *protoapi.GetProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetProposalsResponse, error)
-	GetProposalsByParty(ctx context.Context, in *protoapi.GetProposalsByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetProposalsByPartyResponse, error)
-	GetVotesByParty(ctx context.Context, in *protoapi.GetVotesByPartyRequest, opts ...grpc.CallOption) (*protoapi.GetVotesByPartyResponse, error)
-	GetNewMarketProposals(ctx context.Context, in *protoapi.GetNewMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetNewMarketProposalsResponse, error)
-	GetUpdateMarketProposals(ctx context.Context, in *protoapi.GetUpdateMarketProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetUpdateMarketProposalsResponse, error)
-	GetNetworkParametersProposals(ctx context.Context, in *protoapi.GetNetworkParametersProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetNetworkParametersProposalsResponse, error)
-	GetNewAssetProposals(ctx context.Context, in *protoapi.GetNewAssetProposalsRequest, opts ...grpc.CallOption) (*protoapi.GetNewAssetProposalsResponse, error)
-	GetProposalByID(ctx context.Context, in *protoapi.GetProposalByIDRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByIDResponse, error)
-	GetProposalByReference(ctx context.Context, in *protoapi.GetProposalByReferenceRequest, opts ...grpc.CallOption) (*protoapi.GetProposalByReferenceResponse, error)
-
-	ObserveGovernance(ctx context.Context, _ *protoapi.ObserveGovernanceRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveGovernanceClient, error)
-	ObservePartyProposals(ctx context.Context, in *protoapi.ObservePartyProposalsRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObservePartyProposalsClient, error)
-	ObservePartyVotes(ctx context.Context, in *protoapi.ObservePartyVotesRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObservePartyVotesClient, error)
-	ObserveProposalVotes(ctx context.Context, in *protoapi.ObserveProposalVotesRequest, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveProposalVotesClient, error)
-	GetNodeSignaturesAggregate(ctx context.Context, in *protoapi.GetNodeSignaturesAggregateRequest, opts ...grpc.CallOption) (*protoapi.GetNodeSignaturesAggregateResponse, error)
-	AssetByID(ctx context.Context, in *protoapi.AssetByIDRequest, opts ...grpc.CallOption) (*protoapi.AssetByIDResponse, error)
-	Assets(ctx context.Context, in *protoapi.AssetsRequest, opts ...grpc.CallOption) (*protoapi.AssetsResponse, error)
-	FeeInfrastructureAccounts(ctx context.Context, in *protoapi.FeeInfrastructureAccountsRequest, opts ...grpc.CallOption) (*protoapi.FeeInfrastructureAccountsResponse, error)
-	EstimateFee(ctx context.Context, in *protoapi.EstimateFeeRequest, opts ...grpc.CallOption) (*protoapi.EstimateFeeResponse, error)
-	EstimateMargin(ctx context.Context, in *protoapi.EstimateMarginRequest, opts ...grpc.CallOption) (*protoapi.EstimateMarginResponse, error)
-	Withdrawal(ctx context.Context, in *protoapi.WithdrawalRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalResponse, error)
-	Withdrawals(ctx context.Context, in *protoapi.WithdrawalsRequest, opts ...grpc.CallOption) (*protoapi.WithdrawalsResponse, error)
-	ERC20WithdrawalApproval(ctx context.Context, in *protoapi.ERC20WithdrawalApprovalRequest, opts ...grpc.CallOption) (*protoapi.ERC20WithdrawalApprovalResponse, error)
-	Deposit(ctx context.Context, in *protoapi.DepositRequest, opts ...grpc.CallOption) (*protoapi.DepositResponse, error)
-	Deposits(ctx context.Context, in *protoapi.DepositsRequest, opts ...grpc.CallOption) (*protoapi.DepositsResponse, error)
-	NetworkParameters(ctx context.Context, in *protoapi.NetworkParametersRequest, opts ...grpc.CallOption) (*protoapi.NetworkParametersResponse, error)
-	LiquidityProvisions(ctx context.Context, in *protoapi.LiquidityProvisionsRequest, opts ...grpc.CallOption) (*protoapi.LiquidityProvisionsResponse, error)
-
-	ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (protoapi.TradingDataService_ObserveEventBusClient, error)
+	protoapi.TradingDataServiceClient
 }
 
 // VegaResolverRoot is the root resolver for all graphql types
@@ -314,6 +229,30 @@ func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
 	return (*myPeggedOrderResolver)(r)
 }
 
+func (r *VegaResolverRoot) OracleSpec() OracleSpecResolver {
+	return (*oracleSpecResolver)(r)
+}
+
+func (r *VegaResolverRoot) PropertyKey() PropertyKeyResolver {
+	return (*propertyKeyResolver)(r)
+}
+
+func (r *VegaResolverRoot) Condition() ConditionResolver {
+	return (*conditionResolver)(r)
+}
+
+func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
+	return (*auctionEventResolver)(r)
+
+}
+func (r *VegaResolverRoot) Vote() VoteResolver {
+	return (*voteResolver)(r)
+}
+
+func (r *VegaResolverRoot) NewMarketCommitment() NewMarketCommitmentResolver {
+	return (*newMarketCommitmentResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
@@ -326,11 +265,14 @@ func (r *myLiquidityOrderResolver) Reference(ctx context.Context, obj *types.Liq
 	return convertPeggedReferenceFromProto(obj.Reference)
 }
 
-// LiquidityOrderRefernce resolver
+// LiquidityOrderReference resolver
 
 type myLiquidityOrderReferenceResolver VegaResolverRoot
 
 func (r *myLiquidityOrderReferenceResolver) Order(ctx context.Context, obj *types.LiquidityOrderReference) (*types.Order, error) {
+	if len(obj.OrderId) <= 0 {
+		return nil, nil
+	}
 	return r.r.getOrderByID(ctx, obj.OrderId, nil)
 }
 
@@ -401,6 +343,39 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) OracleSpecs(ctx context.Context) ([]*oraclespb.OracleSpec, error) {
+	res, err := r.tradingDataClient.OracleSpecs(
+		ctx, &protoapi.OracleSpecsRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.OracleSpecs, nil
+}
+
+func (r *myQueryResolver) OracleSpec(ctx context.Context, id string) (*oraclespb.OracleSpec, error) {
+	res, err := r.tradingDataClient.OracleSpec(
+		ctx, &protoapi.OracleSpecRequest{Id: id},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.OracleSpec, nil
+}
+
+func (r *myQueryResolver) OracleDataBySpec(ctx context.Context, id string) ([]*oraclespb.OracleData, error) {
+	res, err := r.tradingDataClient.OracleDataBySpec(
+		ctx, &protoapi.OracleDataBySpecRequest{Id: id},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.OracleData, nil
+}
 
 func (r *myQueryResolver) NetworkParameters(ctx context.Context) ([]*types.NetworkParameter, error) {
 	res, err := r.tradingDataClient.NetworkParameters(
@@ -789,7 +764,7 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 func (r *myPartyResolver) LiquidityProvisions(
 	ctx context.Context,
 	party *types.Party,
-	market *string,
+	market, ref *string,
 ) ([]*types.LiquidityProvision, error) {
 	var mid string
 	if market != nil {
@@ -806,7 +781,18 @@ func (r *myPartyResolver) LiquidityProvisions(
 		return nil, customErrorFromStatus(err)
 	}
 
-	return res.LiquidityProvisions, nil
+	var out []*types.LiquidityProvision
+	if ref != nil {
+		for _, v := range res.LiquidityProvisions {
+			if v.Reference == *ref {
+				out = append(out, v)
+			}
+		}
+	} else {
+		out = res.LiquidityProvisions
+	}
+
+	return out, nil
 }
 
 func (r *myPartyResolver) Margins(ctx context.Context,
@@ -993,12 +979,7 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 	}
 	result := make([]*ProposalVote, len(resp.Votes))
 	for i, vote := range resp.Votes {
-		//TODO: voter might be shortcut to party once all testing is done, vote.PartyId should be party.ID
-		voter, err := getParty(ctx, r.log, r.tradingDataClient, vote.PartyId)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = ProposalVoteFromProto(vote, voter)
+		result[i] = ProposalVoteFromProto(vote)
 	}
 	return result, nil
 }
@@ -1800,7 +1781,7 @@ func (r *myMutationResolver) PrepareProposal(
 }
 
 func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, partyID, proposalID string) (*PreparedVote, error) {
-	party, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
+	_, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
 	if err != nil {
 		return nil, err
 	}
@@ -1819,17 +1800,10 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-	gqlValue, err := convertVoteValueFromProto(resp.Vote.Value)
-	if err != nil {
-		return nil, err
-	}
 	return &PreparedVote{
 		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 		Vote: &ProposalVote{
-			Vote: &Vote{
-				Party: party,
-				Value: gqlValue,
-			},
+			Vote:       req.Vote,
 			ProposalID: resp.Vote.ProposalId,
 		},
 	}, nil
@@ -1915,7 +1889,7 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput) (*PreparedLiquidityProvision, error) {
+func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, maybeRef *string) (*PreparedLiquidityProvision, error) {
 	if commitmentAmount < 0 {
 		return nil, errors.New("commitmentAmount can't be negative")
 	}
@@ -1930,6 +1904,11 @@ func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, mark
 		return nil, err
 	}
 
+	var ref string
+	if maybeRef != nil {
+		ref = *maybeRef
+	}
+
 	req := &protoapi.PrepareLiquidityProvisionRequest{
 		Submission: &types.LiquidityProvisionSubmission{
 			MarketId:         marketID,
@@ -1937,6 +1916,7 @@ func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, mark
 			Fee:              fee,
 			Buys:             pBuys,
 			Sells:            pSells,
+			Reference:        ref,
 		},
 	}
 	resp, err := r.tradingClient.PrepareLiquidityProvision(ctx, req)
@@ -2385,12 +2365,7 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			party, err := getParty(ctx, r.log, r.tradingDataClient, data.Vote.PartyId)
-			if err != nil {
-				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
-				break
-			}
-			output <- ProposalVoteFromProto(data.Vote, party)
+			output <- ProposalVoteFromProto(data.Vote)
 		}
 	}()
 	return output, nil
@@ -2414,12 +2389,7 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			party, err := getParty(ctx, r.log, r.tradingDataClient, data.Vote.PartyId)
-			if err != nil {
-				r.log.Error("Votes subscriber. getParty error", logging.Error(err))
-				break
-			}
-			output <- ProposalVoteFromProto(data.Vote, party)
+			output <- ProposalVoteFromProto(data.Vote)
 		}
 	}()
 	return output, nil

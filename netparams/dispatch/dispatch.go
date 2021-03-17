@@ -7,10 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-type Collateral interface {
-	UpdateGovernanceAsset(id string) error
-}
-
 type Assets interface {
 	IsEnabled(string) bool
 }
@@ -18,7 +14,6 @@ type Assets interface {
 func GovernanceAssetUpdate(
 	log *logging.Logger,
 	assets Assets,
-	collateral Collateral,
 ) func(context.Context, string) error {
 	return func(ctx context.Context, value string) error {
 		if !assets.IsEnabled(value) {
@@ -27,12 +22,6 @@ func GovernanceAssetUpdate(
 			return fmt.Errorf("invalid asset %v", value)
 		}
 
-		if err := collateral.UpdateGovernanceAsset(value); err != nil {
-			log.Debug("unable to update governance asset in collateral",
-				logging.String("asset-id", value),
-				logging.Error(err))
-			return fmt.Errorf("unable to update governance asset in collateral %w", err)
-		}
 		return nil
 	}
 }

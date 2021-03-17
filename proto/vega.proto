@@ -867,7 +867,7 @@ message Account {
 // Asset value information used within a transfer
 message FinancialAmount {
   // A signed integer amount of asset
-  int64 amount = 1;
+  uint64 amount = 1;
   // Asset identifier
   string asset = 2;
 }
@@ -927,7 +927,7 @@ message Transfer {
   // The type of transfer, gives the reason for the transfer
   TransferType type = 3;
   // A minimum amount
-  int64 min_amount = 4;
+  uint64 min_amount = 4;
 }
 
 // Represents a request to transfer from one set of accounts to another
@@ -1179,7 +1179,9 @@ message LiquidityProvisionSubmission {
   // A set of liquidity sell orders to meet the liquidity provision obligation
   repeated LiquidityOrder sells = 4;
   // A set of liquidity buy orders to meet the liquidity provision obligation
-  repeated LiquidityOrder buys  = 5;
+  repeated LiquidityOrder buys = 5;
+  // A reference to be added to every order created out of this liquidityProvisionSubmission
+  string reference = 6;
 }
 
 // A pair of a liquidity order and the id of the generated order by the core
@@ -1232,6 +1234,8 @@ message LiquidityProvision {
   string version = 10;
   // Status of this liquidity provision order
   Status status = 11;
+  // A reference shared between this liquidity provision and all it's orders
+  string reference = 12;
 }
 
 // Ethereum configuration details

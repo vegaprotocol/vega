@@ -571,7 +571,7 @@ func (j *JSON) AddRules(fns ...interface{}) error {
 
 func (j *JSON) validateValue(value []byte) error {
 	j.value.Reset()
-	d := json.NewDecoder(bytes.NewReader([]byte(value)))
+	d := json.NewDecoder(bytes.NewReader(value))
 	d.DisallowUnknownFields()
 	return d.Decode(j.value)
 }

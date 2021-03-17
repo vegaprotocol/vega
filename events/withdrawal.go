@@ -23,7 +23,7 @@ func (w *Withdrawal) Withdrawal() types.Withdrawal {
 }
 
 func (w Withdrawal) IsParty(id string) bool {
-	return (w.w.PartyId == id)
+	return w.w.PartyId == id
 }
 
 func (w Withdrawal) PartyID() string { return w.w.PartyId }

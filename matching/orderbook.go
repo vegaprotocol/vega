@@ -53,16 +53,11 @@ func (b *OrderBook) Hash() []byte {
 	return crypto.Hash(append(b.buy.Hash(), b.sell.Hash()...))
 }
 
-// NewOrderBook create an order book with a given name
-// TODO(jeremy): At the moment it takes as a parameter the initialMarkPrice from the market
-// framework. This is used in order to calculate the CloseoutPNL when there's no volume in the
-// book. It's currently set to the lastTradedPrice, so once a trade happen it naturally get
-// updated and the new markPrice will be used there.
-func NewOrderBook(log *logging.Logger, config Config, marketID string,
-	initialMarkPrice uint64, auction bool) *OrderBook {
+// NewOrderBook create an order book with a given name.
+func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
-	log.SetLevel(config.Level.Get())
+	log.SetLevel(logging.DebugLevel)
 
 	return &OrderBook{
 		log:             log,
@@ -71,7 +66,6 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string,
 		buy:             &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
 		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
 		Config:          config,
-		lastTradedPrice: initialMarkPrice,
 		ordersByID:      map[string]*types.Order{},
 		auction:         auction,
 		batchID:         0,
@@ -99,10 +93,7 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 // GetCloseoutPrice returns the exit price which would be achieved for a given
 // volume and give side of the book
 func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
-	var (
-		price uint64
-		err   error
-	)
+	var price uint64
 	if b.auction {
 		p := b.GetIndicativePrice()
 		return p, nil
@@ -118,46 +109,42 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 			lvl := levels[i]
 			if lvl.volume >= vol {
 				price += lvl.price * vol
-				return price / volume, err
+				return price / volume, nil
 			}
 			price += lvl.price * lvl.volume
 			vol -= lvl.volume
 		}
 		// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
 		// still return the price for the volume we could close out, so the caller can make a decision on what to do
+		if vol == volume {
+			return b.lastTradedPrice, ErrNotEnoughOrders
+		}
+		price = price / (volume - vol)
 		if vol != 0 {
-			err = ErrNotEnoughOrders
-			// TODO(jeremy): there's no orders in the book so return the markPrice
-			// this is a temporary fix for nicenet and this behaviour will need
-			// to be properaly specified and handled in the future.
-			if vol == volume {
-				return b.lastTradedPrice, err
-			}
+			return price, ErrNotEnoughOrders
 		}
-		return price / (volume - vol), err
-	} else {
-		levels := b.buy.getLevels()
-		for i := len(levels) - 1; i >= 0; i-- {
-			lvl := levels[i]
-			if lvl.volume >= vol {
-				price += lvl.price * vol
-				return price / volume, err
-			}
-			price += lvl.price * lvl.volume
-			vol -= lvl.volume
-		}
-		// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
-		if vol != 0 {
-			err = ErrNotEnoughOrders
-			// TODO(jeremy): there's no orders in the book so return the markPrice
-			// this is a temporary fix for nice-net and this behaviour will need
-			// to be properly specified and handled in the future.
-			if vol == volume {
-				return b.lastTradedPrice, err
-			}
-		}
-		return price / (volume - vol), err
+		return price, nil
 	}
+	// side == buy
+	levels := b.buy.getLevels()
+	for i := len(levels) - 1; i >= 0; i-- {
+		lvl := levels[i]
+		if lvl.volume >= vol {
+			price += lvl.price * vol
+			return price / volume, nil
+		}
+		price += lvl.price * lvl.volume
+		vol -= lvl.volume
+	}
+	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
+	if vol == volume {
+		return b.lastTradedPrice, ErrNotEnoughOrders
+	}
+	price = price / (volume - vol)
+	if vol != 0 {
+		return price, ErrNotEnoughOrders
+	}
+	return price, nil
 }
 
 // EnterAuction Moves the order book into an auction state
@@ -196,9 +183,24 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	}
 
 	for _, uo := range uncrossedOrders {
+		if uo.Order.Remaining == 0 {
+			uo.Order.Status = types.Order_STATUS_FILLED
+			// delete from lookup table
+			delete(b.ordersByID, uo.Order.Id)
+			delete(b.ordersPerParty[uo.Order.PartyId], uo.Order.Id)
+		}
+
 		uo.Order.UpdatedAt = ts
-		for _, po := range uo.PassiveOrdersAffected {
+		for idx, po := range uo.PassiveOrdersAffected {
 			po.UpdatedAt = ts
+			// also remove the orders from lookup tables
+			if uo.PassiveOrdersAffected[idx].Remaining == 0 {
+				uo.PassiveOrdersAffected[idx].Status = types.Order_STATUS_FILLED
+
+				// delete from lookup table
+				delete(b.ordersByID, po.Id)
+				delete(b.ordersPerParty[po.PartyId], po.Id)
+			}
 		}
 		for _, tr := range uo.Trades {
 			tr.Timestamp = ts
@@ -975,6 +977,12 @@ func (b *OrderBook) PrintState(types string) {
 	b.log.Debug("------------------------------------------------------------")
 }
 
+// GetTotalNumberOfOrders is a debug/testing function to return the total number of orders in the book
 func (b *OrderBook) GetTotalNumberOfOrders() int64 {
 	return b.buy.getOrderCount() + b.sell.getOrderCount()
+}
+
+// GetTotalVolume is a debug/testing function to return the total volume in the order book
+func (b *OrderBook) GetTotalVolume() int64 {
+	return b.buy.getTotalVolume() + b.sell.getTotalVolume()
 }

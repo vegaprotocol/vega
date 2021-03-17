@@ -22,7 +22,13 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/risk Orderbook
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
+}
+
+// AuctionState represents the current auction state of the market, previously we got this information from the matching engine, but really... that's not its job
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/risk AuctionState
+type AuctionState interface {
 	InAuction() bool
+	AuctionEnd() bool
 }
 
 // Broker the event bus broker
@@ -56,6 +62,7 @@ type Engine struct {
 	factors          *types.RiskResult
 	waiting          bool
 	ob               Orderbook
+	as               AuctionState
 	broker           Broker
 
 	currTime int64
@@ -70,6 +77,7 @@ func NewEngine(
 	model Model,
 	initialFactors *types.RiskResult,
 	ob Orderbook,
+	as AuctionState,
 	broker Broker,
 	initialTime int64,
 	mktID string,
@@ -86,6 +94,7 @@ func NewEngine(
 		model:            model,
 		waiting:          false,
 		ob:               ob,
+		as:               as,
 		broker:           broker,
 		currTime:         initialTime,
 		mktID:            mktID,
@@ -193,13 +202,16 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		if curMargin >= levels.InitialMargin {
 			continue
 		}
-		minAmount := max(int64(levels.MaintenanceMargin)-int64(curMargin), 0)
+		var minAmount uint64
+		if levels.MaintenanceMargin > curMargin {
+			minAmount = maxUint(levels.MaintenanceMargin-curMargin, 0)
+		}
 		t := &types.Transfer{
 			Owner: evt.Party(),
 			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 			Amount: &types.FinancialAmount{
 				Asset:  asset,
-				Amount: int64(levels.InitialMargin - curMargin), // we know curBalance is less than initial
+				Amount: levels.InitialMargin - curMargin, // we know curBalance is less than initial
 			},
 			MinAmount: minAmount,
 		}
@@ -222,7 +234,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	var margins *types.MarginLevels
-	if !e.ob.InAuction() {
+	if !e.as.InAuction() || e.as.AuctionEnd() {
 		margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true, false)
 	} else {
 		margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -253,7 +265,11 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	if curBalance >= margins.InitialMargin {
 		return nil, nil
 	}
-	minAmount := max(int64(margins.MaintenanceMargin)-int64(curBalance), 0)
+
+	var minAmount uint64
+	if margins.MaintenanceMargin > curBalance {
+		minAmount = maxUint(margins.MaintenanceMargin-curBalance, 0)
+	}
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
 	trnsfr := &types.Transfer{
@@ -261,7 +277,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: int64(margins.InitialMargin - curBalance),
+			Amount: margins.InitialMargin - curBalance,
 		},
 		MinAmount: minAmount, // minimal amount == maintenance
 	}
@@ -292,7 +308,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	for _, evt := range evts {
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
-		if !e.ob.InAuction() {
+		if !e.as.InAuction() || e.as.AuctionEnd() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -327,12 +343,12 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		var trnsfr *types.Transfer
 		// case 2 -> not enough margin
 		if curMargin < margins.SearchLevel {
-			var minAmount int64
+			var minAmount uint64
 
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			if curMargin < margins.MaintenanceMargin {
-				minAmount = int64(margins.MaintenanceMargin - curMargin)
+				minAmount = margins.MaintenanceMargin - curMargin
 			}
 
 			// then the rest is common if we are before or after MaintenanceLevel,
@@ -342,7 +358,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
-					Amount: int64(margins.InitialMargin - curMargin),
+					Amount: margins.InitialMargin - curMargin,
 				},
 				MinAmount: minAmount,
 			}
@@ -353,7 +369,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
-					Amount: int64(curMargin - margins.InitialMargin),
+					Amount: curMargin - margins.InitialMargin,
 				},
 				MinAmount: 0,
 			}
@@ -381,7 +397,7 @@ func (e *Engine) ExpectMargins(
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	for _, evt := range evts {
 		var margins *types.MarginLevels
-		if !e.ob.InAuction() {
+		if !e.as.InAuction() || e.as.AuctionEnd() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -410,7 +426,7 @@ func (e *Engine) ExpectMargins(
 	return
 }
 
-func (m marginChange) Amount() int64 {
+func (m marginChange) Amount() uint64 {
 	if m.transfer == nil {
 		return 0
 	}
@@ -424,4 +440,11 @@ func (m marginChange) Transfer() *types.Transfer {
 
 func (m marginChange) MarginLevels() *types.MarginLevels {
 	return m.margins
+}
+
+func maxUint(a, b uint64) uint64 {
+	if a > b {
+		return a
+	}
+	return b
 }

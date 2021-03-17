@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	ErrPublicKeyExceededRateLimit                    = errors.New("public key excedeed the rate limit")
+	ErrPublicKeyExceededRateLimit                    = errors.New("public key exceeded the rate limit")
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
 )
 
@@ -41,22 +41,22 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets         Assets
-	banking        Banking
-	broker         Broker
-	cmd            Commander
-	erc            ExtResChecker
-	evtfwd         EvtForwarder
-	exec           ExecutionEngine
-	ghandler       *genesis.Handler
-	gov            GovernanceEngine
-	notary         Notary
-	stats          Stats
-	time           TimeService
-	top            ValidatorTopology
-	vegaWallet     nodewallet.Wallet
-	netp           NetworkParameters
-	oracles        *Oracles
+	assets     Assets
+	banking    Banking
+	broker     Broker
+	cmd        Commander
+	erc        ExtResChecker
+	evtfwd     EvtForwarder
+	exec       ExecutionEngine
+	ghandler   *genesis.Handler
+	gov        GovernanceEngine
+	notary     Notary
+	stats      Stats
+	time       TimeService
+	top        ValidatorTopology
+	vegaWallet nodewallet.Wallet
+	netp       NetworkParameters
+	oracles    *Oracle
 }
 
 func NewApp(
@@ -78,7 +78,7 @@ func NewApp(
 	top ValidatorTopology,
 	wallet Wallet,
 	netp NetworkParameters,
-	oracles *Oracles,
+	oracles *Oracle,
 ) (*App, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -213,6 +213,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 
 	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes, vators); err != nil {
+		app.cancel()
 		app.log.Panic("something happened when initializing vega with the genesis block", logging.Error(err))
 	}
 
@@ -297,7 +298,7 @@ func (app *App) limitPubkey(pk []byte) (limit bool, isValidator bool) {
 
 	key := ratelimit.Key(pk).String()
 	if !app.rates.Allow(key) {
-		app.log.Error("Rate limit exceeded", logging.String("key", key))
+		app.log.Debug("Rate limit exceeded", logging.String("key", key))
 		return true, false
 	}
 
@@ -436,14 +437,17 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		return err
 	}
 
-	app.log.Debug("Submitting proposal",
-		logging.String("proposal-id", prop.Id),
+	app.log.Debug("submitting proposal",
+		logging.ProposalID(prop.Id),
 		logging.String("proposal-reference", prop.Reference),
 		logging.String("proposal-party", prop.PartyId),
 		logging.String("proposal-terms", prop.Terms.String()))
 
 	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id)
 	if err != nil {
+		app.log.Debug("could not submit proposal",
+			logging.ProposalID(id),
+			logging.Error(err))
 		return err
 	}
 
@@ -456,6 +460,9 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		err := app.exec.SubmitMarketWithLiquidityProvision(
 			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), prop.PartyId, lpid)
 		if err != nil {
+			app.log.Debug("unable to submit new market with liquidity submission",
+				logging.ProposalID(nm.Market().Id),
+				logging.Error(err))
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
 			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET); err != nil {
@@ -587,7 +594,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		default:
 			prop.State = types.Proposal_STATE_FAILED
-			app.log.Error("unknown proposal cannot be enacted", logging.String("proposal-id", prop.Id))
+			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.Id))
 		}
 		app.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
@@ -625,7 +632,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	if err := app.notary.StartAggregate(prop.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
 		prop.State = types.Proposal_STATE_FAILED
 		app.log.Error("unable to enact proposal",
-			logging.String("proposal-id", prop.Id),
+			logging.ProposalID(prop.Id),
 			logging.Error(err))
 		return
 	}
@@ -672,7 +679,7 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	if err := app.netp.Update(ctx, np.Key, np.Value); err != nil {
 		prop.State = types.Proposal_STATE_FAILED
 		app.log.Error("failed to update network parameters",
-			logging.String("proposal-id", prop.Id),
+			logging.ProposalID(prop.Id),
 			logging.Error(err))
 		return
 	}

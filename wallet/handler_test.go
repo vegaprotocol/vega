@@ -553,7 +553,7 @@ func testUpdateMetaSuccess(t *testing.T) {
 	assert.NotEmpty(t, key)
 
 	// add meta
-	err = h.UpdateMeta(tok, key, "Th1isisasecurep@ssphraseinnit", []wallet.Meta{wallet.Meta{Key: "primary", Value: "yes"}})
+	err = h.UpdateMeta(tok, key, "Th1isisasecurep@ssphraseinnit", []wallet.Meta{{Key: "primary", Value: "yes"}})
 	assert.NoError(t, err)
 
 	// now make sure we have the new key saved
@@ -589,7 +589,7 @@ func testUpdateMetaFailureInvalidPassphrase(t *testing.T) {
 	assert.NotEmpty(t, key)
 
 	// add meta
-	err = h.UpdateMeta(tok, key, "this is the wrong passphrase", []wallet.Meta{wallet.Meta{Key: "primary", Value: "yes"}})
+	err = h.UpdateMeta(tok, key, "this is the wrong passphrase", []wallet.Meta{{Key: "primary", Value: "yes"}})
 	assert.EqualError(t, err, "cipher: message authentication failed")
 }
 

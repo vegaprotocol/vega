@@ -106,7 +106,7 @@ func (md *MarketDepth) orderExists(orderID string) *types.Order {
 	return md.liveOrders[orderID]
 }
 
-func (md *MarketDepth) removeOrder(order *types.Order, reduceAmount uint64) error {
+func (md *MarketDepth) removeOrder(order *types.Order) error {
 	// Find the price level
 	pl := md.getPriceLevel(order.Side, order.Price)
 
@@ -115,7 +115,7 @@ func (md *MarketDepth) removeOrder(order *types.Order, reduceAmount uint64) erro
 	}
 	// Update the values
 	pl.totalOrders--
-	pl.totalVolume -= reduceAmount
+	pl.totalVolume -= order.Remaining
 
 	// See if we can remove this price level
 	if pl.totalOrders == 0 {
@@ -184,17 +184,20 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	// If the price is the same, we can update the original order
 	if originalOrder.Price == newOrder.Price {
 		if newOrder.Remaining == 0 {
-			md.removeOrder(newOrder, originalOrder.Remaining)
+			md.removeOrder(newOrder)
 		} else {
 			// Update
 			pl := md.getPriceLevel(originalOrder.Side, originalOrder.Price)
-			pl.totalVolume += (newOrder.Remaining - originalOrder.Remaining)
+			pl.totalVolume += newOrder.Remaining - originalOrder.Remaining
 			originalOrder.Remaining = newOrder.Remaining
+			originalOrder.Size = newOrder.Size
 			md.changes = append(md.changes, pl)
 		}
 	} else {
-		md.removeOrder(originalOrder, originalOrder.Remaining)
-		md.addOrder(newOrder)
+		md.removeOrder(originalOrder)
+		if newOrder.Remaining > 0 {
+			md.addOrder(newOrder)
+		}
 	}
 }
 
@@ -250,8 +253,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	}
 
 	// Orders that where not valid are ignored
-	if order.Status == types.Order_STATUS_UNSPECIFIED ||
-		order.Status == types.Order_STATUS_REJECTED {
+	if order.Status == types.Order_STATUS_UNSPECIFIED {
 		return
 	}
 
@@ -277,8 +279,11 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		if order.Status == types.Order_STATUS_CANCELLED ||
 			order.Status == types.Order_STATUS_EXPIRED ||
 			order.Status == types.Order_STATUS_STOPPED ||
+			order.Status == types.Order_STATUS_FILLED ||
+			order.Status == types.Order_STATUS_PARTIALLY_FILLED ||
+			order.Status == types.Order_STATUS_REJECTED ||
 			order.Status == types.Order_STATUS_PARKED {
-			md.removeOrder(originalOrder, order.Remaining)
+			md.removeOrder(originalOrder)
 		} else {
 			md.updateOrder(originalOrder, order)
 		}
@@ -286,6 +291,11 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 		if order.Remaining > 0 && order.Status == types.Order_STATUS_ACTIVE {
 			md.addOrder(order)
 		}
+	}
+
+	// If nothing changed we can stop here
+	if len(md.changes) == 0 {
+		return
 	}
 
 	buyPtr := []*types.PriceLevel{}
@@ -381,11 +391,34 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 /*                 FUNCTIONS TO HELP WITH UNIT TESTING                       */
 /*****************************************************************************/
 
-// GetOrderCount returns the number of live orders for the given market
-func (mdb *MarketDepthBuilder) GetOrderCount(market string) int {
+func (mdb *MarketDepthBuilder) GetAllOrders(market string) map[string]*types.Order {
 	md := mdb.marketDepths[market]
 	if md != nil {
-		return len(md.liveOrders)
+		return md.liveOrders
+	}
+	return nil
+}
+
+// GetOrderCount returns the number of live orders for the given market
+func (mdb *MarketDepthBuilder) GetOrderCount(market string) int64 {
+	var liveOrders int64
+	var bookOrders uint64
+	md := mdb.marketDepths[market]
+	if md != nil {
+		liveOrders = int64(len(md.liveOrders))
+
+		for _, pl := range md.buySide {
+			bookOrders += pl.totalOrders
+		}
+
+		for _, pl := range md.sellSide {
+			bookOrders += pl.totalOrders
+		}
+
+		if liveOrders != int64(bookOrders) {
+			return -1
+		}
+		return liveOrders
 	}
 	return 0
 }
@@ -399,6 +432,23 @@ func (mdb *MarketDepthBuilder) GetVolumeAtPrice(market string, side types.Side, 
 			return 0
 		}
 		return pl.totalVolume
+	}
+	return 0
+}
+
+// GetTotalVolume returns the total volume in the order book
+func (mdb *MarketDepthBuilder) GetTotalVolume(market string) int64 {
+	var volume int64
+	md := mdb.marketDepths[market]
+	if md != nil {
+		for _, pl := range md.buySide {
+			volume += int64(pl.totalVolume)
+		}
+
+		for _, pl := range md.sellSide {
+			volume += int64(pl.totalVolume)
+		}
+		return volume
 	}
 	return 0
 }
@@ -419,6 +469,28 @@ func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(market string, side types.Si
 // GetPriceLevels returns the number of non empty price levels
 func (mdb *MarketDepthBuilder) GetPriceLevels(market string) int {
 	return mdb.GetBuyPriceLevels(market) + mdb.GetSellPriceLevels(market)
+}
+
+// GetBestBidPrice returns the highest bid price in the book
+func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) uint64 {
+	md := mdb.marketDepths[market]
+	if md != nil {
+		if len(md.buySide) > 0 {
+			return md.buySide[0].price
+		}
+	}
+	return 0
+}
+
+// GetBestAskPrice returns the highest bid price in the book
+func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) uint64 {
+	md := mdb.marketDepths[market]
+	if md != nil {
+		if len(md.sellSide) > 0 {
+			return md.sellSide[0].price
+		}
+	}
+	return 0
 }
 
 // GetBuyPriceLevels returns the number of non empty buy price levels

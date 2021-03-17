@@ -32,7 +32,7 @@ func (r *reporter) Start(f string) {
 }
 
 func (r *reporter) Dump(result string) {
-	var ok string = green("OK")
+	var ok = green("OK")
 	if r.hasCurrError {
 		r.hasError = true
 		ok = red("KO")

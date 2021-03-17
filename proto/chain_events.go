@@ -2,7 +2,7 @@ package proto
 
 import (
 	"errors"
-	fmt "fmt"
+	"fmt"
 )
 
 var (

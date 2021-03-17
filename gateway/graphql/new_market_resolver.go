@@ -2,6 +2,7 @@ package gql
 
 import (
 	"context"
+	"errors"
 
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -17,7 +18,14 @@ func (r *newMarketResolver) DecimalPlaces(ctx context.Context, obj *types.NewMar
 }
 
 func (r *newMarketResolver) RiskParameters(ctx context.Context, obj *types.NewMarket) (RiskModel, error) {
-	return RiskConfigurationFromProto(obj.Changes)
+	switch rm := obj.Changes.RiskParameters.(type) {
+	case *types.NewMarketConfiguration_LogNormal:
+		return rm.LogNormal, nil
+	case *types.NewMarketConfiguration_Simple:
+		return rm.Simple, nil
+	default:
+		return nil, errors.New("invalid risk model")
+	}
 }
 
 func (r *newMarketResolver) Metadata(ctx context.Context, obj *types.NewMarket) ([]string, error) {
@@ -26,4 +34,8 @@ func (r *newMarketResolver) Metadata(ctx context.Context, obj *types.NewMarket) 
 
 func (r *newMarketResolver) TradingMode(ctx context.Context, obj *types.NewMarket) (TradingMode, error) {
 	return NewMarketTradingModeFromProto(obj.Changes.TradingMode)
+}
+
+func (r *newMarketResolver) Commitment(ctx context.Context, obj *types.NewMarket) (*types.NewMarketCommitment, error) {
+	return obj.LiquidityCommitment, nil
 }

@@ -73,10 +73,6 @@ func TestMarginUpdateOnOrder(t *testing.T) {
 	t.Run("Faile update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
 }
 
-func TestTokenAccounts(t *testing.T) {
-	t.Run("Total tokens is zero at the start, even if we add some traders", testInitialTokens)
-}
-
 func TestEnableAssets(t *testing.T) {
 	t.Run("enable new asset - success", testEnableAssetSuccess)
 	t.Run("enable new asset - failure duplicate", testEnableAssetFailureDuplicate)
@@ -570,54 +566,6 @@ func testCreateNewAccountForBadAsset(t *testing.T) {
 	assert.EqualError(t, err, collateral.ErrInvalidAssetID.Error())
 }
 
-func testInitialTokens(t *testing.T) {
-	eng := getTestEngine(t, "test-market", 0)
-	defer eng.Finish()
-	trader := "trader"
-	assert.Zero(t, eng.GetTotalTokens())
-	// trader doesn't exist yet:
-	acc, err := eng.GetPartyTokenAccount(trader)
-	assert.Error(t, err)
-	assert.Nil(t, acc)
-	assert.Equal(t, err, collateral.ErrPartyHasNoTokenAccount)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(7)
-	_, err = eng.CreatePartyGeneralAccount(context.Background(), trader, "ETH")
-	assert.NoError(t, err)
-	_, err = eng.CreatePartyGeneralAccount(context.Background(), trader, "VOTE")
-	assert.NoError(t, err)
-	acc, err = eng.GetPartyTokenAccount(trader)
-	assert.NoError(t, err)
-	assert.NotNil(t, acc)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-	_, err = eng.Deposit(context.Background(), trader, "VOTE", 10000)
-	assert.NoError(t, err)
-	acc, err = eng.GetPartyTokenAccount(trader)
-	assert.NoError(t, err)
-	assert.NotNil(t, acc)
-	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-
-	// withdraw half the amount
-	_, err = eng.LockFundsForWithdraw(context.Background(), trader, "VOTE", acc.Balance/2) // half the amount
-	assert.NoError(t, err)
-	_, err = eng.Withdraw(context.Background(), trader, "VOTE", acc.Balance/2)
-	assert.NoError(t, err) // half the amount
-
-	acc.Balance /= 2
-	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
-	// test subtracting something from the balance
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-
-	_, err = eng.LockFundsForWithdraw(context.Background(), trader, "VOTE", 100) // half the amount
-	assert.NoError(t, err)                                                       // half the amount
-	_, err = eng.Withdraw(context.Background(), trader, "VOTE", 100)
-	assert.NoError(t, err) // half the amount
-
-	assert.NoError(t, eng.DecrementBalance(context.Background(), acc.Id, 100))
-	acc.Balance -= 100
-	assert.Equal(t, uint64(acc.Balance), eng.GetTotalTokens())
-}
-
 func testNew(t *testing.T) {
 	eng := getTestEngine(t, "test-market", 0)
 	eng.Finish()
@@ -704,7 +652,7 @@ func testTransferLoss(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
@@ -712,7 +660,7 @@ func testTransferLoss(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
@@ -754,7 +702,7 @@ func testTransferComplexLoss(t *testing.T) {
 			Owner: trader,
 			Amount: &types.FinancialAmount{
 				Asset:  "BTC",
-				Amount: int64(-price),
+				Amount: price,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
@@ -772,7 +720,7 @@ func testTransferComplexLoss(t *testing.T) {
 
 func testTransferLossMissingTraderAccounts(t *testing.T) {
 	trader := "test-trader"
-	price := int64(1000)
+	price := uint64(1000)
 
 	eng := getTestEngine(t, testMarketID, 0)
 	defer eng.Finish()
@@ -783,7 +731,7 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 			Owner: trader,
 			Amount: &types.FinancialAmount{
 				Asset:  "BTC",
-				Amount: -price,
+				Amount: price,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
@@ -824,7 +772,7 @@ func testDistributeWin(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
@@ -832,7 +780,7 @@ func testDistributeWin(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
@@ -892,7 +840,7 @@ func testProcessBoth(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
@@ -900,7 +848,7 @@ func testProcessBoth(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
@@ -908,7 +856,7 @@ func testProcessBoth(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
@@ -916,7 +864,7 @@ func testProcessBoth(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
@@ -976,7 +924,7 @@ func testSettleBalanceNotZero(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price) * 2, // lost 2xprice, trader only won half
+				Amount: price * 2, // lost 2xprice, trader only won half
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -984,7 +932,7 @@ func testSettleBalanceNotZero(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
@@ -1026,7 +974,7 @@ func testProcessBothProRated(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
@@ -1034,7 +982,7 @@ func testProcessBothProRated(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
@@ -1042,7 +990,7 @@ func testProcessBothProRated(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
@@ -1050,7 +998,7 @@ func testProcessBothProRated(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
@@ -1092,7 +1040,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1100,7 +1048,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1108,7 +1056,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
@@ -1116,7 +1064,7 @@ func testProcessBothProRatedMTM(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
@@ -1243,7 +1191,7 @@ func testMTMSuccess(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1251,7 +1199,7 @@ func testMTMSuccess(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1259,7 +1207,7 @@ func testMTMSuccess(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
@@ -1267,7 +1215,7 @@ func testMTMSuccess(t *testing.T) {
 		{
 			Owner: moneyTrader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(price),
+				Amount: price,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
@@ -1310,7 +1258,7 @@ func TestInvalidMarketID(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1342,7 +1290,7 @@ func TestEmptyTransfer(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(0),
+				Amount: 0,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1371,7 +1319,7 @@ func TestNoMarginAccount(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1396,7 +1344,7 @@ func TestNoGeneralAccount(t *testing.T) {
 		{
 			Owner: trader,
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1460,7 +1408,7 @@ func TestFinalSettlementNoSystemAccounts(t *testing.T) {
 		{
 			Owner: "testTrader",
 			Amount: &types.FinancialAmount{
-				Amount: int64(-price),
+				Amount: price,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
@@ -1487,7 +1435,7 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 		{
 			Owner: "testTrader",
 			Amount: &types.FinancialAmount{
-				Amount: int64(-amount * 100),
+				Amount: amount * 100,
 				Asset:  "BTC",
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
@@ -1586,7 +1534,7 @@ func TestMTMLossSocialization(t *testing.T) {
 		{
 			Owner: lossTrader1,
 			Amount: &types.FinancialAmount{
-				Amount: -700,
+				Amount: 700,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -1594,7 +1542,7 @@ func TestMTMLossSocialization(t *testing.T) {
 		{
 			Owner: lossTrader2,
 			Amount: &types.FinancialAmount{
-				Amount: -1400,
+				Amount: 1400,
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
@@ -2235,8 +2183,6 @@ func getTestEngine(t *testing.T, market string, insuranceBalance uint64) *testEn
 	}
 	err = eng.EnableAsset(context.Background(), tokAsset)
 	assert.NoError(t, err)
-	err = eng.UpdateGovernanceAsset("VOTE")
-	assert.NoError(t, err)
 
 	// enable the assert for the tests
 	asset := types.Asset{
@@ -2320,7 +2266,7 @@ type riskFake struct {
 	price           uint64
 	vwBuy, vwSell   uint64
 	margins         *types.MarginLevels
-	amount          int64
+	amount          uint64
 	transfer        *types.Transfer
 	asset           string
 	marginShortFall uint64
@@ -2335,7 +2281,7 @@ func (m riskFake) VWBuy() uint64                     { return m.vwBuy }
 func (m riskFake) VWSell() uint64                    { return m.vwSell }
 func (m riskFake) ClearPotentials()                  {}
 func (m riskFake) Transfer() *types.Transfer         { return m.transfer }
-func (m riskFake) Amount() int64                     { return m.amount }
+func (m riskFake) Amount() uint64                    { return m.amount }
 func (m riskFake) MarginLevels() *types.MarginLevels { return m.margins }
 func (m riskFake) Asset() string                     { return m.asset }
 func (m riskFake) MarketID() string                  { return "" }

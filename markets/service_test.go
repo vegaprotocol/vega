@@ -83,8 +83,8 @@ func TestMarketService_GetByID(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.Finish()
 	markets := map[string]*types.Market{
-		"BTC/DEC19": &types.Market{Id: "BTC/DEC19"},
-		"ETH/JUN19": &types.Market{Id: "ETH/JUN19"},
+		"BTC/DEC19": {Id: "BTC/DEC19"},
+		"ETH/JUN19": {Id: "ETH/JUN19"},
 		"LTC/JAN20": nil,
 	}
 	notFoundErr := errors.New("market not found")

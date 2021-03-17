@@ -112,8 +112,8 @@ func (e *Engine) CalculateForContinuousMode(
 		totalLiquidityFeeAmount      uint64
 		// we allocate the len of the trades + 2
 		// len(trade) = number of makerFee + 1 infra fee + 1 liquidity fee
-		transfers     []*types.Transfer = make([]*types.Transfer, 0, (len(trades)*2)+2)
-		transfersRecv []*types.Transfer = make([]*types.Transfer, 0, len(trades)+2)
+		transfers     = make([]*types.Transfer, 0, (len(trades)*2)+2)
+		transfersRecv = make([]*types.Transfer, 0, len(trades)+2)
 	)
 
 	for _, v := range trades {
@@ -131,7 +131,7 @@ func (e *Engine) CalculateForContinuousMode(
 			maker = v.Buyer
 		}
 
-		totalFeeAmount += (fee.InfrastructureFee + fee.LiquidityFee + fee.MakerFee)
+		totalFeeAmount += fee.InfrastructureFee + fee.LiquidityFee + fee.MakerFee
 		totalInfrastructureFeeAmount += fee.InfrastructureFee
 		totalLiquidityFeeAmount += fee.LiquidityFee
 
@@ -140,7 +140,7 @@ func (e *Engine) CalculateForContinuousMode(
 			Owner: aggressor,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
-				Amount: int64(fee.MakerFee),
+				Amount: fee.MakerFee,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
 		})
@@ -149,7 +149,7 @@ func (e *Engine) CalculateForContinuousMode(
 			Owner: maker,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
-				Amount: int64(fee.MakerFee),
+				Amount: fee.MakerFee,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE,
 		})
@@ -160,7 +160,7 @@ func (e *Engine) CalculateForContinuousMode(
 		Owner: aggressor,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
-			Amount: int64(totalInfrastructureFeeAmount),
+			Amount: totalInfrastructureFeeAmount,
 		},
 		Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
 	})
@@ -169,7 +169,7 @@ func (e *Engine) CalculateForContinuousMode(
 		Owner: aggressor,
 		Amount: &types.FinancialAmount{
 			Asset:  e.asset,
-			Amount: int64(totalLiquidityFeeAmount),
+			Amount: totalLiquidityFeeAmount,
 		},
 		Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
 	})
@@ -378,7 +378,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 			Owner: goodParty,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
-				Amount: int64(fees.MakerFee),
+				Amount: fees.MakerFee,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE,
 		})
@@ -426,10 +426,10 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]float64
 		ft.transfers = append(ft.transfers, &types.Transfer{
 			Owner: key,
 			Amount: &types.FinancialAmount{
-				Amount: int64(cs),
+				Amount: uint64(cs),
 				Asset:  acc.Asset,
 			},
-			MinAmount: int64(cs),
+			MinAmount: uint64(cs),
 			Type:      types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE,
 		})
 	}
@@ -438,7 +438,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]float64
 	last := keys[len(keys)-1]
 	diff := acc.Balance - uint64(floored)
 	ft.totalFeesAmountsPerParty[last] += diff
-	ft.transfers[len(ft.transfers)-1].Amount.Amount += int64(diff)
+	ft.transfers[len(ft.transfers)-1].Amount.Amount += diff
 
 	return ft
 }
@@ -448,12 +448,12 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]float64
 func (e *Engine) getPositionResolutionFeesTransfers(
 	party string, share float64, fees *types.Fee,
 ) ([]*types.Transfer, *types.Fee, uint64) {
-	makerFee := int64(math.Ceil(share * float64(fees.MakerFee)))
-	infraFee := int64(math.Ceil(share * float64(fees.InfrastructureFee)))
-	liquiFee := int64(math.Ceil(share * float64(fees.LiquidityFee)))
+	makerFee := uint64(math.Ceil(share * float64(fees.MakerFee)))
+	infraFee := uint64(math.Ceil(share * float64(fees.InfrastructureFee)))
+	liquiFee := uint64(math.Ceil(share * float64(fees.LiquidityFee)))
 
 	return []*types.Transfer{
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -461,7 +461,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 				},
 				Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
 			},
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -469,7 +469,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 				},
 				Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
 			},
-			&types.Transfer{
+			{
 				Owner: party,
 				Amount: &types.FinancialAmount{
 					Asset:  e.asset,
@@ -488,7 +488,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 type feeShare struct {
 	// the absolute position of the party which had to be recovered
 	pos uint64
-	// the share out of the total volumt
+	// the share out of the total volume
 	share float64
 }
 
@@ -526,19 +526,19 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee uint64, p string)
 	// we return both transfer for the party in a slice
 	// always the infrastructure fee first
 	return []*types.Transfer{
-		&types.Transfer{
+		{
 			Owner: p,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
-				Amount: int64(infraFee),
+				Amount: infraFee,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
 		},
-		&types.Transfer{
+		{
 			Owner: p,
 			Amount: &types.FinancialAmount{
 				Asset:  e.asset,
-				Amount: int64(liquiFee),
+				Amount: liquiFee,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
 		},
@@ -563,4 +563,8 @@ func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f floa
 	e.feeCfg.Factors.InfrastructureFee = fmt.Sprintf("%f", f)
 	e.f.infrastructureFee = f
 	return nil
+}
+
+func (e *Engine) GetLiquidityFee() float64 {
+	return e.f.liquidityFee
 }

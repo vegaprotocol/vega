@@ -59,7 +59,7 @@ func DefaultGenesisState() GenesisState {
 
 	h := func(key []byte) []byte {
 		hasher := sha3.New256()
-		hasher.Write([]byte(key))
+		hasher.Write(key)
 		return hasher.Sum(nil)
 	}
 

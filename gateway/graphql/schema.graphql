@@ -14,9 +14,9 @@ type Mutation {
   """
   prepareOrderSubmit(
     "ID of the market to place the order"
-    marketId: String!
+    marketId: ID!
     "ID of the party placing the order"
-    partyId: String!
+    partyId: ID!
     "Price of the asset"
     price: String
     "Size of the order"
@@ -43,9 +43,9 @@ type Mutation {
     "ID of the order to cancel"
     id: ID
     "ID of the party placing the order"
-    partyId: String!
+    partyId: ID!
     "ID of the market where to find the order"
-    marketId: String
+    marketId: ID
   ): PreparedCancelOrder!
 
   """
@@ -56,7 +56,7 @@ type Mutation {
     "ID of the order to amend"
     id: ID!
     "ID of the party which created the order"
-    partyId: String!
+    partyId: ID!
     "New price for this order"
     price: String!
     "New size for this order"
@@ -78,7 +78,7 @@ type Mutation {
   """
   prepareProposal(
     "ID of the party which created this proposal"
-    partyId: String!
+    partyId: ID!
     "A UUID reference for the caller to aid in tracking operations on VEGA"
     reference: String
     "Terms of the proposal"
@@ -94,9 +94,9 @@ type Mutation {
     "vote value"
     value: VoteValue!
     "the party casting the vote"
-    partyID: String!
+    partyId: ID!
     "the proposal voted on"
-    proposalID: String!
+    proposalId: ID!
   ): PreparedVote!
 
   """
@@ -105,7 +105,7 @@ type Mutation {
   """
   prepareWithdrawal(
     "The party which wants to withdraw funds"
-    partyID: String!
+    partyId: ID!
     "The amount to be withdrawn"
     amount: String!
     "The asset from which we want to withdraw funds"
@@ -134,7 +134,7 @@ type Mutation {
   "Prepare a Liquidity provision order so it can be signed and submitted"
   prepareLiquidityProvision(
     "Market identifier for the order"
-    marketID: String!
+    marketId: ID!
     "Specified as a unitless number that represents the amount of settlement asset of the market."
     commitmentAmount: Int!
     "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
@@ -143,6 +143,8 @@ type Mutation {
     sells: [LiquidityOrderInput!]!
     "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
     buys: [LiquidityOrderInput!]!
+    "A reference for the order created from this liquidity provision"
+    reference: String
   ): PreparedLiquidityProvision!
 }
 
@@ -193,7 +195,7 @@ type Subscription {
   "Subscribe to the candles updates"
   candles(
     "ID of the market we want to listen candles for"
-    marketId: String!
+    marketId: ID!
     "Interval of the candles we want to listen for"
     interval: Interval!
   ): Candle!
@@ -201,45 +203,45 @@ type Subscription {
   "Subscribe to orders updates"
   orders(
     "ID of the market from which we want orders updates"
-    marketId: String
+    marketId: ID
     "ID of the party from which we want orders updates"
-    partyId: String
+    partyId: ID
   ): [Order!]
 
   "Subscribe to the trades updates"
   trades(
     "ID of the market from which we want trades updates"
-    marketId: String
+    marketId: ID
     "ID of the party from which we want trades updates"
-    partyId: String
+    partyId: ID
   ): [Trade!]
 
   "Subscribe to the positions updates"
   positions(
     "ID of the party from we want updates for"
-    partyId: String
+    partyId: ID
     "ID of the market from which we want postion updates"
-    marketId: String
+    marketId: ID
   ): Position!
 
   "Subscribe to the market depths update"
   marketDepth(
     "ID of the market we want to receive market depth updates for"
-    marketId: String!
+    marketId: ID!
   ): MarketDepth!
 
   "Subscribe to price level market depth updates"
   marketDepthUpdate(
     "ID of the market we want to receive market depth pricelevel updates for"
-    marketId: String!
+    marketId: ID!
   ): MarketDepthUpdate!
 
   "Subscribe to the accounts updates"
   accounts(
     "ID of the market from which we want accounts updates"
-    marketId: String
+    marketId: ID
     "ID of the party from which we want accounts updates"
-    partyId: String
+    partyId: ID
     "Asset code"
     asset: String
     "Type of the account"
@@ -249,29 +251,29 @@ type Subscription {
   "Subscribe to the mark price changes"
   marketData(
     "id of the market we want to subscribe to the market data changes"
-    marketId: String
+    marketId: ID
   ): MarketData!
 
   "Subscribe to the margin changes"
   margins(
     "id of the trader we want to subscribe for margin updates"
-    partyId: String!
+    partyId: ID!
     "market we want to listen to margin updates (nil if we want updates for all markets)"
-    marketID: String
+    marketId: ID
   ): MarginLevels!
 
   "Subscribe to proposals. Leave out all arguments to receive all proposals"
   proposals(
     "Optional party id whose proposals are to be streamed"
-    partyID: String
+    partyId: ID
   ): Proposal!
 
   "Subscribe to votes, either by proposal id or pary id"
   votes(
     "Optional proposal id which votes are to be streamed"
-    proposalId: String
+    proposalId: ID
     "Optional party id whose votes are to be streamed"
-    partyID: String
+    partyId: ID
   ): ProposalVote!
 
   "Subscribe to event data from the event bus"
@@ -279,9 +281,9 @@ type Subscription {
     "the types to subscribe to has to be an array"
     types: [BusEventType!]!
     "optional filter by market ID"
-    marketID: String
+    marketId: ID
     "optional filter by party ID"
-    partyID: String
+    partyId: ID
     "Specifies the size that the client will receive events in. Using 0 results in a variable batch size being sent. The stream will be closed if the client fails to read a batch within 5 seconds"
     batchSize: Int!
   ): [BusEvent!]
@@ -413,24 +415,39 @@ type TransactionSubmitted {
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "One or more instruments that are trading on the VEGA network"
-  markets("ID of the market" id: String): [Market!]
+  markets("ID of the market" id: ID): [Market!]
 
   "An instrument that is trading on the VEGA network"
-  market("Optional ID of a market" id: String!): Market
+  market("Optional ID of a market" id: ID!): Market
 
   "One or more entities that are trading on the VEGA network"
-  parties("Optional ID of a party" id: String): [Party!]
+  parties("Optional ID of a party" id: ID): [Party!]
 
   "An entity that is trading on the VEGA network"
-  party("ID of a party" id: String!): Party
+  party("ID of a party" id: ID!): Party
 
   "a bunch of statistics about the node"
   statistics: Statistics!
 
+  "All registered oracle specs"
+  oracleSpecs: [OracleSpec!]
+
+  "An oracle spec for a given oracle spec ID"
+  oracleSpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+  ): OracleSpec
+
+  "All oracle data for a given oracle spec ID"
+  oracleDataBySpec(
+    "ID for an oracle spec"
+    oracleSpecID: String!
+  ): [OracleData!]
+
   "An order in the VEGA network found by orderID"
   orderByID(
     "ID for an order"
-    orderID: String!
+    orderId: ID!
 
     "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
     version: Int
@@ -439,7 +456,7 @@ type Query {
   "Order versions (created via amendments if any) found by orderID"
   orderVersions(
     "ID for an order"
-    orderID: String!
+    orderId: ID!
 
     "Pagination skip"
     skip: Int
@@ -450,7 +467,7 @@ type Query {
   ): [Order!]
 
   "An order in the VEGA network found by referenceID"
-  orderByReference("ReferenceID for an order" referenceID: String!): Order!
+  orderByReference("Reference for an order" reference: String!): Order!
 
   "All governance proposals in the VEGA network"
   proposals(
@@ -461,52 +478,52 @@ type Query {
   "A governance proposal located by either its id or reference. If both are set, id is used."
   proposal(
     "Optionally, locate proposal by its id"
-    id: String
+    id: ID
     "Optionally, locate proposal by its reference. If id is set, this parameter is ignored."
     reference: String
   ): Proposal!
 
-  "Governance proposals that aim creating new markets"
+  "Governance proposals that aim to create new markets"
   newMarketProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim updating existing markets"
+  "Governance proposals that aim to update existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
-    marketId: String
+    marketId: ID
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim updating Vega network parameters"
+  "Governance proposals that aim to update Vega network parameters"
   networkParametersProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim creating new assets in Vega"
+  "Governance proposals that aim to create new assets in Vega"
   newAssetProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignatures(resourceId: String!): [NodeSignature!]
+  nodeSignatures(resourceId: ID!): [NodeSignature!]
 
   "An asset which is used in the vega network"
-  asset("Id of the asset" assetId: String!): Asset
+  asset("Id of the asset" assetId: ID!): Asset
 
   "The list of all assets in use in the vega network"
   assets: [Asset!]
 
-  "return an estiamation of the potential cost for a new order"
+  "return an estimation of the potential cost for a new order"
   estimateOrder(
     "ID of the market to place the order"
-    marketId: String!
+    marketId: ID!
     "ID of the party placing the order"
-    partyId: String!
+    partyId: ID!
     "Price of the asset"
     price: String
     "Size of the order"
@@ -515,23 +532,23 @@ type Query {
     side: Side!
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    "exiration of the the order"
+    "expiration of the the order"
     expiration: String
     "type of the order"
     type: OrderType!
   ): OrderEstimate!
 
   "find a withdrawal using its id"
-  withdrawal("id of the withdrawal" id: String!): Withdrawal
+  withdrawal("id of the withdrawal" id: ID!): Withdrawal
 
-  "find a erc20 withdrawal approval using it a withdrawal id"
+  "find an erc20 withdrawal approval using its withdrawal id"
   erc20WithdrawalApproval(
     "id of the withdrawal"
-    withdrawalId: String!
+    withdrawalId: ID!
   ): Erc20WithdrawalApproval
 
   "find a deposit using its id"
-  deposit("id of the Deposit" id: String!): Deposit
+  deposit("id of the Deposit" id: ID!): Deposit
 
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!]
@@ -540,7 +557,7 @@ type Query {
 "Represents an asset in vega"
 type Asset {
   "The id of the asset"
-  id: String!
+  id: ID!
 
   "The full name of the asset (e.g: Great British Pound)"
   name: String!
@@ -573,7 +590,7 @@ type ERC20 {
 "A vega builtin asset, mostly for testing purpose"
 type BuiltinAsset {
   "The id of the asset"
-  id: String!
+  id: ID!
 
   "The full name of the asset (e.g: Great British Pound)"
   name: String!
@@ -594,7 +611,7 @@ type BuiltinAsset {
 "Represents a signature for the approval of a resource from a validator"
 type NodeSignature {
   "The id of the resource being signed for"
-  id: String!
+  id: ID!
 
   "The signature, as base64 encoding"
   signature: String
@@ -702,7 +719,7 @@ type Statistics {
   positionsSubscriptions: Int!
 }
 
-"A mode where Vega try to execute order as soon as they are received"
+"A mode where Vega tries to execute orders as soon as they are received"
 type ContinuousTrading {
   "Size of an increment in price in terms of the quote currency"
   tickSize: String!
@@ -754,7 +771,7 @@ type SimpleRiskModel {
 
 union RiskModel = LogNormalRiskModel | SimpleRiskModel
 
-"A set of metadata to associate to an instruments"
+"A set of metadata to associate to an instrument"
 type InstrumentMetadata {
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
   tags: [String!]
@@ -782,8 +799,146 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle used for this product (Oracle union)"
-  oracle: Oracle!
+  "The oracle spec describing the oracle data of interest."
+  oracleSpec: OracleSpec!
+
+  "The binding between the oracle spec and the settlement price"
+  oracleSpecBinding: OracleSpecToFutureBinding!
+}
+
+"""
+OracleSpecToFutureBinding tells on which property oracle data should be
+used as settlement price.
+"""
+type OracleSpecToFutureBinding {
+  settlementPriceProperty: String!
+}
+
+"""
+An oracle spec describe the oracle data that a product (or a risk model)
+wants to get from the oracle engine.
+"""
+type OracleSpec {
+  "id is a hash generated from the OracleSpec data."
+  id: String!
+  "RFC3339Nano creation date time"
+  createdAt: String!
+  "RFC3339Nano last updated timestamp"
+  updatedAt: String
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [Filter!]
+  "status describes the status of the oracle spec"
+  status: OracleSpecStatus!
+  "data list all the oracle data broadcast to this spec"
+  data: [OracleData!]
+}
+
+"Status describe the status of the oracle spec"
+enum OracleSpecStatus {
+  "STATUS_ACTIVE describes an active oracle spec."
+  StatusActive
+  """
+  STATUS_ACTIVE describes an oracle spec that is not listening to data
+  anymore.
+  """
+  StatusUnused
+}
+
+"""
+Filter describes the conditions under which an oracle data is considered of
+interest or not.
+"""
+type Filter {
+  "key is the oracle data property key targeted by the filter."
+  key: PropertyKey!
+  """
+  conditions are the conditions that should be matched by the data to be
+  considered of interest.
+  """
+  conditions: [Condition!]
+}
+
+
+"PropertyKey describes the property key contained in an oracle data."
+type PropertyKey {
+  "name is the name of the property."
+  name: String
+  "type is the type of the property."
+  type: PropertyKeyType!
+}
+
+"""
+Type describes the type of properties that are supported by the oracle
+engine.
+"""
+enum PropertyKeyType {
+  "Any type."
+  TypeEmpty
+  "Integer type."
+  TypeInteger
+  "String type."
+  TypeString
+  "Boolean type."
+  TypeBoolean
+  "Any floating point decimal type."
+  TypeDecimal
+  "Timestamp date type."
+  TypeTimestamp
+}
+
+"""
+Condition describes the condition that must be validated by the
+"""
+type Condition {
+  "comparator is the type of comparison to make on the value."
+  operator: ConditionOperator!
+  "value is used by the comparator."
+  value: String
+}
+
+"Comparator describes the type of comparison."
+enum ConditionOperator {
+  "Verify if the property values are strictly equal or not."
+  OperatorEquals
+  "Verify if the oracle data value is greater than the Condition value."
+  OperatorGreaterThan
+  """
+  Verify if the oracle data value is greater than or equal to the Condition
+  value.
+  """
+  OperatorGreaterThanOrEqual
+  " Verify if the oracle data value is less than the Condition value."
+  OperatorLessThan
+  """
+  Verify if the oracle data value is less or equal to than the Condition
+  value.
+  """
+  OperatorLessThanOrEqual
+}
+
+"An oracle data contains the data sent by an oracle"
+type OracleData {
+  "pubKeys is the list of public keys that signed the data"
+  pubKeys: [String!]
+  "data contains all the properties send by an oracle"
+  data: [Property!]
+}
+
+"A property associates a name to a value"
+type Property {
+  "name of the property"
+  name: String!
+  "value of the property"
+  value: String!
 }
 
 union Product = Future
@@ -812,7 +967,7 @@ type MarginCalculator {
 }
 
 type ScalingFactors {
-  "the scaling factor that determines the margin level at which we have to search for more money"
+  "the scaling factor that determines the margin level at which Vega has to search for more money"
   searchLevel: Float!
 
   "the scaling factor that determines the optimal margin level"
@@ -853,11 +1008,11 @@ type Fees {
 """
 An auction duration is used to configure 3 auction periods:
 1. `duration > 0`, `volume == 0`:
-  The auction will last for at least N seconds.
+The auction will last for at least N seconds.
 2. `duration == 0`, `volume > 0`:
-  The auction will end once we can close with given traded volume.
+The auction will end once we can close with given traded volume.
 3. `duration > 0`, `volume > 0`:
-  The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
+The auction will take at least N seconds, but can end sooner if we can trade a certain volume.
 """
 type AuctionDuration {
   "Duration of the auction in seconds"
@@ -922,7 +1077,7 @@ type TargetStakeParameters {
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
   "Market ID"
-  id: String!
+  id: ID!
 
   "Market full name"
   name: String!
@@ -941,16 +1096,16 @@ type Market {
   number denominated in the currency of the Market. (uint64)
 
   Examples:
-    Currency     Balance  decimalPlaces  Real Balance
-    GBP              100              0       GBP 100
-    GBP              100              2       GBP   1.00
-    GBP              100              4       GBP   0.01
-    GBP                1              4       GBP   0.0001   (  0.01p  )
+  Currency     Balance  decimalPlaces  Real Balance
+  GBP              100              0       GBP 100
+  GBP              100              2       GBP   1.00
+  GBP              100              4       GBP   0.01
+  GBP                1              4       GBP   0.0001   (  0.01p  )
 
-    GBX (pence)      100              0       GBP   1.00     (100p     )
-    GBX (pence)      100              2       GBP   0.01     (  1p     )
-    GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
-    GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
+  GBX (pence)      100              0       GBP   1.00     (100p     )
+  GBX (pence)      100              2       GBP   0.01     (  1p     )
+  GBX (pence)      100              4       GBP   0.0001   (  0.01p  )
+  GBX (pence)        1              4       GBP   0.000001 (  0.0001p)
   """
   decimalPlaces: Int!
 
@@ -972,6 +1127,9 @@ type Market {
   "Current state of the market"
   state: MarketState!
 
+  "The proposal which initiated this market"
+  proposal: Proposal
+
   "Orders on a market"
   orders(
     "Pagination skip"
@@ -985,7 +1143,7 @@ type Market {
   "Get account for a party or market"
   accounts(
     "Id of the party to get the margin account for"
-    partyId: String
+    partyId: ID
   ): [Account!]
 
   "Trades on a market"
@@ -1103,7 +1261,7 @@ type Candle {
 "Represents a party on Vega, could be an ethereum wallet address in the future"
 type Party {
   "Party identifier"
-  id: String!
+  id: ID!
 
   "Orders relating to a party"
   orders(
@@ -1118,7 +1276,7 @@ type Party {
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
     "ID of the market we want to get trades for"
-    marketId: String
+    marketId: ID
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -1130,7 +1288,7 @@ type Party {
   "Collateral accounts relating to a party"
   accounts(
     "Market ID - specify what market accounts for the party to return"
-    marketId: String
+    marketId: ID
     "Asset (USD, EUR etc)"
     asset: String
     "Filter accounts by type (General account, margin account, etc...)"
@@ -1143,7 +1301,7 @@ type Party {
   "marginLevels"
   margins(
     "market id off the margin to get, nil if all markets"
-    marketId: String
+    marketId: ID
   ): [MarginLevels!]
 
   proposals(
@@ -1163,6 +1321,8 @@ type Party {
   liquidityProvisions(
     "An optional market id"
     market: String
+    "An optional reference"
+    reference: String
   ): [LiquidityProvision!]
 }
 
@@ -1371,7 +1531,7 @@ type Erc20WithdrawalApproval {
 "The details of a withdrawal processed by vega"
 type Withdrawal {
   "The Vega internal id of the withdrawal"
-  id: String!
+  id: ID!
   "The PartyID initiating the witndrawal"
   party: Party!
   "The amount to be withdrawn"
@@ -1415,7 +1575,7 @@ enum WithdrawalStatus {
 "The details of a deposit processed by vega"
 type Deposit {
   "The Vega internal id of the deposit"
-  id: String!
+  id: ID!
   "The PartyID initiating the deposit"
   party: Party!
   "The amount to be withdrawn"
@@ -1438,7 +1598,7 @@ enum DepositStatus {
   Open
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Cancelled
-  "The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  "The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
@@ -1558,6 +1718,9 @@ enum ProposalRejectionReason {
   MarketMissingLiquidityCommitment
   "Market proposal market could not be instantiate in execution"
   CouldNotInstantiateMarket
+  "Market proposal market contained invalid product definition"
+  InvalidFutureProduct
+
 }
 
 "Reason for the order being rejected by the core node"
@@ -1848,6 +2011,69 @@ input FutureProductInput {
   settlementAsset: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
+  "The oracle spec describing the oracle data of interest."
+  oracleSpec: OracleSpecConfigurationInput!
+  "The binding between the oracle spec and the settlement price"
+  oracleSpecBinding: OracleSpecToFutureBindingInput!
+}
+
+"""
+OracleSpecToFutureBindingInput tells on which property oracle data should be
+used as settlement price.
+"""
+input OracleSpecToFutureBindingInput {
+  settlementPriceProperty: String!
+}
+
+"""
+An oracle spec describe the oracle data that a product (or a risk model)
+wants to get from the oracle engine.
+"""
+input OracleSpecConfigurationInput {
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [FilterInput!]
+}
+
+"""
+Filter describes the conditions under which an oracle data is considered of
+interest or not.
+"""
+input FilterInput {
+  "key is the oracle data property key targeted by the filter."
+  key: PropertyKeyInput!
+  """
+  conditions are the conditions that should be matched by the data to be
+  considered of interest.
+  """
+  conditions: [ConditionInput!]
+}
+
+
+"PropertyKey describes the property key contained in an oracle data."
+input PropertyKeyInput {
+  "name is the name of the property."
+  name: String!
+  "type is the type of the property."
+  type: PropertyKeyType!
+}
+
+"""
+Condition describes the condition that must be validated by the
+"""
+input ConditionInput {
+  "comparator is the type of comparison to make on the value."
+  operator: ConditionOperator!
+  "value is used by the comparator."
+  value: String!
 }
 
 type FutureProduct {
@@ -1857,6 +2083,33 @@ type FutureProduct {
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
+  """
+  Describes the oracle data that an instrument wants to get from the oracle engine.
+  """
+  oracleSpec: OracleSpecConfiguration!
+  """
+  OracleSpecToFutureBinding tells on which property oracle data should be
+  used as settlement price.
+  """
+  oracleSpecBinding: OracleSpecToFutureBinding!
+}
+
+"""
+An oracle spec describe the oracle data that an instrument wants to get from the
+oracle engine.
+"""
+type OracleSpecConfiguration {
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [Filter!]
 }
 
 input InstrumentConfigurationInput {
@@ -1942,6 +2195,26 @@ input NewMarketInput {
   continuousTrading: ContinuousTradingInput
   "Frequent batch auctions trading mode. Valid only if continuousTrading is not set"
   discreteTrading: DiscreteTradingInput
+
+  "The liquidity commitment submitted with the new market"
+  commitment: NewMarketCommitmentInput
+}
+
+"A commitment of liquidity to be made by the party which proposes a market"
+input NewMarketCommitmentInput {
+  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  commitmentAmount: String!
+  """
+  Nominated liquidity fee factor, which is an input to the calculation of
+  taker fees on the market, as per setting fees and rewarding liquidity provider
+  """
+  fee: String!
+  "A set of liquidity sell orders to meet the liquidity provision obligation"
+  sells: [LiquidityOrderInput!]
+  "A set of liquidity buy orders to meet the liquidity provision obligation"
+  buys: [LiquidityOrderInput!]
+  "A reference to be associated to all orders created from this commitment"
+  reference: String
 }
 
 type NewMarket {
@@ -1955,6 +2228,25 @@ type NewMarket {
   metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
+  "The liquidity commitment submitted with the new market"
+  commitment: NewMarketCommitment
+}
+
+"A commitment of liquidity to be made by the party which proposes a market"
+type NewMarketCommitment {
+  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  commitmentAmount: String!
+  """
+  Nominated liquidity fee factor, which is an input to the calculation of
+  taker fees on the market, as per setting fees and rewarding liquidity provider
+  """
+  fee: String!
+  "A set of liquidity sell orders to meet the liquidity provision obligation"
+  sells: [LiquidityOrder!]
+  "A set of liquidity buy orders to meet the liquidity provision obligation"
+  buys: [LiquidityOrder!]
+  "A reference to be associated to all orders created from this commitment"
+  reference: String
 }
 
 """
@@ -1962,10 +2254,10 @@ Incomplete change definition for governance proposal terms
 TODO: complete the type
 """
 type UpdateMarket {
-  marketId: String!
+  marketId: ID!
 }
 input UpdateMarketInput {
-  marketId: String!
+  marketId: ID!
 }
 
 "A new asset proposal change"
@@ -2096,10 +2388,10 @@ input BuiltinAssetInput {
 
 """
 Various states a proposal can transition through:
-  Open ->
-      - Passed -> Enacted.
-      - Rejected.
-  Proposal can enter Failed state from any other state.
+Open ->
+- Passed -> Enacted.
+- Rejected.
+Proposal can enter Failed state from any other state.
 """
 enum ProposalState {
   "Proposal became invalid and cannot be processed"
@@ -2191,7 +2483,7 @@ type TimeUpdate {
 
 type MarketEvent {
   "the market ID"
-  marketID: String!
+  marketId: ID!
   "the message - market events are used for logging"
   payload: String!
 }
@@ -2232,7 +2524,7 @@ type TransferResponses {
 
 type PositionResolution {
   "the market ID where position resolution happened"
-  marketID: String!
+  marketId: ID!
   "number of distressed traders on market"
   distressed: Int!
   "number of traders closed out"
@@ -2243,9 +2535,9 @@ type PositionResolution {
 
 type LossSocialization {
   "the market ID where loss socialization happened"
-  marketID: String!
+  marketId: ID!
   "the party that was part of the loss socialization"
-  partyID: String!
+  partyId: ID!
   "the amount lost"
   amount: Int!
 }
@@ -2259,9 +2551,9 @@ type TradeSettlement {
 
 type SettlePosition {
   "the market in which a position was settled"
-  marketID: String!
+  marketId: ID!
   "the party who settled a position"
-  partyID: String!
+  partyId: ID!
   "the settle price"
   price: Int!
   "the trades that were settled to close the overall position"
@@ -2270,9 +2562,9 @@ type SettlePosition {
 
 type SettleDistressed {
   "the market in which a position was closed out"
-  marketID: String!
+  marketId: ID!
   "the party who closed out"
-  partyID: String!
+  partyId: ID!
   "the margin taken from distressed trader"
   margin: Int!
   "the price at which position was closed out"
@@ -2281,14 +2573,14 @@ type SettleDistressed {
 
 type MarketTick {
   "the market ID"
-  marketID: String!
+  marketId: ID!
   "the block time"
   time: String!
 }
 
 type AuctionEvent {
   "the market ID"
-  marketID: String!
+  marketId: ID!
   "event fired because of auction end"
   leave: Boolean!
   "event related to opening auction"
@@ -2363,6 +2655,8 @@ enum BusEventType {
   Deposit
   "Collateral has been withdrawn from this Vega network via the bridge"
   Withdrawal
+  "An oracle spec has been registered"
+  OracleSpec
   "constant for market events - mainly used for logging"
   Market
 }
@@ -2392,10 +2686,11 @@ union Event =
   | RiskFactor
   | Deposit
   | Withdrawal
+  | OracleSpec
 
 type BusEvent {
   "the id for this event"
-  eventID: String!
+  eventId: ID!
   "the block hash"
   block: String!
   "the type of event we're dealing with"
@@ -2450,7 +2745,7 @@ enum LiquidityProvisionStatus {
 
 type LiquidityOrderReference {
   "The id of the pegged order generated to fullfill this commitment"
-  order: Order!
+  order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
 }
@@ -2458,7 +2753,7 @@ type LiquidityOrderReference {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
-  id: String
+  id: ID
   "The Id of the party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -2479,6 +2774,8 @@ type LiquidityProvision {
   version: String!
   "The current status of this liquidity provision"
   status: LiquidityProvisionStatus!
+  "A reference for the orders created out of this Liquidity provision"
+  reference: String
 }
 
 "A prepared LiquidityProvision command"

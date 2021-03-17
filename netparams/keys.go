@@ -8,7 +8,6 @@ const (
 	MarketFeeFactorsLiquidityFee                    = "market.fee.factors.liquidityFee"
 	MarketAuctionMinimumDuration                    = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
-	MarketInitialMarkPrice                          = "market.initialMarkPrice"
 	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
 	MarketLiquidityStakeToCCYSiskas                 = "market.liquidity.stakeToCcySiskas"
@@ -18,6 +17,7 @@ const (
 	MarketValueWindowLength                         = "market.value.windowLength"
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
+	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 
 	GovernanceVoteAsset = "governance.vote.asset"
 
@@ -72,7 +72,6 @@ var AllKeys = map[string]struct{}{
 	MarketFeeFactorsLiquidityFee:                          {},
 	MarketAuctionMinimumDuration:                          {},
 	MarketAuctionMaximumDuration:                          {},
-	MarketInitialMarkPrice:                                {},
 	MarketLiquidityBondPenaltyParameter:                   {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:         {},
 	MarketLiquidityStakeToCCYSiskas:                       {},
@@ -115,4 +114,5 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateNetParamMinProposerBalance:    {},
 	GovernanceProposalUpdateNetParamMinVoterBalance:       {},
 	BlockchainsEthereumConfig:                             {},
+	MarketLiquidityProvisionShapesMaxSize:                 {},
 }

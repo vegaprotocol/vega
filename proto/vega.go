@@ -1,7 +1,7 @@
 package proto
 
 import (
-	proto "github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -21,6 +21,8 @@ func NewTxFromSignedBundlePayload(payload []byte) (*Transaction, *SignedBundle, 
 
 // IsEvent methods needs to be implemented so we can used mapped types in GQL union
 func (Asset) IsEvent()                           {}
+func (Vote) IsEvent()                            {}
+func (AuctionEvent) IsEvent()                    {}
 func (Order) IsEvent()                           {}
 func (Account) IsEvent()                         {}
 func (Trade) IsEvent()                           {}
@@ -38,3 +40,6 @@ func (NewMarket) IsProposalChange()              {}
 func (NewAsset) IsProposalChange()               {}
 func (UpdateMarket) IsProposalChange()           {}
 func (UpdateNetworkParameter) IsProposalChange() {}
+func (LogNormalRiskModel) IsRiskModel()          {}
+func (SimpleRiskModel) IsRiskModel()             {}
+func (SimpleModelParams) IsRiskModel()           {}

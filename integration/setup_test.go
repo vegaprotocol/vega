@@ -8,7 +8,9 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/plugins"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -21,12 +23,11 @@ const (
 )
 
 var (
-	mktsetup  *marketTestSetup
 	execsetup *executionTestSetup
 	reporter  tstReporter
 
-	marketStart  string = defaultMarketStart
-	marketExpiry string = defaultMarketExpiry
+	marketStart  = defaultMarketStart
+	marketExpiry = defaultMarketExpiry
 )
 
 type tstReporter struct {
@@ -43,87 +44,21 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-type marketTestSetup struct {
-	market *types.Market
-	ctrl   *gomock.Controller
-	core   *execution.Market
-
-	// accounts   *cmocks.MockAccountBuffer
-	accountIDs map[string]struct{}
-	traderAccs map[string]map[types.AccountType]*types.Account
-
-	// we need to call this engine directly
-	colE   *collateral.Engine
-	broker *brokerStub
-}
-
-func getMarketTestSetup(market *types.Market) *marketTestSetup {
-	if mktsetup != nil {
-		mktsetup.ctrl.Finish()
-		mktsetup = nil // ready for GC
-	}
-	// the controller needs the reporter to report on errors or clunk out with fatal
-	ctrl := gomock.NewController(&reporter)
-	broker := NewBrokerStub()
-
-	// this can happen any number of times, just set the mock up to accept all of them
-	// Over time, these mocks will be replaced with stubs that store all elements to a map
-	// again: allow all calls, replace with stub over time
-	colE, _ := collateral.New(
-		logging.NewTestLogger(),
-		collateral.NewDefaultConfig(),
-		broker,
-		time.Now(),
-	)
-
-	tokAsset := types.Asset{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
-			},
-		},
-	}
-	colE.EnableAsset(context.Background(), tokAsset)
-
-	setup := &marketTestSetup{
-		market:     market,
-		ctrl:       ctrl,
-		accountIDs: map[string]struct{}{},
-		traderAccs: map[string]map[types.AccountType]*types.Account{},
-		colE:       colE,
-		broker:     broker,
-	}
-
-	return setup
-}
-
 type executionTestSetup struct {
 	engine *execution.Engine
 
-	cfg        execution.Config
-	log        *logging.Logger
-	ctrl       *gomock.Controller
-	timesvc    *timeStub
-	proposal   *ProposalStub
-	votes      *VoteStub
-	collateral *collateral.Engine
+	cfg          execution.Config
+	log          *logging.Logger
+	ctrl         *gomock.Controller
+	timesvc      *stubs.TimeStub
+	collateral   *collateral.Engine
+	oracleEngine *oracles.Engine
 
 	positionPlugin *plugins.Positions
 
-	broker *brokerStub
+	broker *stubs.BrokerStub
 
 	// save trader accounts state
-	accs map[string][]account
 	mkts []types.Market
 
 	InsurancePoolInitialBalance uint64
@@ -140,7 +75,6 @@ func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTe
 func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionTestSetup {
 	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()
-		// execsetup = nil
 	} else if execsetup == nil {
 		execsetup = &executionTestSetup{}
 	}
@@ -150,15 +84,14 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	execsetup.cfg = execution.NewDefaultConfig("")
 	execsetup.cfg.InsurancePoolInitialBalance = execsetup.InsurancePoolInitialBalance
 	execsetup.log = logging.NewTestLogger()
-	execsetup.accs = map[string][]account{}
 	execsetup.mkts = mkts
-	execsetup.timesvc = &timeStub{now: startTime}
-	execsetup.proposal = NewProposalStub()
-	execsetup.votes = NewVoteStub()
-	execsetup.broker = NewBrokerStub()
+	execsetup.timesvc = &stubs.TimeStub{Now: startTime}
+	execsetup.broker = stubs.NewBrokerStub()
+	currentTime := time.Now()
 	execsetup.collateral, _ = collateral.New(
-		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, time.Now(),
+		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
+	execsetup.oracleEngine = oracles.NewEngine(execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker)
 
 	for _, mkt := range mkts {
 		asset, _ := mkt.GetAsset()
@@ -187,32 +120,23 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	}
 	execsetup.collateral.EnableAsset(context.Background(), tokAsset)
 
-	execsetup.engine = execution.NewEngine(execsetup.log, execsetup.cfg, execsetup.timesvc, execsetup.collateral, execsetup.broker)
+	execsetup.engine = execution.NewEngine(
+		execsetup.log,
+		execsetup.cfg,
+		execsetup.timesvc,
+		execsetup.collateral,
+		execsetup.oracleEngine,
+		execsetup.broker,
+	)
 
 	for _, mkt := range mkts {
 		mkt := mkt
 		execsetup.engine.SubmitMarket(context.Background(), &mkt)
 	}
 
-	// instanciate position plugin
+	// instantiate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
 	return execsetup
-}
-
-type account struct {
-	Balance uint64
-	Type    types.AccountType
-	Market  string
-	Asset   string
-}
-
-func traderHaveGeneralAccount(accs []account, asset string) bool {
-	for _, v := range accs {
-		if v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
-			return true
-		}
-	}
-	return false
 }

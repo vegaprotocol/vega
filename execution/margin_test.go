@@ -12,7 +12,7 @@ import (
 )
 
 func TestMargins(t *testing.T) {
-	party1 := "party1"
+	party1, party2, party3 := "party1", "party2", "party3"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
@@ -20,7 +20,43 @@ func TestMargins(t *testing.T) {
 	size := uint64(100)
 
 	addAccount(tm, party1)
+	addAccount(tm, party2)
+	addAccount(tm, party3)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	order1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid12",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
+		Size:        size,
+		Price:       price,
+		Remaining:   size,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party2-buy-order",
+	}
+	order2 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid123",
+		Side:        types.Side_SIDE_SELL,
+		PartyId:     party3,
+		MarketId:    tm.market.GetID(),
+		Size:        size,
+		Price:       price,
+		Remaining:   size,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party3-buy-order",
+	}
+	_, err := tm.market.SubmitOrder(context.TODO(), order1)
+	assert.NoError(t, err)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), order2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(confirmation.Trades))
 
 	orderBuy := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
@@ -37,7 +73,7 @@ func TestMargins(t *testing.T) {
 		Reference:   "party1-buy-order",
 	}
 	// Create an order to amend
-	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
 	if !assert.NoError(t, err) {
 		t.Fatalf("Error: %v", err)
 	}

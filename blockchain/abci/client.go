@@ -17,7 +17,6 @@ import (
 
 var (
 	ErrEmptyClientAddr     = errors.New("abci client addr is empty in config")
-	ErrEmptyClientEndpoint = errors.New("abci client websocket endpoint is empty in config")
 )
 
 type Client struct {
