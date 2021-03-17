@@ -395,7 +395,7 @@ func (s *Svc) validateNewMarketChanges(
 	closeTime := time.Unix(terms.ClosingTimestamp, 0)
 	enactTime := time.Unix(terms.EnactmentTimestamp, 0)
 
-	// just validate things which cannot be done straigh with
+	// just validate things which cannot be done straight with
 	_, err = validateNewMarket(
 		time.Time{}, nm.Changes, nil, false, s.netp, enactTime.Sub(closeTime))
 	return

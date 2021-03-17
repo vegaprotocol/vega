@@ -82,12 +82,12 @@ var (
 	ErrUnableToReprice = errors.New("unable to reprice")
 	// ErrOrderNotFound we cannot find the order in the market
 	ErrOrderNotFound = errors.New("unable to find the order in the market")
-	// ErrTradingNotAllowed no trading related functionnalities are allowed in the current state
+	// ErrTradingNotAllowed no trading related functionalities are allowed in the current state
 	ErrTradingNotAllowed = errors.New("trading not allowed")
 	// ErrCommitmentSubmissionNotAllowed no commitment submission are permitted in the current state
 	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
 	// ErrNotEnoughStake is returned when a LP update results in not enough commitment
-	ErrNotEnoughStake = errors.New("commitment submission rejected, not enouth stake")
+	ErrNotEnoughStake = errors.New("commitment submission rejected, not enough stake")
 
 	// ErrCannotRejectMarketNotInProposedState
 	ErrCannotRejectMarketNotInProposedState = errors.New("cannot reject a market not in proposed state")
@@ -140,7 +140,7 @@ type AuctionState interface {
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
-// the engines in order to process all transctiona
+// the engines in order to process all transactions
 type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
@@ -482,7 +482,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
 	// the opening auction, but settlement at expiry is
-	// not even specd or implemented as of now...
+	// not even specced or implemented as of now...
 	// if the state of the market is just PROPOSED,
 	// we will just skip everything there as nothing apply.
 	if m.mkt.State == types.Market_STATE_PROPOSED {
@@ -612,7 +612,7 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	if oerr, ok := types.IsOrderError(err); ok {
 		order.Reason = oerr
 	} else {
-		// should not happend but still...
+		// should not happened but still...
 		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 	}
 	m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -1066,7 +1066,7 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 		return
 	}
 
-	// now chec if all  buy/sell/size are 0
+	// now check if all buy/sell/size are 0
 	if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || pos.VWBuy() != 0 || pos.VWSell() != 0 {
 		// position is not 0, nothing to release surely
 		return
@@ -1111,7 +1111,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
 	}()
 
-	// set those at the begining as even rejected order get through the buffers
+	// set those at the beginning as even rejected order get through the buffers
 	if setID {
 		m.idgen.SetID(order)
 	}
@@ -1250,7 +1250,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		if oerr, ok := types.IsOrderError(err); ok {
 			order.Reason = oerr
 		} else {
-			// should not happend but still...
+			// should not happened but still...
 			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		}
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -1421,7 +1421,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
-			// Record open inteterest change
+			// Record open interest change
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
@@ -1501,7 +1501,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	orderUpdates := []*types.Order{}
 	distressedParties := []string{}
 	defer func() {
-		// First we check for all distressd parties if they are liquidity
+		// First we check for all distressed parties if they are liquidity
 		// providers, and if yea cancel their commitments
 		for _, party := range distressedParties {
 			if m.liquidity.IsLiquidityProvider(party) {
@@ -1514,7 +1514,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			}
 		}
 
-		// then we send the orders updtes to the liquidity engine
+		// then we send the order updates to the liquidity engine
 		// just to make sure that any changes on the lp orders
 		// are being reflected / and sizes are updated...
 		if len(orderUpdates) > 0 {
@@ -1893,7 +1893,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			MarketId:  partyOrder.MarketId,
 			Price:     partyOrder.Price,
 			Size:      partyOrder.Size,
-			Aggressor: order.Side, // we consider network to be agressor
+			Aggressor: order.Side, // we consider network to be aggressor
 			BuyOrder:  buyOrder.Id,
 			SellOrder: sellOrder.Id,
 			Buyer:     buyOrder.PartyId,
@@ -2627,7 +2627,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		if err != nil {
 			m.log.Panic("unable to submit order", logging.Error(err))
 		}
-		// replace thetrades in the confirmation to have
+		// replace the trades in the confirmation to have
 		// the ones with the fees embedded
 		conf.Trades = trades
 	}
@@ -2710,7 +2710,7 @@ func (m *Market) RemoveExpiredOrders(
 	}
 
 	// If we have removed an expired order, do we need to reprice any
-	// or maybe notify the liqudity engine
+	// or maybe notify the liquidity engine
 	if len(expired) > 0 {
 		expiredPtrs := make([]*types.Order, len(expired))
 		for i := range expired {
@@ -3014,13 +3014,13 @@ func (m *Market) cancelLiquidityProvision(
 
 	// is our party distressed?
 	// if yes, the orders have been cancelled by the resolve
-	// distresed traders flow.
+	// distressed traders flow.
 	if !isDistressed {
 		// now we cancel all existing orders
 		for _, order := range cancelOrders {
 			if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
 				// nothing much we can do here, I suppose
-				// somethign wrong might have happen...
+				// something wrong might have happen...
 				// does this need a panic? need to think about it...
 				m.log.Debug("unable cancel liquidity order",
 					logging.String("party", party),
@@ -3030,13 +3030,13 @@ func (m *Market) cancelLiquidityProvision(
 		}
 	}
 
-	// now we move back the funds from the bond account to the general acount
+	// now we move back the funds from the bond account to the general account
 	// of the party
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(
 		ctx, party, m.GetID(), asset)
 	if err != nil {
-		m.log.Debug("could not get the party bond accound",
+		m.log.Debug("could not get the party bond account",
 			logging.String("party-id", party),
 			logging.Error(err))
 	}
@@ -3067,7 +3067,7 @@ func (m *Market) cancelLiquidityProvision(
 	if !isReplace {
 		// now let's update the fee selection
 		m.updateLiquidityFee(ctx)
-		// and remove the party from the equitey share like calculation
+		// and remove the party from the equity share like calculation
 		m.equityShares.SetPartyStake(party, float64(0))
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares()
@@ -3088,7 +3088,7 @@ func (m *Market) amendLiquidityProvision(
 	// to reach it's commitment level. Otherwise the commitment reduction is
 	// rejected.
 	if sub.CommitmentAmount < lp.CommitmentAmount {
-		// first - does the market have enought stake
+		// first - does the market have enough stake
 		if uint64(m.getTargetStake()) >= m.getSuppliedStake() {
 			return ErrNotEnoughStake
 		}
@@ -3140,7 +3140,7 @@ func (m *Market) amendLiquidityProvision(
 
 		// now let's update the fee selection
 		m.updateLiquidityFee(ctx)
-		// and remove the party from the equitey share like calculation
+		// and remove the party from the equity share like calculation
 		m.equityShares.SetPartyStake(party, float64(0))
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares()
@@ -3194,7 +3194,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	}
 
 	// add the party to the list of all parties involved with
-	// this markt
+	// this market
 	m.addParty(party)
 
 	defer func() {
@@ -3280,8 +3280,8 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 
 	defer func() {
 		// so here we check if at least we were able to get hte
-		// liquidty provision in, even if orders are not deployed, we should
-		// be able to calculate the shars etc
+		// liquidity provision in, even if orders are not deployed, we should
+		// be able to calculate the shares etc
 		if !needsCancel && !needsBondRollback {
 			// if we are still in opening auction, mvp can only be total stake
 			// so we'll use that to update the equity shares
@@ -3371,7 +3371,7 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 // submitted by the liquidity provider.
 // We will first update orders, which basically will trigger cancellation
 // then place the new orders.
-// this is done this way just so we maximiise the changes for the margin
+// this is done this way just so we maximise the changes for the margin
 // calls to succeed.
 func (m *Market) updateAndCreateOrders(
 	ctx context.Context,
@@ -3418,7 +3418,7 @@ func (m *Market) updateAndCreateOrders(
 	// FIXME(ELIAS): apply bon slashing here I suppose?
 	for party := range faultyLPs {
 		if err := m.cancelLiquidityProvision(ctx, party, false, false); err != nil {
-			m.log.Debug("error cancelling liquidity provision commitmment",
+			m.log.Debug("error cancelling liquidity provision commitment",
 				logging.PartyID(party),
 				logging.MarketID(m.GetID()),
 				logging.Error(err))

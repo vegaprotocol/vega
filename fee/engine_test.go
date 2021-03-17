@@ -44,18 +44,18 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("update fee factors with invalid input", testUpdateFeeFactorsError)
 	t.Run("update fee factors with valid input", testUpdateFeeFactors)
 	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
-	t.Run("calcualte continuous trading fee", testCalcContinuousTrading)
-	t.Run("calcualte continuous trading fee + check amounts", testCalcContinuousTradingAndCheckAmounts)
+	t.Run("calculate continuous trading fee", testCalcContinuousTrading)
+	t.Run("calculate continuous trading fee + check amounts", testCalcContinuousTradingAndCheckAmounts)
 
 	t.Run("calculate continuous trading fee empty trade", testCalcContinuousTradingErrorEmptyTrade)
-	t.Run("calcualte continuous trading fee", testCalcContinuousTrading)
+	t.Run("calculate continuous trading fee", testCalcContinuousTrading)
 
 	t.Run("calculate auction trading fee empty trade", testCalcAuctionTradingErrorEmptyTrade)
-	t.Run("calcualte auction trading fee", testCalcAuctionTrading)
+	t.Run("calculate auction trading fee", testCalcAuctionTrading)
 
 	t.Run("calculate batch auction trading fee empty trade", testCalcBatchAuctionTradingErrorEmptyTrade)
-	t.Run("calcualte batch auction trading fee same batch", testCalcBatchAuctionTradingSameBatch)
-	t.Run("calcualte batch auction trading fee different batches", testCalcBatchAuctionTradingDifferentBatches)
+	t.Run("calculate batch auction trading fee same batch", testCalcBatchAuctionTradingSameBatch)
+	t.Run("calculate batch auction trading fee different batches", testCalcBatchAuctionTradingDifferentBatches)
 	t.Run("calculate position resolution", testCalcPositionResolution)
 }
 

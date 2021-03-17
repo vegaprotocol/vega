@@ -178,7 +178,7 @@ func testSubmissionCRUD(t *testing.T) {
 		"Party '%s' should not be a LiquidityProvider after Committing 0 amount", party)
 }
 
-func TestInitialDeplyFailsWorksLater(t *testing.T) {
+func TestInitialDeployFailsWorksLater(t *testing.T) {
 	var (
 		party = "party-1"
 		ctx   = context.Background()
@@ -210,7 +210,7 @@ func TestInitialDeplyFailsWorksLater(t *testing.T) {
 		markPrice = uint64(10)
 	)
 
-	// Now repreiceFn works as expected, so initial orders should get created now
+	// Now repriceFn works as expected, so initial orders should get created now
 	fn := func(order *types.PeggedOrder) (uint64, error) {
 		return markPrice + uint64(order.Offset), nil
 	}

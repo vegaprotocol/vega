@@ -174,7 +174,7 @@ func (opts *walletSign) Execute(_ []string) error {
 
 	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	if err != nil {
-		return fmt.Errorf("unable to instanciate signature algorithm: %v", err)
+		return fmt.Errorf("unable to instantiate signature algorithm: %v", err)
 	}
 	sig, err := wallet.Sign(alg, kp, opts.Message)
 	if err != nil {
@@ -218,7 +218,7 @@ func (opts *walletVerify) Execute(_ []string) error {
 
 	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	if err != nil {
-		return fmt.Errorf("unable to instanciate signature algorithm: %v", err)
+		return fmt.Errorf("unable to instantiate signature algorithm: %v", err)
 	}
 	verified, err := wallet.Verify(alg, kp, opts.Message, opts.Sig)
 	if err != nil {
@@ -316,7 +316,7 @@ func (opts *walletMeta) Execute(_ []string) error {
 }
 
 type walletServiceInit struct {
-	Force  bool `short:"f" long:"force" description:"Erase existing configuratio at specified path"`
+	Force  bool `short:"f" long:"force" description:"Erase existing configuration at specified path"`
 	GenRSA bool `short:"g" long:"genrsakey" description:"Generates RSA for the JWT tokens"`
 }
 

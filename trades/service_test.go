@@ -179,7 +179,7 @@ func testObserveTradesSuccess(t *testing.T) {
 	// ensure we got the data we expected
 	assert.Equal(t, ref, rref)
 	assert.Equal(t, trades, gotTrades)
-	// unsubscript
+	// unsubscribe
 	cfunc()
 	// ensure unsubscribe was indeed called before returning
 	wg.Wait()
@@ -297,7 +297,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 	assert.Equal(t, ref, rref)
 	assert.Equal(t, 1, len(gotTrades))
 	assert.Equal(t, filterMarket, gotTrades[0].MarketId)
-	// unsubscript
+	// unsubscribe
 	cfunc()
 	// ensure unsubscribe was indeed called before returning
 	wg.Wait()

@@ -49,7 +49,7 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 	assert.Len(t, side.levels, 2)
 
 	// remove it and check the length of the array
-	// remove secpmd prder
+	// remove second order
 	side.RemoveOrder(o2)
 	assert.Len(t, side.levels, 1)
 }

@@ -105,7 +105,7 @@ type Engine struct {
 
 	// this is basically tracking all position to
 	// not perform a copy when positions a retrieved by other engines
-	// the pointer is hidden behing the interface, and do not expose
+	// the pointer is hidden behind the interface, and do not expose
 	// any function to mutate them, so we can consider it safe to return
 	// this slice
 	positionsCpy []events.MarketPosition
@@ -229,7 +229,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
-// this method is a quicker way of handling seperate unregsiter+register pairs
+// this method is a quicker way of handling separate unregister+register pairs
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
 	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
 

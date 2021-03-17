@@ -18,7 +18,7 @@ func verifyBundle(log *logging.Logger, tx *types.Transaction, bundle *types.Sign
 	validator, err := crypto.NewSignatureAlgorithm(bundle.Sig.Algo)
 	if err != nil {
 		if log != nil {
-			log.Error("unable to instanciate new algorithm", logging.Error(err))
+			log.Error("unable to instantiate new algorithm", logging.Error(err))
 		}
 		return err
 	}

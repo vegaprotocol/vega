@@ -39,7 +39,7 @@ func TestNetParams(t *testing.T) {
 	t.Run("test update - success", testUpdateSuccess)
 	t.Run("test update - unknown key", testUpdateUnknownKey)
 	t.Run("test update - validation failed", testUpdateValidationFailed)
-	t.Run("test exists - sucess", testExistsSuccess)
+	t.Run("test exists - success", testExistsSuccess)
 	t.Run("test exists - failure", testExistsFailure)
 	t.Run("get float", testGetFloat)
 	t.Run("get duration", testGetDuration)

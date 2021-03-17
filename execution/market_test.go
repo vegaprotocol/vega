@@ -3581,7 +3581,7 @@ func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
 	assert.Equal(t, uint64(10), o3.Remaining)
 }
 
-// Tests that during a list of LiquidityProvision order creation (tiggered by
+// Tests that during a list of LiquidityProvision order creation (triggered by
 // SubmitLiquidityProvision) fails, the created orders are rolled back.
 func TestLPOrdersRollback(t *testing.T) {
 	ctx := context.Background()
@@ -3964,7 +3964,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 
 	require.EqualError(t,
 		tm.market.SubmitLiquidityProvision(ctx, lpCancel, "trader-2", "id-lp2"),
-		"commitment submission rejected, not enouth stake",
+		"commitment submission rejected, not enough stake",
 	)
 }
 

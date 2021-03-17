@@ -82,7 +82,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	tm.EndOpeningAuction(t, auctionEnd, false)
 
-	// now we will reduce our commitmment
+	// now we will reduce our commitment
 	// we will still be higher than the required stake
 	lpSmallerCommitment := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
@@ -174,7 +174,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	})
 
-	// now we will reduce our commitmment
+	// now we will reduce our commitment
 	// we will still be higher than the required stake
 	lpHigherCommitment := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
@@ -266,7 +266,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	})
 
-	// now we will reduce our commitmment
+	// now we will reduce our commitment
 	// we will still be higher than the required stake
 	lpDifferentShapeCommitment := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
@@ -384,7 +384,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	require.EqualError(t,
 		tm.market.SubmitLiquidityProvision(
 			ctx, lpTooSmallCommitment, lpparty, "liquidity-submission-4"),
-		"commitment submission rejected, not enouth stake",
+		"commitment submission rejected, not enough stake",
 	)
 
 	// now we will increase the commitment too much so it gets
@@ -432,7 +432,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	require.EqualError(t,
 		tm.market.SubmitLiquidityProvision(
 			ctx, lpCancelCommitment, lpparty, "liquidity-submission-6"),
-		"commitment submission rejected, not enouth stake",
+		"commitment submission rejected, not enough stake",
 	)
 
 }

@@ -40,7 +40,7 @@ func TradersAttemptToCancelTheFollowingFilledOrders(
 }
 
 func errCanceledFilledOrder(o types.Order) error {
-	return fmt.Errorf("trader(%s) succesfully canceled the uncancelable order with reference(%s)",
+	return fmt.Errorf("trader(%s) successfully canceled the uncancelable order with reference(%s)",
 		o.PartyId, o.Reference,
 	)
 }

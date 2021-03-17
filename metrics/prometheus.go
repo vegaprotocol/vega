@@ -484,7 +484,7 @@ func EvtForwardInc(labelValues ...string) {
 	evtForwardCounter.WithLabelValues(labelValues...).Inc()
 }
 
-// OrderGaugeAdd incement the order gauge
+// OrderGaugeAdd increment the order gauge
 func OrderGaugeAdd(n int, labelValues ...string) {
 	if orderGauge == nil {
 		return

@@ -299,7 +299,7 @@ func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, 
 		return err
 	}
 
-	// checkec straight away if the withdrawal is signed
+	// check straight away if the withdrawal is signed
 	nonce := &big.Int{}
 	nonce.SetString(w.ReferenceNonce, 10)
 	withd, err := e.getWithdrawalFromRef(nonce)
@@ -460,7 +460,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		// need to keep waiting for its validation, or accepted. in the case
 		// it's accepted it's then sent to the given collateral function
 		// (deposit, withdraw, allowlist), then an error can occur down the
-		// line in the collateral but if that happend there's no way for
+		// line in the collateral but if that happened there's no way for
 		// us to recover for this event, so we have no real reason to keep
 		// it in memory
 		delete(e.assetActs, k)
@@ -480,7 +480,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	case aa.IsERC20Withdrawal():
 		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
 		if err != nil {
-			// Nothing to do, withrawal does not exists
+			// Nothing to do, withdrawal does not exists
 			return err
 		}
 		if w.Status != types.Withdrawal_STATUS_OPEN {

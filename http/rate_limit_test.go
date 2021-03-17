@@ -30,7 +30,7 @@ func TestRateLimit(t *testing.T) {
 			}
 		}
 
-		// IP addres not in the allow listttt
+		// IP address not in the allow list
 		err = rl.NewRequest("someprefix", "2.2.2.2")
 		assert.NoError(t, err)
 		err = rl.NewRequest("someprefix", "2.2.2.2")

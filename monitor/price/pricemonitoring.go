@@ -70,7 +70,7 @@ type currentPrice struct {
 	Volume uint64
 }
 
-// RangeProvider provides the minimium and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
+// RangeProvider provides the minimum and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price RangeProvider
 type RangeProvider interface {
 	PriceRange(price, yearFraction, probability float64) (float64, float64)
@@ -133,7 +133,7 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 	return e, nil
 }
 
-// GetHorizonYearFractions returns horizons of all the triggers specifed, expressed as year fraction, sorted in ascending order.
+// GetHorizonYearFractions returns horizons of all the triggers specified, expressed as year fraction, sorted in ascending order.
 func (e *Engine) GetHorizonYearFractions() []float64 {
 	h := make([]float64, 0, len(e.bounds))
 	for _, v := range e.fpHorizons {

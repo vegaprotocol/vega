@@ -6,7 +6,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// LiquidityProvisions provides convenience functions to a slice of *veaga/proto.LiquidityProvision.
+// LiquidityProvisions provides convenience functions to a slice of *vega/proto.LiquidityProvision.
 type LiquidityProvisions []*types.LiquidityProvision
 
 // feeForTarget returns the right fee given a group of sorted (by ascending fee) LiquidityProvisions.

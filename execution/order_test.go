@@ -391,7 +391,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	// Send an aend but use the wrong partyID
+	// Send an amend but use the wrong partyID
 	amend := &types.OrderAmendment{
 		OrderId:  confirmation.GetOrder().GetId(),
 		PartyId:  party2,
@@ -1160,7 +1160,7 @@ func testPeggedOrderSells(t *testing.T) {
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	// BEST ASK peg mudst be >= 0
+	// BEST ASK peg must be >= 0
 	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: -3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)

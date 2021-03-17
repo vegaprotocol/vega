@@ -70,7 +70,7 @@ func TestMarginUpdateOnOrder(t *testing.T) {
 	t.Run("Successfully update margin on new order if general account balance is OK will use bond account if exists", testMarginUpdateOnOrderOKUseBondAccount)
 	t.Run("Successfully update margin on new order if general account balance is OK will use bond&general accounts if exists", testMarginUpdateOnOrderOKUseBondAndGeneralAccounts)
 	t.Run("Successfully update margin on new order then rollback", testMarginUpdateOnOrderOKThenRollback)
-	t.Run("Faile update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
+	t.Run("Failed to update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
 }
 
 func TestEnableAssets(t *testing.T) {
@@ -119,7 +119,7 @@ func testPartyWithAccountHasABalance(t *testing.T) {
 	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.NoError(t, err)
 
-	// then add some monites
+	// then add some money
 	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
 	assert.Nil(t, err)
 
@@ -136,11 +136,11 @@ func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
 	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.NoError(t, err)
 
-	// then add some monites
+	// then add some money
 	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
 	assert.Nil(t, err)
 
-	// then add some monites
+	// then add some money
 	err = eng.Engine.DecrementBalance(context.Background(), acc, 500)
 	assert.Nil(t, err)
 
@@ -1766,7 +1766,7 @@ func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
 	assert.NotNil(t, resp)
 
 	// we toped up only 70 in the bond account
-	// but requied 100 so we should pick 30 in the general account as well.
+	// but required 100 so we should pick 30 in the general account as well.
 
 	// check shortfall
 	assert.Equal(t, int(closed.MarginShortFall()), 30)

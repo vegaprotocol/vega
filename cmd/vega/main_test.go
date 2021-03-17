@@ -20,7 +20,7 @@ var (
 type CommandSuite struct {
 }
 
-// RunMain simulates a CLI execution. It formats a cmd invocation given a format and its args and ovewrites os.Args.
+// RunMain simulates a CLI execution. It formats a cmd invocation given a format and its args and overwrites os.Args.
 // The output of the command is captured and returned.
 func (suite *CommandSuite) RunMain(ctx context.Context, format string, args ...interface{}) ([]byte, error) {
 	old := os.Stdout

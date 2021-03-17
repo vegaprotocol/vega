@@ -322,7 +322,7 @@ func verifySignature(
 	validator, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	if err != nil {
 		if log != nil {
-			log.Error("unable to instanciate new algorithm", logging.Error(err))
+			log.Error("unable to instantiate new algorithm", logging.Error(err))
 		}
 		return err
 	}

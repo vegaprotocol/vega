@@ -1294,7 +1294,7 @@ func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
 	assert.Equal(t, int(expectedTrade.Price), int(trade.Price), "invalid trade price")
 	assert.Equal(t, int(expectedTrade.Size), int(trade.Size), "invalid trade size")
 	assert.Equal(t, expectedTrade.Buyer, trade.Buyer, "invalid trade buyer")
-	assert.Equal(t, expectedTrade.Seller, trade.Seller, "invalide trade sellet")
+	assert.Equal(t, expectedTrade.Seller, trade.Seller, "invalid trade seller")
 	assert.Equal(t, expectedTrade.Aggressor, trade.Aggressor, "invalid trade aggressor")
 }
 
