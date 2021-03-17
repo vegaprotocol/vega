@@ -159,6 +159,9 @@ func FeatureContext(s *godog.Suite) {
 		steps.ClearOrderEvents(execsetup.broker)
 		return nil
 	})
+	s.Step(`^traders place pegged orders:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersPlacePeggedOrders(execsetup.engine, table)
+	})	
 	s.Step(`^I see the following order events:$`, func(table *gherkin.DataTable) error {
 		return steps.OrderEventsSent(execsetup.broker, table)
 	})
@@ -169,13 +172,12 @@ func FeatureContext(s *godog.Suite) {
 		steps.ClearTransferEvents(execsetup.broker)
 		return nil
 	})
-		s.Step(`^traders place pegged orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlacePeggedOrders(execsetup.engine, table)
-	})
 	s.Step(`^traders cancel pegged orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersCancelPeggedOrders(execsetup.broker, execsetup.engine, table)
 	})
-	s.Step(`^the trader submits LP:$`, submitLP)
+	s.Step(`^the trader submits LP:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersSubmitLiquidityProvision(execsetup.engine, table)
+	})
 	s.Step(`^I see the LP events:$`, func(table *gherkin.DataTable) error {
 		return steps.LiquidityProvisionEventsSent(execsetup.broker, table)
 	})

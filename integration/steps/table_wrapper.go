@@ -59,6 +59,12 @@ func U64(value string) (uint64, error) {
 	return strconv.ParseUint(value, 10, 0)
 }
 
+func (r RowWrapper) U32(name string) uint32 {
+	value, err := U64(r.values[name])
+	panicW(name, err)
+	return uint32(value)
+}
+
 func (r RowWrapper) U64Slice(name, sep string) []uint64 {
 	value, err := U64Slice(r.values[name], sep)
 	panicW(name, err)
