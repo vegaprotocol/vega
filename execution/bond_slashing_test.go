@@ -26,7 +26,7 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 			MarketId:    mkt.market.GetID(),
 			PartyId:     parties[0],
 			Side:        types.Side_SIDE_BUY,
-			Price:       price - 1,
+			Price:       price - 10,
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -62,7 +62,7 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 			MarketId:    mkt.market.GetID(),
 			PartyId:     parties[1],
 			Side:        types.Side_SIDE_SELL,
-			Price:       price + 1,
+			Price:       price + 10,
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -93,6 +93,62 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, mktData.MarketTradingMode)
 }
 
+func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
+	mainParty := "mainParty"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	openingAuction := &types.AuctionDuration{
+		Duration: 1,
+	}
+	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
+	initialMarkPrice := uint64(99)
+	ctx := context.Background()
+
+	asset := tm.asset
+
+	// end opening auction
+	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
+
+	mainPartyInitialDeposit := uint64(794)
+	addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
+
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+
+	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	require.NotNil(t, confirmationSell)
+	require.NoError(t, err)
+
+	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+
+	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
+	assert.NotNil(t, confirmationBuy)
+	assert.NoError(t, err)
+
+	require.Equal(t, 0, len(confirmationBuy.Trades))
+
+	lp1 := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 200,
+		Fee:              "0.05",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+		},
+	}
+
+	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
+	require.NoError(t, err)
+
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	require.NoError(t, err)
+	require.NotNil(t, bondAcc)
+	require.Equal(t, lp1.CommitmentAmount, bondAcc.Balance)
+}
+
 func TestRejectLiquidityProvisionWithInsufficientMargin(t *testing.T) {
 	mainParty := "mainParty"
 	now := time.Unix(10, 0)
@@ -109,8 +165,7 @@ func TestRejectLiquidityProvisionWithInsufficientMargin(t *testing.T) {
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
-	// var mainPartyInitialDeposit uint64 = 793 // 794 is the minimum required amount to submitt the two liquidity orders and LP provision
-	mainPartyInitialDeposit := uint64(200) // 794 is the minimum required amount to submitt the two liquidity orders and LP provision
+	mainPartyInitialDeposit := uint64(793) // 794 is the minimum required amount to submitt the two liquidity orders and LP provision
 	addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
