@@ -92,6 +92,11 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil, nil, nil
 	}
 	if evt != nil {
+		// if the order is an LP order, bond slashing doesn't apply
+		// we should fail
+		if m.liquidity.IsLiquidityOrder(mpos.Party(), order.Id) {
+			return nil, nil, ErrMarginCheckInsufficient
+		}
 		return []events.Risk{risk}, []events.MarketPosition{evt}, nil
 	}
 	return []events.Risk{risk}, nil, nil

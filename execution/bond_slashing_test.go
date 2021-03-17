@@ -242,7 +242,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	require.Greater(t, insurancePoolBalanceAfterLPCloseout, insurancePoolBalanceBeforeLPCloseout)
 }
 
-func testBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.T) {
+func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -331,7 +331,7 @@ func testBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	require.Equal(t, zero, insurancePoolBalanceAfterMarketMove)
 }
 
-func testBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.T) {
+func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -453,7 +453,7 @@ func testBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.Equal(t, expectedBondAccBalance, int64(bondAccBalanceAfterMarketMove))
 }
 
-func testBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseout(t *testing.T) {
+func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseout(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -577,7 +577,7 @@ func testBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	require.Equal(t, lp.CommitmentAmount, suppliedStake)
 }
 
-func testBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t *testing.T) {
+func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -700,7 +700,7 @@ func testBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t 
 	require.Equal(t, suppliedStake, zero)
 }
 
-func testBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t *testing.T) {
+func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
