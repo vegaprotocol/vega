@@ -204,7 +204,7 @@ type OrderConfirmation struct {
 func (o *OrderConfirmation) IntoProto() *proto.OrderConfirmation {
 	return &proto.OrderConfirmation{
 		Order:                 o.Order.IntoProto(),
-		Trades:                o.Trades,
+		Trades:                Trades(o.Trades).IntoProto(),
 		PassiveOrdersAffected: Orders(o.PassiveOrdersAffected).IntoProto(),
 	}
 }
@@ -219,8 +219,78 @@ func (o *OrderCancellationConfirmation) IntoProto() *proto.OrderCancellationConf
 	}
 }
 
-type Trade = proto.Trade
-type Fee = proto.Fee
+type Trade struct {
+	Id                 string
+	MarketId           string
+	Price              uint64
+	Size               uint64
+	Buyer              string
+	Seller             string
+	Aggressor          Side
+	BuyOrder           string
+	SellOrder          string
+	Timestamp          int64
+	Type               Trade_Type
+	BuyerFee           *Fee
+	SellerFee          *Fee
+	BuyerAuctionBatch  uint64
+	SellerAuctionBatch uint64
+}
+
+func (t *Trade) IntoProto() *proto.Trade {
+	var buyerFee, sellerFee *proto.Fee
+	if t.BuyerFee != nil {
+		buyerFee = t.BuyerFee.IntoProto()
+	}
+	if t.SellerFee != nil {
+		sellerFee = t.SellerFee.IntoProto()
+	}
+	return &proto.Trade{
+		Id:                 t.Id,
+		MarketId:           t.MarketId,
+		Price:              t.Price,
+		Size:               t.Size,
+		Buyer:              t.Buyer,
+		Seller:             t.Seller,
+		Aggressor:          t.Aggressor,
+		BuyOrder:           t.BuyOrder,
+		SellOrder:          t.SellOrder,
+		Timestamp:          t.Timestamp,
+		Type:               t.Type,
+		BuyerFee:           buyerFee,
+		SellerFee:          sellerFee,
+		BuyerAuctionBatch:  t.BuyerAuctionBatch,
+		SellerAuctionBatch: t.SellerAuctionBatch,
+	}
+}
+
+func (t *Trade) String() string {
+	return t.IntoProto().String()
+}
+
+type Trades []*Trade
+
+func (t Trades) IntoProto() []*proto.Trade {
+	out := make([]*proto.Trade, 0, len(t))
+	for _, v := range t {
+		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
+type Fee struct {
+	MakerFee          uint64
+	InfrastructureFee uint64
+	LiquidityFee      uint64
+}
+
+func (f *Fee) IntoProto() *proto.Fee {
+	return &proto.Fee{
+		MakerFee:          f.MakerFee,
+		InfrastructureFee: f.InfrastructureFee,
+		LiquidityFee:      f.LiquidityFee,
+	}
+}
 
 type Trade_Type = proto.Trade_Type
 
