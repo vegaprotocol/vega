@@ -305,7 +305,7 @@ run() {
 	misspell) ## Run misspell
 		# Since misspell does not support exluding, we need to specify the
 		# files we want and those we don't
-		find . -type f -name '*.go' -o -name '*.proto' | grep -v vendor/|xargs misspell -error
+		find . -name vendor -prune -o "(" -type f -name '*.go' -o -name '*.proto' ")" -print0 | xargs -0 misspell -j 0 -error
 		return "$?"
 		;;
 	semgrep) ## Run semgrep
