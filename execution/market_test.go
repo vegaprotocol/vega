@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -428,6 +429,15 @@ func (tm *testMarket) WithSubmittedOrders(t *testing.T, orders ...*types.Order) 
 	return tm
 }
 
+func (tm *testMarket) EventHasBeenEmitted(t *testing.T, e events.Event) {
+	for _, event := range tm.events {
+		if reflect.DeepEqual(e, event) {
+			return
+		}
+	}
+	t.Fatalf("Expected event: '%s', has not been emitted", e)
+}
+
 func TestMarketClosing(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
@@ -441,6 +451,47 @@ func TestMarketClosing(t *testing.T) {
 	// check account gets updated
 	closed := tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
 	assert.True(t, closed)
+}
+
+func TestMarketNotActive(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(20, 0)
+
+	// this will create a market in Proposed Mode
+	tm := getTestMarket2(t, now, closingAt, nil, nil, false)
+	defer tm.ctrl.Finish()
+
+	require.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
+
+	party1 := "party1"
+	tm.WithAccountAndAmount(party1, 1000000)
+
+	order := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+
+	tm.events = nil
+	cpy := *order
+	cpy.Status = types.Order_STATUS_REJECTED
+	cpy.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
+	expectedEvent := events.NewOrderEvent(context.Background(), &cpy)
+
+	_, err := tm.market.SubmitOrder(context.Background(), order)
+	require.Error(t, err)
+	tm.EventHasBeenEmitted(t, expectedEvent)
+
 }
 
 func TestMarketWithTradeClosing(t *testing.T) {
