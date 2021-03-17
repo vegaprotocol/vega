@@ -90,6 +90,7 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       - failed=""
+      - make misspell
       - make staticcheck
       - make buflint
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
