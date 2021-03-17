@@ -90,9 +90,6 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       - failed=""
-      - make misspell
-      - make staticcheck
-      - make buflint
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
           make retest || exit 1 ;
           for target in gqlgen_check print_check proto_check race vet ;
@@ -103,7 +100,7 @@ steps:
         else
           echo "No Go files changed. Skipping go tests" ;
         fi
-      - for target in codeowners_check ; do
+      - for target in codeowners_check buflint misspell staticcheck; do
           echo "$$COL_CYAN$$target$$COL_RESET" ;
           make "$$target" || failed="$$failed $$target" ;
         done
