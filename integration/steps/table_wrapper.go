@@ -256,6 +256,19 @@ func (r RowWrapper) Account(name string) types.AccountType {
 	return account(r.Str(name))
 }
 
+func (r RowWrapper) Price(name string) *types.Price {
+	n := r.U64(name)
+	// nil instead of zero value of Price is expected by APIs
+	if n == 0 {
+		return nil
+	}
+	return Price(n)
+}
+
+func Price(n uint64) *types.Price {
+	return &types.Price{Value: n}
+}
+
 func account(name string) types.AccountType {
 	value := types.AccountType(types.AccountType_value[name])
 

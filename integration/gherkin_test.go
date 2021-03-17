@@ -58,16 +58,6 @@ func ordertypeval(rows *gherkin.TableRow, idx int) (proto.Order_Type, error) {
 	return proto.Order_Type(ty), nil
 }
 
-func boolval(rows *gherkin.TableRow, idx int) (bool, error) {
-	val := rows.Cells[idx].Value
-	if val == "true" {
-		return true, nil
-	} else if val == "false" {
-		return false, nil
-	}
-	return false, fmt.Errorf("invalid bool value: %v", val)
-}
-
 func peggedRef(rows *gherkin.TableRow, i int) proto.PeggedReference {
 	switch rows.Cells[i].Value {
 	case "MID":
