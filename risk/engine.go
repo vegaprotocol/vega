@@ -250,11 +250,11 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	margins.Timestamp = e.currTime
 	margins.MarketId = e.mktID
 
-	curBalance := evt.MarginBalance()
+	curMarginBalance := evt.MarginBalance()
 
 	// there's not enough monies in the accounts of the party,
 	// we break from here. The minimum requires is MAINTENANCE, not INITIAL here!
-	if curBalance+evt.GeneralBalance() < margins.MaintenanceMargin {
+	if curMarginBalance+evt.GeneralBalance() < margins.MaintenanceMargin {
 		return nil, nil, ErrInsufficientFundsForInitialMargin
 	}
 
@@ -262,13 +262,13 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 
 	// margins are sufficient, nothing to update
-	if curBalance >= margins.InitialMargin {
+	if curMarginBalance >= margins.InitialMargin {
 		return nil, nil, nil
 	}
 
 	var minAmount uint64
-	if margins.MaintenanceMargin > curBalance {
-		minAmount = maxUint(margins.MaintenanceMargin-curBalance, 0)
+	if margins.MaintenanceMargin > curMarginBalance {
+		minAmount = maxUint(margins.MaintenanceMargin-curMarginBalance, 0)
 	}
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
@@ -277,7 +277,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: margins.InitialMargin - curBalance,
+			Amount: margins.InitialMargin - curMarginBalance,
 		},
 		MinAmount: minAmount, // minimal amount == maintenance
 	}
@@ -289,7 +289,8 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 	// we don't have enough in general + margin accounts to cover maintenance level, so we'll be dipping into our bond account
 	// we have to return the margin event to signal that
-	if (curBalance - evt.BondBalance()) < margins.MaintenanceMargin {
+	nonBondFunds := curMarginBalance + evt.GeneralBalance() - evt.BondBalance()
+	if nonBondFunds < margins.MaintenanceMargin {
 		return change, evt, nil
 	}
 	return change, nil, nil
