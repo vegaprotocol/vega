@@ -56,6 +56,7 @@ type ResolverRoot interface {
 	MarketData() MarketDataResolver
 	MarketDepth() MarketDepthResolver
 	MarketDepthUpdate() MarketDepthUpdateResolver
+	MarketTimestamps() MarketTimestampsResolver
 	Mutation() MutationResolver
 	NewAsset() NewAssetResolver
 	NewMarket() NewMarketResolver
@@ -956,6 +957,12 @@ type MarketDepthUpdateResolver interface {
 	Market(ctx context.Context, obj *proto.MarketDepthUpdate) (*proto.Market, error)
 
 	SequenceNumber(ctx context.Context, obj *proto.MarketDepthUpdate) (string, error)
+}
+type MarketTimestampsResolver interface {
+	Proposed(ctx context.Context, obj *proto.MarketTimestamps) (string, error)
+	Pending(ctx context.Context, obj *proto.MarketTimestamps) (string, error)
+	Open(ctx context.Context, obj *proto.MarketTimestamps) (string, error)
+	Close(ctx context.Context, obj *proto.MarketTimestamps) (string, error)
 }
 type MutationResolver interface {
 	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) (*PreparedSubmitOrder, error)
@@ -15216,13 +15223,13 @@ func (ec *executionContext) _MarketTimestamps_proposed(ctx context.Context, fiel
 		Object:   "MarketTimestamps",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Proposed, nil
+		return ec.resolvers.MarketTimestamps().Proposed(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15250,13 +15257,13 @@ func (ec *executionContext) _MarketTimestamps_pending(ctx context.Context, field
 		Object:   "MarketTimestamps",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Pending, nil
+		return ec.resolvers.MarketTimestamps().Pending(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15284,13 +15291,13 @@ func (ec *executionContext) _MarketTimestamps_open(ctx context.Context, field gr
 		Object:   "MarketTimestamps",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Open, nil
+		return ec.resolvers.MarketTimestamps().Open(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15318,13 +15325,13 @@ func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field g
 		Object:   "MarketTimestamps",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Close, nil
+		return ec.resolvers.MarketTimestamps().Close(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29044,25 +29051,61 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketTimestamps")
 		case "proposed":
-			out.Values[i] = ec._MarketTimestamps_proposed(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketTimestamps_proposed(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "pending":
-			out.Values[i] = ec._MarketTimestamps_pending(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketTimestamps_pending(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "open":
-			out.Values[i] = ec._MarketTimestamps_open(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketTimestamps_open(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "close":
-			out.Values[i] = ec._MarketTimestamps_close(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketTimestamps_close(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

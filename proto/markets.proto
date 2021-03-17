@@ -283,11 +283,11 @@ message Market {
 // Time stamps for important times about creating, enacting etc the market
 message MarketTimestamps {
   // Time when the market is first proposed
-  string proposed = 1;
+  int64 proposed = 1;
   // Time when the market has been voted in and is created into an opening auction
-  string pending = 2;
+  int64 pending = 2;
   // Time when the market has left the opening auction and is ready to accept trades
-  string open = 3;
+  int64 open = 3;
   // Time when the market is closed
-  string close = 4;
+  int64 close = 4;
 }

@@ -29,7 +29,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -297,14 +296,14 @@ func NewMarket(
 
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
-		Proposed: vegatime.Format(now),
-		Close:    vegatime.Format(closingAt),
+		Proposed: now.UnixNano(),
+		Close:    closingAt.UnixNano(),
 	}
 
 	if mkt.OpeningAuction != nil {
-		ts.Open = vegatime.Format(now.Add(time.Duration(mkt.OpeningAuction.Duration)))
+		ts.Open = now.Add(time.Duration(mkt.OpeningAuction.Duration)).UnixNano()
 	} else {
-		ts.Open = vegatime.Format(now)
+		ts.Open = now.UnixNano()
 	}
 
 	mkt.MarketTimestamps = ts
@@ -458,7 +457,7 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.as.AuctionStart() {
 		// we are now in a pending state
 		m.mkt.State = types.Market_STATE_PENDING
-		m.mkt.MarketTimestamps.Pending = vegatime.Format(m.currentTime)
+		m.mkt.MarketTimestamps.Pending = m.currentTime.UnixNano()
 		m.EnterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting

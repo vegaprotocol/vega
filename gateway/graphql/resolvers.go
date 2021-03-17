@@ -253,6 +253,10 @@ func (r *VegaResolverRoot) NewMarketCommitment() NewMarketCommitmentResolver {
 	return (*newMarketCommitmentResolver)(r)
 }
 
+func (r *VegaResolverRoot) MarketTimestamps() MarketTimestampsResolver {
+	return (*marketTimestampsResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
