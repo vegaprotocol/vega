@@ -157,6 +157,10 @@ staticcheck: ## Run statick analysis checks
 buflint: ## Run buf lint
 	@./script/build.sh -a buflint
 
+.PHONY: misspell
+misspell: # Run go specific misspell checks
+	@./script/build.sh -a misspell
+
 .PHONY: semgrep
 semgrep: ## Run semgrep static analysis checks
 	@./script/build.sh -a semgrep
