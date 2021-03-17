@@ -4256,6 +4256,10 @@
         "state": {
           "$ref": "#/definitions/vegaMarketState",
           "title": "Current state of the market"
+        },
+        "market_timestamps": {
+          "$ref": "#/definitions/vegaMarketTimestamps",
+          "title": "Timestamps for when the market staye changes"
         }
       },
       "title": "Market definition"
@@ -4493,6 +4497,32 @@
         }
       },
       "title": "A market ticket event contains the time value for when a particular market was last processed on Vega"
+    },
+    "vegaMarketTimestamps": {
+      "type": "object",
+      "properties": {
+        "proposed": {
+          "type": "string",
+          "format": "int64",
+          "title": "Time when the market is first proposed"
+        },
+        "pending": {
+          "type": "string",
+          "format": "int64",
+          "title": "Time when the market has been voted in and is created into an opening auction"
+        },
+        "open": {
+          "type": "string",
+          "format": "int64",
+          "title": "Time when the market has left the opening auction and is ready to accept trades"
+        },
+        "close": {
+          "type": "string",
+          "format": "int64",
+          "title": "Time when the market is closed"
+        }
+      },
+      "title": "Time stamps for important times about creating, enacting etc the market"
     },
     "vegaNetworkParameter": {
       "type": "object",

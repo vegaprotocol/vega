@@ -294,6 +294,20 @@ func NewMarket(
 	mkt.State = types.Market_STATE_PROPOSED
 	mkt.TradingMode = types.Market_TRADING_MODE_CONTINUOUS
 
+	// Populate the market timestamps
+	ts := &types.MarketTimestamps{
+		Proposed: now.UnixNano(),
+		Close:    closingAt.UnixNano(),
+	}
+
+	if mkt.OpeningAuction != nil {
+		ts.Open = now.Add(time.Duration(mkt.OpeningAuction.Duration)).UnixNano()
+	} else {
+		ts.Open = now.UnixNano()
+	}
+
+	mkt.MarketTimestamps = ts
+
 	market := &Market{
 		log:                log,
 		idgen:              idgen,
@@ -443,6 +457,7 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.as.AuctionStart() {
 		// we are now in a pending state
 		m.mkt.State = types.Market_STATE_PENDING
+		m.mkt.MarketTimestamps.Pending = m.currentTime.UnixNano()
 		m.EnterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting

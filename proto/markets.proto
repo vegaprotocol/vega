@@ -276,4 +276,18 @@ message Market {
   TradingMode trading_mode = 8;
   // Current state of the market
   State state = 9;
+  // Timestamps for when the market staye changes
+  MarketTimestamps market_timestamps = 10;
+}
+
+// Time stamps for important times about creating, enacting etc the market
+message MarketTimestamps {
+  // Time when the market is first proposed
+  int64 proposed = 1;
+  // Time when the market has been voted in and is created into an opening auction
+  int64 pending = 2;
+  // Time when the market has left the opening auction and is ready to accept trades
+  int64 open = 3;
+  // Time when the market is closed
+  int64 close = 4;
 }

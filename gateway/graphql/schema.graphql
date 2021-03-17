@@ -370,6 +370,19 @@ type MarketData {
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
 }
 
+"timestamps for when the market changes state"
+type MarketTimestamps {
+  "Time when the market is first proposed"
+  proposed: String
+  "Time when the market has been voted in and waiting to be created"
+  pending: String
+  "Time when the market is open and ready to accept trades"
+  open: String
+  "Time when the market is closed"
+  close: String
+}
+
+
 "The equity like share of liquidity fee for each liquidity provider"
 type LiquidityProviderFeeShare {
   "The liquidity provider party id"
@@ -1178,6 +1191,9 @@ type Market {
     "An optional party id"
     party: String
   ): [LiquidityProvision!]
+
+  "timestamps for state changes in the market"
+  marketTimestamps: MarketTimestamps!
 }
 
 """
