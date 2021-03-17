@@ -122,7 +122,7 @@ func TestMargins(t *testing.T) {
 		t.Fatal("SubmitOrder confirmation was nil, but no error.")
 	}
 
-	orderID := confirmation.GetOrder().Id
+	orderID := confirmation.Order.Id
 
 	// Amend size up
 	amend := &commandspb.OrderAmendment{

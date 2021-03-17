@@ -4617,7 +4617,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -4996,7 +4996,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5054,7 +5054,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5491,7 +5491,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 

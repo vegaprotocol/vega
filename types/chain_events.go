@@ -15,6 +15,16 @@ type ERC20Withdrawal = proto.ERC20Withdrawal
 type Erc20WithdrawExt = proto.Erc20WithdrawExt
 type BuiltinAsset = proto.BuiltinAsset
 type ERC20 = proto.ERC20
+type ChainEvent_Builtin = proto.ChainEvent_Builtin
+type ChainEvent_Erc20 = proto.ChainEvent_Erc20
+type ChainEvent_Btc = proto.ChainEvent_Btc
+type ChainEvent_Validator = proto.ChainEvent_Validator
+type BuiltinAssetEvent_Deposit = proto.BuiltinAssetEvent_Deposit
+type BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
+type ERC20Event_AssetList = proto.ERC20Event_AssetList
+type ERC20Event_AssetDelist = proto.ERC20Event_AssetDelist
+type ERC20Event_Deposit = proto.ERC20Event_Deposit
+type ERC20Event_Withdrawal = proto.ERC20Event_Withdrawal
 
 type Withdrawal_Status = proto.Withdrawal_Status
 

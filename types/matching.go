@@ -30,6 +30,10 @@ type Order struct {
 	PeggedOrder *PeggedOrder
 }
 
+func (o Order) String() string {
+	return o.IntoProto().String()
+}
+
 type Orders []*Order
 
 func (o Orders) IntoProto() []*proto.Order {

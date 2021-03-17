@@ -59,7 +59,7 @@ func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.Mar
 	needToQuit := false
 	orders := mdb.GetAllOrders(tm.market.GetID())
 	for _, order := range orders {
-		if !tm.market.ValidateOrder(order) {
+		if !tm.market.ValidateOrder(types.OrderFromProto(order)) {
 			needToQuit = true
 		}
 	}

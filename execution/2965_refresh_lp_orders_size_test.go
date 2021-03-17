@@ -194,7 +194,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.Order:
 				if evt.Order().PartyId == "trader-2" {
-					found = append(found, evt.Order())
+					found = append(found, types.OrderFromProto(evt.Order()))
 				}
 			}
 		}

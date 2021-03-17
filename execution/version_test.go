@@ -41,9 +41,9 @@ func TestVersioning(t *testing.T) {
 	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
-	assert.EqualValues(t, confirmation.GetOrder().Version, uint64(1))
+	assert.EqualValues(t, confirmation.Order.Version, uint64(1))
 
-	orderID := confirmation.GetOrder().Id
+	orderID := confirmation.Order.Id
 
 	// Amend price up, check version moves to 2
 	amend := &commandspb.OrderAmendment{

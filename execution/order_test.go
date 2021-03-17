@@ -136,7 +136,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	orderID := confirmation.GetOrder().Id
+	orderID := confirmation.Order.Id
 
 	// Amend the price to force a cancel+resubmit to the order book
 
@@ -647,7 +647,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 	//	*now = now.Add(time.Second)
 	//	tm.market.OnChainTimeUpdate(*now)
 
-	return confirmation.GetOrder().Id
+	return confirmation.Order.Id
 }
 
 func TestAmendToFill(t *testing.T) {
