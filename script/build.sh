@@ -302,6 +302,12 @@ run() {
 		buf check lint
 		return "$?"
 		;;
+	misspell) ## Run misspell
+		# Since misspell does not support exluding, we need to specify the
+		# files we want and those we don't
+		find . -type f -name '*.go' -o -name '*.proto' | grep -v vendor/|xargs misspell -error
+		return "$?"
+		;;
 	semgrep) ## Run semgrep
 		semgrep -f "p/dgryski.semgrep-go"
 		return "$?"
