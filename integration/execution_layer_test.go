@@ -102,47 +102,6 @@ func missingTradersCancelsTheFollowingOrdersReference(refs *gherkin.DataTable) e
 	return nil
 }
 
-func tradersCancelPeggedOrdersAndClear(data *gherkin.DataTable) error {
-	cancellations := make([]types.OrderCancellation, 0, len(data.Rows))
-	for _, row := range data.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		mkt := val(row, 1)
-		orders := execsetup.broker.GetOrdersByPartyAndMarket(trader, mkt)
-		if len(orders) == 0 {
-			return fmt.Errorf("no orders found for party %s on market %s", trader, mkt)
-		}
-		// orders have to be pegged:
-		found := false
-		for _, o := range orders {
-			if o.PeggedOrder != nil && o.Status != types.Order_STATUS_CANCELLED && o.Status != types.Order_STATUS_REJECTED {
-				cancellations = append(cancellations, types.OrderCancellation{
-					PartyId:  trader,
-					MarketId: mkt,
-					OrderId:  o.Id,
-				})
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf("no valid pegged order found for %s on market %s", trader, mkt)
-		}
-	}
-	// do the clear stuff
-	if err := clearOrderEvents(); err != nil {
-		return err
-	}
-	for _, c := range cancellations {
-		if _, err := execsetup.engine.CancelOrder(context.Background(), &c); err != nil {
-			return fmt.Errorf("failed to cancel pegged order %s for %s on market %s", c.OrderId, c.PartyId, c.MarketId)
-		}
-	}
-	return nil
-}
-
 func tradersCannotPlaceTheFollowingOrdersAnymore(orders *gherkin.DataTable) error {
 	for _, row := range orders.Rows {
 		if val(row, 0) == "trader" {
@@ -219,50 +178,6 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	}
 
 	return err
-}
-
-func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
-	for i, row := range orders.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		id, side, vol, ref, offset, price := val(row, 1), val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
-		o := &types.Order{
-			Status:      types.Order_STATUS_ACTIVE,
-			Type:        types.Order_TYPE_LIMIT,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-			Id:          "someid",
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     trader,
-			MarketId:    id,
-			Size:        vol,
-			Price:       price,
-			Remaining:   vol,
-			Reference:   fmt.Sprintf("%s-pegged-order-%d", trader, i),
-			PeggedOrder: &types.PeggedOrder{
-				Reference: ref,
-				Offset:    offset,
-			},
-		}
-		if side == "sell" {
-			o.Side = types.Side_SIDE_SELL
-		}
-		_, err := execsetup.engine.SubmitOrder(context.Background(), o)
-		if err != nil {
-			fmt.Println("DUMP ORDER ERROR")
-			fmt.Printf("Error: %v\n", err)
-			fmt.Println("DUMP ORDER")
-			fmt.Printf("%#v\n", *o)
-			return err
-		}
-	}
-	return nil
-}
-
-func clearOrderEvents() error {
-	execsetup.broker.ClearOrderEvents()
-	return nil
 }
 
 // liquidity provisioning
