@@ -149,18 +149,32 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following trades were executed:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingTradesWereExecuted(execsetup.broker, table)
 	})
-	s.Step(`^verify the status of the order reference:$`, verifyTheStatusOfTheOrderReference)
+	s.Step(`^verify the status of the order reference:$`, func(table *gherkin.DataTable) error {
+		return steps.TheStatusOfOrderWithReference(execsetup.broker, table)
+	})
 	s.Step(`^executed trades:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingTradesWereExecuted(execsetup.broker, table)
 	})
-	s.Step(`^clear order events$`, clearOrderEvents)
+	s.Step(`^clear order events$`, func() error {
+		steps.ClearOrderEvents(execsetup.broker)
+		return nil
+	})
 	s.Step(`^traders place pegged orders:$`, tradersPlacePeggedOrders)
-	s.Step(`^I see the following order events:$`, seeTheFollowingOrderEvents)
-	s.Step(`^clear order events by reference:$`, clearOrdersByRef)
-	s.Step(`^clear transfer events$`, clearTransferEvents)
+	s.Step(`^I see the following order events:$`, func(table *gherkin.DataTable) error {
+		return steps.OrderEventsSent(execsetup.broker, table)
+	})
+	s.Step(`^clear order events by reference:$`, func(table *gherkin.DataTable) error {
+		return steps.ClearOrdersByReference(execsetup.broker, table)
+	})
+	s.Step(`^clear transfer events$`, func() error {
+		steps.ClearTransferEvents(execsetup.broker)
+		return nil
+	})
 	s.Step(`^traders cancel pegged orders and clear:$`, tradersCancelPeggedOrdersAndClear)
 	s.Step(`^the trader submits LP:$`, submitLP)
-	s.Step(`^I see the LP events:$`, seeLPEvents)
+	s.Step(`^I see the LP events:$`, func(table *gherkin.DataTable) error {
+		return steps.LiquidityProvisionEventsSent(execsetup.broker, table)
+	})
 	s.Step(`^the opening auction period for market "([^"]+)" ends$`, func(marketID string) error {
 		steps.MarketOpeningAuctionPeriodEnds(execsetup.timesvc, execsetup.mkts, marketID)
 		return nil

@@ -191,6 +191,20 @@ func OrderType(rawValue string) (types.Order_Type, error) {
 	return types.Order_Type(ty), nil
 }
 
+func (r RowWrapper) OrderStatus(name string) types.Order_Status {
+	s, err := OrderStatus(r.values[name])
+	panicW(name, err)
+	return s
+}
+
+func OrderStatus(rawValue string) (types.Order_Status, error) {
+	ty, ok := types.Order_Status_value[rawValue]
+	if !ok {
+		return types.Order_Status(ty), fmt.Errorf("invalid order status: %v", rawValue)
+	}
+	return types.Order_Status(ty), nil
+}
+
 func (r RowWrapper) TIF(name string) types.Order_TimeInForce {
 	tif, err := TIF(r.values[name])
 	panicW(name, err)
@@ -209,6 +223,22 @@ func (r RowWrapper) Side(name string) types.Side {
 	side, err := Side(r.values[name])
 	panicW(name, err)
 	return side
+}
+
+func (r RowWrapper) PeggedReference(name string) types.PeggedReference {
+	return peggedReference(r.values[name])
+}
+
+func peggedReference(rawValue string) types.PeggedReference {
+	switch rawValue {
+	case "MID":
+		return types.PeggedReference_PEGGED_REFERENCE_MID
+	case "ASK":
+		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+	case "BID":
+		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID
+	}
+	return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
 }
 
 func Side(rawValue string) (types.Side, error) {

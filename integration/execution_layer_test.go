@@ -221,30 +221,6 @@ func theFollowingNetworkTradesHappened(trades *gherkin.DataTable) error {
 	return err
 }
 
-func verifyTheStatusOfTheOrderReference(refs *gherkin.DataTable) error {
-	for _, row := range refs.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-
-		o, err := execsetup.broker.GetByReference(trader, val(row, 1))
-		if err != nil {
-			return err
-		}
-
-		status, err := orderstatusval(row, 2)
-		if err != nil {
-			return err
-		}
-		if status != o.Status {
-			return fmt.Errorf("invalid order status for order ref %v, expected %v got %v", o.Reference, status.String(), o.Status.String())
-		}
-	}
-
-	return nil
-}
-
 func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 	for i, row := range orders.Rows {
 		trader := val(row, 0)
@@ -284,74 +260,8 @@ func tradersPlacePeggedOrders(orders *gherkin.DataTable) error {
 	return nil
 }
 
-func seeTheFollowingOrderEvents(evts *gherkin.DataTable) error {
-	data := execsetup.broker.GetOrderEvents()
-	for _, row := range evts.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		// | trader  | market id | side | volume | reference | offset |
-		id, sside, vol, ref, offset, price := val(row, 1),
-			val(row, 2), u64val(row, 3), peggedRef(row, 4), i64val(row, 5), u64val(row, 6)
-		status, err := orderstatusval(row, 7)
-		if err != nil {
-			return err
-		}
-		side := types.Side_SIDE_BUY
-		if sside == "sell" {
-			side = types.Side_SIDE_SELL
-		}
-		match := false
-		for _, e := range data {
-			o := e.Order()
-			if o.PartyId != trader || o.Status != status || o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
-				// if o.MarketId != id || o.Side != side || o.Size != vol || o.Price != price {
-				continue
-			}
-			// check if pegged:
-			if offset != 0 {
-				// nope
-				if o.PeggedOrder == nil {
-					continue
-				}
-				if o.PeggedOrder.Offset != offset || o.PeggedOrder.Reference != ref {
-					continue
-				}
-				// this matches
-			}
-			// we've checked all fields and found this order to be a match
-			match = true
-			break
-		}
-		if !match {
-			return errors.New("no matching order event found")
-		}
-	}
-	return nil
-}
-
-func clearTransferEvents() error {
-	execsetup.broker.ClearTransferEvents()
-	return nil
-}
-
 func clearOrderEvents() error {
 	execsetup.broker.ClearOrderEvents()
-	return nil
-}
-
-func clearOrdersByRef(in *gherkin.DataTable) error {
-	for _, row := range in.Rows {
-		trader := val(row, 0)
-		if trader == "trader" {
-			continue
-		}
-		ref := val(row, 1)
-		if err := execsetup.broker.ClearOrderByReference(trader, ref); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -395,34 +305,6 @@ func submitLP(in *gherkin.DataTable) error {
 		}
 		if err := execsetup.engine.SubmitLiquidityProvision(context.Background(), sub, party, id); err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-func seeLPEvents(in *gherkin.DataTable) error {
-	evts := execsetup.broker.GetLPEvents()
-	evtByID := func(id string) *types.LiquidityProvision {
-		for _, e := range evts {
-			if lp := e.LiquidityProvision(); lp.Id == id {
-				return &lp
-			}
-		}
-		return nil
-	}
-	for _, row := range in.Rows {
-		id := val(row, 0)
-		if id == "id" {
-			continue
-		}
-		// find event
-		e := evtByID(id)
-		if e == nil {
-			return errors.New("no LP for id found")
-		}
-		party, market, commitment := val(row, 1), val(row, 2), u64val(row, 3)
-		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment {
-			return errors.New("party,  market ID, or commitment amount mismatch")
 		}
 	}
 	return nil
