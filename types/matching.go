@@ -234,3 +234,8 @@ var (
 	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE
 	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO
 )
+
+func IsOrderError(err error) (OrderError, bool) {
+	oerr, ok := err.(OrderError)
+	return oerr, ok
+}

@@ -28,10 +28,10 @@ import (
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/products"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/shopspring/decimal"

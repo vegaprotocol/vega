@@ -13,8 +13,8 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/products"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (
