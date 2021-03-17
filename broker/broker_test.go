@@ -160,7 +160,7 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 		}
 	})
 	k := tstBroker.Subscribe(sub)
-	// We can't use sendBatch here: we use the traceID of the fisrt event in the batch to determine
+	// We can't use sendBatch here: we use the traceID of the first event in the batch to determine
 	// the hash (batch-sending events can only happen within a single block)
 	for i := range dataH1 {
 		tstBroker.Send(dataH1[i])

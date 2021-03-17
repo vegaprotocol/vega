@@ -87,7 +87,7 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 		return err
 	}
 
-	// instanciate the ETHClient
+	// instantiate the ETHClient
 	ethclt, err := ethclient.Dial(opts.Config.ETH.Address)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (opts *nodeWalletVerify) Execute(_ []string) error {
 		return err
 	}
 
-	// instanciate the ETHClient
+	// instantiate the ETHClient
 	ethclt, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return err

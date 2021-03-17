@@ -201,7 +201,7 @@ func testVerifyTokenInvalidToken(t *testing.T) {
 
 }
 
-// this should never happend but beeeh....
+// this should never happened but beeeh....
 func testVerifyTokenWalletNotFound(t *testing.T) {
 	h := getTestHandler(t)
 	defer h.ctrl.Finish()
@@ -233,7 +233,7 @@ func testListPubInvalidToken(t *testing.T) {
 
 }
 
-// this should never happend but beeeh....
+// this should never happened but beeeh....
 func testListPubWalletNotFound(t *testing.T) {
 	h := getTestHandler(t)
 	defer h.ctrl.Finish()

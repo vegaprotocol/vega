@@ -15,10 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	markPrice = 10
-)
-
 // launch aggressiveOrder orders from both sides to fully clear the order book
 type aggressiveOrderScenario struct {
 	aggressiveOrder               *types.Order
@@ -43,7 +39,7 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, markPrice, false)
+	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, false)
 
 	tob.OrderBook.LogRemovedOrdersDebug = true
 	return &tob
@@ -1298,7 +1294,7 @@ func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
 	assert.Equal(t, int(expectedTrade.Price), int(trade.Price), "invalid trade price")
 	assert.Equal(t, int(expectedTrade.Size), int(trade.Size), "invalid trade size")
 	assert.Equal(t, expectedTrade.Buyer, trade.Buyer, "invalid trade buyer")
-	assert.Equal(t, expectedTrade.Seller, trade.Seller, "invalide trade sellet")
+	assert.Equal(t, expectedTrade.Seller, trade.Seller, "invalid trade seller")
 	assert.Equal(t, expectedTrade.Aggressor, trade.Aggressor, "invalid trade aggressor")
 }
 

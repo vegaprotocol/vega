@@ -53,30 +53,23 @@ func (b *OrderBook) Hash() []byte {
 	return crypto.Hash(append(b.buy.Hash(), b.sell.Hash()...))
 }
 
-// NewOrderBook create an order book with a given name
-// TODO(jeremy): At the moment it takes as a parameter the initialMarkPrice from the market
-// framework. This is used in order to calculate the CloseoutPNL when there's no volume in the
-// book. It's currently set to the lastTradedPrice, so once a trade happen it naturally get
-// updated and the new markPrice will be used there.
-func NewOrderBook(log *logging.Logger, config Config, marketID string,
-	initialMarkPrice uint64, auction bool) *OrderBook {
+// NewOrderBook create an order book with a given name.
+func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
-	// log.SetLevel(config.Level.Get())
 	log.SetLevel(logging.DebugLevel)
 
 	return &OrderBook{
-		log:             log,
-		marketID:        marketID,
-		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
-		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
-		Config:          config,
-		lastTradedPrice: initialMarkPrice,
-		ordersByID:      map[string]*types.Order{},
-		auction:         auction,
-		batchID:         0,
-		ordersPerParty:  map[string]map[string]struct{}{},
+		log:            log,
+		marketID:       marketID,
+		cfgMu:          &sync.Mutex{},
+		buy:            &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
+		sell:           &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
+		Config:         config,
+		ordersByID:     map[string]*types.Order{},
+		auction:        auction,
+		batchID:        0,
+		ordersPerParty: map[string]map[string]struct{}{},
 	}
 }
 
@@ -505,7 +498,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	var uncrossedOrder *types.OrderConfirmation
 	var allOrders []*types.OrderConfirmation
 
-	// Remove all the orders from that side of the book upto the given volume
+	// Remove all the orders from that side of the book up to the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
 		// Pull out the trades we want to process
 		uncrossOrders, err := b.buy.ExtractOrders(price, volume)
@@ -984,6 +977,12 @@ func (b *OrderBook) PrintState(types string) {
 	b.log.Debug("------------------------------------------------------------")
 }
 
+// GetTotalNumberOfOrders is a debug/testing function to return the total number of orders in the book
 func (b *OrderBook) GetTotalNumberOfOrders() int64 {
 	return b.buy.getOrderCount() + b.sell.getOrderCount()
+}
+
+// GetTotalVolume is a debug/testing function to return the total volume in the order book
+func (b *OrderBook) GetTotalVolume() int64 {
+	return b.buy.getTotalVolume() + b.sell.getTotalVolume()
 }

@@ -146,7 +146,7 @@ func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
 		return false
 	}
 	if ok {
-		// exists but was not acknowleded
+		// exists but was not acknowledged
 		// we just remove it from the non-acked table
 		delete(e.evts, key)
 	}

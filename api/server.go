@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"strconv"
+	"time"
 
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
@@ -261,7 +262,6 @@ func (g *GRPCServer) Start() {
 		NetParamsService:        g.netParamsService,
 		LiquidityService:        g.liquidityService,
 		oracleService:           g.oracleService,
-		ctx:                     g.ctx,
 	}
 	go tradingDataSvc.updateNetInfo(g.ctx)
 	g.tradingDataService = tradingDataSvc
@@ -275,9 +275,21 @@ func (g *GRPCServer) Start() {
 
 // Stop stops the GRPC server
 func (g *GRPCServer) Stop() {
-	if g.srv != nil {
-		g.log.Info("Stopping gRPC based API")
-		g.cfunc()
+	if g.srv == nil {
+		return
+	}
+
+	done := make(chan struct{})
+	go func() {
+		g.log.Info("Gracefully stopping gRPC based API")
 		g.srv.GracefulStop()
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		g.log.Info("Force stopping gRPC based API")
+		g.srv.Stop()
 	}
 }

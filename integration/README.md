@@ -1,3 +1,4 @@
+
 #Integration Tests
 
 This is the home of the system integrations tests. They can be run from the root of vega with:
@@ -33,7 +34,7 @@ The `-v` flag tells `go test` to run with verbose output (sending logging to std
 To run only certain tests (feature files), you can simply add the paths to a given feature file to the command:
 
 ```shell
-go test -v ./integration/... -godog.format=pretty $(pwd)/integration/features/simple.feature
+go test -v ./integration/... -godog.format=pretty $(pwd)/integration/features/my-feature.feature
 ```
 
 ## Race detection and cache
@@ -51,7 +52,7 @@ Should there be tests that are intermittently failing, this could indicate a dat
 go test -v -count=1 -race ./integration/... -godog.format=pretty
 
 # Same as above, but only run a specific feature file:
-go test -v -count=1 -race ./integration/... -godog.format=pretty $(pwd)/integration/feature/core.feature
+go test -v -count=1 -race ./integration/... -godog.format=pretty $(pwd)/integration/feature/my-feature.feature
 ```
 
 Race detection is a complex thing to do, so it will make running tests significantly slower. The pipeline runs the tests with race detection, so this shouldn't be required to do locally.
@@ -60,12 +61,12 @@ Race detection is a complex thing to do, so it will make running tests significa
 
 The system tests run on a higher level. They submit a new market proposal, get said market accepted through governance, and then start trading. They use a `LogNormal` risk model, and specific fee parameters. David kindly provided the long/short risk factors for a simple risk model that result in the same margin requirements and same fees being applied to trades. To create an integration test that replicates the system test results (transfers, balances, fees, etc...), simply start your feature file with the following:
 
-```
+```gherkin
 Feature: A feature that reproduces some system test
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long              | tau/short              | mu | r  | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading |
-      | ETH/DEC20 | ETH      | ETH       | ETH   | 100       | simple     | 0.08628781058136630000 | 0.09370922348428490000 | -1 | -1 | -1    | 1.4            | 1.2            | 1.1           | 100             | 1           | continuous   |    0.004 |             0.001 |          0.3 |                 0  |                |             |                 | 0.1             |
+      | name      | quote name | asset | mark price | risk model | lamd/long              | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC20 | ETH        | ETH   | 100        | simple     | 0.08628781058136630000 | 0.09370922348428490000 | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 100              | 1                | 0.004     | 0.001              | 0.3           | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
 ```

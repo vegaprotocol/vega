@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
@@ -247,6 +247,10 @@ func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
 }
 func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
+}
+
+func (r *VegaResolverRoot) NewMarketCommitment() NewMarketCommitmentResolver {
+	return (*newMarketCommitmentResolver)(r)
 }
 
 // LiquidityOrder resolver

@@ -76,7 +76,7 @@ func testDevInitSuccess(t *testing.T) {
 	err := nodewallet.DevInit(filepath, rootDir, "somepassphrase")
 	assert.NoError(t, err)
 
-	// try to instanciate a wallet from that
+	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
 		StorePath:      filepath,
@@ -117,7 +117,7 @@ func testVerifySuccess(t *testing.T) {
 	err := nodewallet.DevInit(filepath, rootDir, "somepassphrase")
 	assert.NoError(t, err)
 
-	// try to instanciate a wallet from that
+	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
 		StorePath:      filepath,
@@ -177,7 +177,7 @@ func testNewFailureMissingRequiredWallets(t *testing.T) {
 	err := nodewallet.Init(filepath, "somepassphrase")
 	assert.NoError(t, err)
 
-	// try to instanciate a wallet from that
+	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
 		StorePath:      filepath,
@@ -207,7 +207,7 @@ func testImportNewWallet(t *testing.T) {
 	err := nodewallet.DevInit(filepath, rootDir, "somepassphrase")
 	assert.NoError(t, err)
 
-	// try to instanciate a wallet from that
+	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
 		StorePath:      filepath,
@@ -246,7 +246,7 @@ func testNewFailureInvalidPassphrase(t *testing.T) {
 	err := nodewallet.Init(filepath, "somepassphrase")
 	assert.NoError(t, err)
 
-	// try to instanciate a wallet from that
+	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
 		StorePath:      filepath,

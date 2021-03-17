@@ -30,7 +30,7 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	}
 
 	// we define this option to parse the cli args each time the config is
-	// loaded. So that we can respect the cli flag presedence.
+	// loaded. So that we can respect the cli flag precedence.
 	parseFlagOpt := func(cfg *config.Config) error {
 		_, err := flags.NewParser(cfg, flags.Default|flags.IgnoreUnknown).Parse()
 		return err

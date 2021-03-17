@@ -50,7 +50,7 @@ func (p *Price) CheckAuction(as AuctionState) {
 
 func (l *Liquidity) CheckAuction(as AuctionSate) {
     if as.IsOpeningAuction() {
-        // an opeing auction is not something we check
+        // an opening auction is not something we check
         return
     }
     if as.IsLiquidityAuction() {
@@ -75,7 +75,7 @@ func (l *Liquidity) CheckAuction(as AuctionSate) {
 
 Price subpackage contains the price monitoring engine. It's used to determine if the price movement exceeded the bounds implied by the risk model over a specified horizon at a specified probability level. If that's the case, the price monitoring engine modifies the `AuctionState` to indicate that the price monitoring auction should commence. Once in auction, the engine checks if the auction time has elapsed, and if so if the resulting auction uncrossing price falls within the price monitoring bounds, if that condition is met the `AuctionState` object gets modified to indicate that price monitoring auction should finish, otherwise the  `AuctionState` object gets modified to indicate that the auction should be extended.
 
-Below is the signature of the price montoring constructor:
+Below is the signature of the price monitoring constructor:
 
 ```go
 func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings) (*Engine, error)

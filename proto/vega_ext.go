@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"google.golang.org/protobuf/types/known/wrapperspb"
+	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 )
 
 func (l *LiquidityProvision) IntoSubmission() *LiquidityProvisionSubmission {

@@ -9,7 +9,7 @@ Votes will also be fed into this engine. Votes are expected to be cast on propos
 
 The Governance engine needs to be able to check the accounts of parties (seeing how many tokens a given party has, and how many total tokens are in the system). This information is currently accessible through the collateral engine.
 
-To expose the proposals the API (gRPC), we'll create a buffer which will allow the governace service to stream updates regarding proposals over a gRPC call, should this be required.
+To expose the proposals the API (gRPC), we'll create a buffer which will allow the governance service to stream updates regarding proposals over a gRPC call, should this be required.
 
 ## Accepted proposals
 

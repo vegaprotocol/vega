@@ -1,5 +1,88 @@
 # Changelog
 
+## 0.33.0
+
+*2021-02-16*
+
+As per the previous release notes, this release brings a lot of fixes, most of which aren't exciting new features but improve either the code quality or the developer experience. This release is pretty hefty, as the last few updates have been patch releases. It represents a lot of heavy testing and bug fixing on Liquidity Commitment orders. Alongside that, the feature test suite (we use [godog](https://github.com/cucumber/godog)) has seen some serious attention so that we can specify more complex scenarios easily.
+
+### Improvements
+- [#3094](https://github.com/vegaprotocol/vega/pull/3094) - :fire: GraphQL: Use `ID` scalar for IDs, ensure capitalisation is correct (`marketID` -> `marketId`)
+- [#3093](https://github.com/vegaprotocol/vega/pull/3093) - :fire: GraphQL: Add LP Commitment field to market proposal
+- [#3061](https://github.com/vegaprotocol/vega/pull/3061) - GraphQL: Add market proposal to markets created via governance
+- [#3060](https://github.com/vegaprotocol/vega/pull/3060) - Add maximum LP shape size limit network parameter
+- [#3089](https://github.com/vegaprotocol/vega/pull/3089) - Add `OracleSpec` to market
+- [#3148](https://github.com/vegaprotocol/vega/pull/3148) - Add GraphQL endpoints for oracle spec
+- [#3179](https://github.com/vegaprotocol/vega/pull/3179) - Add metrics logging for LPs
+- [#3127](https://github.com/vegaprotocol/vega/pull/3127) - Add validation for Oracle Specs on market proposals
+- [#3129](https://github.com/vegaprotocol/vega/pull/3129) - Update transfers to use `uint256`
+- [#3091](https://github.com/vegaprotocol/vega/pull/3091) - Refactor: Standardise how `InAuction` is detected in the core
+- [#3133](https://github.com/vegaprotocol/vega/pull/3133) - Remove `log.error` when TX rate limit is hit
+- [#3140](https://github.com/vegaprotocol/vega/pull/3140) - Remove `log.error` when cancel all orders fails
+- [#3072](https://github.com/vegaprotocol/vega/pull/3072) - Re-enable disabled static analysis
+- [#3068](https://github.com/vegaprotocol/vega/pull/3068) - Add `dlv` to docker container
+- [#3067](https://github.com/vegaprotocol/vega/pull/3067) - Add more LP unit tests
+- [#3066](https://github.com/vegaprotocol/vega/pull/3066) - Remove `devnet` specific wallet initialisation
+- [#3041](https://github.com/vegaprotocol/vega/pull/3041) - Remove obsolete `InitialMarkPrice` network parameter
+- [#3035](https://github.com/vegaprotocol/vega/pull/3035) - Documentation fixed for infrastructure fee field
+- [#3034](https://github.com/vegaprotocol/vega/pull/3034) - Add `buf` to get tools script
+- [#3032](https://github.com/vegaprotocol/vega/pull/3032) - Move documentation generation to [`vegaprotocol/api`](https://github.com/vegaprotocol/api) repository
+- [#3030](https://github.com/vegaprotocol/vega/pull/3030) - Add more debug logging in execution engine
+- [#3114](https://github.com/vegaprotocol/vega/pull/3114) - _Feature test refactor_: Standardise market definitions
+- [#3122](https://github.com/vegaprotocol/vega/pull/3122) - _Feature test refactor_: Remove unused trading modes
+- [#3124](https://github.com/vegaprotocol/vega/pull/3124) - _Feature test refactor_: Move submit order step to separate package
+- [#3141](https://github.com/vegaprotocol/vega/pull/3141) - _Feature test refactor_: Move oracle data step to separate package
+- [#3142](https://github.com/vegaprotocol/vega/pull/3142) - _Feature test refactor_: Move market steps to separate package
+- [#3143](https://github.com/vegaprotocol/vega/pull/3143) - _Feature test refactor_: Move confirmed trades step to separate package
+- [#3144](https://github.com/vegaprotocol/vega/pull/3144) - _Feature test refactor_: Move cancelled trades step to separate package
+- [#3145](https://github.com/vegaprotocol/vega/pull/3145) - _Feature test refactor_: Move traders step to separate package
+- [#3146](https://github.com/vegaprotocol/vega/pull/3146) - _Feature test refactor_: Create new step to verify margin accounts for a market
+- [#3153](https://github.com/vegaprotocol/vega/pull/3153) - _Feature test refactor_: Create step to verify one account of each type per asset
+- [#3152](https://github.com/vegaprotocol/vega/pull/3152) - _Feature test refactor_: Create step to deposit collateral
+- [#3151](https://github.com/vegaprotocol/vega/pull/3151) - _Feature test refactor_: Create step to withdraw collateral
+- [#3149](https://github.com/vegaprotocol/vega/pull/3149) - _Feature test refactor_: Merge deposit & verification steps
+- [#3154](https://github.com/vegaprotocol/vega/pull/3154) - _Feature test refactor_: Create step to verify settlement balance for market
+- [#3156](https://github.com/vegaprotocol/vega/pull/3156) - _Feature test refactor_: Rewrite margin levels step
+- [#3178](https://github.com/vegaprotocol/vega/pull/3178) - _Feature test refactor_: Unify error handling steps
+- [#3157](https://github.com/vegaprotocol/vega/pull/3157) - _Feature test refactor_: Various small fixes
+- [#3101](https://github.com/vegaprotocol/vega/pull/3101) - _Feature test refactor_: Remove outdated feature tests
+- [#3092](https://github.com/vegaprotocol/vega/pull/3092) - _Feature test refactor_: Add steps to test handling of LPs during auction
+- [#3071](https://github.com/vegaprotocol/vega/pull/3071) - _Feature test refactor_: Fix typo
+
+### Fixes
+- [#3018](https://github.com/vegaprotocol/vega/pull/3018) - Fix crash caused by distressed traders with LPs
+- [#3029](https://github.com/vegaprotocol/vega/pull/3029) - API: LP orders were missing their reference data
+- [#3031](https://github.com/vegaprotocol/vega/pull/3031) - Parties with cancelled LPs no longer receive fees
+- [#3033](https://github.com/vegaprotocol/vega/pull/3033) - Improve handling of genesis block errors
+- [#3036](https://github.com/vegaprotocol/vega/pull/3036) - Equity share is now correct when submitting initial order
+- [#3048](https://github.com/vegaprotocol/vega/pull/3048) - LP submission now checks margin engine is started
+- [#3070](https://github.com/vegaprotocol/vega/pull/3070) - Rewrite amending LPs
+- [#3053](https://github.com/vegaprotocol/vega/pull/3053) - Rewrite cancel all order implementation
+- [#3050](https://github.com/vegaprotocol/vega/pull/3050) - GraphQL: Order in `LiquidityOrder` is now nullable
+- [#3056](https://github.com/vegaprotocol/vega/pull/3056) - Move `vegastream` to a separate repository
+- [#3057](https://github.com/vegaprotocol/vega/pull/3057) - Ignore error if Tendermint stats is temporarily unavailable
+- [#3058](https://github.com/vegaprotocol/vega/pull/3058) - Fix governance to use total supply rather than total deposited into network
+- [#3062](https://github.com/vegaprotocol/vega/pull/3070) - Opening Auction no longer set to null on a market when auction completes
+- [#3051](https://github.com/vegaprotocol/vega/pull/3051) - Rewrite LP refresh mechanism
+- [#3080](https://github.com/vegaprotocol/vega/pull/3080) - Auctions now leave auction when `maximumDuration` is exceeded
+- [#3075](https://github.com/vegaprotocol/vega/pull/3075) - Bond account is now correctly cleared when LPs are cancelled
+- [#3074](https://github.com/vegaprotocol/vega/pull/3074) - Switch error reporting mechanism to stream error
+- [#3069](https://github.com/vegaprotocol/vega/pull/3069) - Switch more error reporting mechanisms to stream error
+- [#3081](https://github.com/vegaprotocol/vega/pull/3081) - Fix fee check for LP orders
+- [#3087](https://github.com/vegaprotocol/vega/pull/3087) - GraphQL schema grammar & spelling fixes
+- [#3185](https://github.com/vegaprotocol/vega/pull/3185) - LP orders are now accessed deterministically
+- [#3131](https://github.com/vegaprotocol/vega/pull/3131) - GRPC api now shuts down gracefully
+- [#3110](https://github.com/vegaprotocol/vega/pull/3110) - LP Bond is now returned if a market is rejected
+- [#3115](https://github.com/vegaprotocol/vega/pull/3115) - Parties with closed out LPs can now submit new LPs
+- [#3123](https://github.com/vegaprotocol/vega/pull/3123) - New market proposals with invalid Oracle definitions no longer crash core
+- [#3131](https://github.com/vegaprotocol/vega/pull/3131) - GRPC api now shuts down gracefully
+- [#3137](https://github.com/vegaprotocol/vega/pull/3137) - Pegged orders that fail to reprice correctly are now properly removed from the Market Depth API
+- [#3168](https://github.com/vegaprotocol/vega/pull/3168) - Fix `intoProto` for `OracleSpecBinding`
+- [#3106](https://github.com/vegaprotocol/vega/pull/3106) - Target Stake is now used as the Market Value Proxy during opening auction
+- [#3103](https://github.com/vegaprotocol/vega/pull/3103) - Ensure all filled and partially filled orders are remove from the Market Depth API
+- [#3095](https://github.com/vegaprotocol/vega/pull/3095) - GraphQL: Fix missing data in proposal subscription
+- [#3085](https://github.com/vegaprotocol/vega/pull/3085) - Minor tidy-up of errors reported by `goland`
+
 ## 0.32.0
 
 *2021-02-23*
@@ -8,13 +91,13 @@ More fixes, primarily related to liquidity provisioning (still disabled in this 
 
 Two minor breaking changes in the GraphQL API are included - one fixing a typo, the other changing the content of date fields on the withdrawal object - they're now date formatted.
 
-# Improvements
+### Improvements
 - [#3004](https://github.com/vegaprotocol/vega/pull/3004) - Incorporate `buf.yaml` tidy up submitted by `bufdev` on api-clients repo
 - [#3002](https://github.com/vegaprotocol/vega/pull/3002) -🔥GraphQL: Withdrawal fields `expiry`, `createdAt` & `updatedAt` are now `RFC3339Nano` date formatted
 - [#3000](https://github.com/vegaprotocol/vega/pull/3002) -🔥GraphQL: Fix typo in `prepareVote` mutation - `propopsalId` is now `proposalId`
 - [#2957](https://github.com/vegaprotocol/vega/pull/2957) - REST: Add missing prepare endpoints (`PrepareProposal`, `PrepareVote`, `PrepareLiquiditySubmission`)
 
-# Fixes
+### Fixes
 - [#3011](https://github.com/vegaprotocol/vega/pull/3011) - Liquidity fees are distributed in to margin accounts, not general accounts
 - [#2991](https://github.com/vegaprotocol/vega/pull/2991) - Liquidity Provisions are now rejected if there is not enough collateral
 - [#2990](https://github.com/vegaprotocol/vega/pull/2990) - Fix a lock caused by GraphQL subscribers unsubscribing from certain endpoints

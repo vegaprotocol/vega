@@ -150,14 +150,16 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	}
 
 	if err := s.blockchain.SubmitTransaction(ctx, req.Tx, ty); err != nil {
-		s.log.Error("unable to submit transaction", logging.Error(err))
+		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
 			Code() uint32
 			Details() string
 			Error() string
 		}); ok {
+			s.log.Debug("unable to submit transaction", logging.Error(err))
 			return nil, apiError(codes.InvalidArgument, err)
 		}
+		s.log.Error("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
 
@@ -320,7 +322,7 @@ func verifySignature(
 	validator, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	if err != nil {
 		if log != nil {
-			log.Error("unable to instanciate new algorithm", logging.Error(err))
+			log.Error("unable to instantiate new algorithm", logging.Error(err))
 		}
 		return err
 	}

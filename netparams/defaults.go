@@ -20,7 +20,6 @@ func defaultNetParams() map[string]value {
 		MarketFeeFactorsLiquidityFee:                    NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.001"),
 		MarketAuctionMinimumDuration:                    NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("30m0s"),
 		MarketAuctionMaximumDuration:                    NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),
-		MarketInitialMarkPrice:                          NewInt(IntGT(0)).Mutable(true).MustUpdate("1"),
 		MarketLiquidityBondPenaltyParameter:             NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("1"),
 		MarketLiquidityMaximumLiquidityFeeFactorLevel:   NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("1"),
 		MarketLiquidityStakeToCCYSiskas:                 NewFloat(FloatGT(0)).Mutable(true).MustUpdate("1"),

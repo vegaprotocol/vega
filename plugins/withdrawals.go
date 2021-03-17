@@ -24,7 +24,7 @@ type Withdrawal struct {
 	*subscribers.Base
 
 	// FIXME(jeremy): add some reference mapping here later on
-	// party -> withdrawal id -> withdraal
+	// party -> withdrawal id -> withdrawal
 	withdrawals map[string]map[string]types.Withdrawal
 	mu          sync.RWMutex
 	ch          chan types.Withdrawal
@@ -83,7 +83,7 @@ func (w *Withdrawal) GetByID(id string) (types.Withdrawal, error) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	// FIXME(jeremy): this is very naive, and will require
-	// a lookup table over the withdrwal id -> party
+	// a lookup table over the withdrawal id -> party
 	for _, withdrawals := range w.withdrawals {
 		for wid, withdrawal := range withdrawals {
 			if wid == id {

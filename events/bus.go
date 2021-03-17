@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrUnsuportedEvent  = errors.New("unknown payload for event")
+	ErrUnsupportedEvent = errors.New("unknown payload for event")
 	ErrInvalidEventType = errors.New("invalid proto event type")
 )
 
@@ -254,7 +254,7 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		e := NewLiquidityProvisionEvent(ctx, &tv)
 		return e, nil
 	}
-	return nil, ErrUnsuportedEvent
+	return nil, ErrUnsupportedEvent
 }
 
 // A base event holds no data, so the constructor will not be called directly

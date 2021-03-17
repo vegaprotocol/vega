@@ -83,7 +83,7 @@ func (t *ToEnact) Proposal() *types.Proposal {
 // ToSubmit wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data
 // This cover every kind of proposal which requires action after a
-// a proposal is submited
+// a proposal is submitted
 type ToSubmit struct {
 	p *types.Proposal
 	m *ToSubmitNewMarket

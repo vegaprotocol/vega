@@ -74,7 +74,7 @@ func (w *Wallet) Chain() string {
 func (w *Wallet) Sign(data []byte) ([]byte, error) {
 	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	if err != nil {
-		return nil, fmt.Errorf("unable to instanciate signature algorithm: %v", err)
+		return nil, fmt.Errorf("unable to instantiate signature algorithm: %v", err)
 	}
 	return wallet.Sign(alg, w.kp, data)
 }

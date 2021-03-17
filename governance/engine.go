@@ -191,6 +191,7 @@ func (e *Engine) removeProposal(id string) {
 // OnChainTimeUpdate triggers time bound state changes.
 func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteClosed) {
 	e.currentTime = t
+
 	var (
 		toBeEnacted []*ToEnact
 		voteClosed  []*VoteClosed
@@ -212,7 +213,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		if err != nil {
 			// an error here mean the asset has not been enabled,
 			// which might happen eventually, we can just continue
-			// return and do nothinbg for now I suppose
+			// return and do nothing for now I suppose
 			e.log.Debug("governance asset is not enabled yet",
 				logging.Error(err))
 			return nil, nil
@@ -344,9 +345,9 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewMarket:
-		// use to calcualte the auction duration
-		// which is basically enactime - closetime
-		// FIXME(): normaly we should use the closetime
+		// use to calculate the auction duration
+		// which is basically enacttime - closetime
+		// FIXME(): normally we should use the closetime
 		// but this would not play well with the MarketAcutionState stuff
 		// for now we start the auction as of now.
 		closeTime := e.currentTime
@@ -650,7 +651,7 @@ func (s *stakeCounter) getTokens(partyID string) uint64 {
 			logging.String("party-id", partyID),
 			logging.Error(err),
 		)
-		// not much we can do with the error as there is nowhere to buble up the error on tick
+		// not much we can do with the error as there is nowhere to bubble up the error on tick
 		return 0
 	}
 	s.balances[partyID] = balance

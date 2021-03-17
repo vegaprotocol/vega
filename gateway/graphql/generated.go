@@ -59,6 +59,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	NewAsset() NewAssetResolver
 	NewMarket() NewMarketResolver
+	NewMarketCommitment() NewMarketCommitmentResolver
 	NodeSignature() NodeSignatureResolver
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
@@ -212,9 +213,11 @@ type ComplexityRoot struct {
 	}
 
 	FutureProduct struct {
-		Maturity        func(childComplexity int) int
-		QuoteName       func(childComplexity int) int
-		SettlementAsset func(childComplexity int) int
+		Maturity          func(childComplexity int) int
+		OracleSpec        func(childComplexity int) int
+		OracleSpecBinding func(childComplexity int) int
+		QuoteName         func(childComplexity int) int
+		SettlementAsset   func(childComplexity int) int
 	}
 
 	Instrument struct {
@@ -419,11 +422,20 @@ type ComplexityRoot struct {
 	}
 
 	NewMarket struct {
+		Commitment     func(childComplexity int) int
 		DecimalPlaces  func(childComplexity int) int
 		Instrument     func(childComplexity int) int
 		Metadata       func(childComplexity int) int
 		RiskParameters func(childComplexity int) int
 		TradingMode    func(childComplexity int) int
+	}
+
+	NewMarketCommitment struct {
+		Buys             func(childComplexity int) int
+		CommitmentAmount func(childComplexity int) int
+		Fee              func(childComplexity int) int
+		Reference        func(childComplexity int) int
+		Sells            func(childComplexity int) int
 	}
 
 	NodeSignature struct {
@@ -445,6 +457,11 @@ type ComplexityRoot struct {
 		PubKeys   func(childComplexity int) int
 		Status    func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
+	}
+
+	OracleSpecConfiguration struct {
+		Filters func(childComplexity int) int
+		PubKeys func(childComplexity int) int
 	}
 
 	OracleSpecToFutureBinding struct {
@@ -623,7 +640,7 @@ type ComplexityRoot struct {
 		OracleSpec                 func(childComplexity int, oracleSpecID string) int
 		OracleSpecs                func(childComplexity int) int
 		OrderByID                  func(childComplexity int, orderID string, version *int) int
-		OrderByReference           func(childComplexity int, referenceID string) int
+		OrderByReference           func(childComplexity int, reference string) int
 		OrderVersions              func(childComplexity int, orderID string, skip *int, first *int, last *int) int
 		Parties                    func(childComplexity int, id *string) int
 		Party                      func(childComplexity int, id string) int
@@ -959,6 +976,10 @@ type NewMarketResolver interface {
 	RiskParameters(ctx context.Context, obj *proto.NewMarket) (RiskModel, error)
 	Metadata(ctx context.Context, obj *proto.NewMarket) ([]string, error)
 	TradingMode(ctx context.Context, obj *proto.NewMarket) (TradingMode, error)
+	Commitment(ctx context.Context, obj *proto.NewMarket) (*proto.NewMarketCommitment, error)
+}
+type NewMarketCommitmentResolver interface {
+	CommitmentAmount(ctx context.Context, obj *proto.NewMarketCommitment) (string, error)
 }
 type NodeSignatureResolver interface {
 	Signature(ctx context.Context, obj *proto.NodeSignature) (*string, error)
@@ -1050,7 +1071,7 @@ type QueryResolver interface {
 	OracleDataBySpec(ctx context.Context, oracleSpecID string) ([]*v1.OracleData, error)
 	OrderByID(ctx context.Context, orderID string, version *int) (*proto.Order, error)
 	OrderVersions(ctx context.Context, orderID string, skip *int, first *int, last *int) ([]*proto.Order, error)
-	OrderByReference(ctx context.Context, referenceID string) (*proto.Order, error)
+	OrderByReference(ctx context.Context, reference string) (*proto.Order, error)
 	Proposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
 	Proposal(ctx context.Context, id *string, reference *string) (*proto.GovernanceData, error)
 	NewMarketProposals(ctx context.Context, inState *ProposalState) ([]*proto.GovernanceData, error)
@@ -1275,7 +1296,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AuctionEvent.Leave(childComplexity), true
 
-	case "AuctionEvent.marketID":
+	case "AuctionEvent.marketId":
 		if e.complexity.AuctionEvent.MarketId == nil {
 			break
 		}
@@ -1352,7 +1373,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BusEvent.Event(childComplexity), true
 
-	case "BusEvent.eventID":
+	case "BusEvent.eventId":
 		if e.complexity.BusEvent.EventID == nil {
 			break
 		}
@@ -1659,6 +1680,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FutureProduct.Maturity(childComplexity), true
+
+	case "FutureProduct.oracleSpec":
+		if e.complexity.FutureProduct.OracleSpec == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.OracleSpec(childComplexity), true
+
+	case "FutureProduct.oracleSpecBinding":
+		if e.complexity.FutureProduct.OracleSpecBinding == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.OracleSpecBinding(childComplexity), true
 
 	case "FutureProduct.quoteName":
 		if e.complexity.FutureProduct.QuoteName == nil {
@@ -1968,14 +2003,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LossSocialization.Amount(childComplexity), true
 
-	case "LossSocialization.marketID":
+	case "LossSocialization.marketId":
 		if e.complexity.LossSocialization.MarketID == nil {
 			break
 		}
 
 		return e.complexity.LossSocialization.MarketID(childComplexity), true
 
-	case "LossSocialization.partyID":
+	case "LossSocialization.partyId":
 		if e.complexity.LossSocialization.PartyID == nil {
 			break
 		}
@@ -2474,7 +2509,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketDepthUpdate.SequenceNumber(childComplexity), true
 
-	case "MarketEvent.marketID":
+	case "MarketEvent.marketId":
 		if e.complexity.MarketEvent.MarketID == nil {
 			break
 		}
@@ -2488,7 +2523,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketEvent.Payload(childComplexity), true
 
-	case "MarketTick.marketID":
+	case "MarketTick.marketId":
 		if e.complexity.MarketTick.MarketID == nil {
 			break
 		}
@@ -2540,7 +2575,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareLiquidityProvision(childComplexity, args["marketID"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput), args["reference"].(*string)), true
+		return e.complexity.Mutation.PrepareLiquidityProvision(childComplexity, args["marketId"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput), args["reference"].(*string)), true
 
 	case "Mutation.prepareOrderAmend":
 		if e.complexity.Mutation.PrepareOrderAmend == nil {
@@ -2600,7 +2635,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyID"].(string), args["proposalID"].(string)), true
+		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyId"].(string), args["proposalId"].(string)), true
 
 	case "Mutation.prepareWithdrawal":
 		if e.complexity.Mutation.PrepareWithdrawal == nil {
@@ -2612,7 +2647,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareWithdrawal(childComplexity, args["partyID"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput)), true
+		return e.complexity.Mutation.PrepareWithdrawal(childComplexity, args["partyId"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput)), true
 
 	case "Mutation.submitTransaction":
 		if e.complexity.Mutation.SubmitTransaction == nil {
@@ -2646,6 +2681,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewAsset.Source(childComplexity), true
+
+	case "NewMarket.commitment":
+		if e.complexity.NewMarket.Commitment == nil {
+			break
+		}
+
+		return e.complexity.NewMarket.Commitment(childComplexity), true
 
 	case "NewMarket.decimalPlaces":
 		if e.complexity.NewMarket.DecimalPlaces == nil {
@@ -2681,6 +2723,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.TradingMode(childComplexity), true
+
+	case "NewMarketCommitment.buys":
+		if e.complexity.NewMarketCommitment.Buys == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.Buys(childComplexity), true
+
+	case "NewMarketCommitment.commitmentAmount":
+		if e.complexity.NewMarketCommitment.CommitmentAmount == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.CommitmentAmount(childComplexity), true
+
+	case "NewMarketCommitment.fee":
+		if e.complexity.NewMarketCommitment.Fee == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.Fee(childComplexity), true
+
+	case "NewMarketCommitment.reference":
+		if e.complexity.NewMarketCommitment.Reference == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.Reference(childComplexity), true
+
+	case "NewMarketCommitment.sells":
+		if e.complexity.NewMarketCommitment.Sells == nil {
+			break
+		}
+
+		return e.complexity.NewMarketCommitment.Sells(childComplexity), true
 
 	case "NodeSignature.id":
 		if e.complexity.NodeSignature.Id == nil {
@@ -2765,6 +2842,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OracleSpec.UpdatedAt(childComplexity), true
+
+	case "OracleSpecConfiguration.filters":
+		if e.complexity.OracleSpecConfiguration.Filters == nil {
+			break
+		}
+
+		return e.complexity.OracleSpecConfiguration.Filters(childComplexity), true
+
+	case "OracleSpecConfiguration.pubKeys":
+		if e.complexity.OracleSpecConfiguration.PubKeys == nil {
+			break
+		}
+
+		return e.complexity.OracleSpecConfiguration.PubKeys(childComplexity), true
 
 	case "OracleSpecToFutureBinding.settlementPriceProperty":
 		if e.complexity.OracleSpecToFutureBinding.SettlementPriceProperty == nil {
@@ -3118,7 +3209,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PositionResolution.MarkPrice(childComplexity), true
 
-	case "PositionResolution.marketID":
+	case "PositionResolution.marketId":
 		if e.complexity.PositionResolution.MarketID == nil {
 			break
 		}
@@ -3580,7 +3671,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByID(childComplexity, args["orderID"].(string), args["version"].(*int)), true
+		return e.complexity.Query.OrderByID(childComplexity, args["orderId"].(string), args["version"].(*int)), true
 
 	case "Query.orderByReference":
 		if e.complexity.Query.OrderByReference == nil {
@@ -3592,7 +3683,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderByReference(childComplexity, args["referenceID"].(string)), true
+		return e.complexity.Query.OrderByReference(childComplexity, args["reference"].(string)), true
 
 	case "Query.orderVersions":
 		if e.complexity.Query.OrderVersions == nil {
@@ -3604,7 +3695,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.OrderVersions(childComplexity, args["orderID"].(string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
+		return e.complexity.Query.OrderVersions(childComplexity, args["orderId"].(string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Query.parties":
 		if e.complexity.Query.Parties == nil {
@@ -3734,14 +3825,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SettleDistressed.Margin(childComplexity), true
 
-	case "SettleDistressed.marketID":
+	case "SettleDistressed.marketId":
 		if e.complexity.SettleDistressed.MarketID == nil {
 			break
 		}
 
 		return e.complexity.SettleDistressed.MarketID(childComplexity), true
 
-	case "SettleDistressed.partyID":
+	case "SettleDistressed.partyId":
 		if e.complexity.SettleDistressed.PartyID == nil {
 			break
 		}
@@ -3755,14 +3846,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SettleDistressed.Price(childComplexity), true
 
-	case "SettlePosition.marketID":
+	case "SettlePosition.marketId":
 		if e.complexity.SettlePosition.MarketID == nil {
 			break
 		}
 
 		return e.complexity.SettlePosition.MarketID(childComplexity), true
 
-	case "SettlePosition.partyID":
+	case "SettlePosition.partyId":
 		if e.complexity.SettlePosition.PartyID == nil {
 			break
 		}
@@ -4029,7 +4120,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.BusEvents(childComplexity, args["types"].([]BusEventType), args["marketID"].(*string), args["partyID"].(*string), args["batchSize"].(int)), true
+		return e.complexity.Subscription.BusEvents(childComplexity, args["types"].([]BusEventType), args["marketId"].(*string), args["partyId"].(*string), args["batchSize"].(int)), true
 
 	case "Subscription.candles":
 		if e.complexity.Subscription.Candles == nil {
@@ -4053,7 +4144,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Margins(childComplexity, args["partyId"].(string), args["marketID"].(*string)), true
+		return e.complexity.Subscription.Margins(childComplexity, args["partyId"].(string), args["marketId"].(*string)), true
 
 	case "Subscription.marketData":
 		if e.complexity.Subscription.MarketData == nil {
@@ -4125,7 +4216,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Proposals(childComplexity, args["partyID"].(*string)), true
+		return e.complexity.Subscription.Proposals(childComplexity, args["partyId"].(*string)), true
 
 	case "Subscription.trades":
 		if e.complexity.Subscription.Trades == nil {
@@ -4149,7 +4240,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Votes(childComplexity, args["proposalId"].(*string), args["partyID"].(*string)), true
+		return e.complexity.Subscription.Votes(childComplexity, args["proposalId"].(*string), args["partyId"].(*string)), true
 
 	case "TargetStakeParameters.scalingFactor":
 		if e.complexity.TargetStakeParameters.ScalingFactor == nil {
@@ -4591,9 +4682,9 @@ type Mutation {
   """
   prepareOrderSubmit(
     "ID of the market to place the order"
-    marketId: String!
+    marketId: ID!
     "ID of the party placing the order"
-    partyId: String!
+    partyId: ID!
     "Price of the asset"
     price: String
     "Size of the order"
@@ -4620,9 +4711,9 @@ type Mutation {
     "ID of the order to cancel"
     id: ID
     "ID of the party placing the order"
-    partyId: String!
+    partyId: ID!
     "ID of the market where to find the order"
-    marketId: String
+    marketId: ID
   ): PreparedCancelOrder!
 
   """
@@ -4633,7 +4724,7 @@ type Mutation {
     "ID of the order to amend"
     id: ID!
     "ID of the party which created the order"
-    partyId: String!
+    partyId: ID!
     "New price for this order"
     price: String!
     "New size for this order"
@@ -4655,7 +4746,7 @@ type Mutation {
   """
   prepareProposal(
     "ID of the party which created this proposal"
-    partyId: String!
+    partyId: ID!
     "A UUID reference for the caller to aid in tracking operations on VEGA"
     reference: String
     "Terms of the proposal"
@@ -4671,9 +4762,9 @@ type Mutation {
     "vote value"
     value: VoteValue!
     "the party casting the vote"
-    partyID: String!
+    partyId: ID!
     "the proposal voted on"
-    proposalID: String!
+    proposalId: ID!
   ): PreparedVote!
 
   """
@@ -4682,7 +4773,7 @@ type Mutation {
   """
   prepareWithdrawal(
     "The party which wants to withdraw funds"
-    partyID: String!
+    partyId: ID!
     "The amount to be withdrawn"
     amount: String!
     "The asset from which we want to withdraw funds"
@@ -4711,7 +4802,7 @@ type Mutation {
   "Prepare a Liquidity provision order so it can be signed and submitted"
   prepareLiquidityProvision(
     "Market identifier for the order"
-    marketID: String!
+    marketId: ID!
     "Specified as a unitless number that represents the amount of settlement asset of the market."
     commitmentAmount: Int!
     "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
@@ -4772,7 +4863,7 @@ type Subscription {
   "Subscribe to the candles updates"
   candles(
     "ID of the market we want to listen candles for"
-    marketId: String!
+    marketId: ID!
     "Interval of the candles we want to listen for"
     interval: Interval!
   ): Candle!
@@ -4780,45 +4871,45 @@ type Subscription {
   "Subscribe to orders updates"
   orders(
     "ID of the market from which we want orders updates"
-    marketId: String
+    marketId: ID
     "ID of the party from which we want orders updates"
-    partyId: String
+    partyId: ID
   ): [Order!]
 
   "Subscribe to the trades updates"
   trades(
     "ID of the market from which we want trades updates"
-    marketId: String
+    marketId: ID
     "ID of the party from which we want trades updates"
-    partyId: String
+    partyId: ID
   ): [Trade!]
 
   "Subscribe to the positions updates"
   positions(
     "ID of the party from we want updates for"
-    partyId: String
-    "ID of the market from which we want postion updates"
-    marketId: String
+    partyId: ID
+    "ID of the market from which we want position updates"
+    marketId: ID
   ): Position!
 
   "Subscribe to the market depths update"
   marketDepth(
     "ID of the market we want to receive market depth updates for"
-    marketId: String!
+    marketId: ID!
   ): MarketDepth!
 
   "Subscribe to price level market depth updates"
   marketDepthUpdate(
     "ID of the market we want to receive market depth pricelevel updates for"
-    marketId: String!
+    marketId: ID!
   ): MarketDepthUpdate!
 
   "Subscribe to the accounts updates"
   accounts(
     "ID of the market from which we want accounts updates"
-    marketId: String
+    marketId: ID
     "ID of the party from which we want accounts updates"
-    partyId: String
+    partyId: ID
     "Asset code"
     asset: String
     "Type of the account"
@@ -4828,29 +4919,29 @@ type Subscription {
   "Subscribe to the mark price changes"
   marketData(
     "id of the market we want to subscribe to the market data changes"
-    marketId: String
+    marketId: ID
   ): MarketData!
 
   "Subscribe to the margin changes"
   margins(
     "id of the trader we want to subscribe for margin updates"
-    partyId: String!
+    partyId: ID!
     "market we want to listen to margin updates (nil if we want updates for all markets)"
-    marketID: String
+    marketId: ID
   ): MarginLevels!
 
   "Subscribe to proposals. Leave out all arguments to receive all proposals"
   proposals(
     "Optional party id whose proposals are to be streamed"
-    partyID: String
+    partyId: ID
   ): Proposal!
 
   "Subscribe to votes, either by proposal id or pary id"
   votes(
     "Optional proposal id which votes are to be streamed"
-    proposalId: String
+    proposalId: ID
     "Optional party id whose votes are to be streamed"
-    partyID: String
+    partyId: ID
   ): ProposalVote!
 
   "Subscribe to event data from the event bus"
@@ -4858,9 +4949,9 @@ type Subscription {
     "the types to subscribe to has to be an array"
     types: [BusEventType!]!
     "optional filter by market ID"
-    marketID: String
+    marketId: ID
     "optional filter by party ID"
-    partyID: String
+    partyId: ID
     "Specifies the size that the client will receive events in. Using 0 results in a variable batch size being sent. The stream will be closed if the client fails to read a batch within 5 seconds"
     batchSize: Int!
   ): [BusEvent!]
@@ -5005,16 +5096,16 @@ type TransactionSubmitted {
 "Queries allow a caller to read data and filter data via GraphQL."
 type Query {
   "One or more instruments that are trading on the VEGA network"
-  markets("ID of the market" id: String): [Market!]
+  markets("ID of the market" id: ID): [Market!]
 
   "An instrument that is trading on the VEGA network"
-  market("Optional ID of a market" id: String!): Market
+  market("Optional ID of a market" id: ID!): Market
 
   "One or more entities that are trading on the VEGA network"
-  parties("Optional ID of a party" id: String): [Party!]
+  parties("Optional ID of a party" id: ID): [Party!]
 
   "An entity that is trading on the VEGA network"
-  party("ID of a party" id: String!): Party
+  party("ID of a party" id: ID!): Party
 
   "a bunch of statistics about the node"
   statistics: Statistics!
@@ -5037,7 +5128,7 @@ type Query {
   "An order in the VEGA network found by orderID"
   orderByID(
     "ID for an order"
-    orderID: String!
+    orderId: ID!
 
     "version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
     version: Int
@@ -5046,7 +5137,7 @@ type Query {
   "Order versions (created via amendments if any) found by orderID"
   orderVersions(
     "ID for an order"
-    orderID: String!
+    orderId: ID!
 
     "Pagination skip"
     skip: Int
@@ -5057,7 +5148,7 @@ type Query {
   ): [Order!]
 
   "An order in the VEGA network found by referenceID"
-  orderByReference("ReferenceID for an order" referenceID: String!): Order!
+  orderByReference("Reference for an order" reference: String!): Order!
 
   "All governance proposals in the VEGA network"
   proposals(
@@ -5068,52 +5159,52 @@ type Query {
   "A governance proposal located by either its id or reference. If both are set, id is used."
   proposal(
     "Optionally, locate proposal by its id"
-    id: String
+    id: ID
     "Optionally, locate proposal by its reference. If id is set, this parameter is ignored."
     reference: String
   ): Proposal!
 
-  "Governance proposals that aim creating new markets"
+  "Governance proposals that aim to create new markets"
   newMarketProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim updating existing markets"
+  "Governance proposals that aim to update existing markets"
   updateMarketProposals(
     "Optionally, select proposals for a specific market. Leave out for all"
-    marketId: String
+    marketId: ID
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim updating Vega network parameters"
+  "Governance proposals that aim to update Vega network parameters"
   networkParametersProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
-  "Governance proposals that aim creating new assets in Vega"
+  "Governance proposals that aim to create new assets in Vega"
   newAssetProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
 
   "Return a list of aggregated node signature for a given resource ID"
-  nodeSignatures(resourceId: String!): [NodeSignature!]
+  nodeSignatures(resourceId: ID!): [NodeSignature!]
 
   "An asset which is used in the vega network"
-  asset("Id of the asset" assetId: String!): Asset
+  asset("Id of the asset" assetId: ID!): Asset
 
   "The list of all assets in use in the vega network"
   assets: [Asset!]
 
-  "return an estiamation of the potential cost for a new order"
+  "return an estimation of the potential cost for a new order"
   estimateOrder(
     "ID of the market to place the order"
-    marketId: String!
+    marketId: ID!
     "ID of the party placing the order"
-    partyId: String!
+    partyId: ID!
     "Price of the asset"
     price: String
     "Size of the order"
@@ -5122,23 +5213,23 @@ type Query {
     side: Side!
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    "exiration of the the order"
+    "expiration of the the order"
     expiration: String
     "type of the order"
     type: OrderType!
   ): OrderEstimate!
 
   "find a withdrawal using its id"
-  withdrawal("id of the withdrawal" id: String!): Withdrawal
+  withdrawal("id of the withdrawal" id: ID!): Withdrawal
 
-  "find a erc20 withdrawal approval using it a withdrawal id"
+  "find an erc20 withdrawal approval using its withdrawal id"
   erc20WithdrawalApproval(
     "id of the withdrawal"
-    withdrawalId: String!
+    withdrawalId: ID!
   ): Erc20WithdrawalApproval
 
   "find a deposit using its id"
-  deposit("id of the Deposit" id: String!): Deposit
+  deposit("id of the Deposit" id: ID!): Deposit
 
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!]
@@ -5147,7 +5238,7 @@ type Query {
 "Represents an asset in vega"
 type Asset {
   "The id of the asset"
-  id: String!
+  id: ID!
 
   "The full name of the asset (e.g: Great British Pound)"
   name: String!
@@ -5180,7 +5271,7 @@ type ERC20 {
 "A vega builtin asset, mostly for testing purpose"
 type BuiltinAsset {
   "The id of the asset"
-  id: String!
+  id: ID!
 
   "The full name of the asset (e.g: Great British Pound)"
   name: String!
@@ -5201,7 +5292,7 @@ type BuiltinAsset {
 "Represents a signature for the approval of a resource from a validator"
 type NodeSignature {
   "The id of the resource being signed for"
-  id: String!
+  id: ID!
 
   "The signature, as base64 encoding"
   signature: String
@@ -5309,7 +5400,7 @@ type Statistics {
   positionsSubscriptions: Int!
 }
 
-"A mode where Vega try to execute order as soon as they are received"
+"A mode where Vega tries to execute orders as soon as they are received"
 type ContinuousTrading {
   "Size of an increment in price in terms of the quote currency"
   tickSize: String!
@@ -5361,7 +5452,7 @@ type SimpleRiskModel {
 
 union RiskModel = LogNormalRiskModel | SimpleRiskModel
 
-"A set of metadata to associate to an instruments"
+"A set of metadata to associate to an instrument"
 type InstrumentMetadata {
   "An arbitrary list of tags to associated to associate to the Instrument (string list)"
   tags: [String!]
@@ -5557,7 +5648,7 @@ type MarginCalculator {
 }
 
 type ScalingFactors {
-  "the scaling factor that determines the margin level at which we have to search for more money"
+  "the scaling factor that determines the margin level at which Vega has to search for more money"
   searchLevel: Float!
 
   "the scaling factor that determines the optimal margin level"
@@ -5667,7 +5758,7 @@ type TargetStakeParameters {
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
   "Market ID"
-  id: String!
+  id: ID!
 
   "Market full name"
   name: String!
@@ -5733,7 +5824,7 @@ type Market {
   "Get account for a party or market"
   accounts(
     "Id of the party to get the margin account for"
-    partyId: String
+    partyId: ID
   ): [Account!]
 
   "Trades on a market"
@@ -5854,7 +5945,7 @@ type Candle {
 "Represents a party on Vega, could be an ethereum wallet address in the future"
 type Party {
   "Party identifier"
-  id: String!
+  id: ID!
 
   "Orders relating to a party"
   orders(
@@ -5869,7 +5960,7 @@ type Party {
   "Trades relating to a party (specifically where party is either buyer OR seller)"
   trades(
     "ID of the market we want to get trades for"
-    marketId: String
+    marketId: ID
     "Pagination skip"
     skip: Int
     "Pagination first element"
@@ -5881,7 +5972,7 @@ type Party {
   "Collateral accounts relating to a party"
   accounts(
     "Market ID - specify what market accounts for the party to return"
-    marketId: String
+    marketId: ID
     "Asset (USD, EUR etc)"
     asset: String
     "Filter accounts by type (General account, margin account, etc...)"
@@ -5894,7 +5985,7 @@ type Party {
   "marginLevels"
   margins(
     "market id off the margin to get, nil if all markets"
-    marketId: String
+    marketId: ID
   ): [MarginLevels!]
 
   proposals(
@@ -6108,7 +6199,7 @@ type Account {
 type Erc20WithdrawalApproval {
   "The source asset in the ethereum network"
   assetSource: String!
-  "The amount to be withdrawan"
+  "The amount to be withdrawn"
   amount: String!
   "Timestamp in seconds for expiry of the approval"
   expiry: String!
@@ -6124,7 +6215,7 @@ type Erc20WithdrawalApproval {
 "The details of a withdrawal processed by vega"
 type Withdrawal {
   "The Vega internal id of the withdrawal"
-  id: String!
+  id: ID!
   "The PartyID initiating the witndrawal"
   party: Party!
   "The amount to be withdrawn"
@@ -6168,7 +6259,7 @@ enum WithdrawalStatus {
 "The details of a deposit processed by vega"
 type Deposit {
   "The Vega internal id of the deposit"
-  id: String!
+  id: ID!
   "The PartyID initiating the deposit"
   party: Party!
   "The amount to be withdrawn"
@@ -6191,7 +6282,7 @@ enum DepositStatus {
   Open
   "The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
   Cancelled
-  "The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
+  "The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts"
   Finalized
 }
 
@@ -6312,7 +6403,7 @@ enum ProposalRejectionReason {
   "Market proposal market could not be instantiate in execution"
   CouldNotInstantiateMarket
   "Market proposal market contained invalid product definition"
-  InvalidFuturProduct
+  InvalidFutureProduct
 
 }
 
@@ -6363,7 +6454,7 @@ enum OrderRejectionReason {
   "Order missing general account"
   MissingGeneralAccount
 
-  "An internal error happend"
+  "An internal error happened"
   InternalError
 
   "Invalid size"
@@ -6676,6 +6767,33 @@ type FutureProduct {
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
+  """
+  Describes the oracle data that an instrument wants to get from the oracle engine.
+  """
+  oracleSpec: OracleSpecConfiguration!
+  """
+  OracleSpecToFutureBinding tells on which property oracle data should be
+  used as settlement price.
+  """
+  oracleSpecBinding: OracleSpecToFutureBinding!
+}
+
+"""
+An oracle spec describe the oracle data that an instrument wants to get from the
+oracle engine.
+"""
+type OracleSpecConfiguration {
+  """
+  pubKeys is the list of authorized public keys that signed the data for this
+  oracle. All the public keys in the oracle data should be contained in these
+  public keys.
+  """
+  pubKeys: [String!]
+  """
+  filters describes which oracle data are considered of interest or not for
+  the product (or the risk model).
+  """
+  filters: [Filter!]
 }
 
 input InstrumentConfigurationInput {
@@ -6761,6 +6879,26 @@ input NewMarketInput {
   continuousTrading: ContinuousTradingInput
   "Frequent batch auctions trading mode. Valid only if continuousTrading is not set"
   discreteTrading: DiscreteTradingInput
+
+  "The liquidity commitment submitted with the new market"
+  commitment: NewMarketCommitmentInput
+}
+
+"A commitment of liquidity to be made by the party which proposes a market"
+input NewMarketCommitmentInput {
+  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  commitmentAmount: String!
+  """
+  Nominated liquidity fee factor, which is an input to the calculation of
+  taker fees on the market, as per setting fees and rewarding liquidity provider
+  """
+  fee: String!
+  "A set of liquidity sell orders to meet the liquidity provision obligation"
+  sells: [LiquidityOrderInput!]
+  "A set of liquidity buy orders to meet the liquidity provision obligation"
+  buys: [LiquidityOrderInput!]
+  "A reference to be associated to all orders created from this commitment"
+  reference: String
 }
 
 type NewMarket {
@@ -6774,6 +6912,25 @@ type NewMarket {
   metadata: [String!]
   "Trading mode"
   tradingMode: TradingMode!
+  "The liquidity commitment submitted with the new market"
+  commitment: NewMarketCommitment
+}
+
+"A commitment of liquidity to be made by the party which proposes a market"
+type NewMarketCommitment {
+  "Specified as a unitless number that represents the amount of settlement asset of the market"
+  commitmentAmount: String!
+  """
+  Nominated liquidity fee factor, which is an input to the calculation of
+  taker fees on the market, as per setting fees and rewarding liquidity provider
+  """
+  fee: String!
+  "A set of liquidity sell orders to meet the liquidity provision obligation"
+  sells: [LiquidityOrder!]
+  "A set of liquidity buy orders to meet the liquidity provision obligation"
+  buys: [LiquidityOrder!]
+  "A reference to be associated to all orders created from this commitment"
+  reference: String
 }
 
 """
@@ -6781,10 +6938,10 @@ Incomplete change definition for governance proposal terms
 TODO: complete the type
 """
 type UpdateMarket {
-  marketId: String!
+  marketId: ID!
 }
 input UpdateMarketInput {
-  marketId: String!
+  marketId: ID!
 }
 
 "A new asset proposal change"
@@ -7010,7 +7167,7 @@ type TimeUpdate {
 
 type MarketEvent {
   "the market ID"
-  marketID: String!
+  marketId: ID!
   "the message - market events are used for logging"
   payload: String!
 }
@@ -7051,7 +7208,7 @@ type TransferResponses {
 
 type PositionResolution {
   "the market ID where position resolution happened"
-  marketID: String!
+  marketId: ID!
   "number of distressed traders on market"
   distressed: Int!
   "number of traders closed out"
@@ -7062,9 +7219,9 @@ type PositionResolution {
 
 type LossSocialization {
   "the market ID where loss socialization happened"
-  marketID: String!
+  marketId: ID!
   "the party that was part of the loss socialization"
-  partyID: String!
+  partyId: ID!
   "the amount lost"
   amount: Int!
 }
@@ -7078,9 +7235,9 @@ type TradeSettlement {
 
 type SettlePosition {
   "the market in which a position was settled"
-  marketID: String!
+  marketId: ID!
   "the party who settled a position"
-  partyID: String!
+  partyId: ID!
   "the settle price"
   price: Int!
   "the trades that were settled to close the overall position"
@@ -7089,9 +7246,9 @@ type SettlePosition {
 
 type SettleDistressed {
   "the market in which a position was closed out"
-  marketID: String!
+  marketId: ID!
   "the party who closed out"
-  partyID: String!
+  partyId: ID!
   "the margin taken from distressed trader"
   margin: Int!
   "the price at which position was closed out"
@@ -7100,14 +7257,14 @@ type SettleDistressed {
 
 type MarketTick {
   "the market ID"
-  marketID: String!
+  marketId: ID!
   "the block time"
   time: String!
 }
 
 type AuctionEvent {
   "the market ID"
-  marketID: String!
+  marketId: ID!
   "event fired because of auction end"
   leave: Boolean!
   "event related to opening auction"
@@ -7217,7 +7374,7 @@ union Event =
 
 type BusEvent {
   "the id for this event"
-  eventID: String!
+  eventId: ID!
   "the block hash"
   block: String!
   "the type of event we're dealing with"
@@ -7271,7 +7428,7 @@ enum LiquidityProvisionStatus {
 }
 
 type LiquidityOrderReference {
-  "The id of the pegged order generated to fullfill this commitment"
+  "The id of the pegged order generated to fulfill this commitment"
   order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!
@@ -7280,7 +7437,7 @@ type LiquidityOrderReference {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
-  id: String
+  id: ID
   "The Id of the party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -7323,7 +7480,7 @@ func (ec *executionContext) field_Market_accounts_args(ctx context.Context, rawA
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7446,13 +7603,13 @@ func (ec *executionContext) field_Mutation_prepareLiquidityProvision_args(ctx co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["marketID"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["marketId"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketID"] = arg0
+	args["marketId"] = arg0
 	var arg1 int
 	if tmp, ok := rawArgs["commitmentAmount"]; ok {
 		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
@@ -7509,7 +7666,7 @@ func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Co
 	args["id"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7579,7 +7736,7 @@ func (ec *executionContext) field_Mutation_prepareOrderCancel_args(ctx context.C
 	args["id"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7587,7 +7744,7 @@ func (ec *executionContext) field_Mutation_prepareOrderCancel_args(ctx context.C
 	args["partyId"] = arg1
 	var arg2 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7601,7 +7758,7 @@ func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.C
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7609,7 +7766,7 @@ func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.C
 	args["marketId"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7687,7 +7844,7 @@ func (ec *executionContext) field_Mutation_prepareProposal_args(ctx context.Cont
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7724,21 +7881,21 @@ func (ec *executionContext) field_Mutation_prepareVote_args(ctx context.Context,
 	}
 	args["value"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["partyID"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyID"] = arg1
+	args["partyId"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["proposalID"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["proposalId"]; ok {
+		arg2, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["proposalID"] = arg2
+	args["proposalId"] = arg2
 	return args, nil
 }
 
@@ -7746,13 +7903,13 @@ func (ec *executionContext) field_Mutation_prepareWithdrawal_args(ctx context.Co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["partyID"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyID"] = arg0
+	args["partyId"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["amount"]; ok {
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
@@ -7815,7 +7972,7 @@ func (ec *executionContext) field_Party_accounts_args(ctx context.Context, rawAr
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7867,7 +8024,7 @@ func (ec *executionContext) field_Party_margins_args(ctx context.Context, rawArg
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7925,7 +8082,7 @@ func (ec *executionContext) field_Party_trades_args(ctx context.Context, rawArgs
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7977,7 +8134,7 @@ func (ec *executionContext) field_Query_asset_args(ctx context.Context, rawArgs 
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["assetId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -7991,7 +8148,7 @@ func (ec *executionContext) field_Query_deposit_args(ctx context.Context, rawArg
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8005,7 +8162,7 @@ func (ec *executionContext) field_Query_erc20WithdrawalApproval_args(ctx context
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["withdrawalId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8019,7 +8176,7 @@ func (ec *executionContext) field_Query_estimateOrder_args(ctx context.Context, 
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8027,7 +8184,7 @@ func (ec *executionContext) field_Query_estimateOrder_args(ctx context.Context, 
 	args["marketId"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8089,7 +8246,7 @@ func (ec *executionContext) field_Query_market_args(ctx context.Context, rawArgs
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8103,7 +8260,7 @@ func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArg
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8159,7 +8316,7 @@ func (ec *executionContext) field_Query_nodeSignatures_args(ctx context.Context,
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["resourceId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8200,13 +8357,13 @@ func (ec *executionContext) field_Query_orderByID_args(ctx context.Context, rawA
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["orderID"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["orderId"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["orderID"] = arg0
+	args["orderId"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["version"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
@@ -8222,13 +8379,13 @@ func (ec *executionContext) field_Query_orderByReference_args(ctx context.Contex
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["referenceID"]; ok {
+	if tmp, ok := rawArgs["reference"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["referenceID"] = arg0
+	args["reference"] = arg0
 	return args, nil
 }
 
@@ -8236,13 +8393,13 @@ func (ec *executionContext) field_Query_orderVersions_args(ctx context.Context, 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["orderID"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	if tmp, ok := rawArgs["orderId"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["orderID"] = arg0
+	args["orderId"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["skip"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
@@ -8275,7 +8432,7 @@ func (ec *executionContext) field_Query_parties_args(ctx context.Context, rawArg
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8289,7 +8446,7 @@ func (ec *executionContext) field_Query_party_args(ctx context.Context, rawArgs 
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8303,7 +8460,7 @@ func (ec *executionContext) field_Query_proposal_args(ctx context.Context, rawAr
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8339,7 +8496,7 @@ func (ec *executionContext) field_Query_updateMarketProposals_args(ctx context.C
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8361,7 +8518,7 @@ func (ec *executionContext) field_Query_withdrawal_args(ctx context.Context, raw
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8375,7 +8532,7 @@ func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8383,7 +8540,7 @@ func (ec *executionContext) field_Subscription_accounts_args(ctx context.Context
 	args["marketId"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8420,21 +8577,21 @@ func (ec *executionContext) field_Subscription_busEvents_args(ctx context.Contex
 	}
 	args["types"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["marketID"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["marketId"]; ok {
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketID"] = arg1
+	args["marketId"] = arg1
 	var arg2 *string
-	if tmp, ok := rawArgs["partyID"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyID"] = arg2
+	args["partyId"] = arg2
 	var arg3 int
 	if tmp, ok := rawArgs["batchSize"]; ok {
 		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
@@ -8451,7 +8608,7 @@ func (ec *executionContext) field_Subscription_candles_args(ctx context.Context,
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8473,20 +8630,20 @@ func (ec *executionContext) field_Subscription_margins_args(ctx context.Context,
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["partyId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["marketID"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["marketId"]; ok {
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketID"] = arg1
+	args["marketId"] = arg1
 	return args, nil
 }
 
@@ -8495,7 +8652,7 @@ func (ec *executionContext) field_Subscription_marketData_args(ctx context.Conte
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8509,7 +8666,7 @@ func (ec *executionContext) field_Subscription_marketDepthUpdate_args(ctx contex
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8523,7 +8680,7 @@ func (ec *executionContext) field_Subscription_marketDepth_args(ctx context.Cont
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8537,7 +8694,7 @@ func (ec *executionContext) field_Subscription_orders_args(ctx context.Context, 
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8545,7 +8702,7 @@ func (ec *executionContext) field_Subscription_orders_args(ctx context.Context, 
 	args["marketId"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8559,7 +8716,7 @@ func (ec *executionContext) field_Subscription_positions_args(ctx context.Contex
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8567,7 +8724,7 @@ func (ec *executionContext) field_Subscription_positions_args(ctx context.Contex
 	args["partyId"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8580,13 +8737,13 @@ func (ec *executionContext) field_Subscription_proposals_args(ctx context.Contex
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["partyID"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyID"] = arg0
+	args["partyId"] = arg0
 	return args, nil
 }
 
@@ -8595,7 +8752,7 @@ func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, 
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8603,7 +8760,7 @@ func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, 
 	args["marketId"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -8617,20 +8774,20 @@ func (ec *executionContext) field_Subscription_votes_args(ctx context.Context, r
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["proposalId"]; ok {
-		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["proposalId"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["partyID"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	if tmp, ok := rawArgs["partyId"]; ok {
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyID"] = arg1
+	args["partyId"] = arg1
 	return args, nil
 }
 
@@ -8834,7 +8991,7 @@ func (ec *executionContext) _Asset_id(ctx context.Context, field graphql.Collect
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
@@ -9109,7 +9266,7 @@ func (ec *executionContext) _AuctionDuration_volume(ctx context.Context, field g
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AuctionEvent_marketID(ctx context.Context, field graphql.CollectedField, obj *proto.AuctionEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _AuctionEvent_marketId(ctx context.Context, field graphql.CollectedField, obj *proto.AuctionEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9140,7 +9297,7 @@ func (ec *executionContext) _AuctionEvent_marketID(ctx context.Context, field gr
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AuctionEvent_leave(ctx context.Context, field graphql.CollectedField, obj *proto.AuctionEvent) (ret graphql.Marshaler) {
@@ -9344,7 +9501,7 @@ func (ec *executionContext) _BuiltinAsset_id(ctx context.Context, field graphql.
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BuiltinAsset_name(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
@@ -9517,7 +9674,7 @@ func (ec *executionContext) _BuiltinAsset_maxFaucetAmountMint(ctx context.Contex
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _BusEvent_eventID(ctx context.Context, field graphql.CollectedField, obj *BusEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _BusEvent_eventId(ctx context.Context, field graphql.CollectedField, obj *BusEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9548,7 +9705,7 @@ func (ec *executionContext) _BusEvent_eventID(ctx context.Context, field graphql
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BusEvent_block(ctx context.Context, field graphql.CollectedField, obj *BusEvent) (ret graphql.Marshaler) {
@@ -10055,7 +10212,7 @@ func (ec *executionContext) _Deposit_id(ctx context.Context, field graphql.Colle
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Deposit_party(ctx context.Context, field graphql.CollectedField, obj *proto.Deposit) (ret graphql.Marshaler) {
@@ -11137,6 +11294,74 @@ func (ec *executionContext) _FutureProduct_quoteName(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _FutureProduct_oracleSpec(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FutureProduct",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleSpec, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v1.OracleSpecConfiguration)
+	fc.Result = res
+	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FutureProduct_oracleSpecBinding(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FutureProduct",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleSpecBinding, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*proto.OracleSpecToFutureBinding)
+	fc.Result = res
+	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Instrument_id(ctx context.Context, field graphql.CollectedField, obj *proto.Instrument) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -11938,7 +12163,7 @@ func (ec *executionContext) _LiquidityProvision_id(ctx context.Context, field gr
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_party(ctx context.Context, field graphql.CollectedField, obj *proto.LiquidityProvision) (ret graphql.Marshaler) {
@@ -12513,7 +12738,7 @@ func (ec *executionContext) _LogNormalRiskModel_params(ctx context.Context, fiel
 	return ec.marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLogNormalModelParams(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LossSocialization_marketID(ctx context.Context, field graphql.CollectedField, obj *LossSocialization) (ret graphql.Marshaler) {
+func (ec *executionContext) _LossSocialization_marketId(ctx context.Context, field graphql.CollectedField, obj *LossSocialization) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12544,10 +12769,10 @@ func (ec *executionContext) _LossSocialization_marketID(ctx context.Context, fie
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _LossSocialization_partyID(ctx context.Context, field graphql.CollectedField, obj *LossSocialization) (ret graphql.Marshaler) {
+func (ec *executionContext) _LossSocialization_partyId(ctx context.Context, field graphql.CollectedField, obj *LossSocialization) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -12578,7 +12803,7 @@ func (ec *executionContext) _LossSocialization_partyID(ctx context.Context, fiel
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LossSocialization_amount(ctx context.Context, field graphql.CollectedField, obj *LossSocialization) (ret graphql.Marshaler) {
@@ -12952,7 +13177,7 @@ func (ec *executionContext) _Market_id(ctx context.Context, field graphql.Collec
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_name(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
@@ -14844,7 +15069,7 @@ func (ec *executionContext) _MarketDepthUpdate_sequenceNumber(ctx context.Contex
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketEvent_marketID(ctx context.Context, field graphql.CollectedField, obj *MarketEvent) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketEvent_marketId(ctx context.Context, field graphql.CollectedField, obj *MarketEvent) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -14875,7 +15100,7 @@ func (ec *executionContext) _MarketEvent_marketID(ctx context.Context, field gra
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketEvent_payload(ctx context.Context, field graphql.CollectedField, obj *MarketEvent) (ret graphql.Marshaler) {
@@ -14912,7 +15137,7 @@ func (ec *executionContext) _MarketEvent_payload(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MarketTick_marketID(ctx context.Context, field graphql.CollectedField, obj *MarketTick) (ret graphql.Marshaler) {
+func (ec *executionContext) _MarketTick_marketId(ctx context.Context, field graphql.CollectedField, obj *MarketTick) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -14943,7 +15168,7 @@ func (ec *executionContext) _MarketTick_marketID(ctx context.Context, field grap
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarketTick_time(ctx context.Context, field graphql.CollectedField, obj *MarketTick) (ret graphql.Marshaler) {
@@ -15304,7 +15529,7 @@ func (ec *executionContext) _Mutation_prepareVote(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareVote(rctx, args["value"].(VoteValue), args["partyID"].(string), args["proposalID"].(string))
+		return ec.resolvers.Mutation().PrepareVote(rctx, args["value"].(VoteValue), args["partyId"].(string), args["proposalId"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15345,7 +15570,7 @@ func (ec *executionContext) _Mutation_prepareWithdrawal(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareWithdrawal(rctx, args["partyID"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput))
+		return ec.resolvers.Mutation().PrepareWithdrawal(rctx, args["partyId"].(string), args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15427,7 +15652,7 @@ func (ec *executionContext) _Mutation_prepareLiquidityProvision(ctx context.Cont
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareLiquidityProvision(rctx, args["marketID"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput), args["reference"].(*string))
+		return ec.resolvers.Mutation().PrepareLiquidityProvision(rctx, args["marketId"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput), args["reference"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15713,6 +15938,198 @@ func (ec *executionContext) _NewMarket_tradingMode(ctx context.Context, field gr
 	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTradingMode(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _NewMarket_commitment(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarket) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarket",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarket().Commitment(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*proto.NewMarketCommitment)
+	fc.Result = res
+	return ec.marshalONewMarketCommitment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNewMarketCommitment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_commitmentAmount(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewMarketCommitment().CommitmentAmount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_fee(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fee, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_sells(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sells, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.LiquidityOrder)
+	fc.Result = res
+	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_buys(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Buys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*proto.LiquidityOrder)
+	fc.Result = res
+	return ec.marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewMarketCommitment_reference(ctx context.Context, field graphql.CollectedField, obj *proto.NewMarketCommitment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewMarketCommitment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reference, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql.CollectedField, obj *proto.NodeSignature) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -15744,7 +16161,7 @@ func (ec *executionContext) _NodeSignature_id(ctx context.Context, field graphql
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodeSignature_signature(ctx context.Context, field graphql.CollectedField, obj *proto.NodeSignature) (ret graphql.Marshaler) {
@@ -16095,6 +16512,68 @@ func (ec *executionContext) _OracleSpec_data(ctx context.Context, field graphql.
 	res := resTmp.([]*v1.OracleData)
 	fc.Result = res
 	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OracleSpecConfiguration_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v1.OracleSpecConfiguration) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OracleSpecConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PubKeys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OracleSpecConfiguration_filters(ctx context.Context, field graphql.CollectedField, obj *v1.OracleSpecConfiguration) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OracleSpecConfiguration",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.Filter)
+	fc.Result = res
+	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OracleSpecToFutureBinding_settlementPriceProperty(ctx context.Context, field graphql.CollectedField, obj *proto.OracleSpecToFutureBinding) (ret graphql.Marshaler) {
@@ -16855,7 +17334,7 @@ func (ec *executionContext) _Party_id(ctx context.Context, field graphql.Collect
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Party_orders(ctx context.Context, field graphql.CollectedField, obj *proto.Party) (ret graphql.Marshaler) {
@@ -17544,7 +18023,7 @@ func (ec *executionContext) _Position_updatedAt(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PositionResolution_marketID(ctx context.Context, field graphql.CollectedField, obj *PositionResolution) (ret graphql.Marshaler) {
+func (ec *executionContext) _PositionResolution_marketId(ctx context.Context, field graphql.CollectedField, obj *PositionResolution) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -17575,7 +18054,7 @@ func (ec *executionContext) _PositionResolution_marketID(ctx context.Context, fi
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PositionResolution_distressed(ctx context.Context, field graphql.CollectedField, obj *PositionResolution) (ret graphql.Marshaler) {
@@ -19336,7 +19815,7 @@ func (ec *executionContext) _Query_orderByID(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByID(rctx, args["orderID"].(string), args["version"].(*int))
+		return ec.resolvers.Query().OrderByID(rctx, args["orderId"].(string), args["version"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19377,7 +19856,7 @@ func (ec *executionContext) _Query_orderVersions(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderVersions(rctx, args["orderID"].(string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return ec.resolvers.Query().OrderVersions(rctx, args["orderId"].(string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19415,7 +19894,7 @@ func (ec *executionContext) _Query_orderByReference(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OrderByReference(rctx, args["referenceID"].(string))
+		return ec.resolvers.Query().OrderByReference(rctx, args["reference"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20229,7 +20708,7 @@ func (ec *executionContext) _ScalingFactors_collateralRelease(ctx context.Contex
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SettleDistressed_marketID(ctx context.Context, field graphql.CollectedField, obj *SettleDistressed) (ret graphql.Marshaler) {
+func (ec *executionContext) _SettleDistressed_marketId(ctx context.Context, field graphql.CollectedField, obj *SettleDistressed) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -20260,10 +20739,10 @@ func (ec *executionContext) _SettleDistressed_marketID(ctx context.Context, fiel
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SettleDistressed_partyID(ctx context.Context, field graphql.CollectedField, obj *SettleDistressed) (ret graphql.Marshaler) {
+func (ec *executionContext) _SettleDistressed_partyId(ctx context.Context, field graphql.CollectedField, obj *SettleDistressed) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -20294,7 +20773,7 @@ func (ec *executionContext) _SettleDistressed_partyID(ctx context.Context, field
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SettleDistressed_margin(ctx context.Context, field graphql.CollectedField, obj *SettleDistressed) (ret graphql.Marshaler) {
@@ -20365,7 +20844,7 @@ func (ec *executionContext) _SettleDistressed_price(ctx context.Context, field g
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SettlePosition_marketID(ctx context.Context, field graphql.CollectedField, obj *SettlePosition) (ret graphql.Marshaler) {
+func (ec *executionContext) _SettlePosition_marketId(ctx context.Context, field graphql.CollectedField, obj *SettlePosition) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -20396,10 +20875,10 @@ func (ec *executionContext) _SettlePosition_marketID(ctx context.Context, field 
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SettlePosition_partyID(ctx context.Context, field graphql.CollectedField, obj *SettlePosition) (ret graphql.Marshaler) {
+func (ec *executionContext) _SettlePosition_partyId(ctx context.Context, field graphql.CollectedField, obj *SettlePosition) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -20430,7 +20909,7 @@ func (ec *executionContext) _SettlePosition_partyID(ctx context.Context, field g
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SettlePosition_price(ctx context.Context, field graphql.CollectedField, obj *SettlePosition) (ret graphql.Marshaler) {
@@ -22012,7 +22491,7 @@ func (ec *executionContext) _Subscription_margins(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Margins(rctx, args["partyId"].(string), args["marketID"].(*string))
+		return ec.resolvers.Subscription().Margins(rctx, args["partyId"].(string), args["marketId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22063,7 +22542,7 @@ func (ec *executionContext) _Subscription_proposals(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Proposals(rctx, args["partyID"].(*string))
+		return ec.resolvers.Subscription().Proposals(rctx, args["partyId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22114,7 +22593,7 @@ func (ec *executionContext) _Subscription_votes(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Votes(rctx, args["proposalId"].(*string), args["partyID"].(*string))
+		return ec.resolvers.Subscription().Votes(rctx, args["proposalId"].(*string), args["partyId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22165,7 +22644,7 @@ func (ec *executionContext) _Subscription_busEvents(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().BusEvents(rctx, args["types"].([]BusEventType), args["marketID"].(*string), args["partyID"].(*string), args["batchSize"].(int))
+		return ec.resolvers.Subscription().BusEvents(rctx, args["types"].([]BusEventType), args["marketId"].(*string), args["partyId"].(*string), args["batchSize"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23290,7 +23769,7 @@ func (ec *executionContext) _UpdateMarket_marketId(ctx context.Context, field gr
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UpdateNetworkParameter_networkParameter(ctx context.Context, field graphql.CollectedField, obj *proto.UpdateNetworkParameter) (ret graphql.Marshaler) {
@@ -23494,7 +23973,7 @@ func (ec *executionContext) _Withdrawal_id(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Withdrawal_party(ctx context.Context, field graphql.CollectedField, obj *proto.Withdrawal) (ret graphql.Marshaler) {
@@ -25261,6 +25740,48 @@ func (ec *executionContext) unmarshalInputNewAssetInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputNewMarketCommitmentInput(ctx context.Context, obj interface{}) (NewMarketCommitmentInput, error) {
+	var it NewMarketCommitmentInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "commitmentAmount":
+			var err error
+			it.CommitmentAmount, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fee":
+			var err error
+			it.Fee, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sells":
+			var err error
+			it.Sells, err = ec.unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "buys":
+			var err error
+			it.Buys, err = ec.unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "reference":
+			var err error
+			it.Reference, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, obj interface{}) (NewMarketInput, error) {
 	var it NewMarketInput
 	var asMap = obj.(map[string]interface{})
@@ -25306,6 +25827,12 @@ func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, ob
 		case "discreteTrading":
 			var err error
 			it.DiscreteTrading, err = ec.unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "commitment":
+			var err error
+			it.Commitment, err = ec.unmarshalONewMarketCommitmentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -25611,7 +26138,7 @@ func (ec *executionContext) unmarshalInputUpdateMarketInput(ctx context.Context,
 		switch k {
 		case "marketId":
 			var err error
-			it.MarketID, err = ec.unmarshalNString2string(ctx, v)
+			it.MarketID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -26180,8 +26707,8 @@ func (ec *executionContext) _AuctionEvent(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("AuctionEvent")
-		case "marketID":
-			out.Values[i] = ec._AuctionEvent_marketID(ctx, field, obj)
+		case "marketId":
+			out.Values[i] = ec._AuctionEvent_marketId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -26311,8 +26838,8 @@ func (ec *executionContext) _BusEvent(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("BusEvent")
-		case "eventID":
-			out.Values[i] = ec._BusEvent_eventID(ctx, field, obj)
+		case "eventId":
+			out.Values[i] = ec._BusEvent_eventId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -26982,6 +27509,16 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "oracleSpec":
+			out.Values[i] = ec._FutureProduct_oracleSpec(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "oracleSpecBinding":
+			out.Values[i] = ec._FutureProduct_oracleSpecBinding(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -27510,13 +28047,13 @@ func (ec *executionContext) _LossSocialization(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LossSocialization")
-		case "marketID":
-			out.Values[i] = ec._LossSocialization_marketID(ctx, field, obj)
+		case "marketId":
+			out.Values[i] = ec._LossSocialization_marketId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "partyID":
-			out.Values[i] = ec._LossSocialization_partyID(ctx, field, obj)
+		case "partyId":
+			out.Values[i] = ec._LossSocialization_partyId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -28442,8 +28979,8 @@ func (ec *executionContext) _MarketEvent(ctx context.Context, sel ast.SelectionS
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketEvent")
-		case "marketID":
-			out.Values[i] = ec._MarketEvent_marketID(ctx, field, obj)
+		case "marketId":
+			out.Values[i] = ec._MarketEvent_marketId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -28474,8 +29011,8 @@ func (ec *executionContext) _MarketTick(ctx context.Context, sel ast.SelectionSe
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MarketTick")
-		case "marketID":
-			out.Values[i] = ec._MarketTick_marketID(ctx, field, obj)
+		case "marketId":
+			out.Values[i] = ec._MarketTick_marketId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -28749,6 +29286,64 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 				}
 				return res
 			})
+		case "commitment":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarket_commitment(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var newMarketCommitmentImplementors = []string{"NewMarketCommitment"}
+
+func (ec *executionContext) _NewMarketCommitment(ctx context.Context, sel ast.SelectionSet, obj *proto.NewMarketCommitment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, newMarketCommitmentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NewMarketCommitment")
+		case "commitmentAmount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewMarketCommitment_commitmentAmount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "fee":
+			out.Values[i] = ec._NewMarketCommitment_fee(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "sells":
+			out.Values[i] = ec._NewMarketCommitment_sells(ctx, field, obj)
+		case "buys":
+			out.Values[i] = ec._NewMarketCommitment_buys(ctx, field, obj)
+		case "reference":
+			out.Values[i] = ec._NewMarketCommitment_reference(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -28905,6 +29500,32 @@ func (ec *executionContext) _OracleSpec(ctx context.Context, sel ast.SelectionSe
 				res = ec._OracleSpec_data(ctx, field, obj)
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var oracleSpecConfigurationImplementors = []string{"OracleSpecConfiguration"}
+
+func (ec *executionContext) _OracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, obj *v1.OracleSpecConfiguration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, oracleSpecConfigurationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OracleSpecConfiguration")
+		case "pubKeys":
+			out.Values[i] = ec._OracleSpecConfiguration_pubKeys(ctx, field, obj)
+		case "filters":
+			out.Values[i] = ec._OracleSpecConfiguration_filters(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -29532,8 +30153,8 @@ func (ec *executionContext) _PositionResolution(ctx context.Context, sel ast.Sel
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PositionResolution")
-		case "marketID":
-			out.Values[i] = ec._PositionResolution_marketID(ctx, field, obj)
+		case "marketId":
+			out.Values[i] = ec._PositionResolution_marketId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -30665,13 +31286,13 @@ func (ec *executionContext) _SettleDistressed(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("SettleDistressed")
-		case "marketID":
-			out.Values[i] = ec._SettleDistressed_marketID(ctx, field, obj)
+		case "marketId":
+			out.Values[i] = ec._SettleDistressed_marketId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "partyID":
-			out.Values[i] = ec._SettleDistressed_partyID(ctx, field, obj)
+		case "partyId":
+			out.Values[i] = ec._SettleDistressed_partyId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -30707,13 +31328,13 @@ func (ec *executionContext) _SettlePosition(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("SettlePosition")
-		case "marketID":
-			out.Values[i] = ec._SettlePosition_marketID(ctx, field, obj)
+		case "marketId":
+			out.Values[i] = ec._SettlePosition_marketId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "partyID":
-			out.Values[i] = ec._SettlePosition_partyID(ctx, field, obj)
+		case "partyId":
+			out.Values[i] = ec._SettlePosition_partyId(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -32992,6 +33613,20 @@ func (ec *executionContext) marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋveg
 	return ec._OracleSpec(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNOracleSpecConfiguration2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, v v1.OracleSpecConfiguration) graphql.Marshaler {
+	return ec._OracleSpecConfiguration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx context.Context, sel ast.SelectionSet, v *v1.OracleSpecConfiguration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OracleSpecConfiguration(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNOracleSpecConfigurationInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx context.Context, v interface{}) (OracleSpecConfigurationInput, error) {
 	return ec.unmarshalInputOracleSpecConfigurationInput(ctx, v)
 }
@@ -34495,6 +35130,66 @@ func (ec *executionContext) marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗio�
 	return ret
 }
 
+func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityOrder) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrder(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx context.Context, v interface{}) ([]*LiquidityOrderInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*LiquidityOrderInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNLiquidityOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
 func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityOrderReference) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -34778,6 +35473,29 @@ func (ec *executionContext) unmarshalONewAssetInput2ᚖcodeᚗvegaprotocolᚗio�
 		return nil, nil
 	}
 	res, err := ec.unmarshalONewAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalONewMarketCommitment2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNewMarketCommitment(ctx context.Context, sel ast.SelectionSet, v proto.NewMarketCommitment) graphql.Marshaler {
+	return ec._NewMarketCommitment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalONewMarketCommitment2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNewMarketCommitment(ctx context.Context, sel ast.SelectionSet, v *proto.NewMarketCommitment) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NewMarketCommitment(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONewMarketCommitmentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx context.Context, v interface{}) (NewMarketCommitmentInput, error) {
+	return ec.unmarshalInputNewMarketCommitmentInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalONewMarketCommitmentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx context.Context, v interface{}) (*NewMarketCommitmentInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalONewMarketCommitmentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx, v)
 	return &res, err
 }
 

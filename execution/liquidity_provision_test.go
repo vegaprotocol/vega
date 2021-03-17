@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
@@ -944,4 +946,387 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 
 	// Check we have not lost any assets
 	assert.Equal(t, totalFunds, tm.market.GetTotalAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+}
+
+func TestLpCanResubmitAfterBeingClosedOut(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	var (
+		lpparty = "lp-party-1"
+		party0  = "party-0"
+		party1  = "party-1"
+	)
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 300000).
+		WithAccountAndAmount(party1, 1000000000).
+		WithAccountAndAmount(party0, 1000000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(.3)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 150000,
+		Fee:              "0.01",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	tm.events = nil
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	// make sure LP order is deployed
+	t.Run("expect commitment statuses", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				lp := evt.LiquidityProvision()
+				found[lp.Id] = lp
+			}
+		}
+
+		expectedStatus := map[string]types.LiquidityProvision_Status{
+			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
+		}
+
+		require.Len(t, found, len(expectedStatus))
+
+		for k, v := range expectedStatus {
+			assert.Equal(t, v.String(), found[k].Status.String())
+		}
+	})
+
+	// now set the markprice
+	mpOrders := []*types.Order{
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        100,
+			Remaining:   100,
+			Price:       2000,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     party1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        100,
+			Remaining:   100,
+			Price:       2000,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     party0,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	// submit the auctions orders
+	tm.WithSubmittedOrders(t, mpOrders...)
+
+	// make sure LP order is cancelled
+	t.Run("expect commitment statuses", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				lp := evt.LiquidityProvision()
+				found[lp.Id] = lp
+			}
+		}
+
+		expectedStatus := map[string]types.LiquidityProvision_Status{
+			"liquidity-submission-1": types.LiquidityProvision_STATUS_CANCELLED,
+		}
+
+		require.Len(t, found, len(expectedStatus))
+
+		for k, v := range expectedStatus {
+			assert.Equal(t, v.String(), found[k].Status.String())
+		}
+	})
+
+	// now redeposit-funds
+	// log more
+	tm.WithAccountAndAmount(lpparty, 25000000)
+
+	tm.events = nil
+	// an re-submit the lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-2"),
+	)
+
+	// make sure LP order is deployed
+	t.Run("new LP order is active", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				lp := evt.LiquidityProvision()
+				found[lp.Id] = lp
+			}
+		}
+
+		expectedStatus := map[string]types.LiquidityProvision_Status{
+			"liquidity-submission-2": types.LiquidityProvision_STATUS_ACTIVE,
+		}
+
+		require.Len(t, found, len(expectedStatus))
+
+		for k, v := range expectedStatus {
+			assert.Equal(t, v.String(), found[k].Status.String())
+		}
+	})
+
+}
+
+func TestCloseOutLPTraderContIssue3086(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	var (
+		ruser1 = "ruser_1"
+		ruser2 = "ruser_2"
+		ruser3 = "ruser3"
+	)
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(ruser1, 500000).
+		WithAccountAndAmount(ruser2, 8600).
+		WithAccountAndAmount(ruser3, 10000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(.2)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 2000,
+		Fee:              "0.01",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 2, Offset: 5},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, ruser2, "liquidity-submission-1"),
+	)
+
+	tm.events = nil
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	// make sure LP order is deployed
+	t.Run("new LP order is active", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				lp := evt.LiquidityProvision()
+				found[lp.Id] = lp
+			}
+		}
+
+		expectedStatus := map[string]types.LiquidityProvision_Status{
+			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
+		}
+
+		require.Len(t, found, len(expectedStatus))
+
+		for k, v := range expectedStatus {
+			assert.Equal(t, v.String(), found[k].Status.String())
+		}
+	})
+
+	// now add a couple of orders
+	// now set the markprice
+	mpOrders := []*types.Order{
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        3,
+			Remaining:   3,
+			Price:       5000,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     ruser3,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        2,
+			Remaining:   2,
+			Price:       4500,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     ruser2,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        4,
+			Remaining:   4,
+			Price:       4500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     ruser1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	tm.events = nil
+	// submit the auctions orders
+	tm.WithSubmittedOrders(t, mpOrders...)
+
+	// check accounts
+	t.Run("margin account is updated", func(t *testing.T) {
+		_, err := tm.collateralEngine.GetPartyMarginAccount(
+			tm.market.GetID(), ruser2, tm.asset)
+		assert.EqualError(t, err, collateral.ErrAccountDoesNotExist.Error())
+	})
+
+	t.Run("bond account", func(t *testing.T) {
+		acc, err := tm.collateralEngine.GetPartyBondAccount(
+			tm.market.GetID(), ruser2, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, int(acc.Balance))
+	})
+
+	t.Run("general account", func(t *testing.T) {
+		acc, err := tm.collateralEngine.GetPartyGeneralAccount(
+			ruser2, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, int(acc.Balance))
+	})
+
+	// deposit funds again for this party
+	tm.WithAccountAndAmount(ruser2, 90000000)
+
+	t.Run("general account", func(t *testing.T) {
+		acc, err := tm.collateralEngine.GetPartyGeneralAccount(
+			ruser2, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, 90000000, int(acc.Balance))
+	})
+
+	lpSubmission2 := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 200000,
+		Fee:              "0.01",
+		Reference:        "ref-lp-submission-2",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 10, Offset: -10},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 13, Offset: -15},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 10, Offset: 20},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 13, Offset: 10},
+		},
+	}
+
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission2, ruser2, "liquidity-submission-2"),
+	)
+
+	// make sure LP order is deployed
+	t.Run("new LP order is active", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				lp := evt.LiquidityProvision()
+				found[lp.Id] = lp
+			}
+		}
+
+		expectedStatus := map[string]types.LiquidityProvision_Status{
+			"liquidity-submission-2": types.LiquidityProvision_STATUS_UNDEPLOYED,
+		}
+
+		require.Len(t, found, len(expectedStatus))
+
+		for k, v := range expectedStatus {
+			assert.Equal(t, v.String(), found[k].Status.String())
+		}
+	})
+
 }

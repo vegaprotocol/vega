@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -24,9 +25,9 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/mock/gomock"
+	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const MAXMOVEUP = 1000
@@ -331,7 +332,6 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 						"product:futures",
 					},
 				},
-				InitialMarkPrice: 99,
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
 						Maturity:        closingAt.Format(time.RFC3339),
@@ -429,6 +429,15 @@ func (tm *testMarket) WithSubmittedOrders(t *testing.T, orders ...*types.Order) 
 	return tm
 }
 
+func (tm *testMarket) EventHasBeenEmitted(t *testing.T, e events.Event) {
+	for _, event := range tm.events {
+		if reflect.DeepEqual(e, event) {
+			return
+		}
+	}
+	t.Fatalf("Expected event: '%s', has not been emitted", e)
+}
+
 func TestMarketClosing(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
@@ -442,6 +451,47 @@ func TestMarketClosing(t *testing.T) {
 	// check account gets updated
 	closed := tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
 	assert.True(t, closed)
+}
+
+func TestMarketNotActive(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(20, 0)
+
+	// this will create a market in Proposed Mode
+	tm := getTestMarket2(t, now, closingAt, nil, nil, false)
+	defer tm.ctrl.Finish()
+
+	require.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
+
+	party1 := "party1"
+	tm.WithAccountAndAmount(party1, 1000000)
+
+	order := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party1,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		ExpiresAt:   closingAt.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+
+	tm.events = nil
+	cpy := *order
+	cpy.Status = types.Order_STATUS_REJECTED
+	cpy.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
+	expectedEvent := events.NewOrderEvent(context.Background(), &cpy)
+
+	_, err := tm.market.SubmitOrder(context.Background(), order)
+	require.Error(t, err)
+	tm.EventHasBeenEmitted(t, expectedEvent)
+
 }
 
 func TestMarketWithTradeClosing(t *testing.T) {
@@ -556,7 +606,7 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 }
 
 func TestMarketGetMarginOnFailNoFund(t *testing.T) {
-	party1 := "party1"
+	party1, party2, party3 := "party1", "party2", "party3"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
@@ -565,6 +615,42 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	// this will create 2 traders, credit their account
 	// and move some monies to the market
 	addAccountWithAmount(tm, party1, 0)
+	addAccountWithAmount(tm, party2, 1000000)
+	addAccountWithAmount(tm, party3, 1000000)
+
+	order1 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid12",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party2,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party2-buy-order",
+	}
+	order2 := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Id:          "someid123",
+		Side:        types.Side_SIDE_SELL,
+		PartyId:     party3,
+		MarketId:    tm.market.GetID(),
+		Size:        100,
+		Price:       100,
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party3-buy-order",
+	}
+	_, err := tm.market.SubmitOrder(context.TODO(), order1)
+	assert.NoError(t, err)
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), order2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(confirmation.Trades))
 
 	// submit orders
 	// party1 buys
@@ -589,7 +675,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
-	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
+	_, err = tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "margin check failed")
 }
@@ -1590,6 +1676,8 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	ctx := context.Background()
 	party1 := "party1"
 	party2 := "party2"
+	party3 := "party3"
+	party4 := "party4"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
@@ -1597,7 +1685,77 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
+	addAccount(tm, party3)
+	addAccount(tm, party4)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	price := uint64(99)
+
+	order1 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid3",
+		Side:        types.Side_SIDE_SELL,
+		PartyId:     party3,
+		MarketId:    tm.market.GetID(),
+		Size:        1,
+		Price:       price,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party3-sell-order-1",
+	}
+	order2 := &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid4",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party4,
+		MarketId:    tm.market.GetID(),
+		Size:        1,
+		Price:       price,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party4-sell-order-1",
+	}
+	_, err := tm.market.SubmitOrder(context.TODO(), order1)
+	assert.NoError(t, err)
+	confirmationSell, err := tm.market.SubmitOrder(ctx, order2)
+	assert.NoError(t, err)
+	require.Equal(t, 1, len(confirmationSell.Trades))
+	order1 = &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid5",
+		Side:        types.Side_SIDE_SELL,
+		PartyId:     party4,
+		MarketId:    tm.market.GetID(),
+		Size:        1,
+		Price:       price,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party5-sell-order-1",
+	}
+	order2 = &types.Order{
+		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Status:      types.Order_STATUS_ACTIVE,
+		Id:          "someid6",
+		Side:        types.Side_SIDE_BUY,
+		PartyId:     party3,
+		MarketId:    tm.market.GetID(),
+		Size:        1,
+		Price:       price,
+		Remaining:   1,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party6-sell-order-1",
+	}
+	_, err = tm.market.SubmitOrder(context.TODO(), order1)
+	assert.NoError(t, err)
+	confirmationSell, err = tm.market.SubmitOrder(ctx, order2)
+	assert.NoError(t, err)
+	require.Equal(t, 1, len(confirmationSell.Trades))
 
 	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
@@ -1615,7 +1773,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party2-sell-order-1",
 	}
-	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
+	confirmationSell, err = tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
@@ -3474,7 +3632,7 @@ func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
 	assert.Equal(t, uint64(10), o3.Remaining)
 }
 
-// Tests that during a list of LiquidityProvision order creation (tiggered by
+// Tests that during a list of LiquidityProvision order creation (triggered by
 // SubmitLiquidityProvision) fails, the created orders are rolled back.
 func TestLPOrdersRollback(t *testing.T) {
 	ctx := context.Background()
@@ -3678,7 +3836,13 @@ func TestLPOrdersRollback(t *testing.T) {
 		// the first order we try to place, the party does
 		// not have enough funds
 		expectedStatus := []types.Order_Status{
-			types.Order_STATUS_REJECTED, // second gets rejected
+			types.Order_STATUS_ACTIVE,
+			types.Order_STATUS_ACTIVE,
+			types.Order_STATUS_ACTIVE,
+			types.Order_STATUS_REJECTED,
+			types.Order_STATUS_CANCELLED,
+			types.Order_STATUS_CANCELLED,
+			types.Order_STATUS_CANCELLED,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -3851,7 +4015,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 
 	require.EqualError(t,
 		tm.market.SubmitLiquidityProvision(ctx, lpCancel, "trader-2", "id-lp2"),
-		"commitment submission rejected, not enouth stake",
+		"commitment submission rejected, not enough stake",
 	)
 }
 
@@ -4597,4 +4761,197 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		// require.Equal(t, found[0].Balances[0].Account.Owner, "trader-2")
 	})
 
+}
+
+func TestAverageEntryValuation(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	// auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+	lpparty2 := "lp-party-2"
+	lpparty3 := "lp-party-3"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 500000000000).
+		WithAccountAndAmount(lpparty2, 500000000000).
+		WithAccountAndAmount(lpparty3, 500000000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(.2)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 8000,
+		Fee:              "0.01",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+		},
+	}
+
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, &lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	lpSubmission2 := lpSubmission
+	lpSubmission2.Reference = "lp-submission-2"
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, &lpSubmission2, lpparty2, "liquidity-submission-2"),
+	)
+
+	lpSubmission3 := lpSubmission
+	lpSubmission3.Reference = "lp-submission-3"
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, &lpSubmission3, lpparty3, "liquidity-submission-3"),
+	)
+
+	marketData := tm.market.GetMarketData()
+	expects := map[string]struct {
+		found bool
+		value string
+	}{
+		lpparty:  {value: "0.5454545454545454"},
+		lpparty2: {value: "0.2727272727272727"},
+		lpparty3: {value: "0.18181818181818182"},
+	}
+
+	for _, v := range marketData.LiquidityProviderFeeShare {
+		expv, ok := expects[v.Party]
+		assert.True(t, ok, "unexpected lp provider in market data", v.Party)
+		assert.Equal(t, expv.value, v.EquityLikeShare)
+		expv.found = true
+		expects[v.Party] = expv
+	}
+
+	// now ensure all are found
+	for k, v := range expects {
+		assert.True(t, v.found, "was not in the list of lp providers", k)
+	}
+}
+
+func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			LiquidityFee:      "0.001",
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.WithAccountAndAmount(lpparty, 500000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.20)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 150000,
+		Fee:              "0.01",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+		},
+	}
+
+	// submit our lp
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
+		bacc, err := tm.collateralEngine.GetPartyBondAccount(
+			tm.market.GetID(), lpparty, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, 150000, int(bacc.Balance))
+		gacc, err := tm.collateralEngine.GetPartyGeneralAccount(
+			lpparty, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, 350000, int(gacc.Balance))
+	})
+
+	// now we reject the network and our party bond account should be released to general
+	assert.NoError(t,
+		tm.market.Reject(context.Background()),
+	)
+
+	t.Run("bond is released to general account", func(t *testing.T) {
+		// an error as the bon account is being deleted
+		_, err := tm.collateralEngine.GetPartyBondAccount(
+			tm.market.GetID(), lpparty, tm.asset)
+		assert.EqualError(t, err, collateral.ErrAccountDoesNotExist.Error())
+		gacc, err := tm.collateralEngine.GetPartyGeneralAccount(
+			lpparty, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, 500000, int(gacc.Balance))
+	})
 }

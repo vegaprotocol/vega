@@ -228,7 +228,7 @@ func ensureRequiredWallets(wallets map[Blockchain]Wallet) error {
 	return nil
 }
 
-// takes the wallets configs from the store and try to instanciate them
+// takes the wallets configs from the store and try to instantiate them
 // to proper blockchains wallets
 func loadWallets(cfg Config, stor *store, ethclt eth.ETHClient) (map[Blockchain]Wallet, error) {
 	wallets := map[Blockchain]Wallet{}

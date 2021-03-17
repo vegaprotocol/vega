@@ -12,6 +12,35 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
+
+	tradedOrder1 := types.Order{
+		MarketId:    market,
+		PartyId:     "A",
+		Side:        types.Side_SIDE_SELL,
+		Price:       100,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Type:        types.Order_TYPE_LIMIT,
+	}
+	confirm, err := book.SubmitOrder(&tradedOrder1)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+
+	tradedOrder2 := types.Order{
+		MarketId:    market,
+		PartyId:     "B",
+		Side:        types.Side_SIDE_BUY,
+		Price:       100,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Type:        types.Order_TYPE_LIMIT,
+	}
+	confirm, err = book.SubmitOrder(&tradedOrder2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(confirm.Trades))
+
 	order := types.Order{
 		MarketId:    market,
 		PartyId:     "A",
@@ -22,7 +51,7 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err = book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
@@ -51,7 +80,8 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
-	order := types.Order{
+
+	tradedOrder1 := types.Order{
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
@@ -61,7 +91,35 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.SubmitOrder(&tradedOrder1)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(confirm.Trades))
+
+	tradedOrder2 := types.Order{
+		MarketId:    market,
+		PartyId:     "B",
+		Side:        types.Side_SIDE_BUY,
+		Price:       100,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Type:        types.Order_TYPE_LIMIT,
+	}
+	confirm, err = book.SubmitOrder(&tradedOrder2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(confirm.Trades))
+
+	untradedOrder := types.Order{
+		MarketId:    market,
+		PartyId:     "A",
+		Side:        types.Side_SIDE_SELL,
+		Price:       100,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Type:        types.Order_TYPE_LIMIT,
+	}
+	confirm, err = book.SubmitOrder(&untradedOrder)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 

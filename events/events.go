@@ -42,9 +42,9 @@ type SettlePosition interface {
 type FeesTransfer interface {
 	// The list of transfers to be made by the collateral
 	Transfers() []*types.Transfer
-	// The total amount of fees to be payed (all cumulated)
+	// The total amount of fees to be paid (all cumulated)
 	// per party if all the  transfers are to be executed
-	// map is party id -> total amount of fees to be transfered
+	// map is party id -> total amount of fees to be transferred
 	TotalFeesAmountPerParty() map[string]uint64
 }
 
@@ -69,7 +69,7 @@ type Margin interface {
 // Risk is an event that summarizes everything and an eventual update to margin account.
 type Risk interface {
 	Margin
-	Amount() int64
+	Amount() uint64
 	Transfer() *types.Transfer // I know, it's included in the Transfer interface, but this is to make it clear that this particular func is masked at this level
 	MarginLevels() *types.MarginLevels
 }

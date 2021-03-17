@@ -92,7 +92,7 @@ type BuiltinAssetInput struct {
 
 type BusEvent struct {
 	// the id for this event
-	EventID string `json:"eventID"`
+	EventID string `json:"eventId"`
 	// the block hash
 	Block string `json:"block"`
 	// the type of event we're dealing with
@@ -109,7 +109,7 @@ type ConditionInput struct {
 	Value string `json:"value"`
 }
 
-// A mode where Vega try to execute order as soon as they are received
+// A mode where Vega tries to execute orders as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
 	TickSize string `json:"tickSize"`
@@ -159,7 +159,7 @@ type ERC20Input struct {
 type Erc20WithdrawalApproval struct {
 	// The source asset in the ethereum network
 	AssetSource string `json:"assetSource"`
-	// The amount to be withdrawan
+	// The amount to be withdrawn
 	Amount string `json:"amount"`
 	// Timestamp in seconds for expiry of the approval
 	Expiry string `json:"expiry"`
@@ -282,9 +282,9 @@ type LogNormalRiskModelInput struct {
 
 type LossSocialization struct {
 	// the market ID where loss socialization happened
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party that was part of the loss socialization
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the amount lost
 	Amount int `json:"amount"`
 }
@@ -301,7 +301,7 @@ type MarketDataCommitments struct {
 
 type MarketEvent struct {
 	// the market ID
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the message - market events are used for logging
 	Payload string `json:"payload"`
 }
@@ -310,7 +310,7 @@ func (MarketEvent) IsEvent() {}
 
 type MarketTick struct {
 	// the market ID
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the block time
 	Time string `json:"time"`
 }
@@ -333,6 +333,21 @@ type NewAssetInput struct {
 	Erc20 *ERC20Input `json:"erc20"`
 }
 
+// A commitment of liquidity to be made by the party which proposes a market
+type NewMarketCommitmentInput struct {
+	// Specified as a unitless number that represents the amount of settlement asset of the market
+	CommitmentAmount string `json:"commitmentAmount"`
+	// Nominated liquidity fee factor, which is an input to the calculation of
+	// taker fees on the market, as per setting fees and rewarding liquidity provider
+	Fee string `json:"fee"`
+	// A set of liquidity sell orders to meet the liquidity provision obligation
+	Sells []*LiquidityOrderInput `json:"sells"`
+	// A set of liquidity buy orders to meet the liquidity provision obligation
+	Buys []*LiquidityOrderInput `json:"buys"`
+	// A reference to be associated to all orders created from this commitment
+	Reference *string `json:"reference"`
+}
+
 // Allows creating new markets on the network
 type NewMarketInput struct {
 	// New market instrument configuration
@@ -349,6 +364,8 @@ type NewMarketInput struct {
 	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
 	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
 	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
+	// The liquidity commitment submitted with the new market
+	Commitment *NewMarketCommitmentInput `json:"commitment"`
 }
 
 // An oracle spec describe the oracle data that a product (or a risk model)
@@ -389,7 +406,7 @@ type PeggedOrderInput struct {
 
 type PositionResolution struct {
 	// the market ID where position resolution happened
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// number of distressed traders on market
 	Distressed int `json:"distressed"`
 	// number of traders closed out
@@ -552,9 +569,9 @@ type RiskParametersInput struct {
 
 type SettleDistressed struct {
 	// the market in which a position was closed out
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party who closed out
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the margin taken from distressed trader
 	Margin int `json:"margin"`
 	// the price at which position was closed out
@@ -565,9 +582,9 @@ func (SettleDistressed) IsEvent() {}
 
 type SettlePosition struct {
 	// the market in which a position was settled
-	MarketID string `json:"marketID"`
+	MarketID string `json:"marketId"`
 	// the party who settled a position
-	PartyID string `json:"partyID"`
+	PartyID string `json:"partyId"`
 	// the settle price
 	Price int `json:"price"`
 	// the trades that were settled to close the overall position
@@ -951,7 +968,7 @@ const (
 	DepositStatusOpen DepositStatus = "Open"
 	// The deposit have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
 	DepositStatusCancelled DepositStatus = "Cancelled"
-	// The deposit was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
+	// The deposit was finalized, it was first valid, the foreign chain has executed it and the network updated all accounts
 	DepositStatusFinalized DepositStatus = "Finalized"
 )
 
@@ -1339,7 +1356,7 @@ const (
 	OrderRejectionReasonMarginCheckFailed OrderRejectionReason = "MarginCheckFailed"
 	// Order missing general account
 	OrderRejectionReasonMissingGeneralAccount OrderRejectionReason = "MissingGeneralAccount"
-	// An internal error happend
+	// An internal error happened
 	OrderRejectionReasonInternalError OrderRejectionReason = "InternalError"
 	// Invalid size
 	OrderRejectionReasonInvalidSize OrderRejectionReason = "InvalidSize"
@@ -1807,7 +1824,7 @@ const (
 	// Market proposal market could not be instantiate in execution
 	ProposalRejectionReasonCouldNotInstantiateMarket ProposalRejectionReason = "CouldNotInstantiateMarket"
 	// Market proposal market contained invalid product definition
-	ProposalRejectionReasonInvalidFuturProduct ProposalRejectionReason = "InvalidFuturProduct"
+	ProposalRejectionReasonInvalidFutureProduct ProposalRejectionReason = "InvalidFutureProduct"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1836,12 +1853,12 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonOpeningAuctionDurationTooLarge,
 	ProposalRejectionReasonMarketMissingLiquidityCommitment,
 	ProposalRejectionReasonCouldNotInstantiateMarket,
-	ProposalRejectionReasonInvalidFuturProduct,
+	ProposalRejectionReasonInvalidFutureProduct,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket, ProposalRejectionReasonInvalidFuturProduct:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket, ProposalRejectionReasonInvalidFutureProduct:
 		return true
 	}
 	return false

@@ -43,7 +43,7 @@ func verifyBundle(bundle *types.SignedBundle, pubkey []byte) error {
 	// build new signature algorithm using the algo from the sig
 	validator, err := crypto.NewSignatureAlgorithm(bundle.Sig.Algo)
 	if err != nil {
-		return fmt.Errorf("unable to instanciate new algorithm: %w", err)
+		return fmt.Errorf("unable to instantiate new algorithm: %w", err)
 	}
 
 	ok, err := validator.Verify(pubkey, bundle.Tx, bundle.Sig.Sig)

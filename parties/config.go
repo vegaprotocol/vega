@@ -9,7 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "parties"
 
-// Config reprensent the configuration of the parties service
+// Config represent the configuration of the parties service
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 }

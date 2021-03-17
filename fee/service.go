@@ -67,7 +67,7 @@ func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, erro
 	}
 
 	base := float64(price * o.Size)
-	maker, infra, liqui, err := s.feeFactors(mkt)
+	maker, infra, liquidity, err := s.feeFactors(mkt)
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +75,10 @@ func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, erro
 	fee := &types.Fee{
 		MakerFee:          uint64(math.Ceil(base * maker)),
 		InfrastructureFee: uint64(math.Ceil(base * infra)),
-		LiquidityFee:      uint64(math.Ceil(base * liqui)),
+		LiquidityFee:      uint64(math.Ceil(base * liquidity)),
 	}
 
-	// if mkt.State == types.MarketState_MARKET_STATE_OPENNING_AUCTION {
+	// if mkt.State == types.MarketState_MARKET_STATE_OPENING_AUCTION {
 	// 	// half price paid by both partis
 	// 	fee.MakerFee = fee.MakerFee / 2
 	// 	fee.InfrastructureFee = fee.InfrastructureFee / 2
@@ -88,7 +88,7 @@ func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, erro
 	return fee, nil
 }
 
-func (s *Svc) feeFactors(mkt *types.Market) (maker, infra, liqui float64, err error) {
+func (s *Svc) feeFactors(mkt *types.Market) (maker, infra, liquidity float64, err error) {
 	maker, err = strconv.ParseFloat(mkt.Fees.Factors.MakerFee, 64)
 	if err != nil {
 		return
@@ -97,7 +97,7 @@ func (s *Svc) feeFactors(mkt *types.Market) (maker, infra, liqui float64, err er
 	if err != nil {
 		return
 	}
-	liqui, err = strconv.ParseFloat(mkt.Fees.Factors.LiquidityFee, 64)
+	liquidity, err = strconv.ParseFloat(mkt.Fees.Factors.LiquidityFee, 64)
 	if err != nil {
 		return
 	}

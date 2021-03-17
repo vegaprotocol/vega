@@ -23,9 +23,9 @@ var (
 	ErrInvalidPriceForLimitOrder = errors.New("invalid limit order (missing required price)")
 	// ErrInvalidPriceForMarketOrder signals that a price was specified for a market order but not price is required
 	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
-	// ErrNonGTTOrderWithExpiry signals that a non GTT order what set with an expiracy
+	// ErrNonGTTOrderWithExpiry signals that a non GTT order what set with an expiry
 	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
-	// ErrGTTOrderWithNoExpiry signals that a GTT order was set without an expiracy
+	// ErrGTTOrderWithNoExpiry signals that a GTT order was set without an expiry
 	ErrGTTOrderWithNoExpiry = errors.New("GTT order without expiry")
 	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")

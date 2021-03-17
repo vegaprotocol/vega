@@ -3,30 +3,24 @@ Feature: Set up a market, with an opening auction, then uncross the book
   Background:
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
-      | name      | baseName | quoteName | asset | markprice | risk model | lamd/long | tau/short | mu | r  | sigma | release factor | initial factor | search factor | settlementPrice | openAuction | trading mode | makerFee | infrastructureFee | liquidityFee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | Prob of trading | oracleSpecPubKeys     | oracleSpecProperty | oracleSpecPropertyType | oracleSpecBinding |
-      | ETH/DEC19 | ETH      | BTC       | BTC   | 100       | simple     | 0.1       | 0.1       | -1 | -1 | -1    | 1.4            | 1.2            | 1.1           | 100             | 1           | continuous   | 0        | 0                 | 0            | 0                  |                |             |                 | 0.1             | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value   | TYPE_INTEGER           | prices.ETH.value  |
+      | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
+      | ETH/DEC19 |  BTC        | BTC   |  simple     | 0.1       | 0.1       | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 100              | 1                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
 
   Scenario: set up 2 traders with balance
     # setup accounts
-    Given the following traders:
-      | name    | amount    |
-      | trader1 | 100000000 |
-      | trader2 | 100000000 |
-      | trader3 | 100000000 |
-      | trader4 | 100000000 |
-    Then I Expect the traders to have new general account:
-      | name    | asset |
-      | trader1 | BTC   |
-      | trader2 | BTC   |
-      | trader3 | BTC   |
-      | trader4 | BTC   |
+    Given the traders make the following deposits on asset's general account:
+      | trader  | asset | amount    |
+      | trader1 | BTC   | 100000000 |
+      | trader2 | BTC   | 100000000 |
+      | trader3 | BTC   | 100000000 |
+      | trader4 | BTC   | 100000000 |
 
     # place orders and generate trades
     Then traders place following orders with references:
-      | trader  | id        | type | volume | price | resulting trades | type       | tif     | reference |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
       | trader4 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GTC | t4-s-1    |
       | trader1 | ETH/DEC19 | buy  | 5      | 10000 | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
@@ -36,19 +30,17 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | trader2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     Then the margins levels for the traders are:
-      | trader  | id        | maintenance | search | initial | release |
-      | trader1 | ETH/DEC19 |       25201 |  27721 |   30241 |   65521 |
-      | trader2 | ETH/DEC19 |       23899 |  26289 |   28679 |   57458 |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general  |
+      | trader  | market id | maintenance | search | initial | release |
+      | trader1 | ETH/DEC19 | 25201       | 27721  | 30241   | 65521   |
+      | trader2 | ETH/DEC19 | 23899       | 26289  | 28679   | 57458   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general  |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
       | trader2 | BTC   | ETH/DEC19 | 28679  | 99971321 |
-    And traders withdraw balance:
-      | trader  | asset | amount   |
-      | trader1 | BTC   | 99969759 |
-      | trader2 | BTC   | 99971321 |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+    And "trader1" withdraws "99969759" from the "BTC" account
+    And "trader2" withdraws "99971321" from the "BTC" account
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0       |
       | trader2 | BTC   | ETH/DEC19 | 28679  | 0       |
     Then the opening auction period for market "ETH/DEC19" ends
@@ -69,9 +61,9 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-b-3    | STATUS_CANCELLED |
       | trader2 | t2-s-3    | STATUS_FILLED    |
     And the following transfers happened:
-      | from    | to      | from account type   | to account type      | market ID | amount | asset |
+      | from    | to      | from account   | to account      | market id | amount | asset |
       | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9479   | BTC   |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
       | trader2 | BTC   | ETH/DEC19 | 19200  | 9479    |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0       |

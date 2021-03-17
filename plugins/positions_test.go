@@ -67,7 +67,7 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// average entry price should be 1k
-	// initialy calculation say the RealisedPNL should be 1000
+	// initially calculation say the RealisedPNL should be 1000
 	assert.Equal(t, 1000, int(pp[0].RealisedPnl))
 
 	// then we process the event for LossSocialization
@@ -100,7 +100,7 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// average entry price should be 1k
-	// initialy calculation say the RealisedPNL should be 1000
+	// initially calculation say the RealisedPNL should be 1000
 	assert.Equal(t, 0, int(pp[0].RealisedPnl))
 	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 
@@ -142,7 +142,7 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(pp))
 	// average entry price should be 1k
-	// initialy calculation say the RealisedPNL should be 1000
+	// initially calculation say the RealisedPNL should be 1000
 	assert.Equal(t, 0, int(pp[0].RealisedPnl))
 	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 

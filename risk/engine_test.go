@@ -117,9 +117,9 @@ func testMarginLevelsTS(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(20), trans.Amount.Amount)
+	assert.Equal(t, 20, int(trans.Amount.Amount))
 	// min = 15 so we go back to maintenance level
-	assert.Equal(t, int64(15), trans.MinAmount)
+	assert.Equal(t, 15, int(trans.MinAmount))
 	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, trans.Type)
 }
 
@@ -148,9 +148,9 @@ func testMarginTopup(t *testing.T) {
 	assert.Equal(t, 1, len(resp))
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(20), trans.Amount.Amount)
+	assert.Equal(t, 20, int(trans.Amount.Amount))
 	// min = 15 so we go back to maintenance level
-	assert.Equal(t, int64(15), trans.MinAmount)
+	assert.Equal(t, 15, int(trans.MinAmount))
 	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, trans.Type)
 }
 
@@ -232,7 +232,7 @@ func testMarginOverflow(t *testing.T) {
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(470), trans.Amount.Amount)
+	assert.Equal(t, 470, int(trans.Amount.Amount))
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, trans.Type)
 }
@@ -267,7 +267,7 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 
 	// ensure we get the correct transfer request back, correct amount etc...
 	trans := resp[0].Transfer()
-	assert.Equal(t, int64(470), trans.Amount.Amount)
+	assert.Equal(t, 470, int(trans.Amount.Amount))
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
 	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, trans.Type)
 }
@@ -333,8 +333,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice), false)
+	book := matching.NewOrderBook(log, conf.Matching, marketID, false)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -408,8 +407,6 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		},
 	}
 
-	var markPrice int64 = 94
-
 	// list of order in the book before the test happen
 	ordersInBook := []struct {
 		volume int64
@@ -441,8 +438,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	as.EXPECT().InAuction().AnyTimes().Return(false)
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(
-		log, conf.Matching, marketID, uint64(markPrice), false)
+	book := matching.NewOrderBook(log, conf.Matching, marketID, false)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{

@@ -113,7 +113,7 @@ func (r *Recorder) read() ([]byte, error) {
 	buf := make([]byte, bufsize)
 	if _, err := r.f.Read(buf); err != nil {
 		// in this case as we reading from a file
-		// if we cannot get all the size we asked for, an error happend
+		// if we cannot get all the size we asked for, an error happened
 		return nil, fmt.Errorf("unable to read msg: %w", err)
 	}
 

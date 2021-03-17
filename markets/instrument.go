@@ -24,7 +24,6 @@ type Instrument struct {
 	Code             string
 	Name             string
 	Metadata         *types.InstrumentMetadata
-	InitialMarkPrice uint64
 	Product          products.Product
 
 	Quote string
@@ -69,7 +68,6 @@ func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrumen
 		Name:             pi.Name,
 		Metadata:         pi.Metadata,
 		Product:          product,
-		InitialMarkPrice: pi.InitialMarkPrice,
 	}, err
 }
 

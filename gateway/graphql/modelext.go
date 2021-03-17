@@ -3,6 +3,7 @@ package gql
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
@@ -287,7 +288,9 @@ func (o ConditionOperator) IntoProto() (oraclesv1.Condition_Operator, error) {
 
 // IntoProto ...
 func (o *OracleSpecToFutureBindingInput) IntoProto() (*types.OracleSpecToFutureBinding, error) {
-	return nil, nil
+	return &types.OracleSpecToFutureBinding{
+		SettlementPriceProperty: o.SettlementPriceProperty,
+	}, nil
 }
 
 // IntoProto ...
@@ -485,6 +488,56 @@ func (p *PriceMonitoringSettingsInput) IntoProto() (*types.PriceMonitoringSettin
 	}, nil
 }
 
+// ProtoCommitment ...
+func (n *NewMarketInput) ProtoCommitment() (*types.NewMarketCommitment, error) {
+	// FIXME(JEREMY): commitment are optional for now.
+	// this check will need to be changed for an error if it's nil
+	// in the future
+	if n.Commitment == nil {
+		return nil, nil
+	}
+
+	c := n.Commitment
+
+	amount, err := strconv.ParseUint(c.CommitmentAmount, 10, 64)
+	if err != nil || amount == 0 {
+		return nil, errors.New("NewMarket.CommitmentAmount: needs to be > 0")
+	}
+	fee, err := strconv.ParseFloat(c.CommitmentAmount, 64)
+	if err != nil || fee < 0 {
+		return nil, errors.New("NewMarket.Fee: needs to be >= 0")
+	}
+
+	var reference string
+	if c.Reference != nil {
+		reference = *c.Reference
+	}
+
+	if len(c.Buys) <= 0 {
+		return nil, errors.New("NewMarket.Buys: cannot be empty")
+	}
+	if len(c.Sells) <= 0 {
+		return nil, errors.New("NewMarket.Sells: cannot be empty")
+	}
+
+	buys, err := LiquidityOrderInputs(c.Buys).IntoProto()
+	if err != nil {
+		return nil, err
+	}
+	sells, err := LiquidityOrderInputs(c.Sells).IntoProto()
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.NewMarketCommitment{
+		CommitmentAmount: amount,
+		Fee:              c.Fee,
+		Reference:        reference,
+		Sells:            sells,
+		Buys:             buys,
+	}, nil
+}
+
 // IntoProto ...
 func (n *NewMarketInput) IntoProto() (*types.NewMarketConfiguration, error) {
 	if n.DecimalPlaces < 0 {
@@ -557,9 +610,14 @@ func (p ProposalTermsInput) IntoProto() (*types.ProposalTerms, error) {
 		if err != nil {
 			return nil, err
 		}
+		commitment, err := p.NewMarket.ProtoCommitment()
+		if err != nil {
+			return nil, err
+		}
 		result.Change = &types.ProposalTerms_NewMarket{
 			NewMarket: &types.NewMarket{
-				Changes: market,
+				Changes:             market,
+				LiquidityCommitment: commitment,
 			},
 		}
 	}
