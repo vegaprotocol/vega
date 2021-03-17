@@ -161,7 +161,10 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders cancel pegged orders and clear:$`, tradersCancelPeggedOrdersAndClear)
 	s.Step(`^the trader submits LP:$`, submitLP)
 	s.Step(`^I see the LP events:$`, seeLPEvents)
-	s.Step(`^the opening auction period for market "([^"]+)" ends$`, theOpeningAuctionPeriodEnds)
+	s.Step(`^the opening auction period for market "([^"]+)" ends$`, func(marketID string) error {
+		steps.MarketOpeningAuctionPeriodEnds(execsetup.timesvc, execsetup.mkts, marketID)
+		return nil
+	})
 	s.Step(`^oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *gherkin.DataTable) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
 	})

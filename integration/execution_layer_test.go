@@ -427,22 +427,3 @@ func seeLPEvents(in *gherkin.DataTable) error {
 	}
 	return nil
 }
-
-func theOpeningAuctionPeriodEnds(mktName string) error {
-	var mkt *types.Market
-	for _, m := range execsetup.mkts {
-		if m.Id == mktName {
-			mkt = &m
-			break
-		}
-	}
-	if mkt == nil {
-		return fmt.Errorf("market %s not found", mktName)
-	}
-	// double the time, so it's definitely past opening auction time
-	now := execsetup.timesvc.Now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second)
-	execsetup.timesvc.Now = now
-	// notify markets
-	execsetup.timesvc.Notify(context.Background(), now)
-	return nil
-}
