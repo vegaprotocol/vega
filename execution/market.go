@@ -109,7 +109,7 @@ type PriceMonitor interface {
 
 // LiquidityMonitor
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, current, target float64, bestStaticBidVolume, bestStaticAskVolume uint64)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
 }
 
 // TargetStakeCalculator interface
@@ -118,7 +118,6 @@ type TargetStakeCalculator interface {
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64) float64
 	UpdateScalingFactor(sFactor float64) error
 	UpdateTimeWindow(tWindow time.Duration)
-	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64, theoreticalOI uint64) float64
 }
 
 // AuctionState ...
@@ -291,13 +290,15 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate fee engine")
 	}
 
+	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
+
 	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
-	lMonitor := lmon.NewMonitor()
 
-	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters)
+	lMonitor := lmon.NewMonitor(tsCalc)
+
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
 	// The market is initially create in a proposed state
@@ -2971,16 +2972,6 @@ func (m *Market) getTargetStake() float64 {
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.markPrice)
 }
 
-func (m *Market) getTheoreticalTargetStake(trades []*types.Trade) float64 {
-	rf, err := m.getRiskFactors()
-	if err != nil {
-		m.log.Debug("unable to get risk factors, can't calculate target", logging.Error(err))
-		return 0
-	}
-	oi := m.position.GetOpenInterestGivenTrades(trades)
-	return m.tsCalc.GetTheoreticalTargetStake(*rf, m.currentTime, m.markPrice, oi)
-}
-
 func (m *Market) getSuppliedStake() uint64 {
 	return m.liquidity.CalculateSuppliedStake()
 }
@@ -3418,18 +3409,21 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
 	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
-	var targetStake float64
-	if trades != nil {
-		targetStake = m.getTheoreticalTargetStake(trades)
-	} else {
-		targetStake = m.getTargetStake()
+
+	rf, err := m.getRiskFactors()
+	if err != nil {
+		m.log.Panic("unable to get risk factors, can't check liquidity",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
 	}
 
 	m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
 		m.targetStakeTriggeringRatio,
 		float64(m.getSuppliedStake()),
-		targetStake,
+		trades,
+		*rf,
+		m.markPrice,
 		vBid, vAsk)
 
 }

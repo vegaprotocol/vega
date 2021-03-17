@@ -5,17 +5,20 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/monitor/liquidity/mocks"
+	types "code.vegaprotocol.io/vega/proto"
 	"github.com/golang/mock/gomock"
 )
 
 type testHarness struct {
-	AuctionState *mocks.MockAuctionState
+	AuctionState          *mocks.MockAuctionState
+	TargetStakeCalculator *mocks.MockTargetStakeCalculator
 }
 
 func newTestHarness(t *testing.T) *testHarness {
 	ctrl := gomock.NewController(t)
 	return &testHarness{
-		AuctionState: mocks.NewMockAuctionState(ctrl),
+		AuctionState:          mocks.NewMockAuctionState(ctrl),
+		TargetStakeCalculator: mocks.NewMockTargetStakeCalculator(ctrl),
 	}
 }
 
@@ -25,7 +28,10 @@ func (h *testHarness) WhenInLiquidityAuction(v bool) *testHarness {
 }
 
 func TestEngineWhenInLiquidityAuction(t *testing.T) {
-	var constant = 0.7
+	var (
+		constant = 0.7
+		now      = time.Now()
+	)
 
 	tests := []struct {
 		desc string
@@ -45,14 +51,18 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 		{"Current == Target, no best bid and ask", 15, 15, 0, 0, false},
 	}
 
-	mon := NewMonitor()
 	h := newTestHarness(t).WhenInLiquidityAuction(true)
+	mon := NewMonitor(h.TargetStakeCalculator)
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionShouldEnd {
 				h.AuctionState.EXPECT().EndAuction().Times(1)
 			}
-			mon.CheckLiquidity(h.AuctionState, time.Now(), constant, test.current, test.target, test.bestStaticBidVolume, test.bestStaticAskVolume)
+			var trades []*types.Trade = nil
+			var rf types.RiskFactor = types.RiskFactor{}
+			var markPrice uint64 = 100
+			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice, trades).Return(test.target)
+			mon.CheckLiquidity(h.AuctionState, now, constant, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})
 	}
 }
@@ -81,16 +91,19 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 		{"Current == (Target * c1), no best bid and ask", 10, 20, 0, 0, true},
 	}
 
-	mon := NewMonitor()
 	h := newTestHarness(t).WhenInLiquidityAuction(false)
+	mon := NewMonitor(h.TargetStakeCalculator)
 	h.AuctionState.EXPECT().InAuction().Return(false).Times(len(tests))
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionShouldStart {
 				h.AuctionState.EXPECT().StartLiquidityAuction(now, nil).Times(1)
 			}
-
-			mon.CheckLiquidity(h.AuctionState, now, constant, test.current, test.target, test.bestStaticBidVolume, test.bestStaticAskVolume)
+			var trades []*types.Trade = nil
+			var rf types.RiskFactor = types.RiskFactor{}
+			var markPrice uint64 = 100
+			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice, trades).Return(test.target)
+			mon.CheckLiquidity(h.AuctionState, now, constant, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})
 	}
 }
