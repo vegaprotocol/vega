@@ -3,20 +3,21 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Order struct {
 	*Base
-	o types.Order
+	o *ptypes.Order
 }
 
 func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
 	cpy := o.DeepClone()
 	order := &Order{
 		Base: newBase(ctx, OrderEvent),
-		o:    *cpy,
+		o:    o.IntoProto(),
 	}
 	return order
 }
@@ -33,12 +34,12 @@ func (o Order) MarketID() string {
 	return o.o.MarketId
 }
 
-func (o *Order) Order() *types.Order {
-	return &o.o
+func (o *Order) Order() *ptypes.Order {
+	return o.o
 }
 
-func (o Order) Proto() types.Order {
-	return o.o
+func (o Order) Proto() ptypes.Order {
+	return *o.o
 }
 
 func (o Order) StreamMessage() *eventspb.BusEvent {

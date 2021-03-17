@@ -9,9 +9,9 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"

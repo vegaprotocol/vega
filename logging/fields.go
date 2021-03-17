@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 
 	"go.uber.org/zap"
 )
@@ -146,6 +147,11 @@ func CandleWithTag(c types.Candle, tag string) zap.Field {
 
 // Order constructs a field with the given VEGA order proto value.
 func Order(o types.Order) zap.Field {
+	return zap.String("order", o.IntoProto().String())
+}
+
+// Order constructs a field with the given VEGA order proto value.
+func ProtoOrder(o ptypes.Order) zap.Field {
 	return zap.String("order", o.String())
 }
 
@@ -160,7 +166,7 @@ func Time(key string, t time.Time) zap.Field {
 
 // OrderWithTag constructs a field with the given VEGA order proto value and key equal to the tag string.
 func OrderWithTag(o types.Order, tag string) zap.Field {
-	return zap.String(tag, o.String())
+	return zap.String(tag, o.IntoProto().String())
 }
 
 // Trade constructs a field with the given VEGA trade proto value.

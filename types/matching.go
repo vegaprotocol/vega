@@ -2,14 +2,219 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	"time"
 
-type Order = proto.Order
-type OrderConfirmation = proto.OrderConfirmation
-type OrderAmendment = proto.OrderAmendment
-type OrderCancellation = proto.OrderCancellation
-type OrderCancellationConfirmation = proto.OrderCancellationConfirmation
-type PeggedOrder = proto.PeggedOrder
+	"code.vegaprotocol.io/vega/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+)
+
+type Order struct {
+	Id          string
+	MarketId    string
+	PartyId     string
+	Side        Side
+	Price       uint64
+	Size        uint64
+	Remaining   uint64
+	TimeInForce Order_TimeInForce
+	Type        Order_Type
+	CreatedAt   int64
+	Status      Order_Status
+	ExpiresAt   int64
+	Reference   string
+	Reason      OrderError
+	UpdatedAt   int64
+	Version     uint64
+	BatchId     uint64
+	PeggedOrder *PeggedOrder
+}
+
+type Orders []*Order
+
+func (o Orders) IntoProto() []*proto.Order {
+	out := make([]*proto.Order, 0, len(o))
+	for _, v := range o {
+		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
+func (o *Order) IntoProto() *proto.Order {
+	var pegged *proto.PeggedOrder
+	if o.PeggedOrder != nil {
+		pegged = o.PeggedOrder.IntoProto()
+	}
+	return &proto.Order{
+		Id:          o.Id,
+		MarketId:    o.MarketId,
+		PartyId:     o.PartyId,
+		Side:        o.Side,
+		Price:       o.Price,
+		Size:        o.Size,
+		Remaining:   o.Remaining,
+		TimeInForce: o.TimeInForce,
+		Type:        o.Type,
+		CreatedAt:   o.CreatedAt,
+		Status:      o.Status,
+		ExpiresAt:   o.ExpiresAt,
+		Reference:   o.Reference,
+		Reason:      o.Reason,
+		UpdatedAt:   o.UpdatedAt,
+		Version:     o.Version,
+		BatchId:     o.BatchId,
+		PeggedOrder: pegged,
+	}
+}
+func OrderFromProto(o *proto.Order) *Order {
+	var pegged *PeggedOrder
+	if o.PeggedOrder != nil {
+		pegged = PeggedOrderFromProto(o.PeggedOrder)
+	}
+	return &Order{
+		Id:          o.Id,
+		MarketId:    o.MarketId,
+		PartyId:     o.PartyId,
+		Side:        o.Side,
+		Price:       o.Price,
+		Size:        o.Size,
+		Remaining:   o.Remaining,
+		TimeInForce: o.TimeInForce,
+		Type:        o.Type,
+		CreatedAt:   o.CreatedAt,
+		Status:      o.Status,
+		ExpiresAt:   o.ExpiresAt,
+		Reference:   o.Reference,
+		Reason:      o.Reason,
+		UpdatedAt:   o.UpdatedAt,
+		Version:     o.Version,
+		BatchId:     o.BatchId,
+		PeggedOrder: pegged,
+	}
+}
+
+// Create sets the creation time (CreatedAt) to t and returns the
+// updated order.
+func (o *Order) Create(t time.Time) *Order {
+	o.CreatedAt = t.UnixNano()
+	return o
+}
+
+// Update sets the modification time (UpdatedAt) to t and returns the
+// updated order.
+func (o *Order) Update(t time.Time) *Order {
+	o.UpdatedAt = t.UnixNano()
+	return o
+}
+
+// IsPersistent returns true if the order is persistent.
+// A persistent order is a Limit type order that might be
+// matched in the future.
+func (o *Order) IsPersistent() bool {
+	return (o.TimeInForce == Order_TIME_IN_FORCE_GTC ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GTT ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GFN ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GFA) &&
+		o.Type == Order_TYPE_LIMIT &&
+		o.Remaining > 0
+}
+
+func (o *Order) AmendSize(newSize int64) *OrderAmendment {
+	a := &OrderAmendment{
+		OrderId:  o.Id,
+		MarketId: o.MarketId,
+		PartyId:  o.PartyId,
+
+		SizeDelta:   newSize - int64(o.Size),
+		TimeInForce: o.TimeInForce,
+	}
+	if e := o.ExpiresAt; e > 0 {
+		a.ExpiresAt = &Timestamp{
+			Value: e,
+		}
+	}
+
+	if p := o.PeggedOrder; p != nil {
+		a.PeggedReference = p.Reference
+		a.PeggedOffset = &wrapperspb.Int64Value{
+			Value: p.Offset,
+		}
+	} else {
+		if p := o.Price; p > 0 {
+			a.Price = &Price{
+				Value: p,
+			}
+		}
+	}
+
+	return a
+}
+
+func (o *Order) IsExpireable() bool {
+	return (o.TimeInForce == Order_TIME_IN_FORCE_GFN ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GTT ||
+		o.TimeInForce == Order_TIME_IN_FORCE_GFA) &&
+		o.ExpiresAt > 0
+}
+
+// IsFinished returns true if an order
+// is in any state different to ACTIVE and PARKED
+// Basically any order which is never gonna
+// trade anymore
+func (o *Order) IsFinished() bool {
+	return o.Status != Order_STATUS_ACTIVE && o.Status != Order_STATUS_PARKED
+}
+
+func (o *Order) HasTraded() bool {
+	return o.Size != o.Remaining
+}
+
+type PeggedOrder struct {
+	Reference PeggedReference
+	Offset    int64
+}
+
+func PeggedOrderFromProto(p *proto.PeggedOrder) *PeggedOrder {
+	if p == nil {
+		return nil
+	}
+	return &PeggedOrder{
+		Reference: p.Reference,
+		Offset:    p.Offset,
+	}
+}
+
+func (p PeggedOrder) IntoProto() *proto.PeggedOrder {
+	return &proto.PeggedOrder{
+		Reference: p.Reference,
+		Offset:    p.Offset,
+	}
+}
+
+type OrderConfirmation struct {
+	Order                 *Order
+	Trades                []*Trade
+	PassiveOrdersAffected []*Order
+}
+
+func (o *OrderConfirmation) IntoProto() *proto.OrderConfirmation {
+	return &proto.OrderConfirmation{
+		Order:                 o.Order.IntoProto(),
+		Trades:                o.Trades,
+		PassiveOrdersAffected: Orders(o.PassiveOrdersAffected).IntoProto(),
+	}
+}
+
+type OrderCancellationConfirmation struct {
+	Order *Order
+}
+
+func (o *OrderCancellationConfirmation) IntoProto() *proto.OrderCancellationConfirmation {
+	return &proto.OrderCancellationConfirmation{
+		Order: o.Order.IntoProto(),
+	}
+}
+
 type Trade = proto.Trade
 type Fee = proto.Fee
 

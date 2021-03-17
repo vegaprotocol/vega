@@ -26,7 +26,7 @@ func TestOrderBook_MarketOrderFOKNotFilledResponsePrice(t *testing.T) {
 
 	// Verify that the response price for the unfilled order is zero
 	assert.NotEqual(t, (*types.OrderConfirmation)(nil), confirm)
-	assert.Equal(t, uint64(0), confirm.Order.GetPrice())
+	assert.Equal(t, uint64(0), confirm.Order.Price)
 }
 
 func TestOrderBook_MarketOrderIOCNotFilledResponsePrice(t *testing.T) {
@@ -47,7 +47,7 @@ func TestOrderBook_MarketOrderIOCNotFilledResponsePrice(t *testing.T) {
 
 	// Verify that the response price for the unfilled order is zero
 	assert.NotEqual(t, (*types.OrderConfirmation)(nil), confirm)
-	assert.Equal(t, uint64(0), confirm.Order.GetPrice())
+	assert.Equal(t, uint64(0), confirm.Order.Price)
 }
 
 func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
@@ -81,10 +81,10 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 
 	// Verify that the response price for the unfilled order is zero
 	assert.NotEqual(t, (*types.OrderConfirmation)(nil), confirm)
-	assert.Equal(t, uint64(0), confirm.Order.GetPrice())
+	assert.Equal(t, uint64(0), confirm.Order.Price)
 
 	// Nothing was filled
-	assert.Equal(t, uint64(10), confirm.Order.GetRemaining())
+	assert.Equal(t, uint64(10), confirm.Order.Remaining)
 
 	// No orders
 	assert.Nil(t, confirm.Trades)
@@ -122,10 +122,10 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 
 	// Verify that the response price for the unfilled order is zero
 	assert.NotEqual(t, (*types.OrderConfirmation)(nil), confirm)
-	assert.Equal(t, uint64(0), confirm.Order.GetPrice())
+	assert.Equal(t, uint64(0), confirm.Order.Price)
 
 	// Something was filled
-	assert.Equal(t, uint64(4), confirm.Order.GetRemaining())
+	assert.Equal(t, uint64(4), confirm.Order.Remaining)
 
 	// One order
 	assert.Equal(t, 1, len(confirm.Trades))
