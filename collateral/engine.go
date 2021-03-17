@@ -596,14 +596,14 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		}
 
 		// updating the accounts stored in the marginEvt
-		marginEvt.general, err = e.GetAccountByID(marginEvt.general.GetId())
+		marginEvt.general, err = e.GetAccountByID(marginEvt.general.Id)
 		if err != nil {
 			e.log.Error("unable to get party account",
 				logging.String("account-type", "general"),
 				logging.String("party-id", evt.Party()),
 				logging.String("asset", asset))
 		}
-		marginEvt.margin, err = e.GetAccountByID(marginEvt.margin.GetId())
+		marginEvt.margin, err = e.GetAccountByID(marginEvt.margin.Id)
 		if err != nil {
 			e.log.Error("unable to get party account",
 				logging.String("account-type", "margin"),
@@ -728,7 +728,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			}
 		}
 		// updating the accounts stored in the marginEvt
-		marginEvt.general, err = e.GetAccountByID(marginEvt.general.GetId())
+		marginEvt.general, err = e.GetAccountByID(marginEvt.general.Id)
 		if err != nil {
 			e.log.Error("unable to get party account",
 				logging.String("account-type", "general"),
@@ -736,7 +736,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.String("asset", asset))
 		}
 
-		marginEvt.margin, err = e.GetAccountByID(marginEvt.margin.GetId())
+		marginEvt.margin, err = e.GetAccountByID(marginEvt.margin.Id)
 		if err != nil {
 			e.log.Error("unable to get party account",
 				logging.String("account-type", "margin"),
@@ -844,7 +844,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 			toPenalise = append(toPenalise, mevt)
 		}
 		response = append(response, res)
-		for _, v := range res.GetTransfers() {
+		for _, v := range res.Transfers {
 			// increment the to account
 			if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
 				e.log.Error(
@@ -901,7 +901,7 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 	if err != nil {
 		return nil, err
 	}
-	for _, v := range res.GetTransfers() {
+	for _, v := range res.Transfers {
 		// increment the to account
 		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
 			e.log.Error(
@@ -929,7 +929,7 @@ func (e *Engine) BondUpdate(ctx context.Context, market, party string, transfer 
 		return nil, err
 	}
 
-	for _, v := range res.GetTransfers() {
+	for _, v := range res.Transfers {
 		// increment the to account
 		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
 			e.log.Error(
@@ -983,7 +983,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	if err != nil {
 		return nil, nil, err
 	}
-	for _, v := range res.GetTransfers() {
+	for _, v := range res.Transfers {
 		// increment the to account
 		if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
 			e.log.Error(

@@ -353,7 +353,7 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 		// Validate marketID as only MARGIN accounts should have a marketID specified
 		if acc.MarketId == "" && (acc.Type != types.AccountType_ACCOUNT_TYPE_GENERAL || acc.Type == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW) {
 			err := fmt.Errorf("general or withdraw account should not have a market")
-			a.log.Error(err.Error(), logging.Account(*acc))
+			a.log.Error(err.Error(), logging.ProtoAccount(*acc))
 			return nil, err
 		}
 

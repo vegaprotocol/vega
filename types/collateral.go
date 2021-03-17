@@ -4,13 +4,140 @@ package types
 
 import "code.vegaprotocol.io/vega/proto"
 
+type Account struct {
+	Id       string
+	Owner    string
+	Balance  uint64
+	Asset    string
+	MarketId string
+	Type     AccountType
+}
+
+func (a Account) String() string {
+	return a.IntoProto().String()
+}
+
+func (a *Account) IntoProto() *proto.Account {
+	return &proto.Account{
+		Id:       a.Id,
+		Owner:    a.Owner,
+		Balance:  a.Balance,
+		Asset:    a.Asset,
+		MarketId: a.MarketId,
+		Type:     a.Type,
+	}
+}
+
+type Accounts []*Account
+
+func (a Accounts) IntoProto() []*proto.Account {
+	out := make([]*proto.Account, 0, len(a))
+	for _, v := range a {
+		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
+type TransferRequest struct {
+	FromAccount []*Account
+	ToAccount   []*Account
+	Amount      uint64
+	MinAmount   uint64
+	Asset       string
+	Reference   string
+}
+
+func (t *TransferRequest) IntoProto() *proto.TransferRequest {
+	return &proto.TransferRequest{
+		FromAccount: Accounts(t.FromAccount).IntoProto(),
+		ToAccount:   Accounts(t.ToAccount).IntoProto(),
+		Amount:      t.Amount,
+		MinAmount:   t.MinAmount,
+		Asset:       t.Asset,
+		Reference:   t.Reference,
+	}
+}
+
+type TransferResponse struct {
+	Transfers []*LedgerEntry
+	Balances  []*TransferBalance
+}
+
+func (t *TransferResponse) IntoProto() *proto.TransferResponse {
+	return &proto.TransferResponse{
+		Transfers: LedgerEntries(t.Transfers).IntoProto(),
+		Balances:  TransferBalances(t.Balances).IntoProto(),
+	}
+}
+
+type TransferResponses []*TransferResponse
+
+func (a TransferResponses) IntoProto() []*proto.TransferResponse {
+	out := make([]*proto.TransferResponse, 0, len(a))
+	for _, v := range a {
+		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
+type TransferBalance struct {
+	Account *Account
+	Balance uint64
+}
+
+func (t *TransferBalance) IntoProto() *proto.TransferBalance {
+	var acc *proto.Account
+	if t.Account != nil {
+		acc = t.Account.IntoProto()
+	}
+	return &proto.TransferBalance{
+		Account: acc,
+		Balance: t.Balance,
+	}
+}
+
+type TransferBalances []*TransferBalance
+
+func (a TransferBalances) IntoProto() []*proto.TransferBalance {
+	out := make([]*proto.TransferBalance, 0, len(a))
+	for _, v := range a {
+		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
+type LedgerEntry struct {
+	FromAccount string
+	ToAccount   string
+	Amount      uint64
+	Reference   string
+	Type        string
+	Timestamp   int64
+}
+
+func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
+	return &proto.LedgerEntry{
+		FromAccount: l.FromAccount,
+		ToAccount:   l.ToAccount,
+		Amount:      l.Amount,
+		Reference:   l.Reference,
+		Type:        l.Type,
+		Timestamp:   l.Timestamp,
+	}
+}
+
+type LedgerEntries []*LedgerEntry
+
+func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
+	out := make([]*proto.LedgerEntry, 0, len(a))
+	for _, v := range a {
+		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
 type Party = proto.Party
-type Account = proto.Account
-type TransferRequest = proto.TransferRequest
-type TransferResponse = proto.TransferResponse
 type Transfer = proto.Transfer
-type LedgerEntry = proto.LedgerEntry
-type TransferBalance = proto.TransferBalance
 type FinancialAmount = proto.FinancialAmount
 
 type AccountType = proto.AccountType

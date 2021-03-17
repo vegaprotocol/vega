@@ -3,13 +3,14 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type TransferResponse struct {
 	*Base
-	responses []*types.TransferResponse
+	responses []*ptypes.TransferResponse
 }
 
 // NewTransferResponse returns an event with transfer responses - this is the replacement of the transfer buffer
@@ -21,12 +22,12 @@ func NewTransferResponse(ctx context.Context, responses []*types.TransferRespons
 
 	return &TransferResponse{
 		Base:      newBase(ctx, TransferResponses),
-		responses: trs,
+		responses: types.TransferResponses(response).IntoProto(),
 	}
 }
 
 // TransferResponses returns the actual event payload
-func (t *TransferResponse) TransferResponses() []*types.TransferResponse {
+func (t *TransferResponse) TransferResponses() []*ptypes.TransferResponse {
 	return t.responses
 }
 

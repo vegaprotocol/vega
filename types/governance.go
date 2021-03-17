@@ -7,6 +7,30 @@ import "code.vegaprotocol.io/vega/proto"
 type Proposal = proto.Proposal
 type Vote = proto.Vote
 type ProposalTerms = proto.ProposalTerms
+type InstrumentConfiguration = proto.InstrumentConfiguration
+type NewMarketConfiguration = proto.NewMarketConfiguration
+type FutureProduct = proto.FutureProduct
+type UpdateMarket = proto.UpdateMarket
+type ProposalTerms_NewMarket = proto.ProposalTerms_NewMarket
+type ProposalTerms_UpdateNetworkParameter = proto.ProposalTerms_UpdateNetworkParameter
+type ProposalTerms_NewAsset = proto.ProposalTerms_NewAsset
+type InstrumentConfiguration_Future = proto.InstrumentConfiguration_Future
+type NewMarketConfiguration_Continuous = proto.NewMarketConfiguration_Continuous
+type NewMarketConfiguration_Discrete = proto.NewMarketConfiguration_Discrete
+type NewMarketConfiguration_Simple = proto.NewMarketConfiguration_Simple
+type NewMarketConfiguration_LogNormal = proto.NewMarketConfiguration_LogNormal
+type NewMarketCommitment = proto.NewMarketCommitment
+
+type Vote_Value = proto.Vote_Value
+
+const (
+	// Default value, always invalid
+	Vote_VALUE_UNSPECIFIED Vote_Value = 0
+	// A vote against the proposal
+	Vote_VALUE_NO Vote_Value = 1
+	// A vote in favour of the proposal
+	Vote_VALUE_YES Vote_Value = 2
+)
 
 type ProposalError = proto.ProposalError
 

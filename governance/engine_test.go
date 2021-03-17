@@ -17,6 +17,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	dtypes "code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -754,7 +755,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	}
 	eng.accounts.EXPECT().GetPartyGeneralAccount(accountA.Owner, "VOTE").AnyTimes().Return(&accountA, nil)
 	partyB := "party-B"
-	accountB := types.Account{
+	accountB := dtypes.Account{
 		Id:      partyB + "-account",
 		Owner:   partyB,
 		Balance: 100,

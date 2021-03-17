@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
@@ -34,7 +35,7 @@ type testEngine struct {
 
 type accEvt interface {
 	events.Event
-	Account() types.Account
+	Account() ptypes.Account
 }
 
 func TestCollateralTransfer(t *testing.T) {

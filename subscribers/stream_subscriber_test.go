@@ -9,6 +9,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	"code.vegaprotocol.io/vega/subscribers"
+	dtypes "code.vegaprotocol.io/vega/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -87,10 +88,10 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent}, 0)
 	defer sub.cfunc()
 	set := []events.Event{
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id: "acc-1",
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id: "acc-2",
 		}),
 	}
@@ -110,7 +111,7 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 	<-done
 	// we expect to see no events
 	assert.Equal(t, len(set), len(data))
-	last := events.NewAccountEvent(sub.ctx, types.Account{
+	last := events.NewAccountEvent(sub.ctx, dtypes.Account{
 		Id: "acc-3",
 	})
 
@@ -132,11 +133,11 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 func testFilteredNoValidEvents(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent}, 0, accMarketIDFilter("valid"))
 	set := []events.Event{
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc-1",
 			MarketId: "invalid",
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc-2",
 			MarketId: "also-invalid",
 		}),
@@ -159,11 +160,11 @@ func testFilteredSomeValidEvents(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent}, 0, accMarketIDFilter("valid"))
 	defer sub.cfunc()
 	set := []events.Event{
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc-1",
 			MarketId: "invalid",
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc-2",
 			MarketId: "valid",
 		}),
@@ -196,15 +197,15 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	defer sub.cfunc()
 	sent, rec := make(chan struct{}), make(chan struct{})
 	set1 := []events.Event{
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc1",
 			MarketId: mID,
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc2",
 			MarketId: mID,
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc50",
 			MarketId: "other-market",
 		}),
@@ -261,39 +262,39 @@ func testCloseChannelWrite(t *testing.T) {
 	mID := "tstMarket"
 	sub := getTestStreamSub([]events.Type{events.AccountEvent}, 0, accMarketIDFilter(mID))
 	set := []events.Event{
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc1",
 			MarketId: mID,
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc2",
 			MarketId: mID,
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc50",
 			MarketId: "other-market",
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc3",
 			MarketId: mID,
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc4",
 			MarketId: mID,
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc51",
 			MarketId: "other-market",
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc5",
 			MarketId: "other-market",
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc6",
 			MarketId: mID,
 		}),
-		events.NewAccountEvent(sub.ctx, types.Account{
+		events.NewAccountEvent(sub.ctx, dtypes.Account{
 			Id:       "acc7",
 			MarketId: mID,
 		}),

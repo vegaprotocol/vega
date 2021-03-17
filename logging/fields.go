@@ -214,6 +214,11 @@ func Account(a types.Account) zap.Field {
 	return zap.String("account", a.String())
 }
 
+// ProtoAccount constructs a field with the given VEGA account proto value.
+func ProtoAccount(a ptypes.Account) zap.Field {
+	return zap.String("account", a.String())
+}
+
 // OrderAmendment constructs a single string field to contain all the object information
 func OrderAmendment(oa *commandspb.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())

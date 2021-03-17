@@ -7,3 +7,4 @@ import "code.vegaprotocol.io/vega/proto"
 type Asset = proto.Asset
 type AssetSource = proto.AssetSource
 type AssetSource_BuiltinAsset = proto.AssetSource_BuiltinAsset
+type AssetSource_Erc20 = proto.AssetSource_Erc20
