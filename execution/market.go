@@ -612,7 +612,7 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	if oerr, ok := types.IsOrderError(err); ok {
 		order.Reason = oerr
 	} else {
-		// should not happend but still...
+		// should not happened but still...
 		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 	}
 	m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -1111,7 +1111,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
 	}()
 
-	// set those at the begining as even rejected order get through the buffers
+	// set those at the beginning as even rejected order get through the buffers
 	if setID {
 		m.idgen.SetID(order)
 	}
@@ -1250,7 +1250,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		if oerr, ok := types.IsOrderError(err); ok {
 			order.Reason = oerr
 		} else {
-			// should not happend but still...
+			// should not happened but still...
 			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		}
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -3020,7 +3020,7 @@ func (m *Market) cancelLiquidityProvision(
 		for _, order := range cancelOrders {
 			if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
 				// nothing much we can do here, I suppose
-				// somethign wrong might have happen...
+				// something wrong might have happen...
 				// does this need a panic? need to think about it...
 				m.log.Debug("unable cancel liquidity order",
 					logging.String("party", party),

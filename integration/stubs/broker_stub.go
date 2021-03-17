@@ -329,7 +329,7 @@ func (b *BrokerStub) GetFirstByReference(party, ref string) (types.Order, error)
 			return *v, nil
 		}
 	}
-	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
 }
 
 func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
@@ -347,7 +347,7 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 	if matched {
 		return last, nil
 	}
-	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
 }
 
 func (b *BrokerStub) GetTrades() []types.Trade {

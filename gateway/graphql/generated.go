@@ -4845,7 +4845,7 @@ type Subscription {
   positions(
     "ID of the party from we want updates for"
     partyId: ID
-    "ID of the market from which we want postion updates"
+    "ID of the market from which we want position updates"
     marketId: ID
   ): Position!
 
@@ -6140,7 +6140,7 @@ type Account {
 type Erc20WithdrawalApproval {
   "The source asset in the ethereum network"
   assetSource: String!
-  "The amount to be withdrawan"
+  "The amount to be withdrawn"
   amount: String!
   "Timestamp in seconds for expiry of the approval"
   expiry: String!
@@ -6395,7 +6395,7 @@ enum OrderRejectionReason {
   "Order missing general account"
   MissingGeneralAccount
 
-  "An internal error happend"
+  "An internal error happened"
   InternalError
 
   "Invalid size"
@@ -7369,7 +7369,7 @@ enum LiquidityProvisionStatus {
 }
 
 type LiquidityOrderReference {
-  "The id of the pegged order generated to fullfill this commitment"
+  "The id of the pegged order generated to fulfill this commitment"
   order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!

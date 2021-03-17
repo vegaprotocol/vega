@@ -96,7 +96,7 @@ func (e *Engine) SetLiquidityFee(v string) error {
 // trades which were produced from a market running in
 // in continuous trading mode.
 // A single FeesTransfer is produced here as all fees
-// are paid by the agressive order
+// are paid by the aggressive order
 func (e *Engine) CalculateForContinuousMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {

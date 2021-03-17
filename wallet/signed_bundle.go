@@ -11,7 +11,7 @@ import (
 // internally the signed bundle is a bunch of bytes slices
 // when being returned to the client they are strings.
 // Data and sig become base64 encoded string, as they
-// are literaly blobs of binary data.
+// are literally blobs of binary data.
 // the Public key will be encoded into hex format
 // as it's a format commonly used by address in the blockchain
 // world, and also is easier to read etc.

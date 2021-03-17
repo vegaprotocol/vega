@@ -826,7 +826,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 			res.Balances[0].Account.Balance < (update.MarginBalance()+transfer.MinAmount) {
 			closed = append(closed, mevt)
 		} else if mevt.marginShortFall > 0 {
-			// party not closed out, but could also not fullfill it's margin requirement
+			// party not closed out, but could also not fulfill it's margin requirement
 			// from it's general account we need to return this information so penalty can be
 			// calculated an taken out from him.
 			toPenalise = append(toPenalise, mevt)

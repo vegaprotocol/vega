@@ -159,7 +159,7 @@ type ERC20Input struct {
 type Erc20WithdrawalApproval struct {
 	// The source asset in the ethereum network
 	AssetSource string `json:"assetSource"`
-	// The amount to be withdrawan
+	// The amount to be withdrawn
 	Amount string `json:"amount"`
 	// Timestamp in seconds for expiry of the approval
 	Expiry string `json:"expiry"`
@@ -1356,7 +1356,7 @@ const (
 	OrderRejectionReasonMarginCheckFailed OrderRejectionReason = "MarginCheckFailed"
 	// Order missing general account
 	OrderRejectionReasonMissingGeneralAccount OrderRejectionReason = "MissingGeneralAccount"
-	// An internal error happend
+	// An internal error happened
 	OrderRejectionReasonInternalError OrderRejectionReason = "InternalError"
 	// Invalid size
 	OrderRejectionReasonInvalidSize OrderRejectionReason = "InvalidSize"

@@ -46,7 +46,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     #check positions
     #   Note that the realised pnl for tt_15 is -102 as additional 2 was made
     #   on top of initial deposit by earning maker fee on passive orders.
-    #   That same income was used to pay up a higer portion of the 200 owed in MTM
+    #   That same income was used to pay up a higher portion of the 200 owed in MTM
     #   settlement by tt_15, hence lower realised pnl loss for tt_11 compared to
     #   the no fees case. The benefit for tt_6 is not visible due to rounding.
     Then traders have the following profit and loss:
