@@ -383,10 +383,9 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	assert.Equal(t, types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, err)
 }
 
-// TODO FIX TEST
 // When a liquidity provider submits an order and runs out of margin from both their general
 // and margin account, the system should take the required amount from the bond account
-func testLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *testing.T) {
+func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
