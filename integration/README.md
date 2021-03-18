@@ -135,7 +135,7 @@ This seems completely unrelated to what the file name mentions.
 
 The `Scenario` keyword should describe the tested case of the command, and, thus, should never be empty.
 
-A file can contain multiple scenarios, iff they test the same feature. Unrelated tests should live in a dedicated file.
+A file can contain multiple scenarios if they test the same feature. Unrelated tests should live in a dedicated file.
 
 If the feature to be tested is order cancellation, we could have:
 
