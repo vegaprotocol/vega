@@ -31,8 +31,8 @@ Feature: Test trader accounts
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
-      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the margins levels for the traders are:
       | trader    | market id | maintenance | search | initial | release |
       | traderGuy | ETH/DEC19 | 100         | 110    | 120     | 140     |

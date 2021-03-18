@@ -35,16 +35,16 @@ Feature: Regression test for issue 630
 
 # setup orderbook
     Then traders place following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
-      | sellSideProvider | ETH/DEC19 | sell | 200    | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/DEC19 | buy  | 200    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC19 | sell | 200    | 10000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideProvider  | ETH/DEC19 | buy  | 200    | 1     | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And Cumulated balance for all accounts is worth "4240000"
     Then the margins levels for the traders are:
       | trader           | market id | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 | 2000        | 2200   | 2400    | 2800    |
     Then traders place following orders:
-      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
-      | traderGuy | ETH/DEC19 | buy  | 100    | 10000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | traderGuy | ETH/DEC19 | buy  | 100    | 10000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:
       | trader           | asset | market id | margin | general |
       | traderGuy        | BTC   | ETH/DEC19 | 0      | 0       |

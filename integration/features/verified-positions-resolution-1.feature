@@ -25,8 +25,8 @@ Feature: Position resolution case 1
 
 # insurance pool generation - trade
     Then traders place following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
-      | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
 # insurance pool generation - modify order book
     Then traders cancel the following orders:
@@ -38,9 +38,9 @@ Feature: Position resolution case 1
 
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 # check positions
     Then traders have the following profit and loss:
@@ -61,7 +61,7 @@ Feature: Position resolution case 1
 # then try to sell 1 again with low price -> result in no trades -> buy side empty
 # We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
     Then traders place following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 40    | 1                | TYPE_LIMIT | TIF_FOK |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_FOK |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 40    | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |

@@ -25,8 +25,8 @@ Feature: Ensure network trader are generated
 
 # insurance pool generation - trade
     Then traders place following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
-      | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
 # insurance pool generation - modify order book
     Then traders cancel the following orders:
@@ -38,9 +38,9 @@ Feature: Ensure network trader are generated
 
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 # check the network trade happened
     Then the following network trades happened:

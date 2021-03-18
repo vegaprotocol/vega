@@ -85,7 +85,7 @@ func FeatureContext(s *godog.Suite) {
 		return nil
 	})
 	s.Step(`^traders place following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceFollowingOrders(execsetup.engine, table)
+		return steps.TradersPlaceFollowingOrdersWithReferences(execsetup.engine, table)
 	})
 	s.Step(`^traders have the following account balances:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingAccountBalances(execsetup.broker, table)

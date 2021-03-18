@@ -31,8 +31,8 @@ Feature: Test margins releases on position = 0
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
-      | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_FOK |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_FOK | ref-1     |
     Then traders have the following account balances:
       | trader    | asset | market id | margin | general    |
       | traderGuy | BTC   | ETH/DEC19 | 0      | 1000000000 |
@@ -59,16 +59,16 @@ Feature: Test margins releases on position = 0
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
-      | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | traderGuy | ETH/DEC19 | buy  | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:
       | trader    | asset | market id | margin | general   |
       | traderGuy | BTC   | ETH/DEC19 | 980    | 999999020 |
 
 # now we place an order which would wash trade and see
     Then traders place following orders:
-      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
-      | traderGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | traderGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
 # checking margins, should have the margins required for the current order
     Then traders have the following account balances:
@@ -143,8 +143,8 @@ Feature: Test margins releases on position = 0
 
 # now we place an order which would wash trade and see
     Then traders place following orders:
-      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
-      | traderGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | traderGuy | ETH/DEC19 | sell | 13     | 15000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 # checking margins, should have the margins required for the current order
     Then traders have the following account balances:

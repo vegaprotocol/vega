@@ -16,9 +16,9 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | buySideMM  | ETH   | 1000000000 |
     # setting mark price
     And traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 
     # setting order book
@@ -39,8 +39,8 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     And "trader1" has only one account per asset
     # placing test order
     Then traders place following orders:
-      | trader  | market id | side | volume | price    | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2      | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "trader1" general account for asset "ETH" balance is "575199952"
     And executed trades:
       | buyer   | price    | size | seller     |
@@ -80,9 +80,9 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 100
     Then traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the following transfers happened:
       | from    | to     | from account        | to account              | market id | amount   | asset |
@@ -100,8 +100,8 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     # PARTIAL CLOSEOUT BY TRADER
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 10     | 8000000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 10     | 8000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:
       | trader  | asset | market id | margin   | general   |
       | trader1 | ETH   | ETH/DEC19 | 19200000 | 908400000 |
@@ -114,8 +114,8 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     # FULL CLOSEOUT BY TRADER
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 3      | 7000000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 3      | 7000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general   |
       | trader1 | ETH   | ETH/DEC19 | 0      | 927600000 |

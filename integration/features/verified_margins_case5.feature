@@ -16,9 +16,9 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | buySideMM  | ETH   | 100000000000 |
     # setting mark price
     And traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 
     # setting order book
@@ -38,8 +38,8 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     And "trader1" has only one account per asset
     # placing test order
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 13     | 9000000 | 3      | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 13     | 9000000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "trader1" general account for asset "ETH" balance is "718400040"
     And executed trades:
       | buyer     | price    | size | seller  |
@@ -67,11 +67,11 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | sellSideMM | sell2     |
       | sellSideMM | sell3     |
     And traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 14     | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 2      | 8000000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | sellSideMM | ETH/DEC19 | sell | 14     | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | sellSideMM | ETH/DEC19 | sell | 2      | 8000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
@@ -85,9 +85,9 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 300
     Then traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 50     | 30000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 27     | 30000000 | 4                | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 50     | 30000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 27     | 30000000 | 4                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # MTM
     And the following transfers happened:
@@ -107,9 +107,9 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # ENTER SEARCH LEVEL (& DEPLEAT GENERAL ACCOUNT)
     Then traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 11     | 50000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 50     | 50000000 | 2                | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 11     | 50000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 50     | 50000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 65000000    | 208000000 | 260000000 | 325000000 |
@@ -119,9 +119,9 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     # FORCED CLOSEOUT
     Then traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 21     | 80000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 11     | 80000000 | 2                | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 21     | 80000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 11     | 80000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
