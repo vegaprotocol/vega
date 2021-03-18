@@ -580,17 +580,15 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.markPrice)
 	if err != nil {
-		m.log.Error(
-			"Failed to get settle positions on market close",
+		m.log.Error("Failed to get settle positions on market close",
 			logging.Error(err))
 		return
 	}
 
 	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
 	if err != nil {
-		m.log.Error(
-			"Failed to get ledger movements after settling closed market",
-			logging.String("market-id", m.GetID()),
+		m.log.Error("Failed to get ledger movements after settling closed market",
+			logging.MarketID(m.GetID()),
 			logging.Error(err))
 		return
 	}
@@ -609,7 +607,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 	if err != nil {
 		m.log.Error("Clear market error",
-			logging.String("market-id", m.GetID()),
+			logging.MarketID(m.GetID()),
 			logging.Error(err))
 		return
 	}
