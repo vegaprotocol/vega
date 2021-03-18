@@ -101,7 +101,7 @@ To be avoided:
 
 The `Feature` keyword should describe the feature to be tested in proper sentences, with context.
 
-It should match, or at least be close to, the name of the file it lives into.
+It should match, or at least be close to, the name of the file it lives in.
 
 ##### Examples
 
