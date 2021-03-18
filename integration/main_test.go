@@ -142,7 +142,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the trading mode for the market "([^"]*)" is "([^"]*)"$`, func(marketID, tradingMode string) error {
 		return steps.TradingModeForMarketIs(execsetup.engine, marketID, tradingMode)
 	})
-	s.Step(`^the following network trades happened:$`, theFollowingNetworkTradesHappened)
+	s.Step(`^the following network trades happened:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingNetworkTradesHappened(execsetup.broker, table)
+	})
 	s.Step(`^traders amends the following orders reference:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersAmendOrdersByReference(execsetup.broker, execsetup.engine, table)
 	})
