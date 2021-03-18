@@ -1488,18 +1488,20 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 func (m *Market) updateLiquidityFee(ctx context.Context) {
 	stake := m.getTargetStake()
 	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(uint64(stake))
-	_ = fee
+	if fee != m.getLiquidityFee() {
+		m.fee.SetLiquidityFee(fee)
+		m.setLiquidityFee(fee)
+		m.broker.Send(
+			events.NewMarketUpdatedEvent(ctx, *m.mkt),
+		)
+	}
+}
 
-	// TODO(jeremy): this need to be uncommented later
-	// we do not set the fee for now so system-test
-	// can keep running with the static fee setted up in the
-	// genesis block.
-	// m.fee.SetLiquidityFee(fee)
-	//
-	// m.mkt.Fees.Factors.LiquidityFee = fee
-	// m.broker.Send(
-	// 	events.NewMarketEvent(ctx, *m.mkt),
-	// )
+func (m *Market) setLiquidityFee(fee string) {
+	m.mkt.Fees.Factors.LiquidityFee = fee
+}
+func (m *Market) getLiquidityFee() string {
+	return m.mkt.Fees.Factors.LiquidityFee
 }
 
 // resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral

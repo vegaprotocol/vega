@@ -1330,3 +1330,146 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 	})
 
 }
+
+func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 20,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+	lpparty2 := "lp-party-2"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount(lpparty, 500000000000).
+		WithAccountAndAmount(lpparty2, 500000000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 70000,
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	t.Run("current liquidity fee is 0.5", func(t *testing.T) {
+		// First collect all the orders events
+		found := types.Market{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.MarketUpdated:
+				found = evt.Market()
+			}
+		}
+
+		assert.Equal(t, found.Fees.Factors.LiquidityFee, "0.5")
+	})
+
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	// now we submit a second LP, with a lower fee,
+	// but we still need the first LP to cover liquidity
+	// so its fee is selected
+	lpSubmission2 := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 20000,
+		Fee:              "0.1",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission2, lpparty2, "liquidity-submission-2"),
+	)
+
+	t.Run("current liquidity fee is still 0.5", func(t *testing.T) {
+		// First collect all the orders events
+		var found *types.Market
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.MarketUpdated:
+				mkt := evt.Market()
+				found = &mkt
+			}
+		}
+
+		// no update to the liquidity fee
+		assert.Nil(t, found)
+	})
+
+	// now submit again the commitment, but we coverall othe target stake
+	// so our fee should be selected
+	tm.events = nil
+	lpSubmission2.CommitmentAmount = 60000
+
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission2, lpparty2, "liquidity-submission-2"),
+	)
+
+	t.Run("current liquidity fee is still 0.5", func(t *testing.T) {
+		// First collect all the orders events
+		found := types.Market{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.MarketUpdated:
+				found = evt.Market()
+			}
+		}
+		// no update to the liquidity fee
+		assert.Equal(t, found.Fees.Factors.LiquidityFee, "0.1")
+	})
+
+}
