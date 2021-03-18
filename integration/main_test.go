@@ -85,7 +85,7 @@ func FeatureContext(s *godog.Suite) {
 		return nil
 	})
 	s.Step(`^traders place following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceFollowingOrdersWithReferences(execsetup.engine, table)
+		return steps.TradersPlaceOrders(execsetup.engine, table)
 	})
 	s.Step(`^traders have the following account balances:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingAccountBalances(execsetup.broker, table)
@@ -122,9 +122,6 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TradersPlaceFollowingInvalidOrders(execsetup.engine, table)
 	})
 	s.Step(`^the following orders are rejected:$`, theFollowingOrdersAreRejected)
-	s.Step(`^traders place following orders with references:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceFollowingOrdersWithReferences(execsetup.engine, table)
-	})
 	s.Step(`^missing traders place following orders with references:$`, missingTradersPlaceFollowingOrdersWithReferences)
 	s.Step(`^traders cancel the following orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, table)
