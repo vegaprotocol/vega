@@ -574,47 +574,45 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 	m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	// market is closed, final settlement
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.markPrice)
 	if err != nil {
-		m.log.Error(
-			"Failed to get settle positions on market close",
-			logging.Error(err),
-		)
-	} else {
-		transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
-		if err != nil {
-			m.log.Error(
-				"Failed to get ledger movements after settling closed market",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err),
-			)
-		} else {
-			// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
-			// this will be next block
-			evt := events.NewTransferResponse(ctx, transfers)
-			m.broker.Send(evt)
-
-			asset, _ := m.mkt.GetAsset()
-			parties := make([]string, 0, len(m.parties))
-			for k := range m.parties {
-				parties = append(parties, k)
-			}
-
-			clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
-			if err != nil {
-				m.log.Error("Clear market error",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			} else {
-				evt := events.NewTransferResponse(ctx, clearMarketTransfers)
-				m.broker.Send(evt)
-			}
-		}
+		m.log.Error("Failed to get settle positions on market close",
+			logging.Error(err))
+		return
 	}
 
+	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
+	if err != nil {
+		m.log.Error("Failed to get ledger movements after settling closed market",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return
+	}
+
+	// @TODO pass in correct context -> Previous or next block?
+	// Which is most appropriate here?
+	// this will be next block
+	m.broker.Send(events.NewTransferResponse(ctx, transfers))
+
+	asset, _ := m.mkt.GetAsset()
+	parties := make([]string, 0, len(m.parties))
+	for k := range m.parties {
+		parties = append(parties, k)
+	}
+
+	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
+	if err != nil {
+		m.log.Error("Clear market error",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return
+	}
+
+	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
