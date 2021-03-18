@@ -20,7 +20,7 @@ Feature: Test loss socialization case 2
       | trader3          | BTC   | 10000     |
       | trader4          | BTC   | 10000     |
 # setup orderbook
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
@@ -40,7 +40,7 @@ Feature: Test loss socialization case 2
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 300   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |

@@ -18,7 +18,7 @@ Feature: Position resolution case 4
       | designatedLooser | BTC   | 10000         |
 
 # insurance pool generation - setup orderbook
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
@@ -39,7 +39,7 @@ Feature: Position resolution case 4
       | sellSideProvider | sell-provider-1 |
 
 # add back some volume on the sell side
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 150    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
 

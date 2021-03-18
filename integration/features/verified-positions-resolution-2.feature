@@ -18,7 +18,7 @@ Feature: Position resolution case 2
       | designatedLooser | BTC   | 12000         |
 
 # insurance pool generation - setup orderbook
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
@@ -32,7 +32,7 @@ Feature: Position resolution case 2
     Then traders cancel the following orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader          | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 1      | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 

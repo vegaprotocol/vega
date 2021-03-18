@@ -19,7 +19,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # Trigger an auction to set the mark price
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
@@ -92,7 +92,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # Trigger an auction to set the mark price
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
@@ -165,7 +165,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # Trigger an auction to set the mark price
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
@@ -236,7 +236,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # Trigger an auction to set the mark price
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
@@ -319,7 +319,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # Trigger an auction to set the mark price
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
@@ -402,7 +402,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     # Trigger an auction to set the mark price
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
@@ -444,7 +444,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me |
       | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_FOK |           |

@@ -21,7 +21,7 @@ Feature: test bugfix 614 for margin calculations
       | trader2 | ETH   | 1000000 |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |

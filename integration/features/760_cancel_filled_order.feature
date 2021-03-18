@@ -16,7 +16,7 @@ Feature: Close a filled order twice
       | sellSideProvider | BTC   | 100000000 |
       | buySideProvider  | BTC   | 100000000 |
 # setup orderbook
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 10     | 120   | 1                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |

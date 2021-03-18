@@ -18,7 +18,7 @@ Feature: Regression test for issue 596
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
     # Trigger an auction to set the mark price
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -78,7 +78,7 @@ Feature: Regression test for issue 596
       | trader2 | BTC   | 1000000 |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -108,7 +108,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 848    | 9152    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
 # Chris place an order for a volume of 60, but only 2 trades happen at that price
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference            |
       | chris  | ETH/DEC19 | buy  | 60     | 102   | 2                | TYPE_LIMIT | TIF_GTC | chris-id-1-to-cancel |
     Then traders have the following account balances:

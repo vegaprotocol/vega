@@ -23,7 +23,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader3_buy_1  |
       | trader4 | ETH/DEC20 | sell | 1      | 105000 | 0                | TYPE_LIMIT | TIF_GTC | trader4_sell_1 |
@@ -51,7 +51,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader4 | trader4_sell_1 |
 
     # 1st trigger breached with non-persistent order -> auction with initial duration of 6s starts
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader1 | ETH/DEC20 | sell | 1      | 99844 | 0                | TYPE_LIMIT | TIF_GTC | trader1_sell_1 |
 

@@ -22,7 +22,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
 
 
     # setting order book
-    And traders place following orders with references:
+    And traders place following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 10     | 15000000 | 0      | TYPE_LIMIT | TIF_GTC | sell1     |
       | sellSideMM | ETH/DEC19 | sell | 14     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC | sell2     |
