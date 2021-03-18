@@ -451,6 +451,7 @@ func TestMarketClosing(t *testing.T) {
 	// check account gets updated
 	closed := tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
 	assert.True(t, closed)
+	assert.Equal(t, types.Market_STATE_TRADING_TERMINATED, tm.market.State())
 }
 
 func TestMarketNotActive(t *testing.T) {
