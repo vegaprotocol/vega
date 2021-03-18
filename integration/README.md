@@ -105,7 +105,7 @@ It should match, or at least be close to, the name of the file it lives in.
 
 ##### Examples
 
-Let's assume, we have a `trader_cancels_orders.go`
+Let's assume, we have a file called `trader_cancels_orders.go`
 
 ###### Good
 
