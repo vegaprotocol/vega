@@ -65,5 +65,5 @@ Feature: Test trader accounts
       | trader    | market id | side | volume | price | error               | type       | tif      |
       | traderGuy | ETH/DEC19 | sell | 1      | 1000  | margin check failed | TYPE_LIMIT |  TIF_GTC |
     Then the following orders are rejected:
-      | trader    | id        | reason                          |
+      | trader    | market id | reason                          |
       | traderGuy | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |

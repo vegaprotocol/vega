@@ -121,7 +121,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders place the following invalid orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersPlaceFollowingInvalidOrders(execsetup.engine, table)
 	})
-	s.Step(`^the following orders are rejected:$`, theFollowingOrdersAreRejected)
+	s.Step(`^the following orders are rejected:$`, func(table *gherkin.DataTable) error {
+		return steps.OrdersAreRejected(execsetup.broker, table)
+	})
 	s.Step(`^missing traders place following orders with references:$`, missingTradersPlaceFollowingOrdersWithReferences)
 	s.Step(`^traders cancel the following orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, table)
