@@ -17,7 +17,7 @@ func (m *Market) transferMargins(ctx context.Context, risk []events.Risk, closed
 	if m.as.InAuction() {
 		return m.transferMarginsAuction(ctx, risk, closed)
 	}
-	return m.transferMarginsContinuous(ctx, risk, closed)
+	return m.transferMarginsContinuous(ctx, risk)
 }
 
 func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk, distressed []events.MarketPosition) error {
@@ -52,7 +52,7 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 	return nil
 }
 
-func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Risk, lpShortfall []events.MarketPosition) error {
+func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Risk) error {
 	if len(risk) > 1 {
 		return errors.New("this should not be possiburu")
 	}
@@ -65,15 +65,13 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 		return err
 	}
 	// if LP shortfall is not empty, this trader will have to pay the LP penalty
-	responses := make([]*types.TransferResponse, 0, len(risk)+len(lpShortfall))
+	responses := make([]*types.TransferResponse, 0, len(risk))
 	if tr != nil {
 		responses = append(responses, tr)
 	}
-	var rerr error
 	// margin shortfall && liquidity provider -> bond slashing
-	if closed != nil && len(lpShortfall) != 0 {
+	if closed != nil && closed.MarginShortFall() > 0 {
 		// get bond penalty
-		rerr = ErrBondSlashing
 		resp, err := m.bondSlashing(ctx, closed)
 		if err != nil {
 			return err
@@ -81,7 +79,7 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 		responses = append(responses, resp...)
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
-	return rerr
+	return nil
 }
 
 func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*types.TransferResponse, error) {
