@@ -144,7 +144,7 @@ If the feature to be tested is order cancellation, we could have:
 ###### Good
 
 ```gherkin
-Feature: Traders can cancel orders under certain condition
+Feature: Trader can cancel orders under certain condition
 
   Scenario: Trader can cancel his order if not matched
   ...
