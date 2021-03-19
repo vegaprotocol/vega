@@ -477,8 +477,11 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 
 	bondPenaltyParameter := 0.1
 	tm.market.BondPenaltyFactorUpdate(ctx, bondPenaltyParameter)
+	// No fees
+	tm.market.OnFeeFactorsInfrastructureFeeUpdate(ctx, 0)
+	tm.market.OnFeeFactorsMakerFeeUpdate(ctx, 0)
 
-	var mainPartyInitialDeposit uint64 = 1000 // 1006 is the minimum required amount to cover margin without dipping into the bond account
+	var mainPartyInitialDeposit uint64 = 1000 // 1020 is the minimum required amount to cover margin without dipping into the bond account
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
 	mainPartyMarginAccID := fmt.Sprintf("%smainParty%s3", tm.market.GetID(), tm.asset)
@@ -506,7 +509,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	lp := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
-		Fee:              "0.05",
+		Fee:              "0.0",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
 		},
