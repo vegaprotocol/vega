@@ -355,7 +355,8 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 				}
 			}
 		} else if agg.Side == types.Side_SIDE_BUY {
-			for _, level := range s.levels {
+			for i := len(s.levels) - 1; i >= 0; i-- {
+				level := s.levels[i]
 				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
 					for _, order := range level.orders {
 						if agg.PartyId == order.PartyId {
@@ -469,7 +470,8 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		}
 
 		if agg.Side == types.Side_SIDE_BUY {
-			for _, level := range s.levels {
+			for i := len(s.levels) - 1; i >= 0; i-- {
+				level := s.levels[i]
 				// in case of network trades, we want to calculate an accurate average price to return
 				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
 					// We have to process every order to check for wash trades
