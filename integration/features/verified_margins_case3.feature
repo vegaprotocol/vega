@@ -45,7 +45,6 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     # no margin account created for trader1, just general account
     And "trader1" have only one account per asset
 
-
     And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     # placing test order
@@ -62,15 +61,15 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | from   | to      | from account            | to account          | market id | amount  | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
-    And I expect the trader to have a margin:
-      | trader  | asset | market id | margin   | general   |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 462800000 | 542800000 |
     And the margins levels for the traders are:
-      | trader  | market id | maintenance | search    | initial   |   release |
+      | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 115700000   | 370240000 | 462800000 | 578500000 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 5600000       | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 5600000        | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 160
@@ -83,15 +82,15 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | from   | to      | from account            | to account          | market id | amount   | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 26000000 | ETH   |
 
-    And I expect the trader to have a margin:
+    Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
       | trader1 | ETH   | ETH/DEC19 | 488800000 | 542800000 |
     And the margins levels for the traders are:
-      | trader  | market id | maintenance | search     | initial   | release   |
-      | trader1 | ETH/DEC19 | 146900000    | 470080000 | 587600000 | 734500000 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 31600000      | 0           |
+      | trader  | market id | maintenance | search    | initial   | release   |
+      | trader1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 31600000       | 0            |
 
     # CLOSEOUT ATTEMPT (FAILED, no buy-side in order book) BY TRADER
     Then traders place following orders:
@@ -103,6 +102,6 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 13     | 31600000      | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 13     | 31600000       | 0            |

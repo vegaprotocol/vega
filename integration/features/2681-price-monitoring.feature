@@ -9,7 +9,7 @@ Feature: Price monitoring test for issue 2681
       | name             | value |
       | prices.ETH.value | 42    |
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
-    
+
   Scenario: Upper bound breached
     Given the traders make the following deposits on asset's general account:
       | trader    | asset | amount       |

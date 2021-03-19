@@ -108,9 +108,9 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 |  39000000   | 124800000 | 156000000 | 195000000 |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | -13    | -270200000    | 0           |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | -13    | -270200000     | 0            |
 
     # ENTER SEARCH LEVEL (& DEPLEAT GENERAL ACCOUNT)
     Then traders place following orders:
@@ -129,9 +129,12 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 21     | 80000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 11     | 80000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |      0 |       0 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-    And position API produce the following:
-      | trader  | volume | unrealisedPNL | realisedPNL |
-      | trader1 | 0      | 0             |  -980000000 |
+    And traders have the following profit and loss:
+      | trader  | volume | unrealised pnl | realised pnl |
+      | trader1 | 0      | 0              |  -980000000  |

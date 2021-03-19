@@ -44,9 +44,9 @@ Feature: Position resolution case 2
       | buySideProvider | ETH/DEC19 | buy  | 1      | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
 # check the trader accounts
-    Then I expect the trader to have a margin:
-      | trader           | asset | id        | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 |  12000 |      0 |
+    Then traders have the following account balances:
+      | trader           | asset | market id | margin | general |
+      | designatedLooser | BTC   | ETH/DEC19 |  12000 |      0  |
 
 # insurance pool generation - set new mark price (and trigger closeout)
     Then traders place following orders:

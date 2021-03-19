@@ -66,9 +66,9 @@ Feature: Amend orders
       | trader | id        | type | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
-    Then the following trades happened:
-      | buyer  | seller | price | volume |
-      | myboi3 | myboi  |     2 |      3 |
+    Then the following trades were executed:
+      | buyer  | seller | price | size |
+      | myboi3 | myboi  | 2     | 3      |
 
   Scenario: Increase size success and loosing position in order book
 # setup accounts
@@ -98,11 +98,11 @@ Feature: Amend orders
 # matching the order now
 # this should match with the size 3 order of myboi
     Then traders place following orders:
-      | trader | id        | type | volume | price | resulting trades | type       | tif     | reference   |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
-    Then the following trades happened:
-      | buyer  | seller | price | volume |
-      | myboi3 | myboi2 |     2 |      3 |
+    Then the following trades were executed:
+      | buyer  | seller | price | size |
+      | myboi3 | myboi2 |     2 |    3 |
 
   Scenario: Reduce size success and order cancelled as  < to remaining
 # setup accounts

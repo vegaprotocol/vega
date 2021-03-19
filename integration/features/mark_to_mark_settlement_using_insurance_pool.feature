@@ -30,8 +30,8 @@ Feature: Test mark to market settlement with insurance pool
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |   5122 |       0 |
       | trader2 | ETH   | ETH/DEC19 |    133 |    9867 |
 
@@ -39,19 +39,19 @@ Feature: Test mark to market settlement with insurance pool
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader2 | ETH/DEC19 | buy  | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader  | asset |        id | margin | general |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
       | trader2 | ETH   | ETH/DEC19 |    265 |    9735 |
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC19 | sell | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
-    Then I expect the trader to have a margin:
-      | trader  | asset | id        | margin | general |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |      0 |       0 |
       | trader2 | ETH   | ETH/DEC19 |  13586 |    1414 |
       | trader3 | ETH   | ETH/DEC19 |    721 |    9279 |
 
-   And All balances cumulated are worth "45122"
-   And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-   And the insurance pool balance is "10122" for the market "ETH/DEC19"
+    And Cumulated balance for all accounts is worth "45122"
+    And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
+    And the insurance pool balance is "10122" for the market "ETH/DEC19"
