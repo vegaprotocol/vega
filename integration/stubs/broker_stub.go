@@ -364,3 +364,33 @@ func (b *BrokerStub) ResetType(t events.Type) {
 	b.data[t] = []events.Event{}
 	b.mu.Unlock()
 }
+
+func (b *BrokerStub) filterTxErr(predicate func(errProto types.TxErrorEvent) bool) []events.TxErr {
+	batch := b.GetBatch(events.TxErrEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	errs := []events.TxErr{}
+	b.mu.Lock()
+	for _, e := range batch {
+		err := derefTxErr(e)
+		errProto := err.Proto()
+		if predicate(errProto) {
+			errs = append(errs, err)
+		}
+	}
+	b.mu.Unlock()
+	return errs
+}
+
+func derefTxErr(e events.Event) events.TxErr {
+	var dub events.TxErr
+	switch et := e.(type) {
+	case *events.TxErr:
+		dub = *et
+	case events.TxErr:
+		dub = et
+	}
+	return dub
+}
