@@ -131,7 +131,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^traders attempt to cancel the following filled orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersAttemptToCancelTheFollowingFilledOrders(execsetup.broker, execsetup.engine, table)
 	})
-	s.Step(`^missing traders cancels the following orders reference:$`, missingTradersCancelsTheFollowingOrdersReference)
+	s.Step(`^traders cancels the following orders reference:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersCancelsTheFollowingOrders(execsetup.broker, execsetup.engine, table)
+	})
 	s.Step(`^traders have the following profit and loss:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
 	})
@@ -162,7 +164,7 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^traders place pegged orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersPlacePeggedOrders(execsetup.engine, table)
-	})	
+	})
 	s.Step(`^I see the following order events:$`, func(table *gherkin.DataTable) error {
 		return steps.OrderEventsSent(execsetup.broker, table)
 	})
@@ -199,5 +201,10 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^debug orders$`, func() error {
 		return steps.DebugOrders(execsetup.broker, execsetup.log)
+	})
+
+	// Experimental error assertion
+	s.Step(`^the system should return error "([^"]*)"$`, func(msg string) error {
+		return steps.TheSystemShouldReturnError(msg)
 	})
 }
