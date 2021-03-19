@@ -16,12 +16,13 @@ func TradersPlaceOrders(
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
+		trader := row.Str("trader")
+		marketID := row.Str("market id")
+		side := row.Side("side")
+		volume := row.U64("volume")
+		price := row.U64("price")
 		oty := row.OrderType("type")
 		tif := row.TIF("tif")
-		side := row.Side("side")
-		price := row.U64("price")
-		volume := row.U64("volume")
-		trader := row.Str("trader")
 		reference := row.Str("reference")
 
 		var expiresAt int64
@@ -32,7 +33,7 @@ func TradersPlaceOrders(
 		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
-			MarketId:    row.Str("market id"),
+			MarketId:    marketID,
 			PartyId:     trader,
 			Side:        side,
 			Price:       price,
