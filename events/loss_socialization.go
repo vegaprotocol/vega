@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type LossSoc struct {
@@ -48,21 +48,21 @@ func (l LossSoc) Timestamp() int64 {
 	return l.ts
 }
 
-func (l LossSoc) Proto() types.LossSocialization {
-	return types.LossSocialization{
+func (l LossSoc) Proto() eventspb.LossSocialization {
+	return eventspb.LossSocialization{
 		MarketId: l.marketID,
 		PartyId:  l.partyID,
 		Amount:   l.amount,
 	}
 }
 
-func (l LossSoc) StreamMessage() *types.BusEvent {
+func (l LossSoc) StreamMessage() *eventspb.BusEvent {
 	p := l.Proto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    l.eventID(),
 		Block: l.TraceID(),
 		Type:  l.et.ToProto(),
-		Event: &types.BusEvent_LossSocialization{
+		Event: &eventspb.BusEvent_LossSocialization{
 			LossSocialization: &p,
 		},
 	}

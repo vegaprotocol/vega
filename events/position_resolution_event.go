@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type PosRes struct {
@@ -46,8 +46,8 @@ func (p PosRes) Closed() int {
 	return p.closed
 }
 
-func (p PosRes) Proto() types.PositionResolution {
-	return types.PositionResolution{
+func (p PosRes) Proto() eventspb.PositionResolution {
+	return eventspb.PositionResolution{
 		MarketId:   p.marketID,
 		Closed:     int64(p.closed),
 		Distressed: int64(p.distressed),
@@ -55,31 +55,31 @@ func (p PosRes) Proto() types.PositionResolution {
 	}
 }
 
-func (p PosRes) MarketProto() types.MarketEvent {
-	return types.MarketEvent{
+func (p PosRes) MarketProto() eventspb.MarketEvent {
+	return eventspb.MarketEvent{
 		MarketId: p.marketID,
 		Payload:  p.MarketEvent(),
 	}
 }
 
-func (p PosRes) StreamMessage() *types.BusEvent {
+func (p PosRes) StreamMessage() *eventspb.BusEvent {
 	pr := p.Proto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    p.eventID(),
 		Block: p.TraceID(),
 		Type:  p.et.ToProto(),
-		Event: &types.BusEvent_PositionResolution{
+		Event: &eventspb.BusEvent_PositionResolution{
 			PositionResolution: &pr,
 		},
 	}
 }
 
-func (p PosRes) StreamMarketMessage() *types.BusEvent {
+func (p PosRes) StreamMarketMessage() *eventspb.BusEvent {
 	msg := p.MarketProto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:   p.eventID(),
-		Type: types.BusEventType_BUS_EVENT_TYPE_MARKET,
-		Event: &types.BusEvent_Market{
+		Type: eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
+		Event: &eventspb.BusEvent_Market{
 			Market: &msg,
 		},
 	}

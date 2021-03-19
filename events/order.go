@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type Order struct {
@@ -40,13 +41,13 @@ func (o Order) Proto() types.Order {
 	return o.o
 }
 
-func (o Order) StreamMessage() *types.BusEvent {
+func (o Order) StreamMessage() *eventspb.BusEvent {
 	cpy := o.o
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    o.eventID(),
 		Block: o.TraceID(),
 		Type:  o.et.ToProto(),
-		Event: &types.BusEvent_Order{
+		Event: &eventspb.BusEvent_Order{
 			Order: &cpy,
 		},
 	}

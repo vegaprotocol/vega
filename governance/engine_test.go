@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
@@ -25,7 +26,7 @@ var (
 
 type streamEvt interface {
 	events.Event
-	StreamMessage() *types.BusEvent
+	StreamMessage() *eventspb.BusEvent
 }
 
 type voteMatcher struct{}
@@ -546,6 +547,20 @@ func testSubmittingVoteOnNonexistingProposalFails(t *testing.T) {
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: "id-of-non-existent-proposal",
 	}
+	eng.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
+		// check we're getting the corret event
+		assert.Equal(t, events.TxErrEvent, evt.Type())
+		se, ok := evt.(streamEvt)
+		assert.True(t, ok)
+		be := se.StreamMessage()
+		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		txErr := be.GetTxErrEvent()
+		assert.NotNil(t, txErr)
+		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
+		v := txErr.GetVote()
+		assert.NotNil(t, v)
+		assert.Equal(t, vote, *v)
+	})
 
 	// setup
 	eng.expectAnyAsset()

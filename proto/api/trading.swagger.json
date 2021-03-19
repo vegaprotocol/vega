@@ -1734,6 +1734,217 @@
       },
       "title": "Response for a list of all assets enabled on Vega"
     },
+    "v1AuctionEvent": {
+      "type": "object",
+      "properties": {
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the event"
+        },
+        "opening_auction": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "True if the event indicates an auction opening and False otherwise"
+        },
+        "leave": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "True if the event indicates leaving auction mode and False otherwise"
+        },
+        "start": {
+          "type": "string",
+          "format": "int64",
+          "title": "Timestamp containing the start time for an auction"
+        },
+        "end": {
+          "type": "string",
+          "format": "int64",
+          "title": "Timestamp containing the end time for an auction"
+        },
+        "trigger": {
+          "$ref": "#/definitions/vegaAuctionTrigger",
+          "title": "the reason this market is/was in auction"
+        },
+        "extension_trigger": {
+          "$ref": "#/definitions/vegaAuctionTrigger",
+          "title": "If an auction was ongoing, but was extended for whatever reason, this field will\nbe set to the trigger type indicating which component extended the auction"
+        }
+      },
+      "title": "An auction event indicating a change in auction state, for example starting or ending an auction"
+    },
+    "v1BusEvent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "A unique event identifier for the message"
+        },
+        "block": {
+          "type": "string",
+          "title": "The batch (or block) of transactions that the events relate to"
+        },
+        "type": {
+          "$ref": "#/definitions/v1BusEventType",
+          "title": "The type of bus event (one of the list below)"
+        },
+        "time_update": {
+          "$ref": "#/definitions/v1TimeUpdate",
+          "title": "Time update events - See [TimeUpdate](#vega.TimeUpdate)"
+        },
+        "transfer_responses": {
+          "$ref": "#/definitions/v1TransferResponses",
+          "title": "Transfer responses update events - See [TransferResponses](#vega.TransferResponses)"
+        },
+        "position_resolution": {
+          "$ref": "#/definitions/v1PositionResolution",
+          "title": "Position resolution events - See [PositionResolution](#vega.PositionResolution)"
+        },
+        "order": {
+          "$ref": "#/definitions/vegaOrder",
+          "title": "Order events"
+        },
+        "account": {
+          "$ref": "#/definitions/vegaAccount",
+          "title": "Account events"
+        },
+        "party": {
+          "$ref": "#/definitions/vegaParty",
+          "title": "Party events"
+        },
+        "trade": {
+          "$ref": "#/definitions/vegaTrade",
+          "title": "Trade events"
+        },
+        "margin_levels": {
+          "$ref": "#/definitions/vegaMarginLevels",
+          "title": "Margin level update events"
+        },
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal",
+          "title": "Proposal events (for governance)"
+        },
+        "vote": {
+          "$ref": "#/definitions/vegaVote",
+          "title": "Vote events (for governance)"
+        },
+        "market_data": {
+          "$ref": "#/definitions/vegaMarketData",
+          "title": "Market data events"
+        },
+        "node_signature": {
+          "$ref": "#/definitions/vegaNodeSignature",
+          "title": "Node signature events"
+        },
+        "loss_socialization": {
+          "$ref": "#/definitions/v1LossSocialization",
+          "title": "Loss socialization events - See [LossSocialization](#vega.LossSocialization)"
+        },
+        "settle_position": {
+          "$ref": "#/definitions/v1SettlePosition",
+          "title": "Position settlement events - See [SettlePosition](#vega.SettlePosition)"
+        },
+        "settle_distressed": {
+          "$ref": "#/definitions/v1SettleDistressed",
+          "title": "Position distressed events - See [SettleDistressed](#vega.SettleDistressed)"
+        },
+        "market_created": {
+          "$ref": "#/definitions/vegaMarket",
+          "title": "Market created events"
+        },
+        "asset": {
+          "$ref": "#/definitions/vegaAsset",
+          "title": "Asset events"
+        },
+        "market_tick": {
+          "$ref": "#/definitions/v1MarketTick",
+          "title": "Market tick events - See [MarketTick](#vega.MarketTick)"
+        },
+        "withdrawal": {
+          "$ref": "#/definitions/vegaWithdrawal",
+          "title": "Withdrawal events"
+        },
+        "deposit": {
+          "$ref": "#/definitions/vegaDeposit",
+          "title": "Deposit events"
+        },
+        "auction": {
+          "$ref": "#/definitions/v1AuctionEvent",
+          "title": "Auction events - See [AuctionEvent](#vega.AuctionEvent)"
+        },
+        "risk_factor": {
+          "$ref": "#/definitions/vegaRiskFactor",
+          "title": "Risk factor events"
+        },
+        "network_parameter": {
+          "$ref": "#/definitions/vegaNetworkParameter",
+          "title": "Network parameter events"
+        },
+        "liquidity_provision": {
+          "$ref": "#/definitions/vegaLiquidityProvision",
+          "title": "LiquidityProvision  events"
+        },
+        "market_updated": {
+          "$ref": "#/definitions/vegaMarket",
+          "title": "Market created events"
+        },
+        "oracle_spec": {
+          "$ref": "#/definitions/v1OracleSpec",
+          "title": "OracleSpec events"
+        },
+        "oracle_data": {
+          "$ref": "#/definitions/v1OracleData",
+          "title": "OracleData events"
+        },
+        "market": {
+          "$ref": "#/definitions/v1MarketEvent",
+          "title": "Market tick events - See [MarketEvent](#vega.MarketEvent)"
+        },
+        "tx_err_event": {
+          "$ref": "#/definitions/v1TxErrorEvent",
+          "title": "Transaction error events, not included in the ALL event type"
+        }
+      },
+      "title": "A bus event is a container for event bus events emitted by Vega"
+    },
+    "v1BusEventType": {
+      "type": "string",
+      "enum": [
+        "BUS_EVENT_TYPE_UNSPECIFIED",
+        "BUS_EVENT_TYPE_ALL",
+        "BUS_EVENT_TYPE_TIME_UPDATE",
+        "BUS_EVENT_TYPE_TRANSFER_RESPONSES",
+        "BUS_EVENT_TYPE_POSITION_RESOLUTION",
+        "BUS_EVENT_TYPE_ORDER",
+        "BUS_EVENT_TYPE_ACCOUNT",
+        "BUS_EVENT_TYPE_PARTY",
+        "BUS_EVENT_TYPE_TRADE",
+        "BUS_EVENT_TYPE_MARGIN_LEVELS",
+        "BUS_EVENT_TYPE_PROPOSAL",
+        "BUS_EVENT_TYPE_VOTE",
+        "BUS_EVENT_TYPE_MARKET_DATA",
+        "BUS_EVENT_TYPE_NODE_SIGNATURE",
+        "BUS_EVENT_TYPE_LOSS_SOCIALIZATION",
+        "BUS_EVENT_TYPE_SETTLE_POSITION",
+        "BUS_EVENT_TYPE_SETTLE_DISTRESSED",
+        "BUS_EVENT_TYPE_MARKET_CREATED",
+        "BUS_EVENT_TYPE_ASSET",
+        "BUS_EVENT_TYPE_MARKET_TICK",
+        "BUS_EVENT_TYPE_WITHDRAWAL",
+        "BUS_EVENT_TYPE_DEPOSIT",
+        "BUS_EVENT_TYPE_AUCTION",
+        "BUS_EVENT_TYPE_RISK_FACTOR",
+        "BUS_EVENT_TYPE_NETWORK_PARAMETER",
+        "BUS_EVENT_TYPE_LIQUIDITY_PROVISION",
+        "BUS_EVENT_TYPE_MARKET_UPDATED",
+        "BUS_EVENT_TYPE_ORACLE_SPEC",
+        "BUS_EVENT_TYPE_ORACLE_DATA",
+        "BUS_EVENT_TYPE_MARKET",
+        "BUS_EVENT_TYPE_TX_ERROR"
+      ],
+      "default": "BUS_EVENT_TYPE_UNSPECIFIED",
+      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET_UPDATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ORACLE_SPEC: Event indicating an oracle spec has been created or updated\n - BUS_EVENT_TYPE_ORACLE_DATA: Event indicating that an oracle data has been broadcast\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens\n - BUS_EVENT_TYPE_TX_ERROR: Event used to report failed transactions back to a user, this is excluded from the ALL type",
+      "title": "An (event) bus event type is used to specify a type of event\nIt has 2 styles of event:\nSingle values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item\nGroup values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items"
+    },
     "v1CandlesResponse": {
       "type": "object",
       "properties": {
@@ -2046,6 +2257,25 @@
       },
       "title": "A response containing all of the Vega liquidity provision orders"
     },
+    "v1LossSocialization": {
+      "type": "object",
+      "properties": {
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the event"
+        },
+        "party_id": {
+          "type": "string",
+          "title": "Party identifier (public key) for the event"
+        },
+        "amount": {
+          "type": "string",
+          "format": "int64",
+          "title": "Amount distributed"
+        }
+      },
+      "title": "A loss socialization event contains details on the amount of wins unable to be distributed"
+    },
     "v1MarginLevelsResponse": {
       "type": "object",
       "properties": {
@@ -2149,6 +2379,35 @@
         }
       }
     },
+    "v1MarketEvent": {
+      "type": "object",
+      "properties": {
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the event"
+        },
+        "payload": {
+          "type": "string",
+          "title": "Payload is a unique information string"
+        }
+      },
+      "title": "MarketEvent - the common denominator for all market events\ninterface has a method to return a string for logging"
+    },
+    "v1MarketTick": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Market identifier for the event"
+        },
+        "time": {
+          "type": "string",
+          "format": "int64",
+          "title": "Timestamp containing latest update from Vega blockchain aka Vega-time"
+        }
+      },
+      "title": "A market ticket event contains the time value for when a particular market was last processed on Vega"
+    },
     "v1MarketsDataResponse": {
       "type": "object",
       "properties": {
@@ -2201,7 +2460,7 @@
         "events": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaBusEvent"
+            "$ref": "#/definitions/v1BusEvent"
           },
           "title": "One or more events"
         }
@@ -2525,6 +2784,31 @@
       },
       "title": "Response for a party given a party identifier"
     },
+    "v1PositionResolution": {
+      "type": "object",
+      "properties": {
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the event"
+        },
+        "distressed": {
+          "type": "string",
+          "format": "int64",
+          "title": "Number of distressed traders"
+        },
+        "closed": {
+          "type": "string",
+          "format": "int64",
+          "title": "Number of close outs"
+        },
+        "mark_price": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Mark price, as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
+        }
+      },
+      "title": "A position resolution event contains information on distressed trades"
+    },
     "v1PositionsByPartyResponse": {
       "type": "object",
       "properties": {
@@ -2766,6 +3050,56 @@
       "default": "TYPE_UNSPECIFIED",
       "description": "Type describes the type of properties that are supported by the oracle\nengine.\n\n - TYPE_UNSPECIFIED: The default value.\n - TYPE_EMPTY: Any type.\n - TYPE_INTEGER: Integer type.\n - TYPE_STRING: String type.\n - TYPE_BOOLEAN: Boolean type.\n - TYPE_DECIMAL: Any floating point decimal type.\n - TYPE_TIMESTAMP: Timestamp date type."
     },
+    "v1SettleDistressed": {
+      "type": "object",
+      "properties": {
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the event"
+        },
+        "party_id": {
+          "type": "string",
+          "title": "Party identifier (public key) for the event"
+        },
+        "margin": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Margin value as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Price as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
+        }
+      },
+      "title": "A settle distressed event contains information on distressed trading parties who are closed out"
+    },
+    "v1SettlePosition": {
+      "type": "object",
+      "properties": {
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the event"
+        },
+        "party_id": {
+          "type": "string",
+          "title": "Party identifier (public key) for the event"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Price of settlement as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
+        },
+        "trade_settlements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1TradeSettlement"
+          },
+          "title": "A collection of 1 or more trade settlements"
+        }
+      },
+      "title": "A settle position event contains position settlement information for a party"
+    },
     "v1StatisticsResponse": {
       "type": "object",
       "properties": {
@@ -2810,6 +3144,33 @@
         }
       },
       "title": "Response for submitting a transaction on Vega"
+    },
+    "v1TimeUpdate": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "Timestamp containing latest update from Vega blockchain aka Vega-time"
+        }
+      },
+      "title": "A time update event contains the latest time update from Vega blockchain"
+    },
+    "v1TradeSettlement": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "string",
+          "format": "int64",
+          "title": "Size of trade settlement"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Price of settlement as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
+        }
+      },
+      "title": "A trade settlement is part of the settle position event"
     },
     "v1TradesByMarketResponse": {
       "type": "object",
@@ -2863,11 +3224,55 @@
       },
       "title": "A stream of trades"
     },
+    "v1TransferResponses": {
+      "type": "object",
+      "properties": {
+        "responses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaTransferResponse"
+          },
+          "title": "One or more entries containing internal transfer information"
+        }
+      },
+      "title": "A transfer responses event contains a collection of transfer information"
+    },
     "v1TransferResponsesSubscribeResponse": {
       "type": "object",
       "properties": {
         "response": {
           "$ref": "#/definitions/vegaTransferResponse"
+        }
+      }
+    },
+    "v1TxErrorEvent": {
+      "type": "object",
+      "properties": {
+        "party_id": {
+          "type": "string",
+          "title": "Unique party identifier for the related party"
+        },
+        "err_msg": {
+          "type": "string",
+          "title": "An error message describing what went wrong"
+        },
+        "order_submission": {
+          "$ref": "#/definitions/vegaOrderSubmission"
+        },
+        "order_amendment": {
+          "$ref": "#/definitions/vegaOrderAmendment"
+        },
+        "order_cancellation": {
+          "$ref": "#/definitions/vegaOrderCancellation"
+        },
+        "proposal": {
+          "$ref": "#/definitions/vegaProposal"
+        },
+        "vote_submission": {
+          "$ref": "#/definitions/vegaVoteSubmission"
+        },
+        "liquidity_provision_submission": {
+          "$ref": "#/definitions/vegaLiquidityProvisionSubmission"
         }
       }
     },
@@ -3014,44 +3419,6 @@
         }
       },
       "title": "An auction duration is used to configure 3 auction periods:\n1. `duration \u003e 0`, `volume == 0`:\n  The auction will last for at least N seconds\n2. `duration == 0`, `volume \u003e 0`:\n  The auction will end once we can close with given traded volume\n3. `duration \u003e 0`, `volume \u003e 0`:\n  The auction will take at least N seconds, but can end sooner if we can trade a certain volume"
-    },
-    "vegaAuctionEvent": {
-      "type": "object",
-      "properties": {
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the event"
-        },
-        "opening_auction": {
-          "type": "boolean",
-          "format": "boolean",
-          "title": "True if the event indicates an auction opening and False otherwise"
-        },
-        "leave": {
-          "type": "boolean",
-          "format": "boolean",
-          "title": "True if the event indicates leaving auction mode and False otherwise"
-        },
-        "start": {
-          "type": "string",
-          "format": "int64",
-          "title": "Timestamp containing the start time for an auction"
-        },
-        "end": {
-          "type": "string",
-          "format": "int64",
-          "title": "Timestamp containing the end time for an auction"
-        },
-        "trigger": {
-          "$ref": "#/definitions/vegaAuctionTrigger",
-          "title": "the reason this market is/was in auction"
-        },
-        "extension_trigger": {
-          "$ref": "#/definitions/vegaAuctionTrigger",
-          "title": "If an auction was ongoing, but was extended for whatever reason, this field will\nbe set to the trigger type indicating which component extended the auction"
-        }
-      },
-      "title": "An auction event indicating a change in auction state, for example starting or ending an auction"
     },
     "vegaAuctionTrigger": {
       "type": "string",
@@ -3218,179 +3585,6 @@
         }
       },
       "title": "A withdrawal for a Vega built-in asset"
-    },
-    "vegaBusEvent": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "A unique event identifier for the message"
-        },
-        "block": {
-          "type": "string",
-          "title": "The batch (or block) of transactions that the events relate to"
-        },
-        "type": {
-          "$ref": "#/definitions/vegaBusEventType",
-          "title": "The type of bus event (one of the list below)"
-        },
-        "time_update": {
-          "$ref": "#/definitions/vegaTimeUpdate",
-          "title": "Time update events - See [TimeUpdate](#vega.TimeUpdate)"
-        },
-        "transfer_responses": {
-          "$ref": "#/definitions/vegaTransferResponses",
-          "title": "Transfer responses update events - See [TransferResponses](#vega.TransferResponses)"
-        },
-        "position_resolution": {
-          "$ref": "#/definitions/vegaPositionResolution",
-          "title": "Position resolution events - See [PositionResolution](#vega.PositionResolution)"
-        },
-        "order": {
-          "$ref": "#/definitions/vegaOrder",
-          "title": "Order events"
-        },
-        "account": {
-          "$ref": "#/definitions/vegaAccount",
-          "title": "Account events"
-        },
-        "party": {
-          "$ref": "#/definitions/vegaParty",
-          "title": "Party events"
-        },
-        "trade": {
-          "$ref": "#/definitions/vegaTrade",
-          "title": "Trade events"
-        },
-        "margin_levels": {
-          "$ref": "#/definitions/vegaMarginLevels",
-          "title": "Margin level update events"
-        },
-        "proposal": {
-          "$ref": "#/definitions/vegaProposal",
-          "title": "Proposal events (for governance)"
-        },
-        "vote": {
-          "$ref": "#/definitions/vegaVote",
-          "title": "Vote events (for governance)"
-        },
-        "market_data": {
-          "$ref": "#/definitions/vegaMarketData",
-          "title": "Market data events"
-        },
-        "node_signature": {
-          "$ref": "#/definitions/vegaNodeSignature",
-          "title": "Node signature events"
-        },
-        "loss_socialization": {
-          "$ref": "#/definitions/vegaLossSocialization",
-          "title": "Loss socialization events - See [LossSocialization](#vega.LossSocialization)"
-        },
-        "settle_position": {
-          "$ref": "#/definitions/vegaSettlePosition",
-          "title": "Position settlement events - See [SettlePosition](#vega.SettlePosition)"
-        },
-        "settle_distressed": {
-          "$ref": "#/definitions/vegaSettleDistressed",
-          "title": "Position distressed events - See [SettleDistressed](#vega.SettleDistressed)"
-        },
-        "market_created": {
-          "$ref": "#/definitions/vegaMarket",
-          "title": "Market created events"
-        },
-        "asset": {
-          "$ref": "#/definitions/vegaAsset",
-          "title": "Asset events"
-        },
-        "market_tick": {
-          "$ref": "#/definitions/vegaMarketTick",
-          "title": "Market tick events - See [MarketTick](#vega.MarketTick)"
-        },
-        "withdrawal": {
-          "$ref": "#/definitions/vegaWithdrawal",
-          "title": "Withdrawal events"
-        },
-        "deposit": {
-          "$ref": "#/definitions/vegaDeposit",
-          "title": "Deposit events"
-        },
-        "auction": {
-          "$ref": "#/definitions/vegaAuctionEvent",
-          "title": "Auction events - See [AuctionEvent](#vega.AuctionEvent)"
-        },
-        "risk_factor": {
-          "$ref": "#/definitions/vegaRiskFactor",
-          "title": "Risk factor events"
-        },
-        "network_parameter": {
-          "$ref": "#/definitions/vegaNetworkParameter",
-          "title": "Network parameter events"
-        },
-        "liquidity_provision": {
-          "$ref": "#/definitions/vegaLiquidityProvision",
-          "title": "LiquidityProvision  events"
-        },
-        "market_updated": {
-          "$ref": "#/definitions/vegaMarket",
-          "title": "Market created events"
-        },
-        "oracle_spec": {
-          "$ref": "#/definitions/v1OracleSpec",
-          "title": "OracleSpec events"
-        },
-        "oracle_data": {
-          "$ref": "#/definitions/v1OracleData",
-          "title": "OracleData events"
-        },
-        "market": {
-          "$ref": "#/definitions/vegaMarketEvent",
-          "title": "Market tick events - See [MarketEvent](#vega.MarketEvent)"
-        },
-        "tx_err_event": {
-          "$ref": "#/definitions/vegaTxErrorEvent",
-          "title": "Transaction error events, not included in the ALL event type"
-        }
-      },
-      "title": "A bus event is a container for event bus events emitted by Vega"
-    },
-    "vegaBusEventType": {
-      "type": "string",
-      "enum": [
-        "BUS_EVENT_TYPE_UNSPECIFIED",
-        "BUS_EVENT_TYPE_ALL",
-        "BUS_EVENT_TYPE_TIME_UPDATE",
-        "BUS_EVENT_TYPE_TRANSFER_RESPONSES",
-        "BUS_EVENT_TYPE_POSITION_RESOLUTION",
-        "BUS_EVENT_TYPE_ORDER",
-        "BUS_EVENT_TYPE_ACCOUNT",
-        "BUS_EVENT_TYPE_PARTY",
-        "BUS_EVENT_TYPE_TRADE",
-        "BUS_EVENT_TYPE_MARGIN_LEVELS",
-        "BUS_EVENT_TYPE_PROPOSAL",
-        "BUS_EVENT_TYPE_VOTE",
-        "BUS_EVENT_TYPE_MARKET_DATA",
-        "BUS_EVENT_TYPE_NODE_SIGNATURE",
-        "BUS_EVENT_TYPE_LOSS_SOCIALIZATION",
-        "BUS_EVENT_TYPE_SETTLE_POSITION",
-        "BUS_EVENT_TYPE_SETTLE_DISTRESSED",
-        "BUS_EVENT_TYPE_MARKET_CREATED",
-        "BUS_EVENT_TYPE_ASSET",
-        "BUS_EVENT_TYPE_MARKET_TICK",
-        "BUS_EVENT_TYPE_WITHDRAWAL",
-        "BUS_EVENT_TYPE_DEPOSIT",
-        "BUS_EVENT_TYPE_AUCTION",
-        "BUS_EVENT_TYPE_RISK_FACTOR",
-        "BUS_EVENT_TYPE_NETWORK_PARAMETER",
-        "BUS_EVENT_TYPE_LIQUIDITY_PROVISION",
-        "BUS_EVENT_TYPE_MARKET_UPDATED",
-        "BUS_EVENT_TYPE_ORACLE_SPEC",
-        "BUS_EVENT_TYPE_ORACLE_DATA",
-        "BUS_EVENT_TYPE_MARKET",
-        "BUS_EVENT_TYPE_TX_ERROR"
-      ],
-      "default": "BUS_EVENT_TYPE_UNSPECIFIED",
-      "description": "- BUS_EVENT_TYPE_UNSPECIFIED: Default value, always invalid\n - BUS_EVENT_TYPE_ALL: Events of ALL event types, used when filtering stream from event bus\n - BUS_EVENT_TYPE_TIME_UPDATE: Event for blockchain time updates\n - BUS_EVENT_TYPE_TRANSFER_RESPONSES: Event for when a transfer happens internally, contains the transfer information\n - BUS_EVENT_TYPE_POSITION_RESOLUTION: Event indicating position resolution has occurred\n - BUS_EVENT_TYPE_ORDER: Event for order updates, both new and existing orders\n - BUS_EVENT_TYPE_ACCOUNT: Event for account updates\n - BUS_EVENT_TYPE_PARTY: Event for party updates\n - BUS_EVENT_TYPE_TRADE: Event indicating a new trade has occurred\n - BUS_EVENT_TYPE_MARGIN_LEVELS: Event indicating margin levels have changed for a party\n - BUS_EVENT_TYPE_PROPOSAL: Event for proposal updates (for governance)\n - BUS_EVENT_TYPE_VOTE: Event indicating a new vote has occurred (for governance)\n - BUS_EVENT_TYPE_MARKET_DATA: Event for market data updates\n - BUS_EVENT_TYPE_NODE_SIGNATURE: Event for a new signature for a Vega node\n - BUS_EVENT_TYPE_LOSS_SOCIALIZATION: Event indicating loss socialisation occurred for a party\n - BUS_EVENT_TYPE_SETTLE_POSITION: Event for when a position is being settled\n - BUS_EVENT_TYPE_SETTLE_DISTRESSED: Event for when a position is distressed\n - BUS_EVENT_TYPE_MARKET_CREATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ASSET: Event for when an asset is added to Vega\n - BUS_EVENT_TYPE_MARKET_TICK: Event indicating a market tick event\n - BUS_EVENT_TYPE_WITHDRAWAL: Event for when a withdrawal occurs\n - BUS_EVENT_TYPE_DEPOSIT: Event for when a deposit occurs\n - BUS_EVENT_TYPE_AUCTION: Event indicating a change in auction state, for example starting or ending an auction\n - BUS_EVENT_TYPE_RISK_FACTOR: Event indicating a risk factor has been updated\n - BUS_EVENT_TYPE_NETWORK_PARAMETER: Event indicating a network parameter has been added or updated\n - BUS_EVENT_TYPE_LIQUIDITY_PROVISION: Event indicating a liquidity provision has been created or updated\n - BUS_EVENT_TYPE_MARKET_UPDATED: Event indicating a new market was created\n - BUS_EVENT_TYPE_ORACLE_SPEC: Event indicating an oracle spec has been created or updated\n - BUS_EVENT_TYPE_ORACLE_DATA: Event indicating that an oracle data has been broadcast\n - BUS_EVENT_TYPE_MARKET: Event indicating a market related event, for example when a market opens\n - BUS_EVENT_TYPE_TX_ERROR: Event used to report failed transactions back to a user, this is excluded from the ALL type",
-      "title": "An (event) bus event type is used to specify a type of event\nIt has 2 styles of event:\nSingle values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item\nGroup values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items"
     },
     "vegaCandle": {
       "type": "object",
@@ -4162,25 +4356,6 @@
       },
       "title": "Risk model for log normal"
     },
-    "vegaLossSocialization": {
-      "type": "object",
-      "properties": {
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the event"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier (public key) for the event"
-        },
-        "amount": {
-          "type": "string",
-          "format": "int64",
-          "title": "Amount distributed"
-        }
-      },
-      "title": "A loss socialization event contains details on the amount of wins unable to be distributed"
-    },
     "vegaMarginCalculator": {
       "type": "object",
       "properties": {
@@ -4476,20 +4651,6 @@
       },
       "title": "Represents the changed market depth since the last update"
     },
-    "vegaMarketEvent": {
-      "type": "object",
-      "properties": {
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the event"
-        },
-        "payload": {
-          "type": "string",
-          "title": "Payload is a unique information string"
-        }
-      },
-      "title": "MarketEvent - the common denominator for all market events\ninterface has a method to return a string for logging"
-    },
     "vegaMarketState": {
       "type": "string",
       "enum": [
@@ -4507,21 +4668,6 @@
       "default": "STATE_UNSPECIFIED",
       "description": "- STATE_UNSPECIFIED: Default value, invalid\n - STATE_PROPOSED: The Governance proposal valid and accepted\n - STATE_REJECTED: Outcome of governance votes is to reject the market\n - STATE_PENDING: Governance vote passes/wins\n - STATE_CANCELLED: Market triggers cancellation condition or governance\nvotes to close before market becomes Active\n - STATE_ACTIVE: Enactment date reached and usual auction exit checks pass\n - STATE_SUSPENDED: Price monitoring or liquidity monitoring trigger\n - STATE_CLOSED: Governance vote (to close)\n - STATE_TRADING_TERMINATED: Defined by the product (i.e. from a product parameter,\nspecified in market definition, giving close date/time)\n - STATE_SETTLED: Settlement triggered and completed as defined by product",
       "title": "The current state of the Market"
-    },
-    "vegaMarketTick": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "Market identifier for the event"
-        },
-        "time": {
-          "type": "string",
-          "format": "int64",
-          "title": "Timestamp containing latest update from Vega blockchain aka Vega-time"
-        }
-      },
-      "title": "A market ticket event contains the time value for when a particular market was last processed on Vega"
     },
     "vegaMarketTimestamps": {
       "type": "object",
@@ -5070,31 +5216,6 @@
       },
       "title": "Represents position data for a party on the specified market on Vega"
     },
-    "vegaPositionResolution": {
-      "type": "object",
-      "properties": {
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the event"
-        },
-        "distressed": {
-          "type": "string",
-          "format": "int64",
-          "title": "Number of distressed traders"
-        },
-        "closed": {
-          "type": "string",
-          "format": "int64",
-          "title": "Number of close outs"
-        },
-        "mark_price": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Mark price, as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
-        }
-      },
-      "title": "A position resolution event contains information on distressed trades"
-    },
     "vegaPrice": {
       "type": "object",
       "properties": {
@@ -5377,56 +5498,6 @@
       },
       "title": "Scaling Factors (for use in margin calculation)"
     },
-    "vegaSettleDistressed": {
-      "type": "object",
-      "properties": {
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the event"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier (public key) for the event"
-        },
-        "margin": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Margin value as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Price as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
-        }
-      },
-      "title": "A settle distressed event contains information on distressed trading parties who are closed out"
-    },
-    "vegaSettlePosition": {
-      "type": "object",
-      "properties": {
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the event"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier (public key) for the event"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Price of settlement as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
-        },
-        "trade_settlements": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaTradeSettlement"
-          },
-          "title": "A collection of 1 or more trade settlements"
-        }
-      },
-      "title": "A settle position event contains position settlement information for a party"
-    },
     "vegaSide": {
       "type": "string",
       "enum": [
@@ -5687,17 +5758,6 @@
       },
       "title": "TargetStakeParameters contains parameters used in target stake calculation"
     },
-    "vegaTimeUpdate": {
-      "type": "object",
-      "properties": {
-        "timestamp": {
-          "type": "string",
-          "format": "int64",
-          "title": "Timestamp containing latest update from Vega blockchain aka Vega-time"
-        }
-      },
-      "title": "A time update event contains the latest time update from Vega blockchain"
-    },
     "vegaTimestamp": {
       "type": "object",
       "properties": {
@@ -5802,22 +5862,6 @@
       },
       "title": "A trade occurs when an aggressive order crosses one or more passive orders on the order book for a market on Vega"
     },
-    "vegaTradeSettlement": {
-      "type": "object",
-      "properties": {
-        "size": {
-          "type": "string",
-          "format": "int64",
-          "title": "Size of trade settlement"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Price of settlement as an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places"
-        }
-      },
-      "title": "A trade settlement is part of the settle position event"
-    },
     "vegaTradeType": {
       "type": "string",
       "enum": [
@@ -5864,50 +5908,6 @@
         }
       },
       "title": "Represents the response from a transfer"
-    },
-    "vegaTransferResponses": {
-      "type": "object",
-      "properties": {
-        "responses": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaTransferResponse"
-          },
-          "title": "One or more entries containing internal transfer information"
-        }
-      },
-      "title": "A transfer responses event contains a collection of transfer information"
-    },
-    "vegaTxErrorEvent": {
-      "type": "object",
-      "properties": {
-        "party_id": {
-          "type": "string",
-          "title": "Unique party identifier for the related party"
-        },
-        "err_msg": {
-          "type": "string",
-          "title": "An error message describing what went wrong"
-        },
-        "order_submission": {
-          "$ref": "#/definitions/vegaOrderSubmission"
-        },
-        "order_amendment": {
-          "$ref": "#/definitions/vegaOrderAmendment"
-        },
-        "order_cancellation": {
-          "$ref": "#/definitions/vegaOrderCancellation"
-        },
-        "proposal": {
-          "$ref": "#/definitions/vegaProposal"
-        },
-        "vote_submission": {
-          "$ref": "#/definitions/vegaVoteSubmission"
-        },
-        "liquidity_provision_submission": {
-          "$ref": "#/definitions/vegaLiquidityProvisionSubmission"
-        }
-      }
     },
     "vegaUpdateMarket": {
       "type": "object",

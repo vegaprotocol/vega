@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/stretchr/testify/assert"
@@ -71,7 +72,7 @@ func testUnfilteredNoEvents(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent}, 0)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	var data []*types.BusEvent
+	var data []*eventspb.BusEvent
 	go func() {
 		data = sub.GetData(context.Background())
 		wg.Done()
@@ -94,7 +95,7 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 		}),
 	}
 
-	data := []*types.BusEvent{}
+	data := []*eventspb.BusEvent{}
 	done := make(chan struct{})
 	getData := func() {
 		done <- struct{}{}
@@ -143,7 +144,7 @@ func testFilteredNoValidEvents(t *testing.T) {
 	sub.Push(set...)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	var data []*types.BusEvent
+	var data []*eventspb.BusEvent
 	go func() {
 		data = sub.GetData(context.Background())
 		wg.Done()
@@ -168,7 +169,7 @@ func testFilteredSomeValidEvents(t *testing.T) {
 		}),
 	}
 
-	data := []*types.BusEvent{}
+	data := []*eventspb.BusEvent{}
 	done := make(chan struct{})
 	getData := func() {
 		done <- struct{}{}
@@ -213,7 +214,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 		close(ch)
 	}
 
-	var data []*types.BusEvent
+	var data []*eventspb.BusEvent
 	go func() {
 		rec <- struct{}{}
 		data = sub.GetData(context.Background())

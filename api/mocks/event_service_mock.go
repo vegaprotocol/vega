@@ -6,7 +6,7 @@ package mocks
 
 import (
 	events "code.vegaprotocol.io/vega/events"
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/events/v1"
 	subscribers "code.vegaprotocol.io/vega/subscribers"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -37,14 +37,14 @@ func (m *MockEventService) EXPECT() *MockEventServiceMockRecorder {
 }
 
 // ObserveEvents mocks base method
-func (m *MockEventService) ObserveEvents(arg0 context.Context, arg1 int, arg2 []events.Type, arg3 int, arg4 ...subscribers.EventFilter) (<-chan []*proto.BusEvent, chan<- int) {
+func (m *MockEventService) ObserveEvents(arg0 context.Context, arg1 int, arg2 []events.Type, arg3 int, arg4 ...subscribers.EventFilter) (<-chan []*v1.BusEvent, chan<- int) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2, arg3}
 	for _, a := range arg4 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ObserveEvents", varargs...)
-	ret0, _ := ret[0].(<-chan []*proto.BusEvent)
+	ret0, _ := ret[0].(<-chan []*v1.BusEvent)
 	ret1, _ := ret[1].(chan<- int)
 	return ret0, ret1
 }

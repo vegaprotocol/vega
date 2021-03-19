@@ -23,7 +23,6 @@ func NewTxFromSignedBundlePayload(payload []byte) (*Transaction, *SignedBundle, 
 func (Asset) IsEvent()                           {}
 func (LiquidityProvision) IsEvent()              {}
 func (Vote) IsEvent()                            {}
-func (AuctionEvent) IsEvent()                    {}
 func (Order) IsEvent()                           {}
 func (Account) IsEvent()                         {}
 func (Trade) IsEvent()                           {}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type Vote struct {
@@ -59,12 +60,12 @@ func (v Vote) Proto() types.Vote {
 	return v.v
 }
 
-func (v Vote) StreamMessage() *types.BusEvent {
-	return &types.BusEvent{
+func (v Vote) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{
 		Id:    v.eventID(),
 		Block: v.TraceID(),
 		Type:  v.et.ToProto(),
-		Event: &types.BusEvent_Vote{
+		Event: &eventspb.BusEvent_Vote{
 			Vote: &v.v,
 		},
 	}

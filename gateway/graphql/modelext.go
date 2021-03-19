@@ -7,6 +7,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
@@ -714,7 +715,7 @@ func defaultTradingMode() *types.NewMarketConfiguration_Continuous {
 	}
 }
 
-func busEventFromProto(events ...*types.BusEvent) []*BusEvent {
+func busEventFromProto(events ...*eventspb.BusEvent) []*BusEvent {
 	r := make([]*BusEvent, 0, len(events))
 	for _, e := range events {
 		evt := eventFromProto(e)
@@ -766,13 +767,13 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 	return gql
 }
 
-func eventFromProto(e *types.BusEvent) Event {
+func eventFromProto(e *eventspb.BusEvent) Event {
 	switch e.Type {
-	case types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return &TimeUpdate{
 			Timestamp: secondsTSToDatetime(e.GetTimeUpdate().Timestamp),
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
 		tr := e.GetTransferResponses()
 		responses := make([]*TransferResponse, 0, len(tr.Responses))
 		for _, r := range tr.Responses {
@@ -784,7 +785,7 @@ func eventFromProto(e *types.BusEvent) Event {
 		return &TransferResponses{
 			Responses: responses,
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
 		pr := e.GetPositionResolution()
 		return &PositionResolution{
 			MarketID:   pr.MarketId,
@@ -792,34 +793,34 @@ func eventFromProto(e *types.BusEvent) Event {
 			Closed:     int(pr.Closed),
 			MarkPrice:  int(pr.MarkPrice),
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_ORDER:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:
 		return e.GetOrder()
-	case types.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
 		return e.GetAccount()
-	case types.BusEventType_BUS_EVENT_TYPE_PARTY:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PARTY:
 		return e.GetParty()
-	case types.BusEventType_BUS_EVENT_TYPE_TRADE:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRADE:
 		return e.GetTrade()
-	case types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:
 		return e.GetMarginLevels()
-	case types.BusEventType_BUS_EVENT_TYPE_PROPOSAL:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL:
 		return &types.GovernanceData{
 			Proposal: e.GetProposal(),
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_VOTE:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOTE:
 		return e.GetVote()
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
 		return e.GetMarketData()
-	case types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:
 		return e.GetNodeSignature()
-	case types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
 		ls := e.GetLossSocialization()
 		return &LossSocialization{
 			MarketID: ls.MarketId,
 			PartyID:  ls.PartyId,
 			Amount:   int(ls.Amount),
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
 		dp := e.GetSettlePosition()
 		settlements := make([]*TradeSettlement, 0, len(dp.TradeSettlements))
 		for _, ts := range dp.TradeSettlements {
@@ -834,7 +835,7 @@ func eventFromProto(e *types.BusEvent) Event {
 			Price:            int(dp.Price),
 			TradeSettlements: settlements,
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
 		de := e.GetSettleDistressed()
 		return &SettleDistressed{
 			MarketID: de.MarketId,
@@ -842,19 +843,19 @@ func eventFromProto(e *types.BusEvent) Event {
 			Margin:   int(de.Margin),
 			Price:    int(de.Price),
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
 		return e.GetMarketCreated()
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
 		return e.GetMarketUpdated()
-	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ASSET:
 		return e.GetAsset()
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
 		mt := e.GetMarketTick()
 		return &MarketTick{
 			MarketID: mt.Id,
 			Time:     secondsTSToDatetime(mt.Time),
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:
 		pe := e.GetEvent()
 		if pe == nil {
 			return nil
@@ -867,13 +868,13 @@ func eventFromProto(e *types.BusEvent) Event {
 			MarketID: me.GetMarketID(),
 			Payload:  me.GetPayload(),
 		}
-	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION:
 		return e.GetAuction()
-	case types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT:
 		return e.GetDeposit()
-	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
 		return e.GetWithdrawal()
-	case types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
 		return e.GetOracleSpec()
 	case types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
 		return e.GetLiquidityProvision()
@@ -883,120 +884,120 @@ func eventFromProto(e *types.BusEvent) Event {
 
 // func (_ GovernanceData) IsEvent() {}
 
-func eventTypeToProto(btypes ...BusEventType) []types.BusEventType {
-	r := make([]types.BusEventType, 0, len(btypes))
+func eventTypeToProto(btypes ...BusEventType) []eventspb.BusEventType {
+	r := make([]eventspb.BusEventType, 0, len(btypes))
 	for _, t := range btypes {
 		switch t {
 		case BusEventTypeTimeUpdate:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE)
 		case BusEventTypeTransferResponses:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES)
 		case BusEventTypePositionResolution:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION)
 		case BusEventTypeOrder:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ORDER)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_ORDER)
 		case BusEventTypeAccount:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ACCOUNT)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT)
 		case BusEventTypeParty:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_PARTY)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_PARTY)
 		case BusEventTypeTrade:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_TRADE)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_TRADE)
 		case BusEventTypeMarginLevels:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS)
 		case BusEventTypeProposal:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_PROPOSAL)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL)
 		case BusEventTypeVote:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_VOTE)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_VOTE)
 		case BusEventTypeMarketData:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA)
 		case BusEventTypeNodeSignature:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE)
 		case BusEventTypeLossSocialization:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION)
 		case BusEventTypeSettlePosition:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION)
 		case BusEventTypeSettleDistressed:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED)
 		case BusEventTypeMarketCreated:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED)
 		case BusEventTypeMarketUpdated:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED)
 		case BusEventTypeAsset:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ASSET)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_ASSET)
 		case BusEventTypeMarketTick:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK)
 		case BusEventTypeMarket:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_MARKET)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_MARKET)
 		case BusEventTypeAuction:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_AUCTION)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION)
 		case BusEventTypeRiskFactor:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR)
 		case BusEventTypeLiquidityProvision:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION)
 		case BusEventTypeDeposit:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_DEPOSIT)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT)
 		case BusEventTypeWithdrawal:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL)
 		case BusEventTypeOracleSpec:
-			r = append(r, types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC)
+			r = append(r, eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC)
 		}
 	}
 	return r
 }
 
-func eventTypeFromProto(t types.BusEventType) (BusEventType, error) {
+func eventTypeFromProto(t eventspb.BusEventType) (BusEventType, error) {
 	switch t {
-	case types.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return BusEventTypeTimeUpdate, nil
-	case types.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:
 		return BusEventTypeTransferResponses, nil
-	case types.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:
 		return BusEventTypePositionResolution, nil
-	case types.BusEventType_BUS_EVENT_TYPE_ORDER:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:
 		return BusEventTypeOrder, nil
-	case types.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:
 		return BusEventTypeAccount, nil
-	case types.BusEventType_BUS_EVENT_TYPE_PARTY:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PARTY:
 		return BusEventTypeParty, nil
-	case types.BusEventType_BUS_EVENT_TYPE_TRADE:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_TRADE:
 		return BusEventTypeTrade, nil
-	case types.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:
 		return BusEventTypeMarginLevels, nil
-	case types.BusEventType_BUS_EVENT_TYPE_PROPOSAL:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL:
 		return BusEventTypeProposal, nil
-	case types.BusEventType_BUS_EVENT_TYPE_VOTE:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VOTE:
 		return BusEventTypeVote, nil
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:
 		return BusEventTypeMarketData, nil
-	case types.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:
 		return BusEventTypeNodeSignature, nil
-	case types.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:
 		return BusEventTypeLossSocialization, nil
-	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
 		return BusEventTypeSettlePosition, nil
-	case types.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
 		return BusEventTypeSettleDistressed, nil
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
 		return BusEventTypeMarketCreated, nil
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:
 		return BusEventTypeMarketUpdated, nil
-	case types.BusEventType_BUS_EVENT_TYPE_ASSET:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ASSET:
 		return BusEventTypeAsset, nil
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:
 		return BusEventTypeMarketTick, nil
-	case types.BusEventType_BUS_EVENT_TYPE_MARKET:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:
 		return BusEventTypeMarket, nil
-	case types.BusEventType_BUS_EVENT_TYPE_AUCTION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION:
 		return BusEventTypeAuction, nil
-	case types.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
 		return BusEventTypeRiskFactor, nil
-	case types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
 		return BusEventTypeLiquidityProvision, nil
-	case types.BusEventType_BUS_EVENT_TYPE_DEPOSIT:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT:
 		return BusEventTypeDeposit, nil
-	case types.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:
 		return BusEventTypeWithdrawal, nil
-	case types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
+	case eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
 		return BusEventTypeOracleSpec, nil
 	}
 	return "", errors.New("unsupported proto event type")

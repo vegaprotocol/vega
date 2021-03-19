@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type SettlePos struct {
@@ -50,15 +50,15 @@ func (s SettlePos) Timestamp() int64 {
 	return s.ts
 }
 
-func (s SettlePos) Proto() types.SettlePosition {
-	ts := make([]*types.TradeSettlement, 0, len(s.trades))
+func (s SettlePos) Proto() eventspb.SettlePosition {
+	ts := make([]*eventspb.TradeSettlement, 0, len(s.trades))
 	for _, t := range s.trades {
-		ts = append(ts, &types.TradeSettlement{
+		ts = append(ts, &eventspb.TradeSettlement{
 			Size:  t.Size(),
 			Price: t.Price(),
 		})
 	}
-	return types.SettlePosition{
+	return eventspb.SettlePosition{
 		MarketId:         s.marketID,
 		PartyId:          s.partyID,
 		Price:            s.price,
@@ -66,13 +66,13 @@ func (s SettlePos) Proto() types.SettlePosition {
 	}
 }
 
-func (s SettlePos) StreamMessage() *types.BusEvent {
+func (s SettlePos) StreamMessage() *eventspb.BusEvent {
 	p := s.Proto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    s.eventID(),
 		Block: s.TraceID(),
 		Type:  s.et.ToProto(),
-		Event: &types.BusEvent_SettlePosition{
+		Event: &eventspb.BusEvent_SettlePosition{
 			SettlePosition: &p,
 		},
 	}

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -203,7 +204,7 @@ type NetParamsService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/api EventService
 type EventService interface {
-	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*types.BusEvent, chan<- int)
+	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*eventspb.BusEvent, chan<- int)
 }
 
 type tradingDataService struct {
@@ -2178,7 +2179,7 @@ func (t *tradingDataService) ObserveEventBus(
 func (t *tradingDataService) observeEvents(
 	ctx context.Context,
 	stream protoapi.TradingDataService_ObserveEventBusServer,
-	ch <-chan []*types.BusEvent,
+	ch <-chan []*eventspb.BusEvent,
 ) error {
 	for {
 		select {
@@ -2231,7 +2232,7 @@ func (t *tradingDataService) observeEventsWithAck(
 	ctx context.Context,
 	stream protoapi.TradingDataService_ObserveEventBusServer,
 	batchSize int64,
-	ch <-chan []*types.BusEvent,
+	ch <-chan []*eventspb.BusEvent,
 	bCh chan<- int,
 ) error {
 	for {
