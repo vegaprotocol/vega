@@ -9,6 +9,7 @@ Feature: Regression test for issue 596
       | name             | value |
       | prices.ETH.value | 42    |
 
+  @ignore
   Scenario: Traded out position but monies left in margin account
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount  |
@@ -21,7 +22,7 @@ Feature: Regression test for issue 596
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type        | tif     |
+      | trader  | id        | side | volume | price | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC |
 
@@ -119,7 +120,7 @@ Feature: Regression test for issue 596
       | edd    | BTC   | ETH/DEC19 | 961    | 9019    |
       | chris  | BTC   | ETH/DEC19 | 607    | 9413    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    And All balances cumulated are worth "2031000"
+    And Cumulated balance for all accounts is worth "2031000"
     Then traders cancel the following orders:
       | trader | reference            |
       | chris  | chris-id-1-to-cancel |

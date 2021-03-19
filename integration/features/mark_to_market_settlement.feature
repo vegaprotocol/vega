@@ -23,7 +23,7 @@ Feature: Test mark to market settlement
       | aux     | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC |
 
-    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
     Then traders place following orders:
@@ -58,6 +58,7 @@ Feature: Test mark to market settlement
     And Cumulated balance for all accounts is worth "130000"
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
 
+  @ignore
   Scenario: If settlement amount > trader’s margin account balance  and <= trader's margin account balance + general account balance for the asset, he full balance of the trader’s margin account is transferred to the market’s temporary settlement account the remainder, i.e. difference between the amount transferred from the margin account and the settlement amount, is transferred from the trader’s general account for the asset to the market’s temporary settlement account
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount |
@@ -122,6 +123,7 @@ Feature: Test mark to market settlement
       | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |   4950 | ETH   |
     And Cumulated balance for all accounts is worth "130000"
 
+  @ignore
   Scenario: If the mark price hasn’t changed, A trader with no change in open position size has no transfers in or out of their margin account, A trader with no change in open volume
     Given the traders make the following deposits on asset's general account:
       | trader  | asset | amount |

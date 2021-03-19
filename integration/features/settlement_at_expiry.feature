@@ -18,7 +18,6 @@ Feature: Test mark to market settlement
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume  | price | resulting trades | type        | tif     |
       | trader   | market id | side | volume  | price | resulting trades | type        | tif     |
       | aux1     | ETH/DEC19 | buy  | 1       |  999  | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux2     | ETH/DEC19 | sell | 1       | 1001  | 0                | TYPE_LIMIT  | TIF_GTC |
@@ -30,9 +29,10 @@ Feature: Test mark to market settlement
       | aux2     | ETH/DEC19 | sell | 1       | 1000  | 1               | TYPE_LIMIT  | TIF_GTC |
 
     Then time is updated to "2020-01-01T01:01:01Z"
-    Then traders cannot place the following orders anymore:
-      | trader  | market id | side | volume | price | resulting trades | error                         |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
+    When traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    Then the system should return error "OrderError: Invalid Market ID"
 
   Scenario: Settlement happened when market is being closed
     Given the traders make the following deposits on asset's general account:
@@ -55,7 +55,7 @@ Feature: Test mark to market settlement
       | aux1     | ETH/DEC19 | buy  | 1       | 1000  | 0               | TYPE_LIMIT  | TIF_GTC |
       | aux2     | ETH/DEC19 | sell | 1       | 1000  | 1               | TYPE_LIMIT  | TIF_GTC |
 
-    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -77,9 +77,11 @@ Feature: Test mark to market settlement
       | aux2    | ETH/DEC19 | buy  | 1       | 1000  | 1                | TYPE_LIMIT  | TIF_GTC |
 
     Then time is updated to "2020-01-01T01:01:01Z"
-    Then traders cannot place the following orders anymore:
-      | trader  | market id | side | volume | price | resulting trades | error                         |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | OrderError: Invalid Market ID |
+    When traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    Then the system should return error "OrderError: Invalid Market ID"
+
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 | 0      | 8084    |

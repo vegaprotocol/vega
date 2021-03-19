@@ -19,7 +19,7 @@ Feature: Close a filled order twice
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | id        | type | volume | price | resulting trades | type        | tif     |
+      | trader  | id        | side | volume | price | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC |
 
@@ -39,4 +39,3 @@ Feature: Close a filled order twice
       | sellSideProvider | sell-provider-1 |
     And the insurance pool balance is "0" for the market "ETH/DEC19"
     And Cumulated balance for all accounts is worth "200100000"
-

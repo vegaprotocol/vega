@@ -22,9 +22,9 @@ Feature: Regression test for issue 596
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Trigger an auction to set the mark price
     Then traders place following orders:
@@ -34,7 +34,7 @@ Feature: Regression test for issue 596
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
 
-    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -109,9 +109,9 @@ Feature: Regression test for issue 596
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Trigger an auction to set the mark price
     Then traders place following orders:
@@ -120,7 +120,7 @@ Feature: Regression test for issue 596
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    And the market trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
