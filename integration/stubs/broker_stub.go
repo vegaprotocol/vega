@@ -101,6 +101,12 @@ func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 	return r
 }
 
+func (b *BrokerStub) GetRejectedOrderAmendments() []events.TxErr {
+	return b.filterTxErr(func(errProto types.TxErrorEvent) bool {
+		return errProto.GetOrderAmendment() != nil
+	})
+}
+
 func (b *BrokerStub) GetTransferResponses() []events.TransferResponse {
 	batch := b.GetBatch(events.TransferResponses)
 	if len(batch) == 0 {

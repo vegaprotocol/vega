@@ -17,19 +17,19 @@ Feature: Test mark to market settlement
       | aux2     | ETH   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader   | market id | side | volume  | price | resulting trades | type        | tif     |
       | aux1     | ETH/DEC19 | buy  | 1       |  999  | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux2     | ETH/DEC19 | sell | 1       | 1001  | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Set mark price
-    Then traders place following orders:
+    When traders place the following orders:
       | trader   | market id | side | volume  | price | resulting trades | type        | tif     |
       | aux1     | ETH/DEC19 | buy  | 1       | 1000  | 0               | TYPE_LIMIT  | TIF_GTC |
       | aux2     | ETH/DEC19 | sell | 1       | 1000  | 1               | TYPE_LIMIT  | TIF_GTC |
 
     Then time is updated to "2020-01-01T01:01:01Z"
-    When traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the system should return error "OrderError: Invalid Market ID"

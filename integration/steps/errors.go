@@ -2,16 +2,28 @@ package steps
 
 import (
 	"fmt"
+	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func errOrderNotFound(reference string, trader string, err error) error {
-	return fmt.Errorf("order not found for trader(%s) with reference(%s): %v", trader, reference, err)
+func formatDiff(expected, got map[string]string) error {
+	var expectedStr strings.Builder
+	var gotStr strings.Builder
+	formatStr := "\n\t%s(%s)"
+	for name, value := range expected {
+		_, _ = fmt.Fprintf(&expectedStr, formatStr, name, value)
+		_, _ = fmt.Fprintf(&gotStr, formatStr, name, got[name])
+	}
+
+	return fmt.Errorf("\nexpected:%s\ngot:%s",
+		expectedStr.String(),
+		gotStr.String(),
+	)
 }
 
-func errAmendingOrder(o types.Order, err error) error {
-	return fmt.Errorf("failed to amend order  for trader(%s) with reference(%s): %v", o.PartyId, o.Reference, err)
+func errOrderNotFound(reference string, trader string, err error) error {
+	return fmt.Errorf("order not found for trader(%s) with reference(%s): %v", trader, reference, err)
 }
 
 type CancelOrderError struct {
