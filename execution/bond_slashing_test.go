@@ -14,7 +14,6 @@ import (
 )
 
 func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration, now time.Time, price uint64) {
-	cancelOrders := make([]*types.Order, 0, 2)
 	// all parties
 	parties := []string{"oo-p1", "oo-p4", "oo-p2", "oo-p3"}
 	// create accounts for the parties
@@ -36,7 +35,7 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 		},
 		{
 			MarketId:    mkt.market.GetID(),
-			PartyId:     "oo-p2",
+			PartyId:     parties[2],
 			Side:        types.Side_SIDE_BUY,
 			Price:       price,
 			Size:        1,
@@ -48,7 +47,7 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 		},
 		{
 			MarketId:    mkt.market.GetID(),
-			PartyId:     "oo-p3",
+			PartyId:     parties[3],
 			Side:        types.Side_SIDE_SELL,
 			Price:       price,
 			Size:        1,
@@ -72,21 +71,14 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 		},
 	}
 	for _, o := range orders {
-		conf, err := mkt.market.SubmitOrder(context.Background(), o)
+		_, err := mkt.market.SubmitOrder(context.Background(), o)
 		require.NoError(t, err)
-		// the first 2 are orders that won't trade
-		if conf.Order.PartyId == parties[0] || conf.Order.PartyId == parties[1] {
-			cancelOrders = append(cancelOrders, conf.Order)
-		}
+
 	}
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
 	mkt.market.OnChainTimeUpdate(context.Background(), now)
-	// Because we don't have liquidity monitoring, we can just cancel the 2 orders on the book and have the tests do their thing
-	for _, o := range cancelOrders {
-		_, err := mkt.market.CancelOrder(context.Background(), o.PartyId, o.Id)
-		require.NoError(t, err)
-	}
+
 	// opening auction ended, mark-price set
 	mktData := mkt.market.GetMarketData()
 	require.NotNil(t, mktData)
@@ -293,7 +285,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 
 	asset := tm.asset
 
-	var mainPartyInitialDeposit uint64 = 794 // 1008 is the minimum required amount to cover margin without dipping into the bond account
+	var mainPartyInitialDeposit uint64 = 795 // 1008 is the minimum required amount to cover margin without dipping into the bond account
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
 	addAccount(tm, auxParty1)
@@ -332,6 +324,9 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
 	require.NoError(t, err)
 
+	lpCount := tm.market.GetLPSCount()
+	require.Equal(t, 1, lpCount)
+
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
@@ -341,7 +336,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	require.Equal(t, genAcc.Balance, zero)
+	require.Greater(t, genAcc.Balance, zero)
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
@@ -354,6 +349,9 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(confirmationBuyAux1.Trades))
+
+	lpCount = tm.market.GetLPSCount()
+	assert.Equal(t, 0, lpCount)
 
 	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
