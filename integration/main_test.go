@@ -117,9 +117,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the margins levels for the traders are:$`, func(table *gherkin.DataTable) error {
 		return steps.TheMarginsLevelsForTheTradersAre(execsetup.broker, table)
 	})
-	s.Step(`^traders place the following invalid orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceFollowingInvalidOrders(execsetup.engine, table)
-	})
 	s.Step(`^the following orders are rejected:$`, func(table *gherkin.DataTable) error {
 		return steps.OrdersAreRejected(execsetup.broker, table)
 	})
