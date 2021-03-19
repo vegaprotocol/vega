@@ -2,7 +2,6 @@ package steps
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
@@ -26,8 +25,9 @@ func TradersCancelsTheFollowingOrders(broker *stubs.BrokerStub, exec *execution.
 			MarketId: o.MarketId,
 		}
 
-		if _, err = exec.CancelOrder(context.Background(), &cancel); err == nil {
-			return fmt.Errorf("successfully cancelled order for trader %s (reference %s)", o.PartyId, o.Reference)
+		_, err = exec.CancelOrder(context.Background(), &cancel)
+		if err != nil {
+			errCh <- err
 		}
 	}
 

@@ -44,7 +44,10 @@ func TradersPlaceOrders(
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   reference,
 		}
-		_, _ = exec.SubmitOrder(context.Background(), &order)
+		_, err := exec.SubmitOrder(context.Background(), &order)
+		if err != nil {
+			errCh <- err
+		}
 		//if err != nil {
 		//	return errUnableToPlaceOrder(trader, reference, err)
 		//}
