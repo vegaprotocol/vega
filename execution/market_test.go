@@ -3592,9 +3592,19 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOK(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	// Even though this is FOK we can still partially match if a wash trade is found
-	require.Equal(t, types.Order_STATUS_PARTIALLY_FILLED, o3.Status)
-	assert.Equal(t, uint64(10), o3.Remaining)
+	// A wash trade during a FOK order will stop the order fully unfilled
+	require.Equal(t, types.Order_STATUS_STOPPED, o3.Status)
+	assert.Equal(t, uint64(20), o3.Remaining)
+
+	// Send the sell order with only enough volume to match the opposite trader
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_FOK, "Order04", types.Side_SIDE_SELL, "trader-A", 5, 0)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	// A wash trade during a FOK order will stop the order fully unfilled
+	require.Equal(t, types.Order_STATUS_FILLED, o4.Status)
+	assert.Equal(t, uint64(0), o4.Remaining)
 }
 
 func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
@@ -3628,9 +3638,19 @@ func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	// Even though this is FOK we can still partially match if a wash trade is found
-	require.Equal(t, types.Order_STATUS_PARTIALLY_FILLED, o3.Status)
-	assert.Equal(t, uint64(10), o3.Remaining)
+	// A wash trade during FOK will stop the order filly unfilled
+	require.Equal(t, types.Order_STATUS_STOPPED, o3.Status)
+	assert.Equal(t, uint64(20), o3.Remaining)
+
+	// Send the sell order with only enough volume to match the opposite trader
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_FOK, "Order04", types.Side_SIDE_SELL, "trader-A", 5, 90)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	// A wash trade during FOK will stop the order filly unfilled
+	require.Equal(t, types.Order_STATUS_FILLED, o4.Status)
+	assert.Equal(t, uint64(0), o4.Remaining)
 }
 
 // Tests that during a list of LiquidityProvision order creation (triggered by

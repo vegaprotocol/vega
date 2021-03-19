@@ -335,11 +335,20 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 	)
 	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
 		if agg.Side == types.Side_SIDE_SELL {
-			for _, level := range s.levels {
+			for i := len(s.levels) - 1; i >= 0; i-- {
+				level := s.levels[i]
 				// we don't have to account for network orders, they don't apply in price monitoring
 				// nor do fees apply
 				if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET {
-					totalVolumeToFill += level.volume
+					for _, order := range level.orders {
+						if agg.PartyId == order.PartyId {
+							return false, nil, ErrWashTrade
+						}
+						totalVolumeToFill += order.Remaining
+						if totalVolumeToFill >= agg.Remaining {
+							break
+						}
+					}
 				}
 				if totalVolumeToFill >= agg.Remaining {
 					break
@@ -348,7 +357,15 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 		} else if agg.Side == types.Side_SIDE_BUY {
 			for _, level := range s.levels {
 				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
-					totalVolumeToFill += level.volume
+					for _, order := range level.orders {
+						if agg.PartyId == order.PartyId {
+							return false, nil, ErrWashTrade
+						}
+						totalVolumeToFill += order.Remaining
+						if totalVolumeToFill >= agg.Remaining {
+							break
+						}
+					}
 				}
 				if totalVolumeToFill >= agg.Remaining {
 					break
@@ -425,12 +442,26 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 
 	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
 		if agg.Side == types.Side_SIDE_SELL {
-			for _, level := range s.levels {
-				// in case of network trades, we want to calculate an accurate average price to return
+			// Process these backwards
+			for i := len(s.levels) - 1; i >= 0; i-- {
+				level := s.levels[i]
 				if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-					totalVolumeToFill += level.volume
+					// We have to process every order to check for wash trades
+					for _, order := range level.orders {
+						// Check for wash trading
+						if agg.PartyId == order.PartyId {
+							// Stop the order and return
+							agg.Status = types.Order_STATUS_STOPPED
+							return nil, nil, 0, ErrWashTrade
+						}
+						// in case of network trades, we want to calculate an accurate average price to return
+						totalVolumeToFill += order.Remaining
+
+						if totalVolumeToFill >= agg.Remaining {
+							break
+						}
+					}
 				}
-				// No need to keep looking once we pass the required amount
 				if totalVolumeToFill >= agg.Remaining {
 					break
 				}
@@ -441,9 +472,22 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 			for _, level := range s.levels {
 				// in case of network trades, we want to calculate an accurate average price to return
 				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-					totalVolumeToFill += level.volume
+					// We have to process every order to check for wash trades
+					for _, order := range level.orders {
+						// Check for wash trading
+						if agg.PartyId == order.PartyId {
+							// Stop the order and return
+							agg.Status = types.Order_STATUS_STOPPED
+							return nil, nil, 0, ErrWashTrade
+						}
+						totalVolumeToFill += level.volume
+
+						// No need to keep looking once we pass the required amount
+						if totalVolumeToFill >= agg.Remaining {
+							break
+						}
+					}
 				}
-				// No need to keep looking once we pass the required amount
 				if totalVolumeToFill >= agg.Remaining {
 					break
 				}
