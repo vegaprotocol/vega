@@ -75,10 +75,10 @@ Feature: Price monitoring test using simple risk model
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-    Then traders place the following invalid orders:
-      | trader  | market id | side | volume | price | error                             | type       | tif     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111   | OrderError: invalid time in force | TYPE_LIMIT | TIF_GFN |
-
+    When traders place following orders:
+      | trader  | market id | side | volume | price | type       | tif     | reference |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111   | TYPE_LIMIT | TIF_GFN | ref-1     |
+    Then the system should return error "OrderError: invalid time in force"
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
   Scenario: Non-persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates.
