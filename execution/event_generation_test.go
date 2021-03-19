@@ -205,7 +205,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	assert.Equal(t, uint64(8), tm.orderEventCount)
 	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, 4, mdb.GetOrderCount(tm.market.GetID()))
 }
 
@@ -277,7 +277,7 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 	assert.Equal(t, uint64(14), tm.orderEventCount)
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, 3, mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
 	assert.Equal(t, uint64(89), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
@@ -357,7 +357,7 @@ func TestEvents_CloseOutTraderWithPeggedOrder(t *testing.T) {
 	assert.Equal(t, uint64(15), tm.orderEventCount)
 	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
-	mdb := processEvents(t, tm, ctx)
+	processEvents(t, tm, mdb)
 	assert.Equal(t, 4, mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
 	assert.Equal(t, uint64(89), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
@@ -750,7 +750,6 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	mdb := processEvents(t, tm, ctx)
 	assert.Equal(t, 3, mdb.GetOrderCount(tm.market.GetID()))
 	assert.Equal(t, 3, mdb.GetPriceLevels(tm.market.GetID()))
 }

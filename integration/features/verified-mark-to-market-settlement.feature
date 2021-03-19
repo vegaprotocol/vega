@@ -56,7 +56,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
 # place trade for 1@111 to set new mark price
@@ -69,7 +69,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers: 200+30=230 as per spreadsheet
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 30     | BTC   |
 
 
@@ -128,7 +128,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 90     | BTC   |
 
@@ -143,7 +143,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers: 200+90-64=226 as per spreadsheet
     Then the following transfers happened:
-      | from    | to     | fromType             | toType                  | id        | amount | asset |
+      | from    | to     | from account         | to account              | market id | amount | asset |
       | trader1 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     64 | BTC   |
 
   Scenario: case 3 - LONG - LESS LONG - one trade
@@ -193,7 +193,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
 # place trade for 1@111 to set new mark price
@@ -206,7 +206,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers: 200+15=215 as per spreadsheet
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 15     | BTC   |
 
 
@@ -265,7 +265,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 30     | BTC   |
 
@@ -279,7 +279,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers: 200+30-16=214 as per spreadsheet
     Then the following transfers happened:
-      | from   | to      | fromType             | toType                  | id        | amount | asset |
+      | from    | to     | from account         | to account              | market id | amount | asset |
       | trader1 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     16 | BTC   |
 
   Scenario: case 5 - LONG - ZERO - one trade
@@ -328,7 +328,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
   Scenario: case 6 - LONG - ZERO - multiple trades
@@ -385,7 +385,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 40     | BTC   |
 
@@ -435,7 +435,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
 
   Scenario: case 7 - LONG - SHORT - multiple trades
@@ -493,7 +493,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 100    | BTC   |
 
@@ -507,7 +507,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers: 200+100+15=315 as per spreadsheet
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 15     | BTC   |
 
   Scenario: case 8 - LONG - SAME AMOUNT - multiple trades
@@ -565,7 +565,7 @@ Feature: MTM settlement tests
 
 # MTM win transfers
     Then the following transfers happened:
-      | from | to | from account | to account | market id | amount | asset |
+      | from   | to      | from account            | to account          | market id | amount | asset |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 200    | BTC   |
       | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 120    | BTC   |
 
@@ -579,5 +579,5 @@ Feature: MTM settlement tests
 
 # MTM win transfers: 200+120-60=260 as per spreadsheet
     Then the following transfers happened:
-      | from   | to      | fromType             | toType                  | id        | amount | asset |
+      | from    | to     | from account        | to account              | market id | amount | asset |
       | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     60 | BTC   |
