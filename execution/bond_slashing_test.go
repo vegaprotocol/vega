@@ -386,7 +386,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 
 	asset := tm.asset
 
-	var mainPartyInitialDeposit uint64 = 1006 // 1006 is the minimum required amount to cover margin without dipping into the bond account
+	var mainPartyInitialDeposit uint64 = 1020 // 1020 is the minimum required amount to cover margin without dipping into the bond account
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
 	addAccount(tm, auxParty1)
