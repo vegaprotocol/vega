@@ -17,18 +17,18 @@ Feature: test for issue 1920
       | trader3 | ETH   | 100000000 |
       | trader4 | ETH   | 100000000 |
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader2 | ETH/DEC19 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GFA |
-      | trader3 | ETH/DEC19 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GFA |
-      | trader4 | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4 | ETH/DEC19 | sell | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader2 | ETH/DEC19 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
+      | trader3 | ETH/DEC19 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |
+      | trader4 | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | trader4 | ETH/DEC19 | sell | 10     | 10000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "1000"
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-1     |
 
     Then the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |

@@ -21,7 +21,7 @@ Feature: test bugfix 614 for margin calculations
       | trader2 | ETH   | 1000000 |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -35,18 +35,18 @@ Feature: test bugfix 614 for margin calculations
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | chris   | ETH/DEC19 | sell | 100    | 250   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd     | ETH/DEC19 | sell | 11     | 140   | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney  | ETH/DEC19 | sell | 2      | 112   | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney  | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd     | ETH/DEC19 | buy  | 3      | 96    | 0                | TYPE_LIMIT | TIF_GTC |
-      | chris   | ETH/DEC19 | buy  | 15     | 90    | 0                | TYPE_LIMIT | TIF_GTC |
-      | rebecca | ETH/DEC19 | buy  | 50     | 87    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | chris   | ETH/DEC19 | sell | 100    | 250   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | edd     | ETH/DEC19 | sell | 11     | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | barney  | ETH/DEC19 | sell | 2      | 112   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | barney  | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | edd     | ETH/DEC19 | buy  | 3      | 96    | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | chris   | ETH/DEC19 | buy  | 15     | 90    | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | rebecca | ETH/DEC19 | buy  | 50     | 87    | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
       # this is now the actual trader that we are testing
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     |
-      | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the margins levels for the traders are:
       | trader | market id | maintenance | search | initial | release |
       | tamlyn | ETH/DEC19 | 988         | 3161   | 3952    | 4940    |

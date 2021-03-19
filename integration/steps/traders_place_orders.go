@@ -2,7 +2,6 @@ package steps
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cucumber/godog/gherkin"
@@ -12,17 +11,18 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TradersPlaceFollowingOrdersWithReferences(
+func TradersPlaceOrders(
 	exec *execution.Engine,
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
+		trader := row.Str("trader")
+		marketID := row.Str("market id")
+		side := row.Side("side")
+		volume := row.U64("volume")
+		price := row.U64("price")
 		oty := row.OrderType("type")
 		tif := row.TIF("tif")
-		side := row.Side("side")
-		price := row.U64("price")
-		volume := row.U64("volume")
-		trader := row.Str("trader")
 		reference := row.Str("reference")
 
 		var expiresAt int64
@@ -33,7 +33,7 @@ func TradersPlaceFollowingOrdersWithReferences(
 		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
-			MarketId:    row.Str("market id"),
+			MarketId:    marketID,
 			PartyId:     trader,
 			Side:        side,
 			Price:       price,
@@ -45,22 +45,18 @@ func TradersPlaceFollowingOrdersWithReferences(
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   reference,
 		}
-		result, err := exec.SubmitOrder(context.Background(), &order)
+		_, err := exec.SubmitOrder(context.Background(), &order)
 		if err != nil {
-			return errUnableToPlaceOrder(trader, reference, err)
+			errCh <- err
 		}
-
-		resultingTrades := row.U64("resulting trades")
-		if len(result.Trades) != int(resultingTrades) {
-			return errWrongNumberOfTrades(resultingTrades, result)
-		}
+		//if err != nil {
+		//	return errUnableToPlaceOrder(trader, reference, err)
+		//}
+		//
+		//resultingTrades := row.U64("resulting trades")
+		//if len(result.Trades) != int(resultingTrades) {
+		//	return errWrongNumberOfTrades(resultingTrades, result)
+		//}
 	}
 	return nil
-}
-
-func errWrongNumberOfTrades(resultingTrades uint64, result *types.OrderConfirmation) error {
-	return fmt.Errorf(
-		"expected %d trades, instead saw %d (%#v)",
-		resultingTrades, len(result.Trades), *result,
-	)
 }

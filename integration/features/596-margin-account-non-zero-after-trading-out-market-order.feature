@@ -20,7 +20,7 @@ Feature: Regression test for issue 596
       | trader2 | BTC   | 1000000 |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -34,24 +34,24 @@ Feature: Regression test for issue 596
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     |
-      | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 15     | 104   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 30     | 105   | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 20     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 12     | 98    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | edd    | ETH/DEC19 | sell | 15     | 104   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | edd    | ETH/DEC19 | sell | 30     | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | barney | ETH/DEC19 | buy  | 20     | 99    | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | barney | ETH/DEC19 | buy  | 12     | 98    | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
+      | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
+      | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC | ref-9     |
+      | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC | ref-10    |
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 9152    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     |
-      | chris  | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC |
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | chris  | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 933    | 9007    |
@@ -60,8 +60,8 @@ Feature: Regression test for issue 596
     And Cumulated balance for all accounts is worth "2040000"
 # then chris is trading out
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     |
-      | chris  | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC |
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | chris  | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1283   | 9007    |
@@ -70,24 +70,24 @@ Feature: Regression test for issue 596
     And Cumulated balance for all accounts is worth "2040000"
 # placing new orders to trade out
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     |
-      | chris  | ETH/DEC19 | buy  | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | chris  | ETH/DEC19 | buy  | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
 # placing order which get cancelled
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference            |
       | chris  | ETH/DEC19 | buy  | 60     | 1     | 0                | TYPE_LIMIT | TIF_GTC | chris-id-1-to-cancel |
 # other traders trade together (tamlyn+barney)
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     |
-      | tamlyn | ETH/DEC19 | sell | 12     | 95    | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tamlyn | ETH/DEC19 | sell | 12     | 95    | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 # cancel order
     Then traders cancel the following orders:
       | trader | reference            |
       | chris  | chris-id-1-to-cancel |
 # then chris is trading out
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     |
-      | chris  | ETH/DEC19 | sell | 5      | 0     | 2                | TYPE_MARKET | TIF_IOC |
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | chris  | ETH/DEC19 | sell | 5      | 0     | 2                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | chris  | BTC   | ETH/DEC19 | 0      | 9767    |
@@ -104,7 +104,7 @@ Feature: Regression test for issue 596
       | trader2 | BTC   | 1000000 |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -118,24 +118,24 @@ Feature: Regression test for issue 596
       | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     |
-      | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 15     | 104   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd    | ETH/DEC19 | sell | 30     | 105   | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 20     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 12     | 98    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | edd    | ETH/DEC19 | sell | 10     | 103   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | edd    | ETH/DEC19 | sell | 15     | 104   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | edd    | ETH/DEC19 | sell | 30     | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | barney | ETH/DEC19 | buy  | 20     | 99    | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | barney | ETH/DEC19 | buy  | 12     | 98    | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
+      | barney | ETH/DEC19 | buy  | 14     | 97    | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
+      | barney | ETH/DEC19 | buy  | 20     | 96    | 0                | TYPE_LIMIT | TIF_GTC | ref-9     |
+      | barney | ETH/DEC19 | buy  | 5      | 95    | 0                | TYPE_LIMIT | TIF_GTC | ref-10    |
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 9152    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     |
-      | chris  | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC |
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | chris  | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 933    | 9007    |
@@ -144,8 +144,8 @@ Feature: Regression test for issue 596
     And Cumulated balance for all accounts is worth "2040000"
 # then chris is trading out
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     |
-      | chris  | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC |
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | chris  | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 1283   | 9007    |
@@ -154,24 +154,24 @@ Feature: Regression test for issue 596
     And Cumulated balance for all accounts is worth "2040000"
 # placing new orders to trade out
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     |
-      | chris  | ETH/DEC19 | buy  | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | chris  | ETH/DEC19 | buy  | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
 # placing order which get cancelled
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference            |
       | chris  | ETH/DEC19 | buy  | 60     | 1     | 0                | TYPE_LIMIT | TIF_GTC | chris-id-1-to-cancel |
 # other traders trade together (tamlyn+barney)
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     |
-      | tamlyn | ETH/DEC19 | sell | 3      | 95    | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tamlyn | ETH/DEC19 | sell | 3      | 95    | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 # cancel order
     Then traders cancel the following orders:
       | trader | reference            |
       | chris  | chris-id-1-to-cancel |
 # then chris is trading out
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     |
-      | chris  | ETH/DEC19 | sell | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC |
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | chris  | ETH/DEC19 | sell | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
       | trader | asset | market id | margin | general |
       | chris  | BTC   | ETH/DEC19 | 0      | 9768    |

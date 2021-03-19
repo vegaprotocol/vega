@@ -20,7 +20,7 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | tt_16  | BTC   | 10000000 |
 
     # place orders and generate trades
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_12  | ETH/DEC19 | buy  | 5      | 20    | 0                | TYPE_LIMIT | TIF_GTT | tt_12-1   |
       | tt_13  | ETH/DEC19 | sell | 5      | 20    | 1                | TYPE_LIMIT | TIF_GTT | tt_13-1   |
