@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ErrInsufficientFundsForInitialMargin = errors.New("insufficient funds for initial margin")
-	ErrRiskFactorsNotAvailableForAsset   = errors.New("risk factors not available for the specified asset")
+	ErrInsufficientFundsForMaintenanceMargin = errors.New("insufficient funds for maintenance margin")
+	ErrRiskFactorsNotAvailableForAsset       = errors.New("risk factors not available for the specified asset")
 )
 
 // Orderbook represent an abstraction over the orderbook
@@ -255,7 +255,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	// there's not enough monies in the accounts of the party,
 	// we break from here. The minimum requires is MAINTENANCE, not INITIAL here!
 	if curMarginBalance+evt.GeneralBalance() < margins.MaintenanceMargin {
-		return nil, nil, ErrInsufficientFundsForInitialMargin
+		return nil, nil, ErrInsufficientFundsForMaintenanceMargin
 	}
 
 	// propagate margins levels to the buffer

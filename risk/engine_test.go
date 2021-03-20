@@ -176,7 +176,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
-	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
+	assert.Error(t, err, risk.ErrInsufficientFundsForMaintenanceMargin.Error())
 }
 
 func testMarginNoop(t *testing.T) {
