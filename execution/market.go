@@ -1480,7 +1480,7 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 			m.broker.Send(events.NewTransferResponse(ctx, transfers))
 		}
 		if len(closed) > 0 {
-			err = m.resolveClosedOutTraders(ctx, closed, order, false)
+			err = m.resolveClosedOutTraders(ctx, closed, order)
 			if err != nil {
 				m.log.Error("unable to close out traders",
 					logging.String("market-id", m.GetID()),
@@ -1516,7 +1516,7 @@ func (m *Market) getLiquidityFee() string {
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused traders to be distressed
-func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order, forceCloseout bool) error {
+func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order) error {
 	if len(distressedMarginEvts) == 0 {
 		return nil
 	}
@@ -1629,7 +1629,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	closed := distressedMarginEvts // default behaviour (ie if rmorders is empty) is to close out all distressed positions we started out with
 
 	// we need to check margin requirements again, it's possible for traders to no longer be distressed now that their orders have been removed
-	if !forceCloseout && len(rmorders) != 0 {
+	if len(rmorders) != 0 {
 		var okPos []events.Margin // need to declare this because we want to reassign closed
 		// now that we closed orders, let's run the risk engine again
 		// so it'll separate the positions still in distress from the
@@ -3489,10 +3489,9 @@ func (m *Market) updateAndCreateOrders(
 				logging.PartyID(order.PartyId),
 				logging.MarketID(order.MarketId),
 				logging.Error(err))
-			faultyLPs[order.PartyId] = struct{}{}
-		}
+			party := order.PartyId
+			faultyLPs[party] = struct{}{}
 
-		for party := range faultyLPs {
 			if leavingAuction {
 				if err := m.cancelLiquidityProvision(ctx, party, false, false); err != nil {
 					m.log.Debug("error cancelling liquidity provision commitmment",
@@ -3518,7 +3517,7 @@ func (m *Market) updateAndCreateOrders(
 						logging.Error(perr))
 					continue
 				}
-				m.resolveClosedOutTraders(ctx, []events.Margin{margin}, order, true)
+				m.resolveClosedOutTraders(ctx, []events.Margin{margin}, order)
 			}
 		}
 	}

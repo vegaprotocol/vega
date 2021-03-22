@@ -287,10 +287,10 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		transfer: trnsfr,
 		margins:  margins,
 	}
-	// we don't have enough in general + margin accounts to cover maintenance level, so we'll be dipping into our bond account
+	// we don't have enough in general + margin accounts to cover initial margin level, so we'll be dipping into our bond account
 	// we have to return the margin event to signal that
 	nonBondFunds := curMarginBalance + evt.GeneralBalance() - evt.BondBalance()
-	if nonBondFunds < margins.MaintenanceMargin {
+	if nonBondFunds < margins.InitialMargin {
 		return change, evt, nil
 	}
 	return change, nil, nil

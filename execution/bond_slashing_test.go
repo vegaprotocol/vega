@@ -3,7 +3,6 @@ package execution_test
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -222,8 +221,9 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForMaintenanceMargin(t *te
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
-	mainPartyInitialDeposit := uint64(694) // 695 is the minimum required amount to meet the commitment amount and maintenance margin on resulting orders
-	addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
+	mainPartyInitialDeposit := uint64(494) // 495 is the minimum required amount to meet the commitment amount and maintenance margin on resulting orders
+	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
+	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -256,6 +256,8 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForMaintenanceMargin(t *te
 	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
 	require.Error(t, err)
 
+	assert.Equal(t, 0, tm.market.GetLPSCount())
+
 	var zero uint64 = 0
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
 	require.NoError(t, err)
@@ -267,6 +269,12 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForMaintenanceMargin(t *te
 	require.NoError(t, err)
 	require.NotNil(t, insurancePool)
 	require.Equal(t, zero, insurancePool.Balance)
+
+	//TODO: WG (When is rollback triggered?)
+	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
+	require.NoError(t, err)
+	require.NotNil(t, genAcc)
+	require.Equal(t, genAcc.Balance, mainPartyInitialDeposit)
 }
 
 func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
@@ -285,7 +293,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 
 	asset := tm.asset
 
-	var mainPartyInitialDeposit uint64 = 795 // 1008 is the minimum required amount to cover margin without dipping into the bond account
+	var mainPartyInitialDeposit uint64 = 682 // 683 is the minimum amount to cover additional orders after orderBuyAux1 fills
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
 	addAccount(tm, auxParty1)
@@ -324,19 +332,18 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
 	require.NoError(t, err)
 
-	lpCount := tm.market.GetLPSCount()
-	require.Equal(t, 1, lpCount)
+	require.Equal(t, 1, tm.market.GetLPSCount())
 
+	var zero uint64 = 0
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
-	require.Equal(t, lp.CommitmentAmount, bondAcc.Balance)
+	require.Greater(t, bondAcc.Balance, zero)
 
-	var zero uint64 = 0
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	require.Greater(t, genAcc.Balance, zero)
+	require.Equal(t, genAcc.Balance, zero)
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
@@ -350,8 +357,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(confirmationBuyAux1.Trades))
 
-	lpCount = tm.market.GetLPSCount()
-	assert.Equal(t, 0, lpCount)
+	assert.Equal(t, 0, tm.market.GetLPSCount())
 
 	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
@@ -584,7 +590,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.Equal(t, expectedBondAccBalance, int64(bondAccBalanceAfterMarketMove))
 }
 
-func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseout(t *testing.T) {
+func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty1 := "auxParty1"
 	now := time.Unix(10, 0)
@@ -603,7 +609,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	bondPenaltyParameter := 0.1
 	tm.market.BondPenaltyFactorUpdate(ctx, bondPenaltyParameter)
 
-	var mainPartyInitialDeposit uint64 = 812
+	var mainPartyInitialDeposit uint64 = 800
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
 	mainPartyMarginAccID := fmt.Sprintf("%smainParty%s3", tm.market.GetID(), tm.asset)
@@ -643,13 +649,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
 	require.NoError(t, err)
 
-	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
-	require.NoError(t, err)
-	require.NotNil(t, genAcc)
-	genAccBalanceBeforeMarketMove := genAcc.Balance
 	var zero uint64 = 0
-	require.Greater(t, genAccBalanceBeforeMarketMove, zero)
-
 	marginAcc, err := tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
 	require.NoError(t, err)
 	require.NotNil(t, marginAcc)
@@ -660,155 +660,34 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromMarginAccount_NoCloseou
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	bondAccBalanceBeforeMarketMove := bondAcc.Balance
-	require.Equal(t, lp.CommitmentAmount, bondAccBalanceBeforeMarketMove)
+	require.Greater(t, bondAccBalanceBeforeMarketMove, zero)
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
-	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
+
+	// Add sell order so LP can be closed out
+	orderSellAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_SELL, auxParty1, 10, orderSell1.Price+1)
+	confirmationSellAux1, err := tm.market.SubmitOrder(ctx, orderSellAux1)
+	require.NotNil(t, confirmationSellAux1)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(confirmationSellAux1.Trades))
 
 	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(confirmationBuyAux1.Trades))
-
-	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
-	require.NoError(t, err)
-	require.NotNil(t, genAcc)
-	genAccBalanceAfterMarketMove := genAcc.Balance
-	require.Equal(t, zero, genAccBalanceAfterMarketMove)
-
-	marginAcc, err = tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
-	require.NoError(t, err)
-	require.NotNil(t, marginAcc)
-	marginAccBalanceAfterMarketMove := marginAcc.Balance
-	require.Greater(t, marginAccBalanceAfterMarketMove, zero)
-
-	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
-	require.NoError(t, err)
-	require.NotNil(t, bondAcc)
-	bondAccBalanceAfterMarketMove := bondAcc.Balance
-	require.Less(t, bondAccBalanceAfterMarketMove, bondAccBalanceBeforeMarketMove)
-	require.Equal(t, bondAccBalanceAfterMarketMove, zero)
-
-	insurancePool, err = tm.collateralEngine.GetAccountByID(insurancePoolAccID)
-	insurancePoolBalanceAfterMarketMove := insurancePool.Balance
-
-	require.NoError(t, err)
-	require.NotNil(t, insurancePool)
-	require.Greater(t, insurancePoolBalanceAfterMarketMove, insurancePoolBalanceBeforeMarketMove)
-	require.Equal(t, zero, bondAccBalanceAfterMarketMove)
-
-	mkdData := tm.market.GetMarketData()
-	suppliedStake, err := strconv.ParseUint(mkdData.GetSuppliedStake(), 10, 64)
-	require.NoError(t, err)
-	require.Greater(t, suppliedStake, zero)
-	require.Equal(t, lp.CommitmentAmount, suppliedStake)
-}
-
-func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t *testing.T) {
-	mainParty := "mainParty"
-	auxParty1 := "auxParty1"
-	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	initialMarkPrice := uint64(99)
-	ctx := context.Background()
-	openingAuction := &types.AuctionDuration{
-		Duration: 1,
-	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
-
-	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
-
-	asset := tm.asset
-
-	bondPenaltyParameter := 0.1
-	tm.market.BondPenaltyFactorUpdate(ctx, bondPenaltyParameter)
-
-	var mainPartyInitialDeposit uint64 = 811
-	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
-	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
-	mainPartyMarginAccID := fmt.Sprintf("%smainParty%s3", tm.market.GetID(), tm.asset)
-	addAccount(tm, auxParty1)
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
-	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
-	require.NotNil(t, confirmationSell1)
-	require.NoError(t, err)
-
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
-	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
-	require.NotNil(t, confirmationSell2)
-	require.NoError(t, err)
-
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
-
-	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
-	assert.NotNil(t, confirmationBuy)
-	assert.NoError(t, err)
-
-	require.Equal(t, 0, len(confirmationBuy.Trades))
-
-	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 200,
-		Fee:              "0.05",
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
-		},
-	}
-
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
-	require.NoError(t, err)
 
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	genAccBalanceBeforeMarketMove := genAcc.Balance
-	var zero uint64 = 0
-	require.Greater(t, genAccBalanceBeforeMarketMove, zero)
+	require.Equal(t, zero, genAcc.Balance)
 
-	marginAcc, err := tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
+	marginAccount, err := tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
 	require.NoError(t, err)
-	require.NotNil(t, marginAcc)
-	marginAccBalanceBeforeMarketMove := marginAcc.Balance
-	require.Greater(t, marginAccBalanceBeforeMarketMove, zero)
-
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
-	require.NoError(t, err)
-	require.NotNil(t, bondAcc)
-	bondAccBalanceBeforeMarketMove := bondAcc.Balance
-	require.Equal(t, lp.CommitmentAmount, bondAccBalanceBeforeMarketMove)
-
-	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
-	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
-	require.NoError(t, err)
-	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance
-	require.Equal(t, zero, insurancePoolBalanceBeforeMarketMove)
-
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price)
-	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
-	require.NotNil(t, confirmationBuyAux1)
-	require.NoError(t, err)
-	require.Equal(t, 2, len(confirmationBuyAux1.Trades))
-
-	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
-	require.NoError(t, err)
-	require.NotNil(t, genAcc)
-	genAccBalanceAfterMarketMove := genAcc.Balance
-	require.Equal(t, zero, genAccBalanceAfterMarketMove)
-
-	marginAcc, err = tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
-	require.NoError(t, err)
-	require.NotNil(t, marginAcc)
-	marginAccBalanceAfterMarketMove := marginAcc.Balance
-	require.Greater(t, marginAccBalanceAfterMarketMove, zero)
+	require.Greater(t, marginAccount.Balance, zero)
 
 	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
 	require.NoError(t, err)
@@ -817,6 +696,8 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t 
 	require.Less(t, bondAccBalanceAfterMarketMove, bondAccBalanceBeforeMarketMove)
 	require.Equal(t, bondAccBalanceAfterMarketMove, zero)
 
+	require.Equal(t, 1, tm.market.GetLPSCount())
+
 	insurancePool, err = tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	insurancePoolBalanceAfterMarketMove := insurancePool.Balance
 
@@ -824,11 +705,6 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccountCloseout(t 
 	require.NotNil(t, insurancePool)
 	require.Greater(t, insurancePoolBalanceAfterMarketMove, insurancePoolBalanceBeforeMarketMove)
 	require.Equal(t, zero, bondAccBalanceAfterMarketMove)
-
-	mkdData := tm.market.GetMarketData()
-	suppliedStake, err := strconv.ParseUint(mkdData.GetSuppliedStake(), 10, 64)
-	require.NoError(t, err)
-	require.Equal(t, suppliedStake, zero)
 }
 
 func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t *testing.T) {
