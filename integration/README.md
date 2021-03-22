@@ -83,6 +83,12 @@ Feature: A feature that reproduces some system test
 
 ## Convention
 
+### Glossary
+
+We should move toward building our ubiquitous language and use domain language and avoid the use of synonyms.
+
+If we talk about `submitting an order`, we avoid using `placing an order.`
+
 ### Structuring a feature test
 
 #### File
@@ -206,13 +212,13 @@ Construction with passive voice is accepted, if it makes more sense than the act
 ###### Good
 
 ```gherkin
-When Traders submit the following orders
+When traders submit the following orders
 ```
 
 We know who does what.
 
 ```gherkin
-When An oracle data is submitted
+When an oracle data is submitted
 ```
 
 The passive voice sounds better `The system receives the following oracle data`.
@@ -233,13 +239,13 @@ Prefer `Then` for positive outcomes and `But` for negative outcomes.
 ###### Good
 
 ```gherkin
-Then Trader trader-1 should have a balance of 100 ETH
+Then trader trader-1 should have a balance of 100 ETH
 ```
 
 We know what we "positively" expect from whom.
 
 ```gherkin
-But The following orders should be rejected
+But the following orders should be rejected
 ```
 
 We know what we "negatively" expect from what.
@@ -247,13 +253,13 @@ We know what we "negatively" expect from what.
 ###### Bad
 
 ```gherkin
-Then Trader trader-1 have a balance of 100 ETH
+Then trader trader-1 have a balance of 100 ETH
 ```
 
 We miss the `should` that emphasize the expectation.
 
 ```gherkin
-But The orders should fails
+But the orders should fails
 ```
 
 This is too vague.
@@ -270,7 +276,7 @@ of `Then`:
 Then the trader places an order
 Then the trader should have balance ...
 Then an oracle data is sent
-Then the settlement price is updated
+Then the settlement price should be updated
 ```
 
 We are no longer be able to sort out the commands from the assertions at first glance.
@@ -280,8 +286,58 @@ We are no longer be able to sort out the commands from the assertions at first g
 `And` can be used by any of the previous keywords and should follow the sentence construction of the keyword it is
 backing.
 
-### Glossary
+### Step
 
-We should move toward building our ubiquitous language and use domain language and avoid the use of synonyms.
+#### Text
 
-If we talk about `submitting an order`, we avoid using `placing an order.`
+* The first word should start we a lower-case letter.
+* Words (and table columns) should be lower-case with space separation, like plain human style. No upper-case location
+  to be remembered.
+* Acronyms should be lower-case, like the rest, without trailing dot. We want to avoid interrogation such as : `ID` or `Id` or `Id.` ?
+
+###### Good
+
+```gherkin
+When the market id should contain the asset "..."
+```
+
+All lower-case.
+
+###### Bad
+
+```gherkin
+Then The Market Id should appears in U.R.L with QuoteName
+```
+
+### Single-line step
+
+#### Error
+
+We should verify the error message on every expected failure using `because` followed by the error message.
+
+###### Good
+
+```gherkin
+But the order "1234" should be rejected because "....."
+```
+
+We ensure the error is the expected one, and the context is clear, no need for additional comments.
+
+###### Bad
+
+```gherkin
+But the order "1234" should be rejected
+```
+
+It may have not failed for the reason we expected. And, we may be tempted to add a comment to explain the reason of the
+failure.
+
+### Table step
+
+#### Error
+
+The column to verify the error should always be named `error`.
+
+#### Date
+
+Prefer `expiration date` over `expires at` or `started at`.
