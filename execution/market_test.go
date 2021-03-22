@@ -5547,7 +5547,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, supplied >= target)
 
-	//Trading with best_ask so it dissappears should start an auction
+	//Trading with best_ask so it disappears should start an auction
 	buyOrder6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder6", types.Side_SIDE_BUY, trader1, 1, sellOrder1.Price)
 	buyConf6, err := tm.market.SubmitOrder(ctx, buyOrder6)
 	require.NoError(t, err)
@@ -5566,7 +5566,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.True(t, supplied < target)
 	require.True(t, supplied > c1*target)
 
-	//Increasing total stake so that the new target stake is accomodated AND adding a sell so best_ask exists should stop the auction
+	//Increasing total stake so that the new target stake is accommodated AND adding a sell so best_ask exists should stop the auction
 	lp1sub.CommitmentAmount = lp1Commitment + 10000
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(ctx, lp1sub, lp1, "id-lp-2"),
