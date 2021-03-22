@@ -23,7 +23,7 @@ func TheFollowingAmendmentsShouldBeRejected(
 		case <-time.After(2 * time.Second):
 			return fmt.Errorf("couldn't find any rejected order amendment")
 		case e := <-errHandler.ErrCh():
-			switch e.(type) {
+			switch et := e.(type) {
 			case OrderAmendmentError:
 				err := asOrderAmendmentError(e)
 				if !isExpectedRejectedOrderAmendment(err, party, reference, errMessage) {
@@ -31,7 +31,7 @@ func TheFollowingAmendmentsShouldBeRejected(
 				}
 				continue
 			default:
-				continue
+				return fmt.Errorf("expecting error of type OrderAmendmentError but got %v", et)
 			}
 		}
 	}
