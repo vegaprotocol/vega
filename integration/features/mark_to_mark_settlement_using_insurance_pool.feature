@@ -18,7 +18,7 @@ Feature: Test mark to market settlement with insurance pool
       | aux     | ETH   | 10000  |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | id        | side | volume | price | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 6001  | 0                | TYPE_LIMIT  | TIF_GTC |
@@ -26,7 +26,7 @@ Feature: Test mark to market settlement with insurance pool
     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -36,14 +36,14 @@ Feature: Test mark to market settlement with insurance pool
       | trader2 | ETH   | ETH/DEC19 |   1332 |    8668 |
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader2 | ETH/DEC19 | buy  | 1      | 6000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader2 | ETH   | ETH/DEC19 |   1464 |    8536 |
 
-    Then traders place following orders:
+    When traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC19 | sell | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then traders have the following account balances:

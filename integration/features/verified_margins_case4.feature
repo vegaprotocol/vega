@@ -22,14 +22,14 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | aux     | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT  | TIF_GTC | 
        
     # setting mark price
-    And traders place following orders:
+    And traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 
     # setting order book
-    And traders place following orders:
+    And traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 10     | 15000000 | 0      | TYPE_LIMIT | TIF_GTC | sell1     |
       | sellSideMM | ETH/DEC19 | sell | 14     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC | sell2     |
@@ -44,7 +44,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
     # no margin account created for trader1, just general account
     And "trader1" has only one account per asset
     # placing test order
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 13     | 9000000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "trader1" general account for asset "ETH" balance is "718400040"
@@ -75,7 +75,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | sellSideMM | sell1     |
       | sellSideMM | sell2     |
       | sellSideMM | sell3     |
-    And traders place following orders:
+    And traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | buySideMM  | ETH/DEC19 | buy  | 45     | 7000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 7500000  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -95,7 +95,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 80
-    Then traders place following orders:
+    When traders place the following orders:
       | trader     | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 8000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -116,7 +116,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | trader1 | -13    | 15800000       | 0            |
 
     # FULL CLOSEOUT BY TRADER
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 13     | 9000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And traders have the following profit and loss:

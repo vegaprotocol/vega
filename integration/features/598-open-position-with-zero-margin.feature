@@ -26,14 +26,14 @@ Feature: Regression test for issue 598
       | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | sell | 10     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | edd    | ETH/DEC19 | sell | 12     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -50,7 +50,7 @@ Feature: Regression test for issue 598
       | edd    | BTC   | ETH/DEC19 | 571    | 429     |
       | barney | BTC   | ETH/DEC19 | 535    | 465     |
 # next instruction will trade with edd
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
@@ -58,7 +58,7 @@ Feature: Regression test for issue 598
       | edd    | BTC   | ETH/DEC19 | 571    | 429     |
       | chris  | BTC   | ETH/DEC19 | 109    | 891     |
 # next instruction will trade with barney
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | sell | 10     | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:

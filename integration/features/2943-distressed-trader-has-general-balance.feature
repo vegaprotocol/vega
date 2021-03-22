@@ -26,7 +26,7 @@ Feature: Distressed traders should not have general balance left
       | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
       | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -40,11 +40,11 @@ Feature: Distressed traders should not have general balance left
     # T0 + 1min - this causes the price for comparison of the bounds to be 567
     Then time is updated to "2020-10-16T00:01:00Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif      | reference |
       | trader4 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC  | ref-1     |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader5 | ETH/DEC20 | buy  | 10     | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
       | trader3 | ETH/DEC20 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -73,7 +73,7 @@ Feature: Distressed traders should not have general balance left
       | trader3 | ETH   | ETH/DEC20 | 13186  | 814     |
 
     ## Now let's increase the mark price so trader3 gets distressed
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader5 | ETH/DEC20 | buy  | 20     | 165   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And the mark price for the market "ETH/DEC20" is "120"
@@ -84,7 +84,7 @@ Feature: Distressed traders should not have general balance left
       # expected balances to be margin(15165) general(0), instead saw margin(13186), general(814), (trader: trader3)
 
     ## Now let's increase the mark price so trader3 gets distressed
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader5 | ETH/DEC20 | buy  | 30     | 165   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And the mark price for the market "ETH/DEC20" is "130"

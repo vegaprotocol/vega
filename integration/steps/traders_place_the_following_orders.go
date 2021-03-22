@@ -11,7 +11,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TradersPlaceOrders(
+func TradersPlaceTheFollowingOrders(
 	exec *execution.Engine,
 	table *gherkin.DataTable,
 ) error {

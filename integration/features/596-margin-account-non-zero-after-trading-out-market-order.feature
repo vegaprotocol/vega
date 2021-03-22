@@ -27,7 +27,7 @@ Feature: Regression test for issue 596
       | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
@@ -36,7 +36,7 @@ Feature: Regression test for issue 596
 
     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -52,7 +52,7 @@ Feature: Regression test for issue 596
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 9152    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
@@ -62,7 +62,7 @@ Feature: Regression test for issue 596
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And Cumulated balance for all accounts is worth "2041000"
 # then chris is trading out
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
@@ -72,15 +72,15 @@ Feature: Regression test for issue 596
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
     And Cumulated balance for all accounts is worth "2041000"
 # placing new orders to trade out
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | buy  | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
 # placing order which get cancelled
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference            |
       | chris  | ETH/DEC19 | buy  | 60     | 1     | 0                | TYPE_LIMIT | TIF_GTC | chris-id-1-to-cancel |
 # other traders trade together (tamlyn+barney)
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tamlyn | ETH/DEC19 | sell | 12     | 95    | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 # cancel order
@@ -88,7 +88,7 @@ Feature: Regression test for issue 596
       | trader | reference            |
       | chris  | chris-id-1-to-cancel |
 # then chris is trading out
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | sell | 5      | 0     | 2                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
@@ -114,7 +114,7 @@ Feature: Regression test for issue 596
       | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
@@ -122,7 +122,7 @@ Feature: Regression test for issue 596
     And the mark price for the market "ETH/DEC19" is "100"
     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -138,7 +138,7 @@ Feature: Regression test for issue 596
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 9152    |
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | buy  | 50     | 0     | 3                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
@@ -148,7 +148,7 @@ Feature: Regression test for issue 596
       | barney | BTC   | ETH/DEC19 | 594    | 9406    |
     And Cumulated balance for all accounts is worth "2041000"
 # then chris is trading out
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | sell | 50     | 0     | 4                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
@@ -158,15 +158,15 @@ Feature: Regression test for issue 596
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
     And Cumulated balance for all accounts is worth "2041000"
 # placing new orders to trade out
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | buy  | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
 # placing order which get cancelled
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference            |
       | chris  | ETH/DEC19 | buy  | 60     | 1     | 0                | TYPE_LIMIT | TIF_GTC | chris-id-1-to-cancel |
 # other traders trade together (tamlyn+barney)
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tamlyn | ETH/DEC19 | sell | 3      | 95    | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 # cancel order
@@ -174,7 +174,7 @@ Feature: Regression test for issue 596
       | trader | reference            |
       | chris  | chris-id-1-to-cancel |
 # then chris is trading out
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | chris  | ETH/DEC19 | sell | 5      | 0     | 1                | TYPE_MARKET | TIF_IOC | ref-1     |
     Then traders have the following account balances:
