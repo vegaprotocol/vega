@@ -43,6 +43,6 @@ Feature: Test mark to market settlement
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 | 0      | 8084    |
-      | trader2 | ETH   | ETH/DEC19 | 0      | 2784    |
-      | trader3 | ETH   | ETH/DEC19 | 0      | 4868    |
+      | trader2 | ETH   | ETH/DEC19 | 0      | 1826    |
+      | trader3 | ETH   | ETH/DEC19 | 0      | 5826    |
     And Cumulated balance for all accounts is worth "15736"
