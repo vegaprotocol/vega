@@ -814,7 +814,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 		updatedOrders = append(updatedOrders, order)
 	}
 
-	if err := m.liquidityUpdate(ctx, updatedOrders, false); err != nil {
+	if err := m.liquidityUpdate(ctx, updatedOrders); err != nil {
 		m.log.Debug("error update liquidity engine",
 			logging.MarketID(m.GetID()),
 			logging.Error(err))
@@ -893,7 +893,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// update the liquidity engine with the state of every orders
 	// which got updated during auction
-	if err := m.liquidityUpdate(ctx, append(updatedOrders, repricedOrders...), true); err != nil {
+	if err := m.liquidityUpdate(ctx, append(updatedOrders, repricedOrders...)); err != nil {
 		m.log.Debug("could not update liquidity", logging.Error(err))
 	}
 
@@ -1113,7 +1113,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order), false); err != nil {
+	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
 		m.log.Debug("error when calling liquidity update",
 			logging.MarketID(m.GetID()),
 			logging.Error(err))
@@ -1546,7 +1546,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		// just to make sure that any changes on the lp orders
 		// are being reflected / and sizes are updated...
 		if len(orderUpdates) > 0 {
-			err := m.liquidityUpdate(ctx, orderUpdates, false)
+			err := m.liquidityUpdate(ctx, orderUpdates)
 			if err != nil {
 				m.log.Debug("unable to run liquidity update after resolving closed out traders",
 					logging.MarketID(m.GetID()),
@@ -2215,7 +2215,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		return nil, err
 	}
 
-	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order), false); err != nil {
+	if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
 		return nil, err
 	}
 
@@ -2789,7 +2789,7 @@ func (m *Market) RemoveExpiredOrders(
 		for i := range expired {
 			expiredPtrs[i] = &expired[i]
 		}
-		if err := m.liquidityUpdate(ctx, expiredPtrs, false); err != nil {
+		if err := m.liquidityUpdate(ctx, expiredPtrs); err != nil {
 			m.log.Debug("error update liquidity engine",
 				logging.MarketID(m.GetID()),
 				logging.Error(err))
@@ -2889,7 +2889,7 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 		if changes != 0 {
 			var updatedOrders []*types.Order
 			updatedOrders, repricedCount = m.repriceAllPeggedOrders(ctx, changes)
-			if err := m.liquidityUpdate(ctx, updatedOrders, false); err != nil {
+			if err := m.liquidityUpdate(ctx, updatedOrders); err != nil {
 				m.log.Debug("error update liquidity engine",
 					logging.MarketID(m.GetID()),
 					logging.Error(err))
@@ -3426,7 +3426,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	return nil
 }
 
-func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order, leavingAuction bool) error {
+func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "liquidityUpdate")
 	midPriceBid, midPriceAsk, err := m.getStaticMidPrices()
 	if err != nil {
@@ -3441,7 +3441,7 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order, lea
 	}
 
 	timer.EngineTimeCounterAdd()
-	return m.updateAndCreateOrders(ctx, newOrders, amendments, leavingAuction)
+	return m.updateAndCreateOrders(ctx, newOrders, amendments)
 }
 
 // this is a function to be called when orders already exists
@@ -3454,7 +3454,6 @@ func (m *Market) updateAndCreateOrders(
 	ctx context.Context,
 	newOrders []*types.Order,
 	amendments []*types.OrderAmendment,
-	leavingAuction bool,
 ) error {
 
 	for _, order := range amendments {
@@ -3492,33 +3491,25 @@ func (m *Market) updateAndCreateOrders(
 			party := order.PartyId
 			faultyLPs[party] = struct{}{}
 
-			if leavingAuction {
-				if err := m.cancelLiquidityProvision(ctx, party, false, false); err != nil {
-					m.log.Debug("error cancelling liquidity provision commitmment",
-						logging.PartyID(party),
-						logging.MarketID(m.GetID()),
-						logging.Error(err))
-				}
-			} else {
-				mktID := m.GetID()
-				mpos, ok := m.position.GetPositionByPartyID(party)
-				if !ok {
-					m.log.Debug("error getting party position",
-						logging.PartyID(party),
-						logging.MarketID(mktID))
-					continue
-				}
-				asset, _ := m.mkt.GetAsset()
-				margin, perr := m.collateral.GetPartyMargin(mpos, asset, mktID)
-				if perr != nil {
-					m.log.Debug("error getting party margin",
-						logging.PartyID(party),
-						logging.MarketID(mktID),
-						logging.Error(perr))
-					continue
-				}
-				m.resolveClosedOutTraders(ctx, []events.Margin{margin}, order)
+			mktID := m.GetID()
+			mpos, ok := m.position.GetPositionByPartyID(party)
+			if !ok {
+				m.log.Debug("error getting party position",
+					logging.PartyID(party),
+					logging.MarketID(mktID))
+				continue
 			}
+			asset, _ := m.mkt.GetAsset()
+			margin, perr := m.collateral.GetPartyMargin(mpos, asset, mktID)
+			if perr != nil {
+				m.log.Debug("error getting party margin",
+					logging.PartyID(party),
+					logging.MarketID(mktID),
+					logging.Error(perr))
+				continue
+			}
+			m.resolveClosedOutTraders(ctx, []events.Margin{margin}, order)
+
 		}
 	}
 	return nil
