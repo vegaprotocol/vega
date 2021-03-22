@@ -2109,7 +2109,9 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 	if foundOnBook {
 		if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
-			return nil, err
+			// FIXME(): we do not return an error here as the issue is linked
+			// to liquidyt provision, most likely some orders could not be repriced
+			m.log.Debug("liquidity update error", logging.Error(err))
 		}
 	}
 
