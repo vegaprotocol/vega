@@ -14,9 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type productTest struct {
-	prod *products.Product
-}
+const SettlementAssetStr = "Ethereum/Ether"
 
 func getValidInstrumentProto() *types.Instrument {
 	return &types.Instrument{
@@ -33,7 +31,7 @@ func getValidInstrumentProto() *types.Instrument {
 			Future: &types.Future{
 				QuoteName:       "USD",
 				Maturity:        "2019-12-31T00:00:00Z",
-				SettlementAsset: "Ethereum/Ether",
+				SettlementAsset: SettlementAssetStr,
 				OracleSpec: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*oraclesv1.Filter{
@@ -66,20 +64,38 @@ func TestFuture(t *testing.T) {
 	prodSpec := proto.GetProduct()
 	require.NotNil(t, prodSpec)
 	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe)
+
+	// Cast back into a future so we can call future specific functions
+	f, ok := prod.(*products.Future)
+	require.True(t, ok)
 	require.NotNil(t, prod)
 	require.NoError(t, err)
 
 	// Check the assert string is correct
-	assert.Equal(t, "Ethereum/Ether", prod.GetAsset())
+	assert.Equal(t, SettlementAssetStr, prod.GetAsset())
 
 	// Future values are the same as the mark price
 	value, err := prod.Value(1000)
 	assert.NoError(t, err)
-	assert.Equal(t, 1000, value)
+	assert.EqualValues(t, 1000, value)
 
-	//	f.SetSettlementPrice(ctx, 1000)
+	var params = []struct {
+		entryPrice      uint64
+		settlementPrice uint64
+		position        int64
+		result          int64
+	}{
+		{100, 200, 10, 1000},  // (200-100)*10 == 1000
+		{200, 100, 10, 1000},  // (100-200)*10 == 1000
+		{100, 200, -10, 1000}, // (200-100)*-10 == 1000
+		{200, 100, -10, 1000}, // (100-200)*-10 == 1000
+	}
 
-	//	fa, err := prod.Settle(100, +10)
-	//	assert.NoError(t, err)
-	//	assert.Equal(t, 100, fa.Amount)
+	for _, param := range params {
+		// Use debug function to update the settlement price as if from a Oracle
+		f.SetSettlementPrice(ctx, "prices.ETH.value", param.settlementPrice)
+		fa, err := prod.Settle(param.entryPrice, param.position)
+		assert.NoError(t, err)
+		assert.EqualValues(t, param.result, fa.Amount)
+	}
 }
