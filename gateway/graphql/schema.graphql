@@ -2755,8 +2755,14 @@ enum LiquidityProvisionStatus {
   Cancelled
   "A liquidity provision was invalid and got rejected"
   Rejected
-  "The liquidity provision is valid and accepted by network, but oreders aren't deployed"
+  "The liquidity provision is valid and accepted by network, but orders aren't deployed"
   Undeployed
+  """
+  The liquidity provision is valid and accepted by network, but orders aren't deployed.
+  but have never been deployed. I when it's possible to deploy them for the first time
+  margin check fails, then they will be cancelled without any penalties.
+  """
+  Pending
 }
 
 type LiquidityOrderReference {

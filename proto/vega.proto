@@ -1206,8 +1206,12 @@ message LiquidityProvision {
     STATUS_CANCELLED = 3;
     // The liquidity provision was invalid and got rejected
     STATUS_REJECTED = 4;
-    // The liquidity provision is valid and accepted by network, but oreders aren't deployed
+    // The liquidity provision is valid and accepted by network, but orders aren't deployed
     STATUS_UNDEPLOYED = 5;
+    // The liquidity provision is valid and accepted by network
+    // but have never been deployed. I when it's possible to deploy them for the first time
+    // margin check fails, then they will be cancelled without any penalties.
+    STATUS_PENDING = 6;
   }
 
   // Unique identifier
