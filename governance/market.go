@@ -148,7 +148,6 @@ func createMarket(
 	// get factors for the market
 	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
 	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
-	liquiFee, _ := netp.Get(netparams.MarketFeeFactorsLiquidityFee)
 	// get the margin scaling factors
 	scalingFactors := types.ScalingFactors{}
 	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
@@ -171,7 +170,6 @@ func createMarket(
 			Factors: &types.FeeFactors{
 				MakerFee:          makerFee,
 				InfrastructureFee: infraFee,
-				LiquidityFee:      liquiFee,
 			},
 		},
 		OpeningAuction: &types.AuctionDuration{
