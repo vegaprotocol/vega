@@ -3221,6 +3221,8 @@ func (m *Market) amendLiquidityProvision(
 		m.equityShares.SetPartyStake(party, float64(0))
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares()
+		// do not need to be pending
+		m.liquidity.RemovePending(party)
 	}
 
 	return err
@@ -3423,6 +3425,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
+	// all went well, we can remove the pending state from the
+	// liquidity engine
+	m.liquidity.RemovePending(party)
+
 	return nil
 }
 
@@ -3473,10 +3479,23 @@ func (m *Market) updateAndCreateOrders(
 	// this is set of all liquidity provider which
 	// at after trying to cancel and replace their orders
 	// cannot fullfil their margins anymore.
-	faultyLPs := map[string]struct{}{}
+	faultyLPs := map[string]bool{}
+	faultyLPOrders := map[string]*types.Order{}
+	initialMargins := map[string]uint64{}
 
+	mktID := m.GetID()
+	asset, _ := m.mkt.GetAsset()
 	for _, order := range newOrders {
-		if _, ok := faultyLPs[order.PartyId]; ok {
+		// before we submit orders, we check if the party was pending
+		// and save the amount of the margin balance.
+		// so we can roll back to this state later on
+		if m.liquidity.IsPending(order.PartyId) {
+			marginAcc, _ := m.collateral.GetPartyMarginAccount(
+				mktID, order.PartyId, asset)
+			initialMargins[order.PartyId] = marginAcc.Balance
+		}
+
+		if faulty, ok := faultyLPs[order.PartyId]; ok && faulty {
 			// we already tried to submit an lp order which failed
 			// for this party. we'll cancel them just in a bit
 			// be patient...
@@ -3488,30 +3507,137 @@ func (m *Market) updateAndCreateOrders(
 				logging.PartyID(order.PartyId),
 				logging.MarketID(order.MarketId),
 				logging.Error(err))
-			party := order.PartyId
-			faultyLPs[party] = struct{}{}
-
-			mktID := m.GetID()
-			mpos, ok := m.position.GetPositionByPartyID(party)
-			if !ok {
-				m.log.Debug("error getting party position",
-					logging.PartyID(party),
-					logging.MarketID(mktID))
-				continue
-			}
-			asset, _ := m.mkt.GetAsset()
-			margin, perr := m.collateral.GetPartyMargin(mpos, asset, mktID)
-			if perr != nil {
-				m.log.Debug("error getting party margin",
-					logging.PartyID(party),
-					logging.MarketID(mktID),
-					logging.Error(perr))
-				continue
-			}
-			m.resolveClosedOutTraders(ctx, []events.Margin{margin}, order)
-
+			// set the party as faulty
+			faultyLPs[order.PartyId] = true
+			faultyLPOrders[order.PartyId] = order
+			continue
 		}
+		faultyLPs[order.PartyId] = false
 	}
+
+	// now get all non faulty parties, and get them not pending
+	// if they were
+	parties := make([]struct {
+		Party  string
+		Faulty bool
+	}, 0, len(faultyLPs))
+	for k, v := range faultyLPs {
+		parties = append(parties, struct {
+			Party  string
+			Faulty bool
+		}{k, v})
+	}
+
+	// now just sort them to deterministically send them
+	sort.Slice(parties, func(i, j int) bool {
+		return parties[i].Party < parties[j].Party
+	})
+
+	for _, v := range parties {
+		if !v.Faulty {
+			m.liquidity.RemovePending(v.Party)
+			continue
+		}
+
+		// now if the party was pending, which means the
+		// order was never submitted, which also means that the
+		// margin were never calculated on submission
+		if m.liquidity.IsPending(v.Party) {
+			_ = m.cancelPendingLiquidityProvision(
+				ctx, v.Party, initialMargins[v.Party])
+			continue
+		}
+
+		// now the party had not enough enough funds to pay the margin
+		_ = m.cancelDistressedLiquidityProvision(
+			ctx, v.Party, faultyLPOrders[v.Party])
+	}
+
+	return nil
+}
+
+func (m *Market) cancelPendingLiquidityProvision(
+	ctx context.Context,
+	party string,
+	initialMargin uint64,
+) error {
+	// we will just cancel the party,
+	// no bond slashing applied
+	if err := m.cancelLiquidityProvision(ctx, party, false, false); err != nil {
+		m.log.Debug("error cancelling liquidity provision commitment",
+			logging.PartyID(party),
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return err
+	}
+
+	asset, _ := m.mkt.GetAsset()
+	// get the new balance
+	marginAcc, _ := m.collateral.GetPartyMarginAccount(
+		m.GetID(), party, asset)
+
+	amount := marginAcc.Balance - initialMargin
+	// now create the rollback to transfer
+	transfer := types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Amount: amount,
+			Asset:  asset,
+		},
+		Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+		MinAmount: amount,
+	}
+
+	// then trigger the rollback
+	resp, err := m.collateral.RollbackMarginUpdateOnOrder(
+		ctx, m.GetID(), asset, &transfer)
+	if err != nil {
+		m.log.Debug("error rolling back party margin",
+			logging.PartyID(party),
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return err
+	}
+
+	// then send the event for the transfer request
+	m.broker.Send(events.NewTransferResponse(
+		ctx, []*types.TransferResponse{resp}))
+	return nil
+}
+
+func (m *Market) cancelDistressedLiquidityProvision(
+	ctx context.Context,
+	party string,
+	order *types.Order,
+) error {
+	mktID := m.GetID()
+	asset, _ := m.mkt.GetAsset()
+
+	mpos, ok := m.position.GetPositionByPartyID(party)
+	if !ok {
+		m.log.Debug("error getting party position",
+			logging.PartyID(party),
+			logging.MarketID(mktID))
+		return nil
+	}
+
+	margin, perr := m.collateral.GetPartyMargin(mpos, asset, mktID)
+	if perr != nil {
+		m.log.Debug("error getting party margin",
+			logging.PartyID(party),
+			logging.MarketID(mktID),
+			logging.Error(perr))
+		return perr
+	}
+	err := m.resolveClosedOutTraders(ctx, []events.Margin{margin}, order)
+	if err != nil {
+		m.log.Error("could not resolve out traders",
+			logging.MarketID(mktID),
+			logging.PartyID(party),
+			logging.Error(err))
+		return err
+	}
+
 	return nil
 }
 
@@ -3551,34 +3677,34 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 		submittedIDs = append(submittedIDs, order.Id)
 	}
 
-	// amendment rollback
-	amendmentsRollBack := []*types.OrderAmendment{}
-	// submitted order rollback
-	defer func() {
-		if err == nil || len(amendmentsRollBack) <= 0 {
-			return
-		}
-		for _, v := range amendmentsRollBack {
-			_, newerr := m.amendOrder(ctx, v)
-			if newerr != nil {
-				m.log.Error("unable to rollback order via cancel",
-					logging.Error(newerr),
-					logging.String("party", v.PartyId),
-					logging.String("order-id", v.OrderId))
-				err = fmt.Errorf("%v, %w", err, newerr)
-			}
-		}
-	}()
+	// // amendment rollback
+	// amendmentsRollBack := []*types.OrderAmendment{}
+	// // submitted order rollback
+	// defer func() {
+	// 	if err == nil || len(amendmentsRollBack) <= 0 {
+	// 		return
+	// 	}
+	// 	for _, v := range amendmentsRollBack {
+	// 		_, newerr := m.amendOrder(ctx, v)
+	// 		if newerr != nil {
+	// 			m.log.Error("unable to rollback order via cancel",
+	// 				logging.Error(newerr),
+	// 				logging.String("party", v.PartyId),
+	// 				logging.String("order-id", v.OrderId))
+	// 			err = fmt.Errorf("%v, %w", err, newerr)
+	// 		}
+	// 	}
+	// }()
 
-	for _, order := range amendments {
-		if _, err := m.amendOrder(ctx, order); err != nil {
-			return err
-		}
+	// for _, order := range amendments {
+	// 	if _, err := m.amendOrder(ctx, order); err != nil {
+	// 		return err
+	// 	}
 
-		arb := *order
-		arb.SizeDelta = -arb.SizeDelta
-		amendmentsRollBack = append(amendmentsRollBack, &arb)
-	}
+	// 	arb := *order
+	// 	arb.SizeDelta = -arb.SizeDelta
+	// 	amendmentsRollBack = append(amendmentsRollBack, &arb)
+	// }
 
 	return nil
 }

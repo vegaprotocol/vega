@@ -270,11 +270,17 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForMaintenanceMargin(t *te
 	require.NotNil(t, insurancePool)
 	require.Equal(t, zero, insurancePool.Balance)
 
-	//TODO: WG (When is rollback triggered?)
+	//TODO: JEREMY: funds are staying in margin ACCOUNT, let's
+	// fix that latert.
+	marginAcc, err := tm.collateralEngine.GetPartyMarginAccount(tm.mktCfg.Id, mainParty, asset)
+	require.NoError(t, err)
+	require.NotNil(t, marginAcc)
+
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	require.Equal(t, genAcc.Balance, mainPartyInitialDeposit)
+	require.Equal(t, genAcc.Balance, mainPartyInitialDeposit-marginAcc.Balance)
+
 }
 
 func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
