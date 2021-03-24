@@ -3573,38 +3573,7 @@ func (m *Market) cancelPendingLiquidityProvision(
 		return err
 	}
 
-	asset, _ := m.mkt.GetAsset()
-	// get the new balance
-	marginAcc, _ := m.collateral.GetPartyMarginAccount(
-		m.GetID(), party, asset)
-
-	amount := marginAcc.Balance - initialMargin
-	// now create the rollback to transfer
-	transfer := types.Transfer{
-		Owner: party,
-		Amount: &types.FinancialAmount{
-			Amount: amount,
-			Asset:  asset,
-		},
-		Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
-		MinAmount: amount,
-	}
-
-	// then trigger the rollback
-	resp, err := m.collateral.RollbackMarginUpdateOnOrder(
-		ctx, m.GetID(), asset, &transfer)
-	if err != nil {
-		m.log.Debug("error rolling back party margin",
-			logging.PartyID(party),
-			logging.MarketID(m.GetID()),
-			logging.Error(err))
-		return err
-	}
-
-	// then send the event for the transfer request
-	m.broker.Send(events.NewTransferResponse(
-		ctx, []*types.TransferResponse{resp}))
-	return nil
+	return m.rollBackMargin(ctx, party, initialMargin)
 }
 
 func (m *Market) cancelDistressedLiquidityProvision(
@@ -3644,6 +3613,17 @@ func (m *Market) cancelDistressedLiquidityProvision(
 }
 
 func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {
+	if len(newOrders) <= 0 {
+		return nil
+	}
+
+	asset, _ := m.mkt.GetAsset()
+	party := newOrders[0].PartyId
+	// get the new balance
+	marginAcc, _ := m.collateral.GetPartyMarginAccount(
+		m.GetID(), party, asset)
+	initialMargin := marginAcc.Balance
+
 	submittedIDs := []string{}
 	// submitted order rollback
 	defer func() {
@@ -3660,6 +3640,10 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 					logging.String("order-id", v))
 				err = fmt.Errorf("%v, %w", err, newerr)
 			}
+		}
+		// then we release any margin excess
+		if rerr := m.rollBackMargin(ctx, party, initialMargin); rerr != nil {
+			err = fmt.Errorf("%v, %w", err, rerr)
 		}
 	}()
 
@@ -3679,35 +3663,58 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 		submittedIDs = append(submittedIDs, order.Id)
 	}
 
-	// // amendment rollback
-	// amendmentsRollBack := []*types.OrderAmendment{}
-	// // submitted order rollback
-	// defer func() {
-	// 	if err == nil || len(amendmentsRollBack) <= 0 {
-	// 		return
-	// 	}
-	// 	for _, v := range amendmentsRollBack {
-	// 		_, newerr := m.amendOrder(ctx, v)
-	// 		if newerr != nil {
-	// 			m.log.Error("unable to rollback order via cancel",
-	// 				logging.Error(newerr),
-	// 				logging.String("party", v.PartyId),
-	// 				logging.String("order-id", v.OrderId))
-	// 			err = fmt.Errorf("%v, %w", err, newerr)
-	// 		}
-	// 	}
-	// }()
+	return nil
+}
 
-	// for _, order := range amendments {
-	// 	if _, err := m.amendOrder(ctx, order); err != nil {
-	// 		return err
-	// 	}
+func (m *Market) rollBackMargin(
+	ctx context.Context,
+	party string,
+	initialMargin uint64,
+) error {
+	asset, _ := m.mkt.GetAsset()
+	// get the new balance
+	marginAcc, err := m.collateral.GetPartyMarginAccount(
+		m.GetID(), party, asset)
+	if err != nil {
+		m.log.Error("could not get margin account",
+			logging.PartyID(party),
+			logging.MarketID(m.GetID()),
+			logging.AssetID(asset),
+			logging.Error(err))
+		return err
+	}
 
-	// 	arb := *order
-	// 	arb.SizeDelta = -arb.SizeDelta
-	// 	amendmentsRollBack = append(amendmentsRollBack, &arb)
-	// }
+	if marginAcc.Balance < initialMargin {
+		// nothing to rollback
+		return nil
+	}
 
+	amount := marginAcc.Balance - initialMargin
+	// now create the rollback to transfer
+	transfer := types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Amount: amount,
+			Asset:  asset,
+		},
+		Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+		MinAmount: amount,
+	}
+
+	// then trigger the rollback
+	resp, err := m.collateral.RollbackMarginUpdateOnOrder(
+		ctx, m.GetID(), asset, &transfer)
+	if err != nil {
+		m.log.Debug("error rolling back party margin",
+			logging.PartyID(party),
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return err
+	}
+
+	// then send the event for the transfer request
+	m.broker.Send(events.NewTransferResponse(
+		ctx, []*types.TransferResponse{resp}))
 	return nil
 }
 
