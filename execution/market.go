@@ -1899,7 +1899,7 @@ func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Co
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 
-	m.checkLiquidity(nil)
+	m.checkLiquidity(ctx, nil)
 	// start the liquidity monitoring auction if required
 	if !m.as.InAuction() && m.as.AuctionStart() {
 		m.EnterAuction(ctx)
@@ -3415,6 +3415,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 			// force update of shares so they are updated for all
 			_ = m.equityShares.Shares()
+
+			m.checkLiquidity(ctx, nil)
+			m.commandLiquidityAuction(ctx)
+
 		}
 	}()
 
@@ -3470,12 +3474,6 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	// all went well, we can remove the pending state from the
 	// liquidity engine
 	m.liquidity.RemovePending(party)
-
-	m.updateLiquidityFee(ctx)
-	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
-
-	m.checkLiquidity(ctx, nil)
-	m.commandLiquidityAuction(ctx)
 
 	return nil
 }

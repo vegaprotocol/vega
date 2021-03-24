@@ -884,94 +884,94 @@ func TestEvents_CloseOutTraderWithNotEnoughLiquidity(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 }
 
-func TestEvents_CloseOutTraderWithLPOrder(t *testing.T) {
-	now := time.Unix(10, 0)
-	ctx := context.Background()
-	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
-	tm := startMarketInAuction(t, ctx, &now)
-	addAccountWithAmount(tm, "trader-Z", 4000)
+// func TestEvents_CloseOutTraderWithLPOrder(t *testing.T) {
+// 	now := time.Unix(10, 0)
+// 	ctx := context.Background()
+// 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
+// 	tm := startMarketInAuction(t, ctx, &now)
+// 	addAccountWithAmount(tm, "trader-Z", 4000)
 
-	// place some orders on the book for when we leave auction
-	addAccountWithAmount(tm, "trader-X", 100000000)
-	addAccountWithAmount(tm, "trader-Y", 100000000)
+// 	// place some orders on the book for when we leave auction
+// 	addAccountWithAmount(tm, "trader-X", 100000000)
+// 	addAccountWithAmount(tm, "trader-Y", 100000000)
 
-	orders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFA, "auctionOrder1", types.Side_SIDE_SELL, "trader-X", 5, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFA, "auctionOrder2", types.Side_SIDE_BUY, "trader-Y", 5, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "auctionOrder3", types.Side_SIDE_SELL, "trader-X", 10, 3),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "auctionOrder4", types.Side_SIDE_BUY, "trader-Y", 10, 2),
-	}
-	for _, o := range orders {
-		_, err := tm.market.SubmitOrder(ctx, o)
-		assert.NoError(t, err)
-	}
-	// move time forwards 20 seconds, so the opening auction can end
-	now = now.Add(time.Second * 20)
-	tm.market.OnChainTimeUpdate(ctx, now)
+// 	orders := []*types.Order{
+// 		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFA, "auctionOrder1", types.Side_SIDE_SELL, "trader-X", 5, 1),
+// 		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFA, "auctionOrder2", types.Side_SIDE_BUY, "trader-Y", 5, 1),
+// 		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "auctionOrder3", types.Side_SIDE_SELL, "trader-X", 10, 3),
+// 		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "auctionOrder4", types.Side_SIDE_BUY, "trader-Y", 10, 2),
+// 	}
+// 	for _, o := range orders {
+// 		_, err := tm.market.SubmitOrder(ctx, o)
+// 		assert.NoError(t, err)
+// 	}
+// 	// move time forwards 20 seconds, so the opening auction can end
+// 	now = now.Add(time.Second * 20)
+// 	tm.market.OnChainTimeUpdate(ctx, now)
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFN, "Order01", types.Side_SIDE_SELL, "trader-Z", 30, 1)
-	o1conf, err := tm.market.SubmitOrder(ctx, o1)
-	require.NotNil(t, o1conf)
-	require.NoError(t, err)
+// 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFN, "Order01", types.Side_SIDE_SELL, "trader-Z", 30, 1)
+// 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+// 	require.NotNil(t, o1conf)
+// 	require.NoError(t, err)
 
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 30, 1)
-	o4conf, err := tm.market.SubmitOrder(ctx, o4)
-	require.NotNil(t, o4conf)
-	require.NoError(t, err)
+// 	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 30, 1)
+// 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+// 	require.NotNil(t, o4conf)
+// 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-B", 1, 99)
-	o2conf, err := tm.market.SubmitOrder(ctx, o2)
-	require.NotNil(t, o2conf)
-	require.NoError(t, err)
+// 	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-B", 1, 99)
+// 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
+// 	require.NotNil(t, o2conf)
+// 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_BUY, "trader-B", 1, 100)
-	o3conf, err := tm.market.SubmitOrder(ctx, o3)
-	require.NotNil(t, o3conf)
-	require.NoError(t, err)
+// 	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_BUY, "trader-B", 1, 100)
+// 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
+// 	require.NotNil(t, o3conf)
+// 	require.NoError(t, err)
 
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_SELL, "trader-B", 1, 110)
-	o5conf, err := tm.market.SubmitOrder(ctx, o5)
-	require.NotNil(t, o5conf)
-	require.NoError(t, err)
+// 	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_SELL, "trader-B", 1, 110)
+// 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+// 	require.NotNil(t, o5conf)
+// 	require.NoError(t, err)
 
-	buys := []*types.LiquidityOrder{
-		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50},
-	}
-	sells := []*types.LiquidityOrder{
-		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50},
-	}
+// 	buys := []*types.LiquidityOrder{
+// 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50},
+// 	}
+// 	sells := []*types.LiquidityOrder{
+// 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50},
+// 	}
 
-	lps := &types.LiquidityProvisionSubmission{
-		Fee:              "0.05",
-		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000,
-		Buys:             buys,
-		Sells:            sells}
+// 	lps := &types.LiquidityProvisionSubmission{
+// 		Fee:              "0.05",
+// 		MarketId:         tm.market.GetID(),
+// 		CommitmentAmount: 1000,
+// 		Buys:             buys,
+// 		Sells:            sells}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-Z", "LPOrder01")
-	require.NoError(t, err)
-	require.Equal(t, 1, tm.market.GetLPSCount())
+// 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-Z", "LPOrder01")
+// 	require.NoError(t, err)
+// 	require.Equal(t, 1, tm.market.GetLPSCount())
 
-	// Change mark price to force Trader-Z to be closed out
-	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order06", types.Side_SIDE_SELL, "trader-C", 10, 100)
-	o6conf, err := tm.market.SubmitOrder(ctx, o6)
-	require.NotNil(t, o6conf)
-	require.NoError(t, err)
-	require.Equal(t, 0, tm.market.GetLPSCount())
+// 	// Change mark price to force Trader-Z to be closed out
+// 	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order06", types.Side_SIDE_SELL, "trader-C", 10, 100)
+// 	o6conf, err := tm.market.SubmitOrder(ctx, o6)
+// 	require.NotNil(t, o6conf)
+// 	require.NoError(t, err)
+// 	require.Equal(t, 0, tm.market.GetLPSCount())
 
-	// Check we have the right amount of events
-	//assert.Equal(t, uint64(12), tm.orderEventCount)
-	//assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
-	assert.Equal(t, uint64(15), tm.orderEventCount)
-	assert.Equal(t, int64(6), tm.market.GetOrdersOnBookCount())
+// 	// Check we have the right amount of events
+// 	//assert.Equal(t, uint64(12), tm.orderEventCount)
+// 	//assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
+// 	assert.Equal(t, uint64(15), tm.orderEventCount)
+// 	assert.Equal(t, int64(6), tm.market.GetOrdersOnBookCount())
 
-	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(6), mdb.GetOrderCount(tm.market.GetID()))
-	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
-	assert.Equal(t, uint64(10), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
-	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
-}
+// 	processEvents(t, tm, mdb)
+// 	assert.Equal(t, int64(6), mdb.GetOrderCount(tm.market.GetID()))
+// 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
+// 	assert.Equal(t, uint64(10), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
+// 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
+// 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+// }
 
 func TestEvents_LPOrderRecalcDueToFill(t *testing.T) {
 	now := time.Unix(10, 0)
