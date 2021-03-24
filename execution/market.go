@@ -3490,9 +3490,11 @@ func (m *Market) updateAndCreateOrders(
 		// and save the amount of the margin balance.
 		// so we can roll back to this state later on
 		if m.liquidity.IsPending(order.PartyId) {
-			marginAcc, _ := m.collateral.GetPartyMarginAccount(
-				mktID, order.PartyId, asset)
-			initialMargins[order.PartyId] = marginAcc.Balance
+			if _, ok := initialMargins[order.PartyId]; !ok {
+				marginAcc, _ := m.collateral.GetPartyMarginAccount(
+					mktID, order.PartyId, asset)
+				initialMargins[order.PartyId] = marginAcc.Balance
+			}
 		}
 
 		if faulty, ok := faultyLPs[order.PartyId]; ok && faulty {
