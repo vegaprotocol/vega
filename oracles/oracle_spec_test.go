@@ -13,6 +13,8 @@ import (
 func TestOracleSpec(t *testing.T) {
 	t.Run("Creating without required public keys fails", testOracleSpecCreatingWithoutPubKeysFails)
 	t.Run("Creating without filters fails", testOracleSpecCreatingWithoutFiltersFails)
+	t.Run("Creating with filters but without key fails", testOracleSpecCreatingWithFiltersWithoutKeyFails)
+	t.Run("Creating with filters but without property name fails", testOracleSpecCreatingWithFiltersWithoutPropertyNameFails)
 	t.Run("Creating with split filters with same type works", testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks)
 	t.Run("Creating with split filters with different type fails", testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks)
 	t.Run("Creating with filters with inconvertible type fails", testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails)
@@ -68,6 +70,55 @@ func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
 	// then
 	require.Error(t, err)
 	assert.Equal(t, "at least one filter is required", err.Error())
+	assert.Nil(t, oracleSpec)
+}
+
+func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
+	// given
+	spec := oraclespb.OracleSpec{
+		PubKeys: []string{
+			"0xCAFED00D",
+		},
+		Filters: []*oraclespb.Filter{
+			{
+				Key:        nil,
+				Conditions: nil,
+			},
+		},
+	}
+
+	// when
+	oracleSpec, err := oracles.NewOracleSpec(spec)
+
+	// then
+	require.Error(t, err)
+	assert.Equal(t, "a property key is required", err.Error())
+	assert.Nil(t, oracleSpec)
+}
+
+func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
+	// given
+	spec := oraclespb.OracleSpec{
+		PubKeys: []string{
+			"0xCAFED00D",
+		},
+		Filters: []*oraclespb.Filter{
+			{
+				Key:        &oraclespb.PropertyKey{
+					Name: "",
+					Type: oraclespb.PropertyKey_TYPE_INTEGER,
+				},
+				Conditions: nil,
+			},
+		},
+	}
+
+	// when
+	oracleSpec, err := oracles.NewOracleSpec(spec)
+
+	// then
+	require.Error(t, err)
+	assert.Equal(t, "a property name is required", err.Error())
 	assert.Nil(t, oracleSpec)
 }
 
