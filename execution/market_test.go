@@ -4639,11 +4639,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		// not have enough funds
 		expectedStatus := []types.Order_Status{
 			types.Order_STATUS_ACTIVE,
-			types.Order_STATUS_ACTIVE,
-			types.Order_STATUS_ACTIVE,
 			types.Order_STATUS_REJECTED,
-			types.Order_STATUS_CANCELLED,
-			types.Order_STATUS_CANCELLED,
 			types.Order_STATUS_CANCELLED,
 		}
 
