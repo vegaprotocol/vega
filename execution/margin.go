@@ -8,11 +8,11 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
+func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnBondUse bool) ([]events.Risk, []events.MarketPosition, error) {
 	if m.as.InAuction() {
 		return m.marginsAuction(ctx, order)
 	}
-	return m.margins(ctx, pos, order)
+	return m.margins(ctx, pos, order, failOnBondUse)
 }
 
 func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
@@ -76,7 +76,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	return riskTransfers, mposEvts, nil
 }
 
-func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
+func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order, failOnBondUse bool) ([]events.Risk, []events.MarketPosition, error) {
 	price := m.getMarkPrice(order)
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
@@ -92,6 +92,9 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil, nil, nil
 	}
 	if evt != nil {
+		if failOnBondUse {
+			return nil, nil, ErrBondSlashing
+		}
 		return []events.Risk{risk}, []events.MarketPosition{evt}, nil
 	}
 	return []events.Risk{risk}, nil, nil

@@ -706,7 +706,7 @@ func TestEvents_CloseOutTraderWithLPOrder(t *testing.T) {
 	ctx := context.Background()
 	mdb := subscribers.NewMarketDepthBuilder(ctx, nil, true)
 	tm := startMarketInAuction(t, ctx, &now)
-	addAccountWithAmount(tm, "trader-Z", 4000)
+	addAccountWithAmount(tm, "trader-Z", 5000)
 
 	leaveAuction(tm, ctx, &now)
 
