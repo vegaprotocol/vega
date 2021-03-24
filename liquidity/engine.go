@@ -70,7 +70,7 @@ type Engine struct {
 	// indexed as: map of PartyID -> OrdersID -> order
 	liquidityOrders map[string]map[string]*types.Order
 
-	// The list of parties which submitted liquidity submittion
+	// The list of parties which submitted liquidity submission
 	// which still haven't been deployed even once.
 	pendings map[string]struct{}
 
