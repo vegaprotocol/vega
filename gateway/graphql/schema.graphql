@@ -2703,6 +2703,7 @@ union Event =
   | Deposit
   | Withdrawal
   | OracleSpec
+  | LiquidityProvision
 
 type BusEvent {
   "the id for this event"
