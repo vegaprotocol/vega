@@ -54,7 +54,7 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 
 func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Risk) error {
 	if len(risk) > 1 {
-		return errors.New("this should not be possiburu")
+		return errors.New("transferMarginsContinuous should not be possible when len(risk) > 1")
 	}
 	if len(risk) == 0 {
 		return nil
