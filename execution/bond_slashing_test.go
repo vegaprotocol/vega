@@ -140,72 +140,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 	require.Equal(t, lp1.CommitmentAmount, bondAcc.Balance)
 }
 
-func TestUseBondAccountForLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testing.T) {
-	mainParty := "mainParty"
-	now := time.Unix(10, 0)
-	closingAt := time.Unix(10000000000, 0)
-	openingAuction := &types.AuctionDuration{
-		Duration: 1,
-	}
-	tm := getTestMarket(t, now, closingAt, nil, openingAuction)
-	ctx := context.Background()
-	tm.market.BondPenaltyFactorUpdate(ctx, 1)
-	initialMarkPrice := uint64(99)
-
-	asset := tm.asset
-
-	// end opening auction
-	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
-
-	mainPartyInitialDeposit := uint64(793) // 794 is the minimum required amount to meet the initial margin
-	addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
-
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
-
-	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
-	require.NotNil(t, confirmationSell)
-	require.NoError(t, err)
-
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
-
-	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
-	assert.NotNil(t, confirmationBuy)
-	assert.NoError(t, err)
-
-	require.Equal(t, 0, len(confirmationBuy.Trades))
-
-	lp1 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 200,
-		Fee:              "0.05",
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
-		},
-	}
-
-	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
-	require.NoError(t, err)
-
-	var zero uint64 = 0
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
-	require.NoError(t, err)
-	require.NotNil(t, bondAcc)
-	require.Greater(t, bondAcc.Balance, zero)
-	require.Less(t, bondAcc.Balance, lp1.CommitmentAmount)
-
-	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
-	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
-	require.NoError(t, err)
-	require.NotNil(t, insurancePool)
-	require.Equal(t, insurancePool.Balance, zero)
-}
-
-func TestRejectLiquidityProvisionWithInsufficientFundsForMaintenanceMargin(t *testing.T) {
+func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testing.T) {
 	mainParty := "mainParty"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
@@ -221,7 +156,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForMaintenanceMargin(t *te
 	// end opening auction
 	setMarkPrice(t, tm, openingAuction, now, initialMarkPrice)
 
-	mainPartyInitialDeposit := uint64(494) // 495 is the minimum required amount to meet the commitment amount and maintenance margin on resulting orders
+	mainPartyInitialDeposit := uint64(793) // 794 is the minimum required amount to meet the commitment amount and maintenance margin on resulting orders
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
 
@@ -299,13 +234,13 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 
 	asset := tm.asset
 
-	var mainPartyInitialDeposit uint64 = 682 // 683 is the minimum amount to cover additional orders after orderBuyAux1 fills
+	var mainPartyInitialDeposit uint64 = 794 // 794 is the minimum amount to cover additional orders after orderBuyAux1 fills
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
 	mainPartyGenAccID := transferResp.Transfers[0].ToAccount
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 10, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
@@ -344,7 +279,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
-	require.Greater(t, bondAcc.Balance, zero)
+	require.Equal(t, lp.CommitmentAmount, bondAcc.Balance)
 
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
@@ -666,7 +601,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	bondAccBalanceBeforeMarketMove := bondAcc.Balance
-	require.Greater(t, bondAccBalanceBeforeMarketMove, zero)
+	require.Equal(t, lp.CommitmentAmount, bondAccBalanceBeforeMarketMove)
 
 	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)

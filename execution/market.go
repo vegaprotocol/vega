@@ -745,7 +745,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 
 	// Reinsert all the orders
 	for _, order := range toSubmitOrders {
-		if _, err := m.submitValidatedOrder(ctx, order); err != nil {
+		if _, err := m.submitValidatedOrder(ctx, order, false); err != nil {
 			m.log.Debug("could not re-submit a pegged order after repricing",
 				logging.MarketID(m.GetID()),
 				logging.PartyID(order.PartyId),
@@ -1147,7 +1147,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrTradingNotAllowed
 	}
-	conf, err := m.submitOrder(ctx, order, true)
+	conf, err := m.submitOrder(ctx, order, true, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1161,7 +1161,7 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 	return conf, nil
 }
 
-func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool) (*types.OrderConfirmation, error) {
+func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool, failOnBondUse bool) (*types.OrderConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -1190,7 +1190,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 	}
 
 	// Now that validation is handled, call the code to place the order
-	orderConf, err := m.submitValidatedOrder(ctx, order)
+	orderConf, err := m.submitValidatedOrder(ctx, order, failOnBondUse)
 	if err == nil {
 		orderValidity = "valid"
 	}
@@ -1213,7 +1213,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 	return orderConf, err
 }
 
-func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order, failOnBondUse bool) (*types.OrderConfirmation, error) {
 	isPegged := order.PeggedOrder != nil
 	if isPegged {
 		order.Status = types.Order_STATUS_PARKED
@@ -2016,10 +2016,10 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order, failOnBondUse bool) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
-	risk, closed, err := m.calcMargins(ctx, pos, order)
+	risk, closed, err := m.calcMargins(ctx, pos, order, failOnBondUse)
 	// margin error
 	if err != nil {
 		return err
@@ -2456,7 +2456,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		} else {
 			// We got a new valid price, if we are parked we need to unpark
 			if amendedOrder.Status == types.Order_STATUS_PARKED {
-				orderConf, err := m.submitValidatedOrder(ctx, amendedOrder)
+				orderConf, err := m.submitValidatedOrder(ctx, amendedOrder, false)
 				if err != nil {
 					// If we cannot submit a new order then the amend has failed, return the error
 					return nil, err
@@ -2515,7 +2515,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// will be updated later on for sure.
 
 	if priceIncrease || sizeIncrease {
-		if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+		if err = m.checkMarginForOrder(ctx, pos, amendedOrder, false); err != nil {
 			// Undo the position registering
 			_ = m.position.AmendOrder(amendedOrder, existingOrder)
 
@@ -3553,7 +3553,7 @@ func (m *Market) updateAndCreateOrders(
 			// be patient...
 			continue
 		}
-		if _, err := m.submitOrder(ctx, order, false); err != nil {
+		if _, err := m.submitOrder(ctx, order, false, false); err != nil {
 			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
 				logging.OrderID(order.Id),
 				logging.PartyID(order.PartyId),
@@ -3732,7 +3732,7 @@ func (m *Market) createOrders(ctx context.Context, newOrders []*types.Order) (er
 	}()
 
 	for _, order := range newOrders {
-		if _, err := m.submitOrder(ctx, order, false); err != nil {
+		if _, err := m.submitOrder(ctx, order, false, true); err != nil {
 			failedOnID = order.Id
 			m.log.Debug("unable to submit liquidity provision order",
 				logging.MarketID(m.GetID()),
