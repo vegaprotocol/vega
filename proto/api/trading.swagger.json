@@ -4054,10 +4054,11 @@
         "STATUS_STOPPED",
         "STATUS_CANCELLED",
         "STATUS_REJECTED",
-        "STATUS_UNDEPLOYED"
+        "STATUS_UNDEPLOYED",
+        "STATUS_PENDING"
       ],
       "default": "STATUS_UNSPECIFIED",
-      "description": "- STATUS_UNSPECIFIED: The default value\n - STATUS_ACTIVE: The liquidity provision is active\n - STATUS_STOPPED: The liquidity provision was stopped by the network\n - STATUS_CANCELLED: The liquidity provision was cancelled by the liquidity provider\n - STATUS_REJECTED: The liquidity provision was invalid and got rejected\n - STATUS_UNDEPLOYED: The liquidity provision is valid and accepted by network, but oreders aren't deployed",
+      "description": "- STATUS_UNSPECIFIED: The default value\n - STATUS_ACTIVE: The liquidity provision is active\n - STATUS_STOPPED: The liquidity provision was stopped by the network\n - STATUS_CANCELLED: The liquidity provision was cancelled by the liquidity provider\n - STATUS_REJECTED: The liquidity provision was invalid and got rejected\n - STATUS_UNDEPLOYED: The liquidity provision is valid and accepted by network, but orders aren't deployed\n - STATUS_PENDING: The liquidity provision is valid and accepted by network\nbut have never been deployed. I when it's possible to deploy them for the first time\nmargin check fails, then they will be cancelled without any penalties.",
       "title": "Status of a liquidity provision order"
     },
     "vegaLiquidityProvisionSubmission": {

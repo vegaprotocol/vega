@@ -69,6 +69,8 @@ func convertLiquidityProvisionStatusFromProto(x types.LiquidityProvision_Status)
 		return LiquidityProvisionStatusRejected, nil
 	case types.LiquidityProvision_STATUS_UNDEPLOYED:
 		return LiquidityProvisionStatusUndeployed, nil
+	case types.LiquidityProvision_STATUS_PENDING:
+		return LiquidityProvisionStatusPending, nil
 	default:
 		err := fmt.Errorf("failed to convert LiquidityProvisionStatus from GraphQL to Proto: %v", x)
 		return LiquidityProvisionStatusActive, err

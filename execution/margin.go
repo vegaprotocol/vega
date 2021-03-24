@@ -8,14 +8,14 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
+func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
 	if m.as.InAuction() {
 		return m.marginsAuction(ctx, order)
 	}
 	return m.margins(ctx, pos, order)
 }
 
-func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types.Transfer, error) {
+func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
 	// 1. Get the price
 	price := m.getMarkPrice(order)
 	// m.log.Infof("calculating margins at %d for order at price %d", price, order.Price)
@@ -28,26 +28,27 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types
 	if cPos, ok := m.position.GetPositionByPartyID(order.PartyId); ok {
 		e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		_, closed, err := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if len(closed) > 0 {
 			// this order would take party below maintenance -> stop here
-			return nil, ErrMarginCheckInsufficient
+			return nil, nil, ErrMarginCheckInsufficient
 		}
 		// we could transfer the funds for this trader here, but we're handling all positions lower down, including this one
 		// this is just to stop all margins being updated based on a price that the trader can't even manage
 	}
 	// 4. construct the events for all positions + margin balances
+	// at this point, we have established the order is going through
 	posEvts := make([]events.Margin, 0, len(allPos))
 	for _, p := range allPos {
 		e, err := m.collateral.GetPartyMargin(p, asset, mID)
 		if err != nil {
 			// this shouldn't happen
-			return nil, err
+			return nil, nil, err
 		}
 		posEvts = append(posEvts, e)
 	}
@@ -55,84 +56,45 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) (*types
 	risk, closed, err := m.risk.UpdateMarginAuction(ctx, posEvts, price)
 	if err != nil {
 		// @TODO handle this properly
-		return nil, err
+		return nil, nil, err
 	}
+	distressed := make(map[string]struct{}, len(closed))
 	mposEvts := make([]events.MarketPosition, 0, len(closed))
 	for _, e := range closed {
+		distressed[e.Party()] = struct{}{}
 		mposEvts = append(mposEvts, e)
 	}
 	// 6. Attempt margin updates where possible. If position is to be closed, append it to the closed slice we already have
-	marginEvts := make([]events.Event, 0, len(risk))
+	riskTransfers := make([]events.Risk, 0, len(risk))
 	for _, ru := range risk {
-		tr, _, err := m.collateral.MarginUpdateOnOrder(ctx, mID, ru)
-		if err != nil {
-			// @TODO handle this
-			return nil, err
+		// skip the traders with a shortfall/distressed
+		if _, ok := distressed[ru.Party()]; ok {
+			continue
 		}
-		marginEvts = append(marginEvts, events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
+		riskTransfers = append(riskTransfers, ru)
 	}
-	// 7. Send batch of Transfer events out
-	m.broker.SendBatch(marginEvts)
-	// 8. Close out untenable positions
-	rmorders, err := m.matching.RemoveDistressedOrders(mposEvts)
-	if err != nil {
-		return nil, err
-	}
-	evts := make([]events.Event, 0, len(rmorders))
-	for _, o := range rmorders {
-		// cancel order
-		o.Status = types.Order_STATUS_CANCELLED
-		// create event
-		evts = append(evts, events.NewOrderEvent(ctx, o))
-		// remove order from positions
-		m.position.UnregisterOrder(o)
-	}
-	m.broker.SendBatch(evts)
-	return nil, nil
+	return riskTransfers, mposEvts, nil
 }
 
-func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
+func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
 	price := m.getMarkPrice(order)
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	pos, err := m.collateral.GetPartyMargin(mpos, asset, mID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	risk, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price)
+	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if risk == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
-	tr, closed, err := m.collateral.MarginUpdateOnOrder(ctx, mID, risk)
-	if err != nil {
-		return nil, err
+	if evt != nil {
+		return []events.Risk{risk}, []events.MarketPosition{evt}, nil
 	}
-	if closed != nil && closed.MarginShortFall() > 0 {
-		// @TODO handle closed
-		return nil, nil
-	}
-	if tr == nil {
-		return nil, nil
-	}
-	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tr}))
-	// create the rollback transaction
-	// for some reason, we can get a transfer object returned, but no actual transfers?
-	var riskRollback *types.Transfer
-	if len(tr.Transfers) > 0 {
-		riskRollback = &types.Transfer{
-			Owner: risk.Party(),
-			Amount: &types.FinancialAmount{
-				Amount: tr.Transfers[0].Amount,
-				Asset:  asset,
-			},
-			Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
-			MinAmount: tr.Transfers[0].Amount,
-		}
-	}
-	return riskRollback, nil
+	return []events.Risk{risk}, nil, nil
 }
 
 func (m *Market) getMarkPrice(o *types.Order) uint64 {

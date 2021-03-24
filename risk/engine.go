@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ErrInsufficientFundsForInitialMargin = errors.New("insufficient funds for initial margin")
-	ErrRiskFactorsNotAvailableForAsset   = errors.New("risk factors not available for the specified asset")
+	ErrInsufficientFundsForMaintenanceMargin = errors.New("insufficient funds for maintenance margin")
+	ErrRiskFactorsNotAvailableForAsset       = errors.New("risk factors not available for the specified asset")
 )
 
 // Orderbook represent an abstraction over the orderbook
@@ -228,9 +228,9 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
 // trader margin account is at least at the InitialMargin level before the order is added to the book.
-func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice uint64) (events.Risk, error) {
+func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice uint64) (events.Risk, events.Margin, error) {
 	if evt == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	var margins *types.MarginLevels
@@ -241,7 +241,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 	// no margins updates, nothing to do then
 	if margins == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// update other fields for the margins
@@ -250,25 +250,25 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	margins.Timestamp = e.currTime
 	margins.MarketId = e.mktID
 
-	curBalance := evt.MarginBalance()
+	curMarginBalance := evt.MarginBalance()
 
 	// there's not enough monies in the accounts of the party,
 	// we break from here. The minimum requires is MAINTENANCE, not INITIAL here!
-	if curBalance+evt.GeneralBalance() < margins.MaintenanceMargin {
-		return nil, ErrInsufficientFundsForInitialMargin
+	if curMarginBalance+evt.GeneralBalance() < margins.MaintenanceMargin {
+		return nil, nil, ErrInsufficientFundsForMaintenanceMargin
 	}
 
 	// propagate margins levels to the buffer
 	e.broker.Send(events.NewMarginLevelsEvent(ctx, *margins))
 
 	// margins are sufficient, nothing to update
-	if curBalance >= margins.InitialMargin {
-		return nil, nil
+	if curMarginBalance >= margins.InitialMargin {
+		return nil, nil, nil
 	}
 
 	var minAmount uint64
-	if margins.MaintenanceMargin > curBalance {
-		minAmount = maxUint(margins.MaintenanceMargin-curBalance, 0)
+	if margins.MaintenanceMargin > curMarginBalance {
+		minAmount = maxUint(margins.MaintenanceMargin-curMarginBalance, 0)
 	}
 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
@@ -277,16 +277,23 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: margins.InitialMargin - curBalance,
+			Amount: margins.InitialMargin - curMarginBalance,
 		},
 		MinAmount: minAmount, // minimal amount == maintenance
 	}
 
-	return &marginChange{
+	change := &marginChange{
 		Margin:   evt,
 		transfer: trnsfr,
 		margins:  margins,
-	}, nil
+	}
+	// we don't have enough in general + margin accounts to cover initial margin level, so we'll be dipping into our bond account
+	// we have to return the margin event to signal that
+	nonBondFunds := curMarginBalance + evt.GeneralBalance() - evt.BondBalance()
+	if nonBondFunds < margins.InitialMargin {
+		return change, evt, nil
+	}
+	return change, nil, nil
 }
 
 // UpdateMarginsOnSettlement ensure the margin requirement over all positions.

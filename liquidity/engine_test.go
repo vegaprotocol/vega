@@ -125,7 +125,7 @@ func testSubmissionCRUD(t *testing.T) {
 		CommitmentAmount: lps1.CommitmentAmount,
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
-		Status:           types.LiquidityProvision_STATUS_UNDEPLOYED,
+		Status:           types.LiquidityProvision_STATUS_PENDING,
 		Buys: []*types.LiquidityOrderReference{
 			{LiquidityOrder: buyShape[0]},
 		},
