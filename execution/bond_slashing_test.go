@@ -202,7 +202,7 @@ func TestUseBondAccountForLiquidityProvisionWithInsufficientFundsForInitialMargi
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
 	require.NotNil(t, insurancePool)
-	require.Greater(t, insurancePool.Balance, zero)
+	require.Equal(t, insurancePool.Balance, zero)
 }
 
 func TestRejectLiquidityProvisionWithInsufficientFundsForMaintenanceMargin(t *testing.T) {

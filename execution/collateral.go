@@ -22,7 +22,6 @@ func (m *Market) transferMargins(ctx context.Context, risk []events.Risk, closed
 
 func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk, distressed []events.MarketPosition) error {
 	evts := make([]events.Event, 0, len(risk))
-	// asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	// first, update the margin accounts for all traders who have enough balance
 	for _, re := range risk {
@@ -46,7 +45,10 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 		// create event
 		evts = append(evts, events.NewOrderEvent(ctx, o))
 		// remove order from positions
-		m.position.UnregisterOrder(o)
+		if _, err := m.position.UnregisterOrder(o); err != nil {
+			// @TODO handle this
+			return err
+		}
 	}
 	m.broker.SendBatch(evts)
 	return nil
@@ -71,12 +73,15 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 	}
 	// margin shortfall && liquidity provider -> bond slashing
 	if closed != nil && closed.MarginShortFall() > 0 {
-		// get bond penalty
-		resp, err := m.bondSlashing(ctx, closed)
-		if err != nil {
-			return err
+		// we pay the bond penalty if the order was not pending
+		if !m.liquidity.IsPending(closed.Party()) {
+			// get bond penalty
+			resp, err := m.bondSlashing(ctx, closed)
+			if err != nil {
+				return err
+			}
+			responses = append(responses, resp...)
 		}
-		responses = append(responses, resp...)
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, responses))
 	return nil
