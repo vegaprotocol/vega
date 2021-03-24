@@ -11,9 +11,9 @@ import (
 func TheFollowingNetworkTradesHappened(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	for _, row := range TableWrapper(*table).Parse() {
 		var (
-			trader        = row.Str("trader")
-			aggressorSide = row.Side("aggressor side")
-			volume        = row.U64("volume")
+			trader        = row.MustStr("trader")
+			aggressorSide = row.MustSide("aggressor side")
+			volume        = row.MustU64("volume")
 		)
 
 		ok := false

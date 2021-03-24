@@ -64,19 +64,19 @@ type amendOrderRow struct {
 }
 
 func (r amendOrderRow) trader() string {
-	return r.row.Str("trader")
+	return r.row.MustStr("trader")
 }
 func (r amendOrderRow) reference() string {
-	return r.row.Str("reference")
+	return r.row.MustStr("reference")
 }
 func (r amendOrderRow) price() *types.Price {
-	return r.row.Price("price")
+	return r.row.MustPrice("price")
 }
 func (r amendOrderRow) sizeDelta() int64 {
-	return r.row.I64("size delta")
+	return r.row.MustI64("size delta")
 }
 func (r amendOrderRow) timeInForce() types.Order_TimeInForce {
-	return r.row.TIF("tif")
+	return r.row.MustTIF("tif")
 }
 
 func (r amendOrderRow) expirationDate() *types.Timestamp {
@@ -84,7 +84,7 @@ func (r amendOrderRow) expirationDate() *types.Timestamp {
 		return nil
 	}
 
-	timeNano := r.row.Time("expiration date").UnixNano()
+	timeNano := r.row.MustTime("expiration date").UnixNano()
 	if timeNano == 0 {
 		return nil
 	}

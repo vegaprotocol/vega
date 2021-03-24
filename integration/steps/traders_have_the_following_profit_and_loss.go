@@ -75,17 +75,17 @@ type pnlRow struct {
 }
 
 func (r pnlRow) trader() string {
-	return r.row.Str("trader")
+	return r.row.MustStr("trader")
 }
 
 func (r pnlRow) volume() int64 {
-	return r.row.I64("volume")
+	return r.row.MustI64("volume")
 }
 
 func (r pnlRow) unrealisedPNL() int64 {
-	return r.row.I64("unrealised pnl")
+	return r.row.MustI64("unrealised pnl")
 }
 
 func (r pnlRow) realisedPNL() int64 {
-	return r.row.I64("realised pnl")
+	return r.row.MustI64("realised pnl")
 }

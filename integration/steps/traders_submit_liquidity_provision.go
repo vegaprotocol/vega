@@ -15,16 +15,16 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 	parties := map[string]string{}
 
 	for _, row := range TableWrapper(*table).Parse() {
-		id := row.Str("id")
-		party := row.Str("party")
-		marketID := row.Str("market id")
-		amount := row.U64("commitment amount")
-		fee := row.Str("fee")
-		side := row.Side("order side")
-		reference := row.PeggedReference("order reference")
-		proportion := row.U32("order proportion")
-		offset := row.I64("order offset")
-		orderRefernce := row.Str("reference")
+		id := row.MustStr("id")
+		party := row.MustStr("party")
+		marketID := row.MustStr("market id")
+		amount := row.MustU64("commitment amount")
+		fee := row.MustStr("fee")
+		side := row.MustSide("order side")
+		reference := row.MustPeggedReference("order reference")
+		proportion := row.MustU32("order proportion")
+		offset := row.MustI64("order offset")
+		orderReference := row.Str("reference")
 
 		if id == "id" {
 			continue
@@ -38,7 +38,7 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 				Fee:              fee,
 				Sells:            []*types.LiquidityOrder{},
 				Buys:             []*types.LiquidityOrder{},
-				Reference:        orderRefernce,
+				Reference:        orderReference,
 			}
 			parties[id] = party
 			lps[id] = lp

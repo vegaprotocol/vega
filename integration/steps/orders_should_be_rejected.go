@@ -12,9 +12,9 @@ func OrdersAreRejected(broker *stubs.BrokerStub, orders *gherkin.DataTable) erro
 	var orderNotRejected []string
 	count := len(orders.Rows) - 1
 	for _, row := range TableWrapper(*orders).Parse() {
-		trader := row.Str("trader")
-		marketID := row.Str("market id")
-		reason := row.Str("reason")
+		trader := row.MustStr("trader")
+		marketID := row.MustStr("market id")
+		reason := row.MustStr("reason")
 
 		data := broker.GetOrderEvents()
 		for _, o := range data {

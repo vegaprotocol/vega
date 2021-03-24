@@ -57,6 +57,27 @@ func FeatureContext(s *godog.Suite) {
 		}
 	})
 
+	// Market steps
+	s.Step(`the simple risk model named "([^"]*)":$`, func(name string, table *gherkin.DataTable) error {
+		return steps.TheSimpleRiskModel(marketConfig, name, table)
+	})
+	s.Step(`the log normal risk model named "([^"]*)":$`, func(name string, table *gherkin.DataTable) error {
+		return steps.TheLogNormalRiskModel(marketConfig, name, table)
+	})
+	s.Step(`the fees configuration named "([^"]*)":$`, func(name string, table *gherkin.DataTable) error {
+		return steps.TheFeesConfiguration(marketConfig, name, table)
+	})
+	s.Step(`the oracle spec filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys, name string, table *gherkin.DataTable) error {
+		return steps.TheOracleSpec(marketConfig, name, pubKeys, table)
+	})
+	s.Step(`the price monitoring updated every "([^"]*)" seconds named "([^"]*)":$`, func(updateFrequency, name string, table *gherkin.DataTable) error {
+		return steps.ThePriceMonitoring(marketConfig, name, updateFrequency, table)
+	})
+	s.Step(`the margin calculator named "([^"]*)":$`, func(name string, table *gherkin.DataTable) error {
+		return steps.TheMarginCalculator(marketConfig, name, table)
+	})
+
+	// Other steps
 	s.Step(`^"([^"]*)" has only one margin account per market$`, func(owner string) error {
 		return steps.TraderHasOnlyOneMarginAccountPerMarket(execsetup.broker, owner)
 	})
@@ -73,8 +94,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the traders make the following deposits on asset's general account:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersDepositAssets(execsetup.collateral, execsetup.broker, table)
 	})
-	s.Step(`^the execution engine have these markets:$`, func(table *gherkin.DataTable) error {
-		markets := steps.TheMarkets(marketExpiry, table)
+	s.Step(`^the markets:$`, func(table *gherkin.DataTable) error {
+		markets := steps.TheMarkets(marketConfig, marketExpiry, table)
 
 		t, _ := time.Parse("2006-01-02T15:04:05Z", marketStart)
 		execsetup = getExecutionTestSetup(t, markets)

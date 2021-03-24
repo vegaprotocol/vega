@@ -11,13 +11,13 @@ import (
 
 func TradersPlacePeggedOrders(exec *execution.Engine, orders *gherkin.DataTable) error {
 	for i, row := range TableWrapper(*orders).Parse() {
-		trader := row.Str("trader")
-		marketID := row.Str("market id")
-		side := row.Side("side")
-		volume := row.U64("volume")
-		reference := row.PeggedReference("reference")
-		offset := row.I64("offset")
-		price := row.U64("price")
+		trader := row.MustStr("trader")
+		marketID := row.MustStr("market id")
+		side := row.MustSide("side")
+		volume := row.MustU64("volume")
+		reference := row.MustPeggedReference("reference")
+		offset := row.MustI64("offset")
+		price := row.MustU64("price")
 
 		o := &types.Order{
 			Status:      types.Order_STATUS_ACTIVE,

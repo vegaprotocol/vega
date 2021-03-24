@@ -14,12 +14,12 @@ func TheMarginsLevelsForTheTradersAre(
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
-		partyID := row.Str("trader")
-		marketID := row.Str("market id")
-		maintenance := row.U64("maintenance")
-		search := row.U64("search")
-		initial := row.U64("initial")
-		release := row.U64("release")
+		partyID := row.MustStr("trader")
+		marketID := row.MustStr("market id")
+		maintenance := row.MustU64("maintenance")
+		search := row.MustU64("search")
+		initial := row.MustU64("initial")
+		release := row.MustU64("release")
 
 		levels, err := broker.GetMarginByPartyAndMarket(partyID, marketID)
 		if err != nil {

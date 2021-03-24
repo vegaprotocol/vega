@@ -64,21 +64,21 @@ type accountBalancesRow struct {
 }
 
 func (r accountBalancesRow) trader() string {
-	return r.row.Str("trader")
+	return r.row.MustStr("trader")
 }
 
 func (r accountBalancesRow) asset() string {
-	return r.row.Str("asset")
+	return r.row.MustStr("asset")
 }
 
 func (r accountBalancesRow) marketID() string {
-	return r.row.Str("market id")
+	return r.row.MustStr("market id")
 }
 
 func (r accountBalancesRow) marginAccountBalance() uint64 {
-	return r.row.U64("margin")
+	return r.row.MustU64("margin")
 }
 
 func (r accountBalancesRow) generalAccountBalance() uint64 {
-	return r.row.U64("general")
+	return r.row.MustU64("general")
 }

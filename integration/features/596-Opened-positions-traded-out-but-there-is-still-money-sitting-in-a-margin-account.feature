@@ -2,9 +2,9 @@ Feature: Regression test for issue 596
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
-    And the execution engine have these markets:
-      | name      | quote name | asset | risk model | lamd/long | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading |  | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 | BTC        | BTC   | forward    | 0.001     | 0.00011407711613050422 | 0              | 0.016           | 2.0   | 1.4            | 1.2            | 1.1           | 1                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              |  | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+    And the markets:
+      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | price monitoring | oracle config          |
+      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-none     | default-eth-for-future |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -68,7 +68,6 @@ Feature: Regression test for issue 596
       | chris  | BTC   | ETH/DEC19 | 0      | 9808    |
       | barney | BTC   | ETH/DEC19 | 630    | 9272    |
     And Cumulated balance for all accounts is worth "2031000"
-
 
   Scenario: Traded out position, with cancelled half traded order, but monies left in margin account
     Given the traders make the following deposits on asset's general account:
