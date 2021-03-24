@@ -70,6 +70,7 @@ type netParamsValues struct {
 	makerFee                        float64
 	scalingFactors                  *types.ScalingFactors
 	maxLiquidityFee                 float64
+	bondPenaltyFactor               float64
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -84,6 +85,7 @@ func defaultNetParamsValues() netParamsValues {
 		makerFee:                        -1,
 		scalingFactors:                  nil,
 		maxLiquidityFee:                 -1,
+		bondPenaltyFactor:               -1,
 	}
 }
 
@@ -379,6 +381,9 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	if e.npv.suppliedStakeToObligationFactor != -1 {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
 	}
+	if e.npv.bondPenaltyFactor != -1 {
+		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
+	}
 	if e.npv.maxLiquidityFee != -1 {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
@@ -646,9 +651,18 @@ func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
 }
 
 func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, v float64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity bond penalty",
+			logging.Float64("bond-penalty-factor", v),
+		)
+	}
+
 	for _, mkt := range e.markets {
 		mkt.BondPenaltyFactorUpdate(ctx, v)
 	}
+
+	e.npv.bondPenaltyFactor = v
+
 	return nil
 }
 
