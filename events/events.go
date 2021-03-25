@@ -62,6 +62,7 @@ type Margin interface {
 	Asset() string
 	MarginBalance() uint64
 	GeneralBalance() uint64
+	BondBalance() uint64
 	MarketID() string
 	MarginShortFall() uint64
 }

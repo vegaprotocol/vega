@@ -9,32 +9,42 @@ Feature: Regression test for issue 596
       | name             | value |
       | prices.ETH.value | 42    |
 
+  @ignore
   Scenario: Traded out position but monies left in margin account
-# setup accounts
+    # setup accounts
     Given the traders make the following deposits on asset's general account:
       | trader           | asset | amount     |
       | traderGuy        | BTC   | 1000000000 |
       | sellSideProvider | BTC   | 1000000000 |
       | buySideProvider  | BTC   | 1000000000 |
-# setup previous mark price
+      | aux              | BTC   | 1000000000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place following orders:
-      | trader           | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC |
-# setup orderbook
+      | trader  | market id | side | volume | price      | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 8700000    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 25000000   | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    # setup previous mark price
     Then traders place following orders:
-      | trader           | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideProvider | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | sellSideProvider | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | sellSideProvider | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/DEC19 | buy  | 3      | 9600000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/DEC19 | buy  | 15     | 9000000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideProvider  | ETH/DEC19 | buy  | 50     | 8700000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader           | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+    # setup orderbook
+    Then traders place following orders:
+      | trader           | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | sellSideProvider | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | sellSideProvider | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | buySideProvider  | ETH/DEC19 | buy  | 3      | 9600000  | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | buySideProvider  | ETH/DEC19 | buy  | 15     | 9000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | buySideProvider  | ETH/DEC19 | buy  | 50     | 8700000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
 # buy 13@150
     Then traders place following orders:
-      | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
-      | traderGuy | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC |
+      | trader    | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | traderGuy | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
 # checking margins
     Then traders have the following account balances:
       | trader    | asset | market id | margin    | general   |

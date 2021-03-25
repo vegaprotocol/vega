@@ -14,10 +14,17 @@ Feature: Amend orders
     Given the traders make the following deposits on asset's general account:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
+      | aux    | BTC   | 100000 |
 
-    Then traders place following orders with references:
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi  | ETH/DEC19 | sell |      1 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # cancel the order, so we cannot edit it.
     Then traders cancel the following orders:
@@ -35,10 +42,18 @@ Feature: Amend orders
       | myboi  | BTC   | 10000  |
       | myboi2 | BTC   | 10000  |
       | myboi3 | BTC   | 10000  |
-    Then traders place following orders with references:
+      | aux    | BTC   | 100000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
     Then traders amends the following orders reference:
@@ -47,13 +62,13 @@ Feature: Amend orders
 
 # matching the order now
 # this should match with the size 3 order of myboi
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi3 | ETH/DEC19 | buy  | 3      | 1     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
     Then the following trades were executed:
       | buyer  | seller | price | size |
-      | myboi3 | myboi  | 1     | 3      |
+      | myboi3 | myboi  | 2     | 3    |
 
   Scenario: Increase size success and loosing position in order book
 # setup accounts
@@ -62,10 +77,18 @@ Feature: Amend orders
       | myboi  | BTC   | 10000  |
       | myboi2 | BTC   | 10000  |
       | myboi3 | BTC   | 10000  |
-    Then traders place following orders with references:
+      | aux    | BTC   | 100000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
     Then traders amends the following orders reference:
@@ -74,12 +97,12 @@ Feature: Amend orders
 
 # matching the order now
 # this should match with the size 3 order of myboi
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi3 | ETH/DEC19 | buy  |      3 |     1 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
     Then the following trades were executed:
-      | buyer  | seller | price | size   |
-      | myboi3 | myboi2 |     1 |      3 |
+      | buyer  | seller | price | size |
+      | myboi3 | myboi2 |     2 |    3 |
 
   Scenario: Reduce size success and order cancelled as  < to remaining
 # setup accounts
@@ -88,16 +111,24 @@ Feature: Amend orders
       | myboi  | BTC   | 10000  |
       | myboi2 | BTC   | 10000  |
       | myboi3 | BTC   | 10000  |
-    Then traders place following orders with references:
+      | aux    | BTC   | 100000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # matching the order now
 # this will reduce the remaining to 2 so it get cancelled later on
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi3 | ETH/DEC19 | buy  | 3      | 1     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
     Then traders amends the following orders reference:
@@ -114,9 +145,17 @@ Feature: Amend orders
     Given the traders make the following deposits on asset's general account:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
-    Then traders place following orders with references:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | aux    | BTC   | 100000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    Then traders place following orders:
+      | trader | market id | side | volume | price | resulting trades | type  | tif | reference   |
+      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 
 # cannot amend TIF to TIF_FOK so this will be rejected
@@ -129,10 +168,17 @@ Feature: Amend orders
     Given the traders make the following deposits on asset's general account:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
-    Then traders place following orders with references:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | aux    | BTC   | 100000 |
 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    Then traders place following orders:
+      | trader | market id | side | volume | price | resulting trades | type  | tif | reference   |
+      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # TIF_GTT rejected because of missing expiresAt
     Then traders amends the following orders reference:
@@ -144,12 +190,19 @@ Feature: Amend orders
     Given the traders make the following deposits on asset's general account:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
-    Then traders place following orders with references:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell | 5      | 1     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | aux    | BTC   | 100000 |
 
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+
+    Then traders place following orders:
+      | trader | market id | side | volume | price | resulting trades | type  | tif | reference   |
+      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
     Then traders amends the following orders reference:
-      | trader | reference   | price | sizeDelta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 1     | 0         | 10000     | TIF_GTT | false   |
+      | trader | reference   | price | sizeDelta | expiresAt | tif | success |
+      | myboi  | myboi-ref-1 |     2 |         0 |     10000 | TIF_GTT | false   |

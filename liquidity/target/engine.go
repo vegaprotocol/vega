@@ -19,6 +19,7 @@ var (
 type Engine struct {
 	tWindow time.Duration
 	sFactor float64
+	oiCalc  OpenInterestCalculator
 
 	now               time.Time
 	scheduledTruncate time.Time
@@ -32,11 +33,17 @@ type timestampedOI struct {
 	OI   uint64
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/open_interest_calculator_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/target OpenInterestCalculator
+type OpenInterestCalculator interface {
+	GetOpenInterestGivenTrades(trades []*types.Trade) uint64
+}
+
 // NewEngine returns a new instance of target stake calculation Engine
-func NewEngine(parameters types.TargetStakeParameters) *Engine {
+func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
 	return &Engine{
 		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
 		sFactor: parameters.ScalingFactor,
+		oiCalc:  oiCalc,
 	}
 }
 
@@ -89,6 +96,22 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice ui
 	}
 
 	return float64(markPrice*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
+}
+
+//GetTheoreticalTargetStake returns target stake based current time, risk factors
+//and the supplied trades without modifying the internal state
+func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64, trades []*types.Trade) float64 {
+	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
+	minTime := e.minTime(now)
+	if minTime.After(e.max.Time) {
+		e.computeMaxOI(now, minTime)
+	}
+	maxOI := e.max.OI
+	if theoreticalOI > maxOI {
+		maxOI = theoreticalOI
+	}
+
+	return float64(markPrice*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
 }
 
 func (e *Engine) getMaxFromCurrent() uint64 {

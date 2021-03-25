@@ -242,6 +242,14 @@ type LedgerEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
+// Configuration of a market liquidity monitoring parameters
+type LiquidityMonitoringParameters struct {
+	// Specifies parameters related to target stake calculation
+	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters"`
+	// Specifies the triggering ratio for entering liquidity auction
+	TriggeringRatio float64 `json:"triggeringRatio"`
+}
+
 // A special order type for liquidity providers
 type LiquidityOrderInput struct {
 	// The value to which this order is tied
@@ -1075,8 +1083,12 @@ const (
 	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = "Cancelled"
 	// A liquidity provision was invalid and got rejected
 	LiquidityProvisionStatusRejected LiquidityProvisionStatus = "Rejected"
-	// The liquidity provision is valid and accepted by network, but oreders aren't deployed
+	// The liquidity provision is valid and accepted by network, but orders aren't deployed
 	LiquidityProvisionStatusUndeployed LiquidityProvisionStatus = "Undeployed"
+	// The liquidity provision is valid and accepted by network, but orders aren't deployed.
+	// but have never been deployed. I when it's possible to deploy them for the first time
+	// margin check fails, then they will be cancelled without any penalties.
+	LiquidityProvisionStatusPending LiquidityProvisionStatus = "Pending"
 )
 
 var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
@@ -1085,11 +1097,12 @@ var AllLiquidityProvisionStatus = []LiquidityProvisionStatus{
 	LiquidityProvisionStatusCancelled,
 	LiquidityProvisionStatusRejected,
 	LiquidityProvisionStatusUndeployed,
+	LiquidityProvisionStatusPending,
 }
 
 func (e LiquidityProvisionStatus) IsValid() bool {
 	switch e {
-	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected, LiquidityProvisionStatusUndeployed:
+	case LiquidityProvisionStatusActive, LiquidityProvisionStatusStopped, LiquidityProvisionStatusCancelled, LiquidityProvisionStatusRejected, LiquidityProvisionStatusUndeployed, LiquidityProvisionStatusPending:
 		return true
 	}
 	return false

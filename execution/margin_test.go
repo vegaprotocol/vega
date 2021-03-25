@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMargins(t *testing.T) {
@@ -23,6 +24,23 @@ func TestMargins(t *testing.T) {
 	addAccount(tm, party2)
 	addAccount(tm, party3)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	auxParty := "auxParty"
+	addAccount(tm, auxParty)
+
+	//Assure liquidity auction won't be triggered
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+
+	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 100000)
+	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
 
 	order1 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
@@ -52,7 +70,7 @@ func TestMargins(t *testing.T) {
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party3-buy-order",
 	}
-	_, err := tm.market.SubmitOrder(context.TODO(), order1)
+	_, err = tm.market.SubmitOrder(context.TODO(), order1)
 	assert.NoError(t, err)
 	confirmation, err := tm.market.SubmitOrder(context.TODO(), order2)
 	assert.NoError(t, err)
@@ -108,6 +126,7 @@ func TestPartialFillMargins(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	party3 := "party3"
+	auxParty := "auxParty"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
@@ -115,7 +134,22 @@ func TestPartialFillMargins(t *testing.T) {
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	addAccount(tm, party3)
+	addAccount(tm, auxParty)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	//Assure liquidity auction won't be triggered
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+
+	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000000)
+	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
 
 	// use party 2+3 to set super high mark price
 	orderSell1 := &types.Order{
@@ -186,7 +220,7 @@ func TestPartialFillMargins(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       1,
+		Price:       2,
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   now.UnixNano() + 10000000000,

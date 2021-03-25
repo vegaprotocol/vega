@@ -95,7 +95,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 
 	for _, mkt := range mkts {
 		asset, _ := mkt.GetAsset()
-		execsetup.collateral.EnableAsset(context.Background(), types.Asset{
+		_ = execsetup.collateral.EnableAsset(context.Background(), types.Asset{
 			Id:     asset,
 			Symbol: asset,
 		})
@@ -118,7 +118,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 			},
 		},
 	}
-	execsetup.collateral.EnableAsset(context.Background(), tokAsset)
+	_ = execsetup.collateral.EnableAsset(context.Background(), tokAsset)
 
 	execsetup.engine = execution.NewEngine(
 		execsetup.log,
@@ -131,7 +131,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 
 	for _, mkt := range mkts {
 		mkt := mkt
-		execsetup.engine.SubmitMarket(context.Background(), &mkt)
+		_ = execsetup.engine.SubmitMarket(context.Background(), &mkt)
 	}
 
 	// instantiate position plugin

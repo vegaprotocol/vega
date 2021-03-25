@@ -125,7 +125,7 @@ func testSubmissionCRUD(t *testing.T) {
 		CommitmentAmount: lps1.CommitmentAmount,
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
-		Status:           types.LiquidityProvision_STATUS_UNDEPLOYED,
+		Status:           types.LiquidityProvision_STATUS_PENDING,
 		Buys: []*types.LiquidityOrderReference{
 			{LiquidityOrder: buyShape[0]},
 		},
@@ -205,6 +205,8 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
 	)
+
+	require.True(t, tng.engine.IsLiquidityProvider(party))
 
 	var (
 		markPrice = uint64(10)

@@ -12,14 +12,21 @@ Feature: Price monitoring test for issue 2681
 
   Scenario: Upper bound breached
     Given the traders make the following deposits on asset's general account:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
+      | trader    | asset | amount       |
+      | trader1   | ETH   | 10000000000  |
+      | trader2   | ETH   | 10000000000  |
+      | auxiliary | ETH   | 100000000000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader     | market id | side | volume | price    | resulting trades | type        | tif     | 
+      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | auxiliary  | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "5670000"
 
@@ -29,9 +36,9 @@ Feature: Price monitoring test for issue 2681
     Then time is updated to "2020-10-16T00:01:00Z"
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  | 1      | 4850000 | 1                | TYPE_LIMIT | TIF_FOK |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 4850000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "4850000"
 
@@ -41,9 +48,9 @@ Feature: Price monitoring test for issue 2681
     Then time is updated to "2020-10-16T00:02:00Z"
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell | 1      | 6490000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  | 1      | 6490000 | 1                | TYPE_LIMIT | TIF_FOK |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC20 | sell | 1      | 6490000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 6490000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "6490000"
 
@@ -54,18 +61,18 @@ Feature: Price monitoring test for issue 2681
     Then time is updated to "2020-10-16T00:03:00Z"
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell | 1      | 6635392 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  | 1      | 6635392 | 1                | TYPE_LIMIT | TIF_FOK |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC20 | sell | 1      | 6635392 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 6635392 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "6635392"
 
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | sell | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_FOK |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC20 | sell | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "6635392"
 

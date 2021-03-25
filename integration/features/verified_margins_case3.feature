@@ -14,29 +14,41 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | trader1    | ETH   | 1000000000 |
       | sellSideMM | ETH   | 1000000000 |
       | buySideMM  | ETH   | 1000000000 |
+      | aux        | ETH   | 1000000000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price    | resulting trades | type        | tif     | reference      |
+      | aux     | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT  | TIF_GTC | cancel-me-buy  |
+      | aux     | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT  | TIF_GTC | cancel-me-sell |
+
     # setting mark price
     And traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC |
-
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # setting order book
     And traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC |
-      | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
+    Then traders cancels the following orders reference:
+      | trader | reference      |
+      | aux    | cancel-me-sell |
+
+    And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
   Scenario:
-    # no margin account created for trader1, just general account
-    And "trader1" has only one account per asset
+    And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+
     # placing test order
     Then traders place following orders:
-      | trader  | market id | side | volume | price    | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2      | TYPE_LIMIT | TIF_GTC |
-    And "trader1" general account for asset "ETH" balance is "860000000"
+      | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    And "trader1" general account for asset "ETH" balance is "542800000"
     And executed trades:
       | buyer   | price    | size | seller     |
       | trader1 | 11200000 | 2    | sellSideMM |
@@ -48,10 +60,10 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
 
     Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 145600000 | 860000000 |
+      | trader1 | ETH   | ETH/DEC19 | 462800000 | 542800000 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 36400000    | 116480000 | 145600000 | 182000000 |
+      | trader1 | ETH/DEC19 | 115700000   | 370240000 | 462800000 | 578500000 |
     And traders have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
       | trader1 | 13     | 5600000        | 0            |
@@ -59,9 +71,9 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 160
     Then traders place following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     |
-      | sellSideMM | ETH/DEC19 | sell | 1      | 16000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | sellSideMM | ETH/DEC19 | sell | 1      | 16000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the following transfers happened:
       | from   | to      | from account            | to account          | market id | amount   | asset |
@@ -69,24 +81,24 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
 
     Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 171600000 | 860000000 |
+      | trader1 | ETH   | ETH/DEC19 | 488800000 | 542800000 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 41600000    | 133120000 | 166400000 | 208000000 |
+      | trader1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
     And traders have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
       | trader1 | 13     | 31600000       | 0            |
 
     # CLOSEOUT ATTEMPT (FAILED, no buy-side in order book) BY TRADER
     Then traders place following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 171600000 | 860000000 |
+      | trader1 | ETH   | ETH/DEC19 | 587600000 | 444000000 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 41600000    | 133120000 | 166400000 | 208000000 |
+      | trader1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
     And traders have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
       | trader1 | 13     | 31600000       | 0            |

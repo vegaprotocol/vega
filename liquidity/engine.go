@@ -70,6 +70,10 @@ type Engine struct {
 	// indexed as: map of PartyID -> OrdersID -> order
 	liquidityOrders map[string]map[string]*types.Order
 
+	// The list of parties which submitted liquidity submission
+	// which still haven't been deployed even once.
+	pendings map[string]struct{}
+
 	// undeployedProvisions flags that there are provisions within the engine that are not deployed
 	undeployedProvisions bool
 
@@ -100,6 +104,7 @@ func NewEngine(
 		provisions:              map[string]*types.LiquidityProvision{},
 		orders:                  map[string]map[string]*types.Order{},
 		liquidityOrders:         map[string]map[string]*types.Order{},
+		pendings:                map[string]struct{}{},
 		maxShapesSize:           100, // set it to the same default than the netparams
 		maxFee:                  1.0,
 	}
@@ -126,6 +131,15 @@ func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
 	}
 	e.maxShapesSize = v
 	return nil
+}
+
+func (e *Engine) IsPending(party string) bool {
+	_, ok := e.pendings[party]
+	return ok
+}
+
+func (e *Engine) RemovePending(party string) {
+	delete(e.pendings, party)
 }
 
 func (e *Engine) stopLiquidityProvision(
@@ -156,8 +170,8 @@ func (e *Engine) stopLiquidityProvision(
 	delete(e.liquidityOrders, party)
 	delete(e.orders, party)
 	delete(e.provisions, party)
+	delete(e.pendings, party)
 	return orders, nil
-
 }
 
 // IsLiquidityProvider returns true if the party hold any liquidity commitmement
@@ -204,7 +218,6 @@ func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisi
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
-
 	lp := &types.LiquidityProvision{
 		Id:               id,
 		Fee:              lps.Fee,
@@ -290,11 +303,12 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 		e.provisions[party] = lp
 		e.orders[party] = map[string]*types.Order{}
 		e.liquidityOrders[party] = map[string]*types.Order{}
+		e.pendings[party] = struct{}{}
 	}
 
 	lp.UpdatedAt = now
 	lp.CommitmentAmount = lps.CommitmentAmount
-	lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
+	lp.Status = types.LiquidityProvision_STATUS_PENDING
 	e.undeployedProvisions = true
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
 	for _, buy := range lps.Buys {
@@ -408,7 +422,8 @@ func (e *Engine) Update(
 		// but haven't yet been deployed, try an deploy now.
 		stillUndeployed := false
 		for _, lp := range e.provisions.slice() {
-			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED {
+			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED ||
+				lp.Status == types.LiquidityProvision_STATUS_PENDING {
 				creates, updates, err := e.createOrUpdateForParty(midPriceBid, midPriceAsk, lp.PartyId, repriceFn)
 				if err != nil {
 					return nil, nil, err
@@ -416,7 +431,9 @@ func (e *Engine) Update(
 				updatedLPParties = append(updatedLPParties, lp.PartyId)
 				newOrders = append(newOrders, creates...)
 				amendments = append(amendments, updates...)
-				stillUndeployed = stillUndeployed || lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED
+				stillUndeployed = stillUndeployed ||
+					(lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED ||
+						lp.Status == types.LiquidityProvision_STATUS_PENDING)
 			}
 		}
 		e.undeployedProvisions = stillUndeployed
@@ -518,7 +535,12 @@ func (e *Engine) createOrUpdateForParty(
 		needsUpdateSells = e.undeployOrdersFromShape(
 			party, sellsShape, types.Side_SIDE_SELL)
 
-		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
+		// set to undeployed if active basically as
+		// we want to keep it pending until it deployed for the first time
+		if lp.Status != types.LiquidityProvision_STATUS_UNDEPLOYED &&
+			lp.Status != types.LiquidityProvision_STATUS_PENDING {
+			lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
+		}
 		e.undeployedProvisions = true
 	} else {
 		// Create a slice shaped copy of the orders

@@ -19,34 +19,35 @@ Feature: test bugfix 614 for margin calculations
       | tamlyn  | ETH   | 10000   |
       | trader1 | ETH   | 1000000 |
       | trader2 | ETH   | 1000000 |
+      | aux     | ETH   | 1000    |
+
+ # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 87    | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 1      | 250   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    Then traders place following orders with references:
+    Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
-      | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "94"
-    Then traders cancel the following orders:
-      | trader  | reference |
-      | trader1 | trader1-1 |
-      | trader2 | trader2-1 |
 
     Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | chris   | ETH/DEC19 | sell | 100    | 250   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd     | ETH/DEC19 | sell | 11     | 140   | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney  | ETH/DEC19 | sell | 2      | 112   | 0                | TYPE_LIMIT | TIF_GTC |
-      | barney  | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
-      | edd     | ETH/DEC19 | buy  | 3      | 96    | 0                | TYPE_LIMIT | TIF_GTC |
-      | chris   | ETH/DEC19 | buy  | 15     | 90    | 0                | TYPE_LIMIT | TIF_GTC |
-      | rebecca | ETH/DEC19 | buy  | 50     | 87    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | chris   | ETH/DEC19 | sell | 100    | 250   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | edd     | ETH/DEC19 | sell | 11     | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | barney  | ETH/DEC19 | sell | 2      | 112   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | barney  | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+      | edd     | ETH/DEC19 | buy  | 3      | 96    | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | chris   | ETH/DEC19 | buy  | 15     | 90    | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | rebecca | ETH/DEC19 | buy  | 50     | 87    | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
       # this is now the actual trader that we are testing
     Then traders place following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     |
-      | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the margins levels for the traders are:
       | trader | market id | maintenance | search | initial | release |
       | tamlyn | ETH/DEC19 | 988         | 3161   | 3952    | 4940    |
@@ -57,4 +58,4 @@ Feature: test bugfix 614 for margin calculations
       | edd     | ETH   | ETH/DEC19 | 5456   | 4544    |
       | barney  | ETH   | ETH/DEC19 | 992    | 8952    |
       | rebecca | ETH   | ETH/DEC19 | 3760   | 6240    |
-    And Cumulated balance for all accounts is worth "2050000"
+    And Cumulated balance for all accounts is worth "2051000"

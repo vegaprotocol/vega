@@ -604,6 +604,10 @@ func (m marginVal) GeneralBalance() uint64 {
 	return m.general
 }
 
+func (m marginVal) BondBalance() uint64 {
+	return 0
+}
+
 func (m marginVal) MarginShortFall() uint64 {
 	return m.marginShortFall
 }

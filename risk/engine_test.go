@@ -173,10 +173,10 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
 			return markPrice, nil
 		})
-	riskevt, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
+	riskevt, _, err := eng.UpdateMarginOnNewOrder(context.Background(), evt, markPrice)
 	assert.Nil(t, riskevt)
 	assert.NotNil(t, err)
-	assert.Error(t, err, risk.ErrInsufficientFundsForInitialMargin.Error())
+	assert.Error(t, err, risk.ErrInsufficientFundsForMaintenanceMargin.Error())
 }
 
 func testMarginNoop(t *testing.T) {
@@ -366,7 +366,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		general: 100000,
 		market:  "ETH/DEC19",
 	}
-	riskevt, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, uint64(markPrice))
+	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, uint64(markPrice))
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -473,7 +473,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 
 	previousMarkPrice := 103
 
-	riskevt, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, uint64(previousMarkPrice))
+	riskevt, _, err := testE.UpdateMarginOnNewOrder(context.Background(), evt, uint64(previousMarkPrice))
 	assert.NotNil(t, riskevt)
 	if riskevt == nil {
 		t.Fatal("expecting non nil risk update")
@@ -548,6 +548,10 @@ func (m testMargin) MarginBalance() uint64 {
 
 func (m testMargin) GeneralBalance() uint64 {
 	return m.general
+}
+
+func (m testMargin) BondBalance() uint64 {
+	return 0
 }
 
 func (m testMargin) Price() uint64 {

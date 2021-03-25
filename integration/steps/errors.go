@@ -6,12 +6,6 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func errUnableToPlaceOrder(trader, reference string, err error) error {
-	return fmt.Errorf("unable to place order for trader(%s) and reference(%s): %s",
-		trader, reference, err.Error(),
-	)
-}
-
 func errOrderNotFound(reference string, trader string, err error) error {
 	return fmt.Errorf("order not found for trader(%s) with reference(%s): %v", trader, reference, err)
 }

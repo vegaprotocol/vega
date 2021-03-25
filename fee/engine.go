@@ -74,9 +74,12 @@ func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
 	}
 	e.f.infrastructureFee = f
 
-	if err := e.SetLiquidityFee(fees.Factors.LiquidityFee); err != nil {
-		e.log.Error("unable to load liquidityfee", logging.Error(err))
-		return err
+	// liquidity fee is not required to create a network
+	if len(fees.Factors.LiquidityFee) > 0 {
+		if err := e.SetLiquidityFee(fees.Factors.LiquidityFee); err != nil {
+			e.log.Error("unable to load liquidityfee", logging.Error(err))
+			return err
+		}
 	}
 
 	e.feeCfg = fees

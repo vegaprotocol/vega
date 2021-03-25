@@ -198,12 +198,14 @@ func (r *myMarketResolver) TradingModeConfig(ctx context.Context, obj *types.Mar
 	return TradingModeConfigFromProto(obj.TradingModeConfig)
 }
 
-func (r *myMarketResolver) TargetStakeParameters(ctx context.Context, obj *types.Market) (*TargetStakeParameters, error) {
-	return &TargetStakeParameters{
-		TimeWindow:    int(obj.TargetStakeParameters.TimeWindow),
-		ScalingFactor: obj.TargetStakeParameters.ScalingFactor,
+func (r *myMarketResolver) LiquidityMonitoringParameters(ctx context.Context, obj *types.Market) (*LiquidityMonitoringParameters, error) {
+	return &LiquidityMonitoringParameters{
+		TargetStakeParameters: &TargetStakeParameters{
+			TimeWindow:    int(obj.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow),
+			ScalingFactor: obj.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor,
+		},
+		TriggeringRatio: obj.LiquidityMonitoringParameters.TriggeringRatio,
 	}, nil
-
 }
 
 func (r *myMarketResolver) TradingMode(ctx context.Context, obj *types.Market) (MarketTradingMode, error) {

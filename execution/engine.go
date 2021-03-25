@@ -70,6 +70,8 @@ type netParamsValues struct {
 	makerFee                        float64
 	scalingFactors                  *types.ScalingFactors
 	maxLiquidityFee                 float64
+	bondPenaltyFactor               float64
+	targetStakeTriggeringRatio      float64
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -84,6 +86,8 @@ func defaultNetParamsValues() netParamsValues {
 		makerFee:                        -1,
 		scalingFactors:                  nil,
 		maxLiquidityFee:                 -1,
+		bondPenaltyFactor:               -1,
+		targetStakeTriggeringRatio:      -1,
 	}
 }
 
@@ -379,10 +383,15 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	if e.npv.suppliedStakeToObligationFactor != -1 {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
 	}
+	if e.npv.bondPenaltyFactor != -1 {
+		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
+	}
+	if e.npv.targetStakeTriggeringRatio != -1 {
+		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, e.npv.targetStakeTriggeringRatio)
+	}
 	if e.npv.maxLiquidityFee != -1 {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
-
 	return nil
 }
 
@@ -645,6 +654,22 @@ func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
 	return mkt.GetMarketData(), nil
 }
 
+func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, v float64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity bond penalty",
+			logging.Float64("bond-penalty-factor", v),
+		)
+	}
+
+	for _, mkt := range e.markets {
+		mkt.BondPenaltyFactorUpdate(ctx, v)
+	}
+
+	e.npv.bondPenaltyFactor = v
+
+	return nil
+}
+
 func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v interface{}) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market scaling factors",
@@ -816,6 +841,22 @@ func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
 	}
 
 	e.npv.maxLiquidityFee = f
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update target stake triggering ratio",
+			logging.Float64("max-liquidity-fee", v),
+		)
+	}
+
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, v)
+	}
+
+	e.npv.targetStakeTriggeringRatio = v
 
 	return nil
 }

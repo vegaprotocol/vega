@@ -5,13 +5,13 @@ const (
 	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
 	MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
-	MarketFeeFactorsLiquidityFee                    = "market.fee.factors.liquidityFee"
 	MarketAuctionMinimumDuration                    = "market.auction.minimumDuration"
 	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
 	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
 	MarketLiquidityStakeToCCYSiskas                 = "market.liquidity.stakeToCcySiskas"
 	MarketLiquidityProvidersFeeDistribitionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
+	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
 	MarketTargetStakeTimeWindow                     = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
 	MarketValueWindowLength                         = "market.value.windowLength"
@@ -69,13 +69,13 @@ var AllKeys = map[string]struct{}{
 	MarketMarginScalingFactors:                            {},
 	MarketFeeFactorsMakerFee:                              {},
 	MarketFeeFactorsInfrastructureFee:                     {},
-	MarketFeeFactorsLiquidityFee:                          {},
 	MarketAuctionMinimumDuration:                          {},
 	MarketAuctionMaximumDuration:                          {},
 	MarketLiquidityBondPenaltyParameter:                   {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:         {},
 	MarketLiquidityStakeToCCYSiskas:                       {},
 	MarketLiquidityProvidersFeeDistribitionTimeStep:       {},
+	MarketLiquidityTargetStakeTriggeringRatio:             {},
 	MarketTargetStakeTimeWindow:                           {},
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},
