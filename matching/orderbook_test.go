@@ -3089,3 +3089,59 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(cancels), 0)
 }
+
+func TestOrderBook_BidAndAskOnBookAfterAuction(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	// Switch to auction mode
+	book.EnterAuction()
+	assert.True(t, book.InAuction())
+
+	require.Equal(t, false, book.BidAndAskOnBookAfterAuction())
+	require.Equal(t, false, book.CanUncross())
+
+	matchingPrice := uint64(100)
+	party1 := "party1"
+	party2 := "party2"
+	makeOrder(t, book, market, "needTwentyTwoCharacts1", types.Side_SIDE_BUY, matchingPrice-1, party1, 1)
+
+	require.Equal(t, false, book.BidAndAskOnBookAfterAuction())
+	require.Equal(t, false, book.CanUncross())
+
+	makeOrder(t, book, market, "needTwentyTwoCharacts2", types.Side_SIDE_SELL, matchingPrice+1, party2, 1)
+
+	require.Equal(t, true, book.BidAndAskOnBookAfterAuction())
+	require.Equal(t, false, book.CanUncross())
+
+	makeOrder(t, book, market, "needTwentyTwoCharacts3", types.Side_SIDE_BUY, matchingPrice, party1, 1)
+
+	require.Equal(t, true, book.BidAndAskOnBookAfterAuction())
+	require.Equal(t, false, book.CanUncross())
+
+	makeOrder(t, book, market, "needTwentyTwoCharacts4", types.Side_SIDE_SELL, matchingPrice, party2, 1)
+
+	require.Equal(t, true, book.BidAndAskOnBookAfterAuction())
+	require.Equal(t, true, book.CanUncross())
+
+	_, err := book.CancelAllOrders(party1)
+	require.NoError(t, err)
+	_, err = book.CancelAllOrders(party2)
+	require.NoError(t, err)
+
+	require.Equal(t, int64(0), book.GetTotalNumberOfOrders())
+
+	makeOrder(t, book, market, "needTwentyTwoCharacts5", types.Side_SIDE_BUY, matchingPrice, party1, 1)
+
+	require.Equal(t, false, book.BidAndAskOnBookAfterAuction())
+	require.Equal(t, false, book.CanUncross())
+
+	makeOrder(t, book, market, "needTwentyTwoCharacts6", types.Side_SIDE_SELL, matchingPrice, party2, 1)
+
+	require.Equal(t, false, book.BidAndAskOnBookAfterAuction())
+	require.Equal(t, false, book.CanUncross())
+}

@@ -24,6 +24,12 @@ type TargetStakeCalculator interface {
 	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64, trades []*types.Trade) float64
 }
 
+// AuctionMonitor interface provides the function indicating if there will be a bid and ask on the book if auction were to be uncrossed now
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_monitor_mock.go -package mocks code.vegaprotocol.io/vega/monitor/liquidity AuctionMonitor
+type AuctionMonitor interface {
+	BidAndAskOnBookAfterAuction() bool
+}
+
 type Engine struct {
 	mu          *sync.Mutex
 	params      *types.LiquidityMonitoringParameters
@@ -40,6 +46,7 @@ func NewMonitor(tsCalc TargetStakeCalculator, params *types.LiquidityMonitoringP
 		mu:     &sync.Mutex{},
 		params: params,
 		tsCalc: tsCalc,
+		am:     am,
 	}
 	if e.minDuration < 1 {
 		e.minDuration = time.Second

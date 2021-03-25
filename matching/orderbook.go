@@ -237,12 +237,20 @@ func (b OrderBook) InAuction() bool {
 // CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders
 // on the book after we uncross the book (at the end of an auction). If this returns false, the opening auction should be extended
 func (b *OrderBook) CanUncross() bool {
+	return b.canUncross(true)
+}
+
+func (b *OrderBook) BidAndAskOnBookAfterAuction() bool {
+	return b.canUncross(false)
+}
+
+func (b *OrderBook) canUncross(requireTrades bool) bool {
 	bb, err := b.GetBestBidPrice() // sell
 	if err != nil {
 		return false
 	}
 	ba, err := b.GetBestAskPrice() // buy
-	if err != nil || bb < ba || bb == 0 || ba == 0 {
+	if err != nil || bb == 0 || ba == 0 || (requireTrades && bb < ba) {
 		return false
 	}
 	// check all buy price levels below ba, find limit orders

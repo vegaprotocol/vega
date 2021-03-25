@@ -12,6 +12,7 @@ import (
 
 type testHarness struct {
 	AuctionState          *mocks.MockAuctionState
+	AuctionMonitor        *mocks.MockAuctionMonitor
 	TargetStakeCalculator *mocks.MockTargetStakeCalculator
 }
 
@@ -19,6 +20,7 @@ func newTestHarness(t *testing.T) *testHarness {
 	ctrl := gomock.NewController(t)
 	return &testHarness{
 		AuctionState:          mocks.NewMockAuctionState(ctrl),
+		AuctionMonitor:        mocks.NewMockAuctionMonitor(ctrl),
 		TargetStakeCalculator: mocks.NewMockTargetStakeCalculator(ctrl),
 	}
 }
@@ -49,6 +51,10 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 		{"Current == Target, no best bid and ask", 15, 15, 0, 0, false},
 	}
 
+	var auctionMon = func(bidVol, askVol uint64) bool {
+		return bidVol > 0 && askVol > 0
+	}
+
 	h := newTestHarness(t).WhenInLiquidityAuction(true)
 	exp := now.Add(-1 * time.Second)
 	keep := now.Add(time.Second)
@@ -66,6 +72,10 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 			var trades []*types.Trade = nil
 			var rf types.RiskFactor = types.RiskFactor{}
 			var markPrice uint64 = 100
+
+			if test.current >= test.target {
+				h.AuctionMonitor.EXPECT().BidAndAskOnBookAfterAuction().Return(auctionMon(test.bestStaticBidVolume, test.bestStaticAskVolume))
+			}
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice, trades).Return(test.target)
 			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})
