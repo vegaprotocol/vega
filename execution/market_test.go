@@ -3978,15 +3978,20 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKBuy(t *testing.T) {
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-B", 10, 90)
+	o5conf, err := tm.market.SubmitOrder(ctx, o5)
+	require.NotNil(t, o5conf)
+	require.NoError(t, err)
+
 	// Send the sell order with enough volume to match both existing trades
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_FOK, "Order03", types.Side_SIDE_BUY, "trader-A", 20, 0)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_FOK, "Order03", types.Side_SIDE_BUY, "trader-A", 15, 0)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
 	// A wash trade during a FOK order will stop the order fully unfilled
 	require.Equal(t, types.Order_STATUS_STOPPED, o3.Status)
-	assert.Equal(t, uint64(20), o3.Remaining)
+	assert.EqualValues(t, 15, o3.Remaining)
 
 	// Send the sell order with only enough volume to match the opposite trader
 	o4 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_FOK, "Order04", types.Side_SIDE_BUY, "trader-A", 5, 0)
