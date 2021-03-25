@@ -16,20 +16,20 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | buySideMM  | ETH   | 1000000000 |
       | aux        | ETH   | 1000000000 |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # setting mark price
-    And traders place following orders:
+    And traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 
     # setting order book
-    And traders place following orders:
+    And traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0      | TYPE_LIMIT | TIF_GTC | _sell1    |
       | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC | _sell2    |
@@ -45,7 +45,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     # no margin account created for trader1, just general account
     And "trader1" has only one account per asset
     # placing test order
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "trader1" general account for asset "ETH" balance is "575199952"
@@ -86,7 +86,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 100
-    Then traders place following orders:
+    When traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -106,7 +106,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | trader1 | 13     | -46400000      | 0            |
 
     # PARTIAL CLOSEOUT BY TRADER
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 10     | 8000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:
@@ -120,7 +120,7 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | trader1 | 3      | -16707692      | -55692308    |
 
     # FULL CLOSEOUT BY TRADER
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 3      | 7000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:

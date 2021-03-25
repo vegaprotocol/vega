@@ -17,19 +17,19 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | aux        | ETH   | 1000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type        | tif     | reference      |
       | aux     | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT  | TIF_GTC | cancel-me-buy  |
       | aux     | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT  | TIF_GTC | cancel-me-sell |
 
     # setting mark price
-    And traders place following orders:
+    And traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # setting order book
-    And traders place following orders:
+    And traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -45,7 +45,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     # placing test order
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And "trader1" general account for asset "ETH" balance is "542800000"
@@ -70,7 +70,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 160
-    Then traders place following orders:
+    When traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 16000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -90,7 +90,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | trader1 | 13     | 31600000       | 0            |
 
     # CLOSEOUT ATTEMPT (FAILED, no buy-side in order book) BY TRADER
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:

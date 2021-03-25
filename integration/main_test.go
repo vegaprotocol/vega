@@ -84,8 +84,8 @@ func FeatureContext(s *godog.Suite) {
 
 		return nil
 	})
-	s.Step(`^traders place following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceOrders(execsetup.engine, table)
+	s.Step(`^traders place the following orders:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersPlaceTheFollowingOrders(execsetup.engine, execsetup.errorHandler, table)
 	})
 	s.Step(`^traders have the following account balances:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingAccountBalances(execsetup.broker, table)
@@ -117,13 +117,10 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the margins levels for the traders are:$`, func(table *gherkin.DataTable) error {
 		return steps.TheMarginsLevelsForTheTradersAre(execsetup.broker, table)
 	})
-	s.Step(`^traders place the following invalid orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceFollowingInvalidOrders(execsetup.engine, table)
-	})
 	s.Step(`^the following orders are rejected:$`, func(table *gherkin.DataTable) error {
 		return steps.OrdersAreRejected(execsetup.broker, table)
 	})
-	s.Step(`^missing traders place following orders with references:$`, missingTradersPlaceFollowingOrdersWithReferences)
+	s.Step(`^missing traders place the following orders with references:$`, missingTradersPlaceFollowingOrdersWithReferences)
 	s.Step(`^traders cancel the following orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, table)
 	})
@@ -131,7 +128,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TradersAttemptToCancelTheFollowingFilledOrders(execsetup.broker, execsetup.engine, table)
 	})
 	s.Step(`^traders cancels the following orders reference:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelsTheFollowingOrders(execsetup.broker, execsetup.engine, table)
+		return steps.TradersCancelsTheFollowingOrders(execsetup.broker, execsetup.engine, execsetup.errorHandler, table)
 	})
 	s.Step(`^traders have the following profit and loss:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
@@ -203,6 +200,6 @@ func FeatureContext(s *godog.Suite) {
 
 	// Experimental error assertion
 	s.Step(`^the system should return error "([^"]*)"$`, func(msg string) error {
-		return steps.TheSystemShouldReturnError(msg)
+		return steps.TheSystemShouldReturnError(execsetup.errorHandler, msg)
 	})
 }

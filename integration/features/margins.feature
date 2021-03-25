@@ -19,13 +19,13 @@ Feature: Test trader accounts
 
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -39,7 +39,7 @@ Feature: Test trader accounts
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the margins levels for the traders are:
@@ -57,7 +57,7 @@ Feature: Test trader accounts
       | trader2   | ETH   | 1000000 |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -70,9 +70,10 @@ Feature: Test trader accounts
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
 
-    Then traders place the following invalid orders:
-      | trader    | market id | side | volume | price | error               | type       | tif      |
-      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | margin check failed | TYPE_LIMIT |  TIF_GTC |
+    When traders place the following orders:
+      | trader    | market id | side | volume | price |  type       | tif      | reference |
+      | traderGuy | ETH/DEC19 | sell | 1      | 1000  |  TYPE_LIMIT |  TIF_GTC | trader1-1 |
+    Then the system should return error "margin check failed"
     Then the following orders are rejected:
       | trader    | market id | reason                          |
       | traderGuy | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |

@@ -34,7 +34,7 @@ Feature: Test market depth events for pegged orders (with BID and ASK price)
       | pegged4 | ETH/DEC19 | buy  | 5      | MID       | -10    | 100   | STATUS_PARKED |
 # keep things simple: remove the events we've just verified
     And clear order events
-    Then traders place following orders:
+    When traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |

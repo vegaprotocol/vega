@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersCancelsTheFollowingOrders(broker *stubs.BrokerStub, exec *execution.Engine, orders *gherkin.DataTable) error {
+func TradersCancelsTheFollowingOrders(broker *stubs.BrokerStub, exec *execution.Engine, errorHandler *helpers.ErrorHandler, orders *gherkin.DataTable) error {
 	for _, row := range TableWrapper(*orders).Parse() {
 		trader := row.Str("trader")
 		reference := row.Str("reference")
@@ -27,7 +28,11 @@ func TradersCancelsTheFollowingOrders(broker *stubs.BrokerStub, exec *execution.
 
 		_, err = exec.CancelOrder(context.Background(), &cancel)
 		if err != nil {
-			errCh <- err
+			errorHandler.HandleError(CancelOrderError{
+				reference: reference,
+				request:   cancel,
+				Err:       err,
+			})
 		}
 	}
 

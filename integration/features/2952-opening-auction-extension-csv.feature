@@ -20,13 +20,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | auxiliary | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader     | market id | side | volume | price      | resulting trades | type        | tif     | 
       | auxiliary  | ETH/DEC20 | buy  | 1      | 1          | 0                | TYPE_LIMIT  | TIF_GTC | 
       | auxiliary  | ETH/DEC20 | sell | 1      | 100000000  | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # place orders and generate trades - slippage 100
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 10500000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-1    |
       | trader2 | ETH/DEC20 | buy  | 1      | 9500000  | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
@@ -40,7 +40,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | 10000000 | 1    | trader2 |
     And the mark price for the market "ETH/DEC20" is "10000000"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | post-oa-1 |
       | trader3 | ETH/DEC20 | sell | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | post-oa-2 |
@@ -62,7 +62,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-s-1    | 12500000 | 0         | 0         | TIF_GTC | true    |
       | trader2 | t2-b-1    | 10500000 | 0         | 0         | TIF_GTC | true    |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-2    |
       | trader2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-3    |
@@ -84,7 +84,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-s-1    | 14500000 | 0         | 0         | TIF_GTC | true    |
       | trader2 | t2-b-1    | 13500000 | 0         | 0         | TIF_GTC | true    |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-3    |
       | trader2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-4    |
@@ -105,7 +105,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-s-1    | 16500000 | 0         | 0         | TIF_GTC | true    |
       | trader2 | t2-b-1    | 15500000 | 0         | 0         | TIF_GTC | true    |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 16000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | trader2 | ETH/DEC20 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-5    |
@@ -127,7 +127,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-s-1    | 18500000 | 0         | 0         | TIF_GTC | true    |
       | trader2 | t2-b-1    | 17500000 | 0         | 0         | TIF_GTC | true    |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 18000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-3    |
       | trader2 | ETH/DEC20 | buy  | 1      | 18000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-6    |
@@ -150,7 +150,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | t2-b-1    | 13500000 | 0         | 0         | TIF_GTC | true    |
       | trader1 | t1-s-1    | 14500000 | 0         | 0         | TIF_GTC | true    |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | trader2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-7    |
@@ -173,7 +173,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | t2-b-1    | 11500000 | 0         | 0         | TIF_GTC | true    |
       | trader1 | t1-s-1    | 12500000 | 0         | 0         | TIF_GTC | true    |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
       | trader2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-8    |
@@ -196,7 +196,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | t2-b-1    | 10500000 | 0         | 0         | TIF_GTC | true    |
       | trader1 | t1-s-1    | 11500000 | 0         | 0         | TIF_GTC | true    |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 11000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-6    |
       | trader2 | ETH/DEC20 | buy  | 1      | 11000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-9    |
@@ -219,7 +219,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | t2-b-1    | 9500000  | 0         | 0         | TIF_GTC | true    |
       | trader1 | t1-s-1    | 10500000 | 0         | 0         | TIF_GTC | true    |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-7    |
       | trader2 | ETH/DEC20 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-10   |
@@ -235,7 +235,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 1112451 | ETH   |
     And clear transfer events
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | post-oa-3 |
       | trader3 | ETH/DEC20 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | post-oa-4 |

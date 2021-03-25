@@ -21,13 +21,13 @@ Feature: Regression test for issue 630
       | aux              | BTC   | 100000  |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Trigger an auction to set the mark price
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
@@ -35,7 +35,7 @@ Feature: Regression test for issue 630
     And the mark price for the market "ETH/DEC19" is "100"
 
 # setup orderbook
-    Then traders place following orders:
+    When traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 200    | 10000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 200    | 1     | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -43,7 +43,7 @@ Feature: Regression test for issue 630
     Then the margins levels for the traders are:
       | trader           | market id | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 | 2000        | 2200   | 2400    | 2800    |
-    Then traders place following orders:
+    When traders place the following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 100    | 10000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:

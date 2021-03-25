@@ -18,19 +18,19 @@ Feature: Price monitoring test using simple risk model
       | aux     | ETH   | 100000000000  |
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "100"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -59,26 +59,26 @@ Feature: Price monitoring test using simple risk model
       | aux     | ETH   | 100000000000 |
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "100"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-    Then traders place the following invalid orders:
-      | trader  | market id | side | volume | price | error                             | type       | tif     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111   | OrderError: invalid time in force | TYPE_LIMIT | TIF_GFN |
-
+    When traders place the following orders:
+      | trader  | market id | side | volume | price | type       | tif     | reference |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111   | TYPE_LIMIT | TIF_GFN | ref-1     |
+    Then the system should return error "OrderError: invalid time in force"
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
   Scenario: Non-persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates.
@@ -89,19 +89,19 @@ Feature: Price monitoring test using simple risk model
       | aux     | ETH   | 100000000000 |
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "100"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -131,19 +131,19 @@ Feature: Price monitoring test using simple risk model
       | aux     | ETH   | 100000000000 |
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
     And the mark price for the market "ETH/DEC20" is "100"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -152,7 +152,7 @@ Feature: Price monitoring test using simple risk model
 
     And the mark price for the market "ETH/DEC20" is "100"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader2 | ETH/DEC20 | buy  | 1      | 112   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
@@ -179,12 +179,12 @@ Feature: Price monitoring test using simple risk model
       | aux     | ETH   | 100000000000 |
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -196,7 +196,7 @@ Feature: Price monitoring test using simple risk model
     #T0 + 10s
     Then time is updated to "2020-10-16T00:00:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -208,7 +208,7 @@ Feature: Price monitoring test using simple risk model
     #T0 + 01min10s
     Then time is updated to "2020-10-16T00:01:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -220,7 +220,7 @@ Feature: Price monitoring test using simple risk model
     #T1 = T0 + 02min10s (auction start)
     Then time is updated to "2020-10-16T00:02:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -264,12 +264,12 @@ Feature: Price monitoring test using simple risk model
       | aux     | ETH   | 100000000000 |
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -281,7 +281,7 @@ Feature: Price monitoring test using simple risk model
     #T0 + 10s
     Then time is updated to "2020-10-16T00:00:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -293,7 +293,7 @@ Feature: Price monitoring test using simple risk model
     #T0 + 01min10s
     Then time is updated to "2020-10-16T00:01:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -305,7 +305,7 @@ Feature: Price monitoring test using simple risk model
     #T1 = T0 + 02min10s (auction start)
     Then time is updated to "2020-10-16T00:02:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -335,12 +335,12 @@ Feature: Price monitoring test using simple risk model
       | aux     | ETH   | 100000000000 |
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -352,7 +352,7 @@ Feature: Price monitoring test using simple risk model
     #T0 + 10s
     Then time is updated to "2020-10-16T00:00:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -364,7 +364,7 @@ Feature: Price monitoring test using simple risk model
     #T0 + 01min10s
     Then time is updated to "2020-10-16T00:01:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -376,7 +376,7 @@ Feature: Price monitoring test using simple risk model
     #T1 = T0 + 02min10s (auction start)
     Then time is updated to "2020-10-16T00:02:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -388,7 +388,7 @@ Feature: Price monitoring test using simple risk model
     #T1 + 04min00s (last second of the auction)
     Then time is updated to "2020-10-16T00:06:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 2      | 133   | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 2      | 133   | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |
@@ -425,12 +425,12 @@ Feature: Price monitoring test using simple risk model
       | aux     | ETH   | 100000000000 |
   
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 99      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -442,7 +442,7 @@ Feature: Price monitoring test using simple risk model
     #T0 + 10s
     Then time is updated to "2020-10-16T00:00:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -454,7 +454,7 @@ Feature: Price monitoring test using simple risk model
     #T0 + 01min10s
     Then time is updated to "2020-10-16T00:01:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -466,7 +466,7 @@ Feature: Price monitoring test using simple risk model
     #T1 = T0 + 02min10s (auction start)
     Then time is updated to "2020-10-16T00:02:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -478,7 +478,7 @@ Feature: Price monitoring test using simple risk model
     #T1 + 04min00s (last second of the auction)
     Then time is updated to "2020-10-16T00:06:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 2      | 133   | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 2      | 133   | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |
@@ -495,7 +495,7 @@ Feature: Price monitoring test using simple risk model
     #T1 + 10min00s (last second of the extended auction)
     Then time is updated to "2020-10-16T00:12:10Z"
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 10     | 303   | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 10     | 303   | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |

@@ -19,13 +19,13 @@ Feature: Regression test for issue 767
       | aux     | BTC   | 100000  |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -38,7 +38,7 @@ Feature: Regression test for issue 767
       | trader1 | trader1-1 |
       | trader2 | trader2-1 |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | edd    | ETH/DEC19 | sell | 20     | 102   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -54,7 +54,7 @@ Feature: Regression test for issue 767
       | trader | asset | market id | margin | general |
       | edd    | BTC   | ETH/DEC19 | 848    | 152     |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | sell | 20     | 101   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:
@@ -62,7 +62,7 @@ Feature: Regression test for issue 767
       | edd    | BTC   | ETH/DEC19 | 1000   | 0       |
       | barney | BTC   | ETH/DEC19 | 594    | 406     |
     And Cumulated balance for all accounts is worth "2102000"
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | edd    | ETH/DEC19 | buy  | 115    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then traders have the following account balances:

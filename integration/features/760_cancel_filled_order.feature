@@ -18,13 +18,13 @@ Feature: Close a filled order twice
       | aux              | BTC   | 100000    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
-      | trader  | id        | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC |
+    When traders place the following orders:
+      | trader  | market id        | side | volume | price | resulting trades | type        | tif     | reference |
+      | aux     | ETH/DEC19        | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | ref-1     |
+      | aux     | ETH/DEC19        | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | ref-2     |
 
     # setup orderbook
-    Then traders place following orders:
+    When traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 10     | 120   | 1                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |

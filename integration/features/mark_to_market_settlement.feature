@@ -18,7 +18,7 @@ Feature: Test mark to market settlement
       | aux     | ETH   | 100000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC |
@@ -26,7 +26,7 @@ Feature: Test mark to market settlement
     And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -36,14 +36,14 @@ Feature: Test mark to market settlement
       | trader2 | ETH   | ETH/DEC19 |   1273 |    8727 |
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |   5041 |    4959 |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then traders have the following account balances:
@@ -67,13 +67,13 @@ Feature: Test mark to market settlement
       | aux     | ETH   | 100000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC |
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -83,14 +83,14 @@ Feature: Test mark to market settlement
       | trader2 | ETH   | ETH/DEC19 |   133  |    9867 |
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |   5041 |    4959 |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC19 | buy  | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then traders have the following account balances:
@@ -106,7 +106,7 @@ Feature: Test mark to market settlement
 # this part show that funds are moved from margin account general account for trader 3 as he does not have
 # enough funds in the margin account
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC19 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
@@ -132,13 +132,13 @@ Feature: Test mark to market settlement
       | aux     | ETH   | 100000  |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC |
 
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    And traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
@@ -147,14 +147,14 @@ Feature: Test mark to market settlement
       | trader1 | ETH   | ETH/DEC19 |   4921 |    5079 |
       | trader2 | ETH   | ETH/DEC19 |    133 |    9867 |
     And the settlement account balance is "0" for the market "ETH/DEC19" before MTM
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then traders have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 |   5041 |    4959 |
 
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 

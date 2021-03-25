@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
@@ -62,6 +63,8 @@ type executionTestSetup struct {
 	mkts []types.Market
 
 	InsurancePoolInitialBalance uint64
+
+	errorHandler *helpers.ErrorHandler
 }
 
 func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTestSetup {
@@ -137,6 +140,8 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	// instantiate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
+
+	execsetup.errorHandler = helpers.NewErrorHandler()
 
 	return execsetup
 }

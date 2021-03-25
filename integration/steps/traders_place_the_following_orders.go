@@ -2,10 +2,9 @@ package steps
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/integration/helpers"
 	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 
@@ -13,19 +12,20 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TradersPlaceFollowingInvalidOrders(
+func TradersPlaceTheFollowingOrders(
 	exec *execution.Engine,
+	errorHandler *helpers.ErrorHandler,
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
+		trader := row.Str("trader")
+		marketID := row.Str("market id")
+		side := row.Side("side")
+		volume := row.U64("volume")
+		price := row.U64("price")
 		oty := row.OrderType("type")
 		tif := row.TIF("tif")
-		side := row.Side("side")
-		price := row.U64("price")
-		volume := row.U64("volume")
-		trader := row.Str("trader")
-		reference := strconv.FormatInt(time.Now().UnixNano(), 10)
-		expectedError := row.Str("error")
+		reference := row.Str("reference")
 
 		var expiresAt int64
 		if oty != types.Order_TYPE_MARKET {
@@ -35,7 +35,7 @@ func TradersPlaceFollowingInvalidOrders(
 		order := types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
 			Id:          uuid.NewV4().String(),
-			MarketId:    row.Str("market id"),
+			MarketId:    marketID,
 			PartyId:     trader,
 			Side:        side,
 			Price:       price,
@@ -47,23 +47,14 @@ func TradersPlaceFollowingInvalidOrders(
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   reference,
 		}
-
 		_, err := exec.SubmitOrder(context.Background(), &order)
-
-		if err == nil {
-			return errUnexpectedSuccessfulOrder(expectedError, err)
-		}
-		if err.Error() != expectedError {
-			return errMismatchedErrorMessage(expectedError, err)
+		if err != nil {
+			errorHandler.HandleError(SubmitOrderError{
+				reference: reference,
+				request:   order,
+				Err:       err,
+			})
 		}
 	}
 	return nil
-}
-
-func errMismatchedErrorMessage(expectedError string, err error) error {
-	return fmt.Errorf("expected error (%v) but got (%v)", expectedError, err)
-}
-
-func errUnexpectedSuccessfulOrder(expectedError string, err error) error {
-	return fmt.Errorf("expected error (%v) but got (%v)", expectedError, err)
 }

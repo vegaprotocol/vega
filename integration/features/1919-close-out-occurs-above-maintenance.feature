@@ -28,12 +28,12 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
       | tt_aux  | BTC   | 100000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | tt_aux  | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | tt_aux  | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | 
+    When traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | tt_aux  | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | ref-1     |
+      | tt_aux  | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | ref-2     |
 
-    Then traders place following orders:
+    And traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | t1-s-1    |
       | trader2 | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
@@ -44,7 +44,7 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
     And the mark price for the market "ETH/DEC19" is "100"
 
     # place orders and generate trades
-    Then traders place following orders:
+    When traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | tt_10  | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT  | TIF_GTT | tt_10-1   |
       | tt_11  | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT  | TIF_GTT | tt_11-1   |

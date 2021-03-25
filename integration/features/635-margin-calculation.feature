@@ -20,19 +20,19 @@ Feature: Regression test for issue 596
       | aux              | BTC   | 1000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price      | resulting trades | type        | tif     |
       | aux     | ETH/DEC19 | buy  | 1      | 8700000    | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 25000000   | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # setup previous mark price
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader           | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # setup orderbook
-    Then traders place following orders:
+    When traders place the following orders:
       | trader           | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | sellSideProvider | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -42,7 +42,7 @@ Feature: Regression test for issue 596
       | buySideProvider  | ETH/DEC19 | buy  | 15     | 9000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
       | buySideProvider  | ETH/DEC19 | buy  | 50     | 8700000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
 # buy 13@150
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader    | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
 # checking margins
