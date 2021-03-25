@@ -201,7 +201,8 @@ message LiquidityMonitoringParameters {
   TargetStakeParameters target_stake_parameters = 1;
   // Specifies the triggering ratio for entering liquidity auction
   double triggering_ratio = 2 [(validator.field) = {float_gte: 0, float_lte: 1}];
-
+  // Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
+  int64 auction_extension = 3;
 }
 
 // TargetStakeParameters contains parameters used in target stake calculation

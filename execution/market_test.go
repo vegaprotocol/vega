@@ -170,6 +170,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 }
 
 func (tm *testMarket) StartOpeningAuction() *testMarket {
+	// tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	tm.market.StartOpeningAuction(context.Background())
 	return tm
 }
@@ -292,6 +293,11 @@ func getTestMarket2(
 	assert.NoError(t, err)
 
 	if startOpeningAuction {
+		d := time.Second
+		if openingAuctionDuration != nil {
+			d = time.Duration(openingAuctionDuration.Duration) * time.Second
+		}
+		mktEngine.OnMarketAuctionMinimumDurationUpdate(context.Background(), d)
 		mktEngine.StartOpeningAuction(context.Background())
 	}
 
@@ -975,7 +981,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	auxParty := "auxParty"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	var auctionExtensionSeconds int64 = 45
+	auctionExtensionSeconds := int64(45)
 	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	afterAuction := auctionEndTime.Add(time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
@@ -989,7 +995,9 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	var initialPrice uint64 = 100
 	var validPrice = initialPrice + (MAXMOVEUP+MINMOVEDOWN)/2
 	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
-	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+	// let's not start this in opening auction, it complicates the matter
+	// tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+	tm := getTestMarket2(t, now, closingAt, pMonitorSettings, nil, false)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -998,6 +1006,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -1044,13 +1053,14 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Reference:   "party1-buy-order-1",
 	}
 	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
+	fmt.Printf("%#v\n", tm.market.GetMarketData())
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
 	require.Equal(t, 1, len(confirmationBuy.Trades))
 
 	auctionEnd := tm.market.GetMarketData().AuctionEnd
-	require.Equal(t, int64(0), auctionEnd) // Not in auction
+	require.Equal(t, int64(0), auctionEnd, "we are in auction?") // Not in auction
 
 	orderSell2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
