@@ -110,8 +110,9 @@ type PriceMonitor interface {
 
 // LiquidityMonitor
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
 	SetMinDuration(d time.Duration)
+	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio float64)
 }
 
 // TargetStakeCalculator interface
@@ -206,7 +207,6 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
-	targetStakeTriggeringRatio float64
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -3109,7 +3109,7 @@ func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64
 }
 
 func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
-	m.targetStakeTriggeringRatio = v
+	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, v)
 	//TODO: Send an event containing updated parameter
 }
 
@@ -3508,7 +3508,6 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 
 	m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
-		m.targetStakeTriggeringRatio,
 		float64(m.getSuppliedStake()),
 		trades,
 		*rf,

@@ -29,10 +29,7 @@ func (h *testHarness) WhenInLiquidityAuction(v bool) *testHarness {
 }
 
 func TestEngineWhenInLiquidityAuction(t *testing.T) {
-	var (
-		constant = 0.7
-		now      = time.Now()
-	)
+	now := time.Now()
 
 	tests := []struct {
 		desc string
@@ -56,7 +53,7 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 	exp := now.Add(-1 * time.Second)
 	keep := now.Add(time.Second)
 	mon := liquidity.NewMonitor(h.TargetStakeCalculator, &types.LiquidityMonitoringParameters{
-		TriggeringRatio: constant,
+		TriggeringRatio: .7,
 	})
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
@@ -70,16 +67,13 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 			var rf types.RiskFactor = types.RiskFactor{}
 			var markPrice uint64 = 100
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice, trades).Return(test.target)
-			mon.CheckLiquidity(h.AuctionState, now, constant, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
+			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})
 	}
 }
 
 func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
-	var (
-		constant = 0.5
-		now      = time.Now()
-	)
+	now := time.Now()
 
 	tests := []struct {
 		desc string
@@ -101,7 +95,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 
 	h := newTestHarness(t).WhenInLiquidityAuction(false)
 	mon := liquidity.NewMonitor(h.TargetStakeCalculator, &types.LiquidityMonitoringParameters{
-		TriggeringRatio: constant,
+		TriggeringRatio: .5,
 	})
 	h.AuctionState.EXPECT().InAuction().Return(false).Times(len(tests))
 	h.AuctionState.EXPECT().ExpiresAt().Times(len(tests)).Return(nil)
@@ -114,7 +108,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 			var rf types.RiskFactor = types.RiskFactor{}
 			var markPrice uint64 = 100
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice, trades).Return(test.target)
-			mon.CheckLiquidity(h.AuctionState, now, constant, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
+			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})
 	}
 }
