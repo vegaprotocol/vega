@@ -19,7 +19,7 @@ Feature: Position resolution case 4
       | auxiliary        | BTC   | 1000000000000 |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-  Then traders place following orders:
+  Then traders place the following orders:
     | trader     | marekt id | side | volume | price   | resulting trades | type        | tif     |
     | auxiliary  | ETH/DEC19 | buy  | 1      | 1       | 0                | TYPE_LIMIT  | TIF_GTC |
     | auxiliary  | ETH/DEC19 | sell | 1      | 1000    | 0                | TYPE_LIMIT  | TIF_GTC |

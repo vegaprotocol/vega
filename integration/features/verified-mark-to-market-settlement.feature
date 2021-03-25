@@ -21,7 +21,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
@@ -85,7 +85,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
@@ -158,7 +158,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
@@ -222,7 +222,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
@@ -293,7 +293,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
@@ -342,7 +342,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
@@ -400,7 +400,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
@@ -450,7 +450,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
@@ -522,7 +522,7 @@ Feature: MTM settlement tests
       | aux     | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 

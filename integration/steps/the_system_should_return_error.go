@@ -3,17 +3,27 @@ package steps
 import (
 	"fmt"
 	"time"
+
+	"code.vegaprotocol.io/vega/integration/helpers"
 )
 
-func TheSystemShouldReturnError(errorMessage string) error {
+func TheSystemShouldReturnError(errorHandler *helpers.ErrorHandler, errorMessage string) error {
 forLoop:
 	for {
 		select {
 		case <-time.After(2 * time.Second):
 			break forLoop
-		case e := <-errCh:
-			if e.Error() == errorMessage {
-				return nil
+		case e := <-errorHandler.ErrCh():
+			switch cause := e.(type) {
+			case CancelOrderError:
+				if cause.Err.Error() == errorMessage {
+					return nil
+				}
+			case SubmitOrderError:
+				if cause.Err.Error() == errorMessage {
+					return nil
+				}
+			default:
 			}
 		}
 	}

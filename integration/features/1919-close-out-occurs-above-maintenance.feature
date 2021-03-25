@@ -28,12 +28,12 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
       | tt_aux  | BTC   | 100000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | tt_aux  | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | tt_aux  | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | 
-
     When traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | tt_aux  | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | ref-1     |
+      | tt_aux  | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | ref-2     |
+
+    And traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | t1-s-1    |
       | trader2 | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |

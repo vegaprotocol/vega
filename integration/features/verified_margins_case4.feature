@@ -16,7 +16,7 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
       | buySideMM  | ETH   | 1000000000 |
       | aux        | ETH   | 1000000000 |
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type        | tif     | 
       | aux     | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT  | TIF_GTC | 

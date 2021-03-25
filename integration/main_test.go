@@ -85,7 +85,7 @@ func FeatureContext(s *godog.Suite) {
 		return nil
 	})
 	s.Step(`^traders place the following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceTheFollowingOrders(execsetup.engine, table)
+		return steps.TradersPlaceTheFollowingOrders(execsetup.engine, execsetup.errorHandler, table)
 	})
 	s.Step(`^traders have the following account balances:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingAccountBalances(execsetup.broker, table)
@@ -128,7 +128,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TradersAttemptToCancelTheFollowingFilledOrders(execsetup.broker, execsetup.engine, table)
 	})
 	s.Step(`^traders cancels the following orders reference:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelsTheFollowingOrders(execsetup.broker, execsetup.engine, table)
+		return steps.TradersCancelsTheFollowingOrders(execsetup.broker, execsetup.engine, execsetup.errorHandler, table)
 	})
 	s.Step(`^traders have the following profit and loss:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
@@ -200,6 +200,6 @@ func FeatureContext(s *godog.Suite) {
 
 	// Experimental error assertion
 	s.Step(`^the system should return error "([^"]*)"$`, func(msg string) error {
-		return steps.TheSystemShouldReturnError(msg)
+		return steps.TheSystemShouldReturnError(execsetup.errorHandler, msg)
 	})
 }

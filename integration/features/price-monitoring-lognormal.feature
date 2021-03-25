@@ -34,7 +34,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
 
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -366,7 +366,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     #T1 + 10min00s (last second of the extended auction)
     Then time is updated to "2020-10-16T00:10:10Z"
 
-    when traders place the following orders:
+    When traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |

@@ -85,7 +85,7 @@ Feature: Amend orders
       | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
 
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
       | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
@@ -119,7 +119,7 @@ Feature: Amend orders
       | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
 
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
       | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
@@ -153,7 +153,7 @@ Feature: Amend orders
       | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
 
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type  | tif | reference   |
       | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 

@@ -26,7 +26,7 @@ Feature: Regression test for issue 596
       | aux     | ETH/DEC19 | sell | 1      | 25000000   | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # setup previous mark price
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader           | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -42,7 +42,7 @@ Feature: Regression test for issue 596
       | buySideProvider  | ETH/DEC19 | buy  | 15     | 9000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
       | buySideProvider  | ETH/DEC19 | buy  | 50     | 8700000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
 # buy 13@150
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader    | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
 # checking margins

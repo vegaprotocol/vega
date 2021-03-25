@@ -17,7 +17,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | aux        | ETH   | 1000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place following orders:
+    Then traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type        | tif     | reference      |
       | aux     | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT  | TIF_GTC | cancel-me-buy  |
       | aux     | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT  | TIF_GTC | cancel-me-sell |

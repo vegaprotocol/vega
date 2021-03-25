@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/integration/helpers"
 	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
 
@@ -13,6 +14,7 @@ import (
 
 func TradersPlaceTheFollowingOrders(
 	exec *execution.Engine,
+	errorHandler *helpers.ErrorHandler,
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
@@ -47,16 +49,12 @@ func TradersPlaceTheFollowingOrders(
 		}
 		_, err := exec.SubmitOrder(context.Background(), &order)
 		if err != nil {
-			errCh <- err
+			errorHandler.HandleError(SubmitOrderError{
+				reference: reference,
+				request:   order,
+				Err:       err,
+			})
 		}
-		//if err != nil {
-		//	return errUnableToPlaceOrder(trader, reference, err)
-		//}
-		//
-		//resultingTrades := row.U64("resulting trades")
-		//if len(result.Trades) != int(resultingTrades) {
-		//	return errWrongNumberOfTrades(resultingTrades, result)
-		//}
 	}
 	return nil
 }
