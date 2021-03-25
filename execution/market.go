@@ -1206,7 +1206,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 				m.broker.Send(events.NewOrderEvent(ctx, order))
 				return &types.OrderConfirmation{Order: order}, nil
 			}
-			order.Status = types.Order_STATUS_ACTIVE
 		}
 	}
 
@@ -1273,6 +1272,9 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			return nil, err
 		}
 	}
+
+	order.Status = types.Order_STATUS_ACTIVE
+
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if err != nil {
