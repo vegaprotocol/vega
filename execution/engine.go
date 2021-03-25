@@ -72,6 +72,7 @@ type netParamsValues struct {
 	maxLiquidityFee                 float64
 	bondPenaltyFactor               float64
 	targetStakeTriggeringRatio      float64
+	auctionMinDuration              time.Duration
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -88,6 +89,7 @@ func defaultNetParamsValues() netParamsValues {
 		maxLiquidityFee:                 -1,
 		bondPenaltyFactor:               -1,
 		targetStakeTriggeringRatio:      -1,
+		auctionMinDuration:              -1,
 	}
 }
 
@@ -338,6 +340,9 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 }
 
 func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) error {
+	if e.npv.auctionMinDuration != -1 {
+		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
+	}
 	if e.npv.shapesMaxSize != -1 {
 		if err := mkt.OnMarketLiquidityProvisionShapesMaxSizeUpdate(e.npv.shapesMaxSize); err != nil {
 			return err
@@ -652,6 +657,14 @@ func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
 		return types.MarketData{}, types.ErrInvalidMarketID
 	}
 	return mkt.GetMarketData(), nil
+}
+
+func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) error {
+	for _, mkt := range e.markets {
+		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
+	}
+	e.npv.auctionMinDuration = d
+	return nil
 }
 
 func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, v float64) error {

@@ -639,6 +639,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
 			Watcher: l.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAuctionMinimumDuration,
+			Watcher: l.executionEngine.OnMarketAuctionMinimumDurationUpdate,
+		},
 	)
 }
 

@@ -1,9 +1,10 @@
-package liquidity
+package liquidity_test
 
 import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/monitor/liquidity"
 	"code.vegaprotocol.io/vega/monitor/liquidity/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/golang/mock/gomock"
@@ -52,11 +53,18 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 	}
 
 	h := newTestHarness(t).WhenInLiquidityAuction(true)
-	mon := NewMonitor(h.TargetStakeCalculator)
+	exp := now.Add(-1 * time.Second)
+	keep := now.Add(time.Second)
+	mon := liquidity.NewMonitor(h.TargetStakeCalculator, &types.LiquidityMonitoringParameters{
+		TriggeringRatio: constant,
+	})
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionShouldEnd {
 				h.AuctionState.EXPECT().EndAuction().Times(1)
+				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&exp)
+			} else {
+				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&keep)
 			}
 			var trades []*types.Trade = nil
 			var rf types.RiskFactor = types.RiskFactor{}
@@ -92,12 +100,15 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 	}
 
 	h := newTestHarness(t).WhenInLiquidityAuction(false)
-	mon := NewMonitor(h.TargetStakeCalculator)
+	mon := liquidity.NewMonitor(h.TargetStakeCalculator, &types.LiquidityMonitoringParameters{
+		TriggeringRatio: constant,
+	})
 	h.AuctionState.EXPECT().InAuction().Return(false).Times(len(tests))
+	h.AuctionState.EXPECT().ExpiresAt().Times(len(tests)).Return(nil)
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionShouldStart {
-				h.AuctionState.EXPECT().StartLiquidityAuction(now, nil).Times(1)
+				h.AuctionState.EXPECT().StartLiquidityAuction(now, gomock.Any()).Times(1)
 			}
 			var trades []*types.Trade = nil
 			var rf types.RiskFactor = types.RiskFactor{}

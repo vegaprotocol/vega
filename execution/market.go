@@ -105,11 +105,13 @@ var (
 type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, v uint64, now time.Time) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
+	SetMinDuration(d time.Duration)
 }
 
 // LiquidityMonitor
 type LiquidityMonitor interface {
 	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
+	SetMinDuration(d time.Duration)
 }
 
 // TargetStakeCalculator interface
@@ -143,6 +145,8 @@ type AuctionState interface {
 	// get some data
 	Mode() types.Market_TradingMode
 	Trigger() types.AuctionTrigger
+	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
+	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
@@ -298,7 +302,7 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
-	lMonitor := lmon.NewMonitor(tsCalc)
+	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
@@ -3106,6 +3110,16 @@ func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64
 func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
 	m.targetStakeTriggeringRatio = v
 	//TODO: Send an event containing updated parameter
+}
+
+func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) {
+	m.pMonitor.SetMinDuration(d)
+	m.lMonitor.SetMinDuration(d)
+	evt := m.as.UpdateMinDuration(ctx, d)
+	// we were in an auction, and the duration of the auction was updated
+	if evt != nil {
+		m.broker.Send(evt)
+	}
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.

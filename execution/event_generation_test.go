@@ -33,6 +33,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 	addAccountWithAmount(tm, "trader-C", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), 10*time.Second)
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(*now, &types.AuctionDuration{Duration: 10})
 	tm.mas.AuctionStarted(ctx)
