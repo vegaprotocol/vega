@@ -56,9 +56,23 @@ func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialA
 	if err != nil {
 		return nil, err
 	}
+
+	// Make sure net position is positive
+	if netPosition < 0 {
+		netPosition = 0 - netPosition
+	}
+
+	sPrice := uint64(settlementPrice)
+	var amount uint64
+	if sPrice > entryPrice {
+		amount = (sPrice - entryPrice) * uint64(netPosition)
+	} else {
+		amount = (entryPrice - sPrice) * uint64(netPosition)
+	}
+
 	return &types.FinancialAmount{
 		Asset:  f.SettlementAsset,
-		Amount: (uint64(settlementPrice) - entryPrice) * uint64(netPosition),
+		Amount: amount,
 	}, nil
 }
 
