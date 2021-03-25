@@ -517,6 +517,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 
 	// Leave auction
 	now = now.Add(time.Second * 40)
+	tm.market.OnChainTimeUpdate(ctx, now)
 	tm.market.LeaveAuction(ctx, now)
 
 	// Check we have an accepted LP submission

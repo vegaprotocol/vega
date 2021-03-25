@@ -194,6 +194,16 @@ message PriceMonitoringSettings {
   int64 update_frequency = 2;
 }
 
+// LiquidityMonitoringParameters contains settings used for liquidity monitoring
+message LiquidityMonitoringParameters {
+
+  // Specifies parameters related to target stake calculation
+  TargetStakeParameters target_stake_parameters = 1;
+  // Specifies the triggering ratio for entering liquidity auction
+  double triggering_ratio = 2 [(validator.field) = {float_gte: 0, float_lte: 1}];
+
+}
+
 // TargetStakeParameters contains parameters used in target stake calculation
 message TargetStakeParameters {
   // Specifies length of time window expressed in seconds for target stake calculation
@@ -270,8 +280,8 @@ message Market {
   }
   // PriceMonitoringSettings for the market
   PriceMonitoringSettings price_monitoring_settings = 6;
-  // TargetStakeParameters for the market
-  TargetStakeParameters target_stake_parameters = 7;
+  // LiquidityMonitoringParameters for the market
+  LiquidityMonitoringParameters liquidity_monitoring_parameters = 7;
   // Current mode of execution of the market
   TradingMode trading_mode = 8;
   // Current state of the market

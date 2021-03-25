@@ -1087,6 +1087,14 @@ type TargetStakeParameters {
   scalingFactor: Float!
 }
 
+"Configuration of a market liquidity monitoring parameters"
+type LiquidityMonitoringParameters {
+  "Specifies parameters related to target stake calculation"
+  targetStakeParameters: TargetStakeParameters!
+  "Specifies the triggering ratio for entering liquidity auction"
+  triggeringRatio: Float!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
   "Market ID"
@@ -1131,8 +1139,8 @@ type Market {
   "Price monitoring settings for the market"
   priceMonitoringSettings: PriceMonitoringSettings!
 
-  "Taget stake parameter"
-  targetStakeParameters: TargetStakeParameters!
+  "Liquidity monitoring parameters for the market"
+  liquidityMonitoringParameters: LiquidityMonitoringParameters!
 
   "Current mode of execution of the market"
   tradingMode: MarketTradingMode!

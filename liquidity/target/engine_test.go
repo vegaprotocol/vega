@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/liquidity/target"
+	"code.vegaprotocol.io/vega/liquidity/target/mocks"
 	types "code.vegaprotocol.io/vega/proto"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,14 +17,14 @@ var now = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
 
 func TestConstructor(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
-	engine := target.NewEngine(params)
+	engine := target.NewEngine(params, nil)
 
 	require.NotNil(t, engine)
 }
 
 func TestRecordOpenInterest(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
-	engine := target.NewEngine(params)
+	engine := target.NewEngine(params, nil)
 	err := engine.RecordOpenInterest(9, now)
 	require.NoError(t, err)
 	err = engine.RecordOpenInterest(0, now)
@@ -37,7 +39,7 @@ func TestRecordOpenInterest(t *testing.T) {
 
 func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
-	engine := target.NewEngine(params)
+	engine := target.NewEngine(params, nil)
 	rf := types.RiskFactor{
 		Long:  0.3,
 		Short: 0.1,
@@ -58,7 +60,7 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	var markPrice uint64 = 123
 	expectedTargetStake := float64(markPrice*oi) * math.Max(rfLong, rfShort) * scalingFactor
 
-	engine := target.NewEngine(params)
+	engine := target.NewEngine(params, nil)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -88,7 +90,7 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 		return float64(markPrice*oi) * math.Max(rfLong, rfShort) * scalingFactor
 	}
 
-	engine := target.NewEngine(params)
+	engine := target.NewEngine(params, nil)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -134,5 +136,55 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
 	require.Equal(t, expectedTargetStake(lastRecordedValue), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(lastRecordedValue), actualTargetStake2)
+}
+
+func TestGetTheoreticalTargetStake(t *testing.T) {
+	tWindow := time.Hour
+	scalingFactor := 11.3
+	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
+	rfLong := 0.3
+	rfShort := 0.1
+	var oi uint64 = 23
+	var markPrice uint64 = 123
+	expectedTargetStake := float64(markPrice*oi) * math.Max(rfLong, rfShort) * scalingFactor
+
+	ctrl := gomock.NewController(t)
+	oiCalc := mocks.NewMockOpenInterestCalculator(ctrl)
+	engine := target.NewEngine(params, oiCalc)
+	rf := types.RiskFactor{
+		Long:  rfLong,
+		Short: rfShort,
+	}
+	err := engine.RecordOpenInterest(oi, now)
+	require.NoError(t, err)
+
+	targetStakeNow := engine.GetTargetStake(rf, now, markPrice)
+	require.Equal(t, expectedTargetStake, targetStakeNow)
+
+	var trades []*types.Trade
+
+	// No change in OI
+	theoreticalOI := oi
+	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
+	expectedTheoreticalTargetStake := expectedTargetStake
+	theoreticalTargetStake := engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+
+	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
+
+	// OI decreases
+	theoreticalOI = oi - 2
+	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
+	expectedTheoreticalTargetStake = expectedTargetStake
+	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+
+	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
+
+	// OI increases
+	theoreticalOI = oi + 2
+	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
+	expectedTheoreticalTargetStake = float64(markPrice*theoreticalOI) * math.Max(rfLong, rfShort) * scalingFactor
+	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+
+	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
 
 }

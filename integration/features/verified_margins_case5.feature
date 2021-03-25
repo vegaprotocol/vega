@@ -11,9 +11,16 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | prices.ETH.value | 9400000 |
     And the traders make the following deposits on asset's general account:
       | trader     | asset | amount       |
-      | trader1    | ETH   | 1000000000   |
+      | trader1    | ETH   | 980000000   |
       | sellSideMM | ETH   | 100000000000 |
       | buySideMM  | ETH   | 100000000000 |
+      | aux        | ETH   | 1000000000   |
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price    | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      |  6999999 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 50000001 | 0                | TYPE_LIMIT  | TIF_GTC |
+
     # setting mark price
     And traders place following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -40,7 +47,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
     Then traders place following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 13     | 9000000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And "trader1" general account for asset "ETH" balance is "718400040"
+    And "trader1" general account for asset "ETH" balance is "698400040"
     And executed trades:
       | buyer     | price    | size | seller  |
       | buySideMM | 10000000 | 1    | trader1 |
@@ -52,7 +59,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
+      | trader1 | ETH   | ETH/DEC19 | 284399960 | 698400040 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
@@ -74,7 +81,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | sellSideMM | ETH/DEC19 | sell | 2      | 8000000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 284399960 | 718400040 |
+      | trader1 | ETH   | ETH/DEC19 | 284399960 | 698400040 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
       | trader1 | ETH/DEC19 | 71099990    | 227519968 | 284399960 | 355499950 |
@@ -97,10 +104,10 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
 
     Then traders have the following account balances:
       | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 156000000 | 573800000 |
+      | trader1 | ETH   | ETH/DEC19 | 156000000 | 553800000 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 39000000    | 124800000 | 156000000 | 195000000 |
+      | trader1 | ETH/DEC19 |  39000000   | 124800000 | 156000000 | 195000000 |
     And traders have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
       | trader1 | -13    | -270200000     | 0            |
@@ -122,9 +129,12 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 21     | 80000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 11     | 80000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    Then traders have the following account balances:
+      | trader  | asset | market id | margin | general |
+      | trader1 | ETH   | ETH/DEC19 |      0 |       0 |
     And the margins levels for the traders are:
       | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 0           | 0      | 0       | 0       |
     And traders have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
-      | trader1 | 0      | 0              | -1000000000  |
+      | trader1 | 0      | 0              |  -980000000  |

@@ -16,6 +16,13 @@ Feature: Position resolution case 4
       | sellSideProvider | BTC   | 1000000000000 |
       | buySideProvider  | BTC   | 1000000000000 |
       | designatedLooser | BTC   | 10000         |
+      | auxiliary        | BTC   | 1000000000000 |
+
+  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+  Then traders place following orders:
+    | trader     | marekt id | side | volume | price   | resulting trades | type        | tif     |
+    | auxiliary  | ETH/DEC19 | buy  | 1      | 1       | 0                | TYPE_LIMIT  | TIF_GTC |
+    | auxiliary  | ETH/DEC19 | sell | 1      | 1000    | 0                | TYPE_LIMIT  | TIF_GTC |
 
 # insurance pool generation - setup orderbook
     Then traders place following orders:
@@ -75,4 +82,4 @@ Feature: Position resolution case 4
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | buySideProvider  | ETH/DEC19 | buy  | 50     | 350   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 1     | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |

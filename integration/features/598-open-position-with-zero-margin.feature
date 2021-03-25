@@ -17,20 +17,21 @@ Feature: Regression test for issue 598
       | chris   | BTC   | 1000    |
       | trader1 | BTC   | 1000000 |
       | trader2 | BTC   | 1000000 |
+      | aux     | BTC   | 1000    |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
+      | aux     | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | aux     | ETH/DEC19 | sell | 1      | 105   | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
     Then traders place following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
-      | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
     And the mark price for the market "ETH/DEC19" is "100"
-    Then traders cancel the following orders:
-      | trader  | reference |
-      | trader1 | trader1-1 |
-      | trader2 | trader2-1 |
 
     Then traders place following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |

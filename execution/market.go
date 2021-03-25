@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
+	lmon "code.vegaprotocol.io/vega/monitor/liquidity"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/products"
@@ -106,6 +107,11 @@ type PriceMonitor interface {
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 }
 
+// LiquidityMonitor
+type LiquidityMonitor interface {
+	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
+}
+
 // TargetStakeCalculator interface
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
@@ -171,6 +177,7 @@ type Market struct {
 	parties map[string]struct{}
 
 	pMonitor PriceMonitor
+	lMonitor LiquidityMonitor
 
 	tsCalc TargetStakeCalculator
 
@@ -195,6 +202,7 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
+	targetStakeTriggeringRatio float64
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -283,12 +291,15 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate fee engine")
 	}
 
+	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
+
 	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
-	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
+	lMonitor := lmon.NewMonitor(tsCalc)
+
 	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
 	// The market is initially create in a proposed state
@@ -327,6 +338,7 @@ func NewMarket(
 		parties:            map[string]struct{}{},
 		as:                 as,
 		pMonitor:           pMonitor,
+		lMonitor:           lMonitor,
 		tsCalc:             tsCalc,
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
@@ -526,7 +538,9 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				// mark opening auction as ending
 				// Prime price monitoring engine with the uncrossing price of the opening auction
 				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
-					m.log.Error("Price monitoring error", logging.Error(err))
+					m.log.Panic("unable to run check price with price monitor",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
 				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
@@ -540,10 +554,12 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			}
 		} else if m.as.IsPriceAuction() {
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
-				m.log.Error("Price monitoring error", logging.Error(err))
-				// @TODO handle or panic? (panic is last resort)
+				m.log.Panic("unable to run check price with price monitor",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
 			}
-			// price monitoring engine indicated auction can end
+			m.checkLiquidity(ctx, nil)
+			// price monitoring engine and liquidity monitoring engine both indicated auction can end
 			if m.as.AuctionEnd() {
 				m.LeaveAuction(ctx, t)
 			}
@@ -1308,25 +1324,33 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	m.handleConfirmation(ctx, confirmation)
-
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 	return confirmation, nil
 }
 
 func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
-	if err == nil {
-		for _, t := range trades {
-			if err := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); err != nil {
-				m.log.Error("Price monitoring error", logging.Error(err))
-				// @TODO handle or panic? (panic is last resort)
-			}
-		}
-		if m.as.AuctionStart() {
-			m.EnterAuction(ctx)
-			return nil, err
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range trades {
+		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); merr != nil {
+			m.log.Panic("unable to run check price with price monitor",
+				logging.String("market-id", m.GetID()),
+				logging.Error(merr))
 		}
 	}
-	return trades, err
+	m.checkLiquidity(ctx, trades)
+
+	// start the  monitoring auction if required?
+	if m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+		return nil, nil
+	}
+
+	return trades, nil
 }
 
 func (m *Market) addParty(party string) {
@@ -1874,6 +1898,12 @@ func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Co
 		return err
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+
+	m.checkLiquidity(ctx, nil)
+	// start the liquidity monitoring auction if required
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+	}
 	return nil
 }
 
@@ -2165,6 +2195,8 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			m.log.Debug("liquidity update error", logging.Error(err))
 		}
 	}
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
@@ -3064,8 +3096,14 @@ func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
 func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
 	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
+
 func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64) {
 	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(v)
+}
+
+func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
+	m.targetStakeTriggeringRatio = v
+	//TODO: Send an event containing updated parameter
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
@@ -3149,6 +3187,10 @@ func (m *Market) cancelLiquidityProvision(
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares()
 	}
+
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
+
 	return nil
 }
 
@@ -3373,6 +3415,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 			// force update of shares so they are updated for all
 			_ = m.equityShares.Shares()
+
+			m.checkLiquidity(ctx, nil)
+			m.commandLiquidityAuction(ctx)
+
 		}
 	}()
 
@@ -3430,6 +3476,51 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	m.liquidity.RemovePending(party)
 
 	return nil
+}
+
+func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
+	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
+	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
+
+	rf, err := m.getRiskFactors()
+	if err != nil {
+		m.log.Panic("unable to get risk factors, can't check liquidity",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+	}
+
+	m.lMonitor.CheckLiquidity(
+		m.as, m.currentTime,
+		m.targetStakeTriggeringRatio,
+		float64(m.getSuppliedStake()),
+		trades,
+		*rf,
+		m.markPrice,
+		vBid, vAsk)
+
+}
+
+// command liquidity auction checks if liquidity auction should be entered and if it can end
+func (m *Market) commandLiquidityAuction(ctx context.Context) {
+	// start the liquidity monitoring auction if required
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+	}
+	// end the liquidity monitoring auction if possible
+	if m.as.InAuction() && m.as.AuctionEnd() && !m.as.IsOpeningAuction() {
+		p, v, _ := m.matching.GetIndicativePriceAndVolume()
+		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime); err != nil {
+			m.log.Panic("unable to run check price with price monitor",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		// TODO: Need to also get indicative trades and check how they'd impact target stake,
+		// see  https://github.com/vegaprotocol/vega/issues/3047
+		// If price monitoring doesn't trigger auction than leave it
+		if m.as.AuctionEnd() {
+			m.LeaveAuction(ctx, m.currentTime)
+		}
+	}
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {

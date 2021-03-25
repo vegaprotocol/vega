@@ -11,10 +11,18 @@ Feature: Test trader accounts
 
   Scenario: a trader place a new order in the system, margin are calculated
     Given the traders make the following deposits on asset's general account:
-      | trader    | asset | amount  |
-      | traderGuy | ETH   | 10000   |
-      | trader1   | ETH   | 1000000 |
-      | trader2   | ETH   | 1000000 |
+      | trader    | asset | amount       |
+      | traderGuy | ETH   | 10000        |
+      | trader1   | ETH   | 1000000      |
+      | trader2   | ETH   | 1000000      |
+      | aux       | ETH   | 100000000000 |
+
+
+     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    Then traders place following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
+      | aux     | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
 
     # Trigger an auction to set the mark price
     Then traders place following orders:
@@ -24,6 +32,7 @@ Feature: Test trader accounts
       | trader1 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period for market "ETH/DEC19" ends
+    And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
     And the mark price for the market "ETH/DEC19" is "1000"
     Then traders cancel the following orders:
       | trader  | reference |
