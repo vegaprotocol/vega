@@ -36,6 +36,8 @@ func (c CancelOrderError) Error() string {
 	return fmt.Sprintf("failed to cancel order [%v] with reference %s: %v", c.request, c.reference, c.Err)
 }
 
+func (c *CancelOrderError) Unwrap() error { return c.Err }
+
 type SubmitOrderError struct {
 	reference string
 	request   types.Order
@@ -45,3 +47,5 @@ type SubmitOrderError struct {
 func (s SubmitOrderError) Error() string {
 	return fmt.Sprintf("failed to submit order [%v] with reference %s: %v", s.request, s.reference, s.Err)
 }
+
+func (s *SubmitOrderError) Unwrap() error { return s.Err }

@@ -21,7 +21,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | pegged3          | BTC   | 50000     |
       | pegged4          | BTC   | 50000     |
 # setup pegged orders
-    Then traders place pegged orders:
+    When traders place pegged orders:
       | trader  | market id | side | volume | reference | offset | price |
       | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 100   |
       | pegged2 | ETH/DEC19 | sell | 500    | MID       | 15     | 100   |
@@ -34,7 +34,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    | 100   | STATUS_PARKED |
       | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    | 100   | STATUS_PARKED |
 # keep things simple: remove the events we've just verified
-    And clear order events
+    Given clear order events
 # setup orderbook
     When traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
@@ -45,7 +45,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | sellSideProvider | ETH/DEC19 | sell | 1000   |           | 0      | 120   | STATUS_ACTIVE |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   |           | 0      | 80    | STATUS_ACTIVE |
 # Checked out, remove the order events we've checked, now let's have a look at the pegged order events
-    And clear order events by reference:
+    When clear order events by reference:
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |
@@ -59,7 +59,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    | 70    | STATUS_ACTIVE |
       | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    | 90    | STATUS_ACTIVE |
 ##  Cancel some pegged events, and clear order event buffer so we can ignore the events we checked above
-    Then traders cancel pegged orders:
+    When traders cancel all their market orders:
       | trader  | market id  |
       | pegged1 | ETH/DEC19 |
       | pegged3 | ETH/DEC19 |

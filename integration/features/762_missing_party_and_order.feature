@@ -14,7 +14,7 @@ Feature: Test crash on cancel of missing order
       | trader        | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | missingTrader | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | missing-ref-1 |
     Then the system should return error "trader does not exist"
-    When traders cancels the following orders reference:
+    When traders cancel the following orders:
       | trader        | reference     |
       | missingTrader | missing-ref-1 |
     Then the system should return error "unable to find the order in the market"
@@ -22,7 +22,7 @@ Feature: Test crash on cancel of missing order
       | trader        | market id | side | volume | price | resulting trades | type       | tif     | reference     |
       | missingTrader | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | missing-ref-2 |
     Then the system should return error "trader does not exist"
-    When traders cancels the following orders reference:
+    When traders cancel the following orders:
       | trader        | reference     |
       | missingTrader | missing-ref-2 |
     Then the system should return error "unable to find the order in the market"

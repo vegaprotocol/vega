@@ -18,24 +18,26 @@ Feature: Close a filled order twice
       | aux              | BTC   | 100000    |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When traders place the following orders:
+    And traders place the following orders:
       | trader  | market id        | side | volume | price | resulting trades | type        | tif     | reference |
       | aux     | ETH/DEC19        | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | ref-1     |
       | aux     | ETH/DEC19        | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | ref-2     |
 
     # setup orderbook
-    When traders place the following orders:
+    And traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 10     | 120   | 1                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-    Then traders attempt to cancel the following filled orders:
+    When traders cancel the following orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
-    Then traders attempt to cancel the following filled orders:
+    Then the system should return error "unable to find the order in the market"
+    When traders cancel the following orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
-    Then traders attempt to cancel the following filled orders:
+    Then the system should return error "unable to find the order in the market"
+    When traders cancel the following orders:
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
-    And the insurance pool balance is "0" for the market "ETH/DEC19"
-    And Cumulated balance for all accounts is worth "200100000"
+    Then the insurance pool balance is "0" for the market "ETH/DEC19"
+    Then Cumulated balance for all accounts is worth "200100000"

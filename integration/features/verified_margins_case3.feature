@@ -35,7 +35,7 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
-    Then traders cancels the following orders reference:
+    Then traders cancel the following orders:
       | trader | reference      |
       | aux    | cancel-me-sell |
 
