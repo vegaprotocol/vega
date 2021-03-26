@@ -7405,6 +7405,7 @@ union Event =
   | Deposit
   | Withdrawal
   | OracleSpec
+  | LiquidityProvision
 
 type BusEvent {
   "the id for this event"
@@ -26461,6 +26462,13 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			return graphql.Null
 		}
 		return ec._OracleSpec(ctx, sel, obj)
+	case proto.LiquidityProvision:
+		return ec._LiquidityProvision(ctx, sel, &obj)
+	case *proto.LiquidityProvision:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._LiquidityProvision(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -27963,7 +27971,7 @@ func (ec *executionContext) _LiquidityProviderFeeShare(ctx context.Context, sel 
 	return out
 }
 
-var liquidityProvisionImplementors = []string{"LiquidityProvision"}
+var liquidityProvisionImplementors = []string{"LiquidityProvision", "Event"}
 
 func (ec *executionContext) _LiquidityProvision(ctx context.Context, sel ast.SelectionSet, obj *proto.LiquidityProvision) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, liquidityProvisionImplementors)
