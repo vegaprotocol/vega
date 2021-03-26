@@ -1,9 +1,10 @@
 package steps
 
 import (
-	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
+	types "code.vegaprotocol.io/vega/proto"
 	"github.com/cucumber/godog/gherkin"
 )
 
@@ -41,12 +42,12 @@ func OrderEventsSent(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 			break
 		}
 		if !match {
-			return errOrderEventsNotFound()
+			return errOrderEventsNotFound(trader, marketID, side, size, price)
 		}
 	}
 	return nil
 }
 
-func errOrderEventsNotFound() error {
-	return errors.New("no matching order event found")
+func errOrderEventsNotFound(trader, marketID string, side types.Side, size, price uint64) error {
+	return fmt.Errorf("no matching order event found %v, %v, %v, %v, %v", trader, marketID, side.String(), size, price)
 }

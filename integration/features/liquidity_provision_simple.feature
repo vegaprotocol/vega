@@ -31,8 +31,8 @@ Feature: Test LP orders
       | lp1 | trader1 | ETH/DEC19 | 10000             | 0.1 | buy        | BID             | 500              | -10          |
       | lp1 | trader1 | ETH/DEC19 | 10000             | 0.1 | sell       | ASK             | 500              | 10           |
     Then I see the LP events:
-      | id  | party   | market    | commitment amount |
-      | lp1 | trader1 | ETH/DEC19 | 10000             |
+      | id  | party   | market    | commitment amount | status        |
+      | lp1 | trader1 | ETH/DEC19 | 10000             | STATUS_ACTIVE |
     Then I see the following order events:
       | trader  | market id | side | volume | reference | offset | price | status        |
       | trader1 | ETH/DEC19 | buy  | 450    |           | 0      | 100   | STATUS_ACTIVE |

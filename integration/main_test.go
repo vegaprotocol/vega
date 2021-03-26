@@ -216,6 +216,6 @@ func FeatureContext(s *godog.Suite) {
 	})
 
 	s.Step(`^there\'s the following volume on the book:$`, func(table *gherkin.DataTable) error {
-		return steps.TheresTheFollowingVolumeOnTheBook(*execsetup.broker, table)
+		return steps.TheresTheFollowingVolumeOnTheBook(execsetup.broker, table)
 	})
 }

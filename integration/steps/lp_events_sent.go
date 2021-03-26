@@ -2,7 +2,6 @@ package steps
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/cucumber/godog/gherkin"
 
@@ -33,8 +32,6 @@ func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataT
 		if e == nil {
 			return errLiquidityProvisionEventNotFound()
 		}
-
-		fmt.Printf("%v\n", e)
 
 		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment || e.Status != status {
 			return errLiquidityProvisionEventNotFound()

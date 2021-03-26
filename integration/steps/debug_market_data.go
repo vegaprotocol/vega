@@ -2,7 +2,6 @@ package steps
 
 import (
 	"errors"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
@@ -18,7 +17,7 @@ func DebugMarketData(
 	if err != nil {
 		return errors.New("market not found")
 	}
-	log.Info(fmt.Sprintf("%s", marketData.String()))
+	log.Info(marketData.String())
 
 	return nil
 }

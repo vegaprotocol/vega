@@ -10,7 +10,7 @@ import (
 )
 
 func TheresTheFollowingVolumeOnTheBook(
-	broker stubs.BrokerStub,
+	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
