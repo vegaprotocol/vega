@@ -450,7 +450,11 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (confirmation *types.OrderConfirmation, returnedErr error) {
+	defer func() {
+		e.notifyFailureOnError(ctx, returnedErr, orderAmendment.PartyId, orderAmendment)
+	}()
+
 	if e.log.IsDebug() {
 		e.log.Debug("amend order", logging.OrderAmendment(orderAmendment))
 	}
@@ -859,4 +863,10 @@ func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context
 	e.npv.targetStakeTriggeringRatio = v
 
 	return nil
+}
+
+func (e *Engine) notifyFailureOnError(ctx context.Context, err error, partyID string, tx interface{}) {
+	if err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, partyID, tx))
+	}
 }

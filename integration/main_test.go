@@ -142,8 +142,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following network trades happened:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingNetworkTradesHappened(execsetup.broker, table)
 	})
-	s.Step(`^traders amends the following orders reference:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersAmendOrdersByReference(execsetup.broker, execsetup.engine, table)
+	s.Step(`^traders amend the following orders:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersAmendTheFollowingOrders(execsetup.errorHandler, execsetup.broker, execsetup.engine, table)
 	})
 	s.Step(`^the following trades were executed:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingTradesWereExecuted(execsetup.broker, table)
@@ -185,6 +185,14 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *gherkin.DataTable) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
+	})
+
+	// Assertion steps
+	s.Step(`^the following amendments should be rejected:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingAmendmentsShouldBeRejected(execsetup.errorHandler, table)
+	})
+	s.Step(`^the following amendments should be accepted:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingAmendmentsShouldBeAccepted(table)
 	})
 
 	// Debug steps
