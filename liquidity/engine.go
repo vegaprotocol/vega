@@ -371,6 +371,7 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 // CreateInitialOrders returns two slices of orders, one for orders to be
 // created and the other for orders to be updated.
 func (e *Engine) CreateInitialOrders(
+	ctx context.Context,
 	midPriceBid, midPriceAsk uint64,
 	party string,
 	orders []*types.Order,
@@ -380,7 +381,7 @@ func (e *Engine) CreateInitialOrders(
 	e.updatePartyOrders(party, orders)
 	kills := e.killExistingLiquidityOrders(party)
 	// ignoring amends as there won't be any since we kill all the orders first
-	creates, _, err := e.createOrUpdateForParty(
+	creates, _, err := e.createOrUpdateForParty(ctx,
 		midPriceBid, midPriceAsk, party, repriceFn)
 	return creates, kills, err
 }
@@ -408,7 +409,7 @@ func (e *Engine) Update(
 		// update our internal orders
 		e.updatePartyOrders(po.Party, po.Orders)
 
-		creates, updates, err := e.createOrUpdateForParty(midPriceBid, midPriceAsk, po.Party, repriceFn)
+		creates, updates, err := e.createOrUpdateForParty(ctx, midPriceBid, midPriceAsk, po.Party, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -424,7 +425,7 @@ func (e *Engine) Update(
 		for _, lp := range e.provisions.slice() {
 			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED ||
 				lp.Status == types.LiquidityProvision_STATUS_PENDING {
-				creates, updates, err := e.createOrUpdateForParty(midPriceBid, midPriceAsk, lp.PartyId, repriceFn)
+				creates, updates, err := e.createOrUpdateForParty(ctx, midPriceBid, midPriceAsk, lp.PartyId, repriceFn)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -472,6 +473,7 @@ func (e *Engine) killExistingLiquidityOrders(party string) []*types.OrderAmendme
 }
 
 func (e *Engine) createOrUpdateForParty(
+	ctx context.Context,
 	midPriceBid, midPriceAsk uint64,
 	party string,
 	repriceFn RepricePeggedOrder,
@@ -566,7 +568,7 @@ func (e *Engine) createOrUpdateForParty(
 		lp.Status = types.LiquidityProvision_STATUS_ACTIVE
 	}
 
-	e.broker.Send(events.NewLiquidityProvisionEvent(context.Background(), lp))
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 
 	return append(needsCreateBuys, needsCreateSells...),
 		append(needsUpdateBuys, needsUpdateSells...),
