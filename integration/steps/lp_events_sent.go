@@ -2,10 +2,12 @@ package steps
 
 import (
 	"errors"
+	"fmt"
+
+	"github.com/cucumber/godog/gherkin"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
-	"github.com/cucumber/godog/gherkin"
 )
 
 func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
@@ -24,13 +26,16 @@ func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataT
 		party := row.Str("party")
 		market := row.Str("market")
 		commitment := row.U64("commitment amount")
+		status := row.LiquidityStatus("status")
 
 		e := evtByID(id)
 		if e == nil {
 			return errLiquidityProvisionEventNotFound()
 		}
 
-		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment {
+		fmt.Printf("%v\n", e)
+
+		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment || e.Status != status {
 			return errLiquidityProvisionEventNotFound()
 		}
 	}
