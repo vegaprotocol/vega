@@ -235,6 +235,8 @@ message Order {
   uint64 batch_id = 17;
   // Pegged order details, used only if the order represents a pegged order.
   PeggedOrder pegged_order = 18;
+  // Is this order created as part of a liquidity provision, will be empty if not.
+  string liquidity_provision_id = 19;
 }
 
 // Used when cancelling an Order

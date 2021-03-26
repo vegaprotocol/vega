@@ -343,6 +343,9 @@ func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
 
 	for _, order := range orders {
 		// skip if it's a liquidity order
+		if len(order.LiquidityProvisionId) > 0 {
+			continue
+		}
 		if _, ok := lm[order.Id]; ok {
 			continue
 		}
@@ -575,18 +578,19 @@ func (e *Engine) createOrUpdateForParty(
 		nil
 }
 
-func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64, ref string) *types.Order {
+func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	order := &types.Order{
-		MarketId:    marketID,
-		Side:        side,
-		PeggedOrder: pegged,
-		Price:       price,
-		PartyId:     partyID,
-		Size:        size,
-		Remaining:   size,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Reference:   ref,
+		MarketId:             marketID,
+		Side:                 side,
+		PeggedOrder:          pegged,
+		Price:                price,
+		PartyId:              partyID,
+		Size:                 size,
+		Remaining:            size,
+		Type:                 types.Order_TYPE_LIMIT,
+		TimeInForce:          types.Order_TIME_IN_FORCE_GTC,
+		Reference:            ref,
+		LiquidityProvisionId: lpID,
 	}
 	return order.Create(e.currentTime)
 }
@@ -704,7 +708,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			Reference: ref.LiquidityOrder.Reference,
 			Offset:    ref.LiquidityOrder.Offset,
 		}
-		order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference)
+		order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
 		e.idGen.SetID(order)
 		newOrders = append(newOrders, order)
 		lm[order.Id] = order

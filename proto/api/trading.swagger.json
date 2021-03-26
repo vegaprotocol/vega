@@ -4779,6 +4779,10 @@
         "pegged_order": {
           "$ref": "#/definitions/vegaPeggedOrder",
           "description": "Pegged order details, used only if the order represents a pegged order."
+        },
+        "liquidity_provision_id": {
+          "type": "string",
+          "description": "Is this order created as part of a liquidity provision, will be empty if not."
         }
       },
       "title": "An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties"

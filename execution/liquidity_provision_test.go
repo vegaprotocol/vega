@@ -1496,3 +1496,194 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 	})
 
 }
+
+func TestLiquidityOrderGeneratedSizes(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 2,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+	oth1 := "party1"
+	oth2 := "party2"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount(lpparty, 100000000000000).
+		WithAccountAndAmount(oth1, 500000000000).
+		WithAccountAndAmount(oth2, 500000000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 10000000,
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 99, Offset: -201},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -200},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 100},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 2, Offset: 101},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 98, Offset: 102},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	t.Run("lp submission is pending", func(t *testing.T) {
+		// First collect all the orders events
+		found := types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				found = evt.LiquidityProvision()
+			}
+		}
+		// no update to the liquidity fee
+		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
+	})
+
+	// then submit some orders, some for the lp party,
+	// end some for the other parrties
+
+	var lpOrders = []*types.Order{
+		// Limit Orders
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        10,
+			Remaining:   10,
+			Price:       120000,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     lpparty,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        10,
+			Remaining:   10,
+			Price:       123000,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     lpparty,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	// submit the auctions orders
+	tm.WithSubmittedOrders(t, lpOrders...)
+
+	// set the mark price and end auction
+	var auctionOrders = []*types.Order{
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1,
+			Remaining:   1,
+			Price:       121500,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     oth1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1,
+			Remaining:   1,
+			Price:       121500,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     oth2,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	// submit the auctions orders
+	tm.events = nil
+	tm.WithSubmittedOrders(t, auctionOrders...)
+
+	// update the time to get out of auction
+	tm.market.OnChainTimeUpdate(context.Background(), auctionEnd)
+
+	t.Run("verify LP orders sizes", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				if ord := evt.Order(); ord.PartyId == lpparty {
+					found[ord.Id] = ord
+				}
+
+			}
+		}
+
+		expect := map[string]uint64{
+			"V0000000000-0000000005": 214,
+			"V0000000000-0000000006": 3,
+			"V0000000000-0000000007": 3,
+			"V0000000000-0000000008": 5,
+			"V0000000000-0000000009": 197,
+		}
+
+		for id, v := range found {
+			size, ok := expect[id]
+			assert.True(t, ok, "unexpected order id")
+			assert.Equal(t, v.Size, size)
+		}
+	})
+
+	var newOrders = []*types.Order{
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1000,
+			Remaining:   1000,
+			Price:       121100,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     oth1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1000,
+			Remaining:   1000,
+			Price:       122200,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     oth2,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	// submit the auctions orders
+	tm.events = nil
+	tm.WithSubmittedOrders(t, newOrders...)
+
+}

@@ -132,6 +132,7 @@ func (e *Engine) updateSizes(liquidityObligation, currentPrice float64, orders [
 		if prob <= 0 {
 			proportion = 0
 		}
+
 		sum += proportion
 		validatedProportions = append(validatedProportions, proportion)
 		probs = append(probs, prob)
