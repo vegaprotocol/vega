@@ -13,12 +13,13 @@ import (
 func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	evts := broker.GetLPEvents()
 	evtByID := func(id string) *types.LiquidityProvision {
+		found := &types.LiquidityProvision{}
 		for _, e := range evts {
 			if lp := e.LiquidityProvision(); lp.Id == id {
-				return &lp
+				found = &lp
 			}
 		}
-		return nil
+		return found
 	}
 
 	for _, row := range TableWrapper(*table).Parse() {

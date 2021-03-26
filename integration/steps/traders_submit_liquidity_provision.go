@@ -24,6 +24,7 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 		reference := row.PeggedReference("order reference")
 		proportion := row.U32("order proportion")
 		offset := row.I64("order offset")
+		orderRefernce := row.Str("reference")
 
 		if id == "id" {
 			continue
@@ -37,6 +38,7 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 				Fee:              fee,
 				Sells:            []*types.LiquidityOrder{},
 				Buys:             []*types.LiquidityOrder{},
+				Reference:        orderRefernce,
 			}
 			parties[id] = party
 			lps[id] = lp

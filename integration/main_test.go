@@ -210,4 +210,12 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the system should return error "([^"]*)"$`, func(msg string) error {
 		return steps.TheSystemShouldReturnError(execsetup.errorHandler, msg)
 	})
+
+	s.Step(`^debug market data for "([^"]*)"$`, func(mkt string) error {
+		return steps.DebugMarketData(execsetup.engine, execsetup.log, mkt)
+	})
+
+	s.Step(`^there\'s the following volume on the book:$`, func(table *gherkin.DataTable) error {
+		return steps.TheresTheFollowingVolumeOnTheBook(*execsetup.broker, table)
+	})
 }
