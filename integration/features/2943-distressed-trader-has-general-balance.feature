@@ -22,9 +22,9 @@ Feature: Distressed traders should not have general balance left
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type        | tif     | 
-      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader     | market id | side | volume | price    | resulting trades | type        | tif     |
+      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC |
+      | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC |
 
     When traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -60,8 +60,8 @@ Feature: Distressed traders should not have general balance left
       | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | buy        | BID             | 10               | -10          |
       | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | sell       | ASK             | 10               | 10           |
     Then I see the LP events:
-      | id  | party   | market    | commitment amount |
-      | lp1 | trader3 | ETH/DEC20 | 10000             |
+      | id  | party   | market    | commitment amount | status        |
+      | lp1 | trader3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |
 
     Then I see the following order events:
       | trader  | market id | side | volume | reference | offset | price | status        |

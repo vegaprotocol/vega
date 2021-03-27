@@ -211,6 +211,20 @@ func OrderStatus(rawValue string) (types.Order_Status, error) {
 	return types.Order_Status(ty), nil
 }
 
+func (r RowWrapper) LiquidityStatus(name string) types.LiquidityProvision_Status {
+	s, err := LiquidityStatus(r.values[name])
+	panicW(name, err)
+	return s
+}
+
+func LiquidityStatus(rawValue string) (types.LiquidityProvision_Status, error) {
+	ty, ok := types.LiquidityProvision_Status_value[rawValue]
+	if !ok {
+		return types.LiquidityProvision_Status(ty), fmt.Errorf("invalid liquidity provision status: %v", rawValue)
+	}
+	return types.LiquidityProvision_Status(ty), nil
+}
+
 func (r RowWrapper) TIF(name string) types.Order_TimeInForce {
 	tif, err := TIF(r.values[name])
 	panicW(name, err)
