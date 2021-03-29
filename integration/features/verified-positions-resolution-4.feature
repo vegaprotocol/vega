@@ -4,7 +4,10 @@ Feature: Position resolution case 4
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
       | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 | BTC        | BTC   | simple     | 0         | 0         | 0              | 0.016           | 2.0   | 5              | 4              | 3.2           | 0                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | ETH/DEC19 | BTC        | BTC   | simple     | 0         | 0         | 0              | 0.016           | 2.0   | 5              | 4              | 3.2           | 1                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+    And the following network parameters are set:
+      | market.auction.minimumDuration |
+      | 1                              |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -17,12 +20,18 @@ Feature: Position resolution case 4
       | buySideProvider  | BTC   | 1000000000000 |
       | designatedLooser | BTC   | 10000         |
       | auxiliary        | BTC   | 1000000000000 |
+      | auxiliary2       | BTC   | 1000000000000 |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
   Then traders place the following orders:
-    | trader     | marekt id | side | volume | price   | resulting trades | type        | tif     |
-    | auxiliary  | ETH/DEC19 | buy  | 1      | 1       | 0                | TYPE_LIMIT  | TIF_GTC |
-    | auxiliary  | ETH/DEC19 | sell | 1      | 1000    | 0                | TYPE_LIMIT  | TIF_GTC |
+    | trader     | market id | side | volume | price   | resulting trades | type        | tif     | reference |
+    | auxiliary2 | ETH/DEC19 | buy  | 1      | 1       | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-1   |
+    | auxiliary  | ETH/DEC19 | sell | 1      | 1000    | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-1   |
+    | auxiliary  | ETH/DEC19 | sell | 10     | 180     | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-2   |
+    | auxiliary2 | ETH/DEC19 | buy  | 10     | 180     | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-2   |
+    Then the opening auction period for market "ETH/DEC19" ends
+    And the trading mode for the market "ETH/DEC19" is "TRADING_MODE_CONTINUOUS"
+    And the mark price for the market "ETH/DEC19" is "180"
 
 # insurance pool generation - setup orderbook
     When traders place the following orders:
@@ -62,7 +71,7 @@ Feature: Position resolution case 4
     Then traders have the following profit and loss:
       | trader           | volume | unrealised pnl | realised pnl |
       | designatedLooser | 0      | 0              | -10000       |
-      | buySideProvider  | 101    | 11500          | -1500        |
+      | buySideProvider  | 101    | 11500          | -1363        |
 
 # checking margins
     Then traders have the following account balances:
