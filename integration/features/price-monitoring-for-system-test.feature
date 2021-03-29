@@ -5,6 +5,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the execution engine have these markets:
       | name      | quote name | asset | risk model | lamd/long | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
       | ETH/DEC20 | ETH        | ETH   | forward    | 0.000001  | 0.00011407711613050422 | 0              | 0.016           | 2.0   | 1.4            | 1.2            | 1.1           | 5                | 0         | 0                  | 0             | 4                  | 5,10           | 0.95,0.99   | 6,8             | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+    And the following network parameters are set:
+      | market.auction.minimumDuration |
+      | 5                              |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -144,8 +147,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
-    # T + 7s
-    Then time is updated to "2020-10-16T00:00:35Z"
+    # T + 3s
+    Then time is updated to "2020-10-16T00:00:33Z"
 
     And the mark price for the market "ETH/DEC20" is "100448"
 
@@ -186,7 +189,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
 
     # T + 6s
-    Then time is updated to "2020-10-16T00:01:01Z"
+    Then time is updated to "2020-10-16T00:01:06Z"
 
     And the mark price for the market "ETH/DEC20" is "100292"
 
