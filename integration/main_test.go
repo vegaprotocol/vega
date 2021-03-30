@@ -122,13 +122,10 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^missing traders place the following orders with references:$`, missingTradersPlaceFollowingOrdersWithReferences)
 	s.Step(`^traders cancel the following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, table)
+		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, execsetup.errorHandler, table)
 	})
-	s.Step(`^traders attempt to cancel the following filled orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersAttemptToCancelTheFollowingFilledOrders(execsetup.broker, execsetup.engine, table)
-	})
-	s.Step(`^traders cancels the following orders reference:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelsTheFollowingOrders(execsetup.broker, execsetup.engine, execsetup.errorHandler, table)
+	s.Step(`^traders cancel all their market orders:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, execsetup.errorHandler, table)
 	})
 	s.Step(`^traders have the following profit and loss:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
@@ -170,9 +167,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^clear transfer events$`, func() error {
 		steps.ClearTransferEvents(execsetup.broker)
 		return nil
-	})
-	s.Step(`^traders cancel pegged orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelPeggedOrders(execsetup.broker, execsetup.engine, table)
 	})
 	s.Step(`^the trader submits LP:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersSubmitLiquidityProvision(execsetup.engine, table)
