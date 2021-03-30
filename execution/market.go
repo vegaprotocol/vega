@@ -3850,6 +3850,13 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 		parties = append(parties, k)
 	}
 
+	err := m.stopAllLiquidityProvisionOnReject(ctx)
+	if err != nil {
+		m.log.Debug("could not stop all liquidity provision on market rejection",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+	}
+
 	asset, _ := m.mkt.GetAsset()
 	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 	if err != nil {
@@ -3861,6 +3868,23 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 
 	// then send the responses
 	m.broker.Send(events.NewTransferResponse(ctx, tresps))
+}
+
+func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
+	for party := range m.liquidity.ProvisionsPerParty() {
+		// here we ignore  the list of orders that could have been
+		// created with this party liquidity provision. At this point
+		// if we are calling this function, the market is in a PENDING
+		// state, which means that liquidity provision can be submitted
+		// but orders would never be able to be deployed, so it's safe
+		// to ignorethe second return as it shall be an empty slice.
+		_, err := m.liquidity.StopLiquidityProvision(ctx, party)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProviderFeeShare {
