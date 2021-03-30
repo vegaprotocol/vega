@@ -94,8 +94,6 @@ func NewEngine(
 	priceMonitor PriceMonitor,
 	marketID string,
 ) *Engine {
-	log.SetLevel(logging.DebugLevel)
-
 	return &Engine{
 		marketID:                marketID,
 		log:                     log,
