@@ -38,16 +38,15 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 		target              float64
 		bestStaticBidVolume uint64
 		bestStaticAskVolume uint64
-		bidAskOnBookAfter   bool
 		// expect
 		auctionShouldEnd bool
 	}{
-		{"Current >  Target", 20, 15, 1, 1, true, true},
-		{"Current == Target", 15, 15, 1, 1, true, true},
-		{"Current <  Target", 14, 15, 1, 1, true, false},
-		{"Current >  Target, no best bid", 20, 15, 0, 1, false, false},
-		{"Current == Target, no best ask", 15, 15, 1, 0, false, false},
-		{"Current == Target, no best bid and ask", 15, 15, 0, 0, false, false},
+		{"Current >  Target", 20, 15, 1, 1, true},
+		{"Current == Target", 15, 15, 1, 1, true},
+		{"Current <  Target", 14, 15, 1, 1, false},
+		{"Current >  Target, no best bid", 20, 15, 0, 1, false},
+		{"Current == Target, no best ask", 15, 15, 1, 0, false},
+		{"Current == Target, no best bid and ask", 15, 15, 0, 0, false},
 	}
 
 	h := newTestHarness(t).WhenInLiquidityAuction(true)
