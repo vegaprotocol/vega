@@ -51,10 +51,11 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
 	market := "market-id"
+	liquidityConfig := liquidity.NewDefaultConfig()
 
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
-	engine := liquidity.NewEngine(
+	engine := liquidity.NewEngine(liquidityConfig,
 		log, broker, idGen, risk, monitor, market,
 	)
 	engine.OnChainTimeUpdate(context.Background(), now)
