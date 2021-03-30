@@ -127,9 +127,6 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	tm.mas.AuctionStarted(ctx)
 	tm.market.EnterAuction(ctx)
 
-	// Leave auction
-	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
-
 	// Create some normal orders to set the reference prices
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -145,6 +142,15 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
+
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-C", 1, 9)
+	o4conf, err := tm.market.SubmitOrder(ctx, o4)
+	require.NotNil(t, o4conf)
+	require.NoError(t, err)
+
+	// Leave auction
+	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	// mark price is set at 10, orders on book
 
 	buys := []*types.LiquidityOrder{
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 50},
