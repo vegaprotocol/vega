@@ -86,7 +86,7 @@ type Engine struct {
 }
 
 // NewEngine returns a new Liquidity Engine.
-func NewEngine(
+func NewEngine(config Config,
 	log *logging.Logger,
 	broker Broker,
 	idGen IDGen,
@@ -94,8 +94,7 @@ func NewEngine(
 	priceMonitor PriceMonitor,
 	marketID string,
 ) *Engine {
-	log.SetLevel(logging.DebugLevel)
-
+	log.SetLevel(config.Level.Get())
 	return &Engine{
 		marketID:                marketID,
 		log:                     log,

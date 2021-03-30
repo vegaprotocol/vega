@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/fee"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/monitor"
@@ -136,6 +137,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 		settlementConfig = settlement.NewDefaultConfig()
 		matchingConfig   = matching.NewDefaultConfig()
 		feeConfig        = fee.NewDefaultConfig()
+		liquidityConfig  = liquidity.NewDefaultConfig()
 	)
 
 	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.now, tm.broker)
@@ -144,7 +146,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	monitor.NewAuctionState(&mktCfg, tm.now)
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas,
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas,
 	)
 	require.NoError(tm.t, err)
 
@@ -210,6 +212,7 @@ func getTestMarket2(
 	settlementConfig := settlement.NewDefaultConfig()
 	matchingConfig := matching.NewDefaultConfig()
 	feeConfig := fee.NewDefaultConfig()
+	liquidityConfig := liquidity.NewDefaultConfig()
 	broker := mocks.NewMockBroker(ctrl)
 
 	tm := &testMarket{
@@ -285,7 +288,7 @@ func getTestMarket2(
 	mas := monitor.NewAuctionState(mktCfg, now)
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
 	assert.NoError(t, err)
 
 	if startOpeningAuction {

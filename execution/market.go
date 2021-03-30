@@ -238,6 +238,7 @@ func NewMarket(
 	settlementConfig settlement.Config,
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
+	liquidityConfig liquidity.Config,
 	collateralEngine *collateral.Engine,
 	oracleEngine products.OracleEngine,
 	mkt *types.Market,
@@ -300,7 +301,7 @@ func NewMarket(
 
 	lMonitor := lmon.NewMonitor(tsCalc)
 
-	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
+	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
 	// The market is initially create in a proposed state
 	mkt.State = types.Market_STATE_PROPOSED

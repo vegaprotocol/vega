@@ -57,7 +57,7 @@ func (b *OrderBook) Hash() []byte {
 func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
-	log.SetLevel(logging.DebugLevel)
+	log.SetLevel(config.Level.Get())
 
 	return &OrderBook{
 		log:            log,

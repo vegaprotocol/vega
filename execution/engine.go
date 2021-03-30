@@ -307,6 +307,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.Config.Settlement,
 		e.Config.Matching,
 		e.Config.Fee,
+		e.Config.Liquidity,
 		e.collateral,
 		e.oracle,
 		marketConfig,
