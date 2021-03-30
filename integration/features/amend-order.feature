@@ -39,9 +39,9 @@ Feature: Amend orders
       | trader | reference   |
       | myboi  | myboi-ref-1 |
 
-    Then traders amends the following orders reference:
-      | trader | reference   | price | sizeDelta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 2     | 3         | 0         | TIF_GTC | false   |
+    Then traders amend the following orders:
+      | trader | reference   | price | size delta | expiresAt | tif     | success |
+      | myboi  | myboi-ref-1 | 2     | 3          | 0         | TIF_GTC | false   |
 
   Scenario: Reduce size success and not loosing position in order book
 # setup accounts
@@ -69,9 +69,9 @@ Feature: Amend orders
       | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
-    Then traders amends the following orders reference:
-      | trader | reference   | price | sizeDelta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | -2        | 0         | TIF_GTC | true    |
+    Then traders amend the following orders:
+      | trader | reference   | price | size delta | expiresAt | tif     | success |
+      | myboi  | myboi-ref-1 | 0     | -2         | 0         | TIF_GTC | true    |
 
 # matching the order now
 # this should match with the size 3 order of myboi
@@ -109,9 +109,9 @@ Feature: Amend orders
       | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
-    And traders amends the following orders reference:
-      | trader | reference   | price | sizeDelta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | 3         | 0         | TIF_GTC | true    |
+    And traders amend the following orders:
+      | trader | reference   | price | size delta | expiresAt | tif     | success |
+      | myboi  | myboi-ref-1 | 0     | 3          | 0         | TIF_GTC | true    |
 
 # matching the order now
 # this should match with the size 3 order of myboi
@@ -154,9 +154,9 @@ Feature: Amend orders
       | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
-    Then traders amends the following orders reference:
-      | trader | reference   | price | sizeDelta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | -3        | 0         | TIF_GTC | true    |
+    Then traders amend the following orders:
+      | trader | reference   | price | size delta | expiresAt | tif     | success |
+      | myboi  | myboi-ref-1 | 0     | -3         | 0         | TIF_GTC | true    |
 
 # check the order status, it should be cancelled
     And verify the status of the order reference:
@@ -187,9 +187,9 @@ Feature: Amend orders
 
 
 # cannot amend TIF to TIF_FOK so this will be rejected
-    Then traders amends the following orders reference:
-      | trader | reference   | price | sizeDelta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | 0         | 0         | TIF_FOK | false   |
+    Then traders amend the following orders:
+      | trader | reference   | price | size delta | expiresAt | tif     | success |
+      | myboi  | myboi-ref-1 | 0     | 0          | 0         | TIF_FOK | false   |
 
   Scenario: TIF_GTC to TIF_GTT rejected without expiry
 # setup accounts
@@ -209,9 +209,9 @@ Feature: Amend orders
       | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # TIF_GTT rejected because of missing expiresAt
-    Then traders amends the following orders reference:
-      | trader | reference   | price | sizeDelta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | 0         | 0         | TIF_GTT | false   |
+    Then traders amend the following orders:
+      | trader | reference   | price | size delta | expiresAt | tif     | success |
+      | myboi  | myboi-ref-1 | 0     | 0          | 0         | TIF_GTT | false   |
 
   Scenario: TIF_GTC to TIF_GTT with time in the past
 # setup accounts
@@ -236,6 +236,6 @@ Feature: Amend orders
       | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
-    Then traders amends the following orders reference:
-      | trader | reference   | price | sizeDelta | expiresAt | tif | success |
-      | myboi  | myboi-ref-1 |     2 |         0 |     10000 | TIF_GTT | false   |
+    Then traders amend the following orders:
+      | trader | reference   | price | size delta | expiresAt | tif | success |
+      | myboi  | myboi-ref-1 |     2 |          0 |     10000 | TIF_GTT | false   |
