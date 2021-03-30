@@ -2335,15 +2335,33 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
+	ctx := context.Background()
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
+	auxParty, auxParty2 := "auxParty", "auxParty2"
 	addAccount(tm, "party1")
+	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
 	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
 	require.NotNil(t, buyOrder)
 	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
 	require.NotNil(t, sellOrder)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	now = now.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Place the pegged orders
 	order1 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
@@ -2490,14 +2508,34 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	now := time.Unix(5, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
-	ctx := context.Background()
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
 	defer tm.ctrl.Finish()
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
+	auxParty, auxParty2 := "auxParty", "auxParty2"
+	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
+
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave auction
+	now = now.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(ctx, now)
 	addAccount(tm, "aaa")
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	addAccount(tm, "bbb")
-	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order01", types.Side_SIDE_SELL, "aaa", 10, 100)
 	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
