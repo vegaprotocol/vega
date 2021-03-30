@@ -240,7 +240,7 @@ func (b *OrderBook) CanUncross() bool {
 	return b.canUncross(true)
 }
 
-func (b *OrderBook) BidAndAskOnBookAfterAuction() bool {
+func (b *OrderBook) BidAndAskPresentAfterAuction() bool {
 	return b.canUncross(false)
 }
 

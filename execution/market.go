@@ -3507,7 +3507,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 		*rf,
 		m.markPrice,
 		vBid, vAsk,
-		m.matching.BidAndAskOnBookAfterAuction())
+		m.matching.BidAndAskPresentAfterAuction())
 
 }
 
