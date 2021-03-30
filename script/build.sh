@@ -52,8 +52,8 @@ check_golang_version() {
 	fi
 
 	goversion="$("$goprog" version)"
-	if ! echo "$goversion" | grep -q 'go1\.14\.' ; then
-		echo "Please use Go 1.14"
+	if ! echo "$goversion" | grep -q 'go1\.16\.' ; then
+		echo "Please use Go 1.16"
 		echo "Using: $goprog"
 		echo "Version: $goversion"
 		return 1
