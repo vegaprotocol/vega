@@ -623,7 +623,9 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	party1, party2, party3 := "party1", "party2", "party3"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
 	defer tm.ctrl.Finish()
 	// add 2 traders to the party engine
 	// this will create 2 traders, credit their account
@@ -633,10 +635,13 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	addAccountWithAmount(tm, party3, 1000000)
 
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -648,6 +653,18 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave opening auction
+	now = now.Add(time.Second * 2)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	order1 := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
@@ -848,10 +865,12 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	var auctionExtensionSeconds int64 = 45
-	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
+	auctionExtensionSeconds := int64(45)
+	openEnd := now.Add(time.Duration(auctionExtensionSeconds)*time.Second + time.Second)
+	auctionEndTime := openEnd.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	afterAuciton := auctionEndTime.Add(time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
@@ -863,15 +882,19 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	}
 	var initialPrice uint64 = 100
 	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
-	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+	tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{
+		Duration: 1,
+	})
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -883,6 +906,19 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, initialPrice),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, initialPrice),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave opening auction by moving time
+	tm.market.OnChainTimeUpdate(context.Background(), openEnd)
+	now = openEnd
 
 	orderBuy1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -979,10 +1015,12 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	auctionExtensionSeconds := int64(45)
-	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
+	openEnd := now.Add(time.Duration(auctionExtensionSeconds)*time.Second + time.Second)
+	auctionEndTime := openEnd.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	afterAuction := auctionEndTime.Add(time.Nanosecond)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
@@ -992,21 +1030,24 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		},
 		UpdateFrequency: 600,
 	}
-	var initialPrice uint64 = 100
+	initialPrice := uint64(100)
 	var validPrice = initialPrice + (MAXMOVEUP+MINMOVEDOWN)/2
 	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	// let's not start this in opening auction, it complicates the matter
-	// tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
-	tm := getTestMarket2(t, now, closingAt, pMonitorSettings, nil, false)
+	tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{
+		Duration: auctionExtensionSeconds,
+	})
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
-	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
+	// set auction duration
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -1018,6 +1059,18 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, initialPrice),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, initialPrice),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave auction
+	tm.market.OnChainTimeUpdate(context.Background(), openEnd)
+	now = openEnd
 
 	orderSell1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -1200,11 +1253,12 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
-	auxParty := "auxParty"
+	auxParty, auxParty2 := "auxParty", "auxParty2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	var auctionExtensionSeconds int64 = 45
-	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
+	auctionExtensionSeconds := int64(45)
+	openEnd := now.Add(time.Duration(auctionExtensionSeconds)*time.Second + time.Second)
+	auctionEndTime := openEnd.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	initialAuctionEnd := auctionEndTime.Add(time.Second)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
@@ -1221,10 +1275,13 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	// set auction duration
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -1236,6 +1293,18 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_BUY, auxParty, 1, initialPrice),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_SELL, auxParty2, 1, initialPrice),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NotNil(t, conf)
+		require.NoError(t, err)
+	}
+	// increase time, so we can leave opening auction
+	tm.market.OnChainTimeUpdate(context.Background(), openEnd)
+	now = openEnd
 
 	orderSell1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -1393,10 +1462,12 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	var auctionExtensionSeconds int64 = 45
-	auctionEndTime := now.Add(time.Duration(auctionExtensionSeconds) * time.Second)
+	openingEnd := now.Add(time.Duration(auctionExtensionSeconds+1) * time.Second)
+	auctionEndTime := openingEnd.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
@@ -1407,15 +1478,19 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	}
 	var initialPrice uint64 = 100
 	var auctionTriggeringPriceHigh = initialPrice + MAXMOVEUP + 1
-	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+	tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{
+		Duration: auctionExtensionSeconds,
+	})
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -1427,6 +1502,19 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, initialPrice),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, initialPrice),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NotNil(t, conf)
+		require.NoError(t, err)
+	}
+	// now leave auction
+	tm.market.OnChainTimeUpdate(context.Background(), openingEnd)
+	now = openingEnd
 
 	orderSell1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -1559,10 +1647,12 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	t1 := &types.PriceMonitoringTrigger{Horizon: 60, Probability: 0.95, AuctionExtension: 45}
-	t2 := &types.PriceMonitoringTrigger{Horizon: 120, Probability: 0.99, AuctionExtension: 90}
+	extension := int64(45)
+	t1 := &types.PriceMonitoringTrigger{Horizon: 60, Probability: 0.95, AuctionExtension: extension}
+	t2 := &types.PriceMonitoringTrigger{Horizon: 120, Probability: 0.99, AuctionExtension: extension * 2}
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
@@ -1572,10 +1662,15 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		},
 		UpdateFrequency: 600,
 	}
-	auctionEndTime := now.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
+	openEnd := now.Add(time.Duration(extension)*time.Second + time.Second)
+	// auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
+	// we don't have to add both anymore, the first auction period is determined by network parameter
+	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension) * time.Second)
 	var initialPrice uint64 = 100
 	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
-	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+	tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{
+		Duration: extension,
+	})
 
 	expectedPmRange1 := types.PriceMonitoringBounds{
 		MinValidPrice:  uint64(int64(initialPrice) + MINMOVEDOWN),
@@ -1593,10 +1688,12 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(extension)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -1608,6 +1705,19 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, initialPrice),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, initialPrice),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave auction
+	tm.market.OnChainTimeUpdate(context.Background(), openEnd)
+	now = openEnd
 
 	orderBuy1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -1731,11 +1841,14 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"
 	auxParty := "auxParty"
-	var oi uint64 = 123
-	var matchingPrice uint64 = 111
+	auxParty2 := "auxParty2"
+	oi := uint64(124)
+	matchingPrice := uint64(111)
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
 
 	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
 	expectedTargetStake := float64(matchingPrice*oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor
@@ -1743,10 +1856,12 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -1759,6 +1874,19 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
 
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, matchingPrice),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, matchingPrice),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
+
 	orderSell1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -1767,9 +1895,9 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 		Side:        types.Side_SIDE_SELL,
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
-		Size:        oi,
+		Size:        oi - 1, // -1 because we trade during opening auction
 		Price:       matchingPrice,
-		Remaining:   oi,
+		Remaining:   oi - 1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
 		Reference:   "party2-sell-order-1",
@@ -1786,9 +1914,9 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 		Side:        types.Side_SIDE_BUY,
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
-		Size:        oi,
+		Size:        oi - 1,
 		Price:       matchingPrice,
-		Remaining:   oi,
+		Remaining:   oi - 1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-1",
 	}
@@ -1811,8 +1939,10 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	party4 := "party4"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
-	var matchingPrice uint64 = 111
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
+	matchingPrice := uint64(111)
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -1822,10 +1952,13 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	price := uint64(99)
 
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -1837,6 +1970,18 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, price),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, price),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(context.Background(), o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	order1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -2194,18 +2339,23 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	mainParty := "mainParty"
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
 	var matchingPrice uint64 = 111
 	ctx := context.Background()
 
 	addAccount(tm, mainParty)
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -2217,6 +2367,18 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, matchingPrice),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, matchingPrice),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// move ahead time to leave auction
+	now = now.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(ctx, now)
 
 	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, matchingPrice+2)
 
@@ -2533,7 +2695,9 @@ func TestOrderBook_Crash2651(t *testing.T) {
 func TestOrderBook_Crash2599(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
 	ctx := context.Background()
 
 	addAccount(tm, "A")
@@ -2544,11 +2708,14 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	addAccount(tm, "F")
 	addAccount(tm, "G")
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -2560,6 +2727,18 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 11000),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 11000),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(ctx, now)
 
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFN, "Order01", types.Side_SIDE_BUY, "A", 5, 11500)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
@@ -2649,11 +2828,12 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	party2 := "party2"
 	party3 := "party3"
 	party4 := "party4"
-	auxParty := "auxParty4"
+	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	var auctionExtensionSeconds int64 = 45
-	openingAuctionDuration := &types.AuctionDuration{Duration: 10}
+	auctionExtensionSeconds := int64(45)
+	openingAuctionDuration := &types.AuctionDuration{Duration: auctionExtensionSeconds}
 	openingAuctionEndTime := now.Add(time.Duration(openingAuctionDuration.Duration) * time.Second)
 	afterOpeningAuction := openingAuctionEndTime.Add(time.Nanosecond)
 	pMonitorAuctionEndTime := afterOpeningAuction.Add(time.Duration(auctionExtensionSeconds) * time.Second)
@@ -2666,7 +2846,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		},
 		UpdateFrequency: 600,
 	}
-	var initialPrice uint64 = 100
+	initialPrice := uint64(100)
 	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, openingAuctionDuration)
@@ -2676,10 +2856,12 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	addAccount(tm, party3)
 	addAccount(tm, party4)
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -2831,17 +3013,22 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 func TestOrderBook_Crash2718(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, nil)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
 	ctx := context.Background()
 
 	addAccount(tm, "aaa")
 	addAccount(tm, "bbb")
 	auxParty := "auxParty"
+	auxParty2 := "auxParty2"
 	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
@@ -2853,6 +3040,19 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// We start in continuous trading, create order to set best bid
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "aaa", 1, 100)
