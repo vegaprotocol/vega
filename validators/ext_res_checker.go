@@ -231,7 +231,7 @@ func (e ExtResChecker) start(ctx context.Context, r *res) {
 		)
 		err := r.res.Check()
 		if err != nil {
-			e.log.Warn("error checking resource", logging.Error(err))
+			e.log.Debug("error checking resource", logging.Error(err))
 			// dump error
 			return err
 		}
