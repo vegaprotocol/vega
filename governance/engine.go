@@ -353,7 +353,7 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		closeTime := e.currentTime
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 
-		mkt, perr, err := createMarket(p.Id, change.NewMarket.Changes, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
+		mkt, perr, err := createMarket(p.Id, change.NewMarket, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
 		if err != nil {
 			e.rejectProposal(p, perr)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -505,16 +505,10 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
 
-		perr, err := validateNewMarket(e.currentTime, change.NewMarket.Changes, e.assets, true, e.netp, enactTime.Sub(closeTime))
+		perr, err := validateNewMarket(e.currentTime, change.NewMarket, e.assets, true, e.netp, enactTime.Sub(closeTime))
 		if err != nil {
 			return perr, err
 		}
-		// TODO: uncomment this once the client support submitting Commitment
-		// if change.NewMarket.LiquidityCommitment == nil {
-		// 	return types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT, ErrMarketMissingLiquidityCommitment
-		// }
-		// we do not validate the content of the commitment here,
-		// the market will do later on
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	case *types.ProposalTerms_NewAsset:
 		return validateNewAsset(change.NewAsset.Changes)
