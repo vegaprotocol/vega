@@ -2030,4 +2030,36 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 		}
 	})
 
+	t.Run("party submit 10 buy", func(t *testing.T) {
+		for i := 0; i < 10; i++ {
+
+			t.Run("submit buy", func(t *testing.T) {
+				o := getMarketOrder(tm, curt, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC,
+					fmt.Sprintf("order-buy-%v", i), types.Side_SIDE_BUY, party2, 1, uint64(550+(i*10)))
+				conf, err := tm.market.SubmitOrder(ctx, o)
+				assert.NoError(t, err)
+				assert.NotNil(t, conf)
+
+			})
+			tm.market.OnChainTimeUpdate(ctx, curt)
+			curt = curt.Add(1 * time.Second)
+		}
+	})
+
+	t.Run("party submit 20 sell", func(t *testing.T) {
+		for i := 0; i < 20; i++ {
+
+			t.Run("submit buy", func(t *testing.T) {
+				o := getMarketOrder(tm, curt, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC,
+					fmt.Sprintf("order-buy-%v", i), types.Side_SIDE_SELL, party2, 1, uint64(450+(i*10)))
+				conf, err := tm.market.SubmitOrder(ctx, o)
+				assert.NoError(t, err)
+				assert.NotNil(t, conf)
+
+			})
+			tm.market.OnChainTimeUpdate(ctx, curt)
+			curt = curt.Add(1 * time.Second)
+		}
+	})
+
 }

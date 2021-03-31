@@ -677,8 +677,9 @@ func HasReferenceMoved(order *types.Order, changes uint8) bool {
 // which are using a reference that has moved. Returns the number of orders that were repriced.
 func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*types.Order, uint64) {
 	var (
-		repriceCount uint64
-		toRemove     []*types.Order
+		repriceCount  uint64
+		toRemove      []*types.Order
+		updatedOrders []*types.Order
 	)
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "repriceAllPeggedOrders")
 
@@ -702,48 +703,41 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 						logging.Error(err))
 				}
 			}
+			updatedOrders = append(updatedOrders, order)
 		}
 	}
 
+	var toSubmitOrders []*types.Order
 	// Reprice all the pegged order
-	for _, order := range m.peggedOrders {
-		if HasReferenceMoved(order, changes) {
-			if price, err := m.getNewPeggedPrice(order); err != nil {
-				// Failed to reprice, if we are parked we do nothing, if not parked we need to park
-				if order.Status != types.Order_STATUS_PARKED {
-					order.UpdatedAt = m.currentTime.UnixNano()
-					order.Status = types.Order_STATUS_PARKED
-					order.Price = 0
-					m.broker.Send(events.NewOrderEvent(ctx, order))
-				}
-			} else {
-				// Repriced so all good make sure status is correct
-				order.Status = types.Order_STATUS_CANCELLED
-				order.Price = price
+	for _, order := range updatedOrders {
+		if price, err := m.getNewPeggedPrice(order); err != nil {
+			// Failed to reprice, if we are parked we do nothing, if not parked we need to park
+			if order.Status != types.Order_STATUS_PARKED {
+				order.UpdatedAt = m.currentTime.UnixNano()
+				order.Status = types.Order_STATUS_PARKED
+				order.Price = 0
+				m.broker.Send(events.NewOrderEvent(ctx, order))
 			}
+		} else {
+			// Repriced so all good make sure status is correct
+			order.Price = price
+			order.Status = types.Order_STATUS_PARKED
+			toSubmitOrders = append(toSubmitOrders, order)
 		}
 	}
-
-	updatedOrders := []*types.Order{}
 
 	// Reinsert all the orders
-	for _, order := range m.peggedOrders {
-		if HasReferenceMoved(order, changes) {
-			if order.Status == types.Order_STATUS_CANCELLED {
-				if _, err := m.submitValidatedOrder(ctx, order); err != nil {
-					m.log.Debug("could not re-submit a pegged order after repricing",
-						logging.MarketID(m.GetID()),
-						logging.PartyID(order.PartyId),
-						logging.OrderID(order.Id),
-						logging.Error(err))
-					// order could not be submitted, it's then been rejected
-					// we just completely remove it.
-					toRemove = append(toRemove, order)
-					continue
-				}
-			}
+	for _, order := range toSubmitOrders {
+		if _, err := m.submitValidatedOrder(ctx, order); err != nil {
+			m.log.Debug("could not re-submit a pegged order after repricing",
+				logging.MarketID(m.GetID()),
+				logging.PartyID(order.PartyId),
+				logging.OrderID(order.Id),
+				logging.Error(err))
+			// order could not be submitted, it's then been rejected
+			// we just completely remove it.
+			toRemove = append(toRemove, order)
 		}
-		updatedOrders = append(updatedOrders, order)
 	}
 
 	for _, o := range toRemove {
@@ -2223,9 +2217,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 	if err := m.matching.RemoveOrder(order); err != nil {
 		m.log.Panic("Failure to remove order from matching engine",
-			logging.String("party-id", order.PartyId),
-			logging.String("order-id", order.Id),
-			logging.String("market", m.mkt.Id),
+			logging.Order(*order),
 			logging.Error(err))
 	}
 
