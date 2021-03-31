@@ -2141,7 +2141,7 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 	})
 
 	// we end the auction
-
+	// This will also generate trades which are included in the MVP.
 	tm.EndOpeningAuction(t, auctionEnd, false)
 
 	// at the end of the opening auction, we check the mvp
@@ -2183,6 +2183,8 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 	tm.WithSubmittedOrders(t, orders...)
 
 	// we increase the time for 1 second
+	// the active_window_length =
+	// 1 second so factor = t_market_value_window_length / active_window_length = 2.
 	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(1*time.Second))
 	md = tm.market.GetMarketData()
 	assert.Equal(t, "2221978", md.MarketValueProxy)
