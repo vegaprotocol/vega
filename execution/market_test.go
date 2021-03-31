@@ -6164,6 +6164,10 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_ACTIVE, buyConf4.Order.Status)
 
+	// we have to wait for the auction to end
+	now = now.Add(2 * time.Second)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
 	require.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, md.Trigger)

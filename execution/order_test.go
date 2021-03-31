@@ -2537,6 +2537,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	addAccount(tm, "aaa")
 	addAccount(tm, "bbb")
 
+	// We probably don't need these orders anymore, but they don't do any harm
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
