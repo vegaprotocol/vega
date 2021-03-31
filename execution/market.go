@@ -3527,7 +3527,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
-		if m.as.AuctionEnd() {
+		if m.as.AuctionEnd() && m.matching.BidAndAskPresentAfterAuction() {
 			m.LeaveAuction(ctx, m.currentTime)
 		}
 	}

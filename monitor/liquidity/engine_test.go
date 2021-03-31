@@ -66,6 +66,7 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 			var trades []*types.Trade = nil
 			var rf types.RiskFactor = types.RiskFactor{}
 			var markPrice uint64 = 100
+
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice, trades).Return(test.target)
 			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})
