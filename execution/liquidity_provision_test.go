@@ -2,6 +2,7 @@ package execution_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1691,5 +1692,342 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	// submit the auctions orders
 	tm.events = nil
 	tm.WithSubmittedOrders(t, newOrders...)
+
+}
+
+func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 2,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount(lpparty, 100000000000000)
+
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 10000000,
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 99, Offset: -201},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -200},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 100},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 2, Offset: 101},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 98, Offset: 102},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	t.Run("lp submission is pending", func(t *testing.T) {
+		// First collect all the orders events
+		found := types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				found = evt.LiquidityProvision()
+			}
+		}
+		// no update to the liquidity fee
+		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
+	})
+
+	// we end the auction
+
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	// this are opening auction party
+	// we'll cancel their orders
+	var (
+		party0 = "clearing-auction-party0"
+		party1 = "clearing-auction-party1"
+
+		pegged              = "pegged-order-party"
+		peggedInitialAmount = 1000000
+		peggedExpiry        = auctionEnd.Add(10 * time.Minute)
+
+		party4 = "party4"
+	)
+
+	tm.WithAccountAndAmount(pegged, uint64(peggedInitialAmount)).
+		WithAccountAndAmount(party4, 10000000000)
+
+	// then cancel all remaining orders in the book.
+	confs, err := tm.market.CancelAllOrders(context.Background(), party0)
+	assert.NoError(t, err)
+	assert.Len(t, confs, 1)
+	confs, err = tm.market.CancelAllOrders(context.Background(), party1)
+	assert.NoError(t, err)
+	assert.Len(t, confs, 1)
+
+	// now we place a pegged order, and ensure it's being
+	// parked straight away with another party
+	peggedO := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order01", types.Side_SIDE_SELL, pegged, 10, 0)
+	peggedO.ExpiresAt = peggedExpiry.UnixNano()
+	peggedO.PeggedOrder = &types.PeggedOrder{
+		Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+		Offset:    10,
+	}
+	peggedOConf, err := tm.market.SubmitOrder(ctx, peggedO)
+	assert.NoError(t, err)
+	assert.NotNil(t, peggedOConf)
+
+	t.Run("pegged order is PARKED", func(t *testing.T) {
+		// First collect all the orders events
+		found := &types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				found = evt.Order()
+			}
+		}
+		// no update to the liquidity fee
+		assert.Equal(t, found.Status.String(), types.Order_STATUS_PARKED.String())
+	})
+
+	// assert the general account is equal to the initial amount
+	t.Run("no general account monies where taken", func(t *testing.T) {
+		acc, err := tm.collateralEngine.GetPartyGeneralAccount(pegged, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, int(acc.Balance), peggedInitialAmount)
+	})
+
+	t.Run("withdraw all funds from the general account", func(t *testing.T) {
+		acc, err := tm.collateralEngine.GetPartyGeneralAccount(pegged, tm.asset)
+		assert.NoError(t, err)
+		assert.NoError(t,
+			tm.collateralEngine.DecrementBalance(context.Background(), acc.Id, uint64(peggedInitialAmount)),
+		)
+
+		// then ensure balance is 0
+		acc, err = tm.collateralEngine.GetPartyGeneralAccount(pegged, tm.asset)
+		assert.NoError(t, err)
+		assert.Equal(t, int(acc.Balance), 0)
+	})
+
+	tm.events = nil
+	t.Run("party place a new order which should unpark the pegged order", func(t *testing.T) {
+		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(10*time.Second))
+		o := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, party4, 10, 2400)
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		assert.NoError(t, err)
+		assert.NotNil(t, conf)
+		o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, party4, 10, 800)
+		conf2, err := tm.market.SubmitOrder(ctx, o2)
+		assert.NoError(t, err)
+		assert.NotNil(t, conf2)
+	})
+
+	t.Run("pegged order is REJECTED", func(t *testing.T) {
+		// First collect all the orders events
+		found := &types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				order := evt.Order()
+				if order.PartyId == pegged {
+					found = evt.Order()
+				}
+			}
+		}
+		// no update to the liquidity fee
+		assert.Equal(t, found.Status.String(), types.Order_STATUS_REJECTED.String())
+	})
+
+	// now move the time to expire the pegged
+	timeExpires := peggedExpiry.Add(1 * time.Hour)
+	tm.market.OnChainTimeUpdate(ctx, timeExpires)
+	orders, err := tm.market.RemoveExpiredOrders(ctx, timeExpires.UnixNano())
+	assert.NoError(t, err)
+	assert.Len(t, orders, 0)
+
+	// tm.dumpPeggedOrders()
+	// tm.dumpMarketData()
+}
+
+func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 2,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount(lpparty, 100000000000000)
+
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 10000000,
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 99, Offset: -201},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -200},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 100},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 2, Offset: 101},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 98, Offset: 102},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	t.Run("lp submission is pending", func(t *testing.T) {
+		// First collect all the orders events
+		found := types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				found = evt.LiquidityProvision()
+			}
+		}
+		// no update to the liquidity fee
+		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
+	})
+
+	// we end the auction
+
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	// this are opening auction party
+	// we'll cancel their orders
+	var (
+		party0 = "clearing-auction-party0"
+		party1 = "clearing-auction-party1"
+		party2 = "party2"
+	)
+
+	tm.WithAccountAndAmount(party2, 100000000000000)
+
+	t.Run("lp submission is pending", func(t *testing.T) {
+		// then cancel all remaining orders in the book.
+		confs, err := tm.market.CancelAllOrders(context.Background(), party0)
+		assert.NoError(t, err)
+		assert.Len(t, confs, 1)
+		confs, err = tm.market.CancelAllOrders(context.Background(), party1)
+		assert.NoError(t, err)
+		assert.Len(t, confs, 1)
+	})
+
+	curt := auctionEnd.Add(1 * time.Second)
+
+	t.Run("party submit volume in both side of the book", func(t *testing.T) {
+		for i := 0; i < 50; i++ {
+
+			t.Run("buy side", func(t *testing.T) {
+				peggedO := getMarketOrder(tm, curt, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC,
+					fmt.Sprintf("order-pegged-buy-%v", i), types.Side_SIDE_BUY, party2, 1, 0)
+				peggedO.PeggedOrder = &types.PeggedOrder{
+					Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
+					Offset:    -20,
+				}
+				peggedOConf, err := tm.market.SubmitOrder(ctx, peggedO)
+				assert.NoError(t, err)
+				assert.NotNil(t, peggedOConf)
+				o := getMarketOrder(tm, curt, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC,
+					fmt.Sprintf("order-buy-%v", i), types.Side_SIDE_BUY, party2, 1, uint64(1250+(i*10)))
+				conf, err := tm.market.SubmitOrder(ctx, o)
+				assert.NoError(t, err)
+				assert.NotNil(t, conf)
+
+			})
+
+			t.Run("sell side", func(t *testing.T) {
+				peggedO := getMarketOrder(tm, curt, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC,
+					fmt.Sprintf("order-pegged-sell-%v", i), types.Side_SIDE_SELL, party2, 1, 0)
+				peggedO.PeggedOrder = &types.PeggedOrder{
+					Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+					Offset:    10,
+				}
+				peggedOConf, err := tm.market.SubmitOrder(ctx, peggedO)
+				assert.NoError(t, err)
+				assert.NotNil(t, peggedOConf)
+				o := getMarketOrder(tm, curt, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC,
+					fmt.Sprintf("order-sell-%v", i), types.Side_SIDE_SELL, party2, 1, uint64(950+(i*10)))
+				conf, err := tm.market.SubmitOrder(ctx, o)
+				assert.NoError(t, err)
+				assert.NotNil(t, conf)
+
+			})
+
+			tm.market.OnChainTimeUpdate(ctx, curt)
+			curt = curt.Add(1 * time.Second)
+		}
+	})
 
 }
