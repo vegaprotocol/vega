@@ -120,7 +120,7 @@ Feature: Traders can cancel his orders under certain conditions
 ```
 
 By reading this, we get to know who's the main actor, the action and the target. Saying _"Under certain conditions"_ is
-vague but it's enough as that's the purpose of the `Scenario` to be more specific. At least, we know there are
+vague, but it's enough as that's the purpose of the `Scenario` to be more specific. At least, we know there are
 conditions.
 
 ###### Bad
@@ -223,16 +223,14 @@ When an oracle data is submitted
 
 The passive voice sounds better `The system receives the following oracle data`.
 
-#### Then / But
+#### Then
 
-`Then` and `But` should only be used when asserting a state. It shouldn't be use for commands. The preferred construct
+`Then` should only be used when asserting a state. It shouldn't be use for commands. The preferred construct
 of assertion steps is:
 
 ```
 <actor> should <state verb> <target>
 ```
-
-Prefer `Then` for positive outcomes and `But` for negative outcomes.
 
 ##### Examples
 
@@ -242,13 +240,7 @@ Prefer `Then` for positive outcomes and `But` for negative outcomes.
 Then trader trader-1 should have a balance of 100 ETH
 ```
 
-We know what we "positively" expect from whom.
-
-```gherkin
-But the following orders should be rejected
-```
-
-We know what we "negatively" expect from what.
+We know what we expect from whom.
 
 ###### Bad
 
@@ -259,7 +251,7 @@ Then trader trader-1 have a balance of 100 ETH
 We miss the `should` that emphasize the expectation.
 
 ```gherkin
-But the orders should fails
+Then the orders should fails
 ```
 
 This is too vague.
@@ -281,10 +273,10 @@ Then the settlement price should be updated
 
 We are no longer be able to sort out the commands from the assertions at first glance.
 
-#### And
+#### And / But
 
 `And` can be used by any of the previous keywords and should follow the sentence construction of the keyword it is
-backing.
+backing. Use `But` for negative outcomes.
 
 ### Step
 
@@ -318,7 +310,7 @@ We should verify the error message on every expected failure using `because` fol
 ###### Good
 
 ```gherkin
-But the order "1234" should be rejected because "....."
+Then the order "1234" should be rejected because "....."
 ```
 
 We ensure the error is the expected one, and the context is clear, no need for additional comments.
@@ -326,7 +318,7 @@ We ensure the error is the expected one, and the context is clear, no need for a
 ###### Bad
 
 ```gherkin
-But the order "1234" should be rejected
+Then the order "1234" should be rejected
 ```
 
 It may have not failed for the reason we expected. And, we may be tempted to add a comment to explain the reason of the

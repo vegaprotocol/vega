@@ -120,7 +120,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following orders are rejected:$`, func(table *gherkin.DataTable) error {
 		return steps.OrdersAreRejected(execsetup.broker, table)
 	})
-	s.Step(`^missing traders place the following orders with references:$`, missingTradersPlaceFollowingOrdersWithReferences)
 	s.Step(`^traders cancel the following orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, execsetup.errorHandler, table)
 	})
@@ -199,16 +198,14 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^debug orders$`, func() error {
 		return steps.DebugOrders(execsetup.broker, execsetup.log)
 	})
+	s.Step(`^debug market data for "([^"]*)"$`, func(mkt string) error {
+		return steps.DebugMarketData(execsetup.engine, execsetup.log, mkt)
+	})
 
 	// Experimental error assertion
 	s.Step(`^the system should return error "([^"]*)"$`, func(msg string) error {
 		return steps.TheSystemShouldReturnError(execsetup.errorHandler, msg)
 	})
-
-	s.Step(`^debug market data for "([^"]*)"$`, func(mkt string) error {
-		return steps.DebugMarketData(execsetup.engine, execsetup.log, mkt)
-	})
-
 	s.Step(`^there\'s the following volume on the book:$`, func(table *gherkin.DataTable) error {
 		return steps.TheresTheFollowingVolumeOnTheBook(execsetup.broker, table)
 	})
