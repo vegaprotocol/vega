@@ -577,13 +577,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	m.risk.CalculateFactors(ctx, t)
 	timer.EngineTimeCounterAdd()
 
-	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
-		ts := m.liquidity.ProvisionsPerParty().TotalStake()
-		m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
-		m.equityShares.WithMVP(m.lastMarketValueProxy)
-
-		m.feeSplitter.TimeWindowStart(t)
-	}
+	m.updateMarketValueProxy()
 
 	if !closed {
 		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
@@ -592,6 +586,21 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	}
 
 	return
+}
+
+func (m *Market) updateMarketValueProxy() {
+	// if windows length is reached, reset fee splitter
+	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
+		m.feeSplitter.TimeWindowStart(m.currentTime)
+	}
+
+	// these need to happen every block
+	// but also when new LP is submitted just so we are sure we do
+	// not have a mvp of 0
+	ts := m.liquidity.ProvisionsPerParty().TotalStake()
+	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
+		m.marketValueWindowLength, float64(ts))
+	m.equityShares.WithMVP(m.lastMarketValueProxy)
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) {
@@ -3418,9 +3427,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 			// if we are still in opening auction, mvp can only be total stake
 			// so we'll use that to update the equity shares
 			if m.isInOpeningAuction() {
-				m.equityShares.WithMVP(
-					float64(m.liquidity.ProvisionsPerParty().TotalStake()),
-				)
+				m.updateMarketValueProxy()
 			}
 			m.updateLiquidityFee(ctx)
 			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
