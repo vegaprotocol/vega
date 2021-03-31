@@ -105,11 +105,14 @@ var (
 type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, v uint64, now time.Time) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
+	SetMinDuration(d time.Duration)
 }
 
 // LiquidityMonitor
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, c1, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
+	SetMinDuration(d time.Duration)
+	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio float64)
 }
 
 // TargetStakeCalculator interface
@@ -143,6 +146,8 @@ type AuctionState interface {
 	// get some data
 	Mode() types.Market_TradingMode
 	Trigger() types.AuctionTrigger
+	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
+	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
@@ -202,7 +207,6 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
-	targetStakeTriggeringRatio float64
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -299,7 +303,7 @@ func NewMarket(
 		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
 	}
 
-	lMonitor := lmon.NewMonitor(tsCalc)
+	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
@@ -553,7 +557,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				// start the market fee window
 				m.feeSplitter.TimeWindowStart(t)
 			}
-		} else if m.as.IsPriceAuction() {
+		} else if m.as.IsPriceAuction() || m.as.IsLiquidityAuction() {
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
@@ -673,8 +677,9 @@ func HasReferenceMoved(order *types.Order, changes uint8) bool {
 // which are using a reference that has moved. Returns the number of orders that were repriced.
 func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*types.Order, uint64) {
 	var (
-		repriceCount uint64
-		toRemove     []*types.Order
+		repriceCount  uint64
+		toRemove      []*types.Order
+		updatedOrders []*types.Order
 	)
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "repriceAllPeggedOrders")
 
@@ -698,48 +703,41 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 						logging.Error(err))
 				}
 			}
+			updatedOrders = append(updatedOrders, order)
 		}
 	}
 
+	var toSubmitOrders []*types.Order
 	// Reprice all the pegged order
-	for _, order := range m.peggedOrders {
-		if HasReferenceMoved(order, changes) {
-			if price, err := m.getNewPeggedPrice(order); err != nil {
-				// Failed to reprice, if we are parked we do nothing, if not parked we need to park
-				if order.Status != types.Order_STATUS_PARKED {
-					order.UpdatedAt = m.currentTime.UnixNano()
-					order.Status = types.Order_STATUS_PARKED
-					order.Price = 0
-					m.broker.Send(events.NewOrderEvent(ctx, order))
-				}
-			} else {
-				// Repriced so all good make sure status is correct
-				order.Status = types.Order_STATUS_CANCELLED
-				order.Price = price
+	for _, order := range updatedOrders {
+		if price, err := m.getNewPeggedPrice(order); err != nil {
+			// Failed to reprice, if we are parked we do nothing, if not parked we need to park
+			if order.Status != types.Order_STATUS_PARKED {
+				order.UpdatedAt = m.currentTime.UnixNano()
+				order.Status = types.Order_STATUS_PARKED
+				order.Price = 0
+				m.broker.Send(events.NewOrderEvent(ctx, order))
 			}
+		} else {
+			// Repriced so all good make sure status is correct
+			order.Price = price
+			order.Status = types.Order_STATUS_PARKED
+			toSubmitOrders = append(toSubmitOrders, order)
 		}
 	}
-
-	updatedOrders := []*types.Order{}
 
 	// Reinsert all the orders
-	for _, order := range m.peggedOrders {
-		if HasReferenceMoved(order, changes) {
-			if order.Status == types.Order_STATUS_CANCELLED {
-				if _, err := m.submitValidatedOrder(ctx, order); err != nil {
-					m.log.Debug("could not re-submit a pegged order after repricing",
-						logging.MarketID(m.GetID()),
-						logging.PartyID(order.PartyId),
-						logging.OrderID(order.Id),
-						logging.Error(err))
-					// order could not be submitted, it's then been rejected
-					// we just completely remove it.
-					toRemove = append(toRemove, order)
-					continue
-				}
-			}
+	for _, order := range toSubmitOrders {
+		if _, err := m.submitValidatedOrder(ctx, order); err != nil {
+			m.log.Debug("could not re-submit a pegged order after repricing",
+				logging.MarketID(m.GetID()),
+				logging.PartyID(order.PartyId),
+				logging.OrderID(order.Id),
+				logging.Error(err))
+			// order could not be submitted, it's then been rejected
+			// we just completely remove it.
+			toRemove = append(toRemove, order)
 		}
-		updatedOrders = append(updatedOrders, order)
 	}
 
 	for _, o := range toRemove {
@@ -2053,7 +2051,9 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		return nil
 	}
 	// sending response to buffer
-	m.broker.Send(events.NewTransferResponse(ctx, response))
+	if response != nil {
+		m.broker.Send(events.NewTransferResponse(ctx, response))
+	}
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
@@ -2217,9 +2217,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 	if err := m.matching.RemoveOrder(order); err != nil {
 		m.log.Panic("Failure to remove order from matching engine",
-			logging.String("party-id", order.PartyId),
-			logging.String("order-id", order.Id),
-			logging.String("market", m.mkt.Id),
+			logging.Order(*order),
 			logging.Error(err))
 	}
 
@@ -3105,8 +3103,18 @@ func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64
 }
 
 func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
-	m.targetStakeTriggeringRatio = v
+	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, v)
 	//TODO: Send an event containing updated parameter
+}
+
+func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) {
+	m.pMonitor.SetMinDuration(d)
+	m.lMonitor.SetMinDuration(d)
+	evt := m.as.UpdateMinDuration(ctx, d)
+	// we were in an auction, and the duration of the auction was updated
+	if evt != nil {
+		m.broker.Send(evt)
+	}
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
@@ -3494,7 +3502,6 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 
 	m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
-		m.targetStakeTriggeringRatio,
 		float64(m.getSuppliedStake()),
 		trades,
 		*rf,

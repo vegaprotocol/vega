@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -82,6 +83,17 @@ func FeatureContext(s *godog.Suite) {
 		marketExpiry = defaultMarketExpiry
 		marketStart = defaultMarketStart
 
+		return nil
+	})
+	// network parameters
+	s.Step(`^the following network parameters are set:$`, func(table *gherkin.DataTable) error {
+		params := steps.TheFollowingNetworkParametersAreSet(table)
+		if v, ok := params["market.auction.minimumDuration"]; ok {
+			d := v.(time.Duration)
+			if err := execsetup.engine.OnMarketAuctionMinimumDurationUpdate(context.Background(), d); err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 	s.Step(`^traders place the following orders:$`, func(table *gherkin.DataTable) error {

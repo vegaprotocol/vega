@@ -4,7 +4,10 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     Given the insurance pool initial balance for the markets is "0":
     And the execution engine have these markets:
       | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 | BTC        | BTC   | simple     | 0.1       | 0.1       | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 0                | 0.00025   | 0.0005             | 0.001         | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+      | ETH/DEC19 | BTC        | BTC   | simple     | 0.1       | 0.1       | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 1                | 0.00025   | 0.0005             | 0.001         | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+    And the following network parameters are set:
+      | market.auction.minimumDuration |
+      | 1                              |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
@@ -19,12 +22,16 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | tt_10  | BTC   | 10000000  |
       | tt_11  | BTC   | 10000000  |
       | tt_aux | BTC   | 100000000 |
+      | t2_aux | BTC   | 100000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     | 
-      | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-1   |
+      | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-1   |
+      | t2_aux | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-2   |
+      | tt_aux | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-2   |
+    Then the opening auction period for market "ETH/DEC19" ends
 
     # place orders and generate trades
     When traders place the following orders:
@@ -60,6 +67,6 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | trader | volume | unrealised pnl | realised pnl |
       | tt_4   | 4      | -200           | 0            |
       | tt_5   | 0      | 0              | -102         |
-      | tt_6   | -4     | 200            | -30          |
+      | tt_6   | -4     | 200            | -28          |
       | tt_10  | 30     | 0              | 0            |
-      | tt_11  | -30    | 200            | -68          |
+      | tt_11  | -30    | 200            | -63          |

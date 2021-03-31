@@ -80,6 +80,7 @@ type RangeProvider interface {
 type Engine struct {
 	riskModel       RangeProvider
 	updateFrequency time.Duration
+	minDuration     time.Duration
 
 	initialised bool
 	fpHorizons  map[int64]float64
@@ -131,6 +132,10 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		bounds:          bounds,
 	}
 	return e, nil
+}
+
+func (e *Engine) SetMinDuration(d time.Duration) {
+	e.minDuration = d
 }
 
 // GetHorizonYearFractions returns horizons of all the triggers specified, expressed as year fraction, sorted in ascending order.
@@ -207,22 +212,22 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 			}
 			return nil
 		}
-		// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
-		var duration int64
-		for _, b := range bounds {
-			duration += b.AuctionExtension
-		}
-
-		end := types.AuctionDuration{
-			Duration: duration,
-		}
 		// we're dealing with a batch auction that's about to end -> extend it?
 		if fba && as.AuctionEnd() {
-			as.ExtendAuction(end)
-			return nil // we could return an error here to indicate the batch auction was altered?
+			// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
+			var duration int64
+			for _, b := range bounds {
+				duration += b.AuctionExtension
+			}
+			as.ExtendAuction(types.AuctionDuration{
+				Duration: duration,
+			})
+			return nil
 		}
-		// setup auction
-		as.StartPriceAuction(now, &end)
+
+		as.StartPriceAuction(now, &types.AuctionDuration{
+			Duration: int64(e.minDuration / time.Second), // unfortunate, but this is multiplied by time.Second later on
+		})
 		return nil
 	}
 	// market is in auction

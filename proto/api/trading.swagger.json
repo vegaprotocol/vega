@@ -3942,6 +3942,11 @@
           "type": "number",
           "format": "double",
           "title": "Specifies the triggering ratio for entering liquidity auction"
+        },
+        "auction_extension": {
+          "type": "string",
+          "format": "int64",
+          "title": "Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction"
         }
       },
       "title": "LiquidityMonitoringParameters contains settings used for liquidity monitoring"

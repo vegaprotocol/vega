@@ -997,6 +997,7 @@ func TestLPIsactivatedWithPriceMonitoring(t *testing.T) {
 	lpparty := "lp-party-1"
 
 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	tm.StartOpeningAuction().
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 50000000)

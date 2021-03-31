@@ -315,6 +315,18 @@ func (r RowWrapper) Price(name string) *types.Price {
 	return Price(n)
 }
 
+func (r RowWrapper) Duration(name string) time.Duration {
+	return time.Duration(r.U64(name))
+}
+
+func (r RowWrapper) DurationSec(name string) time.Duration {
+	n := r.U64(name)
+	if n == 0 {
+		return 0
+	}
+	return time.Duration(n) * time.Second
+}
+
 func Price(n uint64) *types.Price {
 	return &types.Price{Value: n}
 }

@@ -169,6 +169,8 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-maxMoveDownHorizon1, 1, now)
 	require.NoError(t, err)
 
+	// set the min duration to equal auction extension 1
+	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
 	end := types.AuctionDuration{Duration: t1.AuctionExtension}
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+(maxMoveUpHorizon1+maxMoveUpHorizon2)/2, 1, now)
@@ -181,6 +183,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now)
 	require.NoError(t, err)
 
+	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-(maxMoveDownHorizon1+maxMoveDownHorizon2)/2, 1, now)
 	require.NoError(t, err)
@@ -192,6 +195,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now)
 	require.NoError(t, err)
 
+	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+maxMoveUpHorizon2, 1, now)
 	require.NoError(t, err)
@@ -203,6 +207,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now)
 	require.NoError(t, err)
 
+	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-maxMoveDownHorizon2, 1, now)
 	require.NoError(t, err)
@@ -214,7 +219,8 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now)
 	require.NoError(t, err)
 
-	end = types.AuctionDuration{Duration: t1.AuctionExtension + t2.AuctionExtension}
+	// end = types.AuctionDuration{Duration: t1.AuctionExtension + t2.AuctionExtension}
+	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+2*maxMoveUpHorizon2, 1, now)
 	require.NoError(t, err)
@@ -226,6 +232,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now)
 	require.NoError(t, err)
 
+	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice-2*maxMoveDownHorizon2, 1, now)
 	require.NoError(t, err)
@@ -280,6 +287,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 	require.NoError(t, err)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension}
+	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, uint64(referencePrice)+2*maxMoveUp1, 1, now)
 	require.NoError(t, err)
@@ -464,6 +472,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	require.NoError(t, err)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension}
+	pm.SetMinDuration(time.Duration(t1.AuctionExtension) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 	t1ViolatingPrice := uint64(referencePrice) + (t2Multiplier-1)*maxMoveUpt1
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, t1ViolatingPrice, 1, now) //t1 violated only
@@ -523,6 +532,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	require.NoError(t, err)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension + t2.AuctionExtension}
+	pm.SetMinDuration(time.Duration(end.Duration) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 	t2ViolatingPrice := uint64(referencePrice) + (t2Multiplier+1)*maxMoveUpt1
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, t2ViolatingPrice, 1, now) //t1 violated only
@@ -599,6 +609,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	require.Equal(t, bounds[1].ReferencePrice, referencePrice)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension}
+	pm.SetMinDuration(time.Duration(end.Duration) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 	t1ViolatingPrice := uint64(referencePrice) + (t2Multiplier-1)*maxMoveUpt1
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, t1ViolatingPrice, 1, now) //t1 violated only
@@ -896,6 +907,7 @@ func TestPricesValidAfterAuctionEnds(t *testing.T) {
 	require.NoError(t, err)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension}
+	pm.SetMinDuration(time.Duration(end.Duration) * time.Second)
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 	t1ViolatingPrice := uint64(referencePrice) + (t2Multiplier-1)*maxMoveUpt1
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, t1ViolatingPrice, 1, now) //t1 violated only
