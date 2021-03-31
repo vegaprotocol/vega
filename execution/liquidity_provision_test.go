@@ -2063,3 +2063,141 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 	})
 
 }
+
+func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 2,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount(lpparty, 100000000000000)
+
+	tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Add a LPSubmission
+	// this is a log of stake, enough to cover all
+	// the required stake for the market
+	lpSubmission := &types.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 10000,
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 99, Offset: -201},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -200},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 100},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 2, Offset: 101},
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 98, Offset: 102},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	t.Run("lp submission is pending", func(t *testing.T) {
+		// First collect all the orders events
+		found := types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				found = evt.LiquidityProvision()
+			}
+		}
+		// no update to the liquidity fee
+		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
+	})
+
+	// we end the auction
+	// This will also generate trades which are included in the MVP.
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	// at the end of the opening auction, we check the mvp
+	md := tm.market.GetMarketData()
+	assert.Equal(t, "10000", md.MarketValueProxy)
+
+	// place bunches of order which will match so we increase the trade value for fee purpose.
+	var (
+		richParty1 = "rich-party-1"
+		richParty2 = "rich-party-2"
+	)
+
+	tm.WithAccountAndAmount(richParty1, 100000000000000).
+		WithAccountAndAmount(richParty2, 100000000000000)
+
+	orders := []*types.Order{
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1000,
+			Remaining:   1000,
+			Price:       1111,
+			Side:        types.Side_SIDE_BUY,
+			PartyId:     richParty1,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+		{
+			Type:        types.Order_TYPE_LIMIT,
+			Size:        1000,
+			Remaining:   1000,
+			Price:       1111,
+			Side:        types.Side_SIDE_SELL,
+			PartyId:     richParty2,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		},
+	}
+
+	// now we have place our trade just after the end of the auction
+	// period, and the wwindow is of 2 seconds
+	tm.WithSubmittedOrders(t, orders...)
+
+	// we increase the time for 1 second
+	// the active_window_length =
+	// 1 second so factor = t_market_value_window_length / active_window_length = 2.
+	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(1*time.Second))
+	md = tm.market.GetMarketData()
+	assert.Equal(t, "2221978", md.MarketValueProxy)
+
+	// we increase the time for another second
+	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
+	md = tm.market.GetMarketData()
+	assert.Equal(t, "1110989", md.MarketValueProxy)
+
+	// now we increase the time for another second, which makes us slide
+	// out of the window, and reset the tradeValue + window
+	// so the mvp is again the total stake submitted in the market
+	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(3*time.Second))
+	md = tm.market.GetMarketData()
+	assert.Equal(t, "10000", md.MarketValueProxy)
+}
