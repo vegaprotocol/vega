@@ -557,7 +557,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				// start the market fee window
 				m.feeSplitter.TimeWindowStart(t)
 			}
-		} else if m.as.IsPriceAuction() {
+		} else if m.as.IsPriceAuction() || m.as.IsLiquidityAuction() {
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
@@ -2057,7 +2057,9 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		return nil
 	}
 	// sending response to buffer
-	m.broker.Send(events.NewTransferResponse(ctx, response))
+	if response != nil {
+		m.broker.Send(events.NewTransferResponse(ctx, response))
+	}
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
