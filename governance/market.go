@@ -380,7 +380,7 @@ func validateShape(
 					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be >= 0")
 				}
 			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")
+				return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell side shape with best bid price reference")
 			case types.PeggedReference_PEGGED_REFERENCE_MID:
 				if lo.Offset <= 0 {
 					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be > 0")
