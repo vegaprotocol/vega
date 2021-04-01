@@ -195,6 +195,13 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) ([]
 		ctx, party, types.LiquidityProvision_STATUS_CANCELLED)
 }
 
+// StopLiquidityProvision removes a parties commitment of liquidity
+// Returns the liquidityOrders if any
+func (e *Engine) StopLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
+	return e.stopLiquidityProvision(
+		ctx, party, types.LiquidityProvision_STATUS_STOPPED)
+}
+
 // ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.
 func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
