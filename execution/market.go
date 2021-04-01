@@ -3474,13 +3474,19 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return nil
 	}
 
-	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
+	// FIXM(JEREMY):
+	// new orders should never have amends as well.
+	// asserting for now, let's fix the liquidity api later
+	if len(amendments) > 0 {
+		m.log.Panic("a new liquidity submission should not produce any amendments from the liquidity engine")
+	}
+
+	if err := m.createOrders(ctx, newOrders); err != nil {
 		m.log.Debug("Could not create or update orders for a liquidity provision",
 			logging.String("market-id", m.GetID()),
 			logging.String("party", party),
 			logging.Error(err),
 		)
-
 		// at this point we could not create or update some order for this LP
 		// in the case this was a new order, we will want to cancel all that happen
 		// in the case it was an amend, we'll want to do nothing
@@ -3720,7 +3726,7 @@ func (m *Market) cancelDistressedLiquidityProvision(
 	return nil
 }
 
-func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {
+func (m *Market) createOrders(ctx context.Context, newOrders []*types.Order) (err error) {
 	if len(newOrders) <= 0 {
 		return nil
 	}
@@ -3733,13 +3739,17 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 	initialMargin := marginAcc.Balance
 
 	submittedIDs := []string{}
+	failedOnID := ""
 	// submitted order rollback
 	defer func() {
 		if err == nil || len(newOrders) <= 0 {
 			return
 		}
 		party := newOrders[0].PartyId
+		mappedIDs := map[string]struct{}{} // just a map to access them easily
+		// first we cancel all order which we  were able to submit
 		for _, v := range submittedIDs {
+			mappedIDs[v] = struct{}{}
 			_, newerr := m.cancelOrder(ctx, party, v)
 			if newerr != nil {
 				m.log.Error("unable to rollback order via cancel",
@@ -3753,10 +3763,25 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 		if rerr := m.rollBackMargin(ctx, party, initialMargin); rerr != nil {
 			err = fmt.Errorf("%v, %w", err, rerr)
 		}
+
+		// the we just send through the bus all order
+		// we were not even able to submit with a rejected event
+		for _, v := range newOrders {
+			_, ok := mappedIDs[v.Id]
+			if !ok && failedOnID != v.Id {
+				// this was not handled before, we need to send an
+				v.Status = types.Order_STATUS_REJECTED
+				// set margin check failed, it's the only reason we could
+				// not place the order at this point
+				v.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
+				m.broker.Send(events.NewOrderEvent(ctx, v))
+			}
+		}
 	}()
 
 	for _, order := range newOrders {
 		if _, err := m.submitOrder(ctx, order, false); err != nil {
+			failedOnID = order.Id
 			m.log.Debug("unable to submit liquidity provision order",
 				logging.MarketID(m.GetID()),
 				logging.OrderID(order.Id),
