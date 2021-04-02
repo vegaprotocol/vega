@@ -475,24 +475,25 @@ type ComplexityRoot struct {
 	}
 
 	Order struct {
-		CreatedAt       func(childComplexity int) int
-		ExpiresAt       func(childComplexity int) int
-		Id              func(childComplexity int) int
-		Market          func(childComplexity int) int
-		Party           func(childComplexity int) int
-		PeggedOrder     func(childComplexity int) int
-		Price           func(childComplexity int) int
-		Reference       func(childComplexity int) int
-		RejectionReason func(childComplexity int) int
-		Remaining       func(childComplexity int) int
-		Side            func(childComplexity int) int
-		Size            func(childComplexity int) int
-		Status          func(childComplexity int) int
-		TimeInForce     func(childComplexity int) int
-		Trades          func(childComplexity int) int
-		Type            func(childComplexity int) int
-		UpdatedAt       func(childComplexity int) int
-		Version         func(childComplexity int) int
+		CreatedAt          func(childComplexity int) int
+		ExpiresAt          func(childComplexity int) int
+		Id                 func(childComplexity int) int
+		LiquidityProvision func(childComplexity int) int
+		Market             func(childComplexity int) int
+		Party              func(childComplexity int) int
+		PeggedOrder        func(childComplexity int) int
+		Price              func(childComplexity int) int
+		Reference          func(childComplexity int) int
+		RejectionReason    func(childComplexity int) int
+		Remaining          func(childComplexity int) int
+		Side               func(childComplexity int) int
+		Size               func(childComplexity int) int
+		Status             func(childComplexity int) int
+		TimeInForce        func(childComplexity int) int
+		Trades             func(childComplexity int) int
+		Type               func(childComplexity int) int
+		UpdatedAt          func(childComplexity int) int
+		Version            func(childComplexity int) int
 	}
 
 	OrderEstimate struct {
@@ -1021,6 +1022,8 @@ type OrderResolver interface {
 	RejectionReason(ctx context.Context, obj *proto.Order) (*OrderRejectionReason, error)
 	Version(ctx context.Context, obj *proto.Order) (string, error)
 	UpdatedAt(ctx context.Context, obj *proto.Order) (*string, error)
+
+	LiquidityProvision(ctx context.Context, obj *proto.Order) (*proto.LiquidityProvision, error)
 }
 type PartyResolver interface {
 	Orders(ctx context.Context, obj *proto.Party, skip *int, first *int, last *int) ([]*proto.Order, error)
@@ -2910,6 +2913,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Order.Id(childComplexity), true
+
+	case "Order.liquidityProvision":
+		if e.complexity.Order.LiquidityProvision == nil {
+			break
+		}
+
+		return e.complexity.Order.LiquidityProvision(childComplexity), true
 
 	case "Order.market":
 		if e.complexity.Order.Market == nil {
@@ -6131,6 +6141,9 @@ type Order {
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
+
+  "The liquidity provision this order was created from"
+  liquidityProvision: LiquidityProvision
 }
 
 "An estimate of the fee to be paid by the order"
@@ -17296,6 +17309,37 @@ func (ec *executionContext) _Order_peggedOrder(ctx context.Context, field graphq
 	res := resTmp.(*proto.PeggedOrder)
 	fc.Result = res
 	return ec.marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐPeggedOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Order_liquidityProvision(ctx context.Context, field graphql.CollectedField, obj *proto.Order) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Order",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Order().LiquidityProvision(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*proto.LiquidityProvision)
+	fc.Result = res
+	return ec.marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvision(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OrderEstimate_fee(ctx context.Context, field graphql.CollectedField, obj *OrderEstimate) (ret graphql.Marshaler) {
@@ -29939,6 +29983,17 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 			})
 		case "peggedOrder":
 			out.Values[i] = ec._Order_peggedOrder(ctx, field, obj)
+		case "liquidityProvision":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Order_liquidityProvision(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -35444,6 +35499,10 @@ func (ec *executionContext) marshalOLiquidityProviderFeeShare2ᚕᚖcodeᚗvegap
 	return ret
 }
 
+func (ec *executionContext) marshalOLiquidityProvision2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v proto.LiquidityProvision) graphql.Marshaler {
+	return ec._LiquidityProvision(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvisionᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.LiquidityProvision) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -35482,6 +35541,13 @@ func (ec *executionContext) marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocol
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v *proto.LiquidityProvision) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LiquidityProvision(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOLogNormalRiskModelInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx context.Context, v interface{}) (LogNormalRiskModelInput, error) {

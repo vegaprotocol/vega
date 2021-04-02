@@ -1437,6 +1437,9 @@ type Order {
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
+
+  "The liquidity provision this order was created from"
+  liquidityProvision: LiquidityProvision
 }
 
 "An estimate of the fee to be paid by the order"
