@@ -164,7 +164,10 @@ func testMarketObserveDepthSuccess(t *testing.T) {
 		go writeToChannel(ch)
 	})
 
-	svc.marketDepth.EXPECT().GetMarketDepth(gomock.Any(), marketArg, uint64(0)).Times(1).Return(&depth, nil)
+	svc.marketDepth.EXPECT().GetMarketDepth(gomock.Any(), marketArg, uint64(0)).Times(1).Return(&depth, nil).Do(
+		func(ctx context.Context, market string, limit uint64) {
+			depth.SequenceNumber++
+		})
 	// waitgroup here ensures that unsubscribe was indeed called
 	svc.order.EXPECT().Unsubscribe(uint64(1)).Times(1).Return(nil).Do(func(_ uint64) {
 		wg.Done()
