@@ -55,6 +55,7 @@ func TestPrepareUpdateNetworkParameterProposal(t *testing.T) {
 	t.Run("prepare update network proposal - failure empty key", testPrepareNetworkParameterUpdateProposalFailureEmptyKey)
 	t.Run("prepare update network proposal - failure empty value", testPrepareNetworkParameterUpdateProposalFailureEmptyValue)
 	t.Run("prepare update network proposal - validation failure", testPrepareNetworkParameterUpdateProposalValidationFailure)
+	t.Run("prepare proposal with invalid changes - validation failure", testPrepareProposalWithInvalidChanges)
 }
 
 func testPrepareNetworkParameterUpdateProposalSuccess(t *testing.T) {
@@ -130,6 +131,22 @@ func testPrepareNetworkParameterUpdateProposalFailureEmptyValue(t *testing.T) {
 	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrEmptyNetParamValue.Error())
+	assert.Nil(t, proposal)
+}
+
+func testPrepareProposalWithInvalidChanges(t *testing.T) {
+	svc := newTestService(t)
+	defer svc.ctrl.Finish()
+	terms := types.ProposalTerms{
+		ClosingTimestamp:   time.Now().Add(time.Hour * 24 * 2).UTC().Unix(),
+		EnactmentTimestamp: time.Now().Add(time.Hour * 24 * 60).UTC().Unix(),
+		Change:             nil,
+	}
+
+	testAuthor := "test-author"
+	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+
+	assert.EqualError(t, err, governance.ErrUnsupportedProposalTerms.Error())
 	assert.Nil(t, proposal)
 }
 
