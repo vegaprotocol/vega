@@ -14,10 +14,10 @@ func TheresTheFollowingVolumeOnTheBook(
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
-		market := row.Str("market id")
-		volume := row.U64("volume")
-		price := row.U64("price")
-		side := row.Side("side")
+		market := row.MustStr("market id")
+		volume := row.MustU64("volume")
+		price := row.MustU64("price")
+		side := row.MustSide("side")
 
 		sell, buy := broker.GetBookDepth(market)
 		if side == types.Side_SIDE_SELL {

@@ -13,6 +13,20 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
+func GetFirstRow(table gherkin.DataTable) (RowWrapper, error) {
+	rows := TableWrapper(table).Parse()
+
+	if len(rows) > 1 {
+		return RowWrapper{}, fmt.Errorf("this table supports only one row")
+	}
+
+	for _, r := range rows {
+		return r, nil
+	}
+
+	return RowWrapper{}, fmt.Errorf("missing row")
+}
+
 type TableWrapper gherkin.DataTable
 
 func (t TableWrapper) Parse() []RowWrapper {
@@ -34,8 +48,24 @@ type RowWrapper struct {
 	values map[string]string
 }
 
+func (r RowWrapper) mustColumn(name string) string {
+	s, ok := r.values[name]
+	if !ok {
+		panic(fmt.Errorf("column \"%s\" not found", name))
+	}
+	return s
+}
+
+func (r RowWrapper) MustStr(name string) string {
+	return r.mustColumn(name)
+}
+
 func (r RowWrapper) Str(name string) string {
 	return r.values[name]
+}
+
+func (r RowWrapper) MustStrSlice(name, sep string) []string {
+	return StrSlice(r.mustColumn(name), sep)
 }
 
 func (r RowWrapper) StrSlice(name, sep string) []string {
@@ -49,6 +79,12 @@ func StrSlice(value string, sep string) []string {
 	return strings.Split(value, sep)
 }
 
+func (r RowWrapper) MustU64(name string) uint64 {
+	value, err := U64(r.mustColumn(name))
+	panicW(name, err)
+	return value
+}
+
 func (r RowWrapper) U64(name string) uint64 {
 	value, err := U64(r.values[name])
 	panicW(name, err)
@@ -59,10 +95,22 @@ func U64(value string) (uint64, error) {
 	return strconv.ParseUint(value, 10, 0)
 }
 
+func (r RowWrapper) MustU32(name string) uint32 {
+	value, err := U64(r.mustColumn(name))
+	panicW(name, err)
+	return uint32(value)
+}
+
 func (r RowWrapper) U32(name string) uint32 {
 	value, err := U64(r.values[name])
 	panicW(name, err)
 	return uint32(value)
+}
+
+func (r RowWrapper) MustU64Slice(name, sep string) []uint64 {
+	value, err := U64Slice(r.mustColumn(name), sep)
+	panicW(name, err)
+	return value
 }
 
 func (r RowWrapper) U64Slice(name, sep string) []uint64 {
@@ -88,6 +136,12 @@ func U64Slice(rawValue, sep string) ([]uint64, error) {
 	return array, nil
 }
 
+func (r RowWrapper) MustI64(name string) int64 {
+	value, err := I64(r.mustColumn(name))
+	panicW(name, err)
+	return value
+}
+
 func (r RowWrapper) I64(name string) int64 {
 	value, err := I64(r.values[name])
 	panicW(name, err)
@@ -96,6 +150,12 @@ func (r RowWrapper) I64(name string) int64 {
 
 func I64(rawValue string) (int64, error) {
 	return strconv.ParseInt(rawValue, 10, 0)
+}
+
+func (r RowWrapper) MustI64Slice(name, sep string) []int64 {
+	value, err := I64Slice(r.mustColumn(name), sep)
+	panicW(name, err)
+	return value
 }
 
 func (r RowWrapper) I64Slice(name, sep string) []int64 {
@@ -121,6 +181,12 @@ func I64Slice(rawValue string, sep string) ([]int64, error) {
 	return array, nil
 }
 
+func (r RowWrapper) MustF64(name string) float64 {
+	value, err := F64(r.mustColumn(name))
+	panicW(name, err)
+	return value
+}
+
 func (r RowWrapper) F64(name string) float64 {
 	value, err := F64(r.values[name])
 	panicW(name, err)
@@ -129,6 +195,12 @@ func (r RowWrapper) F64(name string) float64 {
 
 func F64(rawValue string) (float64, error) {
 	return strconv.ParseFloat(rawValue, 10)
+}
+
+func (r RowWrapper) MustF64Slice(name, sep string) []float64 {
+	value, err := F64Slice(r.mustColumn(name), sep)
+	panicW(name, err)
+	return value
 }
 
 func (r RowWrapper) F64Slice(name, sep string) []float64 {
@@ -154,6 +226,12 @@ func F64Slice(rawValue string, sep string) ([]float64, error) {
 	return array, nil
 }
 
+func (r RowWrapper) MustBool(name string) bool {
+	b, err := Bool(r.mustColumn(name))
+	panicW(name, err)
+	return b
+}
+
 func (r RowWrapper) Bool(name string) bool {
 	b, err := Bool(r.values[name])
 	panicW(name, err)
@@ -167,6 +245,12 @@ func Bool(rawValue string) (bool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("invalid bool value: %v", rawValue)
+}
+
+func (r RowWrapper) MustTime(name string) time.Time {
+	t, err := Time(r.mustColumn(name))
+	panicW(name, err)
+	return t
 }
 
 func (r RowWrapper) Time(name string) time.Time {
@@ -183,8 +267,14 @@ func Time(rawTime string) (time.Time, error) {
 	return parsedTime, nil
 }
 
+func (r RowWrapper) MustOrderType(name string) types.Order_Type {
+	orderType, err := OrderType(r.MustStr(name))
+	panicW(name, err)
+	return orderType
+}
+
 func (r RowWrapper) OrderType(name string) types.Order_Type {
-	orderType, err := OrderType(r.values[name])
+	orderType, err := OrderType(r.Str(name))
 	panicW(name, err)
 	return orderType
 }
@@ -197,8 +287,14 @@ func OrderType(rawValue string) (types.Order_Type, error) {
 	return types.Order_Type(ty), nil
 }
 
+func (r RowWrapper) MustOrderStatus(name string) types.Order_Status {
+	s, err := OrderStatus(r.MustStr(name))
+	panicW(name, err)
+	return s
+}
+
 func (r RowWrapper) OrderStatus(name string) types.Order_Status {
-	s, err := OrderStatus(r.values[name])
+	s, err := OrderStatus(r.Str(name))
 	panicW(name, err)
 	return s
 }
@@ -211,8 +307,14 @@ func OrderStatus(rawValue string) (types.Order_Status, error) {
 	return types.Order_Status(ty), nil
 }
 
+func (r RowWrapper) MustLiquidityStatus(name string) types.LiquidityProvision_Status {
+	s, err := LiquidityStatus(r.MustStr(name))
+	panicW(name, err)
+	return s
+}
+
 func (r RowWrapper) LiquidityStatus(name string) types.LiquidityProvision_Status {
-	s, err := LiquidityStatus(r.values[name])
+	s, err := LiquidityStatus(r.Str(name))
 	panicW(name, err)
 	return s
 }
@@ -225,8 +327,14 @@ func LiquidityStatus(rawValue string) (types.LiquidityProvision_Status, error) {
 	return types.LiquidityProvision_Status(ty), nil
 }
 
+func (r RowWrapper) MustTIF(name string) types.Order_TimeInForce {
+	tif, err := TIF(r.MustStr(name))
+	panicW(name, err)
+	return tif
+}
+
 func (r RowWrapper) TIF(name string) types.Order_TimeInForce {
-	tif, err := TIF(r.values[name])
+	tif, err := TIF(r.Str(name))
 	panicW(name, err)
 	return tif
 }
@@ -239,14 +347,35 @@ func TIF(rawValue string) (types.Order_TimeInForce, error) {
 	return types.Order_TimeInForce(tif), nil
 }
 
-func (r RowWrapper) Side(name string) types.Side {
-	side, err := Side(r.values[name])
+func (r RowWrapper) MustSide(name string) types.Side {
+	side, err := Side(r.MustStr(name))
 	panicW(name, err)
 	return side
 }
 
+func (r RowWrapper) Side(name string) types.Side {
+	side, err := Side(r.Str(name))
+	panicW(name, err)
+	return side
+}
+
+func Side(rawValue string) (types.Side, error) {
+	switch rawValue {
+	case "sell":
+		return types.Side_SIDE_SELL, nil
+	case "buy":
+		return types.Side_SIDE_BUY, nil
+	default:
+		return types.Side_SIDE_UNSPECIFIED, errors.New("invalid side")
+	}
+}
+
+func (r RowWrapper) MustPeggedReference(name string) types.PeggedReference {
+	return peggedReference(r.MustStr(name))
+}
+
 func (r RowWrapper) PeggedReference(name string) types.PeggedReference {
-	return peggedReference(r.values[name])
+	return peggedReference(r.Str(name))
 }
 
 func peggedReference(rawValue string) types.PeggedReference {
@@ -261,15 +390,10 @@ func peggedReference(rawValue string) types.PeggedReference {
 	return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
 }
 
-func Side(rawValue string) (types.Side, error) {
-	switch rawValue {
-	case "sell":
-		return types.Side_SIDE_SELL, nil
-	case "buy":
-		return types.Side_SIDE_BUY, nil
-	default:
-		return types.Side_SIDE_UNSPECIFIED, errors.New("invalid side")
-	}
+func (r RowWrapper) MustOracleSpecPropertyType(name string) oraclesv1.PropertyKey_Type {
+	ty, err := OracleSpecPropertyType(r.MustStr(name))
+	panicW(name, err)
+	return ty
 }
 
 func (r RowWrapper) OracleSpecPropertyType(name string) oraclesv1.PropertyKey_Type {
@@ -287,6 +411,12 @@ func OracleSpecPropertyType(name string) (oraclesv1.PropertyKey_Type, error) {
 	return oraclesv1.PropertyKey_Type(ty), nil
 }
 
+func (r RowWrapper) MustTradingMode(name string) types.Market_TradingMode {
+	ty, err := TradingMode(r.MustStr(name))
+	panicW(name, err)
+	return ty
+}
+
 func (r RowWrapper) TradingMode(name string) types.Market_TradingMode {
 	ty, err := TradingMode(r.Str(name))
 	panicW(name, err)
@@ -302,10 +432,22 @@ func TradingMode(name string) (types.Market_TradingMode, error) {
 	return types.Market_TradingMode(ty), nil
 }
 
+func (r RowWrapper) MustAccount(name string) types.AccountType {
+	return account(r.MustStr(name))
+}
+
 func (r RowWrapper) Account(name string) types.AccountType {
 	return account(r.Str(name))
 }
 
+func (r RowWrapper) MustPrice(name string) *types.Price {
+	n := r.MustU64(name)
+	// nil instead of zero value of Price is expected by APIs
+	if n == 0 {
+		return nil
+	}
+	return Price(n)
+}
 func (r RowWrapper) Price(name string) *types.Price {
 	n := r.U64(name)
 	// nil instead of zero value of Price is expected by APIs
@@ -315,8 +457,20 @@ func (r RowWrapper) Price(name string) *types.Price {
 	return Price(n)
 }
 
+func (r RowWrapper) MustDuration(name string) time.Duration {
+	return time.Duration(r.MustU64(name))
+}
+
 func (r RowWrapper) Duration(name string) time.Duration {
 	return time.Duration(r.U64(name))
+}
+
+func (r RowWrapper) MustDurationSec(name string) time.Duration {
+	n := r.MustU64(name)
+	if n == 0 {
+		return 0
+	}
+	return time.Duration(n) * time.Second
 }
 
 func (r RowWrapper) DurationSec(name string) time.Duration {

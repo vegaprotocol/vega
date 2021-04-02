@@ -7,7 +7,7 @@ import (
 func TheFollowingNetworkParametersAreSet(data *gherkin.DataTable) map[string]interface{} {
 	params := map[string]interface{}{}
 	for _, row := range TableWrapper(*data).Parse() {
-		if minDuration := row.DurationSec("market.auction.minimumDuration"); minDuration > 0 {
+		if minDuration := row.MustDurationSec("market.auction.minimumDuration"); minDuration > 0 {
 			params["market.auction.minimumDuration"] = minDuration
 			// execsetup.engine.OnMarketAuctionMinimumDurationUpdate(context.Background(), minDuration)
 		}

@@ -15,9 +15,9 @@ func TheFollowingAmendmentsShouldBeRejected(
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
-		party := row.Str("trader")
-		reference := row.Str("reference")
-		errMessage := row.Str("error")
+		party := row.MustStr("trader")
+		reference := row.MustStr("reference")
+		errMessage := row.MustStr("error")
 
 		select {
 		case <-time.After(2 * time.Second):

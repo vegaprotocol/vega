@@ -78,11 +78,11 @@ type transferRow struct {
 }
 
 func (r transferRow) from() string {
-	return r.row.Str("from")
+	return r.row.MustStr("from")
 }
 
 func (r transferRow) fromAccount() types.AccountType {
-	return r.row.Account("from account")
+	return r.row.MustAccount("from account")
 }
 
 func (r transferRow) fromAccountID() string {
@@ -90,11 +90,11 @@ func (r transferRow) fromAccountID() string {
 }
 
 func (r transferRow) to() string {
-	return r.row.Str("to")
+	return r.row.MustStr("to")
 }
 
 func (r transferRow) toAccount() types.AccountType {
-	return r.row.Account("to account")
+	return r.row.MustAccount("to account")
 }
 
 func (r transferRow) toAccountID() string {
@@ -102,13 +102,13 @@ func (r transferRow) toAccountID() string {
 }
 
 func (r transferRow) marketID() string {
-	return r.row.Str("market id")
+	return r.row.MustStr("market id")
 }
 
 func (r transferRow) amount() uint64 {
-	return r.row.U64("amount")
+	return r.row.MustU64("amount")
 }
 
 func (r transferRow) asset() string {
-	return r.row.Str("asset")
+	return r.row.MustStr("asset")
 }

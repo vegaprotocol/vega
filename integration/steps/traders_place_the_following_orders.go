@@ -18,13 +18,13 @@ func TradersPlaceTheFollowingOrders(
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*table).Parse() {
-		trader := row.Str("trader")
-		marketID := row.Str("market id")
-		side := row.Side("side")
-		volume := row.U64("volume")
-		price := row.U64("price")
-		oty := row.OrderType("type")
-		tif := row.TIF("tif")
+		trader := row.MustStr("trader")
+		marketID := row.MustStr("market id")
+		side := row.MustSide("side")
+		volume := row.MustU64("volume")
+		price := row.MustU64("price")
+		oty := row.MustOrderType("type")
+		tif := row.MustTIF("tif")
 		reference := row.Str("reference")
 
 		var expiresAt int64

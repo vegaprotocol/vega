@@ -10,9 +10,9 @@ import (
 
 func TheStatusOfOrderWithReference(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	for _, row := range TableWrapper(*table).Parse() {
-		trader := row.Str("trader")
-		reference := row.Str("reference")
-		status := row.OrderStatus("status")
+		trader := row.MustStr("trader")
+		reference := row.MustStr("reference")
+		status := row.MustOrderStatus("status")
 
 		o, err := broker.GetByReference(trader, reference)
 		if err != nil {

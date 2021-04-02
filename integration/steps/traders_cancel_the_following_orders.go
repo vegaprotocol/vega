@@ -18,7 +18,7 @@ func TradersCancelTheFollowingOrders(
 	orders *gherkin.DataTable,
 ) error {
 	for _, row := range TableWrapper(*orders).Parse() {
-		trader := row.Str("trader")
+		trader := row.MustStr("trader")
 		reference := row.Str("reference")
 		marketID := row.Str("market id")
 

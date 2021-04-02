@@ -54,13 +54,13 @@ type traderRow struct {
 }
 
 func (r traderRow) trader() string {
-	return r.row.Str("trader")
+	return r.row.MustStr("trader")
 }
 
 func (r traderRow) asset() string {
-	return r.row.Str("asset")
+	return r.row.MustStr("asset")
 }
 
 func (r traderRow) generalAccountBalance() uint64 {
-	return r.row.U64("amount")
+	return r.row.MustU64("amount")
 }

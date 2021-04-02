@@ -14,10 +14,10 @@ func TheFollowingTradesWereExecuted(
 ) error {
 	var err error
 	for _, row := range TableWrapper(*table).Parse() {
-		buyer := row.Str("buyer")
-		seller := row.Str("seller")
-		price := row.U64("price")
-		size := row.U64("size")
+		buyer := row.MustStr("buyer")
+		seller := row.MustStr("seller")
+		price := row.MustU64("price")
+		size := row.MustU64("size")
 
 		data := broker.GetTrades()
 		var found bool

@@ -9,8 +9,8 @@ import (
 
 func ClearOrdersByReference(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	for _, row := range TableWrapper(*table).Parse() {
-		trader := row.Str("trader")
-		reference := row.Str("reference")
+		trader := row.MustStr("trader")
+		reference := row.MustStr("reference")
 		if err := broker.ClearOrderByReference(trader, reference); err != nil {
 			return errClearingOrder(trader, reference, err)
 		}

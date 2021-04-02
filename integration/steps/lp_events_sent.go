@@ -22,11 +22,11 @@ func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataT
 	}
 
 	for _, row := range TableWrapper(*table).Parse() {
-		id := row.Str("id")
-		party := row.Str("party")
-		market := row.Str("market")
-		commitment := row.U64("commitment amount")
-		status := row.LiquidityStatus("status")
+		id := row.MustStr("id")
+		party := row.MustStr("party")
+		market := row.MustStr("market")
+		commitment := row.MustU64("commitment amount")
+		status := row.MustLiquidityStatus("status")
 
 		e := evtByID(id)
 		if e == nil {

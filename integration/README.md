@@ -76,9 +76,9 @@ Feature: A feature that reproduces some system test
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
-    And the execution engine have these markets:
-      | name      | quote name | asset | mark price | risk model | lamd/long              | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC20 | ETH        | ETH   | 100        | simple     | 0.08628781058136630000 | 0.09370922348428490000 | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 1                | 0.004     | 0.001              | 0.3           | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+    And the markets:
+      | id        | quote name | asset | mark price | risk model                | margin calculator         | auction duration | maker fee | infrastructure fee | liquidity fee | price monitoring | oracle config      |
+      | ETH/DEC20 | ETH        | ETH   | 100        | default-simple-risk-model | default-margin-calculator | 1                | 0.004     | 0.001              | 0.3           | default-none     | default-for-future |
 ```
 
 ## Convention

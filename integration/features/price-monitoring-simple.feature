@@ -2,9 +2,16 @@ Feature: Price monitoring test using simple risk model
 
   Background:
     Given the markets start on "2020-10-16T00:00:00Z" and expire on "2020-12-31T23:59:59Z"
-    And the execution engine have these markets:
-      | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC20 | ETH        | ETH   | simple     | 0.11      | 0.1       | 10             | -11             | -1    | 1.4            | 1.2            | 1.1           | 240              | 0         | 0                  | 0             | 60                 | 60,120         | 0.95,0.99   | 240,360         | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+    And the price monitoring updated every "60" seconds named "my-price-monitoring":
+      | horizon | probability | auction extension |
+      | 60      | 0.95        | 240               |
+      | 120     | 0.99        | 360               |
+    And the simple risk model named "my-simple-risk-model":
+      | long | short | max move up | min move down | probability of trading |
+      | 0.11 | 0.1   | 10          | -11           | 0.1                    |
+    And the markets:
+      | id        | quote name | asset | auction duration | risk model           | margin calculator         | fees         | price monitoring    | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | 240              | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | market.auction.minimumDuration |
       | 240                            |

@@ -11,14 +11,14 @@ import (
 func OrderEventsSent(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	data := broker.GetOrderEvents()
 	for _, row := range TableWrapper(*table).Parse() {
-		trader := row.Str("trader")
-		marketID := row.Str("market id")
-		side := row.Side("side")
-		size := row.U64("volume")
-		reference := row.PeggedReference("reference")
-		offset := row.I64("offset")
-		price := row.U64("price")
-		status := row.OrderStatus("status")
+		trader := row.MustStr("trader")
+		marketID := row.MustStr("market id")
+		side := row.MustSide("side")
+		size := row.MustU64("volume")
+		reference := row.MustPeggedReference("reference")
+		offset := row.MustI64("offset")
+		price := row.MustU64("price")
+		status := row.MustOrderStatus("status")
 
 		match := false
 		for _, e := range data {

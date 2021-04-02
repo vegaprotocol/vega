@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/helpers"
+	"code.vegaprotocol.io/vega/integration/steps/market"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
@@ -44,6 +45,10 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	fmt.Printf("%s FATAL: %s", t.step, fmt.Sprintf(format, args...))
 	os.Exit(1)
 }
+
+var (
+	marketConfig = market.NewMarketConfig()
+)
 
 type executionTestSetup struct {
 	engine *execution.Engine

@@ -2,9 +2,12 @@ Feature: Verify the order size is correctly cumulated.
 
   Background:
     Given the insurance pool initial balance for the markets is "0":
-    And the execution engine have these markets:
-      | name      | quote name | asset | risk model | lamd/long | tau/short              | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 | ETH        | ETH   | forward    | 0.001     | 0.00000190128526884174 | 0              | 0.016           | 2.5   | 1.4            | 1.2            | 1.1           | 1                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
+    And the log normal risk model named "my-log-normal-risk-model":
+      | risk aversion | tau                    | mu | r     | sigma |
+      | 0.001         | 0.00000190128526884174 | 0  | 0.016 | 2.5   |
+    And the markets:
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
+      | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
