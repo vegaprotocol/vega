@@ -19,6 +19,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	errStubbedAccountNotFound = errors.New("account not found")
+)
+
 type streamEvt interface {
 	events.Event
 	StreamMessage() *types.BusEvent
@@ -29,7 +33,7 @@ type voteMatcher struct{}
 type tstEngine struct {
 	*governance.Engine
 	ctrl            *gomock.Controller
-	accs            *mocks.MockAccounts
+	accounts        *mocks.MockAccounts
 	broker          *mocks.MockBroker
 	erc             *mocks.MockExtResChecker
 	assets          *mocks.MockAssets
@@ -38,36 +42,40 @@ type tstEngine struct {
 }
 
 func TestSubmitProposals(t *testing.T) {
-	t.Run("Submit a valid proposal - success", testSubmitValidProposal)
-	t.Run("Validate proposal state on submission", testProposalState)
-	t.Run("Validate duplicate proposal", testProposalDuplicate)
-	t.Run("Validate closing time", testClosingTime)
-	t.Run("Validate enactment time", testEnactmentTime)
-	t.Run("Validate timestamps", testValidateTimestamps)
-	t.Run("Validate proposer stake", testProposerStake)
+	t.Run("Submitting a valid proposal succeeds", testSubmittingValidProposalSucceeds)
+	t.Run("Submitting a proposal without open state fails", testSubmittingProposalWithoutOpenStateFails)
+	t.Run("Submitting a proposal with open state succeeds", testSubmittingProposalWithOpenStateSucceeds)
+	t.Run("Submitting duplicated proposal fails", testSubmittingDuplicatedProposalFails)
+	t.Run("Submitting a proposal with bad closing time fails", testSubmittingProposalWithBadClosingTimeFails)
+	t.Run("Submitting a proposal with bad enactment time fails", testSubmittingProposalWithBadEnactmentTimeFails)
+	t.Run("Submitting a proposal with closing time before validation time fails", testSubmittingProposalWithClosingTimeBeforeValidationTimeFails)
+	t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonexistingAccountFails)
+	t.Run("Submitting a proposal without enough stake fails", testSubmittingProposalWithoutEnoughStakeFails)
 	t.Run("Submit valid market proposal return a market to submit", testNewValidMarketProposalReturnsAMarketToSubmit)
 	t.Run("Can reject proposal", testCanRejectProposal)
+
+	t.Run("Submitting a valid vote on existing proposal succeeds", testSubmittingValidVoteOnExistingProposalSucceeds)
+	t.Run("Submitting a vote on non-existing proposal fails", testSubmittingVoteOnNonexistingProposalFails)
+	t.Run("Submitting a vote with non-existing account fails", testSubmittingVoteWithNonexistingAccountFails)
+	t.Run("Submitting a vote without token fails", testSubmittingVoteWithoutTokenFails)
+	t.Run("Submitting a majority of yes vote makes the proposal passed", testSubmittingMajorityOfYesVoteMakesProposalPassed)
+	t.Run("Submitting a majority of no vote makes the proposal declined", testSubmittingMajorityOfNoVoteMakesProposalDeclined)
+	t.Run("Test multiple proposal lifecycle", testMultipleProposalsLifecycle)
 }
 
 func testCanRejectProposal(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	var balance uint64 = 123456789
-	party := eng.makeValidParty("a-valid-party", balance)
-
 	// to check min required level
-	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(2).Return(true)
+	eng.expectAnyAssetTimes(2)
+
 	// once proposal is validated, it is added to the buffer
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
-	toSubmit, err := eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, time.Now()), "proposal-id")
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newOpenProposal(party.Id, time.Now())
+	eng.expectSendOpenProposalEvent(t, party, proposal)
+
+	toSubmit, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
 	assert.NoError(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -85,28 +93,22 @@ func testNewValidMarketProposalReturnsAMarketToSubmit(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	var balance uint64 = 123456789
-	party := eng.makeValidParty("a-valid-party", balance)
-
-	// to check min required level
-	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(2).Return(true)
-	// once proposal is validated, it is added to the buffer
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
-
-	prop := eng.newOpenProposal(party.Id, time.Now())
-	prop.GetTerms().GetNewMarket().LiquidityCommitment = &types.NewMarketCommitment{
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newOpenProposal(party.Id, time.Now())
+	proposal.GetTerms().GetNewMarket().LiquidityCommitment = &types.NewMarketCommitment{
 		CommitmentAmount: 100,
 		Fee:              "0.5",
 	}
 
-	toSubmit, err := eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	// setup
+	eng.expectAnyAssetTimes(2)
+	eng.expectSendOpenProposalEvent(t, party, proposal)
+
+	// when
+	toSubmit, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
 	assert.NoError(t, err)
 	assert.NotNil(t, toSubmit)
 	assert.True(t, toSubmit.IsNewMarket())
@@ -114,622 +116,559 @@ func testNewValidMarketProposalReturnsAMarketToSubmit(t *testing.T) {
 	assert.NotNil(t, toSubmit.NewMarket().LiquidityProvisionSubmission())
 }
 
-func testSubmitValidProposal(t *testing.T) {
+func testSubmittingValidProposalSucceeds(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	var balance uint64 = 123456789
-	party := eng.makeValidParty("a-valid-party", balance)
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newOpenProposal(party.Id, time.Now())
 
-	// to check min required level
-	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(2).Return(true)
-	// once proposal is validated, it is added to the buffer
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
-	_, err := eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, time.Now()), "proposal-id")
+	// setup
+	eng.expectAnyAssetTimes(2)
+	eng.expectSendOpenProposalEvent(t, party, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
 	assert.NoError(t, err)
 }
 
-func testProposalState(t *testing.T) {
+func testSubmittingProposalWithoutOpenStateFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	var tokens uint64 = 1000
-	party := eng.makeValidParty("valid-party", tokens)
+	cases := []struct {
+		msg   string
+		state types.Proposal_State
+	}{
+		{
+			msg:   "proposal state cannot be unspecified",
+			state: types.Proposal_STATE_UNSPECIFIED,
+		},
+		{
+			msg:   "proposal state cannot be failed",
+			state: types.Proposal_STATE_FAILED,
+		},
+		{
+			msg:   "proposal state cannot be passed",
+			state: types.Proposal_STATE_PASSED,
+		},
+		{
+			msg:   "proposal state cannot be rejected",
+			state: types.Proposal_STATE_REJECTED,
+		},
+		{
+			msg:   "proposal state cannot be declined",
+			state: types.Proposal_STATE_DECLINED,
+		},
+		{
+			msg:   "proposal state cannot be enacted",
+			state: types.Proposal_STATE_ENACTED,
+		},
+	}
 
-	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(2).Return(true)
+	for _, c := range cases {
+		t.Run(c.msg, func(t *testing.T) {
+			// given
+			party := eng.newValidPartyTimes("party", 1000, 0)
+			proposal := eng.newOpenProposal(party.Id, time.Now())
+			proposal.State = c.state
 
-	unspecified := eng.newOpenProposal(party.Id, time.Now())
-	unspecified.State = types.Proposal_STATE_UNSPECIFIED
-	_, err := eng.SubmitProposal(context.Background(), unspecified, "proposal-id1")
-	assert.Error(t, err)
-	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
+			// when
+			_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
 
-	failed := eng.newOpenProposal(party.Id, time.Now())
-	failed.State = types.Proposal_STATE_FAILED
-	_, err = eng.SubmitProposal(context.Background(), failed, "proposal-id2")
-	assert.Error(t, err)
-	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
+			// then
+			assert.Error(t, err)
+			assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
+		})
+	}
+}
 
-	passed := eng.newOpenProposal(party.Id, time.Now())
-	passed.State = types.Proposal_STATE_PASSED
-	_, err = eng.SubmitProposal(context.Background(), passed, "proposal-id3")
-	assert.Error(t, err)
-	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
+func testSubmittingProposalWithOpenStateSucceeds(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
 
-	rejected := eng.newOpenProposal(party.Id, time.Now())
-	rejected.State = types.Proposal_STATE_REJECTED
-	_, err = eng.SubmitProposal(context.Background(), rejected, "proposal-id4")
-	assert.Error(t, err)
-	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
+	// given
+	party := eng.newValidParty("valid-party", 1000)
+	proposal := eng.newOpenProposal(party.Id, time.Now())
 
-	declined := eng.newOpenProposal(party.Id, time.Now())
-	declined.State = types.Proposal_STATE_DECLINED
-	_, err = eng.SubmitProposal(context.Background(), declined, "proposal-id5")
-	assert.Error(t, err)
-	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
+	// setup
+	eng.expectAnyAssetTimes(2)
+	eng.expectSendOpenProposalEvent(t, party, proposal)
 
-	enacted := eng.newOpenProposal(party.Id, time.Now())
-	enacted.State = types.Proposal_STATE_ENACTED
-	_, err = eng.SubmitProposal(context.Background(), enacted, "proposal-id6")
-	assert.Error(t, err)
-	assert.EqualError(t, governance.ErrProposalInvalidState, err.Error())
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
-	_, err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, time.Now()), "proposal-id7")
+	// then
 	assert.NoError(t, err)
 }
 
-func testProposalDuplicate(t *testing.T) {
+func testSubmittingDuplicatedProposalFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).Times(2).Return(true)
-
-	var balance uint64 = 1000
-	party := eng.makeValidParty("valid-party", balance)
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
-
+	// given
+	party := eng.newValidParty("valid-party", 1000)
 	original := eng.newOpenProposal(party.Id, time.Now())
-	_, err := eng.SubmitProposal(context.Background(), original, "proposal-id")
+
+	// setup
+	eng.expectAnyAssetTimes(2)
+	eng.expectSendOpenProposalEvent(t, party, original)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), original, original.Id)
+
+	// then
 	assert.NoError(t, err)
 
+	// given
 	aCopy := original
 	aCopy.Reference = "this-is-a-copy"
-	_, err = eng.SubmitProposal(context.Background(), aCopy, "proposal-id")
+
+	// when
+	_, err = eng.SubmitProposal(context.Background(), aCopy, aCopy.Id)
+
+	// then
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalIsDuplicate, err.Error())
 
+	// given
 	aCopy = original
 	aCopy.State = types.Proposal_STATE_PASSED
-	_, err = eng.SubmitProposal(context.Background(), aCopy, "proposal-id")
+
+	// when
+	_, err = eng.SubmitProposal(context.Background(), aCopy, aCopy.Id)
+
+	// then
 	assert.Error(t, err)
 	assert.EqualError(t, governance.ErrProposalIsDuplicate, err.Error(), "reject attempt to change state indirectly")
 }
 
-func testProposerStake(t *testing.T) {
+func testSubmittingProposalWithNonexistingAccountFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	// default is 0
-	// let'sset it up to more so it can fail
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	eng.netp.Update(
-		context.Background(),
-		netparams.GovernanceProposalMarketMinProposerBalance,
-		"10000")
-
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+	// given
 	noAccountPartyID := "party"
+	proposal := eng.newOpenProposal(noAccountPartyID, time.Now())
 
-	notFoundError := errors.New("account not found")
-	eng.accs.EXPECT().GetPartyGeneralAccount(noAccountPartyID, gomock.Any()).Times(1).Return(nil, notFoundError)
+	// setup
+	eng.expectAnyAsset()
+	eng.expectNoAccountForParty(noAccountPartyID)
+	eng.expectSendRejectedProposalEvent(t, noAccountPartyID)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
-		assert.Equal(t, noAccountPartyID, p.PartyId)
-	})
-	_, err := eng.SubmitProposal(context.Background(), eng.newOpenProposal(noAccountPartyID, time.Now()), "proposal-id")
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
 	assert.Error(t, err)
-	assert.EqualError(t, err, notFoundError.Error())
+	assert.EqualError(t, err, errStubbedAccountNotFound.Error())
+}
 
-	emptyParty := eng.makeValidParty("no-token-party", 0)
-	// eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(123456))
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
-		assert.Equal(t, emptyParty.Id, p.PartyId)
-	})
-	_, err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(emptyParty.Id, time.Now()), "proposal-id1")
+func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	emptyParty := eng.newValidParty("no-token-party", 0)
+	proposal := eng.newOpenProposal(emptyParty.Id, time.Now())
+
+	// setup
+	eng.setMinProposerBalance("10000")
+	eng.expectAnyAsset()
+	eng.expectSendRejectedProposalEvent(t, emptyParty.Id)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
-
-	// eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(123456))
-	poshParty := eng.makeValidParty("party-with-tokens", 123456-100)
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, poshParty.Id, p.PartyId)
-	})
-	_, err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(poshParty.Id, time.Now()), "proposal-id2")
-	assert.NoError(t, err)
 }
 
-func testClosingTime(t *testing.T) {
+func testSubmittingProposalWithBadClosingTimeFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	party := eng.makeValidParty("a-valid-party", 1)
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
 
 	now := time.Now()
-	tooEarly := eng.newOpenProposal(party.Id, now)
-	tooEarly.Terms.ClosingTimestamp = now.Unix()
-	_, err := eng.SubmitProposal(context.Background(), tooEarly, "proposal-id")
-	fmt.Printf("ERROR: %v\n", err)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "proposal closing time too soon, expected >")
 
-	tooLate := eng.newOpenProposal(party.Id, now)
-	tooLate.Terms.ClosingTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
-	_, err = eng.SubmitProposal(context.Background(), tooLate, "proposal-id2")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "proposal closing time too late, expected <")
+	cases := []struct {
+		msg              string
+		closingTimestamp int64
+		error            string
+	}{
+		{
+			msg:              "proposal closing time cannot be earlier than expected",
+			closingTimestamp: now.Unix(),
+			error:            "proposal closing time too soon, expected >",
+		},
+		{
+			msg:              "proposal closing time cannot be later than expected",
+			closingTimestamp: now.Add(3 * 365 * 24 * time.Hour).Unix(),
+			error:            "proposal closing time too late, expected <",
+		},
+	}
 
-	// eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(1))
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
-	_, err = eng.SubmitProposal(context.Background(), eng.newOpenProposal(party.Id, now), "proposal-id3")
-	assert.NoError(t, err)
+	for _, c := range cases {
+		t.Run(c.msg, func(t *testing.T) {
+			// given
+			party := eng.newValidPartyTimes("party", 1000, 0)
+			proposal := eng.newOpenProposal(party.Id, now)
+			proposal.Terms.ClosingTimestamp = c.closingTimestamp
+
+			// setup
+			eng.expectAnyAsset()
+			eng.expectSendRejectedProposalEvent(t, party.Id)
+
+			// when
+			_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+			// then
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), c.error)
+		})
+	}
 }
 
-func testEnactmentTime(t *testing.T) {
+func testSubmittingProposalWithBadEnactmentTimeFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-
-	party := eng.makeValidParty("a-valid-party", 1)
-
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
 
 	now := time.Now()
-	beforeClosingTime := eng.newOpenProposal(party.Id, now)
-	beforeClosingTime.Terms.EnactmentTimestamp = now.Unix()
-	assert.Less(t, beforeClosingTime.Terms.EnactmentTimestamp, beforeClosingTime.Terms.ClosingTimestamp)
-	_, err := eng.SubmitProposal(context.Background(), beforeClosingTime, "proposal-id")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "proposal enactment time too soon, expected >")
 
-	tooLate := eng.newOpenProposal(party.Id, now)
-	tooLate.Terms.EnactmentTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
-	_, err = eng.SubmitProposal(context.Background(), tooLate, "proposal-id1")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "proposal enactment time too lat, expected <")
+	cases := []struct {
+		msg                string
+		enactmentTimestamp int64
+		error              string
+	}{
+		{
+			msg:                "proposal enactment time cannot be earlier than expected",
+			enactmentTimestamp: now.Unix(),
+			error:              "proposal enactment time too soon, expected >",
+		},
+		{
+			msg:                "proposal enactment time cannot be later than expected",
+			enactmentTimestamp: now.Add(3 * 365 * 24 * time.Hour).Unix(),
+			error:              "proposal enactment time too late, expected <",
+		},
+	}
 
-	atClosingTime := eng.newOpenProposal(party.Id, now)
-	atClosingTime.Terms.EnactmentTimestamp = atClosingTime.Terms.ClosingTimestamp
-	// eng.accs.EXPECT().GetTotalTokens().Times(1).Return(uint64(1))
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, party.Id, p.PartyId)
-	})
-	_, err = eng.SubmitProposal(context.Background(), atClosingTime, "proposal-id2")
-	assert.NoError(t, err)
+	for _, c := range cases {
+		t.Run(c.msg, func(t *testing.T) {
+			// given
+			party := eng.newValidPartyTimes("party", 1000, 0)
+			proposal := eng.newOpenProposal(party.Id, now)
+			proposal.Terms.EnactmentTimestamp = c.enactmentTimestamp
+
+			// setup
+			eng.expectAnyAsset()
+			eng.expectSendRejectedProposalEvent(t, party.Id)
+
+			// when
+			_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+			// then
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), c.error)
+		})
+	}
 }
 
-func testValidateTimestamps(t *testing.T) {
+func testSubmittingProposalWithClosingTimeBeforeValidationTimeFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	party := eng.makeValidParty("a-valid-party", 1)
-	// for some unknown reason this previous utilities expect a mock assertion while doing
-	// nothing. basically this test utilities contaminates the other tests
-	// this will need to be refactored
-	eng.accs.GetPartyGeneralAccount(party.Id, "VOTE")
+	// given
+	now := time.Now()
+	party := eng.newValidPartyTimes("a-valid-party", 1, 0)
+	proposal := eng.newOpenProposal(party.Id, now)
+	proposal.Terms.ValidationTimestamp = proposal.Terms.ClosingTimestamp + 10
+	proposal.Terms.Change = &types.ProposalTerms_NewAsset{}
 
+	// setup
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 
-	now := time.Now()
-	prop := eng.newOpenProposal(party.Id, now)
-	prop.Terms.ValidationTimestamp = prop.Terms.ClosingTimestamp + 10
-	prop.Terms.Change = &types.ProposalTerms_NewAsset{}
-	_, err := eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "proposal closing time cannot be before validation time, expected >")
 }
 
-func TestVoteValidation(t *testing.T) {
-	t.Run("Test proposal id on a vote", testVoteProposalID)
-	t.Run("Test voter stake validation", testVoterStake)
-	t.Run("Test voting on a declined proposal", testVotingDeclinedProposal)
-	t.Run("Test voting on a passed proposal", testVotingPassedProposal)
-	t.Run("Test proposal lifecycle - declined", testProposalDeclined)
-	t.Run("Test proposal lifecycle - passed", testProposalPassed)
-	t.Run("Test multiple proposal lifecycle", testMultipleProposalsLifecycle)
-}
-
-func testVoteProposalID(t *testing.T) {
+func testSubmittingValidVoteOnExistingProposalSucceeds(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	voter := eng.makeValidParty("voter", 1)
+	// given
+	proposer := eng.newValidParty("proposer", 1)
+	voter := eng.newValidParty("voter", 1)
+	proposal := eng.newOpenProposal(proposer.Id, time.Now())
+
+	// setup
+	eng.expectAnyAsset()
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// setup
+	eng.expectSendVoteEvent(t, voter, proposal)
+
+	// when
+	err = eng.AddVote(context.Background(), types.Vote{
+		PartyId:    voter.Id,
+		Value:      types.Vote_VALUE_YES,
+		ProposalId: proposal.Id,
+	})
+
+	// then
+	assert.NoError(t, err)
+}
+
+func testSubmittingVoteOnNonexistingProposalFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// when
+	voter := eng.newValidPartyTimes("voter", 1, 0)
 	vote := types.Vote{
 		PartyId:    voter.Id,
 		Value:      types.Vote_VALUE_YES,
-		ProposalId: "id-of-non-existent-porposal",
+		ProposalId: "id-of-non-existent-proposal",
 	}
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
-		// check we're getting the corret event
-		assert.Equal(t, events.TxErrEvent, evt.Type())
-		se, ok := evt.(streamEvt)
-		assert.True(t, ok)
-		be := se.StreamMessage()
-		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
-		txErr := be.GetTxErrEvent()
-		assert.NotNil(t, txErr)
-		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
-		v := txErr.GetVote()
-		assert.NotNil(t, v)
-		assert.Equal(t, vote, *v)
-	})
 
+	// setup
+	eng.expectAnyAsset()
+	eng.expectSendProposalNotFoundErrorEvent(t, vote)
+
+	// when
 	err := eng.AddVote(context.Background(), vote)
+
+	// then
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
-
-	// default is 0
-	// let'sset it up to more so it can fail
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	eng.netp.Update(
-		context.Background(),
-		netparams.GovernanceProposalMarketMinProposerBalance,
-		"1")
-
-	emptyProposer := eng.makeValidParty("empty-proposer", 0)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
-		assert.Equal(t, emptyProposer.Id, p.PartyId)
-	})
-	rejectedProposal := eng.newOpenProposal(emptyProposer.Id, time.Now())
-	_, err = eng.SubmitProposal(context.Background(), rejectedProposal, "proposal-id")
-	assert.Error(t, err)
-	vote = types.Vote{
-		PartyId:    voter.Id,
-		Value:      types.Vote_VALUE_NO,
-		ProposalId: rejectedProposal.Id,
-	}
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
-		// check we're getting the corret event
-		assert.Equal(t, events.TxErrEvent, evt.Type())
-		se, ok := evt.(streamEvt)
-		assert.True(t, ok)
-		be := se.StreamMessage()
-		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
-		txErr := be.GetTxErrEvent()
-		assert.NotNil(t, txErr)
-		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
-		v := txErr.GetVote()
-		assert.NotNil(t, v)
-		assert.Equal(t, vote, *v)
-	})
-
-	err = eng.AddVote(context.Background(), vote)
-	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
-
-	goodProposer := eng.makeValidParty("proposer", 1)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, goodProposer.Id, p.PartyId)
-	})
-
-	openProposal := eng.newOpenProposal(goodProposer.Id, time.Now())
-	_, err = eng.SubmitProposal(context.Background(), openProposal, "proposal-id1")
-	assert.NoError(t, err)
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		ve, ok := e.(*events.Vote)
-		assert.True(t, ok)
-		vote := ve.Vote()
-		assert.Equal(t, "proposal-id1", vote.ProposalId)
-		assert.Equal(t, voter.Id, vote.PartyId)
-	})
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voter.Id,
-		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalId: "proposal-id1",
-	})
-	assert.NoError(t, err)
 }
 
-func testVoterStake(t *testing.T) {
+func testSubmittingVoteWithNonexistingAccountFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+	// given
+	proposer := eng.newValidParty("proposer", 1)
+	proposal := eng.newOpenProposal(proposer.Id, time.Now())
 
-	proposer := eng.makeValidParty("proposer", 1)
-	openProposal := eng.newOpenProposal(proposer.Id, time.Now())
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, proposer.Id, p.PartyId)
-	})
-	_, err := eng.SubmitProposal(context.Background(), openProposal, "proposal-id1")
+	// setup
+	eng.expectAnyAsset()
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
 	assert.NoError(t, err)
 
+	// given
 	voterNoAccount := "voter-no-account"
-	notFoundError := errors.New("account not found")
-	eng.accs.EXPECT().GetPartyGeneralAccount(voterNoAccount, gomock.Any()).Times(1).Return(nil, notFoundError)
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
-	err = eng.AddVote(context.Background(), types.Vote{
+	vote := types.Vote{
 		PartyId:    voterNoAccount,
-		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalId: "proposal-id1",
-	})
-	assert.Error(t, err)
-	assert.EqualError(t, err, notFoundError.Error())
+		Value:      types.Vote_VALUE_YES,
+		ProposalId: proposal.Id,
+	}
 
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
-		ve, ok := evt.(streamEvt)
-		assert.True(t, ok)
-		be := ve.StreamMessage()
-		txErr := be.GetTxErrEvent()
-		assert.NotNil(t, txErr)
-		assert.Equal(t, governance.ErrVoterInsufficientTokens.Error(), txErr.ErrMsg)
-	})
-	emptyAccount := eng.makeValidParty("empty-account", 0)
+	// setup
+	eng.expectNoAccountForParty(voterNoAccount)
+	eng.expectSendAccountNotFoundErrorEvent(t, vote)
+
+	// when
+	err = eng.AddVote(context.Background(), vote)
+
+	// then
+	assert.Error(t, err)
+	assert.EqualError(t, err, errStubbedAccountNotFound.Error())
+}
+
+func testSubmittingVoteWithoutTokenFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	proposer := eng.newValidParty("proposer", 1)
+	proposal := eng.newOpenProposal(proposer.Id, time.Now())
+
+	// setup
+	eng.expectAnyAsset()
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// given
+	voterWithEmptyAccount := eng.newValidParty("empty-account", 0)
+
+	// setup
+	eng.expectSendInsufficientTokensErrorEvent(t)
+
+	// when
 	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    emptyAccount.Id,
-		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalId: "proposal-id1",
+		PartyId:    voterWithEmptyAccount.Id,
+		Value:      types.Vote_VALUE_YES,
+		ProposalId: proposal.Id,
 	})
+
+	// then
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrVoterInsufficientTokens.Error())
-
-	validAccount := eng.makeValidParty("valid-account", 1)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		ve, ok := e.(*events.Vote)
-		assert.True(t, ok)
-		vote := ve.Vote()
-		assert.Equal(t, "proposal-id1", vote.ProposalId)
-		assert.Equal(t, validAccount.Id, vote.PartyId)
-	})
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    validAccount.Id,
-		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalId: "proposal-id1",
-	})
-	assert.NoError(t, err)
 }
 
-func testVotingDeclinedProposal(t *testing.T) {
+func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).Return(uint64(2), nil)
+	// when
+	proposer := eng.newValidParty("proposer", 1)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	voter2 := eng.newValidPartyTimes("voter2", 1, 0)
+	proposal := eng.newOpenProposal(proposer.Id, time.Now())
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	proposer := eng.makeValidParty("proposer", 1)
-	declined := eng.newOpenProposal(proposer.Id, time.Now())
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, proposer.Id, p.PartyId)
-		assert.Equal(t, "proposal-id1", p.Id)
-	})
-	_, err := eng.SubmitProposal(context.Background(), declined, "proposal-id1")
+	// setup
+	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(2).Return(uint64(9), nil)
+	eng.expectAnyAsset()
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
 	assert.NoError(t, err)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
-		assert.Equal(t, "proposal-id1", p.Id)
-	})
-	afterClose := time.Unix(declined.Terms.ClosingTimestamp, 0).Add(time.Hour)
-	accepted, _ := eng.OnChainTimeUpdate(context.Background(), afterClose)
-	assert.Empty(t, accepted) // nothing was accepted
+	// setup
+	eng.expectSendVoteEvent(t, voter1, proposal)
 
-	voter := eng.makeValidPartyTimes("voter", 1, 0)
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voter.Id,
-		Value:      types.Vote_VALUE_YES, // does not matter
-		ProposalId: "proposal-id1",
-	})
-	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
-}
-
-func testVotingPassedProposal(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
-
-	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(2).Return(uint64(9), nil)
-
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	proposer := eng.makeValidParty("proposer", 1)
-	passed := eng.newOpenProposal(proposer.Id, time.Now())
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, proposer.Id, p.PartyId)
-		assert.Equal(t, "proposal-id1", p.Id)
-	})
-	_, err := eng.SubmitProposal(context.Background(), passed, "proposal-id1")
-	assert.NoError(t, err)
-
-	voter1 := eng.makeValidPartyTimes("voter-1", 7, 2)
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		ve, ok := e.(*events.Vote)
-		assert.True(t, ok)
-		vote := ve.Vote()
-		assert.Equal(t, "proposal-id1", vote.ProposalId)
-		assert.Equal(t, voter1.Id, vote.PartyId)
-	})
+	// then
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyId:    voter1.Id,
-		Value:      types.Vote_VALUE_YES, // matters!
-		ProposalId: "proposal-id1",
+		Value:      types.Vote_VALUE_YES,
+		ProposalId: proposal.Id,
 	})
+
+	// then
 	assert.NoError(t, err)
 
-	afterClosing := time.Unix(passed.Terms.ClosingTimestamp, 0).Add(time.Second)
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		pe, ok := e.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_PASSED, p.State)
-		assert.Equal(t, "proposal-id1", p.Id)
+		assert.Equal(t, proposal.Id, p.Id)
 	})
+
+	// when
 	eng.OnChainTimeUpdate(context.Background(), afterClosing)
 
-	voter2 := eng.makeValidPartyTimes("voter2", 1, 0)
+	// setup
 	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
+
+	// when
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyId:    voter2.Id,
-		Value:      types.Vote_VALUE_NO, // does not matter
-		ProposalId: "proposal-id1",
+		Value:      types.Vote_VALUE_NO,
+		ProposalId: proposal.Id,
 	})
+
+	// then
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalPassed.Error())
 
-	afterEnactment := time.Unix(passed.Terms.EnactmentTimestamp, 0).Add(time.Second)
+	// given
+	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
+
+	// when
 	// no calculations, no state change, simply removed from governance engine
 	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
-	assert.Len(t, toBeEnacted, 1)
-	assert.Equal(t, "proposal-id1", toBeEnacted[0].Proposal().Id)
 
+	// then
+	assert.Len(t, toBeEnacted, 1)
+	assert.Equal(t, proposal.Id, toBeEnacted[0].Proposal().Id)
+
+	// setup
 	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
+
+	// when
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyId:    voter2.Id,
-		Value:      types.Vote_VALUE_NO, // does not matter
-		ProposalId: "proposal-id1",
+		Value:      types.Vote_VALUE_NO,
+		ProposalId: proposal.Id,
 	})
+
+	// then
 	assert.Error(t, err)
 	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
 }
 
-func testProposalDeclined(t *testing.T) {
+func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	// given
 	now := time.Now()
-
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).Return(uint64(200), nil)
-	proposer := eng.makeValidParty("proposer", 100)
-	voter := eng.makeValidPartyTimes("voter", 100, 3)
-
+	proposer := eng.newValidParty("proposer", 100)
+	voter := eng.newValidPartyTimes("voter", 100, 3)
 	proposal := eng.newOpenProposal(proposer.Id, now)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, proposer.Id, p.PartyId)
-		assert.Equal(t, proposal.Id, p.Id)
-	})
+
+	// setup
+	eng.expectAnyAsset()
+	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).Return(uint64(200), nil)
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+
+	// when
 	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
 	assert.NoError(t, err)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
-		ve, ok := e.(*events.Vote)
-		assert.True(t, ok)
-		vote := ve.Vote()
-		assert.Equal(t, proposal.Id, vote.ProposalId)
-		assert.Equal(t, voter.Id, vote.PartyId)
-	})
+	// setup
+	eng.expectSendVoteEvent(t, voter, proposal)
+
+	// when
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyId:    voter.Id,
-		Value:      types.Vote_VALUE_YES, // matters!
+		Value:      types.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
 	})
+
+	// then
 	assert.NoError(t, err)
 
+	// setup
+	eng.expectSendVoteEvent(t, voter, proposal)
+
+	// when
 	err = eng.AddVote(context.Background(), types.Vote{
 		PartyId:    voter.Id,
-		Value:      types.Vote_VALUE_NO, // matters!
+		Value:      types.Vote_VALUE_NO,
 		ProposalId: proposal.Id,
 	})
+
+	// then
 	assert.NoError(t, err)
 
+	// given
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		pe, ok := e.(*events.Proposal)
 		assert.True(t, ok)
@@ -737,97 +676,41 @@ func testProposalDeclined(t *testing.T) {
 		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
 		assert.Equal(t, proposal.Id, p.Id)
 	})
+
+	// when
 	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+
+	// then
 	assert.Len(t, voteClosed, 1)
 	vc := voteClosed[0]
 	assert.NotNil(t, vc.NewMarket())
 	assert.True(t, vc.NewMarket().Rejected())
 
+	// given
 	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
+
+	// when
 	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+
+	// then
 	assert.Empty(t, toBeEnacted)
-}
-
-func testProposalPassed(t *testing.T) {
-	eng := getTestEngine(t)
-	defer eng.ctrl.Finish()
-
-	now := time.Now()
-
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
-	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(2).Return(uint64(100), nil)
-	proposerVoter := eng.makeValidPartyTimes("proposer-and-voter", 100, 3)
-
-	proposal := eng.newOpenProposal(proposerVoter.Id, now)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
-		assert.Equal(t, proposerVoter.Id, p.PartyId)
-		assert.Equal(t, proposal.Id, p.Id)
-	})
-	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
-	assert.NoError(t, err)
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		ve, ok := e.(*events.Vote)
-		assert.True(t, ok)
-		vote := ve.Vote()
-		assert.Equal(t, proposal.Id, vote.ProposalId)
-		assert.Equal(t, proposerVoter.Id, vote.PartyId)
-	})
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    proposerVoter.Id,
-		Value:      types.Vote_VALUE_YES, // matters!
-		ProposalId: proposal.Id,
-	})
-	assert.NoError(t, err)
-
-	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.Proposal)
-		assert.True(t, ok)
-		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_PASSED, p.State)
-		assert.Equal(t, proposal.Id, p.Id)
-	})
-	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
-	assert.Len(t, voteClosed, 1)
-	vc := voteClosed[0]
-	assert.NotNil(t, vc.NewMarket())
-	assert.True(t, vc.NewMarket().StartAuction())
-
-	modified := proposal
-	modified.State = types.Proposal_STATE_DECLINED
-	_, err = eng.SubmitProposal(context.Background(), proposal, proposal.Id)
-	assert.Error(t, err)
-	assert.EqualError(t, err, governance.ErrProposalIsDuplicate.Error())
-
-	eng.makeValidPartyTimes(proposerVoter.Id, 0, 0) // effectively draining proposerVoter
-	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
-	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
-	assert.Len(t, toBeEnacted, 1)
-	assert.Equal(t, proposal.Id, toBeEnacted[0].Proposal().Id)
 }
 
 func testMultipleProposalsLifecycle(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+	eng.expectAnyAsset()
 
 	partyA := "party-A"
-	eng.accs.EXPECT().GetAssetTotalSupply(gomock.Any()).AnyTimes().Return(uint64(300), nil)
+	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).AnyTimes().Return(uint64(300), nil)
 	accountA := types.Account{
 		Id:      partyA + "-account",
 		Owner:   partyA,
 		Balance: 200,
 		Asset:   "VOTE",
 	}
-	eng.accs.EXPECT().GetPartyGeneralAccount(accountA.Owner, "VOTE").AnyTimes().Return(&accountA, nil)
+	eng.accounts.EXPECT().GetPartyGeneralAccount(accountA.Owner, "VOTE").AnyTimes().Return(&accountA, nil)
 	partyB := "party-B"
 	accountB := types.Account{
 		Id:      partyB + "-account",
@@ -835,7 +718,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		Balance: 100,
 		Asset:   "VOTE",
 	}
-	eng.accs.EXPECT().GetPartyGeneralAccount(accountB.Owner, "VOTE").AnyTimes().Return(&accountB, nil)
+	eng.accounts.EXPECT().GetPartyGeneralAccount(accountB.Owner, "VOTE").AnyTimes().Return(&accountB, nil)
 
 	const howMany = 100
 	now := time.Now()
@@ -847,13 +730,13 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	var afterEnactment time.Time
 
 	for i := 0; i < howMany; i++ {
+		toBePassed := eng.newOpenProposal(partyA, now)
 		eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(e events.Event) {
 			pe, ok := e.(*events.Proposal)
 			assert.True(t, ok)
 			p := pe.Proposal()
 			assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
 		})
-		toBePassed := eng.newOpenProposal(partyA, now)
 		_, err := eng.SubmitProposal(context.Background(), toBePassed, toBePassed.Id)
 		assert.NoError(t, err)
 		passed[toBePassed.Id] = &toBePassed
@@ -945,7 +828,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 func getTestEngine(t *testing.T) *tstEngine {
 	ctrl := gomock.NewController(t)
 	cfg := governance.NewDefaultConfig()
-	accs := mocks.NewMockAccounts(ctrl)
+	accounts := mocks.NewMockAccounts(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
 	erc := mocks.NewMockExtResChecker(ctrl)
@@ -953,20 +836,20 @@ func getTestEngine(t *testing.T) *tstEngine {
 	log := logging.NewTestLogger()
 	broker.EXPECT().Send(gomock.Any()).Times(1)
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
-	netp.Update(context.Background(), netparams.GovernanceProposalMarketMinVoterBalance, "1")
+	_ = netp.Update(context.Background(), netparams.GovernanceProposalMarketMinVoterBalance, "1")
 	now := time.Now()
 	now = now.Truncate(time.Second)
-	eng, err := governance.NewEngine(log, cfg, accs, broker, assets, erc, netp, now) // started as a validator
+	eng, err := governance.NewEngine(log, cfg, accounts, broker, assets, erc, netp, now) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{
-		Engine: eng,
-		ctrl:   ctrl,
-		accs:   accs,
-		broker: broker,
-		assets: assets,
-		erc:    erc,
-		netp:   netp,
+		Engine:   eng,
+		ctrl:     ctrl,
+		accounts: accounts,
+		broker:   broker,
+		assets:   assets,
+		erc:      erc,
+		netp:     netp,
 	}
 }
 
@@ -1023,28 +906,28 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 	}
 }
 
-func (e *tstEngine) makeValidPartyTimes(partyID string, balance uint64, times int) *types.Party {
+func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, times int) *types.Party {
 	account := types.Account{
 		Id:      partyID + "-account",
 		Owner:   partyID,
 		Balance: balance,
 		Asset:   "VOTE",
 	}
-	e.accs.EXPECT().GetPartyGeneralAccount(partyID, "VOTE").Times(times).Return(&account, nil)
+	e.accounts.EXPECT().GetPartyGeneralAccount(partyID, "VOTE").Times(times).Return(&account, nil)
 	return &types.Party{Id: partyID}
 }
 
-func (e *tstEngine) makeValidParty(partyID string, balance uint64) *types.Party {
-	return e.makeValidPartyTimes(partyID, balance, 1)
+func (e *tstEngine) newValidParty(partyID string, balance uint64) *types.Party {
+	return e.newValidPartyTimes(partyID, balance, 1)
 }
 
-func (e *tstEngine) newProposalID(partyID string) string {
+func (e *tstEngine) newProposalID() string {
 	e.proposalCounter++
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
 }
 
 func (e *tstEngine) newOpenProposal(partyID string, now time.Time) types.Proposal {
-	id := e.newProposalID(partyID)
+	id := e.newProposalID()
 	return types.Proposal{
 		Id:        id,
 		Reference: "ref-" + id,
@@ -1054,9 +937,108 @@ func (e *tstEngine) newOpenProposal(partyID string, now time.Time) types.Proposa
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newValidMarketTerms(), //TODO: add more variaty here (when available)
+			Change:              newValidMarketTerms(), // TODO: add more variaty here (when available)
 		},
 	}
+}
+
+func (e *tstEngine) expectAnyAsset() {
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+}
+
+func (e *tstEngine) expectAnyAssetTimes(times int) {
+	e.assets.EXPECT().Get(gomock.Any()).Times(times).Return(nil, nil)
+	e.assets.EXPECT().IsEnabled(gomock.Any()).Times(times).Return(true)
+}
+
+func (e *tstEngine) expectSendOpenProposalEvent(t *testing.T, party *types.Party, proposal types.Proposal) {
+	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(ev events.Event) {
+		pe, ok := ev.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
+		assert.Equal(t, party.Id, p.PartyId)
+		assert.Equal(t, proposal.Id, p.Id)
+	})
+}
+
+func (e *tstEngine) expectSendRejectedProposalEvent(t *testing.T, partyID string) {
+	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
+		pe, ok := e.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
+		assert.Equal(t, partyID, p.PartyId)
+	})
+}
+
+func (e *tstEngine) expectSendProposalNotFoundErrorEvent(t *testing.T, vote types.Vote) {
+	e.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
+		assert.Equal(t, events.TxErrEvent, evt.Type())
+		se, ok := evt.(streamEvt)
+		assert.True(t, ok)
+		be := se.StreamMessage()
+		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		txErr := be.GetTxErrEvent()
+		assert.NotNil(t, txErr)
+		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
+		v := txErr.GetVote()
+		assert.NotNil(t, v)
+		assert.Equal(t, vote, *v)
+	})
+}
+
+func (e *tstEngine) expectSendAccountNotFoundErrorEvent(t *testing.T, vote types.Vote) {
+	e.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
+		assert.Equal(t, events.TxErrEvent, evt.Type())
+		se, ok := evt.(streamEvt)
+		assert.True(t, ok)
+		be := se.StreamMessage()
+		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		txErr := be.GetTxErrEvent()
+		assert.NotNil(t, txErr)
+		assert.Equal(t, errStubbedAccountNotFound.Error(), txErr.ErrMsg)
+		v := txErr.GetVote()
+		assert.NotNil(t, v)
+		assert.Equal(t, vote, *v)
+	})
+}
+
+func (e *tstEngine) expectSendInsufficientTokensErrorEvent(t *testing.T) {
+	e.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
+		ve, ok := evt.(streamEvt)
+		assert.True(t, ok)
+		be := ve.StreamMessage()
+		txErr := be.GetTxErrEvent()
+		assert.NotNil(t, txErr)
+		assert.Equal(t, governance.ErrVoterInsufficientTokens.Error(), txErr.ErrMsg)
+	})
+}
+
+func (e *tstEngine) expectNoAccountForParty(partyID string) {
+	e.accounts.EXPECT().GetPartyGeneralAccount(partyID, gomock.Any()).Times(1).Return(nil, errStubbedAccountNotFound)
+}
+
+func (e *tstEngine) setMinProposerBalance(balance string) {
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	if err := e.netp.Update(
+		context.Background(),
+		netparams.GovernanceProposalMarketMinProposerBalance,
+		balance,
+	); err != nil {
+		panic(fmt.Errorf("failed to set GovernanceProposalMarketMinProposerBalance parameter: %v", err))
+	}
+}
+
+func (e *tstEngine) expectSendVoteEvent(t *testing.T, party *types.Party, proposal types.Proposal) {
+	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
+		ve, ok := e.(*events.Vote)
+		assert.True(t, ok)
+		vote := ve.Vote()
+		assert.Equal(t, proposal.Id, vote.ProposalId)
+		assert.Equal(t, party.Id, vote.PartyId)
+	})
 }
 
 func (v voteMatcher) String() string {

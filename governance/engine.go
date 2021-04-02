@@ -447,7 +447,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 			logging.Time("provided", enactTime),
 			logging.String("id", proposal.Id))
 		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE,
-			fmt.Errorf("proposal enactment time too lat, expected < %v, got %v", maxEnactTime, enactTime)
+			fmt.Errorf("proposal enactment time too late, expected < %v, got %v", maxEnactTime, enactTime)
 	}
 
 	if e.isTwoStepsProposal(&proposal) {
