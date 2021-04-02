@@ -1339,6 +1339,27 @@ func (r *myOrderResolver) PeggedOrder(ctx context.Context, order *types.Order) (
 	return order.PeggedOrder, nil
 }
 
+func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *types.Order) (*types.LiquidityProvision, error) {
+	if len(obj.LiquidityProvisionId) <= 0 {
+		return nil, nil
+	}
+	req := protoapi.LiquidityProvisionsRequest{
+		Party:  obj.PartyId,
+		Market: obj.MarketId,
+	}
+	res, err := r.tradingDataClient.LiquidityProvisions(ctx, &req)
+	if err != nil {
+		r.log.Error("tradingData client", logging.Error(err))
+		return nil, customErrorFromStatus(err)
+	}
+
+	if len(res.LiquidityProvisions) <= 0 {
+		return nil, nil
+	}
+
+	return res.LiquidityProvisions[0], nil
+}
+
 // END: Order Resolver
 
 // BEGIN: Trade Resolver
