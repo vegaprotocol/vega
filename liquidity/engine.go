@@ -116,6 +116,10 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
 }
 
+func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v float64) {
+	e.suppliedEngine.OnProbabilityOfTradingTauScalingUpdate(v)
+}
+
 // OnSuppliedStakeToObligationFactorUpdate updates the stake factor
 func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
 	e.stakeToObligationFactor = v

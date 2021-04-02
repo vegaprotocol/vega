@@ -42,7 +42,9 @@ type Engine struct {
 	rm RiskModel
 	pm PriceMonitor
 
-	horizon   float64 // projection horizon used in probability calculations
+	horizon                        float64 // projection horizon used in probability calculations
+	probabilityOfTradingTauScaling float64
+
 	cachedMin float64
 	cachedMax float64
 	bCache    map[uint64]float64
@@ -55,10 +57,15 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		rm: riskModel,
 		pm: priceMonitor,
 
-		horizon: riskModel.GetProjectionHorizon(),
-		bCache:  map[uint64]float64{},
-		sCache:  map[uint64]float64{},
+		horizon:                        riskModel.GetProjectionHorizon(),
+		probabilityOfTradingTauScaling: 1, // this is the same as the default in the netparams
+		bCache:                         map[uint64]float64{},
+		sCache:                         map[uint64]float64{},
 	}
+}
+
+func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v float64) {
+	e.probabilityOfTradingTauScaling = v
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set
@@ -169,7 +176,8 @@ func (e *Engine) getProbabilityOfTrading(currentPrice float64, orderPrice uint64
 	}
 
 	if _, ok := cache[orderPrice]; !ok {
-		prob := e.rm.ProbabilityOfTrading(currentPrice, e.horizon, float64(orderPrice), isBid, true, minPrice, maxPrice)
+		tauScaled := e.horizon * e.probabilityOfTradingTauScaling
+		prob := e.rm.ProbabilityOfTrading(currentPrice, tauScaled, float64(orderPrice), isBid, true, minPrice, maxPrice)
 		cache[orderPrice] = prob
 	}
 

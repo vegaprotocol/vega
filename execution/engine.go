@@ -344,7 +344,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 
 func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) error {
 	if e.npv.probabilityOfTradingTauScaling != -1 {
-		mkt.OnMarketProbabilitOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
+		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
 	}
 	if e.npv.auctionMinDuration != -1 {
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
@@ -884,7 +884,7 @@ func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context
 	return nil
 }
 
-func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) error {
+func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Context, v float64) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update probability of trading tau scaling",
 			logging.Float64("probability of trading tau scaling", v),
@@ -892,7 +892,7 @@ func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context
 	}
 
 	for _, mkt := range e.marketsCpy {
-		mkt.OnMarketProbabilitOfTradingTauScalingUpdate(ctx)
+		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, v)
 	}
 
 	e.npv.probabilityOfTradingTauScaling = v
