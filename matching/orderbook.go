@@ -37,7 +37,6 @@ type OrderBook struct {
 	ordersPerParty  map[string]map[string]struct{}
 	auction         bool
 	batchID         uint64
-	cache           BookCache
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask
@@ -150,9 +149,6 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 
 // EnterAuction Moves the order book into an auction state
 func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	// Scan existing orders to see which ones can be kept or cancelled
 	buyCancelledOrders, err := b.buy.getOrdersToCancel(true)
 	if err != nil {
@@ -175,9 +171,6 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 
 // LeaveAuction Moves the order book back into continuous trading state
 func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*types.Order, error) {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	// Update batchID
 	b.batchID++
 
@@ -340,18 +333,6 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (retprice uint64, retvol uint64, retside types.Side) {
-	cachedPrice, cachedPriceOk := b.cache.GetIndicativePrice()
-	cachedVol, cachedVolOk := b.cache.GetIndicativeVolume()
-	cachedSide, cachedSideOk := b.cache.GetIndicativeUncrossingSide()
-	if cachedPriceOk && cachedVolOk && cachedSideOk {
-		return cachedPrice, cachedVol, cachedSide
-	}
-	// cached not up to date, let's set it up
-	defer func() {
-		b.cache.SetIndicativePrice(retprice)
-		b.cache.SetIndicativeVolume(retvol)
-		b.cache.SetIndicativeUncrossingSide(retside)
-	}()
 
 	bestBid, err := b.GetBestBidPrice()
 	if err != nil {
@@ -404,14 +385,6 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice uint64, retvol uint6
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePrice() (retprice uint64) {
-	if price, ok := b.cache.GetIndicativePrice(); ok {
-		return price
-	}
-	// not price cached, we can cached it now
-	defer func() {
-		b.cache.SetIndicativePrice(retprice)
-	}()
-
 	bestBid, err := b.GetBestBidPrice()
 	if err != nil {
 		return 0
@@ -617,9 +590,6 @@ func (b *OrderBook) BestOfferPriceAndVolume() (uint64, uint64, error) {
 }
 
 func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationConfirmation, error) {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	var (
 		orders = b.GetOrdersPerParty(party)
 		confs  = []*types.OrderCancellationConfirmation{}
@@ -642,9 +612,6 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 // the order on the book with respect to side etc. The caller will typically validate this by using a store, we should
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	// Validate Market
 	if order.MarketId != b.marketID {
 		if b.log.GetLevel() == logging.DebugLevel {
@@ -681,9 +648,6 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 
 // RemoveOrder takes the order off the order book
 func (b *OrderBook) RemoveOrder(order *types.Order) error {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	order, err := b.DeleteOrder(order)
 	if err != nil {
 		return err
@@ -697,9 +661,6 @@ func (b *OrderBook) RemoveOrder(order *types.Order) error {
 
 // AmendOrder amends an order which is an active order on the book
 func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	if originalOrder == nil {
 		return types.ErrOrderNotFound
 	}
@@ -775,9 +736,6 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "SubmitOrder")
 
 	if err := b.validateOrder(order); err != nil {
@@ -888,9 +846,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 // DeleteOrder remove a given order on a given side from the book
 func (b *OrderBook) DeleteOrder(
 	order *types.Order) (*types.Order, error) {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	dorder, err := b.getSide(order.Side).RemoveOrder(order)
 	if err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
@@ -927,9 +882,6 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 func (b *OrderBook) RemoveDistressedOrders(
 	parties []events.MarketPosition,
 ) ([]*types.Order, error) {
-	// invalidate all caches
-	b.cache.Invalidate()
-
 	rmorders := []*types.Order{}
 
 	for _, party := range parties {
