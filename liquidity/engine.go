@@ -143,6 +143,18 @@ func (e *Engine) RemovePending(party string) {
 	delete(e.pendings, party)
 }
 
+// GetInactiveParties returns a set of all the parties
+// with inactive commitment
+func (e *Engine) GetInactiveParties() map[string]struct{} {
+	ret := map[string]struct{}{}
+	for _, p := range e.provisions {
+		if p.Status != types.LiquidityProvision_STATUS_ACTIVE {
+			ret[p.PartyId] = struct{}{}
+		}
+	}
+	return ret
+}
+
 func (e *Engine) stopLiquidityProvision(
 	ctx context.Context, party string, status types.LiquidityProvision_Status) ([]*types.Order, error) {
 	lp := e.provisions[party]

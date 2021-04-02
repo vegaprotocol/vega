@@ -487,11 +487,6 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	return nil
 }
 
-func (m *Market) isInOpeningAuction() bool {
-	return m.mkt.State == types.Market_STATE_PROPOSED ||
-		m.mkt.State == types.Market_STATE_PENDING
-}
-
 // GetID returns the id of the given market
 func (m *Market) GetID() string {
 	return m.mkt.Id
@@ -3205,7 +3200,7 @@ func (m *Market) cancelLiquidityProvision(
 		// and remove the party from the equity share like calculation
 		m.equityShares.SetPartyStake(party, float64(0))
 		// force update of shares so they are updated for all
-		_ = m.equityShares.Shares()
+		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 	}
 
 	m.checkLiquidity(ctx, nil)
@@ -3282,7 +3277,7 @@ func (m *Market) amendLiquidityProvision(
 		// and remove the party from the equity share like calculation
 		m.equityShares.SetPartyStake(party, float64(0))
 		// force update of shares so they are updated for all
-		_ = m.equityShares.Shares()
+		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 		// do not need to be pending
 		m.liquidity.RemovePending(party)
 	}
@@ -3424,15 +3419,15 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		// liquidity provision in, even if orders are not deployed, we should
 		// be able to calculate the shares etc
 		if !needsCancel && !needsBondRollback {
-			// if we are still in opening auction, mvp can only be total stake
-			// so we'll use that to update the equity shares
-			if m.isInOpeningAuction() {
-				m.updateMarketValueProxy()
-			}
+			// update the MVP, if we are in opening auction, this is the total
+			// amount of stake, and it'll be setup properly
+			m.updateMarketValueProxy()
+			// now we can update the liquidity fee to be taken
 			m.updateLiquidityFee(ctx)
+			// now we can setup our party stake to calculate equities
 			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 			// force update of shares so they are updated for all
-			_ = m.equityShares.Shares()
+			_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 
 			m.checkLiquidity(ctx, nil)
 			m.commandLiquidityAuction(ctx)
@@ -3946,7 +3941,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
-	shares := m.equityShares.Shares()
+	shares := m.equityShares.Shares(m.liquidity.GetInactiveParties())
 	if len(shares) == 0 {
 		return nil
 	}

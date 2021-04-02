@@ -99,12 +99,17 @@ func (es *EquityShares) equity(id string) (float64, error) {
 }
 
 // Shares returns the ratio of equity for a given party
-func (es *EquityShares) Shares() map[string]float64 {
+func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]float64 {
 	// Calculate the equity for each party and the totalEquity (the sum of all
 	// the equities)
 	var totalEquity float64
 	shares := map[string]float64{}
 	for id := range es.lps {
+		// if the party is not one of the deployed parties,
+		// we just skip
+		if _, ok := undeployed[id]; ok {
+			continue
+		}
 		eq, err := es.equity(id)
 		if err != nil {
 			// since equity(id) returns an error when the party does not exist

@@ -44,10 +44,12 @@ func testAverageEntryValuation(t *testing.T) {
 
 func testShares(t *testing.T) {
 	var (
-		oneSixth  = 1.0 / 6
-		oneThird  = 1.0 / 3
-		twoThirds = 2.0 / 3
-		half      = 1.0 / 2
+		oneSixth    = 1.0 / 6
+		oneThird    = 1.0 / 3
+		oneFourth   = 1.0 / 4
+		threeFourth = 3.0 / 4
+		twoThirds   = 2.0 / 3
+		half        = 1.0 / 2
 	)
 
 	es := execution.NewEquityShares(100)
@@ -55,14 +57,14 @@ func testShares(t *testing.T) {
 	// Set LP1
 	es.SetPartyStake("LP1", 100)
 	t.Run("LP1", func(t *testing.T) {
-		s := es.Shares()
+		s := es.Shares(map[string]struct{}{})
 		assert.Equal(t, 1.0, s["LP1"])
 	})
 
 	// Set LP2
 	es.SetPartyStake("LP2", 200)
 	t.Run("LP2", func(t *testing.T) {
-		s := es.Shares()
+		s := es.Shares(map[string]struct{}{})
 		lp1, lp2 := s["LP1"], s["LP2"]
 
 		assert.Equal(t, oneThird, lp1)
@@ -73,7 +75,7 @@ func testShares(t *testing.T) {
 	// Set LP3
 	es.SetPartyStake("LP3", 300)
 	t.Run("LP3", func(t *testing.T) {
-		s := es.Shares()
+		s := es.Shares(map[string]struct{}{})
 
 		lp1, lp2, lp3 := s["LP1"], s["LP2"], s["LP3"]
 
@@ -81,6 +83,21 @@ func testShares(t *testing.T) {
 		assert.Equal(t, oneThird, lp2)
 		assert.Equal(t, half, lp3)
 		assert.Equal(t, 1.0, lp1+lp2+lp3)
+	})
+
+	// LP2 is undeployed
+	t.Run("LP3", func(t *testing.T) {
+		// pass LP as undeployed
+		s := es.Shares(map[string]struct{}{"LP2": {}})
+
+		lp1, lp3 := s["LP1"], s["LP3"]
+		_, ok := s["LP2"]
+		assert.False(t, ok)
+
+		assert.Equal(t, oneFourth, lp1)
+		// assert.Equal(t, oneThird, lp2)
+		assert.Equal(t, threeFourth, lp3)
+		assert.Equal(t, 1.0, lp1+lp3)
 	})
 }
 
@@ -258,14 +275,14 @@ func testWithinMarket(t *testing.T) {
 		"LiquidityFeeAccount should be empty after a fee distribution")
 
 	assert.EqualValues(t,
-		float64(originalBalance)*(2.0/3),
-		esm.PartyMarginAccount("party1").Balance-party1Balance,
-		"party1 should get 2/3 of the fees",
+		int(float64(originalBalance)*(2.25/3)),
+		int(esm.PartyMarginAccount("party1").Balance-party1Balance),
+		"party1 should get 2.25/3 of the fees",
 	)
 
 	assert.EqualValues(t,
-		float64(originalBalance)*(1.0/3),
-		esm.PartyMarginAccount("party2").Balance-party2Balance,
-		"party2 should get 1/3 of the fees",
+		int(float64(originalBalance)*(0.75/3)),
+		int(esm.PartyMarginAccount("party2").Balance-party2Balance),
+		"party2 should get 0.75/3 of the fees",
 	)
 }
