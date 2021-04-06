@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheInsurancePoolBalanceIsForTheMarket(
+func TheInsurancePoolBalanceShouldBeForTheMarket(
 	broker *stubs.BrokerStub,
 	rawAmount, market string,
 ) error {

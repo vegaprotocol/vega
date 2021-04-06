@@ -6,7 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
-func CumulatedBalanceForAllAccountsIsWorth(broker *stubs.BrokerStub, rawAmount string) error {
+func TheCumulatedBalanceForAllAccountsShouldBeWorth(broker *stubs.BrokerStub, rawAmount string) error {
 	amount, err := U64(rawAmount)
 	if err != nil {
 		panicW("balance", err)

@@ -8,7 +8,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func OrdersAreRejected(broker *stubs.BrokerStub, orders *gherkin.DataTable) error {
+func TheFollowingOrdersShouldBeRejected(broker *stubs.BrokerStub, orders *gherkin.DataTable) error {
 	var orderNotRejected []string
 	count := len(orders.Rows) - 1
 	for _, row := range TableWrapper(*orders).Parse() {
