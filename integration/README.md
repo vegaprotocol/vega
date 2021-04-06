@@ -75,7 +75,7 @@ to the trades. To create an integration test that replicates the system test res
 Feature: A feature that reproduces some system test
 
   Background:
-    Given the insurance pool initial balance for the markets is "0":
+    Given the initial insurance pool balance is "0" for the markets :
     And the markets:
       | id        | quote name | asset | mark price | risk model                | margin calculator         | auction duration | maker fee | infrastructure fee | liquidity fee | price monitoring | oracle config      |
       | ETH/DEC20 | ETH        | ETH   | 100        | default-simple-risk-model | default-margin-calculator | 1                | 0.004     | 0.001              | 0.3           | default-none     | default-for-future |

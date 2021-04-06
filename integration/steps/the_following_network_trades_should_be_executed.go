@@ -8,7 +8,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TheFollowingNetworkTradesHappened(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheFollowingNetworkTradesShouldBeExecuted(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	for _, row := range TableWrapper(*table).Parse() {
 		var (
 			trader        = row.MustStr("trader")

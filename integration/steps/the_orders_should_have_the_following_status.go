@@ -8,7 +8,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TheStatusOfOrderWithReference(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheOrdersShouldHaveTheFollowingStatus(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	for _, row := range TableWrapper(*table).Parse() {
 		trader := row.MustStr("trader")
 		reference := row.MustStr("reference")

@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func SettlementAccountBalanceIsForMarket(
+func TheSettlementAccountShouldHaveBalanceForMarket(
 	broker *stubs.BrokerStub,
 	amountStr, market string,
 ) error {

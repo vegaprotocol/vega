@@ -15,12 +15,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the following network parameters are set:
       | market.auction.minimumDuration |
       | 3600                           |
-    And oracles broadcast data signed with "0xDEADBEEF":
+    And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
 
   Scenario: Auction triggered by 1st trigger (lower bound breached)
-    Given the traders make the following deposits on asset's general account:
+    Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
@@ -30,78 +30,78 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | aux2    | ETH   | 100000000000|
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    When traders place the following orders:
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
       | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
-    Then the opening auction period for market "ETH/DEC20" ends
-    And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancel the following orders:
+    Then the opening auction period ends for market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
+    Then the traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "100000"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "95878"
+    And the mark price should be "95878" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min + 2 second opening auction
     Then time is updated to "2020-10-16T02:04:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min03s
     Then time is updated to "2020-10-16T03:04:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by 1st trigger, upper bound
-    Given the traders make the following deposits on asset's general account:
+    Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
@@ -110,78 +110,78 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | aux     | ETH   | 100000000000|
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    When traders place the following orders:
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
       | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
-    Then the opening auction period for market "ETH/DEC20" ends
-    And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancel the following orders:
+    Then the opening auction period ends for market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
+    Then the traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "100000"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "95878"
+    And the mark price should be "95878" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min + 2 second opening auction
     Then time is updated to "2020-10-16T02:04:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min03s
     Then time is updated to "2020-10-16T03:04:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by 1 trigger (upper bound breached)
-    Given the traders make the following deposits on asset's general account:
+    Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
@@ -190,76 +190,76 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | aux     | ETH   | 100000000000|
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    When traders place the following orders:
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
       | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
-    Then the opening auction period for market "ETH/DEC20" ends
-    And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancel the following orders:
+    Then the opening auction period ends for market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
+    Then the traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "100000"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "95878"
+    And the mark price should be "95878" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min + 2 second opening auction
     Then time is updated to "2020-10-16T02:04:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min03s
     Then time is updated to "2020-10-16T03:04:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by both triggers (lower bound breached)
-    Given the traders make the following deposits on asset's general account:
+    Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
@@ -268,88 +268,88 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | aux     | ETH   | 100000000000|
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    When traders place the following orders:
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
       | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
-    Then the opening auction period for market "ETH/DEC20" ends
-    And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancel the following orders:
+    Then the opening auction period ends for market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
+    Then the traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "100000"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "95878"
+    And the mark price should be "95878" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 90496 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min + 2 second opening auction
     Then time is updated to "2020-10-16T02:04:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min03s
     Then time is updated to "2020-10-16T02:04:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
     #T0 + 10min + 2 second opening auction
     Then time is updated to "2020-10-16T02:10:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 10min03s
     Then time is updated to "2020-10-16T03:10:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by both triggers, upper bound
-    Given the traders make the following deposits on asset's general account:
+    Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
@@ -358,88 +358,88 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | aux     | ETH   | 100000000000|
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    When traders place the following orders:
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
       | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
-    Then the opening auction period for market "ETH/DEC20" ends
-    And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancel the following orders:
+    Then the opening auction period ends for market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
+    Then the traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "100000"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "95878"
+    And the mark price should be "95878" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 110402 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min + 2 second opening auction
     Then time is updated to "2020-10-16T02:04:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min03s
     Then time is updated to "2020-10-16T02:04:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
     #T0 + 10min + 2 second opening auction
     Then time is updated to "2020-10-16T02:10:01Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 10min03s
     Then time is updated to "2020-10-16T03:10:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by 1st trigger (lower bound breached), extended by second (upper bound)
-    Given the traders make the following deposits on asset's general account:
+    Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount      |
       | trader1 | ETH   | 10000000000 |
       | trader2 | ETH   | 10000000000 |
@@ -448,74 +448,74 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | aux     | ETH   | 100000000000|
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
       | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
       | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
 
     # Trigger an auction to set the mark price
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_OPENING_AUCTION"
-    When traders place the following orders:
+    And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
       | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
       | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
       | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
-    Then the opening auction period for market "ETH/DEC20" ends
-    And the mark price for the market "ETH/DEC20" is "100000"
-    Then traders cancel the following orders:
+    Then the opening auction period ends for market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
+    Then the traders cancel the following orders:
       | trader  | reference |
       | trader3 | trader3-1 |
       | trader4 | trader4-1 |
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "100000"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     Then time is updated to "2020-10-16T02:00:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "95878"
+    And the mark price should be "95878" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me |
       | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_FOK |           |
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 4min
     Then time is updated to "2020-10-16T02:04:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    Then traders cancel the following orders:
+    Then the traders cancel the following orders:
       | trader  | reference |
       | trader1 | cancel-me |
 
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -523,20 +523,20 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     #T0 + 4min01s
     Then time is updated to "2020-10-16T02:04:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
     #T0 + 10min
     Then time is updated to "2020-10-16T02:10:02Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_MONITORING_AUCTION"
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "104251"
+    And the mark price should be "104251" for the market "ETH/DEC20"
 
     #T0 + 10min01sec
     Then time is updated to "2020-10-16T03:10:03Z"
 
-    And the trading mode for the market "ETH/DEC20" is "TRADING_MODE_CONTINUOUS"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price for the market "ETH/DEC20" is "110430"
+    And the mark price should be "110430" for the market "ETH/DEC20"

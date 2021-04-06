@@ -10,7 +10,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheFollowingTransfersHappened(
+func TheFollowingTransfersShouldHappen(
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {

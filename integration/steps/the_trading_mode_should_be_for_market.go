@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TradingModeForMarketIs(
+func TheTradingModeShouldBeForMarket(
 	engine *execution.Engine,
 	market, tradingModeStr string,
 ) error {

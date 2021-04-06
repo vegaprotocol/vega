@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
-func TheFollowingTradesWereExecuted(
+func TheFollowingTradesShouldBeExecuted(
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {
