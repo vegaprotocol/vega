@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/integration/steps"
-
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/cucumber/godog/gherkin"
+
+	"code.vegaprotocol.io/vega/integration/steps"
 )
 
 var (
@@ -40,6 +40,9 @@ func TestMain(m *testing.M) {
 }
 
 func FeatureContext(s *godog.Suite) {
+	s.BeforeScenario(func(_ interface{}) {
+		execsetup = newExecutionTestSetup()
+	})
 	// each step changes the output from the reporter
 	// so we know where a mock failed
 	s.BeforeStep(func(step *gherkin.Step) {
@@ -58,14 +61,6 @@ func FeatureContext(s *godog.Suite) {
 	})
 
 	// Market steps
-	s.Step(`^the markets start on "([^"]*)" and expire on "([^"]*)"$`, func(startDate, expiryDate string) error {
-		start, expiry, err := steps.MarketsStartOnAndExpireOn(startDate, expiryDate)
-		if err == nil {
-			marketExpiry = expiry
-			marketStart = start
-		}
-		return err
-	})
 	s.Step(`the simple risk model named "([^"]*)":$`, func(name string, table *gherkin.DataTable) error {
 		return steps.TheSimpleRiskModel(marketConfig, name, table)
 	})
@@ -85,59 +80,52 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TheMarginCalculator(marketConfig, name, table)
 	})
 	s.Step(`^the markets:$`, func(table *gherkin.DataTable) error {
-		markets := steps.TheMarkets(marketConfig, marketExpiry, table)
-
-		t, _ := time.Parse("2006-01-02T15:04:05Z", marketStart)
-		execsetup = getExecutionTestSetup(t, markets)
-
-		// reset market start time and expiry for next run
-		marketExpiry = defaultMarketExpiry
-		marketStart = defaultMarketStart
-
-		return nil
+		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, table)
+		execsetup.markets = markets
+		return err
 	})
 
 	// Other steps
+	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, theInsurancePoolInitialBalanceForTheMarketsIs)
 	s.Step(`^the following network parameters are set:$`, func(table *gherkin.DataTable) error {
 		params := steps.TheFollowingNetworkParametersAreSet(table)
 		if v, ok := params["market.auction.minimumDuration"]; ok {
 			d := v.(time.Duration)
-			if err := execsetup.engine.OnMarketAuctionMinimumDurationUpdate(context.Background(), d); err != nil {
+			if err := execsetup.executionEngine.OnMarketAuctionMinimumDurationUpdate(context.Background(), d); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
 	s.Step(`^"([^"]*)" withdraws "([^"]*)" from the account "([^"]*)"$`, func(owner, rawAmount, asset string) error {
-		return steps.TraderWithdrawsFromAccount(execsetup.collateral, owner, rawAmount, asset)
+		return steps.TraderWithdrawsFromAccount(execsetup.collateralEngine, owner, rawAmount, asset)
 	})
-	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, theInsurancePoolInitialBalanceForTheMarketsIs)
 	s.Step(`^time is updated to "([^"]*)"$`, func(rawTime string) error {
-		return steps.TimeIsUpdatedTo(execsetup.timesvc, rawTime)
+		return steps.TimeIsUpdatedTo(execsetup.timeService, rawTime)
 	})
 	s.Step(`^the traders cancel the following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, execsetup.errorHandler, table)
+		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, execsetup.errorHandler, table)
 	})
 	s.Step(`^the traders cancel all their orders for the markets:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.engine, execsetup.errorHandler, table)
+		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, execsetup.errorHandler, table)
 	})
 	s.Step(`^the traders amend the following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersAmendTheFollowingOrders(execsetup.errorHandler, execsetup.broker, execsetup.engine, table)
+		return steps.TradersAmendTheFollowingOrders(execsetup.errorHandler, execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders place the following pegged orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlacePeggedOrders(execsetup.engine, table)
+		return steps.TradersPlacePeggedOrders(execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders deposit on asset's general account the following amount:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersDepositAssets(execsetup.collateral, execsetup.broker, table)
+		return steps.TradersDepositAssets(execsetup.collateralEngine, execsetup.broker, table)
 	})
 	s.Step(`^the traders place the following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceTheFollowingOrders(execsetup.engine, execsetup.errorHandler, table)
+		return steps.TradersPlaceTheFollowingOrders(execsetup.executionEngine, execsetup.errorHandler, table)
 	})
 	s.Step(`^the traders submit the following liquidity provision:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersSubmitLiquidityProvision(execsetup.engine, table)
+		return steps.TradersSubmitLiquidityProvision(execsetup.executionEngine, table)
 	})
 	s.Step(`^the opening auction period ends for market "([^"]+)"$`, func(marketID string) error {
-		return steps.MarketOpeningAuctionPeriodEnds(execsetup.timesvc, execsetup.mkts, marketID)
+		return steps.MarketOpeningAuctionPeriodEnds(execsetup.timeService, execsetup.markets, marketID)
 	})
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *gherkin.DataTable) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
@@ -190,7 +178,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TheFollowingTradesShouldBeExecuted(execsetup.broker, table)
 	})
 	s.Step(`^the trading mode should be "([^"]*)" for the market "([^"]*)"$`, func(tradingMode, marketID string) error {
-		return steps.TheTradingModeShouldBeForMarket(execsetup.engine, marketID, tradingMode)
+		return steps.TheTradingModeShouldBeForMarket(execsetup.executionEngine, marketID, tradingMode)
 	})
 	s.Step(`^the insurance pool balance should be "([^"]*)" for the market "([^"]*)"$`, func(rawAmount, marketID string) error {
 		return steps.TheInsurancePoolBalanceShouldBeForTheMarket(execsetup.broker, rawAmount, marketID)
@@ -199,7 +187,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
 	})
 	s.Step(`^the mark price should be "([^"]*)" for the market "([^"]*)"$`, func(rawMarkPrice, marketID string) error {
-		return steps.TheMarkPriceForTheMarketIs(execsetup.engine, marketID, rawMarkPrice)
+		return steps.TheMarkPriceForTheMarketIs(execsetup.executionEngine, marketID, rawMarkPrice)
 	})
 	s.Step(`^I see the following order events:$`, func(table *gherkin.DataTable) error {
 		return steps.OrderEventsSent(execsetup.broker, table)
@@ -219,7 +207,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.DebugOrders(execsetup.broker, execsetup.log)
 	})
 	s.Step(`^debug market data for "([^"]*)"$`, func(mkt string) error {
-		return steps.DebugMarketData(execsetup.engine, execsetup.log, mkt)
+		return steps.DebugMarketData(execsetup.executionEngine, execsetup.log, mkt)
 	})
 
 	// Event steps
