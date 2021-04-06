@@ -5570,7 +5570,7 @@ func TestAverageEntryValuation(t *testing.T) {
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
 
-	// auctionEnd := now.Add(10001 * time.Second)
+	auctionEnd := now.Add(10001 * time.Second)
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
@@ -5605,7 +5605,8 @@ func TestAverageEntryValuation(t *testing.T) {
 		WithAccountAndAmount(lpparty3, 500000000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(.2)
-	tm.market.OnChainTimeUpdate(ctx, now)
+	tm.EndOpeningAuction(t, auctionEnd, false)
+	// tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
