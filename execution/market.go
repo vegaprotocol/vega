@@ -3933,12 +3933,12 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProvid
 func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get asset")
 	}
 
 	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get market liquidity fee account")
 	}
 
 	// We can't distribute any share when no balance.
@@ -3958,7 +3958,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to transfer fees")
 	}
 
 	m.broker.Send(events.NewTransferResponse(ctx, resp))
