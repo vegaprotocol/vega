@@ -18,7 +18,8 @@ import (
 const invalidProposalTerms = "invalid proposal terms"
 
 var (
-	ErrMissingVoteData = errors.New("required fields from vote missing")
+	ErrMissingVoteData          = errors.New("required fields from vote missing")
+	ErrUnsupportedProposalTerms = errors.New("unsupported proposal terms")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/governance EventBus
@@ -380,13 +381,20 @@ func (s *Svc) validateProposalChanges(terms *types.ProposalTerms) error {
 		return s.validateNewMarketChanges(terms, c.NewMarket)
 	case *types.ProposalTerms_UpdateNetworkParameter:
 		return s.validateUpdateNetworkParameterChanges(c.UpdateNetworkParameter)
+	case *types.ProposalTerms_NewAsset:
+		return s.validateNewAssetChanges(c.NewAsset)
 	default:
-		return nil
+		return ErrUnsupportedProposalTerms
 	}
 }
 
 func (s *Svc) validateUpdateNetworkParameterChanges(np *types.UpdateNetworkParameter) (err error) {
 	_, err = validateNetworkParameterUpdate(s.netp, np.Changes)
+	return
+}
+
+func (s *Svc) validateNewAssetChanges(np *types.NewAsset) (err error) {
+	_, err = validateNewAsset(np.Changes)
 	return
 }
 
