@@ -13,86 +13,11 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// MarketPosition represents the position of a party inside a market
-type MarketPosition struct {
-	// Actual volume
-	size int64
-	// Potential volume (orders not yet accepted/rejected)
-	buy, sell int64
-
-	partyID string
-	price   uint64
-
-	// volume weighted buy/sell prices
-	vwBuyPrice, vwSellPrice uint64
-}
-
 // Errors
 var (
 	// ErrPositionNotFound signal that a position was not found for a given party.
 	ErrPositionNotFound = errors.New("position not found")
 )
-
-// String returns a string representation of a market
-func (m MarketPosition) String() string {
-	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
-		m.size, m.buy, m.sell, m.price, m.partyID)
-}
-
-// Buy will returns the potential buys for a given position
-func (m MarketPosition) Buy() int64 {
-	return m.buy
-}
-
-// Sell returns the potential sells for the position
-func (m MarketPosition) Sell() int64 {
-	return m.sell
-}
-
-// Size returns the current size of the position
-func (m MarketPosition) Size() int64 {
-	return m.size
-}
-
-// Party returns the party to which this positions is associated
-func (m MarketPosition) Party() string {
-	return m.partyID
-}
-
-// Price returns the current price for this position
-func (m MarketPosition) Price() uint64 {
-	return m.price
-}
-
-// VWBuy - get volume weighted buy price for unmatched buy orders
-func (m MarketPosition) VWBuy() uint64 {
-	return m.vwBuyPrice
-}
-
-// VWSell - get volume weighted sell price for unmatched sell orders
-func (m MarketPosition) VWSell() uint64 {
-	return m.vwSellPrice
-}
-
-// I64MaxAbs - get max value based on absolute values of int64 vals
-// keep this function, perhaps we can reuse it in a numutil package
-// once we have to deal with decimals etc...
-func I64MaxAbs(vals ...int64) int64 {
-	var (
-		r, m int64
-	)
-	for _, v := range vals {
-		av := v
-		if av < 0 {
-			av *= -1
-		}
-		if av > m {
-			r = v
-			m = av // current max abs is av
-		}
-	}
-	return r
-}
 
 // Engine represents the positions engine
 type Engine struct {
@@ -176,23 +101,7 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
-	if order.Side == types.Side_SIDE_BUY {
-		// calculate vwBuyPrice: total worth of orders divided by total size
-		if buyVol := uint64(pos.buy) + order.Remaining; buyVol != 0 {
-			pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + order.Price*order.Remaining) / buyVol
-		} else {
-			pos.vwBuyPrice = 0
-		}
-		pos.buy += int64(order.Remaining)
-	} else {
-		// calculate vwSellPrice: total worth of orders divided by total size
-		if sellVol := uint64(pos.sell) + order.Remaining; sellVol != 0 {
-			pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + order.Price*order.Remaining) / sellVol
-		} else {
-			pos.vwSellPrice = 0
-		}
-		pos.sell += int64(order.Remaining)
-	}
+	pos.RegisterOrder(order)
 	timer.EngineTimeCounterAdd()
 	return pos
 }
@@ -207,24 +116,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
 		return nil, ErrPositionNotFound
 	}
 
-	if order.Side == types.Side_SIDE_BUY {
-		// recalculate vwap
-		vwap := pos.vwBuyPrice*uint64(pos.buy) - order.Price*order.Remaining
-		pos.buy -= int64(order.Remaining)
-		if pos.buy != 0 {
-			pos.vwBuyPrice = vwap / uint64(pos.buy)
-		} else {
-			pos.vwBuyPrice = 0
-		}
-	} else {
-		vwap := pos.vwSellPrice*uint64(pos.sell) - order.Price*order.Remaining
-		pos.sell -= int64(order.Remaining)
-		if pos.sell != 0 {
-			pos.vwSellPrice = vwap / uint64(pos.sell)
-		} else {
-			pos.vwSellPrice = 0
-		}
-	}
+	pos.UnregisterOrder(order)
 	return pos, nil
 }
 
@@ -239,27 +131,7 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 		err = ErrPositionNotFound
 		return
 	}
-
-	if originalOrder.Side == types.Side_SIDE_BUY {
-		vwap := pos.vwBuyPrice*uint64(pos.buy) - originalOrder.Price*originalOrder.Remaining
-		pos.buy -= int64(originalOrder.Remaining)
-		if pos.buy != 0 {
-			pos.vwBuyPrice = vwap / uint64(pos.buy)
-		} else {
-			pos.vwBuyPrice = 0
-		}
-		pos.buy += int64(newOrder.Remaining)
-	} else {
-		vwap := pos.vwSellPrice*uint64(pos.sell) - originalOrder.Price*originalOrder.Remaining
-		pos.sell -= int64(originalOrder.Remaining)
-		if pos.sell != 0 {
-			pos.vwSellPrice = vwap / uint64(pos.sell)
-		} else {
-			pos.vwSellPrice = 0
-		}
-		pos.sell += int64(newOrder.Remaining)
-	}
-
+	pos.AmendOrder(originalOrder, newOrder)
 	timer.EngineTimeCounterAdd()
 	return
 }
@@ -449,4 +321,24 @@ func (e *Engine) Parties() []string {
 		parties = append(parties, v.Party())
 	}
 	return parties
+}
+
+// I64MaxAbs - get max value based on absolute values of int64 vals
+// keep this function, perhaps we can reuse it in a numutil package
+// once we have to deal with decimals etc...
+func I64MaxAbs(vals ...int64) int64 {
+	var (
+		r, m int64
+	)
+	for _, v := range vals {
+		av := v
+		if av < 0 {
+			av *= -1
+		}
+		if av > m {
+			r = v
+			m = av // current max abs is av
+		}
+	}
+	return r
 }

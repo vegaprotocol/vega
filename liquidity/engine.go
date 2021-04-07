@@ -395,6 +395,23 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 	return ok
 }
 
+// GetPotentialShapeOrders is used to create ordes from
+// shape when amending a liquidity provision this allows us to
+// ensure enough funds can be taken from the margin account in orders
+// to submit orders lateer on.
+func (e *Engine) GetPotentialShapeOrders(
+	party string,
+	price uint64,
+	lps *types.LiquidityProvisionSubmission,
+	repriceFn RepricePeggedOrder,
+) ([]*types.Order, error) {
+	if err := e.validateLiquidityProvisionSubmission(lps); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
 // CreateInitialOrders returns two slices of orders, one for orders to be
 // created and the other for orders to be updated.
 func (e *Engine) CreateInitialOrders(

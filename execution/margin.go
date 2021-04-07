@@ -8,6 +8,39 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+func (m *Market) calcMarginsLiquidityProvidersAmendsAuction(
+	ctx context.Context, pos *positions.MarketPosition, price uint64,
+) (events.Risk, error) {
+	asset, _ := m.mkt.GetAsset()
+	market := m.GetID()
+
+	// first we build the margin events from the collateral.
+	e, err := m.collateral.GetPartyMargin(pos, asset, market)
+	if err != nil {
+		return nil, err
+	}
+
+	// then we calculated margins for this party
+	risk, closed, err := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(closed) > 0 {
+		// this order would take party below maintenance -> stop here
+		return nil, ErrMarginCheckInsufficient
+	}
+
+	// then we check if the required top-up is greated that the amound in
+	// the GeneralBalance, if yes it means we would have to use the bond
+	// account which is not acceptable at this point, we return an error as well
+	if risk[0].Amount() > (risk[0].GeneralBalance() - risk[0].BondBalance()) {
+		return nil, ErrMarginCheckInsufficient
+	}
+
+	return risk[0], nil
+}
+
 func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
 	if m.as.InAuction() {
 		return m.marginsAuction(ctx, order)
