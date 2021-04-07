@@ -2,21 +2,58 @@
 
 ## 0.34.0
 
-*2021-03-23*
+*2021-04-07*
 
 ### Improvements
+
+- [#3302](https://github.com/vegaprotocol/vega/pull/3302) - Add reference to LP in orders created by LP
+- [#3183](https://github.com/vegaprotocol/vega/pull/3183) - All orders from LP - including rejected orders - are now sent through the event bus
+- [#3248](https://github.com/vegaprotocol/vega/pull/3248) - Store and propagate bond penalty
+- [#3266](https://github.com/vegaprotocol/vega/pull/3266) - Add network parameters to control auction duration & extension
+- [#3264](https://github.com/vegaprotocol/vega/pull/3264) - Add Liquidity Provision ID to orders created by LP commitments
+- [#3126](https://github.com/vegaprotocol/vega/pull/3126) - Add transfer for bond slashing
+- [#3281](https://github.com/vegaprotocol/vega/pull/3281) - Update scripts to go 1.16.2
+- [#3280](https://github.com/vegaprotocol/vega/pull/3280) - Update to go 1.16.2
+- [#3235](https://github.com/vegaprotocol/vega/pull/3235) - Extend unit test coverage for products
 - [#3219](https://github.com/vegaprotocol/vega/pull/3219) - Remove `liquidityFee` network parameter
 - [#3217](https://github.com/vegaprotocol/vega/pull/3217) - Add an event bus event when a market closes
 - [#3214](https://github.com/vegaprotocol/vega/pull/3214) - Add arbitrary data signing wallet endpoint
+- [#3316](https://github.com/vegaprotocol/vega/pull/3316) - Add tests for traders closing their own position
+- [#3270](https://github.com/vegaprotocol/vega/pull/3270) - _Feature test refactor_: Add Liquidity Provision feature tests
+- [#3289](https://github.com/vegaprotocol/vega/pull/3289) - _Feature test refactor_: Remove unused steps
+- [#3275](https://github.com/vegaprotocol/vega/pull/3275) - _Feature test refactor_: Refactor order cancellation steps
+- [#3230](https://github.com/vegaprotocol/vega/pull/3230) - _Feature test refactor_: Refactor trader amends step
+- [#3226](https://github.com/vegaprotocol/vega/pull/3226) - _Feature test refactor_: Refactor features with invalid order specs
 - [#3200](https://github.com/vegaprotocol/vega/pull/3200) - _Feature test refactor_: Add step to end opening auction
 - [#3201](https://github.com/vegaprotocol/vega/pull/3201) - _Feature test refactor_: Add step to amend order by reference
 - [#3204](https://github.com/vegaprotocol/vega/pull/3204) - _Feature test refactor_: Add step to place pegged orders
 - [#3207](https://github.com/vegaprotocol/vega/pull/3207) - _Feature test refactor_: Add step to create Liquidity Provision
 - [#3212](https://github.com/vegaprotocol/vega/pull/3212) - _Feature test refactor_: Remove unused settlement price step
 - [#3203](https://github.com/vegaprotocol/vega/pull/3203) - _Feature test refactor_: Rework Submit Order step
+- [#3251](https://github.com/vegaprotocol/vega/pull/3251) - _Feature test refactor_:  Split market declaration
+- [#3314](https://github.com/vegaprotocol/vega/pull/3314) - _Feature test refactor_:  Apply naming convention to assertions
+- [#3295](https://github.com/vegaprotocol/vega/pull/3295) - Refactor governance engine tests
+- [#3298](https://github.com/vegaprotocol/vega/pull/3298) - Add order book caching
+- [#3307](https://github.com/vegaprotocol/vega/pull/3307) - Use `UpdateNetworkParams` to validate network parameter updates
+- [#3308](https://github.com/vegaprotocol/vega/pull/3308) - Add probability of trading
 
 ### Fixes
+- [#3249](https://github.com/vegaprotocol/vega/pull/3249) - GraphQL: LiquidityProvision is no longer missing from the EventBus union
+- [#3253](https://github.com/vegaprotocol/vega/pull/3253) - Verify all properties on oracle specs
+- [#3224](https://github.com/vegaprotocol/vega/pull/3224) - Check for wash trades when FOK orders uncross
+- [#3257](https://github.com/vegaprotocol/vega/pull/3257) - Order Status is now only `Active` when it is submitted to the book
+- [#3285](https://github.com/vegaprotocol/vega/pull/3285) - LP provisions are now properly stopped when a market is rejected
+- [#3290](https://github.com/vegaprotocol/vega/pull/3290) - Update Market Value Proxy at the end of each block
+- [#3267](https://github.com/vegaprotocol/vega/pull/3267) - Ensure Liquidity Auctions are not left if it would result in an empty book
+- [#3286](https://github.com/vegaprotocol/vega/pull/3286) - Reduce some log levels
+- [#3263](https://github.com/vegaprotocol/vega/pull/3263) - Fix incorrect context object in Liquidity Provisions
+- [#3283](https://github.com/vegaprotocol/vega/pull/3283) - Remove debug code
 - [#3198](https://github.com/vegaprotocol/vega/pull/3198) - chore: Add spell checking to build pipeline
+- [#3303](https://github.com/vegaprotocol/vega/pull/3303) - Reduce market depth updates when nothing changes
+- [#3310](https://github.com/vegaprotocol/vega/pull/3310) - Fees are no longer paid to inactive LPs
+- [#3305](https://github.com/vegaprotocol/vega/pull/3305) - Fix validation of governance proposal terms
+- [#3311](https://github.com/vegaprotocol/vega/pull/3311) - `targetStake` is now an unsigned int
+- [#3313](https://github.com/vegaprotocol/vega/pull/3313) - Fix invalid account wrapping
 
 ## 0.33.0
 
