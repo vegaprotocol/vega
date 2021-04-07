@@ -20,6 +20,8 @@ type MarketPosition struct {
 	vwBuyPrice, vwSellPrice uint64
 }
 
+func (p *MarketPosition) SetParty(party string) { p.partyID = party }
+
 func (p *MarketPosition) RegisterOrder(order *types.Order) {
 	if order.Side == types.Side_SIDE_BUY {
 		// calculate vwBuyPrice: total worth of orders divided by total size
@@ -86,42 +88,42 @@ func (p *MarketPosition) AmendOrder(originalOrder, newOrder *types.Order) {
 }
 
 // String returns a string representation of a market
-func (m MarketPosition) String() string {
+func (p MarketPosition) String() string {
 	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
-		m.size, m.buy, m.sell, m.price, m.partyID)
+		p.size, p.buy, p.sell, p.price, p.partyID)
 }
 
 // Buy will returns the potential buys for a given position
-func (m MarketPosition) Buy() int64 {
-	return m.buy
+func (p MarketPosition) Buy() int64 {
+	return p.buy
 }
 
 // Sell returns the potential sells for the position
-func (m MarketPosition) Sell() int64 {
-	return m.sell
+func (p MarketPosition) Sell() int64 {
+	return p.sell
 }
 
 // Size returns the current size of the position
-func (m MarketPosition) Size() int64 {
-	return m.size
+func (p MarketPosition) Size() int64 {
+	return p.size
 }
 
 // Party returns the party to which this positions is associated
-func (m MarketPosition) Party() string {
-	return m.partyID
+func (p MarketPosition) Party() string {
+	return p.partyID
 }
 
 // Price returns the current price for this position
-func (m MarketPosition) Price() uint64 {
-	return m.price
+func (p MarketPosition) Price() uint64 {
+	return p.price
 }
 
 // VWBuy - get volume weighted buy price for unmatched buy orders
-func (m MarketPosition) VWBuy() uint64 {
-	return m.vwBuyPrice
+func (p MarketPosition) VWBuy() uint64 {
+	return p.vwBuyPrice
 }
 
 // VWSell - get volume weighted sell price for unmatched sell orders
-func (m MarketPosition) VWSell() uint64 {
-	return m.vwSellPrice
+func (p MarketPosition) VWSell() uint64 {
+	return p.vwSellPrice
 }

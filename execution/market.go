@@ -3247,61 +3247,9 @@ func (m *Market) amendOrCancelLiquidityProvision(
 		return m.cancelLiquidityProvision(ctx, party, false, false)
 	}
 
-	// now we will first try to cancel + replace the submission
-	// err := m.cancelAndReplaceLiquidityProvision(
-	// 	ctx, sub, party, id)
-	// if err == nil {
-	// 	// no errors, all went well, nothing to do.
-	// 	return nil
-	// }
-
-	// m.log.Debug("could not cancel and replace liquidity provision",
-	// 	logging.MarketID(m.GetID()),
-	// 	logging.PartyID(party),
-	// 	logging.Error(err))
-
-	// // so, we haven't been able to submit the new lp provision
-	// // now we want to resubmit the previous one
-	// rollbackSubmission := lp.IntoSubmission()
-	// err = m.SubmitLiquidityProvision(ctx, rollbackSubmission, party, lp.Id)
-	// if err != nil {
-	// 	m.log.Debug("could not re-submit the previous commitment",
-	// 		logging.MarketID(m.GetID()),
-	// 		logging.PartyID(party),
-	// 		logging.Error(err))
-
-	// 	// now let's update the fee selection
-	// 	m.updateLiquidityFee(ctx)
-	// 	// and remove the party from the equity share like calculation
-	// 	m.equityShares.SetPartyStake(party, float64(0))
-	// 	// force update of shares so they are updated for all
-	// 	_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
-	// 	// do not need to be pending
-	// 	m.liquidity.RemovePending(party)
-	// }
-
-	return err
+	// if commitment != 0, then it's an amend
+	return m.amendLiquidityProvision(ctx, sub, party)
 }
-
-// func (m *Market) cancelAndReplaceLiquidityProvision(
-// 	ctx context.Context,
-// 	submission *types.LiquidityProvisionSubmission,
-// 	party, lpid string,
-// ) error {
-// 	// now are going to cancel the existing liquidity provision
-// 	if err := m.cancelLiquidityProvision(ctx, party, false, true); err != nil {
-// 		m.log.Debug("could not cancel before re-submitting commitment",
-// 			logging.MarketID(m.GetID()),
-// 			logging.PartyID(party),
-// 			logging.Error(err))
-// 		return err
-// 	}
-
-// 	// now let's submit again
-// 	// nothing much to do with the error, all will be rollaback as
-// 	// part of the submit liquidity provision call
-// 	return m.SubmitLiquidityProvision(ctx, submission, party, lpid)
-// }
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
@@ -3316,6 +3264,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		// rolled back
 		needsBondRollback bool
 	)
+
+	if err := m.liquidity.ValidateLiquidityProvisionSubmission(sub); err != nil {
+		return err
+	}
 
 	// if the party is amending an existing LP
 	// we go done the path of amending

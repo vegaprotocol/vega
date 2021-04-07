@@ -72,7 +72,8 @@ func (m *Market) amendLiquidityProvisionAuction(
 	// third condition from before, no price available, we just accept the
 	// amendment without deploying any orders, so no need to check any margin etc
 	if price > 0 {
-		if err := m.calcLiquidityProvisionPotentialMarginsAuction(); err != nil {
+		if err := m.calcLiquidityProvisionPotentialMarginsAuction(
+			ctx, sub, party, price); err != nil {
 			return err
 		}
 	}
@@ -83,7 +84,7 @@ func (m *Market) amendLiquidityProvisionAuction(
 // in here we will calculate the liquidity provision potential margin for
 // this amendment, this is all happening during auction, so no LP order
 // from the party should be in the book, we will just get a list of order
-// from the liquidity engine, and try to calculate the potential positon
+// from the liquidity engine, and try to calculate the potential position
 // from there, then move the funds in the party margin account
 func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	ctx context.Context,
@@ -117,7 +118,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	}
 
 	// if we have no orders, this might not be an error
-	// the commitment can be fullfilled by all the limit orders already
+	// the commitment can be fulfilled by all the limit orders already
 	// submitted by the party into the book
 	if len(orders) <= 0 {
 		return nil
@@ -132,6 +133,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 		// the party join, and never had the chance to get anything deployed
 		// so not positions exists
 		pos = &positions.MarketPosition{}
+		pos.SetParty(party)
 	}
 
 	// now we register all these orders as potential positions
@@ -147,11 +149,17 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 		return err
 	}
 
-	// so far all is ok, just one last step, let's move the funds
-	return m.transferMarginsLiquidityProvisionAmendsAuction(ctx, risk)
+	// so far all is ok, just one last step, if a risk event
+	// was returned let's move the funds
+	if risk != nil {
+		return m.transferMarginsLiquidityProvisionAmendAuction(ctx, risk)
+	}
+
+	// nothing left to do
+	return nil
 }
 
-func (m *Market) finalizeAmendLiquidityProvisionAuction(
+func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
 ) error {
 	// first parameter is the update to the orders, but we know that during
@@ -179,6 +187,98 @@ func (m *Market) finalizeAmendLiquidityProvisionAuction(
 func (m *Market) amendLiquidityProvisionContinuous(
 	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
 ) error {
+	midPriceBid, _, err := m.getStaticMidPrices()
+	if err != nil {
+		m.log.Debug("could not get mid prices to call liquidity",
+			logging.String("market-id", m.GetID()),
+			logging.String("party", party),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	// first lets get the protential shape for this submission
+	orders, err := m.liquidity.GetPotentialShapeOrders(
+		party, midPriceBid, sub, m.repriceFuncW)
+	if err != nil {
+		// any error here means:
+		// - the submission was invalid
+		// - order(s) in the shapes where not priceable / sizeable
+		return err
+	}
+
+	pos, ok := m.position.GetPositionByPartyID(party)
+	if !ok {
+		// at this point, in continuous mode, a party with deployed liquidity
+		// should always have a position at least potential
+		return err
+	}
+
+	// first remove all existing orders from the potential positions
+	lorders := m.liquidity.GetLiquidityOrders(party)
+	for _, v := range lorders {
+		pos.UnregisterOrder(v)
+	}
+
+	// then add all the newly created ones
+	for _, v := range orders {
+		pos.RegisterOrder(v)
+	}
+
+	// now we calculate the margin as if we were submitting these orders
+	// any error here means we cannot amend,
+	err = m.calcMarginsLiquidityProvisionAmendContinuous(ctx, pos)
+	if err != nil {
+		return err
+	}
+
+	// then we do not actually move the monies in this case
+	// this will be done naturally when finalizing the amendment
+
+	return m.finalizeLiquidityProvisionAmendmentContinuous(ctx, sub, party)
+}
+
+func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
+	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+) error {
+	// first parameter is the update to the orders, but we know that during
+	// auction no orders shall be return, so let's just look at the error
+	cancels, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party)
+	if err != nil {
+		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
+			logging.Error(err))
+	}
+
+	for _, order := range cancels {
+		if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
+			// nothing much we can do here, I suppose
+			// something wrong might have happen...
+			// does this need a panic? need to think about it...
+			m.log.Debug("unable cancel liquidity order",
+				logging.String("party", party),
+				logging.String("order-id", order.Id),
+				logging.Error(err))
+		}
+	}
+
+	defer func() {
+		m.updateMarketValueProxy()
+		// now we can update the liquidity fee to be taken
+		m.updateLiquidityFee(ctx)
+		// now we can setup our party stake to calculate equities
+		m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
+		// force update of shares so they are updated for all
+		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+
+		m.checkLiquidity(ctx, nil)
+		m.commandLiquidityAuction(ctx)
+
+	}()
+
+	// this workd but we definitely trigger some recursive loop which
+	// are unlikely to be fine.
+	m.liquidityUpdate(ctx, nil)
+
 	return nil
 }
 

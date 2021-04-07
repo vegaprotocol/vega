@@ -147,6 +147,14 @@ func (e *Engine) RemovePending(party string) {
 	delete(e.pendings, party)
 }
 
+func (e *Engine) GetLiquidityOrders(party string) []*types.Order {
+	orders := []*types.Order{}
+	for _, v := range e.liquidityOrders[party] {
+		orders = append(orders, v)
+	}
+	return orders
+}
+
 // GetInactiveParties returns a set of all the parties
 // with inactive commitment
 func (e *Engine) GetInactiveParties() map[string]struct{} {
@@ -223,7 +231,7 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
 }
 
-func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
+func (e *Engine) ValidateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
 	// we check if the commitment is 0 which would mean this is a cancel
 	// a cancel does not need validations
 	if lp.CommitmentAmount == 0 {
@@ -276,7 +284,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
-	if err := e.validateLiquidityProvisionSubmission(lps); err != nil {
+	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
 		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
 		return err
 	}
@@ -393,23 +401,6 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 	}
 	_, ok = pos[order]
 	return ok
-}
-
-// GetPotentialShapeOrders is used to create ordes from
-// shape when amending a liquidity provision this allows us to
-// ensure enough funds can be taken from the margin account in orders
-// to submit orders lateer on.
-func (e *Engine) GetPotentialShapeOrders(
-	party string,
-	price uint64,
-	lps *types.LiquidityProvisionSubmission,
-	repriceFn RepricePeggedOrder,
-) ([]*types.Order, error) {
-	if err := e.validateLiquidityProvisionSubmission(lps); err != nil {
-		return nil, err
-	}
-
-	return nil, nil
 }
 
 // CreateInitialOrders returns two slices of orders, one for orders to be

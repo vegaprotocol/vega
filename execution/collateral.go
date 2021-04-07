@@ -18,9 +18,9 @@ var (
 func (m *Market) transferMarginsLiquidityProvisionAmendAuction(
 	ctx context.Context, risk events.Risk) error {
 	market := m.GetID()
-	// This is ultimately the same beahviour than update on order
-	// all or nothing of margin needsto be transfered
-	tsfer, _, err := m.collateral.MarginUpdateOnOrder(ctx, market, risk)
+	// This is ultimately the same behaviour than update on order
+	// all or nothing of margin needsto be transferred
+	tsfr, _, err := m.collateral.MarginUpdateOnOrder(ctx, market, risk)
 	if err != nil {
 		return err
 	}
