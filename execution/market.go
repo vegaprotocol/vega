@@ -165,7 +165,7 @@ type Market struct {
 	markPrice uint64
 
 	// own engines
-	matching           *matching.OrderBook
+	matching           *matching.CachedOrderBook
 	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
 	position           *positions.Engine
@@ -268,7 +268,8 @@ func NewMarket(
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
-	book := matching.NewOrderBook(log, matchingConfig, mkt.Id, as.InAuction())
+	book := matching.NewCachedOrderBook(
+		log, matchingConfig, mkt.Id, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(
 		log,

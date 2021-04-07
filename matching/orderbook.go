@@ -332,7 +332,8 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 }
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
-func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
+func (b *OrderBook) GetIndicativePriceAndVolume() (retprice uint64, retvol uint64, retside types.Side) {
+
 	bestBid, err := b.GetBestBidPrice()
 	if err != nil {
 		return 0, 0, types.Side_SIDE_UNSPECIFIED
@@ -383,7 +384,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 }
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
-func (b *OrderBook) GetIndicativePrice() uint64 {
+func (b *OrderBook) GetIndicativePrice() (retprice uint64) {
 	bestBid, err := b.GetBestBidPrice()
 	if err != nil {
 		return 0
@@ -879,7 +880,8 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 
 // RemoveDistressedOrders remove from the book all order holding distressed positions
 func (b *OrderBook) RemoveDistressedOrders(
-	parties []events.MarketPosition) ([]*types.Order, error) {
+	parties []events.MarketPosition,
+) ([]*types.Order, error) {
 	rmorders := []*types.Order{}
 
 	for _, party := range parties {
