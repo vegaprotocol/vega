@@ -1,0 +1,13 @@
+{
+  "instrument": null,
+  "marginCalculator": null,
+  "simpleRiskModel": {
+    "params": {
+      "factorLong": 0.08628781058136630000,
+      "factorShort": 0.09370922348428490000,
+      "maxMoveUp": -1,
+      "minMoveDown": -1,
+      "probabilityOfTrading": 0.1
+    }
+  }
+}
