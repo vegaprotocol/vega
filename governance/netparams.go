@@ -40,14 +40,14 @@ func (e *Engine) getNewAssetProposalParameters() (*ProposalParameters, error) {
 
 func (e *Engine) getUpdateNetworkParameterProposalParameters() (*ProposalParameters, error) {
 	return e.getProposalParametersFromNetParams(
-		netparams.GovernanceProposalUpdateMarketMinClose,
-		netparams.GovernanceProposalUpdateMarketMaxClose,
-		netparams.GovernanceProposalUpdateMarketMinEnact,
-		netparams.GovernanceProposalUpdateMarketMaxEnact,
-		netparams.GovernanceProposalUpdateMarketRequiredParticipation,
-		netparams.GovernanceProposalUpdateMarketRequiredMajority,
-		netparams.GovernanceProposalUpdateMarketMinProposerBalance,
-		netparams.GovernanceProposalUpdateMarketMinVoterBalance,
+		netparams.GovernanceProposalUpdateNetParamMinClose,
+		netparams.GovernanceProposalUpdateNetParamMaxClose,
+		netparams.GovernanceProposalUpdateNetParamMinEnact,
+		netparams.GovernanceProposalUpdateNetParamMaxEnact,
+		netparams.GovernanceProposalUpdateNetParamRequiredParticipation,
+		netparams.GovernanceProposalUpdateNetParamRequiredMajority,
+		netparams.GovernanceProposalUpdateNetParamMinProposerBalance,
+		netparams.GovernanceProposalUpdateNetParamMinVoterBalance,
 	)
 }
 
