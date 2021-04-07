@@ -2050,7 +2050,7 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) error {
 	acc, ok := e.accs[id]
 	if !ok {
-		return ErrAccountDoesNotExist
+		return fmt.Errorf("account does not exist: %s", id)
 	}
 	acc.Balance += inc
 	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
@@ -2064,7 +2064,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) error {
 	acc, ok := e.accs[id]
 	if !ok {
-		return ErrAccountDoesNotExist
+		return fmt.Errorf("account does not exist: %s", id)
 	}
 	acc.Balance -= dec
 	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
@@ -2077,7 +2077,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	acc, ok := e.accs[id]
 	if !ok {
-		return nil, ErrAccountDoesNotExist
+		return nil, fmt.Errorf("account does not exist: %s", id)
 	}
 	acccpy := *acc
 	return &acccpy, nil
@@ -2088,7 +2088,7 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 func (e *Engine) GetAssetTotalSupply(asset string) (uint64, error) {
 	asst, ok := e.enabledAssets[asset]
 	if !ok {
-		return 0, ErrInvalidAssetID
+		return 0, fmt.Errorf("invalid asset: %s", asset)
 	}
 
 	// not checking for error, if we

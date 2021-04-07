@@ -738,8 +738,8 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 	}
 	resp, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
 	assert.Nil(t, resp)
-	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account does not exist:")
 }
 
 func testDistributeWin(t *testing.T) {
@@ -1125,8 +1125,8 @@ func testRemoveDistressedBalance(t *testing.T) {
 
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
-	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account does not exist:")
 }
 
 func testRemoveDistressedNoBalance(t *testing.T) {
@@ -1155,8 +1155,8 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
-	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account does not exist:")
 }
 
 // most of this function is copied from the MarkToMarket test - we're using channels, sure

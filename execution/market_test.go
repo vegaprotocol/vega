@@ -5748,10 +5748,11 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 	)
 
 	t.Run("bond is released to general account", func(t *testing.T) {
-		// an error as the bon account is being deleted
+		// an error as the bond account is being deleted
 		_, err := tm.collateralEngine.GetPartyBondAccount(
 			tm.market.GetID(), lpparty, tm.asset)
-		assert.EqualError(t, err, collateral.ErrAccountDoesNotExist.Error())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "account does not exist:")
 		gacc, err := tm.collateralEngine.GetPartyGeneralAccount(
 			lpparty, tm.asset)
 		assert.NoError(t, err)

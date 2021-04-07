@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 
@@ -1288,7 +1287,8 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 	t.Run("margin account is updated", func(t *testing.T) {
 		_, err := tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), ruser2, tm.asset)
-		assert.EqualError(t, err, collateral.ErrAccountDoesNotExist.Error())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "account does not exist:")
 	})
 
 	t.Run("bond account", func(t *testing.T) {
