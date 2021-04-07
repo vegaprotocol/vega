@@ -38,7 +38,7 @@
 - [#3308](https://github.com/vegaprotocol/vega/pull/3308) - Add probability of trading
 
 ### Fixes
-- [#3249](https://github.com/vegaprotocol/vega/pull/3249) - GraphQL: LiquidityProvision is no longer missing from the EventBus union
+- [#3249](https://github.com/vegaprotocol/vega/pull/3249) - GraphQL: `LiquidityProvision` is no longer missing from the `EventBus` union
 - [#3253](https://github.com/vegaprotocol/vega/pull/3253) - Verify all properties on oracle specs
 - [#3224](https://github.com/vegaprotocol/vega/pull/3224) - Check for wash trades when FOK orders uncross
 - [#3257](https://github.com/vegaprotocol/vega/pull/3257) - Order Status is now only `Active` when it is submitted to the book
@@ -52,7 +52,7 @@
 - [#3303](https://github.com/vegaprotocol/vega/pull/3303) - Reduce market depth updates when nothing changes
 - [#3310](https://github.com/vegaprotocol/vega/pull/3310) - Fees are no longer paid to inactive LPs
 - [#3305](https://github.com/vegaprotocol/vega/pull/3305) - Fix validation of governance proposal terms
-- [#3311](https://github.com/vegaprotocol/vega/pull/3311) - `targetStake` is now an unsigned int
+- [#3311](https://github.com/vegaprotocol/vega/pull/3311) - `targetStake` is now an unsigned integer
 - [#3313](https://github.com/vegaprotocol/vega/pull/3313) - Fix invalid account wrapping
 
 ## 0.33.0
