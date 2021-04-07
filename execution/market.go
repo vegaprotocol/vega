@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -32,7 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network
@@ -258,12 +258,12 @@ func NewMarket(
 
 	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instantiate a new market")
+		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
 
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get market closing time")
+		return nil, fmt.Errorf("unable to get market closing time: %w", err)
 	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
@@ -293,14 +293,14 @@ func NewMarket(
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instantiate fee engine")
+		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 	}
 
 	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
 
 	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
+		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
@@ -3933,12 +3933,12 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProvid
 func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get asset")
+		return fmt.Errorf("failed to get asset: %w", err)
 	}
 
 	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
 	if err != nil {
-		return errors.Wrap(err, "failed to get market liquidity fee account")
+		return fmt.Errorf("failed to get market liquidity fee account: %w", err)
 	}
 
 	// We can't distribute any share when no balance.
@@ -3958,7 +3958,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
 	if err != nil {
-		return errors.Wrap(err, "failed to transfer fees")
+		return fmt.Errorf("failed to transfer fees: %w", err)
 	}
 
 	m.broker.Send(events.NewTransferResponse(ctx, resp))
