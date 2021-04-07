@@ -643,6 +643,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketAuctionMinimumDuration,
 			Watcher: l.executionEngine.OnMarketAuctionMinimumDurationUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketProbabilityOfTradingTauScaling,
+			Watcher: l.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
+		},
 	)
 }
 

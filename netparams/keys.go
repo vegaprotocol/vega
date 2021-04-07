@@ -12,6 +12,7 @@ const (
 	MarketLiquidityStakeToCCYSiskas                 = "market.liquidity.stakeToCcySiskas"
 	MarketLiquidityProvidersFeeDistribitionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
+	MarketProbabilityOfTradingTauScaling            = "market.liquidity.probabilityOfTrading.tau.scaling"
 	MarketTargetStakeTimeWindow                     = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
 	MarketValueWindowLength                         = "market.value.windowLength"

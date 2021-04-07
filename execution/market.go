@@ -3107,6 +3107,10 @@ func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64
 	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(v)
 }
 
+func (m *Market) OnMarketProbabilityOfTradingTauScalingUpdate(_ context.Context, v float64) {
+	m.liquidity.OnProbabilityOfTradingTauScalingUpdate(v)
+}
+
 func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
 	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, v)
 	//TODO: Send an event containing updated parameter
