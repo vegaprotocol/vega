@@ -20,6 +20,10 @@ case "${1:-}" in
 	*) echo "Invalid: $1" ; exit 1 ;;
 esac
 
+version="${DRONE_TAG:-$(git describe --tags 2>/dev/null)}"
+version_hash="$(echo "${CI_COMMIT_SHA:-$(git rev-parse HEAD)}" | cut -b1-8)"
+ldflags="-X main.CLIVersion=$version -X main.CLIVersionHash=$version_hash"
+
 pidsfile="$(mktemp)"
 for combo in $combinations ; do
 	goos="$(echo "$combo" | cut -f1 -d,)"
@@ -32,7 +36,7 @@ for combo in $combinations ; do
 		CGO_ENABLED=0 \
 		GOOS="$goos" \
 		GOARCH="$goarch" \
-		go build -o "$o" ./cmd/vega &
+		go build -o "$o" -ldflags "$ldflags" ./cmd/vega &
 	pid="$!"
 	echo "Building for OS=$goos arch=$goarch in subprocess $pid"
 	echo "$pid" >>"$pidsfile"
