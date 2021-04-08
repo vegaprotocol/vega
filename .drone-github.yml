@@ -45,7 +45,7 @@ steps:
       - git diff --name-only "$$DRONE_COMMIT_BEFORE...$$DRONE_COMMIT_AFTER" >git_diff.txt
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go|\.feature)$$' git_diff.txt)" -gt 0 ; then
           echo "Building executable" ;
-         ./script/build-multiarch-no-cgo.sh default || exit 1 ;
+          ./script/build-multiarch-no-cgo.sh default || exit 1 ;
         else
           echo "No Go files changed. Skipping building of binary." ;
           rm -f cmd/vega/vega-* ;
