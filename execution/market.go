@@ -543,6 +543,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				}
+				if evt := m.as.AuctionExtended(ctx); evt != nil {
+					// this should never, ever happen
+					m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
+				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
 
@@ -558,6 +562,9 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
+			}
+			if evt := m.as.AuctionExtended(ctx); evt != nil {
+				m.broker.Send(evt)
 			}
 			m.checkLiquidity(ctx, nil)
 			// price monitoring engine and liquidity monitoring engine both indicated auction can end
@@ -1347,6 +1354,9 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 				logging.String("market-id", m.GetID()),
 				logging.Error(merr))
 		}
+	}
+	if evt := m.as.AuctionEnded(ctx); evt != nil {
+		m.broker.Send(evt)
 	}
 	m.checkLiquidity(ctx, trades)
 
@@ -3470,6 +3480,9 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 		*rf,
 		m.markPrice,
 		vBid, vAsk)
+	if evt := m.as.AuctionExtended(ctx); evt != nil {
+		m.broker.Send(evt)
+	}
 
 }
 
@@ -3492,6 +3505,8 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		// If price monitoring doesn't trigger auction than leave it
 		if m.as.AuctionEnd() && m.matching.BidAndAskPresentAfterAuction() {
 			m.LeaveAuction(ctx, m.currentTime)
+		} else if evt := m.as.AuctionExtended(ctx); evt != nil {
+			m.broker.Send(evt)
 		}
 	}
 }
