@@ -254,7 +254,7 @@ steps:
         - refs/tags/*
 
   - name: build-multiarch
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo:1.16.2
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
     pull: always
     volumes:
       - name: gocache
@@ -275,7 +275,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - ./script/build.sh -a build -T
+      - ./script/build-multiarch-no-cgo.sh
     depends_on:
       - build_docker_image
     when:
