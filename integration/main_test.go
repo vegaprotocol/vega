@@ -221,6 +221,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^debug market data for "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugMarketData(execsetup.engine, execsetup.log, mkt)
 	})
+	s.Step(`^debug auction events$`, func() error {
+		return steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
+	})
 
 	// Event steps
 	s.Step(`^clear order events by reference:$`, func(table *gherkin.DataTable) error {

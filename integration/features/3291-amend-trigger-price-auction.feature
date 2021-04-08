@@ -19,8 +19,8 @@ Feature: Amend order to trigger price monitoring auction
   Scenario: Upper bound breached
     Given the traders deposit on asset's general account the following amount:
       | trader    | asset | amount       |
-      | trader1   | ETH   | 10000000000  |
-      | trader2   | ETH   | 10000000000  |
+      | trader1   | ETH   | 100000000000 |
+      | trader2   | ETH   | 100000000000 |
       | auxiliary | ETH   | 100000000000 |
       | aux2      | ETH   | 100000000000 |
 
@@ -39,8 +39,9 @@ Feature: Amend order to trigger price monitoring auction
       | trader1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the mark price should be "5670000" for the market "ETH/DEC20"
-
+    Then the mark price should be "5670000" for the market "ETH/DEC20"
+    And debug auction events
+    And debug trades
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the traders place the following orders:
