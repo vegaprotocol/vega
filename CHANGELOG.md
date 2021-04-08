@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.34.1
+
+*2021-04-08*
+
+### Fixes
+- [#3324](https://github.com/vegaprotocol/vega/pull/3324) - CI: Fix multi-architecture build
+
 ## 0.34.0
 
 *2021-04-07*
