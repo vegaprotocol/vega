@@ -3931,6 +3931,26 @@
       },
       "title": "Represents a ledger entry on Vega"
     },
+    "vegaLiquidityMonitoringParameters": {
+      "type": "object",
+      "properties": {
+        "target_stake_parameters": {
+          "$ref": "#/definitions/vegaTargetStakeParameters",
+          "title": "Specifies parameters related to target stake calculation"
+        },
+        "triggering_ratio": {
+          "type": "number",
+          "format": "double",
+          "title": "Specifies the triggering ratio for entering liquidity auction"
+        },
+        "auction_extension": {
+          "type": "string",
+          "format": "int64",
+          "title": "Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction"
+        }
+      },
+      "title": "LiquidityMonitoringParameters contains settings used for liquidity monitoring"
+    },
     "vegaLiquidityOrder": {
       "type": "object",
       "properties": {
@@ -4054,10 +4074,11 @@
         "STATUS_STOPPED",
         "STATUS_CANCELLED",
         "STATUS_REJECTED",
-        "STATUS_UNDEPLOYED"
+        "STATUS_UNDEPLOYED",
+        "STATUS_PENDING"
       ],
       "default": "STATUS_UNSPECIFIED",
-      "description": "- STATUS_UNSPECIFIED: The default value\n - STATUS_ACTIVE: The liquidity provision is active\n - STATUS_STOPPED: The liquidity provision was stopped by the network\n - STATUS_CANCELLED: The liquidity provision was cancelled by the liquidity provider\n - STATUS_REJECTED: The liquidity provision was invalid and got rejected\n - STATUS_UNDEPLOYED: The liquidity provision is valid and accepted by network, but oreders aren't deployed",
+      "description": "- STATUS_UNSPECIFIED: The default value\n - STATUS_ACTIVE: The liquidity provision is active\n - STATUS_STOPPED: The liquidity provision was stopped by the network\n - STATUS_CANCELLED: The liquidity provision was cancelled by the liquidity provider\n - STATUS_REJECTED: The liquidity provision was invalid and got rejected\n - STATUS_UNDEPLOYED: The liquidity provision is valid and accepted by network, but orders aren't deployed\n - STATUS_PENDING: The liquidity provision is valid and accepted by network\nbut have never been deployed. I when it's possible to deploy them for the first time\nmargin check fails, then they will be cancelled without any penalties.",
       "title": "Status of a liquidity provision order"
     },
     "vegaLiquidityProvisionSubmission": {
@@ -4245,9 +4266,9 @@
           "$ref": "#/definitions/vegaPriceMonitoringSettings",
           "title": "PriceMonitoringSettings for the market"
         },
-        "target_stake_parameters": {
-          "$ref": "#/definitions/vegaTargetStakeParameters",
-          "title": "TargetStakeParameters for the market"
+        "liquidity_monitoring_parameters": {
+          "$ref": "#/definitions/vegaLiquidityMonitoringParameters",
+          "title": "LiquidityMonitoringParameters for the market"
         },
         "trading_mode": {
           "$ref": "#/definitions/MarketTradingMode",
@@ -4256,6 +4277,10 @@
         "state": {
           "$ref": "#/definitions/vegaMarketState",
           "title": "Current state of the market"
+        },
+        "market_timestamps": {
+          "$ref": "#/definitions/vegaMarketTimestamps",
+          "title": "Timestamps for when the market staye changes"
         }
       },
       "title": "Market definition"
@@ -4494,6 +4519,32 @@
       },
       "title": "A market ticket event contains the time value for when a particular market was last processed on Vega"
     },
+    "vegaMarketTimestamps": {
+      "type": "object",
+      "properties": {
+        "proposed": {
+          "type": "string",
+          "format": "int64",
+          "title": "Time when the market is first proposed"
+        },
+        "pending": {
+          "type": "string",
+          "format": "int64",
+          "title": "Time when the market has been voted in and is created into an opening auction"
+        },
+        "open": {
+          "type": "string",
+          "format": "int64",
+          "title": "Time when the market has left the opening auction and is ready to accept trades"
+        },
+        "close": {
+          "type": "string",
+          "format": "int64",
+          "title": "Time when the market is closed"
+        }
+      },
+      "title": "Time stamps for important times about creating, enacting etc the market"
+    },
     "vegaNetworkParameter": {
       "type": "object",
       "properties": {
@@ -4587,6 +4638,10 @@
         "price_monitoring_parameters": {
           "$ref": "#/definitions/vegaPriceMonitoringParameters",
           "title": "Price monitoring parameters"
+        },
+        "liquidity_monitoring_parameters": {
+          "$ref": "#/definitions/vegaLiquidityMonitoringParameters",
+          "title": "Liquidity monitoring parameters"
         },
         "simple": {
           "$ref": "#/definitions/vegaSimpleModelParams",
@@ -4729,6 +4784,10 @@
         "pegged_order": {
           "$ref": "#/definitions/vegaPeggedOrder",
           "description": "Pegged order details, used only if the order represents a pegged order."
+        },
+        "liquidity_provision_id": {
+          "type": "string",
+          "description": "Is this order created as part of a liquidity provision, will be empty if not."
         }
       },
       "title": "An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties"

@@ -85,7 +85,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 func (s *Svc) GetMarginLevelsByID(partyID, marketID string) ([]types.MarginLevels, error) {
 	marginLevels, err := s.store.GetMarginLevelsByID(partyID, marketID)
 	// Searching for margin-levels by party, should return without error in this case
-	// as just because a party has not traded does not mean they dont exist in vega
+	// as just because a party has not traded does not mean they don't exist in vega
 	if err != nil && (err != storage.ErrNoMarginLevelsForParty && err != storage.ErrNoMarginLevelsForMarket) {
 		return nil, err
 	} else {

@@ -55,9 +55,9 @@ type propertyRow struct {
 }
 
 func (r propertyRow) name() string {
-	return r.row.Str("name")
+	return r.row.MustStr("name")
 }
 
 func (r propertyRow) value() string {
-	return r.row.Str("value")
+	return r.row.MustStr("value")
 }

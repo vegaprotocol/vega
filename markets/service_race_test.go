@@ -3,6 +3,7 @@
 package markets_test
 
 import (
+	"context"
 	"sync"
 	"testing"
 
@@ -47,7 +48,10 @@ func TestMarketObserveDepthRetryLimit(t *testing.T) {
 	})
 
 	// at least == to number of retries
-	svc.marketDepth.EXPECT().GetMarketDepth(gomock.Any(), marketArg, uint64(0)).MinTimes(1).Return(&depth, nil)
+	svc.marketDepth.EXPECT().GetMarketDepth(gomock.Any(), marketArg, uint64(0)).MinTimes(1).Return(&depth, nil).Do(
+		func(ctx context.Context, market string, limit uint64) {
+			depth.SequenceNumber++
+		})
 	// waitgroup here ensures that unsubscribe was indeed called
 	svc.order.EXPECT().Unsubscribe(ref).Times(1).DoAndReturn(func(id uint64) error {
 		svc.cfunc() // cancel writeToChannel

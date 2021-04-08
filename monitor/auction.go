@@ -188,7 +188,11 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 // AuctionEnded is called by execution to update internal state indicating this auction was closed
 func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.Auction {
 	// the end-of-auction event
-	evt := events.NewAuctionEvent(ctx, a.m.Id, true, a.begin.UnixNano(), now.UnixNano(), a.trigger)
+	var start int64 = 0
+	if a.begin != nil {
+		start = a.begin.UnixNano()
+	}
+	evt := events.NewAuctionEvent(ctx, a.m.Id, true, start, now.UnixNano(), a.trigger)
 	a.start, a.stop = false, false
 	a.begin, a.end = nil, nil
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
@@ -198,4 +202,22 @@ func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.
 		a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_BATCH
 	}
 	return evt
+}
+
+// UpdateMinDuration - see if we need to update the end value for current auction duration (if any)
+// if the auction duration increases, an auction event will be returned
+func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction {
+	oldExp := a.ExpiresAt()
+	// oldExp is nil if we're not in auction
+	if oldExp == nil {
+		return nil
+	}
+	// calc new end for auction:
+	newMin := a.begin.Add(d)
+	// no need to check for nil, we already have
+	if newMin.After(*oldExp) {
+		a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using secondws in AuctionDuration type
+		return events.NewAuctionEvent(ctx, a.m.Id, false, a.begin.UnixNano(), newMin.UnixNano(), a.trigger)
+	}
+	return nil
 }

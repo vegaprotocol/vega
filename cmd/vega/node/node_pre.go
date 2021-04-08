@@ -128,7 +128,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		l.Log.Info("node setted up with badger store support")
 	}
 
-	// instanciate the ETHClient
+	// instantiate the ETHClient
 	ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return err
@@ -318,7 +318,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 	if err != nil {
-		return fmt.Errorf("unable to instanciate new asset err=%v, asset-source=%s", err, v.String())
+		return fmt.Errorf("unable to instantiate new asset err=%v, asset-source=%s", err, v.String())
 	}
 	if err := l.assets.Enable(aid); err != nil {
 		return fmt.Errorf("unable to enable asset: %v", err)
@@ -326,7 +326,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 
 	assetD := asset.ProtoAsset()
 	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
-		return fmt.Errorf("unable to enable asset in colateral: %v", err)
+		return fmt.Errorf("unable to enable asset in collateral: %v", err)
 	}
 
 	l.Log.Info("new asset added successfully",
@@ -507,7 +507,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
 		// the node upon genesis will load all asset first in the node
-		// state. This is important to happend first as we will load the
+		// state. This is important to happened first as we will load the
 		// asset which will be considered as the governance token.
 		l.UponGenesis,
 		// This needs to happen always after, as it defined the network
@@ -527,7 +527,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
-	// now instanciate the blockchain layer
+	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
 		return err
 	}
@@ -630,6 +630,22 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: l.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
+			Watcher: l.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
+			Watcher: l.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAuctionMinimumDuration,
+			Watcher: l.executionEngine.OnMarketAuctionMinimumDurationUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketProbabilityOfTradingTauScaling,
+			Watcher: l.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
 		},
 	)
 }

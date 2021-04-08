@@ -70,6 +70,10 @@ type netParamsValues struct {
 	makerFee                        float64
 	scalingFactors                  *types.ScalingFactors
 	maxLiquidityFee                 float64
+	bondPenaltyFactor               float64
+	targetStakeTriggeringRatio      float64
+	auctionMinDuration              time.Duration
+	probabilityOfTradingTauScaling  float64
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -84,6 +88,10 @@ func defaultNetParamsValues() netParamsValues {
 		makerFee:                        -1,
 		scalingFactors:                  nil,
 		maxLiquidityFee:                 -1,
+		bondPenaltyFactor:               -1,
+		targetStakeTriggeringRatio:      -1,
+		auctionMinDuration:              -1,
+		probabilityOfTradingTauScaling:  -1,
 	}
 }
 
@@ -303,6 +311,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.Config.Settlement,
 		e.Config.Matching,
 		e.Config.Fee,
+		e.Config.Liquidity,
 		e.collateral,
 		e.oracle,
 		marketConfig,
@@ -334,6 +343,12 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 }
 
 func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) error {
+	if e.npv.probabilityOfTradingTauScaling != -1 {
+		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
+	}
+	if e.npv.auctionMinDuration != -1 {
+		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
+	}
 	if e.npv.shapesMaxSize != -1 {
 		if err := mkt.OnMarketLiquidityProvisionShapesMaxSizeUpdate(e.npv.shapesMaxSize); err != nil {
 			return err
@@ -379,10 +394,15 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	if e.npv.suppliedStakeToObligationFactor != -1 {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
 	}
+	if e.npv.bondPenaltyFactor != -1 {
+		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
+	}
+	if e.npv.targetStakeTriggeringRatio != -1 {
+		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, e.npv.targetStakeTriggeringRatio)
+	}
 	if e.npv.maxLiquidityFee != -1 {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
-
 	return nil
 }
 
@@ -441,7 +461,11 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (confirmation *types.OrderConfirmation, returnedErr error) {
+	defer func() {
+		e.notifyFailureOnError(ctx, returnedErr, orderAmendment.PartyId, orderAmendment)
+	}()
+
 	if e.log.IsDebug() {
 		e.log.Debug("amend order", logging.OrderAmendment(orderAmendment))
 	}
@@ -645,6 +669,30 @@ func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
 	return mkt.GetMarketData(), nil
 }
 
+func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) error {
+	for _, mkt := range e.markets {
+		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
+	}
+	e.npv.auctionMinDuration = d
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, v float64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity bond penalty",
+			logging.Float64("bond-penalty-factor", v),
+		)
+	}
+
+	for _, mkt := range e.markets {
+		mkt.BondPenaltyFactorUpdate(ctx, v)
+	}
+
+	e.npv.bondPenaltyFactor = v
+
+	return nil
+}
+
 func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v interface{}) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market scaling factors",
@@ -818,4 +866,42 @@ func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
 	e.npv.maxLiquidityFee = f
 
 	return nil
+}
+
+func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update target stake triggering ratio",
+			logging.Float64("max-liquidity-fee", v),
+		)
+	}
+
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, v)
+	}
+
+	e.npv.targetStakeTriggeringRatio = v
+
+	return nil
+}
+
+func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Context, v float64) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update probability of trading tau scaling",
+			logging.Float64("probability of trading tau scaling", v),
+		)
+	}
+
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, v)
+	}
+
+	e.npv.probabilityOfTradingTauScaling = v
+
+	return nil
+}
+
+func (e *Engine) notifyFailureOnError(ctx context.Context, err error, partyID string, tx interface{}) {
+	if err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, partyID, tx))
+	}
 }

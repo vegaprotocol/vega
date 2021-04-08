@@ -56,3 +56,10 @@ func (n marginUpdate) GeneralBalance() uint64 {
 func (n marginUpdate) MarginShortFall() uint64 {
 	return n.marginShortFall
 }
+
+func (n marginUpdate) BondBalance() uint64 {
+	if n.bond == nil {
+		return 0
+	}
+	return n.bond.Balance
+}

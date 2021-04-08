@@ -74,9 +74,12 @@ func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
 	}
 	e.f.infrastructureFee = f
 
-	if err := e.SetLiquidityFee(fees.Factors.LiquidityFee); err != nil {
-		e.log.Error("unable to load liquidityfee", logging.Error(err))
-		return err
+	// liquidity fee is not required to create a network
+	if len(fees.Factors.LiquidityFee) > 0 {
+		if err := e.SetLiquidityFee(fees.Factors.LiquidityFee); err != nil {
+			e.log.Error("unable to load liquidityfee", logging.Error(err))
+			return err
+		}
 	}
 
 	e.feeCfg = fees
@@ -96,7 +99,7 @@ func (e *Engine) SetLiquidityFee(v string) error {
 // trades which were produced from a market running in
 // in continuous trading mode.
 // A single FeesTransfer is produced here as all fees
-// are paid by the agressive order
+// are paid by the aggressive order
 func (e *Engine) CalculateForContinuousMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
@@ -302,7 +305,7 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 }
 
 func (e *Engine) CalculateFeeForPositionResolution(
-	// the trade from the good traders which 0 out the networl order
+	// the trade from the good traders which 0 out the network order
 	trades []*types.Trade,
 	// the positions of the traders being closed out.
 	closedMPs []events.MarketPosition,

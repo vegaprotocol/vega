@@ -2,45 +2,59 @@ package steps
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/cucumber/godog/gherkin"
 
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/cucumber/godog/gherkin"
 )
 
 func TradersCancelTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
-	table *gherkin.DataTable,
+	errorHandler *helpers.ErrorHandler,
+	orders *gherkin.DataTable,
 ) error {
-	for _, row := range TableWrapper(*table).Parse() {
-		trader := row.Str("trader")
+	for _, row := range TableWrapper(*orders).Parse() {
+		trader := row.MustStr("trader")
 		reference := row.Str("reference")
+		marketID := row.Str("market id")
 
-		o, err := broker.GetByReference(trader, reference)
-		if err != nil {
-			return errCannotGetOrderForParty(trader, reference, err)
+		var orders []types.Order
+		switch {
+		case marketID != "":
+			orders = broker.GetOrdersByPartyAndMarket(trader, marketID)
+		default:
+			o, err := broker.GetByReference(trader, reference)
+			if err != nil {
+				return errOrderNotFound(trader, reference, err)
+			}
+			orders = append(orders, o)
 		}
 
-		cancel := types.OrderCancellation{
-			OrderId:  o.Id,
-			PartyId:  o.PartyId,
-			MarketId: o.MarketId,
+		for _, o := range orders {
+			cancel := types.OrderCancellation{
+				OrderId:  o.Id,
+				PartyId:  o.PartyId,
+				MarketId: o.MarketId,
+			}
+			reference = o.Reference
+			cancelOrder(exec, errorHandler, cancel, reference)
 		}
 
-		if _, err = exec.CancelOrder(context.Background(), &cancel); err != nil {
-			return errCannotCancelOrder(o)
-		}
 	}
 
 	return nil
 }
 
-func errCannotCancelOrder(o types.Order) error {
-	return fmt.Errorf("trader(%s) couldn't canceled the order with reference(%s)",
-		o.PartyId, o.Reference,
-	)
+func cancelOrder(exec *execution.Engine, errHandler *helpers.ErrorHandler, cancel types.OrderCancellation, ref string) {
+	if _, err := exec.CancelOrder(context.Background(), &cancel); err != nil {
+		errHandler.HandleError(CancelOrderError{
+			reference: ref,
+			request:   cancel,
+			Err:       err,
+		})
+	}
 }

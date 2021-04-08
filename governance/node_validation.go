@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	ErrNoNodeValidationRequired            = errors.New("no node validation required")
-	ErrProposalReferenceDuplicate          = errors.New("proposal duplicate")
-	ErrProposalValidationTimestampInvalid  = errors.New("proposal validation timestamp invalid")
+	ErrNoNodeValidationRequired           = errors.New("no node validation required")
+	ErrProposalReferenceDuplicate         = errors.New("proposal duplicate")
+	ErrProposalValidationTimestampInvalid = errors.New("proposal validation timestamp invalid")
 )
 
 const (
@@ -109,7 +109,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 	// check that any proposal is ready
 	for _, prop := range n.nodeProposals {
 		// this proposal has passed the node-voting period, or all nodes have voted/approved
-		// time expired, or all vote agregated, and own vote sent
+		// time expired, or all vote aggregated, and own vote sent
 		state := atomic.LoadUint32(&prop.state)
 		if state == pendingValidationProposal {
 			continue
@@ -178,7 +178,7 @@ func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 		assetID, err := n.assets.NewAsset(p.Id,
 			change.NewAsset.GetChanges())
 		if err != nil {
-			n.log.Error("unable to instanciate asset",
+			n.log.Error("unable to instantiate asset",
 				logging.String("asset-id", assetID),
 				logging.Error(err))
 			return nil, err
@@ -206,7 +206,7 @@ func (n *NodeValidation) checkAsset(assetID string) error {
 
 	err = asset.Validate()
 	if err != nil {
-		// we just log the error, but these are not criticals, as it may be
+		// we just log the error, but these are not critical, as it may be
 		// things unrelated to the current node, and would recover later on.
 		// it's just informative
 		n.log.Warn("error validating asset", logging.Error(err))

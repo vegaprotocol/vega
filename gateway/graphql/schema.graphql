@@ -220,7 +220,7 @@ type Subscription {
   positions(
     "ID of the party from we want updates for"
     partyId: ID
-    "ID of the market from which we want postion updates"
+    "ID of the market from which we want position updates"
     marketId: ID
   ): Position!
 
@@ -369,6 +369,19 @@ type MarketData {
   "the equity like share of liquidity fee for each liquidity provider"
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
 }
+
+"timestamps for when the market changes state"
+type MarketTimestamps {
+  "Time when the market is first proposed"
+  proposed: String
+  "Time when the market has been voted in and waiting to be created"
+  pending: String
+  "Time when the market is open and ready to accept trades"
+  open: String
+  "Time when the market is closed"
+  close: String
+}
+
 
 "The equity like share of liquidity fee for each liquidity provider"
 type LiquidityProviderFeeShare {
@@ -1074,6 +1087,14 @@ type TargetStakeParameters {
   scalingFactor: Float!
 }
 
+"Configuration of a market liquidity monitoring parameters"
+type LiquidityMonitoringParameters {
+  "Specifies parameters related to target stake calculation"
+  targetStakeParameters: TargetStakeParameters!
+  "Specifies the triggering ratio for entering liquidity auction"
+  triggeringRatio: Float!
+}
+
 "Represents a product & associated parameters that can be traded on Vega, has an associated OrderBook and Trade history"
 type Market {
   "Market ID"
@@ -1118,8 +1139,8 @@ type Market {
   "Price monitoring settings for the market"
   priceMonitoringSettings: PriceMonitoringSettings!
 
-  "Taget stake parameter"
-  targetStakeParameters: TargetStakeParameters!
+  "Liquidity monitoring parameters for the market"
+  liquidityMonitoringParameters: LiquidityMonitoringParameters!
 
   "Current mode of execution of the market"
   tradingMode: MarketTradingMode!
@@ -1178,6 +1199,9 @@ type Market {
     "An optional party id"
     party: String
   ): [LiquidityProvision!]
+
+  "timestamps for state changes in the market"
+  marketTimestamps: MarketTimestamps!
 }
 
 """
@@ -1413,6 +1437,9 @@ type Order {
 
   "PeggedOrder contains the details about a pegged order"
   peggedOrder: PeggedOrder
+
+  "The liquidity provision this order was created from"
+  liquidityProvision: LiquidityProvision
 }
 
 "An estimate of the fee to be paid by the order"
@@ -1515,7 +1542,7 @@ type Account {
 type Erc20WithdrawalApproval {
   "The source asset in the ethereum network"
   assetSource: String!
-  "The amount to be withdrawan"
+  "The amount to be withdrawn"
   amount: String!
   "Timestamp in seconds for expiry of the approval"
   expiry: String!
@@ -1770,7 +1797,7 @@ enum OrderRejectionReason {
   "Order missing general account"
   MissingGeneralAccount
 
-  "An internal error happend"
+  "An internal error happened"
   InternalError
 
   "Invalid size"
@@ -2687,6 +2714,7 @@ union Event =
   | Deposit
   | Withdrawal
   | OracleSpec
+  | LiquidityProvision
 
 type BusEvent {
   "the id for this event"
@@ -2739,12 +2767,18 @@ enum LiquidityProvisionStatus {
   Cancelled
   "A liquidity provision was invalid and got rejected"
   Rejected
-  "The liquidity provision is valid and accepted by network, but oreders aren't deployed"
+  "The liquidity provision is valid and accepted by network, but orders aren't deployed"
   Undeployed
+  """
+  The liquidity provision is valid and accepted by network, but orders aren't deployed.
+  but have never been deployed. I when it's possible to deploy them for the first time
+  margin check fails, then they will be cancelled without any penalties.
+  """
+  Pending
 }
 
 type LiquidityOrderReference {
-  "The id of the pegged order generated to fullfill this commitment"
+  "The id of the pegged order generated to fulfill this commitment"
   order: Order
   "The liquidity order"
   liquidityOrder: LiquidityOrder!

@@ -14,12 +14,15 @@ type BrokerStub struct {
 	mu   sync.Mutex
 	data map[events.Type][]events.Event
 	subT map[events.Type][]broker.Subscriber
+
+	immdata map[events.Type][]events.Event
 }
 
 func NewBrokerStub() *BrokerStub {
 	return &BrokerStub{
-		data: map[events.Type][]events.Event{},
-		subT: map[events.Type][]broker.Subscriber{},
+		data:    map[events.Type][]events.Event{},
+		immdata: map[events.Type][]events.Event{},
+		subT:    map[events.Type][]broker.Subscriber{},
 	}
 }
 
@@ -62,7 +65,11 @@ func (b *BrokerStub) SendBatch(evts []events.Event) {
 	if _, ok := b.data[t]; !ok {
 		b.data[t] = []events.Event{}
 	}
+	if _, ok := b.immdata[t]; !ok {
+		b.immdata[t] = []events.Event{}
+	}
 	b.data[t] = append(b.data[t], evts...)
+	b.immdata[t] = append(b.immdata[t], evts...)
 	b.mu.Unlock()
 }
 
@@ -90,13 +97,30 @@ func (b *BrokerStub) Send(e events.Event) {
 	if _, ok := b.data[t]; !ok {
 		b.data[t] = []events.Event{}
 	}
+	if _, ok := b.immdata[t]; !ok {
+		b.immdata[t] = []events.Event{}
+	}
 	b.data[t] = append(b.data[t], e)
+	b.immdata[t] = append(b.immdata[t], e)
 	b.mu.Unlock()
 }
 
 func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 	b.mu.Lock()
 	r := b.data[t]
+	b.mu.Unlock()
+	return r
+}
+
+func (b *BrokerStub) GetRejectedOrderAmendments() []events.TxErr {
+	return b.filterTxErr(func(errProto types.TxErrorEvent) bool {
+		return errProto.GetOrderAmendment() != nil
+	})
+}
+
+func (b *BrokerStub) GetImmBatch(t events.Type) []events.Event {
+	b.mu.Lock()
+	r := b.immdata[t]
 	b.mu.Unlock()
 	return r
 }
@@ -135,6 +159,47 @@ func (b *BrokerStub) ClearOrderEvents() {
 	// reallocate new slice
 	b.data[t] = make([]events.Event, 0, cap(r))
 	b.mu.Unlock()
+}
+
+func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy map[uint64]uint64) {
+	batch := b.GetImmBatch(events.OrderEvent)
+	if len(batch) == 0 {
+		return nil, nil
+	}
+
+	// first get all active orders
+	activeOrders := map[string]*types.Order{}
+	for _, e := range batch {
+		var ord *types.Order
+		switch et := e.(type) {
+		case *events.Order:
+			ord = et.Order()
+		case events.Order:
+			ord = et.Order()
+		}
+
+		if ord.MarketId != market {
+			continue
+		}
+
+		if ord.Status == types.Order_STATUS_ACTIVE {
+			activeOrders[ord.Id] = ord
+		} else {
+			delete(activeOrders, ord.Id)
+		}
+	}
+
+	// now we haveall active orders, let's build both sides
+	sell, buy = map[uint64]uint64{}, map[uint64]uint64{}
+	for _, v := range activeOrders {
+		if v.Side == types.Side_SIDE_BUY {
+			buy[v.Price] = buy[v.Price] + v.Remaining
+			continue
+		}
+		sell[v.Price] = sell[v.Price] + v.Remaining
+	}
+
+	return
 }
 
 func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []types.Order {
@@ -329,7 +394,7 @@ func (b *BrokerStub) GetFirstByReference(party, ref string) (types.Order, error)
 			return *v, nil
 		}
 	}
-	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
 }
 
 func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
@@ -347,7 +412,7 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 	if matched {
 		return last, nil
 	}
-	return types.Order{}, fmt.Errorf("no order for party %v and referrence %v", party, ref)
+	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
 }
 
 func (b *BrokerStub) GetTrades() []types.Trade {
@@ -363,4 +428,34 @@ func (b *BrokerStub) ResetType(t events.Type) {
 	b.mu.Lock()
 	b.data[t] = []events.Event{}
 	b.mu.Unlock()
+}
+
+func (b *BrokerStub) filterTxErr(predicate func(errProto types.TxErrorEvent) bool) []events.TxErr {
+	batch := b.GetBatch(events.TxErrEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	errs := []events.TxErr{}
+	b.mu.Lock()
+	for _, e := range batch {
+		err := derefTxErr(e)
+		errProto := err.Proto()
+		if predicate(errProto) {
+			errs = append(errs, err)
+		}
+	}
+	b.mu.Unlock()
+	return errs
+}
+
+func derefTxErr(e events.Event) events.TxErr {
+	var dub events.TxErr
+	switch et := e.(type) {
+	case *events.TxErr:
+		dub = *et
+	case events.TxErr:
+		dub = et
+	}
+	return dub
 }

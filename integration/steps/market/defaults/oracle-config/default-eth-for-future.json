@@ -1,0 +1,28 @@
+{
+  "maturity": "",
+  "settlementAsset": "",
+  "quoteName": "",
+  "oracleSpec": {
+    "id": "",
+    "createdAt": "0",
+    "updatedAt": "0",
+    "pubKeys": [
+      "0xDEADBEEF",
+      "0xCAFEDOOD"
+    ],
+    "filters": [
+      {
+        "key": {
+          "name": "prices.ETH.value",
+          "type": "TYPE_INTEGER"
+        },
+        "conditions": [
+        ]
+      }
+    ],
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "oracleSpecBinding": {
+    "settlementPriceProperty": "prices.ETH.value"
+  }
+}

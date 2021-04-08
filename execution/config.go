@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fee"
+	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/positions"
@@ -38,6 +39,7 @@ type Config struct {
 	Position   positions.Config  `group:"Position" namespace:"position"`
 	Settlement settlement.Config `group:"Settlement" namespace:"settlement"`
 	Fee        fee.Config        `group:"Fee" namespace:"fee"`
+	Liquidity  liquidity.Config  `group:"Liquidity" namespace:"liquidity"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -55,6 +57,7 @@ func NewDefaultConfig(defaultConfigDirPath string) Config {
 		Position:                    positions.NewDefaultConfig(),
 		Settlement:                  settlement.NewDefaultConfig(),
 		Fee:                         fee.NewDefaultConfig(),
+		Liquidity:                   liquidity.NewDefaultConfig(),
 	}
 	return c
 }

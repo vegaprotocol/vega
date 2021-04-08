@@ -19,7 +19,7 @@ steps:
   # ====== Pipeline for pull requests ======
 
   - name: build-PR
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
     pull: always
     volumes:
       - name: gocache
@@ -76,7 +76,7 @@ steps:
         - pull_request
 
   - name: test-PR
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
     volumes:
       - name: gocache
         path: /go/cache
@@ -90,8 +90,6 @@ steps:
         from_secret: SLACK_HOOK_URL
     commands:
       - failed=""
-      - make staticcheck
-      - make buflint
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
           make retest || exit 1 ;
           for target in gqlgen_check print_check proto_check race vet ;
@@ -102,7 +100,7 @@ steps:
         else
           echo "No Go files changed. Skipping go tests" ;
         fi
-      - for target in codeowners_check ; do
+      - for target in codeowners_check buflint misspell staticcheck; do
           echo "$$COL_CYAN$$target$$COL_RESET" ;
           make "$$target" || failed="$$failed $$target" ;
         done
@@ -141,7 +139,7 @@ steps:
   # ====== Pipeline for main branches (master, develop) and tags ======
 
   - name: build-branch
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
     pull: always
     volumes:
       - name: gocache
@@ -174,7 +172,7 @@ steps:
         - refs/tags/*
 
   - name: deploy_devnet
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
     volumes:
       - name: gopkg
         path: /go/pkg
@@ -256,7 +254,7 @@ steps:
         - refs/tags/*
 
   - name: build-multiarch
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo:1.14.4
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/xgo:1.16.2
     pull: always
     volumes:
       - name: gocache
@@ -298,7 +296,7 @@ steps:
       - build-multiarch
 
   - name: changelog_slack
-    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.14.4
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
     environment:
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL

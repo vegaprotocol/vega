@@ -1747,7 +1747,7 @@ func (t *tradingDataService) updateNetInfo(ctx context.Context) {
 
 func (t *tradingDataService) getGenesisTimeAndChainID(ctx context.Context) error {
 	const refused = "connection refused"
-	// just lock in here, ideally we'ill come here only once, so not a big issue to lock
+	// just lock in here, ideally we'll come here only once, so not a big issue to lock
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -2136,7 +2136,7 @@ func (t *tradingDataService) ObserveEventBus(
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 
-	// now we will aggregaate filter out of the initial reuqest
+	// now we will aggregate filter out of the initial request
 	types, err := events.ProtoToInternal(req.Type...)
 	if err != nil {
 		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
@@ -2217,7 +2217,7 @@ func (t *tradingDataService) recvEventRequest(
 	select {
 	case <-readCtx.Done():
 		if err != nil {
-			// this means the client disconnectd
+			// this means the client disconnected
 			return nil, err
 		}
 		// this mean we timedout

@@ -48,5 +48,5 @@ func TestGenericEvent(t *testing.T) {
 func TestInvalidEvent(t *testing.T) {
 	_, err := events.New(context.Background(), events.TimeUpdate)
 	assert.Error(t, err)
-	assert.Equal(t, events.ErrUnsuportedEvent, err)
+	assert.Equal(t, events.ErrUnsupportedEvent, err)
 }

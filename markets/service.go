@@ -147,6 +147,7 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 		atomic.AddInt32(&s.subscribersCnt, 1)
 		defer atomic.AddInt32(&s.subscribersCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
+		var prevSeqNum uint64
 		defer cancel()
 		for {
 			select {
@@ -178,37 +179,41 @@ func (s *Svc) ObserveDepth(ctx context.Context, retries int, market string) (<-c
 					)
 					continue
 				}
-				retryCount := retries
-				success := false
-				for !success && retryCount >= 0 {
-					select {
-					case depth <- d:
-						s.log.Debug(
-							"Market depth for subscriber sent successfully",
-							logging.Uint64("ref", ref),
-							logging.String("ip-address", ip),
-						)
-						success = true
-					default:
-						retryCount--
-						if retryCount >= 0 {
+
+				if prevSeqNum != d.SequenceNumber {
+					prevSeqNum = d.SequenceNumber
+					retryCount := retries
+					success := false
+					for !success && retryCount >= 0 {
+						select {
+						case depth <- d:
 							s.log.Debug(
-								"Market depth for subscriber not sent",
+								"Market depth for subscriber sent successfully",
 								logging.Uint64("ref", ref),
 								logging.String("ip-address", ip),
 							)
-							time.Sleep(time.Duration(10) * time.Millisecond)
+							success = true
+						default:
+							retryCount--
+							if retryCount >= 0 {
+								s.log.Debug(
+									"Market depth for subscriber not sent",
+									logging.Uint64("ref", ref),
+									logging.String("ip-address", ip),
+								)
+								time.Sleep(time.Duration(10) * time.Millisecond)
+							}
 						}
 					}
-				}
-				if !success && retryCount <= 0 {
-					s.log.Warn(
-						"Market depth subscriber has hit the retry limit",
-						logging.Uint64("ref", ref),
-						logging.String("ip-address", ip),
-						logging.Int("retries", retries),
-					)
-					cancel()
+					if !success && retryCount <= 0 {
+						s.log.Warn(
+							"Market depth subscriber has hit the retry limit",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+							logging.Int("retries", retries),
+						)
+						cancel()
+					}
 				}
 			}
 		}
@@ -242,7 +247,7 @@ func (s *Svc) ObserveDepthUpdates(ctx context.Context, retries int, market strin
 				go func() {
 					// here we just discard all event coming in, until the
 					// channel is actually properly closed.
-					// this is kind of necessary as we wait first to unsusubscribe
+					// this is kind of necessary as we wait first to unsubscribe
 					// which is locking in the subscriber, while the subscriber
 					// may be still sending us some data
 					for range internal {

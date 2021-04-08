@@ -70,7 +70,7 @@ func TestMarginUpdateOnOrder(t *testing.T) {
 	t.Run("Successfully update margin on new order if general account balance is OK will use bond account if exists", testMarginUpdateOnOrderOKUseBondAccount)
 	t.Run("Successfully update margin on new order if general account balance is OK will use bond&general accounts if exists", testMarginUpdateOnOrderOKUseBondAndGeneralAccounts)
 	t.Run("Successfully update margin on new order then rollback", testMarginUpdateOnOrderOKThenRollback)
-	t.Run("Faile update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
+	t.Run("Failed to update margin on new order if general account balance is OK", testMarginUpdateOnOrderFail)
 }
 
 func TestEnableAssets(t *testing.T) {
@@ -119,7 +119,7 @@ func testPartyWithAccountHasABalance(t *testing.T) {
 	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.NoError(t, err)
 
-	// then add some monites
+	// then add some money
 	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
 	assert.Nil(t, err)
 
@@ -136,11 +136,11 @@ func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
 	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.NoError(t, err)
 
-	// then add some monites
+	// then add some money
 	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
 	assert.Nil(t, err)
 
-	// then add some monites
+	// then add some money
 	err = eng.Engine.DecrementBalance(context.Background(), acc, 500)
 	assert.Nil(t, err)
 
@@ -738,8 +738,8 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 	}
 	resp, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
 	assert.Nil(t, resp)
-	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account does not exist:")
 }
 
 func testDistributeWin(t *testing.T) {
@@ -1125,8 +1125,8 @@ func testRemoveDistressedBalance(t *testing.T) {
 
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
-	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account does not exist:")
 }
 
 func testRemoveDistressedNoBalance(t *testing.T) {
@@ -1155,8 +1155,8 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 
 	// check if account was deleted
 	_, err = eng.GetAccountByID(marginID)
-	assert.Error(t, err)
-	assert.Equal(t, collateral.ErrAccountDoesNotExist, err)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account does not exist:")
 }
 
 // most of this function is copied from the MarkToMarket test - we're using channels, sure
@@ -1766,7 +1766,7 @@ func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
 	assert.NotNil(t, resp)
 
 	// we toped up only 70 in the bond account
-	// but requied 100 so we should pick 30 in the general account as well.
+	// but required 100 so we should pick 30 in the general account as well.
 
 	// check shortfall
 	assert.Equal(t, int(closed.MarginShortFall()), 30)
@@ -2287,6 +2287,7 @@ func (m riskFake) Asset() string                     { return m.asset }
 func (m riskFake) MarketID() string                  { return "" }
 func (m riskFake) MarginBalance() uint64             { return 0 }
 func (m riskFake) GeneralBalance() uint64            { return 0 }
+func (m riskFake) BondBalance() uint64               { return 0 }
 func (m riskFake) MarginShortFall() uint64           { return m.marginShortFall }
 
 type transferFees struct {

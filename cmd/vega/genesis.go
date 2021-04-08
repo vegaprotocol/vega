@@ -104,7 +104,7 @@ func loadVegaPubKey(log *logging.Logger, rootPath, pass string) (string, error) 
 		return "", err
 	}
 
-	// instanciate the ETHClient
+	// instantiate the ETHClient
 	ethclt, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return "", err

@@ -77,7 +77,7 @@ func TestJSONValues(t *testing.T) {
 
 func TestJSONVPriceMonitoringParameters(t *testing.T) {
 
-	// happy case, pouplated parameters array
+	// happy case, populated parameters array
 	validPmJSONString := `{"triggers": [{"horizon": 60, "probability": 0.95, "auction_extension": 90},{"horizon": 120, "probability": 0.99, "auction_extension": 180}]}`
 	j := netparams.NewJSON(&types.PriceMonitoringParameters{}, netparams.JSONProtoValidator()).Mutable(true).MustUpdate(validPmJSONString)
 	assert.NotNil(t, j)

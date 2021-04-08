@@ -8,6 +8,8 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/integration/helpers"
+	"code.vegaprotocol.io/vega/integration/steps/market"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
@@ -44,6 +46,10 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
+var (
+	marketConfig = market.NewMarketConfig()
+)
+
 type executionTestSetup struct {
 	engine *execution.Engine
 
@@ -62,6 +68,8 @@ type executionTestSetup struct {
 	mkts []types.Market
 
 	InsurancePoolInitialBalance uint64
+
+	errorHandler *helpers.ErrorHandler
 }
 
 func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTestSetup {
@@ -95,7 +103,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 
 	for _, mkt := range mkts {
 		asset, _ := mkt.GetAsset()
-		execsetup.collateral.EnableAsset(context.Background(), types.Asset{
+		_ = execsetup.collateral.EnableAsset(context.Background(), types.Asset{
 			Id:     asset,
 			Symbol: asset,
 		})
@@ -118,7 +126,7 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 			},
 		},
 	}
-	execsetup.collateral.EnableAsset(context.Background(), tokAsset)
+	_ = execsetup.collateral.EnableAsset(context.Background(), tokAsset)
 
 	execsetup.engine = execution.NewEngine(
 		execsetup.log,
@@ -131,12 +139,14 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 
 	for _, mkt := range mkts {
 		mkt := mkt
-		execsetup.engine.SubmitMarket(context.Background(), &mkt)
+		_ = execsetup.engine.SubmitMarket(context.Background(), &mkt)
 	}
 
 	// instantiate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
+
+	execsetup.errorHandler = helpers.NewErrorHandler()
 
 	return execsetup
 }

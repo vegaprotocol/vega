@@ -175,8 +175,8 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 
 	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
 	if err != nil {
-		f.log.Error("unable to instanciate new algorithm", logging.Error(err))
-		writeError(w, newError("unable to instanciate crypto"), http.StatusInternalServerError)
+		f.log.Error("unable to instantiate new algorithm", logging.Error(err))
+		writeError(w, newError("unable to instantiate crypto"), http.StatusInternalServerError)
 		return
 	}
 

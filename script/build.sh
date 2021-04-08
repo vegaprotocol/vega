@@ -52,8 +52,8 @@ check_golang_version() {
 	fi
 
 	goversion="$("$goprog" version)"
-	if ! echo "$goversion" | grep -q 'go1\.14\.' ; then
-		echo "Please use Go 1.14"
+	if ! echo "$goversion" | grep -q 'go1\.16\.' ; then
+		echo "Please use Go 1.16"
 		echo "Using: $goprog"
 		echo "Version: $goversion"
 		return 1
@@ -300,6 +300,12 @@ run() {
 		;;
 	buflint) ## Run
 		buf check lint
+		return "$?"
+		;;
+	misspell) ## Run misspell
+		# Since misspell does not support exluding, we need to specify the
+		# files we want and those we don't
+		find . -name vendor -prune -o "(" -type f -name '*.go' -o -name '*.proto' ")" -print0 | xargs -0 misspell -j 0 -error
 		return "$?"
 		;;
 	semgrep) ## Run semgrep

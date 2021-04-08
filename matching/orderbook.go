@@ -57,19 +57,19 @@ func (b *OrderBook) Hash() []byte {
 func NewOrderBook(log *logging.Logger, config Config, marketID string, auction bool) *OrderBook {
 	// setup logger
 	log = log.Named(namedLogger)
-	log.SetLevel(logging.DebugLevel)
+	log.SetLevel(config.Level.Get())
 
 	return &OrderBook{
-		log:             log,
-		marketID:        marketID,
-		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
-		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
-		Config:          config,
-		ordersByID:      map[string]*types.Order{},
-		auction:         auction,
-		batchID:         0,
-		ordersPerParty:  map[string]map[string]struct{}{},
+		log:            log,
+		marketID:       marketID,
+		cfgMu:          &sync.Mutex{},
+		buy:            &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
+		sell:           &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
+		Config:         config,
+		ordersByID:     map[string]*types.Order{},
+		auction:        auction,
+		batchID:        0,
+		ordersPerParty: map[string]map[string]struct{}{},
 	}
 }
 
@@ -237,12 +237,20 @@ func (b OrderBook) InAuction() bool {
 // CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders
 // on the book after we uncross the book (at the end of an auction). If this returns false, the opening auction should be extended
 func (b *OrderBook) CanUncross() bool {
+	return b.canUncross(true)
+}
+
+func (b *OrderBook) BidAndAskPresentAfterAuction() bool {
+	return b.canUncross(false)
+}
+
+func (b *OrderBook) canUncross(requireTrades bool) bool {
 	bb, err := b.GetBestBidPrice() // sell
 	if err != nil {
 		return false
 	}
 	ba, err := b.GetBestAskPrice() // buy
-	if err != nil || bb < ba || bb == 0 || ba == 0 {
+	if err != nil || bb == 0 || ba == 0 || (requireTrades && bb < ba) {
 		return false
 	}
 	// check all buy price levels below ba, find limit orders
@@ -324,7 +332,8 @@ func (b *OrderBook) CanUncross() bool {
 }
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
-func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
+func (b *OrderBook) GetIndicativePriceAndVolume() (retprice uint64, retvol uint64, retside types.Side) {
+
 	bestBid, err := b.GetBestBidPrice()
 	if err != nil {
 		return 0, 0, types.Side_SIDE_UNSPECIFIED
@@ -375,7 +384,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
 }
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
-func (b *OrderBook) GetIndicativePrice() uint64 {
+func (b *OrderBook) GetIndicativePrice() (retprice uint64) {
 	bestBid, err := b.GetBestBidPrice()
 	if err != nil {
 		return 0
@@ -498,7 +507,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	var uncrossedOrder *types.OrderConfirmation
 	var allOrders []*types.OrderConfirmation
 
-	// Remove all the orders from that side of the book upto the given volume
+	// Remove all the orders from that side of the book up to the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
 		// Pull out the trades we want to process
 		uncrossOrders, err := b.buy.ExtractOrders(price, volume)
@@ -871,7 +880,8 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 
 // RemoveDistressedOrders remove from the book all order holding distressed positions
 func (b *OrderBook) RemoveDistressedOrders(
-	parties []events.MarketPosition) ([]*types.Order, error) {
+	parties []events.MarketPosition,
+) ([]*types.Order, error) {
 	rmorders := []*types.Order{}
 
 	for _, party := range parties {

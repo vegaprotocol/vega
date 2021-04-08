@@ -183,6 +183,20 @@ func (this *PriceMonitoringSettings) Validate() error {
 	}
 	return nil
 }
+func (this *LiquidityMonitoringParameters) Validate() error {
+	if this.TargetStakeParameters != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TargetStakeParameters); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("TargetStakeParameters", err)
+		}
+	}
+	if !(this.TriggeringRatio >= 0) {
+		return github_com_mwitkow_go_proto_validators.FieldError("TriggeringRatio", fmt.Errorf(`value '%v' must be greater than or equal to '0'`, this.TriggeringRatio))
+	}
+	if !(this.TriggeringRatio <= 1) {
+		return github_com_mwitkow_go_proto_validators.FieldError("TriggeringRatio", fmt.Errorf(`value '%v' must be lower than or equal to '1'`, this.TriggeringRatio))
+	}
+	return nil
+}
 func (this *TargetStakeParameters) Validate() error {
 	if !(this.TimeWindow > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("TimeWindow", fmt.Errorf(`value '%v' must be greater than '0'`, this.TimeWindow))
@@ -227,10 +241,18 @@ func (this *Market) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("PriceMonitoringSettings", err)
 		}
 	}
-	if this.TargetStakeParameters != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.TargetStakeParameters); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("TargetStakeParameters", err)
+	if this.LiquidityMonitoringParameters != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.LiquidityMonitoringParameters); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("LiquidityMonitoringParameters", err)
 		}
 	}
+	if this.MarketTimestamps != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.MarketTimestamps); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("MarketTimestamps", err)
+		}
+	}
+	return nil
+}
+func (this *MarketTimestamps) Validate() error {
 	return nil
 }

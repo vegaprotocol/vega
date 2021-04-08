@@ -289,7 +289,7 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 	if len(ft.Transfers()) <= 0 {
 		return nil, nil
 	}
-	// check quickly that all traders have enough monies in their accoutns
+	// check quickly that all traders have enough monies in their accounts
 	// this may be done only in case of continuous trading
 	for party, amount := range ft.TotalFeesAmountPerParty() {
 		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, party, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
@@ -627,7 +627,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		return nil, nil, err
 	}
 
-	// now compare what's in the settlement account what we expect initialy to redistribute.
+	// now compare what's in the settlement account what we expect initially to redistribute.
 	// if there's not enough we enter loss socialization
 	distr := simpleDistributor{
 		log:             e.log,
@@ -826,7 +826,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 			res.Balances[0].Account.Balance < (update.MarginBalance()+transfer.MinAmount) {
 			closed = append(closed, mevt)
 		} else if mevt.marginShortFall > 0 {
-			// party not closed out, but could also not fullfill it's margin requirement
+			// party not closed out, but could also not fulfill it's margin requirement
 			// from it's general account we need to return this information so penalty can be
 			// calculated an taken out from him.
 			toPenalise = append(toPenalise, mevt)
@@ -1558,7 +1558,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 	bondID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_BOND)
 	if _, ok := e.accs[bondID]; !ok {
 		// OK no bond ID, so let's try to get the general id then
-		// first check if generak account exists
+		// first check if general account exists
 		generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 		if _, ok := e.accs[generalID]; !ok {
 			e.log.Error("Tried to create a bond account for a party with no general account",
@@ -1595,7 +1595,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	marginID := e.accountID(marketID, partyID, asset, types.AccountType_ACCOUNT_TYPE_MARGIN)
 	if _, ok := e.accs[marginID]; !ok {
 		// OK no margin ID, so let's try to get the general id then
-		// first check if generak account exists
+		// first check if general account exists
 		generalID := e.accountID(noMarket, partyID, asset, types.AccountType_ACCOUNT_TYPE_GENERAL)
 		if _, ok := e.accs[generalID]; !ok {
 			e.log.Error("Tried to create a margin account for a party with no general account",
@@ -1668,7 +1668,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	return generalID, nil
 }
 
-// GetOrCreatePartyLockWithdrawAccount gets or creates an account to lock funds to be withrawn by a party
+// GetOrCreatePartyLockWithdrawAccount gets or creates an account to lock funds to be withdrawn by a party
 func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyID, asset string) (*types.Account, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
@@ -2050,7 +2050,7 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance uint64) e
 func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) error {
 	acc, ok := e.accs[id]
 	if !ok {
-		return ErrAccountDoesNotExist
+		return fmt.Errorf("account does not exist: %s", id)
 	}
 	acc.Balance += inc
 	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
@@ -2064,7 +2064,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc uint64) er
 func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) error {
 	acc, ok := e.accs[id]
 	if !ok {
-		return ErrAccountDoesNotExist
+		return fmt.Errorf("account does not exist: %s", id)
 	}
 	acc.Balance -= dec
 	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
@@ -2077,7 +2077,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec uint64) er
 func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	acc, ok := e.accs[id]
 	if !ok {
-		return nil, ErrAccountDoesNotExist
+		return nil, fmt.Errorf("account does not exist: %s", id)
 	}
 	acccpy := *acc
 	return &acccpy, nil
@@ -2088,7 +2088,7 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 func (e *Engine) GetAssetTotalSupply(asset string) (uint64, error) {
 	asst, ok := e.enabledAssets[asset]
 	if !ok {
-		return 0, ErrInvalidAssetID
+		return 0, fmt.Errorf("invalid asset: %s", asset)
 	}
 
 	// not checking for error, if we

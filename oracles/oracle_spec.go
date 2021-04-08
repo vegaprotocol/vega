@@ -19,6 +19,10 @@ var (
 	// ErrInvalidTimestamp is returned when the timestamp has a negative value
 	// which may happen in case of unsigned integer overflow.
 	ErrInvalidTimestamp = errors.New("invalid timestamp")
+	// ErrMissingPropertyKey is returned when a property key is undefined.
+	ErrMissingPropertyKey = errors.New("a property key is required")
+	// ErrMissingPropertyName is returned when a property as no name.
+	ErrMissingPropertyName = errors.New("a property name is required")
 )
 
 type OracleSpecID string
@@ -62,6 +66,13 @@ func NewOracleSpec(proto oraclespb.OracleSpec) (*OracleSpec, error) {
 
 	typedFilters := map[string]*filter{}
 	for _, f := range proto.Filters {
+		if f.Key == nil {
+			return nil, ErrMissingPropertyKey
+		}
+		if len(f.Key.Name) == 0 {
+			return nil, ErrMissingPropertyName
+		}
+
 		conditions, err := toConditions(f.Key.Type, f.Conditions)
 		if err != nil {
 			return nil, err

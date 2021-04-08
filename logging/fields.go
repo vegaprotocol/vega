@@ -218,7 +218,7 @@ func OrderCancellation(oc *types.OrderCancellation) zap.Field {
 // Reflect constructs a field by running reflection over all the
 // field of value passed as a parameter.
 // This should never be used we basic log level,
-// only in the case of Debuf log level, and with guards on  top
+// only in the case of Debug log level, and with guards on  top
 // of the actual log call for this level
 func Reflect(key string, val interface{}) zap.Field {
 	return zap.Reflect(key, val)

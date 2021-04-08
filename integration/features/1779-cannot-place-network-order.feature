@@ -1,18 +1,20 @@
 Feature: Cannot place an network order
 
   Background:
-    Given the insurance pool initial balance for the markets is "0":
-    And the execution engine have these markets:
-      | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration | maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 | ETH        | ETH   |  simple     | 0.11      | 0.1       | 0              | 0               | 0     | 1.4            | 1.2            | 1.1           | 42               | 0                | 0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
-    And oracles broadcast data signed with "0xDEADBEEF":
+    Given the initial insurance pool balance is "0" for the markets:
+    And the markets:
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 0                | default-none | default-none     | default-eth-for-future |
+    And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
 
   Scenario: an order is rejected if a trader try to place an order with type NETWORK
-    Given the traders make the following deposits on asset's general account:
+    Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount |
       | trader1 | ETH   | 1      |
-    Then traders place the following invalid orders:
-      | trader  | market id | side | volume | price | error              | type         | tif     |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | invalid order type | TYPE_NETWORK | TIF_GTC |
+    When the traders place the following orders:
+      | trader  | market id | side | volume | price | type         | tif     | reference |
+      | trader1 | ETH/DEC19 | sell | 1      | 1000  | TYPE_NETWORK | TIF_GTC | ref-1     |
+    Then the system should return error "invalid order type"
+

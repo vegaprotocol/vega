@@ -1,6 +1,6 @@
 module code.vegaprotocol.io/vega
 
-go 1.14
+go 1.16
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
@@ -25,6 +25,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/imdario/mergo v0.3.11
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/jinzhu/copier v0.2.8 // indirect
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/mwitkow/go-proto-validators v0.2.0
 	github.com/pkg/errors v0.9.1

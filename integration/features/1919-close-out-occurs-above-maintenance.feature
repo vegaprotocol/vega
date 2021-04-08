@@ -2,17 +2,17 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
 
 
   Background:
-    Given the insurance pool initial balance for the markets is "0":
-    And the execution engine have these markets:
-      | name      | quote name | asset | risk model | lamd/long | tau/short | mu/max move up | r/min move down | sigma | release factor | initial factor | search factor | settlement price | auction duration |  maker fee | infrastructure fee | liquidity fee | p. m. update freq. | p. m. horizons | p. m. probs | p. m. durations | prob. of trading | oracle spec pub. keys | oracle spec property | oracle spec property type | oracle spec binding |
-      | ETH/DEC19 |  BTC        | BTC   |  simple     | 0.1       | 0.1       | -1             | -1              | -1    | 1.4            | 1.2            | 1.1           | 100              | 1                |  0         | 0                  | 0             | 0                  |                |             |                 | 0.1              | 0xDEADBEEF,0xCAFEDOOD | prices.ETH.value     | TYPE_INTEGER              | prices.ETH.value    |
-    And oracles broadcast data signed with "0xDEADBEEF":
+    Given the initial insurance pool balance is "0" for the markets:
+    And the markets:
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+    And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
-    Given the traders make the following deposits on asset's general account:
+    Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount    |
       | tt_4    | BTC   | 500000    |
       | tt_5_0  | BTC   | 123       |
@@ -25,19 +25,26 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
       | tt_11   | BTC   | 10000000  |
       | trader1 | BTC   | 100000000 |
       | trader2 | BTC   | 100000000 |
+      | tt_aux  | BTC   | 100000000 |
 
-    Then traders place following orders with references:
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | reference |
+      | tt_aux  | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | ref-1     |
+      | tt_aux  | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | ref-2     |
+
+    And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | t1-s-1    |
       | trader2 | ETH/DEC19 | buy  | 1      | 95    | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | t2-s-1    |
 
-    Then the opening auction period for market "ETH/DEC19" ends
-    And the mark price for the market "ETH/DEC19" is "100"
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the mark price should be "100" for the market "ETH/DEC19"
 
     # place orders and generate trades
-    Then traders place following orders with references:
+    When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
       | tt_10  | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT  | TIF_GTT | tt_10-1   |
       | tt_11  | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT  | TIF_GTT | tt_11-1   |
@@ -59,10 +66,10 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
       | tt_11  | ETH/DEC19 | sell | 25     | 0     | 11               | TYPE_MARKET | TIF_FOK | tt_11-2   |
 
 
-    And the mark price for the market "ETH/DEC19" is "100"
+    And the mark price should be "100" for the market "ETH/DEC19"
 
     # checking margins
-    And the margins levels for the traders are:
+    And the traders should have the following margin levels:
       | trader | market id | maintenance | search | initial | release |
       | tt_5_0 | ETH/DEC19 | 20          | 22     | 24      | 28      |
       | tt_5_1 | ETH/DEC19 | 20          | 22     | 24      | 28      |
@@ -71,7 +78,7 @@ Feature: Setting up 5 traders so that at once all the orders are places they end
       | tt_5_4 | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     # checking balances
-    Then traders have the following account balances:
+    Then the traders should have the following account balances:
       | trader | asset | market id | margin | general |
       | tt_5_0 | BTC   | ETH/DEC19 | 23     | 0       |
       | tt_5_1 | BTC   | ETH/DEC19 | 22     | 0       |

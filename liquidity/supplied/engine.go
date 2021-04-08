@@ -42,7 +42,9 @@ type Engine struct {
 	rm RiskModel
 	pm PriceMonitor
 
-	horizon   float64 // projection horizon used in probability calculations
+	horizon                        float64 // projection horizon used in probability calculations
+	probabilityOfTradingTauScaling float64
+
 	cachedMin float64
 	cachedMax float64
 	bCache    map[uint64]float64
@@ -55,34 +57,47 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		rm: riskModel,
 		pm: priceMonitor,
 
-		horizon: riskModel.GetProjectionHorizon(),
-		bCache:  map[uint64]float64{},
-		sCache:  map[uint64]float64{},
+		horizon:                        riskModel.GetProjectionHorizon(),
+		probabilityOfTradingTauScaling: 1, // this is the same as the default in the netparams
+		bCache:                         map[uint64]float64{},
+		sCache:                         map[uint64]float64{},
 	}
 }
 
+func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v float64) {
+	e.probabilityOfTradingTauScaling = v
+}
+
 // CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set
-func (e *Engine) CalculateSuppliedLiquidity(markPrice float64, orders []*types.Order) float64 {
+func (e *Engine) CalculateSuppliedLiquidity(
+	midPriceBid, midPriceAsk float64,
+	orders []*types.Order,
+) float64 {
 	minPrice, maxPrice := e.pm.GetValidPriceRange()
-	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMax(markPrice, orders, minPrice, maxPrice)
+	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMax(midPriceBid, midPriceAsk, orders, minPrice, maxPrice)
 	return math.Min(bLiq, sLiq)
 }
 
 // CalculateLiquidityImpliedVolumes updates the LiquidityImpliedSize fields in LiquidityOrderReference so that the liquidity commitment is met.
 // Current market price, liquidity obligation, and orders must be specified.
 // Note that due to integer order size the actual liquidity provided will be more than or equal to the commitment amount.
-func (e *Engine) CalculateLiquidityImpliedVolumes(markPrice, liquidityObligation float64, orders []*types.Order, buyShapes []*LiquidityOrder, sellShapes []*LiquidityOrder) error {
+func (e *Engine) CalculateLiquidityImpliedVolumes(
+	midPriceBid, midPriceAsk, liquidityObligation float64,
+	orders []*types.Order,
+	buyShapes, sellShapes []*LiquidityOrder,
+) error {
 	minPrice, maxPrice := e.pm.GetValidPriceRange()
 
-	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(markPrice, orders, minPrice, maxPrice)
+	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(
+		midPriceBid, midPriceAsk, orders, minPrice, maxPrice)
 
 	buyRemaining := liquidityObligation - buySupplied
-	if err := e.updateSizes(buyRemaining, markPrice, buyShapes, true, minPrice, maxPrice); err != nil {
+	if err := e.updateSizes(buyRemaining, midPriceBid, buyShapes, true, minPrice, maxPrice); err != nil {
 		return err
 	}
 
 	sellRemaining := liquidityObligation - sellSupplied
-	if err := e.updateSizes(sellRemaining, markPrice, sellShapes, false, minPrice, maxPrice); err != nil {
+	if err := e.updateSizes(sellRemaining, midPriceAsk, sellShapes, false, minPrice, maxPrice); err != nil {
 		return err
 	}
 
@@ -90,15 +105,19 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(markPrice, liquidityObligation
 }
 
 // CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
-func (e *Engine) calculateBuySellLiquidityWithMinMax(currentPrice float64, orders []*types.Order, minPrice, maxPrice float64) (float64, float64) {
+func (e *Engine) calculateBuySellLiquidityWithMinMax(
+	midPriceBid, midPriceAsk float64,
+	orders []*types.Order,
+	minPrice, maxPrice float64,
+) (float64, float64) {
 	bLiq := 0.0
 	sLiq := 0.0
 	for _, o := range orders {
 		if o.Side == types.Side_SIDE_BUY {
-			bLiq += float64(o.Price) * float64(o.Remaining) * e.getProbabilityOfTrading(currentPrice, o.Price, true, minPrice, maxPrice)
+			bLiq += float64(o.Price) * float64(o.Remaining) * e.getProbabilityOfTrading(midPriceBid, o.Price, true, minPrice, maxPrice)
 		}
 		if o.Side == types.Side_SIDE_SELL {
-			sLiq += float64(o.Price) * float64(o.Remaining) * e.getProbabilityOfTrading(currentPrice, o.Price, false, minPrice, maxPrice)
+			sLiq += float64(o.Price) * float64(o.Remaining) * e.getProbabilityOfTrading(midPriceAsk, o.Price, false, minPrice, maxPrice)
 		}
 	}
 	return bLiq, sLiq
@@ -120,6 +139,7 @@ func (e *Engine) updateSizes(liquidityObligation, currentPrice float64, orders [
 		if prob <= 0 {
 			proportion = 0
 		}
+
 		sum += proportion
 		validatedProportions = append(validatedProportions, proportion)
 		probs = append(probs, prob)
@@ -156,7 +176,8 @@ func (e *Engine) getProbabilityOfTrading(currentPrice float64, orderPrice uint64
 	}
 
 	if _, ok := cache[orderPrice]; !ok {
-		prob := e.rm.ProbabilityOfTrading(currentPrice, e.horizon, float64(orderPrice), isBid, true, minPrice, maxPrice)
+		tauScaled := e.horizon * e.probabilityOfTradingTauScaling
+		prob := e.rm.ProbabilityOfTrading(currentPrice, tauScaled, float64(orderPrice), isBid, true, minPrice, maxPrice)
 		cache[orderPrice] = prob
 	}
 

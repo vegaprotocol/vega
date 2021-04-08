@@ -1,4 +1,4 @@
 # VEGA code owners - aka 'people who should probably be included in reviews on...'
 
-# GraphQL schema changes should be reviewd by Team Vega Console
+# GraphQL schema changes should be reviewed by Team Vega Console
 gateway/graphql/schema.graphql @edd @mattrussell36 

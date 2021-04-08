@@ -105,7 +105,7 @@ type Engine struct {
 
 	// this is basically tracking all position to
 	// not perform a copy when positions a retrieved by other engines
-	// the pointer is hidden behing the interface, and do not expose
+	// the pointer is hidden behind the interface, and do not expose
 	// any function to mutate them, so we can consider it safe to return
 	// this slice
 	positionsCpy []events.MarketPosition
@@ -229,7 +229,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
-// this method is a quicker way of handling seperate unregsiter+register pairs
+// this method is a quicker way of handling separate unregister+register pairs
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
 	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
 
@@ -392,6 +392,37 @@ func (e *Engine) GetOpenInterest() uint64 {
 		}
 	}
 	return openInterest
+}
+
+func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
+	oi := e.GetOpenInterest()
+	d := int64(0)
+	for _, t := range trades {
+		bSize, sSize := int64(0), int64(0)
+		if p, ok := e.positions[t.Buyer]; ok {
+			bSize = p.size
+		}
+		if p, ok := e.positions[t.Seller]; ok {
+			sSize = p.size
+		}
+		// Change in open interest due to trades equals change in longs
+		d += max(0, bSize+int64(t.Size)) - max(0, bSize) + max(0, sSize-int64(t.Size)) - max(0, sSize)
+	}
+	if d > 0 {
+		oi += uint64(d)
+	}
+	if d < 0 {
+		oi -= uint64(-d)
+	}
+
+	return oi
+}
+
+func max(a int64, b int64) int64 {
+	if a >= b {
+		return a
+	}
+	return b
 }
 
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push

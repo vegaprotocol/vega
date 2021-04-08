@@ -308,8 +308,8 @@ func (os *Order) GetAllVersionsByOrderID(
 	descending bool,
 ) ([]*types.Order, error) {
 
-	verionsPrefix, validForPrefix := os.badger.orderIDVersionPrefix(id, descending)
-	return os.getOrdersDirectly(ctx, verionsPrefix, validForPrefix, skip, limit, descending, nil)
+	versionsPrefix, validForPrefix := os.badger.orderIDVersionPrefix(id, descending)
+	return os.getOrdersDirectly(ctx, versionsPrefix, validForPrefix, skip, limit, descending, nil)
 }
 
 type orderFilter = func(orderEntry *types.Order) bool

@@ -55,6 +55,7 @@ func TestHandler(t *testing.T) {
 	t.Run("get public key failure - wallet not found", testGetPubWalletNotFound)
 	t.Run("get public key failure - invalid token", testGetPubInvalidToken)
 	t.Run("get public key failure - key not found", testGetPubKeyNotFound)
+	t.Run("sign any - success", testSignAnySuccess)
 	t.Run("sign tx - success", testSignTxSuccess)
 	t.Run("sign tx - failure key tainted", testSignTxFailure)
 	t.Run("taint key - success", testTaintKeySuccess)
@@ -201,7 +202,7 @@ func testVerifyTokenInvalidToken(t *testing.T) {
 
 }
 
-// this should never happend but beeeh....
+// this should never happened but beeeh....
 func testVerifyTokenWalletNotFound(t *testing.T) {
 	h := getTestHandler(t)
 	defer h.ctrl.Finish()
@@ -233,7 +234,7 @@ func testListPubInvalidToken(t *testing.T) {
 
 }
 
-// this should never happend but beeeh....
+// this should never happened but beeeh....
 func testListPubWalletNotFound(t *testing.T) {
 	h := getTestHandler(t)
 	defer h.ctrl.Finish()
@@ -377,6 +378,45 @@ func testSignTxSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	v, err := alg.Verify(keyBytes, signedBundle.Tx, signedBundle.Sig.Sig)
+	assert.NoError(t, err)
+	assert.True(t, v)
+
+	assert.NoError(t, os.RemoveAll(h.rootDir))
+}
+
+func testSignAnySuccess(t *testing.T) {
+	h := getTestHandler(t)
+	defer h.ctrl.Finish()
+
+	// then start the test
+	h.auth.EXPECT().VerifyToken(gomock.Any()).AnyTimes().
+		Return("jeremy", nil)
+
+	// first create the wallet
+	h.auth.EXPECT().NewSession(gomock.Any()).Times(1).
+		Return("some fake token", nil)
+
+	tok, err := h.CreateWallet("jeremy", "Th1isisasecurep@ssphraseinnit")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, tok)
+
+	key, err := h.GenerateKeypair(tok, "Th1isisasecurep@ssphraseinnit")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, key)
+
+	message := "@myTwitterHandle"
+
+	keyBytes, _ := hex.DecodeString(key)
+
+	signature, err := h.SignAny(
+		tok, base64.StdEncoding.EncodeToString([]byte(message)), key)
+	assert.NoError(t, err)
+
+	// verify signature then
+	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	assert.NoError(t, err)
+
+	v, err := alg.Verify(keyBytes, []byte(message), signature)
 	assert.NoError(t, err)
 	assert.True(t, v)
 

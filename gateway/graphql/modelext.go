@@ -875,6 +875,8 @@ func eventFromProto(e *types.BusEvent) Event {
 		return e.GetWithdrawal()
 	case types.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:
 		return e.GetOracleSpec()
+	case types.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:
+		return e.GetLiquidityProvision()
 	}
 	return nil
 }

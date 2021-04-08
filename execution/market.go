@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -23,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
+	lmon "code.vegaprotocol.io/vega/monitor/liquidity"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/products"
@@ -31,7 +33,6 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network
@@ -82,12 +83,12 @@ var (
 	ErrUnableToReprice = errors.New("unable to reprice")
 	// ErrOrderNotFound we cannot find the order in the market
 	ErrOrderNotFound = errors.New("unable to find the order in the market")
-	// ErrTradingNotAllowed no trading related functionnalities are allowed in the current state
+	// ErrTradingNotAllowed no trading related functionalities are allowed in the current state
 	ErrTradingNotAllowed = errors.New("trading not allowed")
 	// ErrCommitmentSubmissionNotAllowed no commitment submission are permitted in the current state
 	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
 	// ErrNotEnoughStake is returned when a LP update results in not enough commitment
-	ErrNotEnoughStake = errors.New("commitment submission rejected, not enouth stake")
+	ErrNotEnoughStake = errors.New("commitment submission rejected, not enough stake")
 
 	// ErrCannotRejectMarketNotInProposedState
 	ErrCannotRejectMarketNotInProposedState = errors.New("cannot reject a market not in proposed state")
@@ -104,6 +105,14 @@ var (
 type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, v uint64, now time.Time) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
+	SetMinDuration(d time.Duration)
+}
+
+// LiquidityMonitor
+type LiquidityMonitor interface {
+	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
+	SetMinDuration(d time.Duration)
+	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio float64)
 }
 
 // TargetStakeCalculator interface
@@ -137,10 +146,12 @@ type AuctionState interface {
 	// get some data
 	Mode() types.Market_TradingMode
 	Trigger() types.AuctionTrigger
+	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
+	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
-// the engines in order to process all transctiona
+// the engines in order to process all transactions
 type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
@@ -154,7 +165,7 @@ type Market struct {
 	markPrice uint64
 
 	// own engines
-	matching           *matching.OrderBook
+	matching           *matching.CachedOrderBook
 	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
 	position           *positions.Engine
@@ -171,6 +182,7 @@ type Market struct {
 	parties map[string]struct{}
 
 	pMonitor PriceMonitor
+	lMonitor LiquidityMonitor
 
 	tsCalc TargetStakeCalculator
 
@@ -187,6 +199,7 @@ type Market struct {
 	lastMidSellPrice uint64
 
 	lastMarketValueProxy    float64
+	bondPenaltyFactor       float64
 	marketValueWindowLength time.Duration
 
 	// Liquidity Fee
@@ -229,6 +242,7 @@ func NewMarket(
 	settlementConfig settlement.Config,
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
+	liquidityConfig liquidity.Config,
 	collateralEngine *collateral.Engine,
 	oracleEngine products.OracleEngine,
 	mkt *types.Market,
@@ -244,17 +258,18 @@ func NewMarket(
 
 	tradableInstrument, err := markets.NewTradableInstrument(ctx, log, mkt.TradableInstrument, oracleEngine)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instantiate a new market")
+		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
 
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get market closing time")
+		return nil, fmt.Errorf("unable to get market closing time: %w", err)
 	}
 
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
-	book := matching.NewOrderBook(log, matchingConfig, mkt.Id, as.InAuction())
+	book := matching.NewCachedOrderBook(
+		log, matchingConfig, mkt.Id, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(
 		log,
@@ -279,20 +294,37 @@ func NewMarket(
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instantiate fee engine")
+		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 	}
+
+	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
 
 	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to instantiate price monitoring engine")
+		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	tsCalc := liquiditytarget.NewEngine(*mkt.TargetStakeParameters)
-	liqEngine := liquidity.NewEngine(log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
+	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
+
+	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
 
 	// The market is initially create in a proposed state
 	mkt.State = types.Market_STATE_PROPOSED
 	mkt.TradingMode = types.Market_TRADING_MODE_CONTINUOUS
+
+	// Populate the market timestamps
+	ts := &types.MarketTimestamps{
+		Proposed: now.UnixNano(),
+		Close:    closingAt.UnixNano(),
+	}
+
+	if mkt.OpeningAuction != nil {
+		ts.Open = now.Add(time.Duration(mkt.OpeningAuction.Duration)).UnixNano()
+	} else {
+		ts.Open = now.UnixNano()
+	}
+
+	mkt.MarketTimestamps = ts
 
 	market := &Market{
 		log:                log,
@@ -312,6 +344,7 @@ func NewMarket(
 		parties:            map[string]struct{}{},
 		as:                 as,
 		pMonitor:           pMonitor,
+		lMonitor:           lMonitor,
 		tsCalc:             tsCalc,
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
@@ -397,7 +430,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:                auctionEnd,
 		MarketTradingMode:         m.as.Mode(),
 		Trigger:                   m.as.Trigger(),
-		TargetStake:               strconv.FormatFloat(m.getTargetStake(), 'f', -1, 64),
+		TargetStake:               strconv.FormatUint(uint64(math.Ceil(m.getTargetStake())), 10),
 		SuppliedStake:             strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
 		MarketValueProxy:          strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
@@ -443,6 +476,7 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.as.AuctionStart() {
 		// we are now in a pending state
 		m.mkt.State = types.Market_STATE_PENDING
+		m.mkt.MarketTimestamps.Pending = m.currentTime.UnixNano()
 		m.EnterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting
@@ -452,11 +486,6 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil
-}
-
-func (m *Market) isInOpeningAuction() bool {
-	return m.mkt.State == types.Market_STATE_PROPOSED ||
-		m.mkt.State == types.Market_STATE_PENDING
 }
 
 // GetID returns the id of the given market
@@ -482,7 +511,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
 	// the opening auction, but settlement at expiry is
-	// not even specd or implemented as of now...
+	// not even specced or implemented as of now...
 	// if the state of the market is just PROPOSED,
 	// we will just skip everything there as nothing apply.
 	if m.mkt.State == types.Market_STATE_PROPOSED {
@@ -510,7 +539,9 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				// mark opening auction as ending
 				// Prime price monitoring engine with the uncrossing price of the opening auction
 				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
-					m.log.Error("Price monitoring error", logging.Error(err))
+					m.log.Panic("unable to run check price with price monitor",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
 				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
@@ -522,12 +553,14 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				// start the market fee window
 				m.feeSplitter.TimeWindowStart(t)
 			}
-		} else if m.as.IsPriceAuction() {
+		} else if m.as.IsPriceAuction() || m.as.IsLiquidityAuction() {
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
-				m.log.Error("Price monitoring error", logging.Error(err))
-				// @TODO handle or panic? (panic is last resort)
+				m.log.Panic("unable to run check price with price monitor",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
 			}
-			// price monitoring engine indicated auction can end
+			m.checkLiquidity(ctx, nil)
+			// price monitoring engine and liquidity monitoring engine both indicated auction can end
 			if m.as.AuctionEnd() {
 				m.LeaveAuction(ctx, t)
 			}
@@ -540,13 +573,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	m.risk.CalculateFactors(ctx, t)
 	timer.EngineTimeCounterAdd()
 
-	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
-		ts := m.liquidity.ProvisionsPerParty().TotalStake()
-		m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(mvwl, float64(ts))
-		m.equityShares.WithMVP(m.lastMarketValueProxy)
-
-		m.feeSplitter.TimeWindowStart(t)
-	}
+	m.updateMarketValueProxy()
 
 	if !closed {
 		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
@@ -557,47 +584,62 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	return
 }
 
+func (m *Market) updateMarketValueProxy() {
+	// if windows length is reached, reset fee splitter
+	if mvwl := m.marketValueWindowLength; m.feeSplitter.Elapsed() > mvwl {
+		m.feeSplitter.TimeWindowStart(m.currentTime)
+	}
+
+	// these need to happen every block
+	// but also when new LP is submitted just so we are sure we do
+	// not have a mvp of 0
+	ts := m.liquidity.ProvisionsPerParty().TotalStake()
+	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
+		m.marketValueWindowLength, float64(ts))
+	m.equityShares.WithMVP(m.lastMarketValueProxy)
+}
+
 func (m *Market) closeMarket(ctx context.Context, t time.Time) {
+	m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
 	// market is closed, final settlement
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.markPrice)
 	if err != nil {
-		m.log.Error(
-			"Failed to get settle positions on market close",
-			logging.Error(err),
-		)
-	} else {
-		transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
-		if err != nil {
-			m.log.Error(
-				"Failed to get ledger movements after settling closed market",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err),
-			)
-		} else {
-			// @TODO pass in correct context -> Previous or next block? Which is most appropriate here?
-			// this will be next block
-			evt := events.NewTransferResponse(ctx, transfers)
-			m.broker.Send(evt)
-
-			asset, _ := m.mkt.GetAsset()
-			parties := make([]string, 0, len(m.parties))
-			for k := range m.parties {
-				parties = append(parties, k)
-			}
-
-			clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
-			if err != nil {
-				m.log.Error("Clear market error",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			} else {
-				evt := events.NewTransferResponse(ctx, clearMarketTransfers)
-				m.broker.Send(evt)
-			}
-		}
+		m.log.Error("Failed to get settle positions on market close",
+			logging.Error(err))
+		return
 	}
 
+	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
+	if err != nil {
+		m.log.Error("Failed to get ledger movements after settling closed market",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return
+	}
+
+	// @TODO pass in correct context -> Previous or next block?
+	// Which is most appropriate here?
+	// this will be next block
+	m.broker.Send(events.NewTransferResponse(ctx, transfers))
+
+	asset, _ := m.mkt.GetAsset()
+	parties := make([]string, 0, len(m.parties))
+	for k := range m.parties {
+		parties = append(parties, k)
+	}
+
+	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
+	if err != nil {
+		m.log.Error("Clear market error",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return
+	}
+
+	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
@@ -612,7 +654,7 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	if oerr, ok := types.IsOrderError(err); ok {
 		order.Reason = oerr
 	} else {
-		// should not happend but still...
+		// should not happened but still...
 		order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 	}
 	m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -640,8 +682,9 @@ func HasReferenceMoved(order *types.Order, changes uint8) bool {
 // which are using a reference that has moved. Returns the number of orders that were repriced.
 func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*types.Order, uint64) {
 	var (
-		repriceCount uint64
-		toRemove     []*types.Order
+		repriceCount  uint64
+		toRemove      []*types.Order
+		updatedOrders []*types.Order
 	)
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "repriceAllPeggedOrders")
 
@@ -665,48 +708,41 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 						logging.Error(err))
 				}
 			}
+			updatedOrders = append(updatedOrders, order)
 		}
 	}
 
+	var toSubmitOrders []*types.Order
 	// Reprice all the pegged order
-	for _, order := range m.peggedOrders {
-		if HasReferenceMoved(order, changes) {
-			if price, err := m.getNewPeggedPrice(order); err != nil {
-				// Failed to reprice, if we are parked we do nothing, if not parked we need to park
-				if order.Status != types.Order_STATUS_PARKED {
-					order.UpdatedAt = m.currentTime.UnixNano()
-					order.Status = types.Order_STATUS_PARKED
-					order.Price = 0
-					m.broker.Send(events.NewOrderEvent(ctx, order))
-				}
-			} else {
-				// Repriced so all good make sure status is correct
-				order.Status = types.Order_STATUS_CANCELLED
-				order.Price = price
+	for _, order := range updatedOrders {
+		if price, err := m.getNewPeggedPrice(order); err != nil {
+			// Failed to reprice, if we are parked we do nothing, if not parked we need to park
+			if order.Status != types.Order_STATUS_PARKED {
+				order.UpdatedAt = m.currentTime.UnixNano()
+				order.Status = types.Order_STATUS_PARKED
+				order.Price = 0
+				m.broker.Send(events.NewOrderEvent(ctx, order))
 			}
+		} else {
+			// Repriced so all good make sure status is correct
+			order.Price = price
+			order.Status = types.Order_STATUS_PARKED
+			toSubmitOrders = append(toSubmitOrders, order)
 		}
 	}
-
-	updatedOrders := []*types.Order{}
 
 	// Reinsert all the orders
-	for _, order := range m.peggedOrders {
-		if HasReferenceMoved(order, changes) {
-			if order.Status == types.Order_STATUS_CANCELLED {
-				if _, err := m.submitValidatedOrder(ctx, order); err != nil {
-					m.log.Debug("could not re-submit a pegged order after repricing",
-						logging.MarketID(m.GetID()),
-						logging.PartyID(order.PartyId),
-						logging.OrderID(order.Id),
-						logging.Error(err))
-					// order could not be submitted, it's then been rejected
-					// we just completely remove it.
-					toRemove = append(toRemove, order)
-					continue
-				}
-			}
+	for _, order := range toSubmitOrders {
+		if _, err := m.submitValidatedOrder(ctx, order); err != nil {
+			m.log.Debug("could not re-submit a pegged order after repricing",
+				logging.MarketID(m.GetID()),
+				logging.PartyID(order.PartyId),
+				logging.OrderID(order.Id),
+				logging.Error(err))
+			// order could not be submitted, it's then been rejected
+			// we just completely remove it.
+			toRemove = append(toRemove, order)
 		}
-		updatedOrders = append(updatedOrders, order)
 	}
 
 	for _, o := range toRemove {
@@ -1066,7 +1102,7 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 		return
 	}
 
-	// now chec if all  buy/sell/size are 0
+	// now check if all buy/sell/size are 0
 	if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || pos.VWBuy() != 0 || pos.VWSell() != 0 {
 		// position is not 0, nothing to release surely
 		return
@@ -1087,6 +1123,9 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 // SubmitOrder submits the given order
 func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
 	if !m.canTrade() {
+		order.Status = types.Order_STATUS_REJECTED
+		order.Reason = types.OrderError_ORDER_ERROR_MARKET_CLOSED
+		m.broker.Send(events.NewOrderEvent(ctx, order))
 		return nil, ErrTradingNotAllowed
 	}
 	conf, err := m.submitOrder(ctx, order, true)
@@ -1111,7 +1150,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
 	}()
 
-	// set those at the begining as even rejected order get through the buffers
+	// set those at the beginning as even rejected order get through the buffers
 	if setID {
 		m.idgen.SetID(order)
 	}
@@ -1171,7 +1210,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 				m.broker.Send(events.NewOrderEvent(ctx, order))
 				return &types.OrderConfirmation{Order: order}, nil
 			}
-			order.Status = types.Order_STATUS_ACTIVE
 		}
 	}
 
@@ -1193,7 +1231,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
 	if checkMargin {
-		if _, err := m.checkMarginForOrder(ctx, pos, order); err != nil {
+		if err := m.checkMarginForOrder(ctx, pos, order); err != nil {
 			if _, err := m.position.UnregisterOrder(order); err != nil {
 				m.log.Error("Unable to unregister potential trader positions",
 					logging.String("market-id", m.GetID()),
@@ -1238,6 +1276,9 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			return nil, err
 		}
 	}
+
+	order.Status = types.Order_STATUS_ACTIVE
+
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if err != nil {
@@ -1250,7 +1291,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		if oerr, ok := types.IsOrderError(err); ok {
 			order.Reason = oerr
 		} else {
-			// should not happend but still...
+			// should not happened but still...
 			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
 		}
 		m.broker.Send(events.NewOrderEvent(ctx, order))
@@ -1289,25 +1330,33 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	m.handleConfirmation(ctx, confirmation)
-
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 	return confirmation, nil
 }
 
 func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order) ([]*types.Trade, error) {
 	trades, err := m.matching.GetTrades(order)
-	if err == nil {
-		for _, t := range trades {
-			if err := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); err != nil {
-				m.log.Error("Price monitoring error", logging.Error(err))
-				// @TODO handle or panic? (panic is last resort)
-			}
-		}
-		if m.as.AuctionStart() {
-			m.EnterAuction(ctx)
-			return nil, err
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range trades {
+		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); merr != nil {
+			m.log.Panic("unable to run check price with price monitor",
+				logging.String("market-id", m.GetID()),
+				logging.Error(merr))
 		}
 	}
-	return trades, err
+	m.checkLiquidity(ctx, trades)
+
+	// start the  monitoring auction if required?
+	if m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+		return nil, nil
+	}
+
+	return trades, nil
 }
 
 func (m *Market) addParty(party string) {
@@ -1421,7 +1470,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 			// Update positions (this communicates with settlement via channel)
 			m.position.Update(trade)
-			// Record open inteterest change
+			// Record open interest change
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
@@ -1447,11 +1496,18 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
 	if len(margins) > 0 {
-		// TODO(): handle market makers penalties
-		transfers, closed, _, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
+		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(ctx, m.GetID(), margins)
 		if err == nil && len(transfers) > 0 {
 			evt := events.NewTransferResponse(ctx, transfers)
 			m.broker.Send(evt)
+		}
+		if len(bondPenalties) > 0 {
+			transfers, err := m.bondSlashing(ctx, bondPenalties...)
+			if err != nil {
+				m.log.Error("Failed to perform bond slashing",
+					logging.Error(err))
+			}
+			m.broker.Send(events.NewTransferResponse(ctx, transfers))
 		}
 		if len(closed) > 0 {
 			err = m.resolveClosedOutTraders(ctx, closed, order)
@@ -1470,18 +1526,20 @@ func (m *Market) confirmMTM(ctx context.Context, order *types.Order) {
 func (m *Market) updateLiquidityFee(ctx context.Context) {
 	stake := m.getTargetStake()
 	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(uint64(stake))
-	_ = fee
+	if fee != m.getLiquidityFee() {
+		m.fee.SetLiquidityFee(fee)
+		m.setLiquidityFee(fee)
+		m.broker.Send(
+			events.NewMarketUpdatedEvent(ctx, *m.mkt),
+		)
+	}
+}
 
-	// TODO(jeremy): this need to be uncommented later
-	// we do not set the fee for now so system-test
-	// can keep running with the static fee setted up in the
-	// genesis block.
-	// m.fee.SetLiquidityFee(fee)
-	//
-	// m.mkt.Fees.Factors.LiquidityFee = fee
-	// m.broker.Send(
-	// 	events.NewMarketEvent(ctx, *m.mkt),
-	// )
+func (m *Market) setLiquidityFee(fee string) {
+	m.mkt.Fees.Factors.LiquidityFee = fee
+}
+func (m *Market) getLiquidityFee() string {
+	return m.mkt.Fees.Factors.LiquidityFee
 }
 
 // resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral
@@ -1501,7 +1559,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	orderUpdates := []*types.Order{}
 	distressedParties := []string{}
 	defer func() {
-		// First we check for all distressd parties if they are liquidity
+		// First we check for all distressed parties if they are liquidity
 		// providers, and if yea cancel their commitments
 		for _, party := range distressedParties {
 			if m.liquidity.IsLiquidityProvider(party) {
@@ -1514,7 +1572,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			}
 		}
 
-		// then we send the orders updtes to the liquidity engine
+		// then we send the order updates to the liquidity engine
 		// just to make sure that any changes on the lp orders
 		// are being reflected / and sizes are updated...
 		if len(orderUpdates) > 0 {
@@ -1579,6 +1637,16 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			o.UpdatedAt = m.currentTime.UnixNano()
 			o.Status = types.Order_STATUS_STOPPED // closing out = status STOPPED
 			evts = append(evts, events.NewOrderEvent(ctx, o))
+		}
+		if m.liquidity.IsLiquidityProvider(v.Party()) {
+			if err := m.cancelLiquidityProvisionAndConfiscateBondAccount(ctx, v.Party()); err != nil {
+				m.log.Error("unable to cancel liquidity provision for a distressed party",
+					logging.String("party-id", o.PartyId),
+					logging.String("market-id", mktID),
+				)
+				return err
+			}
+			m.equityShares.SetPartyStake(v.Party(), 0)
 		}
 
 		// add all pegged orders too to the orderUpdates
@@ -1813,6 +1881,38 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	return err
 }
 
+func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Context, partyID string) error {
+	asset, err := m.mkt.GetAsset()
+	if err != nil {
+		return err
+	}
+	bacc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, m.mkt.Id, asset)
+	if err != nil {
+		return err
+	}
+	transfer := &types.Transfer{
+		Owner: partyID,
+		Amount: &types.FinancialAmount{
+			Amount: bacc.Balance,
+			Asset:  asset,
+		},
+		Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+		MinAmount: bacc.Balance,
+	}
+	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, partyID, transfer)
+	if err != nil {
+		return err
+	}
+	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
+
+	m.checkLiquidity(ctx, nil)
+	// start the liquidity monitoring auction if required
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+	}
+	return nil
+}
+
 func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
@@ -1893,7 +1993,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			MarketId:  partyOrder.MarketId,
 			Price:     partyOrder.Price,
 			Size:      partyOrder.Size,
-			Aggressor: order.Side, // we consider network to be agressor
+			Aggressor: order.Side, // we consider network to be aggressor
 			BuyOrder:  buyOrder.Id,
 			SellOrder: sellOrder.Id,
 			Buyer:     buyOrder.PartyId,
@@ -1921,10 +2021,17 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	return nil
 }
 
-func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) (*types.Transfer, error) {
+func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
 	defer timer.EngineTimeCounterAdd()
-	return m.calcMargins(ctx, pos, order)
+	risk, closed, err := m.calcMargins(ctx, pos, order)
+	// margin error
+	if err != nil {
+		return err
+	}
+	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those traders are distressed
+	// the risk slice are risk events, that we must use to transfer funds
+	return m.transferMargins(ctx, risk, closed)
 }
 
 func (m *Market) setMarkPrice(trade *types.Trade) {
@@ -1949,7 +2056,9 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		return nil
 	}
 	// sending response to buffer
-	m.broker.Send(events.NewTransferResponse(ctx, response))
+	if response != nil {
+		m.broker.Send(events.NewTransferResponse(ctx, response))
+	}
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
@@ -2089,9 +2198,13 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 	if foundOnBook {
 		if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
-			return nil, err
+			// FIXME(): we do not return an error here as the issue is linked
+			// to liquidyt provision, most likely some orders could not be repriced
+			m.log.Debug("liquidity update error", logging.Error(err))
 		}
 	}
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
@@ -2109,9 +2222,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 	if err := m.matching.RemoveOrder(order); err != nil {
 		m.log.Panic("Failure to remove order from matching engine",
-			logging.String("party-id", order.PartyId),
-			logging.String("order-id", order.Id),
-			logging.String("market", m.mkt.Id),
+			logging.Order(*order),
 			logging.Error(err))
 	}
 
@@ -2404,7 +2515,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// will be updated later on for sure.
 
 	if priceIncrease || sizeIncrease {
-		if _, err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
+		if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 			// Undo the position registering
 			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
 			if err1 != nil {
@@ -2627,7 +2738,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 		if err != nil {
 			m.log.Panic("unable to submit order", logging.Error(err))
 		}
-		// replace thetrades in the confirmation to have
+		// replace the trades in the confirmation to have
 		// the ones with the fees embedded
 		conf.Trades = trades
 	}
@@ -2710,7 +2821,7 @@ func (m *Market) RemoveExpiredOrders(
 	}
 
 	// If we have removed an expired order, do we need to reprice any
-	// or maybe notify the liqudity engine
+	// or maybe notify the liquidity engine
 	if len(expired) > 0 {
 		expiredPtrs := make([]*types.Order, len(expired))
 		for i := range expired {
@@ -2721,7 +2832,7 @@ func (m *Market) RemoveExpiredOrders(
 				logging.MarketID(m.GetID()),
 				logging.Error(err))
 		}
-		m.checkForReferenceMoves(context.Background())
+		m.checkForReferenceMoves(ctx)
 	}
 
 	return expired, nil
@@ -2770,6 +2881,19 @@ func (m *Market) getStaticMidPrice(side types.Side) (uint64, error) {
 	}
 
 	return mid, nil
+}
+
+func (m *Market) getStaticMidPrices() (midBid uint64, midAsk uint64, err error) {
+	bid, err := m.matching.GetBestStaticBidPrice()
+	if err != nil {
+		return 0, 0, err
+	}
+	ask, err := m.matching.GetBestStaticAskPrice()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return (bid + ask + 1) / 2, (bid + ask) / 2, nil
 }
 
 // checkForReferenceMoves looks to see if the reference prices have moved since the
@@ -2919,6 +3043,10 @@ func (m *Market) getSuppliedStake() uint64 {
 	return m.liquidity.CalculateSuppliedStake()
 }
 
+func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, v float64) {
+	m.bondPenaltyFactor = v
+}
+
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
 	if err := m.risk.OnMarginScalingFactorsUpdate(sf); err != nil {
 		return err
@@ -2974,8 +3102,28 @@ func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
 func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
 	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
+
 func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64) {
 	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(v)
+}
+
+func (m *Market) OnMarketProbabilityOfTradingTauScalingUpdate(_ context.Context, v float64) {
+	m.liquidity.OnProbabilityOfTradingTauScalingUpdate(v)
+}
+
+func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
+	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, v)
+	//TODO: Send an event containing updated parameter
+}
+
+func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) {
+	m.pMonitor.SetMinDuration(d)
+	m.lMonitor.SetMinDuration(d)
+	evt := m.as.UpdateMinDuration(ctx, d)
+	// we were in an auction, and the duration of the auction was updated
+	if evt != nil {
+		m.broker.Send(evt)
+	}
 }
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
@@ -3001,13 +3149,13 @@ func (m *Market) cancelLiquidityProvision(
 
 	// is our party distressed?
 	// if yes, the orders have been cancelled by the resolve
-	// distresed traders flow.
+	// distressed traders flow.
 	if !isDistressed {
 		// now we cancel all existing orders
 		for _, order := range cancelOrders {
 			if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
 				// nothing much we can do here, I suppose
-				// somethign wrong might have happen...
+				// something wrong might have happen...
 				// does this need a panic? need to think about it...
 				m.log.Debug("unable cancel liquidity order",
 					logging.String("party", party),
@@ -3017,13 +3165,13 @@ func (m *Market) cancelLiquidityProvision(
 		}
 	}
 
-	// now we move back the funds from the bond account to the general acount
+	// now we move back the funds from the bond account to the general account
 	// of the party
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(
 		ctx, party, m.GetID(), asset)
 	if err != nil {
-		m.log.Debug("could not get the party bond accound",
+		m.log.Debug("could not get the party bond account",
 			logging.String("party-id", party),
 			logging.Error(err))
 	}
@@ -3054,18 +3202,21 @@ func (m *Market) cancelLiquidityProvision(
 	if !isReplace {
 		// now let's update the fee selection
 		m.updateLiquidityFee(ctx)
-		// and remove the party from the equitey share like calculation
+		// and remove the party from the equity share like calculation
 		m.equityShares.SetPartyStake(party, float64(0))
 		// force update of shares so they are updated for all
-		_ = m.equityShares.Shares()
+		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 	}
+
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
+
 	return nil
 }
 
 func (m *Market) amendLiquidityProvision(
 	ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string,
 ) error {
-
 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
@@ -3076,8 +3227,8 @@ func (m *Market) amendLiquidityProvision(
 	// to reach it's commitment level. Otherwise the commitment reduction is
 	// rejected.
 	if sub.CommitmentAmount < lp.CommitmentAmount {
-		// first - does the market have enought stake
-		if uint64(m.getTargetStake()) > m.getSuppliedStake() {
+		// first - does the market have enough stake
+		if uint64(m.getTargetStake()) >= m.getSuppliedStake() {
 			return ErrNotEnoughStake
 		}
 
@@ -3111,6 +3262,11 @@ func (m *Market) amendLiquidityProvision(
 		return nil
 	}
 
+	m.log.Debug("could not cancel and replace liquidity provision",
+		logging.MarketID(m.GetID()),
+		logging.PartyID(party),
+		logging.Error(err))
+
 	// so, we haven't been able to submit the new lp provision
 	// now we want to resubmit the previous one
 	rollbackSubmission := lp.IntoSubmission()
@@ -3123,10 +3279,12 @@ func (m *Market) amendLiquidityProvision(
 
 		// now let's update the fee selection
 		m.updateLiquidityFee(ctx)
-		// and remove the party from the equitey share like calculation
+		// and remove the party from the equity share like calculation
 		m.equityShares.SetPartyStake(party, float64(0))
 		// force update of shares so they are updated for all
-		_ = m.equityShares.Shares()
+		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+		// do not need to be pending
+		m.liquidity.RemovePending(party)
 	}
 
 	return err
@@ -3177,7 +3335,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	}
 
 	// add the party to the list of all parties involved with
-	// this markt
+	// this market
 	m.addParty(party)
 
 	defer func() {
@@ -3263,25 +3421,43 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 
 	defer func() {
 		// so here we check if at least we were able to get hte
-		// liquidty provision in, even if orders are not deployed, we should
-		// be able to calculate the shars etc
+		// liquidity provision in, even if orders are not deployed, we should
+		// be able to calculate the shares etc
 		if !needsCancel && !needsBondRollback {
-			// if we are still in opening auction, mvp can only be total stake
-			// so we'll use that to update the equity shares
-			if m.isInOpeningAuction() {
-				m.equityShares.WithMVP(
-					float64(m.liquidity.ProvisionsPerParty().TotalStake()),
-				)
-			}
+			// update the MVP, if we are in opening auction, this is the total
+			// amount of stake, and it'll be setup properly
+			m.updateMarketValueProxy()
+			// now we can update the liquidity fee to be taken
 			m.updateLiquidityFee(ctx)
+			// now we can setup our party stake to calculate equities
 			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
 			// force update of shares so they are updated for all
-			_ = m.equityShares.Shares()
+			_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+
+			m.checkLiquidity(ctx, nil)
+			m.commandLiquidityAuction(ctx)
+
 		}
 	}()
 
 	existingOrders := m.matching.GetOrdersPerParty(party)
-	newOrders, amendments, err := m.liquidity.CreateInitialOrders(m.markPrice, party, existingOrders, m.repriceFuncW)
+	midPriceBid, midPriceAsk, err := m.getStaticMidPrices()
+	if err != nil {
+		m.log.Debug("could not get mid prices to call liquidity",
+			logging.String("market-id", m.GetID()),
+			logging.String("party", party),
+			logging.Error(err),
+		)
+		// at this point, we were able to take the bond from the party
+		// but were not able to generate the orders
+		// this is likely due to the market not being ready and the liquidity
+		// engine not being able to price the orders
+		// we do not want to rollback anything then
+		needsBondRollback = false
+		needsCancel = false
+		return nil
+	}
+	newOrders, amendments, err := m.liquidity.CreateInitialOrders(ctx, midPriceBid, midPriceAsk, party, existingOrders, m.repriceFuncW)
 	if err != nil {
 		m.log.Debug("orders from liquidity provisions could not be generated by the liquidity engine",
 			logging.String("market-id", m.GetID()),
@@ -3298,13 +3474,19 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return nil
 	}
 
-	if err := m.createAndUpdateOrders(ctx, newOrders, amendments); err != nil {
+	// FIXM(JEREMY):
+	// new orders should never have amends as well.
+	// asserting for now, let's fix the liquidity api later
+	if len(amendments) > 0 {
+		m.log.Panic("a new liquidity submission should not produce any amendments from the liquidity engine")
+	}
+
+	if err := m.createOrders(ctx, newOrders); err != nil {
 		m.log.Debug("Could not create or update orders for a liquidity provision",
 			logging.String("market-id", m.GetID()),
 			logging.String("party", party),
 			logging.Error(err),
 		)
-
 		// at this point we could not create or update some order for this LP
 		// in the case this was a new order, we will want to cancel all that happen
 		// in the case it was an amend, we'll want to do nothing
@@ -3313,12 +3495,67 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
+	// all went well, we can remove the pending state from the
+	// liquidity engine
+	m.liquidity.RemovePending(party)
+
 	return nil
+}
+
+func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
+	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
+	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
+
+	rf, err := m.getRiskFactors()
+	if err != nil {
+		m.log.Panic("unable to get risk factors, can't check liquidity",
+			logging.String("market-id", m.GetID()),
+			logging.Error(err))
+	}
+
+	m.lMonitor.CheckLiquidity(
+		m.as, m.currentTime,
+		float64(m.getSuppliedStake()),
+		trades,
+		*rf,
+		m.markPrice,
+		vBid, vAsk)
+
+}
+
+// command liquidity auction checks if liquidity auction should be entered and if it can end
+func (m *Market) commandLiquidityAuction(ctx context.Context) {
+	// start the liquidity monitoring auction if required
+	if !m.as.InAuction() && m.as.AuctionStart() {
+		m.EnterAuction(ctx)
+	}
+	// end the liquidity monitoring auction if possible
+	if m.as.InAuction() && m.as.AuctionEnd() && !m.as.IsOpeningAuction() {
+		p, v, _ := m.matching.GetIndicativePriceAndVolume()
+		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime); err != nil {
+			m.log.Panic("unable to run check price with price monitor",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
+		}
+		// TODO: Need to also get indicative trades and check how they'd impact target stake,
+		// see  https://github.com/vegaprotocol/vega/issues/3047
+		// If price monitoring doesn't trigger auction than leave it
+		if m.as.AuctionEnd() && m.matching.BidAndAskPresentAfterAuction() {
+			m.LeaveAuction(ctx, m.currentTime)
+		}
+	}
 }
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "liquidityUpdate")
-	newOrders, amendments, err := m.liquidity.Update(ctx, m.markPrice, m.repriceFuncW, orders)
+	midPriceBid, midPriceAsk, err := m.getStaticMidPrices()
+	if err != nil {
+		m.log.Debug("could not get one of the static mid prices",
+			logging.Error(err))
+		// we do not return here, we could not get one of the prices eventually
+	}
+	newOrders, amendments, err := m.liquidity.Update(
+		ctx, midPriceBid, midPriceAsk, m.repriceFuncW, orders)
 	if err != nil {
 		return err
 	}
@@ -3331,7 +3568,7 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 // submitted by the liquidity provider.
 // We will first update orders, which basically will trigger cancellation
 // then place the new orders.
-// this is done this way just so we maximiise the changes for the margin
+// this is done this way just so we maximise the changes for the margin
 // calls to succeed.
 func (m *Market) updateAndCreateOrders(
 	ctx context.Context,
@@ -3356,47 +3593,163 @@ func (m *Market) updateAndCreateOrders(
 	// this is set of all liquidity provider which
 	// at after trying to cancel and replace their orders
 	// cannot fullfil their margins anymore.
-	faultyLPs := map[string]struct{}{}
+	faultyLPs := map[string]bool{}
+	faultyLPOrders := map[string]*types.Order{}
+	initialMargins := map[string]uint64{}
 
+	mktID := m.GetID()
+	asset, _ := m.mkt.GetAsset()
 	for _, order := range newOrders {
-		if _, ok := faultyLPs[order.PartyId]; ok {
+		// before we submit orders, we check if the party was pending
+		// and save the amount of the margin balance.
+		// so we can roll back to this state later on
+		if m.liquidity.IsPending(order.PartyId) {
+			if _, ok := initialMargins[order.PartyId]; !ok {
+				marginAcc, _ := m.collateral.GetPartyMarginAccount(
+					mktID, order.PartyId, asset)
+				initialMargins[order.PartyId] = marginAcc.Balance
+			}
+		}
+
+		if faulty, ok := faultyLPs[order.PartyId]; ok && faulty {
 			// we already tried to submit an lp order which failed
 			// for this party. we'll cancel them just in a bit
 			// be patient...
 			continue
 		}
 		if _, err := m.submitOrder(ctx, order, false); err != nil {
-			m.log.Debug("could not submit liquidity provision order, scheduling for cancellation",
+			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
 				logging.OrderID(order.Id),
 				logging.PartyID(order.PartyId),
 				logging.MarketID(order.MarketId),
 				logging.Error(err))
-			faultyLPs[order.PartyId] = struct{}{}
+			// set the party as faulty
+			faultyLPs[order.PartyId] = true
+			faultyLPOrders[order.PartyId] = order
+			continue
 		}
+		faultyLPs[order.PartyId] = false
 	}
 
-	// FIXME(ELIAS): apply bon slashing here I suppose?
-	for party := range faultyLPs {
-		if err := m.cancelLiquidityProvision(ctx, party, false, false); err != nil {
-			m.log.Debug("error cancelling liquidity provision commitmment",
-				logging.PartyID(party),
-				logging.MarketID(m.GetID()),
-				logging.Error(err))
+	// now get all non faulty parties, and get them not pending
+	// if they were
+	parties := make([]struct {
+		Party  string
+		Faulty bool
+	}, 0, len(faultyLPs))
+	for k, v := range faultyLPs {
+		parties = append(parties, struct {
+			Party  string
+			Faulty bool
+		}{k, v})
+	}
+
+	// now just sort them to deterministically send them
+	sort.Slice(parties, func(i, j int) bool {
+		return parties[i].Party < parties[j].Party
+	})
+
+	for _, v := range parties {
+		if !v.Faulty {
+			m.liquidity.RemovePending(v.Party)
+			continue
 		}
+
+		// now if the party was pending, which means the
+		// order was never submitted, which also means that the
+		// margin were never calculated on submission
+		if m.liquidity.IsPending(v.Party) {
+			_ = m.cancelPendingLiquidityProvision(
+				ctx, v.Party, initialMargins[v.Party])
+			continue
+		}
+
+		// now the party had not enough enough funds to pay the margin
+		_ = m.cancelDistressedLiquidityProvision(
+			ctx, v.Party, faultyLPOrders[v.Party])
 	}
 
 	return nil
 }
 
-func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.Order, amendments []*types.OrderAmendment) (err error) {
+func (m *Market) cancelPendingLiquidityProvision(
+	ctx context.Context,
+	party string,
+	initialMargin uint64,
+) error {
+	// we will just cancel the party,
+	// no bond slashing applied
+	if err := m.cancelLiquidityProvision(ctx, party, false, false); err != nil {
+		m.log.Debug("error cancelling liquidity provision commitment",
+			logging.PartyID(party),
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return err
+	}
+
+	return m.rollBackMargin(ctx, party, initialMargin)
+}
+
+func (m *Market) cancelDistressedLiquidityProvision(
+	ctx context.Context,
+	party string,
+	order *types.Order,
+) error {
+	mktID := m.GetID()
+	asset, _ := m.mkt.GetAsset()
+
+	mpos, ok := m.position.GetPositionByPartyID(party)
+	if !ok {
+		m.log.Debug("error getting party position",
+			logging.PartyID(party),
+			logging.MarketID(mktID))
+		return nil
+	}
+
+	margin, perr := m.collateral.GetPartyMargin(mpos, asset, mktID)
+	if perr != nil {
+		m.log.Debug("error getting party margin",
+			logging.PartyID(party),
+			logging.MarketID(mktID),
+			logging.Error(perr))
+		return perr
+	}
+	err := m.resolveClosedOutTraders(ctx, []events.Margin{margin}, order)
+	if err != nil {
+		m.log.Error("could not resolve out traders",
+			logging.MarketID(mktID),
+			logging.PartyID(party),
+			logging.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func (m *Market) createOrders(ctx context.Context, newOrders []*types.Order) (err error) {
+	if len(newOrders) <= 0 {
+		return nil
+	}
+
+	asset, _ := m.mkt.GetAsset()
+	party := newOrders[0].PartyId
+	// get the new balance
+	marginAcc, _ := m.collateral.GetPartyMarginAccount(
+		m.GetID(), party, asset)
+	initialMargin := marginAcc.Balance
+
 	submittedIDs := []string{}
+	failedOnID := ""
 	// submitted order rollback
 	defer func() {
 		if err == nil || len(newOrders) <= 0 {
 			return
 		}
 		party := newOrders[0].PartyId
+		mappedIDs := map[string]struct{}{} // just a map to access them easily
+		// first we cancel all order which we  were able to submit
 		for _, v := range submittedIDs {
+			mappedIDs[v] = struct{}{}
 			_, newerr := m.cancelOrder(ctx, party, v)
 			if newerr != nil {
 				m.log.Error("unable to rollback order via cancel",
@@ -3406,10 +3759,29 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 				err = fmt.Errorf("%v, %w", err, newerr)
 			}
 		}
+		// then we release any margin excess
+		if rerr := m.rollBackMargin(ctx, party, initialMargin); rerr != nil {
+			err = fmt.Errorf("%v, %w", err, rerr)
+		}
+
+		// the we just send through the bus all order
+		// we were not even able to submit with a rejected event
+		for _, v := range newOrders {
+			_, ok := mappedIDs[v.Id]
+			if !ok && failedOnID != v.Id {
+				// this was not handled before, we need to send an
+				v.Status = types.Order_STATUS_REJECTED
+				// set margin check failed, it's the only reason we could
+				// not place the order at this point
+				v.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
+				m.broker.Send(events.NewOrderEvent(ctx, v))
+			}
+		}
 	}()
 
 	for _, order := range newOrders {
 		if _, err := m.submitOrder(ctx, order, false); err != nil {
+			failedOnID = order.Id
 			m.log.Debug("unable to submit liquidity provision order",
 				logging.MarketID(m.GetID()),
 				logging.OrderID(order.Id),
@@ -3424,35 +3796,58 @@ func (m *Market) createAndUpdateOrders(ctx context.Context, newOrders []*types.O
 		submittedIDs = append(submittedIDs, order.Id)
 	}
 
-	// amendment rollback
-	amendmentsRollBack := []*types.OrderAmendment{}
-	// submitted order rollback
-	defer func() {
-		if err == nil || len(amendmentsRollBack) <= 0 {
-			return
-		}
-		for _, v := range amendmentsRollBack {
-			_, newerr := m.amendOrder(ctx, v)
-			if newerr != nil {
-				m.log.Error("unable to rollback order via cancel",
-					logging.Error(newerr),
-					logging.String("party", v.PartyId),
-					logging.String("order-id", v.OrderId))
-				err = fmt.Errorf("%v, %w", err, newerr)
-			}
-		}
-	}()
+	return nil
+}
 
-	for _, order := range amendments {
-		if _, err := m.amendOrder(ctx, order); err != nil {
-			return err
-		}
-
-		arb := *order
-		arb.SizeDelta = -arb.SizeDelta
-		amendmentsRollBack = append(amendmentsRollBack, &arb)
+func (m *Market) rollBackMargin(
+	ctx context.Context,
+	party string,
+	initialMargin uint64,
+) error {
+	asset, _ := m.mkt.GetAsset()
+	// get the new balance
+	marginAcc, err := m.collateral.GetPartyMarginAccount(
+		m.GetID(), party, asset)
+	if err != nil {
+		m.log.Error("could not get margin account",
+			logging.PartyID(party),
+			logging.MarketID(m.GetID()),
+			logging.AssetID(asset),
+			logging.Error(err))
+		return err
 	}
 
+	if marginAcc.Balance < initialMargin {
+		// nothing to rollback
+		return nil
+	}
+
+	amount := marginAcc.Balance - initialMargin
+	// now create the rollback to transfer
+	transfer := types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Amount: amount,
+			Asset:  asset,
+		},
+		Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+		MinAmount: amount,
+	}
+
+	// then trigger the rollback
+	resp, err := m.collateral.RollbackMarginUpdateOnOrder(
+		ctx, m.GetID(), asset, &transfer)
+	if err != nil {
+		m.log.Debug("error rolling back party margin",
+			logging.PartyID(party),
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+		return err
+	}
+
+	// then send the event for the transfer request
+	m.broker.Send(events.NewTransferResponse(
+		ctx, []*types.TransferResponse{resp}))
 	return nil
 }
 
@@ -3480,6 +3875,13 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 		parties = append(parties, k)
 	}
 
+	err := m.stopAllLiquidityProvisionOnReject(ctx)
+	if err != nil {
+		m.log.Debug("could not stop all liquidity provision on market rejection",
+			logging.MarketID(m.GetID()),
+			logging.Error(err))
+	}
+
 	asset, _ := m.mkt.GetAsset()
 	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
 	if err != nil {
@@ -3491,6 +3893,23 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 
 	// then send the responses
 	m.broker.Send(events.NewTransferResponse(ctx, tresps))
+}
+
+func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
+	for party := range m.liquidity.ProvisionsPerParty() {
+		// here we ignore  the list of orders that could have been
+		// created with this party liquidity provision. At this point
+		// if we are calling this function, the market is in a PENDING
+		// state, which means that liquidity provision can be submitted
+		// but orders would never be able to be deployed, so it's safe
+		// to ignorethe second return as it shall be an empty slice.
+		_, err := m.liquidity.StopLiquidityProvision(ctx, party)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProviderFeeShare {
@@ -3514,12 +3933,12 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProvid
 func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get asset: %w", err)
 	}
 
 	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get market liquidity fee account: %w", err)
 	}
 
 	// We can't distribute any share when no balance.
@@ -3527,7 +3946,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return nil
 	}
 
-	shares := m.equityShares.Shares()
+	shares := m.equityShares.Shares(m.liquidity.GetInactiveParties())
 	if len(shares) == 0 {
 		return nil
 	}
@@ -3539,7 +3958,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to transfer fees: %w", err)
 	}
 
 	m.broker.Send(events.NewTransferResponse(ctx, resp))

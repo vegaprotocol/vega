@@ -71,6 +71,7 @@ func TestService(t *testing.T) {
 	t.Run("get keypair fail key not found", testServiceGetPublicKeyFailKeyNotFound)
 	t.Run("get keypair fail misc error", testServiceGetPublicKeyFailMiscError)
 	t.Run("sign ok", testServiceSignOK)
+	t.Run("sign any", testServiceSignAnyOK)
 	t.Run("sign fail invalid request", testServiceSignFailInvalidRequest)
 	t.Run("taint ok", testServiceTaintOK)
 	t.Run("taint fail invalid request", testServiceTaintFailInvalidRequest)
@@ -494,6 +495,24 @@ func testServiceSignOK(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	wallet.ExtractToken(s.SignTx)(w, r, nil)
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func testServiceSignAnyOK(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	s.handler.EXPECT().SignAny(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).Return([]byte("some sig"), nil)
+	payload := `{"inputData": "some data", "pubKey": "asdasasdasd"}`
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
+	r.Header.Set("Authorization", "Bearer eyXXzA")
+
+	w := httptest.NewRecorder()
+
+	wallet.ExtractToken(s.SignAny)(w, r, nil)
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

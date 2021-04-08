@@ -70,7 +70,7 @@ type currentPrice struct {
 	Volume uint64
 }
 
-// RangeProvider provides the minimium and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
+// RangeProvider provides the minimum and maximum future price corresponding to the current price level, horizon expressed as year fraction (e.g. 0.5 for 6 months) and probability level (e.g. 0.95 for 95%).
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/price_range_provider_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price RangeProvider
 type RangeProvider interface {
 	PriceRange(price, yearFraction, probability float64) (float64, float64)
@@ -80,6 +80,7 @@ type RangeProvider interface {
 type Engine struct {
 	riskModel       RangeProvider
 	updateFrequency time.Duration
+	minDuration     time.Duration
 
 	initialised bool
 	fpHorizons  map[int64]float64
@@ -116,15 +117,12 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		})
 
 	h := map[int64]float64{}
-	for _, p := range parameters {
-		if _, ok := h[p.Horizon]; !ok {
-			h[p.Horizon] = float64(p.Horizon) / secondsPerYear
-		}
-	}
-
 	bounds := make([]*bound, 0, len(parameters))
 	for _, p := range parameters {
 		bounds = append(bounds, &bound{Active: true, Trigger: p})
+		if _, ok := h[p.Horizon]; !ok {
+			h[p.Horizon] = float64(p.Horizon) / secondsPerYear
+		}
 	}
 
 	e := &Engine{
@@ -136,7 +134,11 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 	return e, nil
 }
 
-// GetHorizonYearFractions returns horizons of all the triggers specifed, expressed as year fraction, sorted in ascending order.
+func (e *Engine) SetMinDuration(d time.Duration) {
+	e.minDuration = d
+}
+
+// GetHorizonYearFractions returns horizons of all the triggers specified, expressed as year fraction, sorted in ascending order.
 func (e *Engine) GetHorizonYearFractions() []float64 {
 	h := make([]float64, 0, len(e.bounds))
 	for _, v := range e.fpHorizons {
@@ -210,22 +212,22 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 			}
 			return nil
 		}
-		// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
-		var duration int64
-		for _, b := range bounds {
-			duration += b.AuctionExtension
-		}
-
-		end := types.AuctionDuration{
-			Duration: duration,
-		}
 		// we're dealing with a batch auction that's about to end -> extend it?
 		if fba && as.AuctionEnd() {
-			as.ExtendAuction(end)
-			return nil // we could return an error here to indicate the batch auction was altered?
+			// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
+			var duration int64
+			for _, b := range bounds {
+				duration += b.AuctionExtension
+			}
+			as.ExtendAuction(types.AuctionDuration{
+				Duration: duration,
+			})
+			return nil
 		}
-		// setup auction
-		as.StartPriceAuction(now, &end)
+
+		as.StartPriceAuction(now, &types.AuctionDuration{
+			Duration: int64(e.minDuration / time.Second), // unfortunate, but this is multiplied by time.Second later on
+		})
 		return nil
 	}
 	// market is in auction

@@ -1,0 +1,13 @@
+{
+  "instrument": null,
+  "marginCalculator": null,
+  "logNormalRiskModel": {
+    "riskAversionParameter": 0.001,
+    "tau": 0.00011407711613050422,
+    "params": {
+      "mu": 0,
+      "r": 0.016,
+      "sigma": 2.0
+    }
+  }
+}
