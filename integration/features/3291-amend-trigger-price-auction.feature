@@ -37,7 +37,13 @@ Feature: Amend order to trigger price monitoring auction
     When the traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 10     | 5670010 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
+    Then the mark price should be "5670000" for the market "ETH/DEC20"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+
+    When the traders amend the following orders:
+      | trader  | reference | price   | size delta | expiresAt | tif     | success |
+      | trader2 | ref-2     | 5670005 | 0          | 0         | TIF_GTC | true    |
     Then the mark price should be "5670000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
