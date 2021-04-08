@@ -158,7 +158,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o cmd/vega/vega ./cmd/vega
+      - ./script/build-multiarch-no-cgo.sh default
     depends_on:
       - fetch
     when:
