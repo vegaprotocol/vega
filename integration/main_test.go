@@ -1,12 +1,10 @@
 package core_test
 
 import (
-	"context"
 	"flag"
 	"os"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
@@ -98,14 +96,7 @@ func FeatureContext(s *godog.Suite) {
 		return nil
 	})
 	s.Step(`^the following network parameters are set:$`, func(table *gherkin.DataTable) error {
-		params := steps.TheFollowingNetworkParametersAreSet(table)
-		if v, ok := params["market.auction.minimumDuration"]; ok {
-			d := v.(time.Duration)
-			if err := execsetup.executionEngine.OnMarketAuctionMinimumDurationUpdate(context.Background(), d); err != nil {
-				return err
-			}
-		}
-		return nil
+		return steps.TheFollowingNetworkParametersAreSet(execsetup.executionEngine, execsetup.netParams, table)
 	})
 	s.Step(`^"([^"]*)" withdraws "([^"]*)" from the account "([^"]*)"$`, func(owner, rawAmount, asset string) error {
 		return steps.TraderWithdrawsFromAccount(execsetup.collateralEngine, owner, rawAmount, asset)

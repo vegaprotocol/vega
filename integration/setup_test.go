@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/integration/steps/market"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/plugins"
 	types "code.vegaprotocol.io/vega/proto"
@@ -59,6 +60,8 @@ type executionTestSetup struct {
 	InsurancePoolInitialBalance uint64
 
 	errorHandler *helpers.ErrorHandler
+
+	netParams *netparams.Store
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -95,6 +98,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
 	execsetup.errorHandler = helpers.NewErrorHandler()
+
+	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
 
 	return execsetup
 }
