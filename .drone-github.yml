@@ -28,9 +28,7 @@ steps:
         path: /go/pkg
     environment:
       GO111MODULE: "on"
-      GOARCH: amd64
       GOCACHE: /go/cache
-      GOOS: linux
       GITHUB_DEPLOY_SSH_PRIVATE_KEY:
         from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
     commands:
@@ -47,7 +45,7 @@ steps:
       - git diff --name-only "$$DRONE_COMMIT_BEFORE...$$DRONE_COMMIT_AFTER" >git_diff.txt
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go|\.feature)$$' git_diff.txt)" -gt 0 ; then
           echo "Building executable" ;
-          ./script/build.sh -a build -t linux/amd64 || exit 1;
+         ./script/build-multiarch-no-cgo.sh default || exit 1 ;
         else
           echo "No Go files changed. Skipping building of binary." ;
           rm -f cmd/vega/vega-* ;
@@ -148,9 +146,7 @@ steps:
         path: /go/pkg
     environment:
       GO111MODULE: "on"
-      GOARCH: amd64
       GOCACHE: /go/cache
-      GOOS: linux
       GITHUB_DEPLOY_SSH_PRIVATE_KEY:
         from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
     commands:
@@ -162,7 +158,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - ./script/build.sh -a build -t linux/amd64
+      - env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o cmd/vega/vega ./cmd/vega
     depends_on:
       - fetch
     when:
@@ -275,7 +271,7 @@ steps:
       - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
       - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
       - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
-      - ./script/build-multiarch-no-cgo.sh
+      - ./script/build-multiarch-no-cgo.sh all
     depends_on:
       - build_docker_image
     when:

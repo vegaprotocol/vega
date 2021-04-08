@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
 
+default_combinations="linux,amd64
+	darwin,amd64
+	windows,amd64"
+
+all_combinations="$default_combinations
+	linux,386
+	linux,arm64
+	linux,mips64
+	linux,mips64le
+	linux,mips
+	linux,mipsle
+	windows,386"
+
+case "${1:-}" in
+	"") combinations="$default_combinations" ;;
+	default) combinations="$default_combinations" ;;
+	all) combinations="$all_combinations" ;;
+	*) echo "Invalid: $1" ; exit 1 ;;
+esac
+
 pidsfile="$(mktemp)"
-for combo in \
-	linux,amd64 \
-	linux,386 \
-	linux,arm64 \
-	darwin,amd64 \
-	linux,mips64 \
-	linux,mips64le \
-	linux,mips \
-	linux,mipsle \
-	windows,amd64 \
-	windows,386
-do
+for combo in $combinations ; do
 	goos="$(echo "$combo" | cut -f1 -d,)"
 	goarch="$(echo "$combo" | cut -f2 -d,)"
 	case "$goos" in
