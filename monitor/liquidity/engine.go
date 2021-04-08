@@ -14,7 +14,7 @@ type AuctionState interface {
 	StartLiquidityAuction(t time.Time, d *types.AuctionDuration)
 	EndAuction()
 	InAuction() bool
-	ExtendAuction(delta types.AuctionDuration)
+	ExtendAuctionLiquidity(delta types.AuctionDuration)
 	ExpiresAt() *time.Time
 }
 
@@ -84,12 +84,12 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake float
 			return // all done
 		}
 		// we're still in trouble, extend the auction
-		as.ExtendAuction(ext)
+		as.ExtendAuctionLiquidity(ext)
 		return
 	}
 	if currentStake < (targetStake*c1) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
 		if exp != nil {
-			as.ExtendAuction(ext)
+			as.ExtendAuctionLiquidity(ext)
 			return
 		}
 		as.StartLiquidityAuction(t, &types.AuctionDuration{

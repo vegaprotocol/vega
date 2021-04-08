@@ -22,12 +22,18 @@ type Auction struct {
 	leave bool
 	// what precisely triggered the auction
 	trigger types.AuctionTrigger
+	// what component extended the ongoing auction (if any)
+	extension types.AuctionTrigger
 }
 
 // NewAuctionEvent creates a new auction event object
-func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, stop int64, trigger types.AuctionTrigger) *Auction {
+func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, stop int64, triggers ...types.AuctionTrigger) *Auction {
+	if len(triggers) == 0 {
+		return nil
+	}
+	trigger := triggers[0]
 	opening := trigger == types.AuctionTrigger_AUCTION_TRIGGER_OPENING
-	return &Auction{
+	e := &Auction{
 		Base:           newBase(ctx, AuctionEvent),
 		marketID:       marketID,
 		auctionStart:   start,
@@ -36,6 +42,10 @@ func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, st
 		leave:          leave,
 		trigger:        trigger,
 	}
+	if len(triggers) == 2 {
+		e.extension = triggers[1]
+	}
+	return e
 }
 
 func (a Auction) MarketID() string {
@@ -51,6 +61,9 @@ func (a Auction) Auction() bool {
 func (a Auction) MarketEvent() string {
 	// is in auction
 	start := time.Unix(0, a.auctionStart).Format(time.RFC3339Nano)
+	if a.extension != types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED {
+		return fmt.Sprintf("Market %s in auction mode (%s) started at %s (extension reason: %s)", a.marketID, a.trigger, start, a.extension)
+	}
 	stopT := time.Unix(0, a.auctionStop)
 	if a.leave {
 		if a.auctionStop == 0 {
@@ -76,12 +89,13 @@ func (a Auction) MarketEvent() string {
 // Proto wrap event data in a proto message
 func (a Auction) Proto() types.AuctionEvent {
 	return types.AuctionEvent{
-		MarketId:       a.marketID,
-		OpeningAuction: a.openingAuction,
-		Leave:          a.leave,
-		Start:          a.auctionStart,
-		End:            a.auctionStop,
-		Trigger:        a.trigger,
+		MarketId:         a.marketID,
+		OpeningAuction:   a.openingAuction,
+		Leave:            a.leave,
+		Start:            a.auctionStart,
+		End:              a.auctionStop,
+		Trigger:          a.trigger,
+		ExtensionTrigger: a.extension,
 	}
 }
 

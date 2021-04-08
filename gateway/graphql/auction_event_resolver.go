@@ -23,3 +23,7 @@ func (r *auctionEventResolver) AuctionEnd(ctx context.Context, obj *proto.Auctio
 func (r *auctionEventResolver) Trigger(ctx context.Context, obj *proto.AuctionEvent) (AuctionTrigger, error) {
 	return convertAuctionTriggerFromProto(obj.Trigger)
 }
+
+func (r *auctionEventResolver) ExtensionTrigger(ctx context.Context, obj *proto.AuctionEvent) (AuctionTrigger, error) {
+	return convertAuctionTriggerFromProto(obj.ExtensionTrigger)
+}
