@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -86,7 +87,16 @@ func FeatureContext(s *godog.Suite) {
 	})
 
 	// Other steps
-	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, theInsurancePoolInitialBalanceForTheMarketsIs)
+	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, func(amountstr string) error {
+		amount, _ := strconv.ParseUint(amountstr, 10, 0)
+		for _, mkt := range execsetup.markets {
+			asset, _ := mkt.GetAsset()
+			if err := execsetup.collateralEngine.TopUpInsurancePool(mkt.Id, asset, amount); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	s.Step(`^the following network parameters are set:$`, func(table *gherkin.DataTable) error {
 		params := steps.TheFollowingNetworkParametersAreSet(table)
 		if v, ok := params["market.auction.minimumDuration"]; ok {

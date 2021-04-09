@@ -1,7 +1,6 @@
 Feature: Test market depth events for pegged orders (cancelling pegged orders)
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets:
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |

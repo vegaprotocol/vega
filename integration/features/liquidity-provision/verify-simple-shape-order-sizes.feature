@@ -1,7 +1,6 @@
 Feature: Verify the order size is correctly cumulated.
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets:
     And the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00000190128526884174 | 0  | 0.016 | 2.5   |
