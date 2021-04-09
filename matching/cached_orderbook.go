@@ -96,11 +96,3 @@ func (b *CachedOrderBook) GetIndicativePrice() uint64 {
 	}
 	return price
 }
-
-func (b *CachedOrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
-	// yes this is moving logic in the caching layer.
-	if b.OrderBook.auction {
-		return b.GetIndicativePrice(), nil
-	}
-	return b.OrderBook.GetCloseoutPrice(volume, side)
-}
