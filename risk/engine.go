@@ -22,6 +22,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/risk Orderbook
 type Orderbook interface {
 	GetCloseoutPrice(volume uint64, side types.Side) (uint64, error)
+	GetIndicativePrice() uint64
 }
 
 // AuctionState represents the current auction state of the market, previously we got this information from the matching engine, but really... that's not its job
