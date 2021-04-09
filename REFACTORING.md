@@ -10,7 +10,7 @@ This document is an attempt to get the team on the same page about the refactori
 * Remove technical limitation
 * Maintainability:  Clean code / SOLID philosophy
 * Make it easier to understand
-* Pony lang philosophy
+* [The Pony philosophy](https://www.ponylang.io/discover/#the-pony-philosophy)
 
 ## How?
 * Defined how we can reach that goal.
@@ -70,4 +70,4 @@ Basically, the boy scout's rule.
 1. find a tool to highlight hot code path
 2. Bootstrap files for coding style, convention and stuff.
 3. Find the biggest offenders and start from there to build our guideline.
-4. golangci : linters to get more insight on smells.
+4. `golangci` : Use linters to get more insight on smells.
