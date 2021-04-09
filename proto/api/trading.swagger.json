@@ -3046,7 +3046,7 @@
           "$ref": "#/definitions/vegaAuctionTrigger",
           "title": "the reason this market is/was in auction"
         },
-        "extensionTrigger": {
+        "extension_trigger": {
           "$ref": "#/definitions/vegaAuctionTrigger",
           "title": "If an auction was ongoing, but was extended for whatever reason, this field will\nbe set to the trigger type indicating which component extended the auction"
         }
