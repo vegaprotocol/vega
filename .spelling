@@ -11,6 +11,7 @@ base64
 blockchain
 Buf
 codegen
+cyclomatic
 datestamps
 datetime
 denylist
