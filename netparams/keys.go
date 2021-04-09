@@ -116,4 +116,5 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateNetParamMinVoterBalance:       {},
 	BlockchainsEthereumConfig:                             {},
 	MarketLiquidityProvisionShapesMaxSize:                 {},
+	MarketProbabilityOfTradingTauScaling:                  {},
 }
