@@ -209,9 +209,12 @@ func (m *Market) amendLiquidityProvisionContinuous(
 
 	pos, ok := m.position.GetPositionByPartyID(party)
 	if !ok {
-		// at this point, in continuous mode, a party with deployed liquidity
-		// should always have a position at least potential
-		return err
+		// this is not an error here, that would just mean the party
+		// never had a position open before that, we may be in the auction
+		// the party join, and never had the chance to get anything deployed
+		// so not positions exists
+		pos = &positions.MarketPosition{}
+		pos.SetParty(party)
 	}
 
 	// first remove all existing orders from the potential positions
