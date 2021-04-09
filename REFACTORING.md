@@ -22,7 +22,7 @@ This document is an attempt to get the team on the same page about the refactori
     * avoid coupling: Better interfaces, or event driven packages.
 * Defined critical code path for maximum impact.
   * Identify the hottest path of code change :
-    * compare results with cyclomatic complexity (gocyclo).
+    * compare results with cyclomatic complexity (`gocyclo`).
     * rate of changes of the code and files 
     * number of import inside a file -> reveal a code smell ?
 * Defined medium to share the knowledge.
