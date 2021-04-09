@@ -61,14 +61,6 @@ type executionTestSetup struct {
 	errorHandler *helpers.ErrorHandler
 }
 
-func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTestSetup {
-	if execsetup == nil {
-		execsetup = &executionTestSetup{}
-	}
-	execsetup.InsurancePoolInitialBalance = balance
-	return execsetup
-}
-
 func newExecutionTestSetup() *executionTestSetup {
 	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()

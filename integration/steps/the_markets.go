@@ -55,7 +55,7 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 		asset, _ := mkt.GetAsset()
 		assetsToEnable[asset] = struct{}{}
 	}
-	for assetToEnable, _ := range assetsToEnable {
+	for assetToEnable := range assetsToEnable {
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
 			Id:     assetToEnable,
 			Symbol: assetToEnable,
