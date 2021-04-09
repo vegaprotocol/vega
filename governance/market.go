@@ -2,6 +2,7 @@ package governance
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/netparams"
@@ -131,7 +132,7 @@ func assignRiskModel(definition *types.NewMarketConfiguration, target *types.Tra
 
 func createMarket(
 	marketID string,
-	definition *types.NewMarketConfiguration,
+	definition *types.NewMarket,
 	netp NetParams,
 	currentTime time.Time,
 	assets Assets,
@@ -140,7 +141,8 @@ func createMarket(
 	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp, openingAuctionDuration); err != nil {
 		return nil, perr, err
 	}
-	instrument, perr, err := createInstrument(definition.Instrument, definition.Metadata)
+	instrument, perr, err := createInstrument(definition.Changes.
+		Instrument, definition.Changes.Metadata)
 	if err != nil {
 		return nil, perr, err
 	}
@@ -153,20 +155,20 @@ func createMarket(
 	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
 	// get price monitoring parameters
 	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
-	if definition.PriceMonitoringParameters == nil {
+	if definition.Changes.PriceMonitoringParameters == nil {
 		pmParams := &types.PriceMonitoringParameters{}
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
-		definition.PriceMonitoringParameters = pmParams
+		definition.Changes.PriceMonitoringParameters = pmParams
 	}
 
-	if definition.LiquidityMonitoringParameters == nil {
+	if definition.Changes.LiquidityMonitoringParameters == nil {
 		// get target stake parameters
 		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
 		tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
 		//get triggering ratio
 		triggeringRatio, _ := netp.GetFloat(netparams.MarketLiquidityTargetStakeTriggeringRatio)
 
-		definition.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
+		definition.Changes.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
 				TimeWindow:    int64(tsTimeWindow.Seconds()),
 				ScalingFactor: tsScalingFactor,
@@ -177,7 +179,7 @@ func createMarket(
 
 	market := &types.Market{
 		Id:            marketID,
-		DecimalPlaces: definition.DecimalPlaces,
+		DecimalPlaces: definition.Changes.DecimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				MakerFee:          makerFee,
@@ -198,15 +200,15 @@ func createMarket(
 			},
 		},
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
-			Parameters:      definition.PriceMonitoringParameters,
+			Parameters:      definition.Changes.PriceMonitoringParameters,
 			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
 		},
-		LiquidityMonitoringParameters: definition.LiquidityMonitoringParameters,
+		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
 	}
-	if err := assignRiskModel(definition, market.TradableInstrument); err != nil {
+	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
-	if err := assignTradingMode(definition, market); err != nil {
+	if err := assignTradingMode(definition.Changes, market); err != nil {
 		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 	return market, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
@@ -313,25 +315,105 @@ func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (ty
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
+func validateCommitment(
+	commitment *types.NewMarketCommitment,
+	netp NetParams,
+) (types.ProposalError, error) {
+	maxShapesSize, _ := netp.GetInt(netparams.MarketLiquidityProvisionShapesMaxSize)
+	maxFee, _ := netp.GetFloat(netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel)
+
+	if commitment == nil {
+		return types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT, errors.New("market proposal is missing liquidity commitment")
+	}
+	if commitment.CommitmentAmount == 0 {
+		return types.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT,
+			fmt.Errorf("proposal commitment amount is 0 or missing")
+	}
+	if fee, err := strconv.ParseFloat(commitment.Fee, 64); err != nil || fee < 0 || len(commitment.Fee) <= 0 || fee > maxFee {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT,
+			errors.New("invalid liquidity provision fee")
+	}
+
+	if perr, err := validateShape(commitment.Buys, types.Side_SIDE_BUY, uint64(maxShapesSize)); err != nil {
+		return perr, err
+	}
+	return validateShape(commitment.Sells, types.Side_SIDE_SELL, uint64(maxShapesSize))
+}
+
+func validateShape(
+	sh []*types.LiquidityOrder,
+	side types.Side,
+	maxSize uint64,
+) (types.ProposalError, error) {
+	if len(sh) <= 0 {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("empty %v shape", side)
+	}
+	if len(sh) > int(maxSize) {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
+	}
+	for _, lo := range sh {
+		if lo.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+			// We must specify a valid reference
+			return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without reference")
+		}
+		if lo.Proportion == 0 {
+			return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without a proportion")
+		}
+
+		if side == types.Side_SIDE_BUY {
+			switch lo.Reference {
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+				return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+				if lo.Offset > 0 {
+					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be <= 0")
+				}
+			case types.PeggedReference_PEGGED_REFERENCE_MID:
+				if lo.Offset >= 0 {
+					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be < 0")
+				}
+			}
+		} else {
+			switch lo.Reference {
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+				if lo.Offset < 0 {
+					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be >= 0")
+				}
+			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+				return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell side shape with best bid price reference")
+			case types.PeggedReference_PEGGED_REFERENCE_MID:
+				if lo.Offset <= 0 {
+					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be > 0")
+				}
+			}
+		}
+	}
+	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+}
+
 // ValidateNewMarket checks new market proposal terms
 func validateNewMarket(
 	currentTime time.Time,
-	terms *types.NewMarketConfiguration,
+	terms *types.NewMarket,
 	assets Assets,
 	deepCheck bool,
 	netp NetParams,
 	openingAuctionDuration time.Duration,
 ) (types.ProposalError, error) {
-	if perr, err := validateInstrument(currentTime, terms.Instrument, assets, deepCheck); err != nil {
+	if perr, err := validateInstrument(currentTime, terms.Changes.Instrument, assets, deepCheck); err != nil {
 		return perr, err
 	}
-	if perr, err := validateTradingMode(terms); err != nil {
+	if perr, err := validateTradingMode(terms.Changes); err != nil {
 		return perr, err
 	}
-	if perr, err := validateRiskParameters(terms.RiskParameters); err != nil {
+	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
+		return perr, err
+	}
+
+	if perr, err := validateCommitment(terms.LiquidityCommitment, netp); err != nil {
 		return perr, err
 	}
 

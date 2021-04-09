@@ -232,6 +232,9 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	}
 
 	mkt := e.markets[marketConfig.Id]
+	// publish market data anyway initially
+	e.publishMarketInfos(ctx, mkt)
+
 	// TODO(): remove check once LiquidityProvision is required
 	// for now it is optional
 	if lp != nil {
@@ -242,7 +245,6 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 		}
 	}
 
-	e.publishMarketInfos(ctx, mkt)
 	return nil
 }
 

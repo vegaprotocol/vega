@@ -6451,7 +6451,12 @@ enum ProposalRejectionReason {
   CouldNotInstantiateMarket
   "Market proposal market contained invalid product definition"
   InvalidFutureProduct
-
+  "Market proposal is missing commitment amount"
+  MissingCommitmentAmount
+  "Market proposal have invalid fee amount"
+  InvalidFeeAmount
+  "Market proposal have one or more invalid shape"
+  InvalidShape
 }
 
 "Reason for the order being rejected by the core node"

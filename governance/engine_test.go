@@ -61,6 +61,88 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a majority of yes vote makes the proposal passed", testSubmittingMajorityOfYesVoteMakesProposalPassed)
 	t.Run("Submitting a majority of no vote makes the proposal declined", testSubmittingMajorityOfNoVoteMakesProposalDeclined)
 	t.Run("Test multiple proposal lifecycle", testMultipleProposalsLifecycle)
+
+	t.Run("Validate market proposal commitment", testValidateProposalCommitment)
+}
+
+func testValidateProposalCommitment(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	party := eng.newValidPartyTimes("a-valid-party", 1, 10)
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+
+	now := time.Now()
+	prop := eng.newOpenProposal(party.Id, now)
+
+	// first we test with no commitment
+	prop.Terms.GetNewMarket().LiquidityCommitment = nil
+	_, err := eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "market proposal is missing liquidity commitment")
+
+	// Then no amount
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.CommitmentAmount = 0
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "proposal commitment amount is 0 or missing")
+
+	// Then empty fees
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.Fee = ""
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid liquidity provision fee")
+
+	// Then negative fees
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.Fee = "-1"
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid liquidity provision fee")
+
+	// Then empty shapes
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.Buys = nil
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty SIDE_BUY shape")
+
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.Sells = nil
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty SIDE_SELL shape")
+
+	// Then invalid shapes
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Offset = 100
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "order in buy side shape offset must be <= 0")
+
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Reference = types.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "order in buy side shape with best ask price reference")
+
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Offset = -100
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "order in sell shape offset must be >= 0")
+
+	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
+	prop.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Reference = types.PeggedReference_PEGGED_REFERENCE_BEST_BID
+	_, err = eng.SubmitProposal(context.Background(), prop, "proposal-id")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "order in sell side shape with best bid price reference")
+
 }
 
 func testCanRejectProposal(t *testing.T) {
@@ -96,10 +178,6 @@ func testNewValidMarketProposalReturnsAMarketToSubmit(t *testing.T) {
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
 	proposal := eng.newOpenProposal(party.Id, time.Now())
-	proposal.GetTerms().GetNewMarket().LiquidityCommitment = &types.NewMarketCommitment{
-		CommitmentAmount: 100,
-		Fee:              "0.5",
-	}
 
 	// setup
 	eng.expectAnyAssetTimes(2)
@@ -902,6 +980,20 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 					},
 				},
 			},
+			LiquidityCommitment: newMarketLiquidityCommitment(),
+		},
+	}
+}
+
+func newMarketLiquidityCommitment() *types.NewMarketCommitment {
+	return &types.NewMarketCommitment{
+		CommitmentAmount: 1000,
+		Fee:              "0.5",
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 10},
+		},
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -10},
 		},
 	}
 }
