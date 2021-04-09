@@ -77,10 +77,18 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice int64, rf types.Ris
 			slippagePerUnit int64
 		)
 		if slippageVolume > 0 {
-			exitPrice, err := e.ob.GetCloseoutPrice(uint64(slippageVolume), types.Side_SIDE_BUY)
-			if err != nil && e.log.GetLevel() == logging.DebugLevel {
-				e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
-					logging.Error(err))
+			var (
+				exitPrice uint64
+				err       error
+			)
+			if auction {
+				exitPrice = e.ob.GetIndicativePrice()
+			} else {
+				exitPrice, err = e.ob.GetCloseoutPrice(uint64(slippageVolume), types.Side_SIDE_BUY)
+				if err != nil && e.log.GetLevel() == logging.DebugLevel {
+					e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
+						logging.Error(err))
+				}
 			}
 			slippagePerUnit = markPrice - int64(exitPrice)
 		}
@@ -101,10 +109,18 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice int64, rf types.Ris
 		)
 		// slippageVolume would be negative we abs it in the next phase
 		if slippageVolume < 0 {
-			exitPrice, err := e.ob.GetCloseoutPrice(uint64(-slippageVolume), types.Side_SIDE_SELL)
-			if err != nil && e.log.GetLevel() == logging.DebugLevel {
-				e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
-					logging.Error(err))
+			var (
+				exitPrice uint64
+				err       error
+			)
+			if auction {
+				exitPrice = e.ob.GetIndicativePrice()
+			} else {
+				exitPrice, err = e.ob.GetCloseoutPrice(uint64(-slippageVolume), types.Side_SIDE_SELL)
+				if err != nil && e.log.GetLevel() == logging.DebugLevel {
+					e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
+						logging.Error(err))
+				}
 			}
 			slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
