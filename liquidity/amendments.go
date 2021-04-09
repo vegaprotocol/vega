@@ -64,7 +64,11 @@ func (e *Engine) AmendLiquidityProvision(
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Fee = lps.Fee
 	lp.Reference = lps.Reference
-	lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
+	// only if it's active, we don't want to loose a PENDING
+	// status here.
+	if lp.Status == types.LiquidityProvision_STATUS_ACTIVE {
+		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
+	}
 	e.undeployedProvisions = true
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
 	for _, buy := range lps.Buys {
