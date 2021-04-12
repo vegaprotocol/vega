@@ -1,7 +1,6 @@
 Feature: Test loss socialization case 5
 
   Background:
-    Given the initial insurance pool balance is "3000" for the markets:
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
@@ -14,6 +13,7 @@ Feature: Test loss socialization case 5
 
   Scenario: case 5 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 # setup accounts
+    Given the initial insurance pool balance is "3000" for the markets:
     Given the traders deposit on asset's general account the following amount:
       | trader           | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |

@@ -1,7 +1,7 @@
 Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTests.py & https://github.com/vegaprotocol/scenario-runner/tree/develop/scenarios/QA/issues/86)
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets:
+
     And the fees configuration named "my-fees-config":
       | maker fee | infrastructure fee | liquidity fee |
       | 0.00025   | 0.0005             | 0.001         |

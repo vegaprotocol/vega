@@ -1,7 +1,7 @@
 Feature: Price monitoring test for issue 2668
 
   Background:
-    Given the markets start on "2020-10-16T00:00:00Z" and expire on "2020-12-31T23:59:59Z"
+    Given time is updated to "2020-10-16T00:00:00Z"
     And the price monitoring updated every "1" seconds named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 43200   | 0.9999999   | 300               |
@@ -9,8 +9,8 @@ Feature: Price monitoring test for issue 2668
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 0.8   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | maturity date        | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | market.auction.minimumDuration |
       | 300                            |

@@ -1,7 +1,7 @@
 Feature: Price monitoring test using simple risk model
 
   Background:
-    Given the markets start on "2020-10-16T00:00:00Z" and expire on "2020-12-31T23:59:59Z"
+    Given time is updated to "2020-10-16T00:00:00Z"
     And the price monitoring updated every "60" seconds named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
@@ -10,8 +10,8 @@ Feature: Price monitoring test using simple risk model
       | long | short | max move up | min move down | probability of trading |
       | 0.11 | 0.1   | 10          | -11           | 0.1                    |
     And the markets:
-      | id        | quote name | asset | auction duration | risk model           | margin calculator         | fees         | price monitoring    | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | 240              | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | auction duration | maturity date        | risk model           | margin calculator         | fees         | price monitoring    | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | 240              | 2020-12-31T23:59:59Z | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | market.auction.minimumDuration |
       | 240                            |

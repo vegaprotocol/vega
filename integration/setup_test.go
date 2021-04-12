@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
@@ -19,17 +18,9 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
-const (
-	defaultMarketStart  = "2019-11-30T00:00:00Z"
-	defaultMarketExpiry = "2019-12-31T23:59:59Z"
-)
-
 var (
 	execsetup *executionTestSetup
 	reporter  tstReporter
-
-	marketStart  = defaultMarketStart
-	marketExpiry = defaultMarketExpiry
 )
 
 type tstReporter struct {
@@ -51,36 +42,26 @@ var (
 )
 
 type executionTestSetup struct {
-	engine *execution.Engine
-
-	cfg          execution.Config
-	log          *logging.Logger
-	ctrl         *gomock.Controller
-	timesvc      *stubs.TimeStub
-	collateral   *collateral.Engine
-	oracleEngine *oracles.Engine
+	cfg              execution.Config
+	log              *logging.Logger
+	ctrl             *gomock.Controller
+	timeService      *stubs.TimeStub
+	broker           *stubs.BrokerStub
+	executionEngine  *execution.Engine
+	collateralEngine *collateral.Engine
+	oracleEngine     *oracles.Engine
 
 	positionPlugin *plugins.Positions
 
-	broker *stubs.BrokerStub
-
 	// save trader accounts state
-	mkts []types.Market
+	markets []types.Market
 
 	InsurancePoolInitialBalance uint64
 
 	errorHandler *helpers.ErrorHandler
 }
 
-func getExecutionSetupEmptyWithInsurancePoolBalance(balance uint64) *executionTestSetup {
-	if execsetup == nil {
-		execsetup = &executionTestSetup{}
-	}
-	execsetup.InsurancePoolInitialBalance = balance
-	return execsetup
-}
-
-func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionTestSetup {
+func newExecutionTestSetup() *executionTestSetup {
 	if execsetup != nil && execsetup.ctrl != nil {
 		execsetup.ctrl.Finish()
 	} else if execsetup == nil {
@@ -92,57 +73,24 @@ func getExecutionTestSetup(startTime time.Time, mkts []types.Market) *executionT
 	execsetup.cfg = execution.NewDefaultConfig("")
 	execsetup.cfg.InsurancePoolInitialBalance = execsetup.InsurancePoolInitialBalance
 	execsetup.log = logging.NewTestLogger()
-	execsetup.mkts = mkts
-	execsetup.timesvc = &stubs.TimeStub{Now: startTime}
+	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()
-	currentTime := time.Now()
-	execsetup.collateral, _ = collateral.New(
+	currentTime, _ := execsetup.timeService.GetTimeNow()
+	execsetup.collateralEngine, _ = collateral.New(
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
-	execsetup.oracleEngine = oracles.NewEngine(execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker)
-
-	for _, mkt := range mkts {
-		asset, _ := mkt.GetAsset()
-		_ = execsetup.collateral.EnableAsset(context.Background(), types.Asset{
-			Id:     asset,
-			Symbol: asset,
-		})
-	}
-
-	tokAsset := types.Asset{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
-			},
-		},
-	}
-	_ = execsetup.collateral.EnableAsset(context.Background(), tokAsset)
-
-	execsetup.engine = execution.NewEngine(
+	execsetup.oracleEngine = oracles.NewEngine(
+		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker,
+	)
+	execsetup.executionEngine = execution.NewEngine(
 		execsetup.log,
 		execsetup.cfg,
-		execsetup.timesvc,
-		execsetup.collateral,
+		execsetup.timeService,
+		execsetup.collateralEngine,
 		execsetup.oracleEngine,
 		execsetup.broker,
 	)
 
-	for _, mkt := range mkts {
-		mkt := mkt
-		_ = execsetup.engine.SubmitMarket(context.Background(), &mkt)
-	}
-
-	// instantiate position plugin
 	execsetup.positionPlugin = plugins.NewPositions(context.Background())
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 

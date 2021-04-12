@@ -2,7 +2,7 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
 
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets:
+
     And the simple risk model named "my-simple-risk-model":
       | long                   | short                  | max move up | min move down | probability of trading |
       | 0.08628781058136630000 | 0.09370922348428490000 | -1          | -1            | 0.1                    |

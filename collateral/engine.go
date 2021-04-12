@@ -2132,3 +2132,15 @@ func (e *Engine) GetMarketLiquidityFeeAccount(market, asset string) (*types.Acco
 	liquidityAccID := e.accountID(market, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 	return e.GetAccountByID(liquidityAccID)
 }
+
+// TopUpInsurancePool - this is used only for test purposed for now
+// and ease out removing the insurance pool balance from configuration, this should
+// definitely never be used in real code.
+func (e *Engine) TopUpInsurancePool(market, asset string, amount uint64) error {
+	acc, err := e.GetAccountByID(e.accountID(market, "", asset, types.AccountType_ACCOUNT_TYPE_INSURANCE))
+	if err != nil {
+		return err
+	}
+
+	return e.IncrementBalance(context.Background(), acc.Id, amount)
+}
