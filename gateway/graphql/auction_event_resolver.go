@@ -24,6 +24,13 @@ func (r *auctionEventResolver) Trigger(ctx context.Context, obj *proto.AuctionEv
 	return convertAuctionTriggerFromProto(obj.Trigger)
 }
 
-func (r *auctionEventResolver) ExtensionTrigger(ctx context.Context, obj *proto.AuctionEvent) (AuctionTrigger, error) {
-	return convertAuctionTriggerFromProto(obj.ExtensionTrigger)
+func (r *auctionEventResolver) ExtensionTrigger(ctx context.Context, obj *proto.AuctionEvent) (*AuctionTrigger, error) {
+	if obj.ExtensionTrigger == proto.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED {
+		return nil, nil
+	}
+	t, err := convertAuctionTriggerFromProto(obj.ExtensionTrigger)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
 }

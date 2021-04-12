@@ -2624,7 +2624,7 @@ type AuctionEvent {
   "What triggered the auction"
   trigger: AuctionTrigger!
   "What, if anything, extended the ongoing auction"
-  extensionTrigger: AuctionTrigger!
+  extensionTrigger: AuctionTrigger
 }
 
 enum AuctionTrigger {

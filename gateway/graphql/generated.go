@@ -848,7 +848,7 @@ type AuctionEventResolver interface {
 	AuctionStart(ctx context.Context, obj *proto.AuctionEvent) (string, error)
 	AuctionEnd(ctx context.Context, obj *proto.AuctionEvent) (string, error)
 	Trigger(ctx context.Context, obj *proto.AuctionEvent) (AuctionTrigger, error)
-	ExtensionTrigger(ctx context.Context, obj *proto.AuctionEvent) (AuctionTrigger, error)
+	ExtensionTrigger(ctx context.Context, obj *proto.AuctionEvent) (*AuctionTrigger, error)
 }
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *proto.Candle) (string, error)
@@ -7337,7 +7337,7 @@ type AuctionEvent {
   "What triggered the auction"
   trigger: AuctionTrigger!
   "What, if anything, extended the ongoing auction"
-  extensionTrigger: AuctionTrigger!
+  extensionTrigger: AuctionTrigger
 }
 
 enum AuctionTrigger {
@@ -9564,14 +9564,11 @@ func (ec *executionContext) _AuctionEvent_extensionTrigger(ctx context.Context, 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(AuctionTrigger)
+	res := resTmp.(*AuctionTrigger)
 	fc.Result = res
-	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+	return ec.marshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BuiltinAsset_id(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
@@ -26971,9 +26968,6 @@ func (ec *executionContext) _AuctionEvent(ctx context.Context, sel ast.Selection
 					}
 				}()
 				res = ec._AuctionEvent_extensionTrigger(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:
@@ -34956,6 +34950,30 @@ func (ec *executionContext) marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Asset(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, v interface{}) (AuctionTrigger, error) {
+	var res AuctionTrigger
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, sel ast.SelectionSet, v AuctionTrigger) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, v interface{}) (*AuctionTrigger, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, sel ast.SelectionSet, v *AuctionTrigger) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
