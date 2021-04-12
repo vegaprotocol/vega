@@ -22,6 +22,19 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 				Param:   netparams.MarketAuctionMinimumDuration,
 				Watcher: exec.OnMarketAuctionMinimumDurationUpdate,
 			})
+				case "market.stake.target.timeWindow":
+			v := row.MustDurationSec("value")
+			if err := exec.OnMarketTargetStakeTimeWindowUpdate(context.Background(), v); err != nil {
+				return err
+			}
+		case "market.stake.target.scalingFactor":
+			v := row.MustF64("value")
+			if err := exec.OnMarketTargetStakeScalingFactorUpdate(context.Background(), v); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unimplemented network param %v in feature test", name)
+		}	
 		}
 	}
 
