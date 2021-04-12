@@ -285,7 +285,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
 		pk := hex.EncodeToString(tx.PubKey())
-		app.log.Error("Rejected as party has no accounts", logging.String("PubKey", pk))
+		app.log.Debug("Rejected as party has no accounts", logging.String("PubKey", pk))
 	}
 
 	return ctx, resp
