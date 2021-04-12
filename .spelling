@@ -11,6 +11,7 @@ base64
 blockchain
 Buf
 codegen
+cyclomatic
 datestamps
 datetime
 denylist
@@ -31,6 +32,7 @@ hotfix
 Ilya
 init
 lifecycle
+linters
 MacOSX
 MarkToMarket
 multisig

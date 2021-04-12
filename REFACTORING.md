@@ -7,16 +7,37 @@ This document is an attempt to get the team on the same page about the refactori
   * Make the code easier to deal with.
   * Ease the addition (or update) of features.
 
+* Remove technical limitation
+* Maintainability:  Clean code / SOLID philosophy
+* Make it easier to understand
+* [The Pony philosophy](https://www.ponylang.io/discover/#the-pony-philosophy)
+
 ## How?
 * Defined how we can reach that goal.
-  * Which techniques? More domain-oriented and less "algorithmic".
+  * Which techniques?
+    * More domain-oriented and less "algorithmic". `order.IsUncrossed()` instead of `order.offet < -1`
+    * avoid graph style code, more like tree structure.
+    * SOLID
+    * clean code
+    * avoid coupling: Better interfaces, or event driven packages.
 * Defined critical code path for maximum impact.
-  * Identify the hottest path of code change.
+  * Identify the hottest path of code change :
+    * compare results with cyclomatic complexity (`gocyclo`).
+    * rate of changes of the code and files 
+    * number of import inside a file -> reveal a code smell ?
 * Defined medium to share the knowledge.
   * Create workshops on specific problems to find a solution, and be on the same page.
   * Save our decisions into a file.
+  * Use external articles on the matter. file with "do this" and "don't do this".
 
 ## When?
+
+Be discussed before being addressed.
+
+Verify the test coverage (coverage is not everything) before refactor.
+
+Beware of refactoring scope to not go too far, and cause conflict.
+
 ### Opportunistic refactoring
 It's done along the way.
 
@@ -43,3 +64,10 @@ Basically, the boy scout's rule.
 
 * How to avoid overlapping with someone else?
 * Into the same PR as the one of the feature or a different one?
+
+## Planing
+
+1. find a tool to highlight hot code path
+2. Bootstrap files for coding style, convention and stuff.
+3. Find the biggest offenders and start from there to build our guideline.
+4. `golangci` : Use linters to get more insight on smells.
