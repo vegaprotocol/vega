@@ -31,6 +31,7 @@ message TxErrorEvent {
     OrderCancellation order_cancellation = 103;
     Proposal proposal = 104;
     Vote vote = 105;
+    LiquidityProvisionSubmission liquidity_provision_submission = 106;
   }
 }
 

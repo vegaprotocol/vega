@@ -1,0 +1,179 @@
+package liquidity
+
+import (
+	"context"
+	"errors"
+	"sort"
+
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/liquidity/supplied"
+	types "code.vegaprotocol.io/vega/proto"
+)
+
+var (
+	ErrPartyHaveNoLiquidityProvision = errors.New("party have no liquidity provision")
+)
+
+func (e *Engine) CanAmend(
+	lps *types.LiquidityProvisionSubmission,
+	party string,
+) error {
+	// does the party is an LP
+	_, ok := e.provisions[party]
+	if !ok {
+		return ErrPartyHaveNoLiquidityProvision
+	}
+
+	// is the new submission valid?
+	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
+		return err
+	}
+
+	// yes
+	return nil
+}
+
+func (e *Engine) AmendLiquidityProvision(
+	ctx context.Context,
+	lps *types.LiquidityProvisionSubmission,
+	party string,
+) ([]*types.Order, error) {
+	if err := e.CanAmend(lps, party); err != nil {
+		return nil, err
+	}
+
+	// LP exists, checked in the previous func
+	lp := e.provisions[party]
+
+	// first we get all orders from this party to be cancelled
+	// get the liquidity order to be cancelled
+	cancels := make([]*types.Order, 0, len(e.liquidityOrders[party]))
+	for _, o := range e.liquidityOrders[party] {
+		cancels = append(cancels, o)
+	}
+
+	sort.Slice(cancels, func(i, j int) bool {
+		return cancels[i].Id < cancels[j].Id
+	})
+
+	// now let's apply all changes
+	// first reset the lp orders map
+	e.liquidityOrders[party] = map[string]*types.Order{}
+	// then update the LP
+	lp.UpdatedAt = e.currentTime.UnixNano()
+	lp.CommitmentAmount = lps.CommitmentAmount
+	lp.Fee = lps.Fee
+	lp.Reference = lps.Reference
+	// only if it's active, we don't want to loose a PENDING
+	// status here.
+	if lp.Status == types.LiquidityProvision_STATUS_ACTIVE {
+		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
+	}
+	e.undeployedProvisions = true
+	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
+	for _, buy := range lps.Buys {
+		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
+			LiquidityOrder: buy,
+		})
+	}
+
+	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(lps.Sells))
+	for _, sell := range lps.Sells {
+		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
+			LiquidityOrder: sell,
+		})
+	}
+
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+	return cancels, nil
+}
+
+// GetPotentialShapeOrders is used to create ordes from
+// shape when amending a liquidity provision this allows us to
+// ensure enough funds can be taken from the margin account in orders
+// to submit orders lateer on.
+func (e *Engine) GetPotentialShapeOrders(
+	party string,
+	price uint64,
+	lps *types.LiquidityProvisionSubmission,
+	repriceFn RepricePeggedOrder,
+) ([]*types.Order, error) {
+	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
+		return nil, err
+	}
+
+	priceShape := func(loShape []*types.LiquidityOrder) ([]*supplied.LiquidityOrder, bool) {
+		shape := make([]*supplied.LiquidityOrder, 0, len(loShape))
+		for _, lorder := range loShape {
+			pegged := &types.PeggedOrder{
+				Reference: lorder.Reference,
+				Offset:    lorder.Offset,
+			}
+			order := &supplied.LiquidityOrder{
+				Proportion: uint64(lorder.Proportion),
+			}
+			price, err := repriceFn(pegged)
+			if err != nil {
+				return nil, false
+			}
+			order.Price = price
+			shape = append(shape, order)
+		}
+		return shape, true
+	}
+
+	buyShape, ok := priceShape(lps.Buys)
+	if !ok {
+		return nil, errors.New("unable to price buy shape")
+	}
+	sellShape, ok := priceShape(lps.Sells)
+	if !ok {
+		return nil, errors.New("unable to price sell shape")
+	}
+
+	obligation := float64(lps.CommitmentAmount) * e.stakeToObligationFactor
+
+	// Create a slice shaped copy of the orders
+	orders := make([]*types.Order, 0, len(e.orders[party]))
+	for _, order := range e.orders[party] {
+		orders = append(orders, order)
+	}
+
+	// now try to calculate the implied volume for our shape,
+	// any error would exit straight away
+	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
+		float64(price), float64(price),
+		obligation,
+		orders,
+		buyShape, sellShape,
+	); err != nil {
+		return nil, err
+	}
+
+	// from this point we should have no error possible, let's just
+	// make the order shapes
+	toCreate := e.buildPotentialShapeOrders(party, buyShape, types.Side_SIDE_BUY)
+	toCreate = append(toCreate,
+		e.buildPotentialShapeOrders(party, sellShape, types.Side_SIDE_SELL)...)
+
+	return toCreate, nil
+}
+
+func (e *Engine) buildPotentialShapeOrders(party string, supplied []*supplied.LiquidityOrder, side types.Side) []*types.Order {
+	orders := make([]*types.Order, 0, len(supplied))
+
+	for _, o := range supplied {
+		// only add order with non = volume to the list
+		if o.LiquidityImpliedVolume == 0 {
+			continue
+		}
+
+		// no need to make it a proper pegged order, set an actual ID etc here
+		// as we actually just return this order as a template for margin
+		// calculation
+		order := e.buildOrder(side, nil, o.Price, party, e.marketID, o.LiquidityImpliedVolume, "", "")
+		orders = append(orders, order)
+	}
+
+	return orders
+}

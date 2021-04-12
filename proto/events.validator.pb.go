@@ -56,6 +56,13 @@ func (this *TxErrorEvent) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_LiquidityProvisionSubmission); ok {
+		if oneOfNester.LiquidityProvisionSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.LiquidityProvisionSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("LiquidityProvisionSubmission", err)
+			}
+		}
+	}
 	return nil
 }
 func (this *TimeUpdate) Validate() error {

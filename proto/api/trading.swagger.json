@@ -5898,6 +5898,9 @@
         },
         "vote": {
           "$ref": "#/definitions/vegaVote"
+        },
+        "liquidity_provision_submission": {
+          "$ref": "#/definitions/vegaLiquidityProvisionSubmission"
         }
       }
     },

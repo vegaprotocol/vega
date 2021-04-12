@@ -556,6 +556,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.2)
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
 	tm.mas.AuctionStarted(ctx)
@@ -678,8 +679,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	// Now attempt to amend the LP submission with something invalid
 	lps.Buys = nil
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
-	// We will not get an error because the previous submission will be re-used
-	require.NoError(t, err)
+	require.EqualError(t, err, "empty SIDE_BUY shape")
 
 	// Check that the original LP submission is still working fine
 	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("trader-A").String())
@@ -747,7 +747,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 700000)
+	addAccountWithAmount(tm, "trader-A", 70000000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -1489,7 +1489,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 			ctx, lpSubmission2, lpparty2, "liquidity-submission-2"),
 	)
 
-	t.Run("current liquidity fee is still 0.5", func(t *testing.T) {
+	t.Run("current liquidity fee is again 0.1", func(t *testing.T) {
 		// First collect all the orders events
 		found := types.Market{}
 		for _, e := range tm.events {
