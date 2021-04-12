@@ -17,7 +17,6 @@ const (
 
 func TestAmendments(t *testing.T) {
 	t.Run("test can amend", testCanAmend)
-	// t.Run("test potential shapes", testPotentialShapes)
 }
 
 func testCanAmend(t *testing.T) {
