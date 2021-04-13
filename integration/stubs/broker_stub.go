@@ -285,6 +285,24 @@ func (b *BrokerStub) GetAccounts() []events.Acc {
 	return s
 }
 
+func (b *BrokerStub) GetAuctionEvents() []events.Auction {
+	batch := b.GetBatch(events.AuctionEvent)
+
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.Auction, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Auction:
+			ret = append(ret, *et)
+		case events.Auction:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
 func (b *BrokerStub) GetMarginByPartyAndMarket(partyID, marketID string) (types.MarginLevels, error) {
 	batch := b.GetBatch(events.MarginLevelsEvent)
 	mapped := map[string]map[string]types.MarginLevels{}
