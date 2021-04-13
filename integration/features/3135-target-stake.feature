@@ -58,7 +58,7 @@ Feature: Target stake
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader | id        | type | volume | price | resulting trades | type        | tif     | reference |
       | tt_0   | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT  | TIF_GTC | tt_0_0    |
       | tt_0   | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT  | TIF_GTC | tt_0_1    |
@@ -68,7 +68,7 @@ Feature: Target stake
     Then the mark price should be "100" for the market "ETH/DEC21"
 
     # Traders 1, 2, 3 go long
-    When traders place the following orders:
+    When the traders place the following orders:
       | trader | id        | type | volume | price | resulting trades | type        | tif     | reference |
       | tt_1   | ETH/DEC21 | buy  | 10     | 110   | 1                | TYPE_LIMIT  | TIF_GTC | tt_1_0    |
       | tt_2   | ETH/DEC21 | buy  | 20     | 110   | 1                | TYPE_LIMIT  | TIF_GTC | tt_2_0    |
