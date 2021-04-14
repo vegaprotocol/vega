@@ -745,6 +745,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 	ctx := context.Background()
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 10*time.Second)
 
 	// Create a new trader account with very little funding
 	addAccountWithAmount(tm, "trader-A", 70000000)
@@ -777,13 +778,15 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
+	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_OPENING, tm.market.GetMarketData().Trigger)
 	// Leave the auction so we can uncross the book
-	now = now.Add(time.Second * 20)
-	tm.market.LeaveAuction(ctx, now)
+	now = now.Add(time.Second * 11)
 	tm.market.OnChainTimeUpdate(ctx, now)
+	// ensure we left auction
+	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, tm.market.GetMarketData().Trigger)
 
 	// Move the price enough that we go into a price auction
-	now = now.Add(time.Second * 20)
+	// now = now.Add(time.Second * 61)
 	o5 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
@@ -904,16 +907,13 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 	ctx := context.Background()
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second*10)
 
 	// Create a new trader account with very little funding
 	addAccountWithAmount(tm, "trader-A", 700000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
-	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 1000)

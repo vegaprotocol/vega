@@ -1,7 +1,7 @@
 Feature: Regression test for issue 596
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets:
+
     And the markets:
       | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-none     | default-eth-for-future |

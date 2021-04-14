@@ -38,7 +38,7 @@ type AuctionState interface {
 	AuctionStart() bool
 	// start a price-related auction, extend a current auction, or end it
 	StartPriceAuction(t time.Time, d *types.AuctionDuration)
-	ExtendAuction(delta types.AuctionDuration)
+	ExtendAuctionPrice(delta types.AuctionDuration)
 	EndAuction()
 	// get parameters for current auction
 	Start() time.Time
@@ -219,7 +219,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 			for _, b := range bounds {
 				duration += b.AuctionExtension
 			}
-			as.ExtendAuction(types.AuctionDuration{
+			as.ExtendAuctionPrice(types.AuctionDuration{
 				Duration: duration,
 			})
 			return nil
@@ -267,7 +267,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 	}
 
 	// extend the current auction
-	as.ExtendAuction(types.AuctionDuration{
+	as.ExtendAuctionPrice(types.AuctionDuration{
 		Duration: duration,
 	})
 

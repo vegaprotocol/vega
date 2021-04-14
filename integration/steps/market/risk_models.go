@@ -18,6 +18,7 @@ var (
 		"defaults/risk-model/simple/default-simple-risk-model-2.json",
 		"defaults/risk-model/simple/default-simple-risk-model-3.json",
 		"defaults/risk-model/simple/default-simple-risk-model-4.json",
+		"defaults/risk-model/simple/system-test-risk-model.json",
 	}
 
 	//go:embed defaults/risk-model/log-normal/*.json

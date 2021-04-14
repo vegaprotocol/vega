@@ -307,6 +307,9 @@ func NewMarket(
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
+	// call on chain time update straight away, so
+	// the time in the engine is being updatedat creation
+	liqEngine.OnChainTimeUpdate(ctx, now)
 
 	// The market is initially create in a proposed state
 	mkt.State = types.Market_STATE_PROPOSED
@@ -543,6 +546,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
 				}
+				if evt := m.as.AuctionExtended(ctx); evt != nil {
+					// this should never, ever happen
+					m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
+				}
 				m.as.EndAuction()
 				m.LeaveAuction(ctx, t)
 
@@ -558,6 +565,9 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
+			}
+			if evt := m.as.AuctionExtended(ctx); evt != nil {
+				m.broker.Send(evt)
 			}
 			m.checkLiquidity(ctx, nil)
 			// price monitoring engine and liquidity monitoring engine both indicated auction can end
@@ -882,20 +892,25 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// we'll fall back to the a network order at the new mark price (mid-price)
 	m.confirmMTM(ctx, &types.Order{Price: m.markPrice})
 
+	// keep var to see if we're leaving opening auction
+	isOpening := m.as.IsOpeningAuction()
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.AuctionEnded(ctx, now)
 
 	updatedOrders := []*types.Order{}
 
 	for _, uncrossedOrder := range uncrossedOrders {
-		for _, trade := range uncrossedOrder.Trades {
-			err := m.pMonitor.CheckPrice(
-				ctx, m.as, trade.Price, trade.Size, now,
-			)
-			if err != nil {
-				m.log.Panic("unable to run check price with price monitor",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
+		if !isOpening {
+			// @TODO we should update this once
+			for _, trade := range uncrossedOrder.Trades {
+				err := m.pMonitor.CheckPrice(
+					ctx, m.as, trade.Price, trade.Size, now,
+				)
+				if err != nil {
+					m.log.Panic("unable to run check price with price monitor",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
+				}
 			}
 		}
 
@@ -1347,6 +1362,9 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 				logging.String("market-id", m.GetID()),
 				logging.Error(merr))
 		}
+	}
+	if evt := m.as.AuctionExtended(ctx); evt != nil {
+		m.broker.Send(evt)
 	}
 	m.checkLiquidity(ctx, trades)
 
@@ -3470,6 +3488,9 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 		*rf,
 		m.markPrice,
 		vBid, vAsk)
+	if evt := m.as.AuctionExtended(ctx); evt != nil {
+		m.broker.Send(evt)
+	}
 
 }
 
@@ -3492,6 +3513,8 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		// If price monitoring doesn't trigger auction than leave it
 		if m.as.AuctionEnd() && m.matching.BidAndAskPresentAfterAuction() {
 			m.LeaveAuction(ctx, m.currentTime)
+		} else if evt := m.as.AuctionExtended(ctx); evt != nil {
+			m.broker.Send(evt)
 		}
 	}
 }

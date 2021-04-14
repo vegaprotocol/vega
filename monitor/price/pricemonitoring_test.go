@@ -634,7 +634,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	now = afterInitialAuction
 	t2ViolatingPrice := uint64(referencePrice) + (t2Multiplier+1)*maxMoveUpt1
 	end2 := types.AuctionDuration{Duration: t2.AuctionExtension}
-	auctionStateMock.EXPECT().ExtendAuction(end2).Times(1)
+	auctionStateMock.EXPECT().ExtendAuctionPrice(end2).Times(1)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, t2ViolatingPrice, 1, afterInitialAuction) //price should violated 2nd trigger and result in auction extension
 	require.NoError(t, err)
 
@@ -737,7 +737,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	require.NoError(t, err)
 
 	extension := types.AuctionDuration{Duration: t1.AuctionExtension}
-	auctionStateMock.EXPECT().ExtendAuction(extension).Times(1)
+	auctionStateMock.EXPECT().ExtendAuctionPrice(extension).Times(1)
 
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice+2*maxMoveUp, 1, now)
 	require.NoError(t, err)

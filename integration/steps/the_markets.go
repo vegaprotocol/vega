@@ -1,30 +1,99 @@
 package steps
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cucumber/godog/gherkin"
 
+	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/steps/market"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 func TheMarkets(
 	config *market.Config,
-	expiry string,
+	executionEngine *execution.Engine,
+	collateralEngine *collateral.Engine,
 	table *gherkin.DataTable,
-) []types.Market {
-	markets := []types.Market{}
-
+) ([]types.Market, error) {
+	var markets []types.Market
 	for _, row := range TableWrapper(*table).Parse() {
-		m := newMarket(config, expiry, marketRow{row: row})
-		markets = append(markets, m)
+		mkt := newMarket(config, marketRow{row: row})
+		markets = append(markets, mkt)
 	}
 
-	return markets
+	if err := enableMarketAssets(markets, collateralEngine); err != nil {
+		return nil, err
+	}
+
+	if err := enableVoteAsset(collateralEngine); err != nil {
+		return nil, err
+	}
+
+	if err := submitMarkets(markets, executionEngine); err != nil {
+		return nil, err
+	}
+
+	return markets, nil
 }
 
-func newMarket(config *market.Config, marketExpiry string, row marketRow) types.Market {
+func submitMarkets(markets []types.Market, executionEngine *execution.Engine) error {
+	for _, mkt := range markets {
+		err := executionEngine.SubmitMarket(context.Background(), &mkt)
+		if err != nil {
+			return fmt.Errorf("couldn't submit market(%s): %v", mkt.Id, err)
+		}
+	}
+	return nil
+}
+
+func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Engine) error {
+	assetsToEnable := map[string]struct{}{}
+	for _, mkt := range markets {
+		asset, _ := mkt.GetAsset()
+		assetsToEnable[asset] = struct{}{}
+	}
+	for assetToEnable := range assetsToEnable {
+		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
+			Id:     assetToEnable,
+			Symbol: assetToEnable,
+		})
+		if err != nil {
+			return fmt.Errorf("couldn't enable asset(%s): %v", assetToEnable, err)
+		}
+	}
+	return nil
+}
+
+func enableVoteAsset(collateralEngine *collateral.Engine) error {
+	voteAsset := types.Asset{
+		Id:          "VOTE",
+		Name:        "VOTE",
+		Symbol:      "VOTE",
+		Decimals:    5,
+		TotalSupply: "1000",
+		Source: &types.AssetSource{
+			Source: &types.AssetSource_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					Name:        "VOTE",
+					Symbol:      "VOTE",
+					Decimals:    5,
+					TotalSupply: "1000",
+				},
+			},
+		},
+	}
+
+	err := collateralEngine.EnableAsset(context.Background(), voteAsset)
+	if err != nil {
+		return fmt.Errorf("couldn't enable asset(%s): %v", voteAsset.Id, err)
+	}
+	return nil
+}
+
+func newMarket(config *market.Config, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
 		panic(err)
@@ -64,7 +133,7 @@ func newMarket(config *market.Config, marketExpiry string, row marketRow) types.
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:          marketExpiry,
+						Maturity:          row.maturityDate(),
 						SettlementAsset:   row.asset(),
 						QuoteName:         row.quoteName(),
 						OracleSpec:        oracleConfig.Spec,
@@ -148,3 +217,16 @@ func (r marketRow) auctionDuration() int64 {
 	return r.row.MustI64("auction duration")
 }
 
+func (r marketRow) maturityDate() string {
+	date := r.row.Str("maturity date")
+	if len(date) == 0 {
+		return "2019-12-31T23:59:59Z"
+	}
+
+	timeNano := r.row.MustTime("maturity date").UnixNano()
+	if timeNano == 0 {
+		panic(fmt.Errorf("maturity date is required"))
+	}
+
+	return date
+}

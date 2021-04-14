@@ -1,7 +1,6 @@
 package steps
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -21,10 +20,12 @@ func MarketOpeningAuctionPeriodEnds(timeStub *stubs.TimeStub, markets []types.Ma
 		return errMarketNotFound(marketID)
 	}
 	// double the time, so it's definitely past opening auction time
-	now := timeStub.Now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second)
-	timeStub.Now = now
-	// notify markets
-	timeStub.Notify(context.Background(), now)
+	now, err := timeStub.GetTimeNow()
+	if err != nil {
+		return err
+
+	}
+	timeStub.SetTime(now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second))
 	return nil
 }
 

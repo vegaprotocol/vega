@@ -130,6 +130,9 @@ message AuctionEvent {
   int64 end = 5;
   // the reason this market is/was in auction
   AuctionTrigger trigger = 6;
+  // If an auction was ongoing, but was extended for whatever reason, this field will
+  // be set to the trigger type indicating which component extended the auction
+  AuctionTrigger extension_trigger = 7;
 }
 
 // An (event) bus event type is used to specify a type of event

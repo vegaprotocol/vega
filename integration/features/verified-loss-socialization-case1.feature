@@ -1,7 +1,7 @@
 Feature: Test loss socialization case 1
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets:
+
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |

@@ -2623,6 +2623,8 @@ type AuctionEvent {
   auctionEnd: String!
   "What triggered the auction"
   trigger: AuctionTrigger!
+  "What, if anything, extended the ongoing auction"
+  extensionTrigger: AuctionTrigger
 }
 
 enum AuctionTrigger {

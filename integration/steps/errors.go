@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func formatDiff(expected, got map[string]string) error {
+func formatDiff(msg string, expected, got map[string]string) error {
 	var expectedStr strings.Builder
 	var gotStr strings.Builder
 	formatStr := "\n\t%s(%s)"
@@ -16,7 +16,8 @@ func formatDiff(expected, got map[string]string) error {
 		_, _ = fmt.Fprintf(&gotStr, formatStr, name, got[name])
 	}
 
-	return fmt.Errorf("\nexpected:%s\ngot:%s",
+	return fmt.Errorf("\n%s\nexpected:%s\ngot:%s",
+		msg,
 		expectedStr.String(),
 		gotStr.String(),
 	)
