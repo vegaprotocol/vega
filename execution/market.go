@@ -307,6 +307,9 @@ func NewMarket(
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
+	// call on chain time update straight away, so
+	// the time in the engine is being updatedat creation
+	liqEngine.OnChainTimeUpdate(ctx, now)
 
 	// The market is initially create in a proposed state
 	mkt.State = types.Market_STATE_PROPOSED
