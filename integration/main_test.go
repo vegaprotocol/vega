@@ -196,6 +196,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^I see the LP events:$`, func(table *gherkin.DataTable) error {
 		return steps.LiquidityProvisionEventsSent(execsetup.broker, table)
 	})
+	s.Step(`^the target stake for the market "([^"]*)" is "([^"]*)"$`, func(marketID, stake string) error {
+		return steps.MarketShouldHaveTargetStake(execsetup.executionEngine, marketID, stake)
+	})
 
 	// Debug steps
 	s.Step(`^debug transfers$`, func() error {
