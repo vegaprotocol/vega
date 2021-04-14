@@ -284,6 +284,8 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	} else if !app.banking.HasBalance(party) {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
+		msgType := tx.Command().String()
+		app.log.Error("Rejected as party has no accounts", logging.PartyID(party), logging.String("Command", msgType))
 	}
 
 	return ctx, resp
