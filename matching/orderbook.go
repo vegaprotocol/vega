@@ -253,29 +253,31 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 	if err != nil || bb == 0 || ba == 0 || (requireTrades && bb < ba) {
 		return false
 	}
+
 	// check all buy price levels below ba, find limit orders
 	buyMatch := false
-	for _, l := range b.buy.levels {
-		if buyMatch || l.price >= ba {
-			break
-		}
-		for _, o := range l.orders {
-			// limit order && not just GFA found
-			if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
-				buyMatch = true
-				break
+	// iterate from the end, where best is
+	for i := len(b.buy.levels) - 1; i >= 0; i-- {
+		l := b.buy.levels[i]
+		if l.price < ba {
+			for _, o := range l.orders {
+				// limit order && not just GFA found
+				if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+					buyMatch = true
+					break
+				}
 			}
 		}
 	}
 	sellMatch := false
-	for _, l := range b.sell.levels {
-		if l.price <= bb {
-			break
-		}
-		for _, o := range l.orders {
-			if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
-				sellMatch = true
-				break
+	for i := len(b.sell.levels) - 1; i >= 0; i-- {
+		l := b.sell.levels[i]
+		if l.price > bb {
+			for _, o := range l.orders {
+				if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+					sellMatch = true
+					break
+				}
 			}
 		}
 	}
@@ -283,14 +285,15 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 	if buyMatch && sellMatch {
 		return true
 	}
-	p, v, _ := b.GetIndicativePriceAndVolume()
+	_, v, _ := b.GetIndicativePriceAndVolume()
 	// no buy orders remaining on the book after uncrossing, it buyMatches exactly
 	vol := uint64(0)
 	if !buyMatch {
-		for _, l := range b.buy.levels {
-			// buy orders are ordered descending
-			if l.price < p {
-				continue
+		for i := len(b.buy.levels) - 1; i >= 0; i-- {
+			l := b.buy.levels[i]
+			// buy orders are ordered ascending
+			if l.price < ba {
+				break
 			}
 			for _, o := range l.orders {
 				vol += o.Remaining
@@ -300,11 +303,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 					break
 				}
 			}
-			if buyMatch {
-				break
-			}
 		}
-		vol = 0
 		if !buyMatch {
 			return false
 		}
@@ -313,10 +312,13 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 	if sellMatch {
 		return true
 	}
+
 	vol = 0
-	for _, l := range b.sell.levels {
-		// sell side is ordered ascending
-		if sellMatch || l.price > p {
+	// for _, l := range b.sell.levels {
+	// sell side is ordered descending
+	for i := len(b.sell.levels) - 1; i >= 0; i-- {
+		l := b.sell.levels[i]
+		if l.price > bb {
 			break
 		}
 		for _, o := range l.orders {

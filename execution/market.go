@@ -561,6 +561,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				m.feeSplitter.TimeWindowStart(t)
 			}
 		} else if m.as.IsPriceAuction() || m.as.IsLiquidityAuction() {
+			isPrice := m.as.IsPriceAuction()
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
@@ -572,7 +573,17 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			m.checkLiquidity(ctx, nil)
 			// price monitoring engine and liquidity monitoring engine both indicated auction can end
 			if m.as.AuctionEnd() {
-				m.LeaveAuction(ctx, t)
+				if m.matching.BidAndAskPresentAfterAuction() {
+					m.LeaveAuction(ctx, t)
+				} else {
+					if isPrice {
+						// TODO: ExtendPriceAuction when implemented
+						m.as.ExtendAuction(types.AuctionDuration{Duration: 1})
+					} else {
+						// TODO: ExtendLiquidityAuction when implemented
+						m.as.ExtendAuction(types.AuctionDuration{Duration: 1})
+					}
+				}
 			}
 		}
 		// This is where ending liquidity auctions and FBA's will be handled

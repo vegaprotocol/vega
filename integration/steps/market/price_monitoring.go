@@ -15,6 +15,7 @@ var (
 	defaultPriceMonitoring          embed.FS
 	defaultPriceMonitoringFileNames = []string{
 		"defaults/price-monitoring/default-none.json",
+		"defaults/price-monitoring/default-basic.json",
 	}
 )
 
