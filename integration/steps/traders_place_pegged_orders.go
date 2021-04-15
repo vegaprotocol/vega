@@ -17,7 +17,6 @@ func TradersPlacePeggedOrders(exec *execution.Engine, orders *gherkin.DataTable)
 		volume := row.MustU64("volume")
 		reference := row.MustPeggedReference("reference")
 		offset := row.MustI64("offset")
-		price := row.MustU64("price")
 
 		o := &types.Order{
 			Status:      types.Order_STATUS_ACTIVE,
@@ -28,7 +27,6 @@ func TradersPlacePeggedOrders(exec *execution.Engine, orders *gherkin.DataTable)
 			PartyId:     trader,
 			MarketId:    marketID,
 			Size:        volume,
-			Price:       price,
 			Remaining:   volume,
 			Reference:   fmt.Sprintf("%s-pegged-order-%d", trader, i),
 			PeggedOrder: &types.PeggedOrder{

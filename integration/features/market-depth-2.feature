@@ -25,15 +25,15 @@ Feature: Test market depth events for pegged orders
       | aux2             | BTC   | 100000000 |
 # setup pegged orders
     Then the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset | price |
-      | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     | 100   |
-      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | -15    | 100   |
-      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | -10    | 100   |
+      | trader  | market id | side | volume | reference | offset |
+      | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     |
+      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | -15    |
+      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | -10    |
     Then I see the following order events:
       | trader  | market id | side | volume | reference | offset | price | status        |
-      | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     | 100   | STATUS_PARKED |
-      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | -15    | 100   | STATUS_PARKED |
-      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | -10    | 100   | STATUS_PARKED |
+      | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     | 0     | STATUS_PARKED |
+      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | -15    | 0     | STATUS_PARKED |
+      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | -10    | 0     | STATUS_PARKED |
 # keep things simple: remove the events we've just verified
     And clear order events
 # setup orderbook

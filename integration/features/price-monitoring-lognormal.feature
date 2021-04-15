@@ -433,14 +433,14 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |
+      | trader1 | ETH/DEC20 | sell | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader2 | ETH/DEC20 | buy  | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA | ref-2-last|
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     And the mark price should be "110000" for the market "ETH/DEC20"
 
-    #T1 + 10min01s (extended auction finished)
+    #T1 + 10min01s (extended auction finished) // this is not finished, not order left in the book.
     Then time is updated to "2020-10-16T00:12:11Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
