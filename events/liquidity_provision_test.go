@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLiquidityProvisionCopy(t *testing.T) {
+func TestLiquidityProvisionDeepClone(t *testing.T) {
 	ctx := context.Background()
 
 	buyOrder := &proto.LiquidityOrderReference{
