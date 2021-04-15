@@ -12,29 +12,11 @@ type LiquidityProvision struct {
 }
 
 func NewLiquidityProvisionEvent(ctx context.Context, p *types.LiquidityProvision) *LiquidityProvision {
-	// Manually copy the pointer objects across
-	buys := p.Buys
-	p.Buys = make([]*types.LiquidityOrderReference, len(buys))
-	sells := p.Sells
-	p.Sells = make([]*types.LiquidityOrderReference, len(sells))
-
-	for i, lor := range buys {
-		tempBuy := *lor
-		tempLO := *lor.LiquidityOrder
-		tempBuy.LiquidityOrder = &tempLO
-		p.Buys[i] = &tempBuy
-	}
-
-	for i, lor := range sells {
-		tempSell := *lor
-		tempLO := *lor.LiquidityOrder
-		tempSell.LiquidityOrder = &tempLO
-		p.Sells[i] = &tempSell
-	}
+	cpy := p.DeepClone()
 
 	order := &LiquidityProvision{
 		Base: newBase(ctx, LiquidityProvisionEvent),
-		p:    *p,
+		p:    *cpy,
 	}
 	return order
 }
