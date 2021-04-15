@@ -1936,7 +1936,6 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 
 	tm.events = nil
 	t.Run("party place a new order which should unpark the pegged order", func(t *testing.T) {
-		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(10*time.Second))
 		o := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, party4, 10, 2400)
 		conf, err := tm.market.SubmitOrder(ctx, o)
 		assert.NoError(t, err)
@@ -1945,6 +1944,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 		conf2, err := tm.market.SubmitOrder(ctx, o2)
 		assert.NoError(t, err)
 		assert.NotNil(t, conf2)
+		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(10*time.Second))
 	})
 
 	t.Run("pegged order is REJECTED", func(t *testing.T) {
