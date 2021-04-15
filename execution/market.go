@@ -3633,8 +3633,11 @@ func (m *Market) updateAndCreateOrders(
 		return parties[i].Party < parties[j].Party
 	})
 
+	var updateShares bool
 	for _, v := range parties {
 		if !v.Faulty {
+			// update shares to add this party to the shares
+			updateShares = true
 			m.liquidity.RemovePending(v.Party)
 			continue
 		}
@@ -3649,8 +3652,21 @@ func (m *Market) updateAndCreateOrders(
 		}
 
 		// now the party had not enough enough funds to pay the margin
-		_ = m.cancelDistressedLiquidityProvision(
+		err := m.cancelDistressedLiquidityProvision(
 			ctx, v.Party, faultyLPOrders[v.Party])
+		if err != nil {
+			m.log.Debug("issue cancelling liquidity provision",
+				logging.Error(err),
+				logging.MarketID(m.GetID()),
+				logging.PartyID(v.Party))
+		}
+		// update shares to remove this party from the shares
+		updateShares = true
+	}
+
+	if updateShares {
+		// force update of shares so they are updated for all
+		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 	}
 
 	return nil
