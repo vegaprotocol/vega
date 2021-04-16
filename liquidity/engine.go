@@ -744,7 +744,6 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 		// properly by the engine.
 		if o.LiquidityImpliedVolume == 0 ||
 			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume) || o.Price == 0) {
-			fmt.Printf("CONTINUE?????\n")
 			continue
 		}
 
