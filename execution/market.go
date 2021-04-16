@@ -2266,7 +2266,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// Try and locate the existing order specified on the
 	// order book in the matching engine for this market
-	existingOrder, _, err := m.getOrderByID(orderAmendment.OrderId)
+	existingOrder, foundOnBook, err := m.getOrderByID(orderAmendment.OrderId)
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Invalid order ID",
@@ -2318,13 +2318,28 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		if returnedErr == nil {
 			if needToRemoveExpiry {
 				m.expiringOrders.RemoveOrder(expiresAt, existingOrder.Id)
-
 			}
 			if needToAddExpiry {
-				m.expiringOrders.Insert(*existingOrder)
+				m.expiringOrders.Insert(*amendedOrder)
 			}
 		}
 	}()
+
+	// We do this first, just in case the party would also have
+	// change the expiry, and that would have been catched by
+	// the follow up checks, so we do not insert a non-existing
+	// order in the expiring orders
+	// if remaining is reduces <= 0, then order is cancelled
+	if amendedOrder.Remaining <= 0 {
+		confirm, err := m.cancelOrder(
+			ctx, existingOrder.PartyId, existingOrder.Id)
+		if err != nil {
+			return nil, err
+		}
+		return &types.OrderConfirmation{
+			Order: confirm.Order,
+		}, nil
+	}
 
 	// if we are amending from GTT to GTC, flag ready to remove from expiry list
 	if existingOrder.IsExpireable() &&
@@ -2352,18 +2367,6 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		expiresAt = existingOrder.ExpiresAt
 	}
 
-	// if remaining is reduces <= 0, then order is cancelled
-	if amendedOrder.Remaining <= 0 {
-		confirm, err := m.cancelOrder(
-			ctx, existingOrder.PartyId, existingOrder.Id)
-		if err != nil {
-			return nil, err
-		}
-		return &types.OrderConfirmation{
-			Order: confirm.Order,
-		}, nil
-	}
-
 	// if expiration has changed and is before the original creation time, reject this amend
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < existingOrder.CreatedAt {
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -2378,37 +2381,47 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	// if expiration has changed and is not 0, and is before currentTime
 	// then we expire the order
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < amendedOrder.UpdatedAt {
+		needToAddExpiry = false
 		// remove the order from the expiring
-		m.expiringOrders.RemoveOrder(amendedOrder.ExpiresAt, amendedOrder.Id)
+		// at this point the order is still referenced at the time of expiry of the existingOrder
+		if existingOrder.IsExpireable() {
+			m.expiringOrders.RemoveOrder(existingOrder.ExpiresAt, amendedOrder.Id)
+		}
 
 		// Update the existing message in place before we cancel it
-		m.orderAmendInPlace(existingOrder, amendedOrder)
-		cancellation, err := m.matching.CancelOrder(amendedOrder)
-		if cancellation == nil || err != nil {
-			if m.log.GetLevel() == logging.DebugLevel {
-				m.log.Debug("Failure to cancel order from matching engine",
+		if foundOnBook {
+			m.orderAmendInPlace(existingOrder, amendedOrder)
+			cancellation, err := m.matching.CancelOrder(amendedOrder)
+			if cancellation == nil || err != nil {
+				m.log.Panic("Failure to cancel order from matching engine",
 					logging.String("party-id", amendedOrder.PartyId),
 					logging.String("order-id", amendedOrder.Id),
 					logging.String("market", m.mkt.Id),
 					logging.Error(err))
+				return nil, err
 			}
-			return nil, err
+
+			_ = m.position.UnregisterOrder(cancellation.Order)
+			amendedOrder = cancellation.Order
 		}
 
 		// Update the order in our stores (will be marked as cancelled)
 		// set the proper status
-		cancellation.Order.Status = types.Order_STATUS_EXPIRED
-		m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
+		amendedOrder.Status = types.Order_STATUS_EXPIRED
+		m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 
-		_ = m.position.UnregisterOrder(cancellation.Order)
+		m.removePeggedOrder(amendedOrder)
 
 		m.checkForReferenceMoves(ctx)
 
 		return &types.OrderConfirmation{
-			Order: cancellation.Order,
+			Order: amendedOrder,
 		}, nil
 	}
 
+	// TODO: This can be simplified by:
+	// - amending the order in the peggedList first
+	// - applying the changed based on auction / repricing
 	if existingOrder.PeggedOrder != nil {
 
 		// Amend in place during an auction
