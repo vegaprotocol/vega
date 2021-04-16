@@ -40,6 +40,10 @@ func (l *LiquidityProvision) Float64Fee() float64 {
 	return v
 }
 
+func (o *Order) IsLiquidityOrder() bool {
+	return len(o.LiquidityProvisionId) > 0
+}
+
 // Create sets the creation time (CreatedAt) to t and returns the
 // updated order.
 func (o *Order) Create(t time.Time) *Order {
