@@ -1206,7 +1206,9 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 		m.expiringOrders.Insert(*order)
 	}
 
-	m.checkForReferenceMoves(ctx)
+	if !order.IsLiquidityOrder() {
+		m.checkForReferenceMoves(ctx)
+	}
 
 	return orderConf, err
 }
@@ -2197,18 +2199,20 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	order.UpdatedAt = m.currentTime.UnixNano()
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
-	m.checkForReferenceMoves(ctx)
+	if !order.IsLiquidityOrder() {
+		m.checkForReferenceMoves(ctx)
 
-	if foundOnBook {
-		if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
-			// FIXME(): we do not return an error here as the issue is linked
-			// to liquidyt provision, most likely some orders could not be repriced
-			m.log.Debug("liquidity update error", logging.Error(err))
+		if foundOnBook {
+			if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
+				// FIXME(): we do not return an error here as the issue is linked
+				// to liquidyt provision, most likely some orders could not be repriced
+				m.log.Debug("liquidity update error", logging.Error(err))
+			}
 		}
-	}
 
-	m.checkLiquidity(ctx, nil)
-	m.commandLiquidityAuction(ctx)
+		m.checkLiquidity(ctx, nil)
+		m.commandLiquidityAuction(ctx)
+	}
 
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }

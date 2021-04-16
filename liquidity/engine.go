@@ -742,7 +742,8 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 		// we check o.Price == 0 just to make sure we are able to price
 		// the order, in which case the size will have been calculated
 		// properly by the engine.
-		if o.LiquidityImpliedVolume == 0 || (order != nil && (!order.HasTraded()) || o.Price == 0) {
+		if o.LiquidityImpliedVolume == 0 ||
+			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume) || o.Price == 0) {
 			continue
 		}
 
