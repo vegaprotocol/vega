@@ -61,10 +61,7 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 		// create event
 		evts = append(evts, events.NewOrderEvent(ctx, o))
 		// remove order from positions
-		if _, err := m.position.UnregisterOrder(o); err != nil {
-			// @TODO handle this
-			return err
-		}
+		_ = m.position.UnregisterOrder(o)
 	}
 	m.broker.SendBatch(evts)
 	return nil

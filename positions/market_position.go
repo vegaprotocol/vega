@@ -3,6 +3,7 @@ package positions
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -42,8 +43,13 @@ func (p *MarketPosition) RegisterOrder(order *types.Order) {
 	p.sell += int64(order.Remaining)
 }
 
-func (p *MarketPosition) UnregisterOrder(order *types.Order) {
+func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order) {
 	if order.Side == types.Side_SIDE_BUY {
+		if uint64(p.buy) < order.Remaining {
+			log.Panic("cannot unregister order with remaining > potential buy",
+				logging.Order(*order),
+				logging.Int64("potential-buy", p.buy))
+		}
 		// recalculate vwap
 		vwap := p.vwBuyPrice*uint64(p.buy) - order.Price*order.Remaining
 		p.buy -= int64(order.Remaining)
@@ -54,6 +60,13 @@ func (p *MarketPosition) UnregisterOrder(order *types.Order) {
 		}
 		return
 	}
+
+	if uint64(p.sell) < order.Remaining {
+		log.Panic("cannot unregister order with remaining > potential sell",
+			logging.Order(*order),
+			logging.Int64("potential-sell", p.sell))
+	}
+
 	vwap := p.vwSellPrice*uint64(p.sell) - order.Price*order.Remaining
 	p.sell -= int64(order.Remaining)
 	if p.sell != 0 {
@@ -65,8 +78,14 @@ func (p *MarketPosition) UnregisterOrder(order *types.Order) {
 
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
-func (p *MarketPosition) AmendOrder(originalOrder, newOrder *types.Order) {
+func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder *types.Order) {
 	if originalOrder.Side == types.Side_SIDE_BUY {
+		if uint64(p.buy) < originalOrder.Remaining {
+			log.Panic("cannot amend order with remaining > potential buy",
+				logging.Order(*originalOrder),
+				logging.Int64("potential-buy", p.buy))
+		}
+
 		vwap := p.vwBuyPrice*uint64(p.buy) - originalOrder.Price*originalOrder.Remaining
 		p.buy -= int64(originalOrder.Remaining)
 		if p.buy != 0 {
@@ -77,6 +96,13 @@ func (p *MarketPosition) AmendOrder(originalOrder, newOrder *types.Order) {
 		p.buy += int64(newOrder.Remaining)
 		return
 	}
+
+	if uint64(p.sell) < originalOrder.Remaining {
+		log.Panic("cannot amend order with remaining > potential sell",
+			logging.Order(*originalOrder),
+			logging.Int64("potential-sell", p.sell))
+	}
+
 	vwap := p.vwSellPrice*uint64(p.sell) - originalOrder.Price*originalOrder.Remaining
 	p.sell -= int64(originalOrder.Remaining)
 	if p.sell != 0 {
