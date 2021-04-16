@@ -664,12 +664,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
-	_, perr := m.position.UnregisterOrder(order)
-	if perr != nil {
-		m.log.Error("Unable to unregister potential trader positions",
-			logging.String("market-id", m.GetID()),
-			logging.Error(err))
-	}
+	_ = m.position.UnregisterOrder(order)
 	order.UpdatedAt = m.currentTime.UnixNano()
 	order.Status = types.Order_STATUS_REJECTED
 	if oerr, ok := types.IsOrderError(err); ok {
@@ -723,11 +718,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 				}
 
 				// Remove it from the trader position
-				if _, err := m.position.UnregisterOrder(order); err != nil {
-					m.log.Panic("Failure unregistering order in positions engine (cancel)",
-						logging.Order(*order),
-						logging.Error(err))
-				}
+				_ = m.position.UnregisterOrder(order)
 			}
 			updatedOrders = append(updatedOrders, order)
 		}
@@ -1260,11 +1251,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
 	if checkMargin {
 		if err := m.checkMarginForOrder(ctx, pos, order); err != nil {
-			if _, err := m.position.UnregisterOrder(order); err != nil {
-				m.log.Error("Unable to unregister potential trader positions",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
+			_ = m.position.UnregisterOrder(order)
 
 			// adding order to the buffer first
 			order.Status = types.Order_STATUS_REJECTED
@@ -1310,11 +1297,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if err != nil {
-		if _, err := m.position.UnregisterOrder(order); err != nil {
-			m.log.Error("Unable to unregister potential trader positions",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
+		_ = m.position.UnregisterOrder(order)
+
 		order.Status = types.Order_STATUS_REJECTED
 		if oerr, ok := types.IsOrderError(err); ok {
 			order.Reason = oerr
@@ -1341,12 +1325,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// Also do it if specifically we went against a wash trade
 		(order.Status == types.Order_STATUS_REJECTED &&
 			order.Reason == types.OrderError_ORDER_ERROR_SELF_TRADING) {
-		_, err := m.position.UnregisterOrder(order)
-		if err != nil {
-			m.log.Error("Unable to unregister potential trader positions",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
+		_ = m.position.UnregisterOrder(order)
 	}
 
 	// we replace the trades in the confirmation with the one we got initially
@@ -1646,13 +1625,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		}
 		o.UpdatedAt = m.currentTime.UnixNano()
 		evts = append(evts, events.NewOrderEvent(ctx, o))
-		if _, err := m.position.UnregisterOrder(o); err != nil {
-			m.log.Error("unable to unregister order for a distressed party",
-				logging.PartyID(o.PartyId),
-				logging.MarketID(mktID),
-				logging.OrderID(o.Id),
-			)
-		}
+		_ = m.position.UnregisterOrder(o)
 	}
 
 	// add the orders remove from the book to the orders
@@ -2202,12 +2175,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			}
 			return nil, err
 		}
-		_, err = m.position.UnregisterOrder(order)
-		if err != nil {
-			m.log.Error("Failure unregistering order in positions engine (cancel)",
-				logging.Order(*order),
-				logging.Error(err))
-		}
+		_ = m.position.UnregisterOrder(order)
 	}
 
 	if order.IsExpireable() {
@@ -2262,11 +2230,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	order.Status = types.Order_STATUS_PARKED
 	order.Price = 0
 	m.broker.Send(events.NewOrderEvent(ctx, order))
-	if _, err := m.position.UnregisterOrder(order); err != nil {
-		m.log.Panic("Failure un-registering order in positions engine (parking)",
-			logging.Order(*order),
-			logging.Error(err))
-	}
+	_ = m.position.UnregisterOrder(order)
 }
 
 // AmendOrder amend an existing order from the order book
@@ -2435,12 +2399,8 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		// set the proper status
 		cancellation.Order.Status = types.Order_STATUS_EXPIRED
 		m.broker.Send(events.NewOrderEvent(ctx, cancellation.Order))
-		_, err = m.position.UnregisterOrder(cancellation.Order)
-		if err != nil {
-			m.log.Error("Failure unregistering order in positions engine (amendOrder)",
-				logging.Order(*amendedOrder),
-				logging.Error(err))
-		}
+
+		_ = m.position.UnregisterOrder(cancellation.Order)
 
 		m.checkForReferenceMoves(ctx)
 
@@ -2833,7 +2793,7 @@ func (m *Market) RemoveExpiredOrders(
 			// or a non-pegged order
 			if (order.PeggedOrder != nil && order.Status != types.Order_STATUS_PARKED) ||
 				order.PeggedOrder == nil {
-				m.unregisterOrder(&order)
+				m.position.UnregisterOrder(&order)
 				m.matching.DeleteOrder(&order)
 			}
 		}
@@ -2867,16 +2827,6 @@ func (m *Market) RemoveExpiredOrders(
 	}
 
 	return expired, nil
-}
-
-func (m *Market) unregisterOrder(order *types.Order) {
-	if _, err := m.position.UnregisterOrder(order); err != nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Failure unregistering order in positions engine (cancel)",
-				logging.Order(*order),
-				logging.Error(err))
-		}
-	}
 }
 
 func (m *Market) getBestStaticAskPrice() (uint64, error) {

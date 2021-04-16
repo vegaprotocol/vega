@@ -108,16 +108,17 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
-func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
+func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 	defer metrics.NewTimeCounter("-", "positions", "UnregisterOrder").EngineTimeCounterAdd()
 
 	pos, found := e.positions[order.PartyId]
 	if !found {
-		return nil, ErrPositionNotFound
+		e.log.Panic("could not find position in engine",
+			logging.Order(*order))
 	}
 
 	pos.UnregisterOrder(order)
-	return pos, nil
+	return pos
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order

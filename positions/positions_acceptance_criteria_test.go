@@ -855,8 +855,7 @@ func testOrderCancelled(t *testing.T) {
 
 	// first add the orders
 	for _, c := range cases.orders {
-		_, err := engine.UnregisterOrder(&c)
-		assert.NoError(t, err)
+		_ = engine.UnregisterOrder(&c)
 	}
 
 	// test everything is back to 0 once orders are unregistered

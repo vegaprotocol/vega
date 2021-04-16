@@ -217,8 +217,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	pos := e.RegisterOrder(&orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
 
-	pos, err := e.UnregisterOrder(&orderBuy)
-	assert.NoError(t, err)
+	pos = e.UnregisterOrder(&orderBuy)
 	assert.Zero(t, pos.Buy())
 
 	orderSell := types.Order{
@@ -231,8 +230,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	assert.Zero(t, pos.Buy())
 	assert.Equal(t, sellsize, pos.Sell())
 
-	pos, err = e.UnregisterOrder(&orderSell)
-	assert.NoError(t, err)
+	pos = e.UnregisterOrder(&orderSell)
 	assert.Zero(t, pos.Buy())
 	assert.Zero(t, pos.Sell())
 }
@@ -245,9 +243,9 @@ func testUnregisterOrderUnsuccessful(t *testing.T) {
 		Size:      uint64(999),
 		Remaining: uint64(999),
 	}
-	pos, err := e.UnregisterOrder(&orderBuy)
-	assert.Equal(t, err, positions.ErrPositionNotFound)
-	assert.Nil(t, pos)
+	require.Panics(t, func() {
+		_ = e.UnregisterOrder(&orderBuy)
+	})
 }
 
 func getTestEngine(t *testing.T) *positions.Engine {
