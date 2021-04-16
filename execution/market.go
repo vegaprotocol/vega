@@ -2763,7 +2763,7 @@ func (m *Market) RemoveExpiredOrders(
 	for _, order := range m.expiringOrders.Expire(timestamp) {
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
-		originalOrder, _, err := m.getOrderByID(order.Id)
+		originalOrder, foundOnBook, err := m.getOrderByID(order.Id)
 		if err == nil {
 			// assign to the order the order from the book
 			// so we get the most recent version from the book
@@ -2773,8 +2773,7 @@ func (m *Market) RemoveExpiredOrders(
 			// if the order was on the book basically
 			// either a pegged + non parked
 			// or a non-pegged order
-			if (order.PeggedOrder != nil && order.Status != types.Order_STATUS_PARKED) ||
-				order.PeggedOrder == nil {
+			if foundOnBook {
 				m.position.UnregisterOrder(&order)
 				m.matching.DeleteOrder(&order)
 			}
