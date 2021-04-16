@@ -24,10 +24,32 @@ func TestUpdatePosition(t *testing.T) {
 func TestGetOpenInterest(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
-	buyer := "buyer_id"
-	buyer2 := "buyer_id2"
-	seller := "seller_id"
-	size := int64(10)
+	var (
+		buyer         = "buyer_id"
+		buyer2        = "buyer_id2"
+		seller        = "seller_id"
+		size   uint64 = 10
+		price  uint64 = 10000
+	)
+	engine.RegisterOrder(&types.Order{
+		PartyId:   buyer,
+		Remaining: size,
+		Price:     price,
+		Side:      types.Side_SIDE_BUY,
+	})
+	engine.RegisterOrder(&types.Order{
+		PartyId:   buyer2,
+		Remaining: size,
+		Price:     price,
+		Side:      types.Side_SIDE_BUY,
+	})
+	engine.RegisterOrder(&types.Order{
+		PartyId:   seller,
+		Remaining: size * 2,
+		Price:     price,
+		Side:      types.Side_SIDE_SELL,
+	})
+
 	trade := types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
@@ -65,15 +87,31 @@ func TestGetOpenInterest(t *testing.T) {
 func testUpdatePositionRegular(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
-	buyer := "buyer_id"
-	seller := "seller_id"
-	size := int64(10)
+	var (
+		buyer         = "buyer_id"
+		seller        = "seller_id"
+		size   uint64 = 10
+		price  uint64 = 10000
+	)
+	engine.RegisterOrder(&types.Order{
+		PartyId:   buyer,
+		Remaining: size,
+		Price:     price,
+		Side:      types.Side_SIDE_BUY,
+	})
+	engine.RegisterOrder(&types.Order{
+		PartyId:   seller,
+		Remaining: size,
+		Price:     price,
+		Side:      types.Side_SIDE_SELL,
+	})
+
 	trade := types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketId:  "market_id",
-		Price:     10000,
-		Size:      uint64(size),
+		Price:     price,
+		Size:      size,
 		Buyer:     buyer,
 		Seller:    seller,
 		BuyOrder:  "buy_order_id",
@@ -86,9 +124,9 @@ func testUpdatePositionRegular(t *testing.T) {
 	assert.Equal(t, 2, len(positions))
 	for _, p := range pos {
 		if p.Party() == buyer {
-			assert.Equal(t, size, p.Size())
+			assert.Equal(t, int64(size), p.Size())
 		} else {
-			assert.Equal(t, -size, p.Size())
+			assert.Equal(t, int64(-size), p.Size())
 		}
 	}
 }
@@ -111,6 +149,7 @@ func testUpdatePositionNetworkBuy(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
+	registerOrder(engine, types.Side_SIDE_SELL, seller, 10000, uint64(size))
 	positions := engine.UpdateNetwork(&trade)
 	pos := engine.Positions()
 	assert.Equal(t, 1, len(pos))
@@ -137,6 +176,7 @@ func testUpdatePositionNetworkSell(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
+	registerOrder(engine, types.Side_SIDE_BUY, buyer, 10000, uint64(size))
 	positions := engine.UpdateNetwork(&trade)
 	pos := engine.Positions()
 	assert.Equal(t, 1, len(pos))
@@ -412,12 +452,16 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		e := getTestEngine(t)
 
 		for _, tr := range tc.ExistingPositions {
+			registerOrder(e, types.Side_SIDE_BUY, tr.Buyer, tr.Price, tr.Size)
+			registerOrder(e, types.Side_SIDE_SELL, tr.Seller, tr.Price, tr.Size)
 			e.Update(tr)
 		}
 
 		oiGivenTrades := e.GetOpenInterestGivenTrades(tc.Trades)
 
 		for _, tr := range tc.Trades {
+			registerOrder(e, types.Side_SIDE_BUY, tr.Buyer, tr.Price, tr.Size)
+			registerOrder(e, types.Side_SIDE_SELL, tr.Seller, tr.Price, tr.Size)
 			e.Update(tr)
 		}
 
@@ -525,4 +569,13 @@ func TestHash(t *testing.T) {
 		got := e.Hash()
 		require.Equal(t, hash, got)
 	}
+}
+
+func registerOrder(e *positions.Engine, side types.Side, party string, price, size uint64) {
+	e.RegisterOrder(&types.Order{
+		PartyId:   party,
+		Side:      side,
+		Price:     price,
+		Remaining: size,
+	})
 }
