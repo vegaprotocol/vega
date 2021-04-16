@@ -1301,7 +1301,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// try to apply fees on the trade
 		err = m.applyFees(ctx, order, trades)
 		if err != nil {
-			return nil, err
+			return nil, m.unregisterAndReject(ctx, order, err)
 		}
 	}
 
@@ -1420,9 +1420,8 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	}
 
 	if err != nil {
-		return m.unregisterAndReject(ctx, order, err)
+		return err
 	}
-	_ = fees
 
 	var (
 		transfers []*types.TransferResponse
@@ -1444,8 +1443,7 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 			logging.String("order-id", order.Id),
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
-		return m.unregisterAndReject(ctx,
-			order, types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES)
+		return err
 	}
 
 	// send transfers through the broker
@@ -2761,7 +2759,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 
 		// try to apply fees on the trade
 		if err := m.applyFees(ctx, newOrder, trades); err != nil {
-			return nil, err
+			return nil, m.unregisterAndReject(ctx, newOrder, err)
 		}
 
 		// Because other collections might be pointing at the original order
@@ -3506,7 +3504,6 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 	if evt := m.as.AuctionExtended(ctx); evt != nil {
 		m.broker.Send(evt)
 	}
-
 }
 
 // command liquidity auction checks if liquidity auction should be entered and if it can end
