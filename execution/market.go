@@ -1422,7 +1422,7 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 			logging.String("order-id", order.Id),
 			logging.String("market-id", m.GetID()),
 			logging.Error(err))
-		return err
+		return types.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
 	}
 
 	// send transfers through the broker
