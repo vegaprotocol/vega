@@ -2073,7 +2073,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 
 	// add all orders being eventually parked
 	for _, order := range m.peggedOrders {
-		if order.PartyId == partyID && order.Status == types.Order_STATUS_PARKED {
+		if order.PartyId == partyID {
 			orders = append(orders, order)
 		}
 	}
@@ -2082,6 +2082,21 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	if len(orders) <= 0 {
 		return nil, nil
 	}
+
+	// now we eventually dedup them
+	uniq := map[string]*types.Order{}
+	for _, v := range orders {
+		uniq[v.Id] = v
+	}
+
+	// put them back in the slice, and sort them
+	orders = make([]*types.Order, 0, len(uniq))
+	for _, v := range uniq {
+		orders = append(orders, v)
+	}
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].Id < orders[j].Id
+	})
 
 	// now we extract all liquidity provision order out of the list.
 	// cancelling some order may trigger repricing, and repricing
