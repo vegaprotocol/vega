@@ -16,7 +16,7 @@ func (f Filter) DeepClone() *Filter {
 	if len(f.Conditions) > 0 {
 		conditions := f.Conditions
 		f.Conditions = make([]*Condition, len(conditions))
-		for i, c := range f.Conditions {
+		for i, c := range conditions {
 			f.Conditions[i] = c.DeepClone()
 		}
 	}
@@ -24,6 +24,25 @@ func (f Filter) DeepClone() *Filter {
 }
 
 func (o OracleSpecConfiguration) DeepClone() *OracleSpecConfiguration {
+	if len(o.Filters) > 0 {
+		filters := o.Filters
+		o.Filters = make([]*Filter, len(filters))
+		for i, f := range filters {
+			o.Filters[i] = f.DeepClone()
+		}
+	}
+	return &o
+}
+
+func (o OracleSpec) DeepClone() *OracleSpec {
+	if len(o.PubKeys) > 0 {
+		pks := o.PubKeys
+		o.PubKeys = make([]string, len(pks))
+		for i, pk := range pks {
+			o.PubKeys[i] = pk
+		}
+	}
+
 	if len(o.Filters) > 0 {
 		filters := o.Filters
 		o.Filters = make([]*Filter, len(filters))

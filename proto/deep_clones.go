@@ -355,3 +355,173 @@ func (m MarketData) DeepClone() *MarketData {
 	}
 	return &m
 }
+
+func (f Future) DeepClone() *Future {
+	if f.OracleSpec != nil {
+		f.OracleSpec = f.OracleSpec.DeepClone()
+	}
+	if f.OracleSpecBinding != nil {
+		f.OracleSpecBinding = f.OracleSpecBinding.DeepClone()
+	}
+	return &f
+}
+
+func (i Instrument_Future) DeepClone() *Instrument_Future {
+	if i.Future != nil {
+		i.Future = i.Future.DeepClone()
+	}
+	return &i
+}
+
+func (i InstrumentMetadata) DeepClone() *InstrumentMetadata {
+	if len(i.Tags) > 0 {
+		tags := i.Tags
+		i.Tags = make([]string, len(tags))
+		for x, s := range tags {
+			i.Tags[x] = s
+		}
+	}
+	return &i
+}
+
+func (i Instrument) DeepClone() *Instrument {
+	if i.Metadata != nil {
+		i.Metadata = i.Metadata.DeepClone()
+	}
+	if i.Product != nil {
+		switch prod := i.Product.(type) {
+		case *Instrument_Future:
+			i.Product = prod.DeepClone()
+		}
+	}
+	return &i
+}
+
+func (s ScalingFactors) DeepClone() *ScalingFactors {
+	return &s
+}
+
+func (m MarginCalculator) DeepClone() *MarginCalculator {
+	if m.ScalingFactors != nil {
+		m.ScalingFactors = m.ScalingFactors.DeepClone()
+	}
+	return &m
+}
+
+func (s SimpleRiskModel) DeepClone() *SimpleRiskModel {
+	if s.Params != nil {
+		s.Params = s.Params.DeepClone()
+	}
+	return &s
+}
+
+func (t TradableInstrument_SimpleRiskModel) DeepClone() *TradableInstrument_SimpleRiskModel {
+	if t.SimpleRiskModel != nil {
+		t.SimpleRiskModel = t.SimpleRiskModel.DeepClone()
+	}
+	return &t
+}
+
+func (t TradableInstrument_LogNormalRiskModel) DeepClone() *TradableInstrument_LogNormalRiskModel {
+	if t.LogNormalRiskModel != nil {
+		t.LogNormalRiskModel = t.LogNormalRiskModel.DeepClone()
+	}
+	return &t
+}
+
+func (t TradableInstrument) DeepClone() *TradableInstrument {
+	if t.Instrument != nil {
+		t.Instrument = t.Instrument.DeepClone()
+	}
+
+	if t.MarginCalculator != nil {
+		t.MarginCalculator = t.MarginCalculator.DeepClone()
+	}
+
+	if t.RiskModel != nil {
+		switch risk := t.RiskModel.(type) {
+		case *TradableInstrument_SimpleRiskModel:
+			t.RiskModel = risk.DeepClone()
+		case *TradableInstrument_LogNormalRiskModel:
+			t.RiskModel = risk.DeepClone()
+		}
+	}
+
+	return &t
+}
+
+func (a AuctionDuration) DeepClone() *AuctionDuration {
+	return &a
+}
+
+func (m Market_Continuous) DeepClone() *Market_Continuous {
+	if m.Continuous != nil {
+		m.Continuous = m.Continuous.DeepClone()
+	}
+	return &m
+}
+
+func (m Market_Discrete) DeepClone() *Market_Discrete {
+	if m.Discrete != nil {
+		m.Discrete = m.Discrete.DeepClone()
+	}
+	return &m
+}
+
+func (p PriceMonitoringSettings) DeepClone() *PriceMonitoringSettings {
+	if p.Parameters != nil {
+		p.Parameters = p.Parameters.DeepClone()
+	}
+	return &p
+}
+
+func (m MarketTimestamps) DeepClone() *MarketTimestamps {
+	return &m
+}
+
+func (f FeeFactors) DeepClone() *FeeFactors {
+	return &f
+}
+
+func (f Fees) DeepClone() *Fees {
+	if f.Factors != nil {
+		f.Factors = f.Factors.DeepClone()
+	}
+	return &f
+}
+
+func (m Market) DeepClone() *Market {
+	if m.TradableInstrument != nil {
+		m.TradableInstrument = m.TradableInstrument.DeepClone()
+	}
+
+	if m.Fees != nil {
+		m.Fees = m.Fees.DeepClone()
+	}
+
+	if m.OpeningAuction != nil {
+		m.OpeningAuction = m.OpeningAuction.DeepClone()
+	}
+
+	if m.TradingModeConfig != nil {
+		switch tmc := m.TradingModeConfig.(type) {
+		case *Market_Continuous:
+			m.TradingModeConfig = tmc.DeepClone()
+		case *Market_Discrete:
+			m.TradingModeConfig = tmc.DeepClone()
+		}
+	}
+
+	if m.PriceMonitoringSettings != nil {
+		m.PriceMonitoringSettings = m.PriceMonitoringSettings.DeepClone()
+	}
+
+	if m.LiquidityMonitoringParameters != nil {
+		m.LiquidityMonitoringParameters = m.LiquidityMonitoringParameters.DeepClone()
+	}
+
+	if m.MarketTimestamps != nil {
+		m.MarketTimestamps = m.MarketTimestamps.DeepClone()
+	}
+	return &m
+}
