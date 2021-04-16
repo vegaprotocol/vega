@@ -894,7 +894,9 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	for _, order := range ordersToCancel {
 		_, err := m.cancelOrder(ctx, order.PartyId, order.Id)
 		if err != nil {
-			m.log.Error("Failed to cancel order", logging.String("OrderID", order.Id))
+			m.log.Panic("Failed to cancel order",
+				logging.Error(err),
+				logging.String("OrderID", order.Id))
 		}
 	}
 
@@ -1374,6 +1376,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 				logging.Error(merr))
 		}
 	}
+
 	if evt := m.as.AuctionExtended(ctx); evt != nil {
 		m.broker.Send(evt)
 	}
@@ -2232,6 +2235,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			m.log.Debug("liquidity update error", logging.Error(err))
 		}
 	}
+
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)
 
@@ -3522,9 +3526,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
-		if m.as.AuctionEnd() && m.matching.BidAndAskPresentAfterAuction() {
-			m.LeaveAuction(ctx, m.currentTime)
-		} else if evt := m.as.AuctionExtended(ctx); evt != nil {
+		if evt := m.as.AuctionExtended(ctx); evt != nil {
 			m.broker.Send(evt)
 		}
 	}
