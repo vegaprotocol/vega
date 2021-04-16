@@ -113,28 +113,28 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 
 	pos, found := e.positions[order.PartyId]
 	if !found {
-		e.log.Panic("could not find position in engine",
+		e.log.Panic("could not find position in engine when unregistering order",
 			logging.Order(*order))
 	}
 
-	pos.UnregisterOrder(order)
+	pos.UnregisterOrder(e.log, order)
 	return pos
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
-func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
+func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
 
 	pos, found := e.positions[originalOrder.PartyId]
 	if !found {
-		// If we can't find the original, we can't amend it
-		err = ErrPositionNotFound
-		return
+		e.log.Panic("could not find position in engine when amending order",
+			logging.Order(*originalOrder),
+			logging.Order(*newOrder))
 	}
-	pos.AmendOrder(originalOrder, newOrder)
+	pos.AmendOrder(e.log, originalOrder, newOrder)
 	timer.EngineTimeCounterAdd()
-	return
+	return pos
 }
 
 // UpdateNetwork - functionally the same as the Update func, except for ignoring the network

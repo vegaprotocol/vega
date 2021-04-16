@@ -2485,20 +2485,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// Update potential new position after the amend
-	pos, err := m.position.AmendOrder(existingOrder, amendedOrder)
-	if err != nil {
-		// adding order to the buffer first
-		amendedOrder.Status = types.Order_STATUS_REJECTED
-		amendedOrder.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
-		m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
-
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Unable to amend potential trader position",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
-		}
-		return nil, ErrMarginCheckFailed
-	}
+	pos := m.position.AmendOrder(existingOrder, amendedOrder)
 
 	// Perform check and allocate margin if price or order size is increased
 	// ignore rollback return here, as if we amend it means the order
@@ -2508,12 +2495,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	if priceIncrease || sizeIncrease {
 		if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 			// Undo the position registering
-			_, err1 := m.position.AmendOrder(amendedOrder, existingOrder)
-			if err1 != nil {
-				m.log.Error("Unable to unregister potential amended trader position",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err1))
-			}
+			_ = m.position.AmendOrder(amendedOrder, existingOrder)
 
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for trader",
