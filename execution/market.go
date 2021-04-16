@@ -1195,7 +1195,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 		orderValidity = "valid"
 	}
 
-	if order.PeggedOrder != nil && order.Status != types.Order_STATUS_ACTIVE && order.Status != types.Order_STATUS_PARKED {
+	if order.PeggedOrder != nil && order.IsFinished() {
 		// remove the pegged order from anywhere
 		m.removePeggedOrder(order)
 	}
@@ -1277,7 +1277,6 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	var trades []*types.Trade
 	// we're not in auction (not opening, not any other auction
 	if !m.as.InAuction() {
-
 		// first we call the order book to evaluate auction triggers and get the list of trades
 		var err error
 		trades, err = m.checkPriceAndGetTrades(ctx, order)
@@ -1292,27 +1291,18 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		}
 	}
 
+	// if an auction was trigger, and we are a pegged order
+	// let's return now.
+	if m.as.InAuction() && isPegged {
+		return &types.OrderConfirmation{Order: order}, nil
+	}
+
 	order.Status = types.Order_STATUS_ACTIVE
 
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(order)
 	if err != nil {
-		_ = m.position.UnregisterOrder(order)
-
-		order.Status = types.Order_STATUS_REJECTED
-		if oerr, ok := types.IsOrderError(err); ok {
-			order.Reason = oerr
-		} else {
-			// should not happened but still...
-			order.Reason = types.OrderError_ORDER_ERROR_INTERNAL_ERROR
-		}
-		m.broker.Send(events.NewOrderEvent(ctx, order))
-		if m.log.GetLevel() <= logging.DebugLevel {
-			m.log.Debug("Failure after submitting order to matching engine",
-				logging.Order(*order),
-				logging.Error(err))
-		}
-		return nil, err
+		return nil, m.unregisterAndReject(ctx, order, err)
 	}
 
 	// if order was FOK or IOC some or all of it may have not be consumed, so we need to
