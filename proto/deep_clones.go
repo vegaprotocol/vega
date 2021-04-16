@@ -325,3 +325,33 @@ func (l LiquidityProvision) DeepClone() *LiquidityProvision {
 	}
 	return &l
 }
+
+func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {
+	if p.Trigger != nil {
+		p.Trigger = p.Trigger.DeepClone()
+	}
+	return &p
+}
+
+func (l LiquidityProviderFeeShare) DeepClone() *LiquidityProviderFeeShare {
+	return &l
+}
+
+func (m MarketData) DeepClone() *MarketData {
+	if len(m.PriceMonitoringBounds) > 0 {
+		pmb := m.PriceMonitoringBounds
+		m.PriceMonitoringBounds = make([]*PriceMonitoringBounds, len(pmb))
+		for i, p := range pmb {
+			m.PriceMonitoringBounds[i] = p.DeepClone()
+		}
+	}
+
+	if len(m.LiquidityProviderFeeShare) > 0 {
+		lpfs := m.LiquidityProviderFeeShare
+		m.LiquidityProviderFeeShare = make([]*LiquidityProviderFeeShare, len(lpfs))
+		for i, l := range lpfs {
+			m.LiquidityProviderFeeShare[i] = l.DeepClone()
+		}
+	}
+	return &m
+}
