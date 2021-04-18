@@ -536,3 +536,14 @@ func (n NodeSignature) DeepClone() *NodeSignature {
 	}
 	return &n
 }
+
+func (p PeggedOrder) DeepClone() *PeggedOrder {
+	return &p
+}
+
+func (o Order) DeepClone() *Order {
+	if o.PeggedOrder != nil {
+		o.PeggedOrder = o.PeggedOrder.DeepClone()
+	}
+	return &o
+}
