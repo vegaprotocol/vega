@@ -13,9 +13,10 @@ type OracleSpec struct {
 }
 
 func NewOracleSpecEvent(ctx context.Context, spec oraclespb.OracleSpec) *OracleSpec {
+	cpy := spec.DeepClone()
 	return &OracleSpec{
 		Base: newBase(ctx, OracleSpecEvent),
-		o:    spec,
+		o:    *cpy,
 	}
 }
 
