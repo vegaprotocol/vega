@@ -570,3 +570,37 @@ func (t Trade) DeepClone() *Trade {
 	}
 	return &t
 }
+
+func (a Account) DeepClone() *Account {
+	return &a
+}
+
+func (t TransferBalance) DeepClone() *TransferBalance {
+	if t.Account != nil {
+		t.Account = t.Account.DeepClone()
+	}
+	return &t
+}
+
+func (l LedgerEntry) DeepClone() *LedgerEntry {
+	return &l
+}
+
+func (t TransferResponse) DeepClone() *TransferResponse {
+	if len(t.Balances) > 0 {
+		bs := t.Balances
+		t.Balances = make([]*TransferBalance, len(bs))
+		for i, b := range bs {
+			t.Balances[i] = b.DeepClone()
+		}
+	}
+
+	if len(t.Transfers) > 0 {
+		ts := t.Transfers
+		t.Transfers = make([]*LedgerEntry, len(ts))
+		for i, tr := range ts {
+			t.Transfers[i] = tr.DeepClone()
+		}
+	}
+	return &t
+}
