@@ -547,3 +547,26 @@ func (o Order) DeepClone() *Order {
 	}
 	return &o
 }
+
+func (p Party) DeepClone() *Party {
+	return &p
+}
+
+func (r RiskFactor) DeepClone() *RiskFactor {
+	return &r
+}
+
+func (f Fee) DeepClone() *Fee {
+	return &f
+}
+
+func (t Trade) DeepClone() *Trade {
+	if t.BuyerFee != nil {
+		t.BuyerFee = t.BuyerFee.DeepClone()
+	}
+
+	if t.SellerFee != nil {
+		t.SellerFee = t.SellerFee.DeepClone()
+	}
+	return &t
+}

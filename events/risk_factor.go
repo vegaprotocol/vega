@@ -12,9 +12,10 @@ type RiskFactor struct {
 }
 
 func NewRiskFactorEvent(ctx context.Context, r types.RiskFactor) *RiskFactor {
+	cpy := r.DeepClone()
 	return &RiskFactor{
 		Base: newBase(ctx, RiskFactorEvent),
-		r:    r,
+		r:    *cpy,
 	}
 }
 

@@ -12,9 +12,10 @@ type Party struct {
 }
 
 func NewPartyEvent(ctx context.Context, p types.Party) *Party {
+	cpy := p.DeepClone()
 	return &Party{
 		Base: newBase(ctx, PartyEvent),
-		p:    p,
+		p:    *cpy,
 	}
 }
 
