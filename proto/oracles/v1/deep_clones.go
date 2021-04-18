@@ -52,3 +52,34 @@ func (o OracleSpec) DeepClone() *OracleSpec {
 	}
 	return &o
 }
+
+func (p Property) DeepClone() *Property {
+	return &p
+}
+
+func (o OracleData) DeepClone() *OracleData {
+	if len(o.PubKeys) > 0 {
+		pks := o.PubKeys
+		o.PubKeys = make([]string, len(pks))
+		for i, k := range pks {
+			o.PubKeys[i] = k
+		}
+	}
+
+	if len(o.Data) > 0 {
+		data := o.Data
+		o.Data = make([]*Property, len(data))
+		for i, d := range data {
+			o.Data[i] = d.DeepClone()
+		}
+	}
+
+	if len(o.MatchedSpecIds) > 0 {
+		ms := o.MatchedSpecIds
+		o.MatchedSpecIds = make([]string, len(ms))
+		for i, m := range ms {
+			o.MatchedSpecIds[i] = m
+		}
+	}
+	return &o
+}

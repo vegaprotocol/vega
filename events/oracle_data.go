@@ -13,9 +13,10 @@ type OracleData struct {
 }
 
 func NewOracleDataEvent(ctx context.Context, spec oraclespb.OracleData) *OracleData {
+	cpy := spec.DeepClone()
 	return &OracleData{
 		Base: newBase(ctx, OracleDataEvent),
-		o:    spec,
+		o:    *cpy,
 	}
 }
 
