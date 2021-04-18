@@ -13,9 +13,10 @@ type NodeSignature struct {
 }
 
 func NewNodeSignatureEvent(ctx context.Context, e types.NodeSignature) *NodeSignature {
+	cpy := e.DeepClone()
 	return &NodeSignature{
 		Base: newBase(ctx, NodeSignatureEvent),
-		e:    e,
+		e:    *cpy,
 	}
 }
 

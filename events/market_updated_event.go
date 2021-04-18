@@ -13,9 +13,10 @@ type MarketUpdated struct {
 }
 
 func NewMarketUpdatedEvent(ctx context.Context, m types.Market) *MarketUpdated {
+	cpy := m.DeepClone()
 	return &MarketUpdated{
 		Base: newBase(ctx, MarketUpdatedEvent),
-		m:    m,
+		m:    *cpy,
 	}
 }
 
