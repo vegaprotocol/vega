@@ -1,7 +1,6 @@
 package matching
 
 import (
-	"fmt"
 	"sort"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -123,11 +122,6 @@ func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price, volume uint64, s
 }
 
 func (ipv *IndicativePriceAndVolume) getLevelsWithinRange(maxPrice, minPrice uint64) []ipvPriceLevel {
-	fmt.Printf("maxPrice(%d), minPrice(%d)\n", maxPrice, minPrice)
-	for _, v := range ipv.levels {
-		fmt.Printf("price: %v\n", v.price)
-	}
-
 	// these are ordered descending, se we gonna find first the maxPrice then
 	// the minPrice, and using that we can then subslice like a boss
 	maxPricePos := sort.Search(len(ipv.levels), func(i int) bool {
@@ -144,8 +138,6 @@ func (ipv *IndicativePriceAndVolume) getLevelsWithinRange(maxPrice, minPrice uin
 		// price level not present, that should not be possible?
 		panic("missing min price level")
 	}
-
-	fmt.Printf("maxPricePos(%d) minPricePos(%d)\n", maxPricePos, minPricePos)
 
 	return ipv.levels[maxPricePos : minPricePos+1]
 }
