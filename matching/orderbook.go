@@ -162,7 +162,7 @@ func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
 
 	// Set the market state
 	b.auction = true
-	b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.buy, b.sell)
+	b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
 
 	// Return all the orders that have been removed from the book and need to be cancelled
 	ordersToCancel := buyCancelledOrders

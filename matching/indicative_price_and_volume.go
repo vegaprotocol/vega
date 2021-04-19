@@ -3,10 +3,12 @@ package matching
 import (
 	"sort"
 
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 type IndicativePriceAndVolume struct {
+	log    *logging.Logger
 	levels []ipvPriceLevel
 }
 
@@ -20,9 +22,10 @@ type ipvVolume struct {
 	volume uint64
 }
 
-func NewIndicativePriceAndVolume(buy, sell *OrderBookSide) *IndicativePriceAndVolume {
+func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) *IndicativePriceAndVolume {
 	ipv := IndicativePriceAndVolume{
 		levels: []ipvPriceLevel{},
+		log:    log,
 	}
 	ipv.buildInitialCumulativeLevels(buy, sell)
 	return &ipv
@@ -95,12 +98,18 @@ func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64
 	switch side {
 	case types.Side_SIDE_BUY:
 		if ipv.levels[idx].buypl == nil {
-			ipv.levels[idx].buypl = &ipvVolume{}
+			ipv.log.Panic("cannot decrement volume from a non-existing level",
+				logging.String("side", side.String()),
+				logging.Uint64("price", ipv.levels[idx].price),
+				logging.Uint64("volume", volume))
 		}
 		ipv.levels[idx].buypl.volume -= volume
 	case types.Side_SIDE_SELL:
 		if ipv.levels[idx].sellpl == nil {
-			ipv.levels[idx].sellpl = &ipvVolume{}
+			ipv.log.Panic("cannot decrement volume from a non-existing level",
+				logging.String("side", side.String()),
+				logging.Uint64("price", ipv.levels[idx].price),
+				logging.Uint64("volume", volume))
 		}
 		ipv.levels[idx].sellpl.volume -= volume
 	}
@@ -114,10 +123,10 @@ func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price, volume uint64, s
 		// we found the price level, let's add the volume there, and we are done
 		ipv.decrementLevelVolume(i, volume, side)
 	} else {
-		ipv.levels = append(ipv.levels, ipvPriceLevel{})
-		copy(ipv.levels[i+1:], ipv.levels[i:])
-		ipv.levels[i] = ipvPriceLevel{price: price}
-		ipv.decrementLevelVolume(i, volume, side)
+		ipv.log.Panic("cannot remove volume from a non-existing level",
+			logging.String("side", side.String()),
+			logging.Uint64("price", price),
+			logging.Uint64("volume", volume))
 	}
 }
 
@@ -129,14 +138,16 @@ func (ipv *IndicativePriceAndVolume) getLevelsWithinRange(maxPrice, minPrice uin
 	})
 	if maxPricePos >= len(ipv.levels) || ipv.levels[maxPricePos].price != maxPrice {
 		// price level not present, that should not be possible?
-		panic("missing max price level")
+		ipv.log.Panic("missing max price in levels",
+			logging.Uint64("max-price", maxPrice))
 	}
 	minPricePos := sort.Search(len(ipv.levels), func(i int) bool {
 		return ipv.levels[i].price <= minPrice
 	})
 	if minPricePos >= len(ipv.levels) || ipv.levels[minPricePos].price != minPrice {
 		// price level not present, that should not be possible?
-		panic("missing min price level")
+		ipv.log.Panic("missing min price in levels",
+			logging.Uint64("min-price", minPrice))
 	}
 
 	return ipv.levels[maxPricePos : minPricePos+1]
