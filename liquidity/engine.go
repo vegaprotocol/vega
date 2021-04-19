@@ -739,11 +739,15 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 
 		// We either don't need this order anymore or
 		// we have just nothing to do about it.
-		// we check o.Price == 0 just to make sure we are able to price
-		// the order, in which case the size will have been calculated
-		// properly by the engine.
 		if o.LiquidityImpliedVolume == 0 ||
-			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume) || o.Price == 0) {
+			// we check if the order was not nil, which mean we alread had a deployed order
+			// if the order as not traded, and the size haven't changed, then we have nothing
+			// to do about it. If the size has changed, then we will want to recreate one.
+			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume)) ||
+			// we check o.Price == 0 just to make sure we are able to price
+			// the order, in which case the size will have been calculated
+			// properly by the engine.
+			o.Price == 0 {
 			continue
 		}
 
