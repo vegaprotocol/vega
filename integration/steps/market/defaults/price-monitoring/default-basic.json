@@ -1,0 +1,17 @@
+{
+    "parameters": {
+	"triggers": [
+	    {
+		"horizon": 5,
+		"probability": 0.95,
+		"auctionExtension": 6
+	    },
+	    {
+		"horizon": 10,
+		"probability": 0.99,
+		"auctionExtension": 8
+	    }
+	]
+    },
+    "updateFrequency": 60
+}

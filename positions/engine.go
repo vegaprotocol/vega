@@ -108,32 +108,33 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
-func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
+func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 	defer metrics.NewTimeCounter("-", "positions", "UnregisterOrder").EngineTimeCounterAdd()
 
 	pos, found := e.positions[order.PartyId]
 	if !found {
-		return nil, ErrPositionNotFound
+		e.log.Panic("could not find position in engine when unregistering order",
+			logging.Order(*order))
 	}
 
-	pos.UnregisterOrder(order)
-	return pos, nil
+	pos.UnregisterOrder(e.log, order)
+	return pos
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
-func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
+func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
 
 	pos, found := e.positions[originalOrder.PartyId]
 	if !found {
-		// If we can't find the original, we can't amend it
-		err = ErrPositionNotFound
-		return
+		e.log.Panic("could not find position in engine when amending order",
+			logging.Order(*originalOrder),
+			logging.Order(*newOrder))
 	}
-	pos.AmendOrder(originalOrder, newOrder)
+	pos.AmendOrder(e.log, originalOrder, newOrder)
 	timer.EngineTimeCounterAdd()
-	return
+	return pos
 }
 
 // UpdateNetwork - functionally the same as the Update func, except for ignoring the network
@@ -142,30 +143,41 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 // wasteful, and would only serve to add complexity to the Update func, and slow it down
 func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 	// there's only 1 position
-	var pos *MarketPosition
+	var (
+		ok  bool
+		pos *MarketPosition
+	)
 	size := int64(trade.Size)
 	if trade.Buyer != "network" {
-		if b, ok := e.positions[trade.Buyer]; !ok {
-			pos = &MarketPosition{
-				partyID: trade.Buyer,
-			}
-			e.positions[trade.Buyer] = pos
-			e.positionsCpy = append(e.positionsCpy, pos)
-		} else {
-			pos = b
+		pos, ok = e.positions[trade.Buyer]
+		if !ok {
+			e.log.Panic("could not find buyer position",
+				logging.Trade(*trade))
 		}
+
+		if pos.buy < int64(trade.Size) {
+			e.log.Panic("network trade with a potential buy position < to the trade size",
+				logging.PartyID(trade.Buyer),
+				logging.Int64("potential-buy", pos.buy),
+				logging.Trade(*trade))
+		}
+
 		// potential buy pos is smaller now
 		pos.buy -= int64(trade.Size)
 	} else {
-		if s, ok := e.positions[trade.Seller]; !ok {
-			pos = &MarketPosition{
-				partyID: trade.Seller,
-			}
-			e.positions[trade.Seller] = pos
-			e.positionsCpy = append(e.positionsCpy, pos)
-		} else {
-			pos = s
+		pos, ok = e.positions[trade.Seller]
+		if !ok {
+			e.log.Panic("could not find seller position",
+				logging.Trade(*trade))
 		}
+
+		if pos.sell < int64(trade.Size) {
+			e.log.Panic("network trade with a potential sell position < to the trade size",
+				logging.PartyID(trade.Seller),
+				logging.Int64("potential-sell", pos.sell),
+				logging.Trade(*trade))
+		}
+
 		// potential sell pos is smaller now
 		pos.sell -= int64(trade.Size)
 		// size is negative in case of a sale
@@ -177,26 +189,34 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
 func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
-	// todo(cdm): overflow should be managed at the trade/order creation point. We shouldn't accept an order onto
-	// your book that would overflow your position. Order validation requires position store/state lookup.
-
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
-		buyer = &MarketPosition{
-			partyID: trade.Buyer,
-		}
-		e.positions[trade.Buyer] = buyer
-		e.positionsCpy = append(e.positionsCpy, buyer)
+		e.log.Panic("could not find buyer position",
+			logging.Trade(*trade))
 	}
 
 	seller, ok := e.positions[trade.Seller]
 	if !ok {
-		seller = &MarketPosition{
-			partyID: trade.Seller,
-		}
-		e.positions[trade.Seller] = seller
-		e.positionsCpy = append(e.positionsCpy, seller)
+		e.log.Panic("could not find seller position",
+			logging.Trade(*trade))
 	}
+
+	// now we check if the trade is possible based on the potential positions
+	// this should always be true, no trade can happen without the equivalent
+	// potential position
+	if buyer.buy < int64(trade.Size) {
+		e.log.Panic("trade with a potential buy position < to the trade size",
+			logging.PartyID(trade.Buyer),
+			logging.Int64("potential-buy", buyer.buy),
+			logging.Trade(*trade))
+	}
+	if seller.sell < int64(trade.Size) {
+		e.log.Panic("trade with a potential sell position < to the trade size",
+			logging.PartyID(trade.Seller),
+			logging.Int64("potential-sell", buyer.sell),
+			logging.Trade(*trade))
+	}
+
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
 	buyer.size += int64(trade.Size)

@@ -70,19 +70,8 @@ func (e *Engine) AmendLiquidityProvision(
 		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
 	}
 	e.undeployedProvisions = true
-	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
-	for _, buy := range lps.Buys {
-		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
-			LiquidityOrder: buy,
-		})
-	}
 
-	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(lps.Sells))
-	for _, sell := range lps.Sells {
-		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
-			LiquidityOrder: sell,
-		})
-	}
+	e.buildLiquidityProvisionShapesReferences(lp, lps)
 
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	return cancels, nil

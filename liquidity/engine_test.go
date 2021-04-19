@@ -2,6 +2,7 @@ package liquidity_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"github.com/golang/mock/gomock"
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,10 +33,10 @@ func (eqMatcher) String() string {
 func eq(t *testing.T, x interface{}) eqMatcher { return eqMatcher{t, x} }
 
 type testEngine struct {
-	ctrl         *gomock.Controller
-	marketID     string
-	broker       *mocks.MockBroker
-	idGen        *mocks.MockIDGen
+	ctrl     *gomock.Controller
+	marketID string
+	broker   *mocks.MockBroker
+	//idGen        *mocks.MockIDGen
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
 	engine       *liquidity.Engine
@@ -47,7 +47,8 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 
 	log := logging.NewTestLogger()
 	broker := mocks.NewMockBroker(ctrl)
-	idGen := mocks.NewMockIDGen(ctrl)
+	// idGen := mocks.NewMockIDGen(ctrl)
+	idGen := &idGenStub{}
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
 	market := "market-id"
@@ -61,10 +62,10 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	engine.OnChainTimeUpdate(context.Background(), now)
 
 	return &testEngine{
-		ctrl:         ctrl,
-		marketID:     market,
-		broker:       broker,
-		idGen:        idGen,
+		ctrl:     ctrl,
+		marketID: market,
+		broker:   broker,
+		// idGen:        idGen,
 		riskModel:    risk,
 		priceMonitor: monitor,
 		engine:       engine,
@@ -108,11 +109,6 @@ func testSubmissionCRUD(t *testing.T) {
 		Buys: buyShape, Sells: sellShape,
 	}
 
-	lps2 := &types.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 200, Fee: "0.5",
-		Buys: buyShape, Sells: sellShape,
-	}
-
 	lps3 := &types.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 000, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
@@ -128,11 +124,11 @@ func testSubmissionCRUD(t *testing.T) {
 		UpdatedAt:        now.UnixNano(),
 		Status:           types.LiquidityProvision_STATUS_PENDING,
 		Buys: []*types.LiquidityOrderReference{
-			{LiquidityOrder: buyShape[0]},
+			{LiquidityOrder: buyShape[0], OrderId: "liquidity-order-1"},
 		},
 
 		Sells: []*types.LiquidityOrderReference{
-			{LiquidityOrder: sellShape[0]},
+			{LiquidityOrder: sellShape[0], OrderId: "liquidity-order-2"},
 		},
 	}
 
@@ -145,24 +141,6 @@ func testSubmissionCRUD(t *testing.T) {
 	)
 	got := tng.engine.LiquidityProvisionByPartyID(party)
 	require.Equal(t, expected, got)
-
-	// Submitting for the same market/party should update the previous
-	now = now.Add(1 * time.Hour)
-	expected.UpdatedAt = now.UnixNano()
-	expected.CommitmentAmount = lps2.CommitmentAmount
-	tng.engine.OnChainTimeUpdate(ctx, now)
-
-	tng.broker.EXPECT().Send(
-		events.NewLiquidityProvisionEvent(ctx, expected),
-	).Times(1)
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps2, party, "some-id-2"),
-	)
-
-	got = tng.engine.LiquidityProvisionByPartyID(party)
-	require.NotNil(t, got)
-	require.Equal(t, lps2.CommitmentAmount, got.CommitmentAmount)
-	require.True(t, got.UpdatedAt > got.CreatedAt)
 
 	// Submit with 0 CommitmentAmount amount should remove the LP and CANCEL it
 	// via event
@@ -224,9 +202,6 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	tng.riskModel.EXPECT().ProbabilityOfTrading(
 		any, any, any, any, any, any, any,
 	).AnyTimes().Return(0.5)
-	tng.idGen.EXPECT().SetID(gomock.Any()).Do(func(order *types.Order) {
-		order.Id = uuid.NewV4().String()
-	}).AnyTimes()
 
 	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, markPrice, fn, []*types.Order{})
 	require.NoError(t, err)
@@ -432,9 +407,6 @@ func TestUpdate(t *testing.T) {
 	tng.riskModel.EXPECT().ProbabilityOfTrading(
 		any, any, any, any, any, any, any,
 	).AnyTimes().Return(0.5)
-	tng.idGen.EXPECT().SetID(gomock.Any()).Do(func(order *types.Order) {
-		order.Id = uuid.NewV4().String()
-	}).AnyTimes()
 
 	orders := []*types.Order{
 		{Id: "1", PartyId: party, Price: 10, Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
@@ -534,4 +506,13 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
+}
+
+type idGenStub struct {
+	id uint64
+}
+
+func (i *idGenStub) SetID(o *types.Order) {
+	i.id++
+	o.Id = fmt.Sprintf("liquidity-order-%d", i.id)
 }

@@ -220,7 +220,10 @@ func (m *Market) amendLiquidityProvisionContinuous(
 	// first remove all existing orders from the potential positions
 	lorders := m.liquidity.GetLiquidityOrders(party)
 	for _, v := range lorders {
-		pos.UnregisterOrder(v)
+		// ensure the order is on the actual potential position first
+		if order, foundOnBook, _ := m.getOrderByID(v.Id); foundOnBook {
+			pos.UnregisterOrder(m.log, order)
+		}
 	}
 
 	// then add all the newly created ones

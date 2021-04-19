@@ -89,6 +89,8 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 
 	for _, c := range cases {
 		// call an update on the positions with the trade
+		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
@@ -152,6 +154,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 
 	for _, c := range cases {
 		// call an update on the positions with the trade
+		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
@@ -214,6 +218,8 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
@@ -276,6 +282,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
 		// call an update on the positions with the trade
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
@@ -322,6 +330,8 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	// now create a trade an make sure the positions are created an correct
+	registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
+	registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
 	positions := engine.Update(&c.trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
@@ -411,6 +421,8 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, c.posSize, len(pos), fmt.Sprintf("all pos trade: %v", c.trade.Id))
@@ -477,6 +489,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
 		// call an update on the positions with the trade
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
@@ -855,8 +869,7 @@ func testOrderCancelled(t *testing.T) {
 
 	// first add the orders
 	for _, c := range cases.orders {
-		_, err := engine.UnregisterOrder(&c)
-		assert.NoError(t, err)
+		_ = engine.UnregisterOrder(&c)
 	}
 
 	// test everything is back to 0 once orders are unregistered

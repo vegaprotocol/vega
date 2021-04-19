@@ -342,21 +342,36 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvision_STATUS_PENDING
 	e.undeployedProvisions = true
+
+	e.buildLiquidityProvisionShapesReferences(lp, lps)
+
+	return nil
+}
+
+func (e *Engine) buildLiquidityProvisionShapesReferences(
+	lp *types.LiquidityProvision,
+	lps *types.LiquidityProvisionSubmission,
+) {
+	// this order is just a stub to send to the id generator,
+	// and get an ID assigned per references in the shapes
+	order := &types.Order{}
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
 	for _, buy := range lps.Buys {
+		e.idGen.SetID(order)
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
+			OrderId:        order.Id,
 			LiquidityOrder: buy,
 		})
 	}
 
 	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(lps.Sells))
 	for _, sell := range lps.Sells {
+		e.idGen.SetID(order)
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
+			OrderId:        order.Id,
 			LiquidityOrder: sell,
 		})
 	}
-
-	return nil
 }
 
 // LiquidityProvisionByPartyID returns the LP associated to a Party if any.
@@ -671,7 +686,6 @@ func (e *Engine) undeployOrdersFromShape(
 
 			// then we can delete the order from our mapping
 			delete(lm, ref.OrderId)
-			ref.OrderId = ""
 		}
 	}
 
@@ -721,7 +735,6 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 
 			// then we can delete the order from our mapping
 			delete(lm, ref.OrderId)
-			ref.OrderId = ""
 		}
 
 		// We either don't need this order anymore or
@@ -729,7 +742,8 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 		// we check o.Price == 0 just to make sure we are able to price
 		// the order, in which case the size will have been calculated
 		// properly by the engine.
-		if o.LiquidityImpliedVolume == 0 || (order != nil && (!order.HasTraded()) || o.Price == 0) {
+		if o.LiquidityImpliedVolume == 0 ||
+			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume) || o.Price == 0) {
 			continue
 		}
 
@@ -741,7 +755,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			Offset:    ref.LiquidityOrder.Offset,
 		}
 		order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
-		e.idGen.SetID(order)
+		order.Id = ref.OrderId
 		newOrders = append(newOrders, order)
 		lm[order.Id] = order
 		ref.OrderId = order.Id
