@@ -2,6 +2,8 @@ package steps
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	"github.com/cucumber/godog/gherkin"
 
@@ -22,19 +24,18 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 				Param:   netparams.MarketAuctionMinimumDuration,
 				Watcher: exec.OnMarketAuctionMinimumDurationUpdate,
 			})
-				case "market.stake.target.timeWindow":
-			v := row.MustDurationSec("value")
-			if err := exec.OnMarketTargetStakeTimeWindowUpdate(context.Background(), v); err != nil {
-				return err
-			}
-		case "market.stake.target.scalingFactor":
-			v := row.MustF64("value")
-			if err := exec.OnMarketTargetStakeScalingFactorUpdate(context.Background(), v); err != nil {
-				return err
-			}
+		case netparams.MarketTargetStakeTimeWindow:
+			watchParams = append(watchParams, netparams.WatchParam{
+				Param:   netparams.MarketTargetStakeTimeWindow,
+				Watcher: exec.OnMarketTargetStakeTimeWindowUpdate,
+			})
+		case netparams.MarketTargetStakeScalingFactor:
+			watchParams = append(watchParams, netparams.WatchParam{
+				Param:   netparams.MarketTargetStakeScalingFactor,
+				Watcher: exec.OnMarketTargetStakeScalingFactorUpdate,
+			})
 		default:
 			return fmt.Errorf("unimplemented network param %v in feature test", name)
-		}	
 		}
 	}
 
@@ -51,6 +52,19 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 			if err := netParams.Update(ctx, netparams.MarketAuctionMinimumDuration, d.String()); err != nil {
 				return err
 			}
+		case netparams.MarketTargetStakeTimeWindow:
+			d := row.MustDurationSec("value")
+			if err := netParams.Update(ctx, netparams.MarketTargetStakeTimeWindow, d.String()); err != nil {
+				return err
+			}
+		case netparams.MarketTargetStakeScalingFactor:
+			f := row.MustF64("value")
+			n := strconv.FormatFloat(f, 'f', -1, 64)
+			if err := netParams.Update(ctx, netparams.MarketTargetStakeScalingFactor, n); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unimplemented network param %v in feature test", name)
 		}
 	}
 
