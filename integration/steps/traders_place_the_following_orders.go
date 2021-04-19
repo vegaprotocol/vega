@@ -2,11 +2,13 @@ package steps
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/integration/helpers"
 	"github.com/cucumber/godog/gherkin"
 	uuid "github.com/satori/go.uuid"
+
+	"code.vegaprotocol.io/vega/integration/helpers"
 
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
@@ -26,6 +28,11 @@ func TradersPlaceTheFollowingOrders(
 		oty := row.MustOrderType("type")
 		tif := row.MustTIF("tif")
 		reference := row.Str("reference")
+
+		var resultingTrades int64 = -1
+		if row.Str("resulting trades") != "" {
+			resultingTrades = row.I64("resulting trades")
+		}
 
 		var expiresAt int64
 		if oty != types.Order_TYPE_MARKET {
@@ -47,12 +54,22 @@ func TradersPlaceTheFollowingOrders(
 			CreatedAt:   time.Now().UnixNano(),
 			Reference:   reference,
 		}
-		_, err := exec.SubmitOrder(context.Background(), &order)
+
+		resp, err := exec.SubmitOrder(context.Background(), &order)
 		if err != nil {
 			errorHandler.HandleError(SubmitOrderError{
 				reference: reference,
 				request:   order,
 				Err:       err,
+			})
+			return nil
+		}
+
+		if resultingTrades != -1 && len(resp.Trades) != int(resultingTrades) {
+			errorHandler.HandleError(SubmitOrderError{
+				reference: reference,
+				request:   order,
+				Err:       fmt.Errorf("expected %d trades executed, but got %d confirmations", resultingTrades, len(resp.Trades)),
 			})
 		}
 	}
