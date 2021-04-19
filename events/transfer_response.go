@@ -13,9 +13,7 @@ type TransferResponse struct {
 
 // NewTransferResponse returns an event with transfer responses - this is the replacement of the transfer buffer
 func NewTransferResponse(ctx context.Context, responses []*types.TransferResponse) *TransferResponse {
-	var trs []*types.TransferResponse
-
-	trs = make([]*types.TransferResponse, len(responses))
+	trs := make([]*types.TransferResponse, len(responses))
 	for i, tr := range responses {
 		trs[i] = tr.DeepClone()
 	}
