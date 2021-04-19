@@ -12,9 +12,10 @@ type Proposal struct {
 }
 
 func NewProposalEvent(ctx context.Context, p types.Proposal) *Proposal {
+	cpy := p.DeepClone()
 	return &Proposal{
 		Base: newBase(ctx, ProposalEvent),
-		p:    p,
+		p:    *cpy,
 	}
 }
 

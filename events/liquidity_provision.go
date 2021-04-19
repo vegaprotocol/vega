@@ -12,9 +12,11 @@ type LiquidityProvision struct {
 }
 
 func NewLiquidityProvisionEvent(ctx context.Context, p *types.LiquidityProvision) *LiquidityProvision {
+	cpy := p.DeepClone()
+
 	order := &LiquidityProvision{
 		Base: newBase(ctx, LiquidityProvisionEvent),
-		p:    *p,
+		p:    *cpy,
 	}
 	return order
 }
