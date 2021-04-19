@@ -23,35 +23,18 @@ func (a AssetSource_Erc20) DeepClone() *AssetSource_Erc20 {
 }
 
 func (a AssetSource) DeepClone() *AssetSource {
-	if a.Source != nil {
-		switch src := a.Source.(type) {
-		case *AssetSource_BuiltinAsset:
-			a.Source = src.DeepClone()
-		case *AssetSource_Erc20:
-			a.Source = src.DeepClone()
-		}
+	switch src := a.Source.(type) {
+	case *AssetSource_BuiltinAsset:
+		a.Source = src.DeepClone()
+	case *AssetSource_Erc20:
+		a.Source = src.DeepClone()
 	}
 	return &a
 }
 
 func (a Asset) DeepClone() *Asset {
 	if a.Source != nil {
-		switch src := a.Source.Source.(type) {
-		case *AssetSource_BuiltinAsset:
-			bia := *src.BuiltinAsset
-			a.Source = &AssetSource{
-				Source: &AssetSource_BuiltinAsset{
-					BuiltinAsset: &bia,
-				},
-			}
-		case *AssetSource_Erc20:
-			erc := *src.Erc20
-			a.Source = &AssetSource{
-				Source: &AssetSource_Erc20{
-					Erc20: &erc,
-				},
-			}
-		}
+		a.Source = a.Source.DeepClone()
 	}
 	return &a
 }
