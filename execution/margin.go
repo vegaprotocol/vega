@@ -164,6 +164,9 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil, nil, nil
 	}
 	if evt != nil {
+		if m.liquidity.IsPending(order.PartyId) {
+			return nil, nil, ErrBondSlashing
+		}
 		return []events.Risk{risk}, []events.MarketPosition{evt}, nil
 	}
 	return []events.Risk{risk}, nil, nil

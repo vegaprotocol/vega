@@ -1258,20 +1258,12 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// Perform check and allocate margin unless the order is (partially) closing the trader position
 	if checkMargin {
 		if err := m.checkMarginForOrder(ctx, pos, order); err != nil {
-			_ = m.position.UnregisterOrder(order)
-
-			// adding order to the buffer first
-			order.Status = types.Order_STATUS_REJECTED
-			order.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
-			m.broker.Send(events.NewOrderEvent(ctx, order))
-
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for trader",
-					logging.OrderID(order.Id),
-					logging.PartyID(order.PartyId),
-					logging.MarketID(m.GetID()),
-					logging.Error(err))
+					logging.Order(*order), logging.Error(err))
 			}
+			_ = m.unregisterAndReject(
+				ctx, order, types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED)
 			return nil, ErrMarginCheckFailed
 		}
 	}

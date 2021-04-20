@@ -977,7 +977,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	assert.Equal(t, totalFunds, tm.market.GetTotalAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
 }
 
-func TestLpCanResubmitAfterBeingClosedOut(t *testing.T) {
+func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
@@ -1061,54 +1061,6 @@ func TestLpCanResubmitAfterBeingClosedOut(t *testing.T) {
 		}
 
 		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
-		}
-
-		require.Len(t, found, len(expectedStatus))
-
-		for k, v := range expectedStatus {
-			assert.Equal(t, v.String(), found[k].Status.String())
-		}
-	})
-
-	// now set the markprice
-	mpOrders := []*types.Order{
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        100,
-			Remaining:   100,
-			Price:       2000,
-			Side:        types.Side_SIDE_SELL,
-			PartyId:     party1,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        100,
-			Remaining:   100,
-			Price:       2000,
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     party0,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-	}
-
-	// submit the auctions orders
-	tm.WithSubmittedOrders(t, mpOrders...)
-
-	// make sure LP order is cancelled
-	t.Run("expect commitment statuses", func(t *testing.T) {
-		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
-		for _, e := range tm.events {
-			switch evt := e.(type) {
-			case *events.LiquidityProvision:
-				lp := evt.LiquidityProvision()
-				found[lp.Id] = lp
-			}
-		}
-
-		expectedStatus := map[string]types.LiquidityProvision_Status{
 			"liquidity-submission-1": types.LiquidityProvision_STATUS_CANCELLED,
 		}
 
@@ -1118,41 +1070,6 @@ func TestLpCanResubmitAfterBeingClosedOut(t *testing.T) {
 			assert.Equal(t, v.String(), found[k].Status.String())
 		}
 	})
-
-	// now redeposit-funds
-	// log more
-	tm.WithAccountAndAmount(lpparty, 25000000)
-
-	tm.events = nil
-	// an re-submit the lp
-	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-2"),
-	)
-
-	// make sure LP order is deployed
-	t.Run("new LP order is active", func(t *testing.T) {
-		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
-		for _, e := range tm.events {
-			switch evt := e.(type) {
-			case *events.LiquidityProvision:
-				lp := evt.LiquidityProvision()
-				found[lp.Id] = lp
-			}
-		}
-
-		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-2": types.LiquidityProvision_STATUS_ACTIVE,
-		}
-
-		require.Len(t, found, len(expectedStatus))
-
-		for k, v := range expectedStatus {
-			assert.Equal(t, v.String(), found[k].Status.String())
-		}
-	})
-
 }
 
 func TestCloseOutLPTraderContIssue3086(t *testing.T) {

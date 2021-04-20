@@ -4638,13 +4638,15 @@ func TestLPOrdersRollback(t *testing.T) {
 		// the first order we try to place, the party does
 		// not have enough funds
 		expectedStatus := []types.Order_Status{
+			// first order is active
 			types.Order_STATUS_ACTIVE,
-			types.Order_STATUS_ACTIVE,
-			types.Order_STATUS_ACTIVE,
+			// second one fails margin check
 			types.Order_STATUS_REJECTED,
+			// first one gets cancelled
 			types.Order_STATUS_CANCELLED,
-			types.Order_STATUS_CANCELLED,
-			types.Order_STATUS_CANCELLED,
+			// order 3 and 4 which were never placed are sent as rejected as well
+			types.Order_STATUS_REJECTED,
+			types.Order_STATUS_REJECTED,
 		}
 
 		require.Len(t, found, len(expectedStatus))
