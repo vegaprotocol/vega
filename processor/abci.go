@@ -83,11 +83,6 @@ func NewApp(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	vegaWallet, ok := wallet.Get(nodewallet.Vega)
-	if !ok {
-		return nil, ErrVegaWalletRequired
-	}
-
 	app := &App{
 		abci: abci.New(&codec{}),
 
@@ -98,22 +93,21 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:     assets,
-		banking:    banking,
-		broker:     broker,
-		cmd:        cmd,
-		erc:        erc,
-		evtfwd:     evtfwd,
-		exec:       exec,
-		ghandler:   ghandler,
-		gov:        gov,
-		notary:     notary,
-		stats:      stats,
-		time:       time,
-		top:        top,
-		vegaWallet: vegaWallet,
-		netp:       netp,
-		oracles:    oracles,
+		assets:   assets,
+		banking:  banking,
+		broker:   broker,
+		cmd:      cmd,
+		erc:      erc,
+		evtfwd:   evtfwd,
+		exec:     exec,
+		ghandler: ghandler,
+		gov:      gov,
+		notary:   notary,
+		stats:    stats,
+		time:     time,
+		top:      top,
+		netp:     netp,
+		oracles:  oracles,
 	}
 
 	// setup handlers

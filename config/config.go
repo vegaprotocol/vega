@@ -122,7 +122,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Transfers:         transfers.NewDefaultConfig(),
 		Governance:        governance.NewDefaultConfig(),
 		NodeWallet:        nodewallet.NewDefaultConfig(defaultStoreDirPath),
-		Assets:            assets.NewDefaultConfig(defaultStoreDirPath),
+		Assets:            assets.NewDefaultConfig(),
 		Notary:            notary.NewDefaultConfig(),
 		EvtForward:        evtforward.NewDefaultConfig(),
 		Genesis:           genesis.NewDefaultConfig(),

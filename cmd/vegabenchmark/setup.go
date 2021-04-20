@@ -1,56 +1,404 @@
 package main
 
 import (
+	"context"
+	"encoding/hex"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/netparams/checks"
+	"code.vegaprotocol.io/vega/netparams/dispatch"
 	"code.vegaprotocol.io/vega/processor"
+	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/cenkalti/backoff"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
+	"github.com/prometheus/common/log"
 )
 
-func setupVega() (*processor.App, error) {
+func setupVega(selfPubKey string) (*processor.App, error) {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 
 	ctrl := gomock.NewController(&nopeTestReporter{log})
-	nodeWallet := mocks.NewNodeWalletMock(ctrl)
-	broker := mocks.NewBrokerMock(ctrl)
+	nodeWallet := mocks.NewMockNodeWallet(ctrl)
+	notary := mocks.NewMockNotary(ctrl)
+	erc := mocks.NewMockExtResChecker(ctrl)
+	evtfwd := mocks.NewMockEvtForwarder(ctrl)
+	oracles := mocks.NewMockOracleEngine(ctrl)
+	oraclesAdaptors := mocks.NewMockOracleAdaptors(ctrl)
+	commander := mocks.NewMockCommander(ctrl)
+	governance := mocks.NewMockGovernanceEngine(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
-	collateral := collateral.New(
+	timeService := vegatime.New(vegatime.NewDefaultConfig())
+
+	collateral, err := collateral.New(
 		log,
 		collateral.NewDefaultConfig(),
 		broker,
 		time.Time{},
 	)
-	_ = collateral
-	timeService := vegatime.New(vegatime.NewDefaultConfig())
-	// banking := banking.New(
-	// 	log,
-	// 	banking.NewDefaultConfig(), col banking.Collateral, erc banking.ExtResChecker, tsvc banking.TimeService, assets banking.Assets, notary banking.Notary, broker banking.Broker)
+	if err != nil {
+		return nil, err
+	}
 
-	assets := assets.New(
+	assets, err := assets.New(
 		log,
 		assets.NewDefaultConfig(),
 		nodeWallet,
-		timeService)
+		timeService,
+	)
+	if err != nil {
+		return nil, err
+	}
 	_ = assets
 
-	// app, err := processor.NewApp(
-	// 	log,
-	// 	processor.NewDefaultConfig(),
-	// 	func() { panic("cancel called") },
-	// 	assets,
-	// 	banking,
+	banking := banking.New(
+		log,
+		banking.NewDefaultConfig(),
+		collateral,
+		erc,
+		timeService,
+		assets,
+		notary,
+		broker,
+	)
+	_ = banking
+
+	exec := execution.NewEngine(
+		log,
+		execution.NewDefaultConfig(""),
+		timeService,
+		collateral,
+		oracles,
+		broker,
+	)
+
+	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
+
+	pubKey, err := hex.DecodeString(selfPubKey)
+	if err != nil {
+		return nil, err
+	}
+	topology := validators.NewTopology(
+		log,
+		validators.NewDefaultConfig(),
+		wallet{pubKey},
+	)
+
+	netparams := netparams.New(
+		log,
+		netparams.NewDefaultConfig(),
+		broker,
+	)
+
+	app, err := processor.NewApp(
+		log,
+		processor.NewDefaultConfig(),
+		func() { panic("cancel called") },
+		assets,
+		banking,
+		broker,
+		erc,
+		evtfwd,
+		exec,
+		commander,
+		genesisHandler,
+		governance,
+		notary,
+		stats.NewBlockchain(),
+		timeService,
+		topology,
+		nodeWallet,
+		netparams,
+		&processor.Oracle{
+			Engine:   oracles,
+			Adaptors: oraclesAdaptors,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)
+	if err != nil {
+		return nil, err
+	}
+
+	// load markets and assets
+	uponGenesisW := func(ctx context.Context, rawstate []byte) error {
+		return uponGenesis(
+			ctx,
+			rawstate,
+			log,
+			assets,
+			collateral,
+			exec,
+		)
+	}
+
+	setupGenesis(
+		uponGenesisW,
+		genesisHandler,
+		timeService,
+		netparams,
+		topology,
+	)
+
+	// data, _ := configsFS.ReadFile(genesisC)
+	// data, _ := configsFS.ReadFile(genesisC)
+
+	// loadGenesis(
+	// 	genesisBytes,
+	// 	proc,
 	// )
 
-	return nil, nil
+	return app, nil
 }
+
+// UponGenesis loads all asset from genesis state
+func uponGenesis(
+	ctx context.Context,
+	rawstate []byte,
+	log *logging.Logger,
+	assetSvc *assets.Service,
+	collateral *collateral.Engine,
+	exec *execution.Engine,
+) error {
+	state, err := assets.LoadGenesisState(rawstate)
+	if err != nil {
+		return err
+	}
+	if state == nil {
+		return nil
+	}
+
+	assetSrcs := map[string]types.AssetSource{}
+	for k, v := range state.Builtins {
+		v := v
+		assetSrc := types.AssetSource{
+			Source: &types.AssetSource_BuiltinAsset{
+				BuiltinAsset: &v,
+			},
+		}
+		assetSrcs[k] = assetSrc
+	}
+	for k, v := range state.ERC20 {
+		v := v
+		assetSrc := types.AssetSource{
+			Source: &types.AssetSource_Erc20{
+				Erc20: &v,
+			},
+		}
+		assetSrcs[k] = assetSrc
+	}
+
+	for k, v := range assetSrcs {
+		err := loadAsset(
+			k, &v,
+			assetSvc, collateral,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	mktscfg := []types.Market{}
+	for _, v := range markets {
+		f, err := configsFS.ReadFile(v)
+		if err != nil {
+			return err
+		}
+
+		mkt := types.Market{}
+		err = proto.Unmarshal(f, &mkt)
+		if err != nil {
+			return err
+		}
+		mktscfg = append(mktscfg, mkt)
+	}
+
+	// then we load the markets
+	for _, mkt := range mktscfg {
+		mkt := mkt
+		err = exec.SubmitMarket(ctx, &mkt)
+		if err != nil {
+			log.Panic("Unable to submit market", logging.Error(err))
+		}
+	}
+
+	return nil
+}
+
+func loadAsset(
+	id string,
+	v *types.AssetSource,
+	assets *assets.Service,
+	collateral *collateral.Engine,
+) error {
+	aid, err := assets.NewAsset(id, v)
+	if err != nil {
+		return fmt.Errorf("error instanciating asset %v", err)
+	}
+
+	asset, err := assets.Get(aid)
+	if err != nil {
+		return fmt.Errorf("unable to get asset %v", err)
+	}
+
+	// just a simple backoff here
+	err = backoff.Retry(
+		func() error {
+			err := asset.Validate()
+			if !asset.IsValid() {
+				return err
+			}
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
+	)
+	if err != nil {
+		return fmt.Errorf("unable to instantiate new asset err=%v, asset-source=%s", err, v.String())
+	}
+	if err := assets.Enable(aid); err != nil {
+		return fmt.Errorf("unable to enable asset: %v", err)
+	}
+
+	assetD := asset.ProtoAsset()
+	if err := collateral.EnableAsset(context.Background(), *assetD); err != nil {
+		return fmt.Errorf("unable to enable asset in collateral: %v", err)
+	}
+
+	log.Info("new asset added successfully",
+		logging.String("asset", asset.String()))
+
+	// FIXME: this will be remove once we stop loading market from config
+	// here we replace the mkts assets symbols with ids
+	// for _, v := range mktscfg {
+	// 	sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
+	// 	if sym == assetD.Symbol {
+	// 		v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.Id
+	// 	}
+	// }
+
+	return nil
+}
+
+func setupGenesis(
+	uponGenesis func(ctx context.Context, rawstate []byte) error,
+	genesisHandler *genesis.Handler,
+	timeService *vegatime.Svc,
+	netps *netparams.Store,
+	topology *validators.Topology,
+) {
+	genesisHandler.OnGenesisTimeLoaded(timeService.SetTimeNow)
+	genesisHandler.OnGenesisAppStateLoaded(
+		uponGenesis,
+		netps.UponGenesis,
+		topology.LoadValidatorsOnGenesis,
+	)
+}
+
+func registerExecutionCallbacks(
+	log *logging.Logger,
+	netps *netparams.Store,
+	exec *execution.Engine,
+	assets *assets.Service,
+	collateral *collateral.Engine,
+) error {
+	if err := netps.AddRules(
+		netparams.ParamStringRules(
+			netparams.GovernanceVoteAsset,
+			checks.GovernanceAssetUpdate(log, assets, collateral),
+		),
+	); err != nil {
+		return err
+	}
+
+	// now add some watcher for our netparams
+	return netps.Watch(
+		netparams.WatchParam{
+			Param:   netparams.GovernanceVoteAsset,
+			Watcher: dispatch.GovernanceAssetUpdate(log, assets),
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMarginScalingFactors,
+			Watcher: exec.OnMarketMarginScalingFactorsUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsMakerFee,
+			Watcher: exec.OnMarketFeeFactorsMakerFeeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsInfrastructureFee,
+			Watcher: exec.OnMarketFeeFactorsInfrastructureFeeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
+			Watcher: exec.OnSuppliedStakeToObligationFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketValueWindowLength,
+			Watcher: exec.OnMarketValueWindowLengthUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketTargetStakeScalingFactor,
+			Watcher: exec.OnMarketTargetStakeScalingFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketTargetStakeTimeWindow,
+			Watcher: exec.OnMarketTargetStakeTimeWindowUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
+			Watcher: exec.OnMarketLiquidityProvidersFeeDistributionTimeStep,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
+			Watcher: exec.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
+			Watcher: exec.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
+			Watcher: exec.OnMarketLiquidityBondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
+			Watcher: exec.OnMarketLiquidityTargetStakeTriggeringRatio,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAuctionMinimumDuration,
+			Watcher: exec.OnMarketAuctionMinimumDurationUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketProbabilityOfTradingTauScaling,
+			Watcher: exec.OnMarketProbabilityOfTradingTauScalingUpdate,
+		},
+	)
+}
+
+type wallet struct {
+	pubKey []byte
+}
+
+func (w wallet) PubKeyOrAddress() []byte { return w.pubKey }
 
 type nopeTestReporter struct{ log *logging.Logger }
 
