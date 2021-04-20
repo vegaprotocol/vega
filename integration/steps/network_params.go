@@ -27,6 +27,12 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 			if err := netParams.Update(ctx, netparams.MarketTargetStakeScalingFactor, n); err != nil {
 				return err
 			}
+		case netparams.MarketLiquidityTargetStakeTriggeringRatio:
+			f := row.MustF64("value")
+			n := strconv.FormatFloat(f, 'f', -1, 64)
+			if err := netParams.Update(ctx, netparams.MarketLiquidityTargetStakeTriggeringRatio, n); err != nil {
+				return err
+			}
 		default:
 			value := row.MustStr("value")
 			if err := netParams.Update(ctx, name, value); err != nil {
