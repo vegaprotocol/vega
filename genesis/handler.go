@@ -2,7 +2,6 @@ package genesis
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -52,7 +51,6 @@ func (h *Handler) OnGenesis(
 	h.log.Debug("vega initial state at genesis",
 		logging.String("state", string(state)))
 	for _, f := range h.onGenesisAppStateLoadedCB {
-		fmt.Printf("LOADING GENESIS\n")
 		if err := f(ctx, state); err != nil {
 			return err
 		}

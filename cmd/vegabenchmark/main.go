@@ -14,6 +14,7 @@ import (
 var (
 	opts = struct {
 		recordings string
+		out        string
 	}{}
 
 	//go:embed configs/*
@@ -34,6 +35,7 @@ var (
 
 func init() {
 	flag.StringVar(&opts.recordings, "recordings", "", "a coma separated list of paths to the vega recordings")
+	flag.StringVar(&opts.out, "out", "bench.txt", "a file to store the outputs of the benchmarks")
 }
 
 func main() {
@@ -42,13 +44,19 @@ func main() {
 		reportError("missing recordings paths argument")
 	}
 
+	f, err := os.OpenFile(opts.out, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		reportError("could not open the output file")
+	}
+
 	recordings := strings.Split(opts.recordings, ",")
 	for _, recording := range recordings {
-		runBenchmark(recording)
+		result := runBenchmark(recording)
+		fmt.Fprint(f, result)
 	}
 }
 
-func runBenchmark(recording string) {
+func runBenchmark(recording string) string {
 	var stats processor.Stats
 	benchResults := testing.Benchmark(func(b *testing.B) {
 		for n := 0; n < b.N; n++ {
@@ -65,7 +73,7 @@ func runBenchmark(recording string) {
 		}
 	})
 
-	fmt.Printf("Benchmark%v\t%v\t%v\t%f orders/s\n",
+	return fmt.Sprintf("Benchmark%v\t%v\t%v\t%f orders/s\n",
 		recording, benchResults, benchResults.MemString(), float64(stats.TotalOrders())/benchResults.T.Seconds())
 }
 
