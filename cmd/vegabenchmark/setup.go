@@ -36,7 +36,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	ctrl := gomock.NewController(&nopeTestReporter{log})
 	nodeWallet := mocks.NewMockNodeWallet(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
-	// erc := mocks.NewMockExtResChecker(ctrl)
 	oraclesAdaptors := mocks.NewMockOracleAdaptors(ctrl)
 
 	commander := mocks.NewMockCommander(ctrl)
@@ -82,7 +81,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	_ = assets
 
 	pubKey, err := hex.DecodeString(selfPubKey)
 	if err != nil {
@@ -112,7 +110,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		notary,
 		broker,
 	)
-	_ = banking
 
 	exec := execution.NewEngine(
 		log,
@@ -136,7 +133,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	app, err := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
-		func() { /*panic("cancel called")*/ },
+		func() {},
 		assets,
 		banking,
 		broker,
@@ -186,14 +183,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		topology,
 	)
 
-	// data, _ := configsFS.ReadFile(genesisC)
-	// data, _ := configsFS.ReadFile(genesisC)
-
-	// loadGenesis(
-	// 	genesisBytes,
-	// 	proc,
-	// )
-
 	return app, bstats, nil
 }
 
@@ -224,15 +213,6 @@ func uponGenesis(
 		}
 		assetSrcs[k] = assetSrc
 	}
-	// for k, v := range state.ERC20 {
-	// 	v := v
-	// 	assetSrc := types.AssetSource{
-	// 		Source: &types.AssetSource_Erc20{
-	// 			Erc20: &v,
-	// 		},
-	// 	}
-	// 	assetSrcs[k] = assetSrc
-	// }
 
 	for k, v := range assetSrcs {
 		err := loadAsset(
@@ -312,15 +292,6 @@ func loadAsset(
 
 	log.Info("new asset added successfully",
 		logging.String("asset", asset.String()))
-
-	// FIXME: this will be remove once we stop loading market from config
-	// here we replace the mkts assets symbols with ids
-	// for _, v := range mktscfg {
-	// 	sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
-	// 	if sym == assetD.Symbol {
-	// 		v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.Id
-	// 	}
-	// }
 
 	return nil
 }
