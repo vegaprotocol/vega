@@ -1,0 +1,92 @@
+{
+  "id": "3C58ED2A4A6C5D7E",
+  "tradableInstrument": {
+    "instrument": {
+      "id": "unused-id",
+      "code": "UNIDAI.MF21",
+      "name": "UNIDAI Monthly (30 Jun 2021)",
+      "metadata": {
+        "tags": [
+          "base:UNI",
+          "quote:DAI",
+          "class:fx/crypto",
+          "monthly",
+          "sector:defi"
+        ]
+      },
+      "future": {
+        "maturity": "2021-06-30T23:59:59Z",
+        "settlementAsset": "fDAI",
+        "quoteName": "DAI",
+        "oracleSpec": {
+          "pubKeys": [
+            "0x51a3a77554709b5db7b769d4376560ad6398c7b08380b5a3e49bda1236697f4f"
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "prices.UNI.value",
+                "type": "TYPE_INTEGER"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        },
+        "oracleSpecBinding": {
+          "settlementPriceProperty": "prices.UNI.value"
+        }
+      }
+    },
+    "marginCalculator": {
+      "scalingFactors": {
+        "searchLevel": 1.025,
+        "initialMargin": 1.05,
+        "collateralRelease": 1.1
+      }
+    },
+    "logNormalRiskModel": {
+      "riskAversionParameter": 0.01,
+      "tau": 0.0001140771161,
+      "params": {
+        "mu": 0,
+        "r": 0.016,
+        "sigma": 0.5
+      }
+    }
+  },
+  "decimalPlaces": "5",
+  "fees": {
+    "factors": {
+      "makerFee": "0.00075",
+      "infrastructureFee": "0.00175",
+      "liquidityFee": "0.0025"
+    }
+  },
+  "openingAuction": {
+    "duration": "10",
+    "volume": "0"
+  },
+  "priceMonitoringSettings": {
+    "parameters": {
+      "triggers": [
+        {
+          "horizon": 43200,
+          "probability": 0.9999999,
+          "auctionExtension": 600
+        }
+      ]
+    },
+    "updateFrequency": "1"
+  },
+  "continuous": {
+    "tickSize": "0.00001"
+  },
+  "liquidityMonitoringParameters": {
+    "targetStakeParameters": {
+      "timeWindow": "3600",
+      "scalingFactor": 10
+    },
+    "triggeringRatio": 0
+  }
+}
