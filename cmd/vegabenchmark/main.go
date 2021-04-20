@@ -28,7 +28,6 @@ var (
 		"configs/4899E01009F1A721.json",
 		"configs/5A86B190C384997F.json",
 	}
-	genesisC = "config/genesis.json"
 
 	selfPubKey = "074ddc82b509801bad2c4d40531e9353e5d7dc96465a5353883225c1dd60c49f"
 )

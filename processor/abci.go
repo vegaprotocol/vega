@@ -13,7 +13,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
@@ -41,22 +40,21 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets     Assets
-	banking    Banking
-	broker     Broker
-	cmd        Commander
-	erc        ExtResChecker
-	evtfwd     EvtForwarder
-	exec       ExecutionEngine
-	ghandler   *genesis.Handler
-	gov        GovernanceEngine
-	notary     Notary
-	stats      Stats
-	time       TimeService
-	top        ValidatorTopology
-	vegaWallet nodewallet.Wallet
-	netp       NetworkParameters
-	oracles    *Oracle
+	assets   Assets
+	banking  Banking
+	broker   Broker
+	cmd      Commander
+	erc      ExtResChecker
+	evtfwd   EvtForwarder
+	exec     ExecutionEngine
+	ghandler *genesis.Handler
+	gov      GovernanceEngine
+	notary   Notary
+	stats    Stats
+	time     TimeService
+	top      ValidatorTopology
+	netp     NetworkParameters
+	oracles  *Oracle
 }
 
 func NewApp(
