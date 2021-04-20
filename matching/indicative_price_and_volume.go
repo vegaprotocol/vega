@@ -10,6 +10,9 @@ import (
 type IndicativePriceAndVolume struct {
 	log    *logging.Logger
 	levels []ipvPriceLevel
+
+	// this is just used to avoid allocations
+	buf []CumulativeVolumeLevel
 }
 
 type ipvPriceLevel struct {
@@ -28,6 +31,10 @@ func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) 
 		log:    log,
 	}
 	ipv.buildInitialCumulativeLevels(buy, sell)
+	// initialize at the size of all levels at start, we most likely
+	// not gonna need any other allocation if we start an auction
+	// on an existing market
+	ipv.buf = make([]CumulativeVolumeLevel, len(ipv.levels))
 	return &ipv
 }
 
@@ -155,13 +162,20 @@ func (ipv *IndicativePriceAndVolume) getLevelsWithinRange(maxPrice, minPrice uin
 
 func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice uint64) ([]CumulativeVolumeLevel, uint64) {
 	rangedLevels := ipv.getLevelsWithinRange(maxPrice, minPrice)
-	// now we iterate other all the OK price levels
+	// now re-allocate the slice only if needed
+	if ipv.buf == nil || cap(ipv.buf) < len(rangedLevels) {
+		ipv.buf = make([]CumulativeVolumeLevel, len(rangedLevels))
+	}
+
 	var (
 		cumulativeVolumeSell, cumulativeVolumeBuy, maxTradable uint64
-		cumulativeVolumes                                      = make([]CumulativeVolumeLevel, len(rangedLevels))
-		ln                                                     = len(rangedLevels) - 1
+		// here the caching buf is already allocated, we can just resize it
+		// based on the required length
+		cumulativeVolumes = ipv.buf[:len(rangedLevels)]
+		ln                = len(rangedLevels) - 1
 	)
 
+	// now we iterate other all the OK price levels
 	for i := ln; i >= 0; i-- {
 		j := ln - i
 		cumulativeVolumes[i].price = rangedLevels[i].price
