@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -16,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/netparams/checks"
 	"code.vegaprotocol.io/vega/netparams/dispatch"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/stats"
@@ -24,22 +26,37 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
 )
 
-func setupVega(selfPubKey string) (*processor.App, error) {
+func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 
 	ctrl := gomock.NewController(&nopeTestReporter{log})
 	nodeWallet := mocks.NewMockNodeWallet(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
-	erc := mocks.NewMockExtResChecker(ctrl)
-	evtfwd := mocks.NewMockEvtForwarder(ctrl)
-	oracles := mocks.NewMockOracleEngine(ctrl)
+	// erc := mocks.NewMockExtResChecker(ctrl)
 	oraclesAdaptors := mocks.NewMockOracleAdaptors(ctrl)
+
 	commander := mocks.NewMockCommander(ctrl)
+	commander.EXPECT().
+		Command(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(nil)
+
+	evtfwd := mocks.NewMockEvtForwarder(ctrl)
+	evtfwd.EXPECT().Ack(gomock.Any()).AnyTimes().Return(true)
+
+	oraclesM := mocks.NewMockOracleEngine(ctrl)
+	oraclesM.EXPECT().
+		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(oracles.SubscriptionID(1))
+
 	governance := mocks.NewMockGovernanceEngine(ctrl)
+	governance.EXPECT().OnChainTimeUpdate(gomock.Any(), gomock.Any()).AnyTimes()
+
 	broker := mocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
@@ -53,7 +70,7 @@ func setupVega(selfPubKey string) (*processor.App, error) {
 		time.Time{},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	assets, err := assets.New(
@@ -63,9 +80,27 @@ func setupVega(selfPubKey string) (*processor.App, error) {
 		timeService,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	_ = assets
+
+	pubKey, err := hex.DecodeString(selfPubKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	topology := validators.NewTopology(
+		log,
+		validators.NewDefaultConfig(),
+		wallet{pubKey},
+	)
+
+	erc := validators.NewExtResChecker(
+		log,
+		validators.NewDefaultConfig(),
+		topology,
+		commander,
+		timeService,
+	)
 
 	banking := banking.New(
 		log,
@@ -84,21 +119,11 @@ func setupVega(selfPubKey string) (*processor.App, error) {
 		execution.NewDefaultConfig(""),
 		timeService,
 		collateral,
-		oracles,
+		oraclesM,
 		broker,
 	)
 
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
-
-	pubKey, err := hex.DecodeString(selfPubKey)
-	if err != nil {
-		return nil, err
-	}
-	topology := validators.NewTopology(
-		log,
-		validators.NewDefaultConfig(),
-		wallet{pubKey},
-	)
 
 	netparams := netparams.New(
 		log,
@@ -106,10 +131,12 @@ func setupVega(selfPubKey string) (*processor.App, error) {
 		broker,
 	)
 
+	bstats := stats.NewBlockchain()
+
 	app, err := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
-		func() { panic("cancel called") },
+		func() { /*panic("cancel called")*/ },
 		assets,
 		banking,
 		broker,
@@ -120,23 +147,23 @@ func setupVega(selfPubKey string) (*processor.App, error) {
 		genesisHandler,
 		governance,
 		notary,
-		stats.NewBlockchain(),
+		bstats,
 		timeService,
 		topology,
 		nodeWallet,
 		netparams,
 		&processor.Oracle{
-			Engine:   oracles,
+			Engine:   oraclesM,
 			Adaptors: oraclesAdaptors,
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// load markets and assets
@@ -167,7 +194,7 @@ func setupVega(selfPubKey string) (*processor.App, error) {
 	// 	proc,
 	// )
 
-	return app, nil
+	return app, bstats, nil
 }
 
 // UponGenesis loads all asset from genesis state
@@ -197,15 +224,15 @@ func uponGenesis(
 		}
 		assetSrcs[k] = assetSrc
 	}
-	for k, v := range state.ERC20 {
-		v := v
-		assetSrc := types.AssetSource{
-			Source: &types.AssetSource_Erc20{
-				Erc20: &v,
-			},
-		}
-		assetSrcs[k] = assetSrc
-	}
+	// for k, v := range state.ERC20 {
+	// 	v := v
+	// 	assetSrc := types.AssetSource{
+	// 		Source: &types.AssetSource_Erc20{
+	// 			Erc20: &v,
+	// 		},
+	// 	}
+	// 	assetSrcs[k] = assetSrc
+	// }
 
 	for k, v := range assetSrcs {
 		err := loadAsset(
@@ -225,9 +252,9 @@ func uponGenesis(
 		}
 
 		mkt := types.Market{}
-		err = proto.Unmarshal(f, &mkt)
+		err = jsonpb.Unmarshal(strings.NewReader(string(f)), &mkt)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to unmarshal market configuration, %w", err)
 		}
 		mktscfg = append(mktscfg, mkt)
 	}

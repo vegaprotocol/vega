@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"code.vegaprotocol.io/vega/processor"
 )
 
 var (
@@ -47,13 +49,15 @@ func main() {
 }
 
 func runBenchmark(recording string) {
+	var stats processor.Stats
 	benchResults := testing.Benchmark(func(b *testing.B) {
 		for n := 0; n < b.N; n++ {
 			// setup a new vega
-			proc, err := setupVega(selfPubKey)
+			proc, bstats, err := setupVega(selfPubKey)
 			if err != nil {
 				reportError(fmt.Sprintf("unable to initialize vega, %v\n", err))
 			}
+			stats = bstats
 			// start replaying
 			if err := replayAll(proc.Abci(), recording); err != nil {
 				reportError(fmt.Sprintf("error replaying blockchain, %v\n", err))
@@ -61,7 +65,8 @@ func runBenchmark(recording string) {
 		}
 	})
 
-	fmt.Printf("Benchmark%v\t%v\t%v\n", recording, benchResults, benchResults.MemString())
+	fmt.Printf("Benchmark%v\t%v\t%v\t%f orders/s\n",
+		recording, benchResults, benchResults.MemString(), float64(stats.TotalOrders())/benchResults.T.Seconds())
 }
 
 func reportError(str string) {
