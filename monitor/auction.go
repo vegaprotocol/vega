@@ -193,7 +193,7 @@ func (a AuctionState) AuctionStart() bool {
 }
 
 // AuctionExtended - called to confirm we will not leave auction, returns the event to be sent
-// or nil if the auction wasn´t extended
+// or nil if the auction wasn't extended
 func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
 	if a.extension == nil {
 		return nil
@@ -215,7 +215,7 @@ func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
 
 // AuctionStarted is called by the execution package to set flags indicating the market has started the auction
 func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
-	a.openingAuctionTimer = metrics.NewTimeCounter("-", "auction", "Auction duration")
+	a.openingAuctionTimer = metrics.NewTimeCounter(a.m.Id, "auction", "Auction duration")
 	a.start = false
 	end := int64(0)
 	if a.begin == nil {
