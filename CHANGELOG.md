@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.35.0
+*2021-04-21*
+
+### Improvements
+- [#3341](https://github.com/vegaprotocol/vega/pull/3341) - Add logging for transactions rejected for having no accounts
+- [#3339](https://github.com/vegaprotocol/vega/pull/3339) - Reimplement amending LPs not to be cancel and replace
+- [#3371](https://github.com/vegaprotocol/vega/pull/3371) - Optimise calculation of cumulative price levels
+- [#3339](https://github.com/vegaprotocol/vega/pull/3339) - Reuse LP orders IDs when they are re-created
+- [#3385](https://github.com/vegaprotocol/vega/pull/3385) - Track the time spent in auction via Prometheus metrics
+- [#3376](https://github.com/vegaprotocol/vega/pull/3376) - Implement a simple benchmarking framework for the core trading
+- [#3371](https://github.com/vegaprotocol/vega/pull/3371) - Optimize indicative price and volume calculation
+
+### Fixes
+- [#3356](https://github.com/vegaprotocol/vega/pull/3356) - Auctions are extended if exiting auction would leave either side of the book empty
+- [#3348](https://github.com/vegaprotocol/vega/pull/3348) - Correctly set time when liquidity engine is created
+- [#3321](https://github.com/vegaprotocol/vega/pull/3321) - Fix bond account use on LP submission
+- [#3369](https://github.com/vegaprotocol/vega/pull/3369) - Reimplement amending LPs not to be cancel and replace
+- [#3358](https://github.com/vegaprotocol/vega/pull/3358) - Improve event bus stability
+- [#3363](https://github.com/vegaprotocol/vega/pull/3363) - Fix behaviour when leaving auctions
+- [#3321](https://github.com/vegaprotocol/vega/pull/3321) - Do not slash bond accounts on LP submission
+- [#3350](https://github.com/vegaprotocol/vega/pull/3350) - Fix equity like share in the market data
+- [#3363](https://github.com/vegaprotocol/vega/pull/3363) - Ensure leaving an auction cannot trigger another auction / auction leave
+- [#3369](https://github.com/vegaprotocol/vega/pull/3369) - Fix LP order deployments
+- [#3366](https://github.com/vegaprotocol/vega/pull/3366) - Set the fee paid in uncrossing auction trades
+- [#3364](https://github.com/vegaprotocol/vega/pull/3364) - Improve / fix positions tracking
+- [#3358](https://github.com/vegaprotocol/vega/pull/3358) - Fix event bus by deep cloning all messages
+- [#3374](https://github.com/vegaprotocol/vega/pull/3374) - Check trades in integration tests
+
 ## 0.34.1
 
 *2021-04-08*
