@@ -163,7 +163,8 @@ func createMarket(
 		definition.Changes.PriceMonitoringParameters = pmParams
 	}
 
-	if definition.Changes.LiquidityMonitoringParameters == nil {
+	if definition.Changes.LiquidityMonitoringParameters == nil ||
+		definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters == nil {
 		// get target stake parameters
 		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
 		tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
