@@ -215,7 +215,7 @@ func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
 
 // AuctionStarted is called by the execution package to set flags indicating the market has started the auction
 func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
-	a.openingAuctionTimer = metrics.NewTimeCounter(a.m.Id, "auction", "Auction duration")
+	a.openingAuctionTimer = metrics.NewTimeCounter(a.m.Id, "auction", "Auction duration", a.trigger.String())
 	a.start = false
 	end := int64(0)
 	if a.begin == nil {
