@@ -13,8 +13,8 @@ Feature: Price monitoring test using simple risk model
       | id        | quote name | asset | auction duration | maturity date        | risk model           | margin calculator         | fees         | price monitoring    | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | 240              | 2020-12-31T23:59:59Z | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | market.auction.minimumDuration |
-      | 240                            |
+      | name                           | value  |
+      | market.auction.minimumDuration | 240    |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |

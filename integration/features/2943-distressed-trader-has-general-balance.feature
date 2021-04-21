@@ -6,8 +6,8 @@ Feature: Distressed traders should not have general balance left
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | market.auction.minimumDuration |
-      | 1                              |
+      | name                           | value  |
+      | market.auction.minimumDuration | 1      |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
