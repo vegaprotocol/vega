@@ -54,8 +54,16 @@ func errCannotGetTraderMarginAccount(trader, asset string, err error) error {
 }
 
 func errMismatchedAccountBalances(row accountBalancesRow, marginAccount types.Account, generalAccount types.Account) error {
-	return fmt.Errorf("expected balances to be margin(%d) general(%v), instead saw margin(%v), general(%v), (trader: %v)",
-		row.marginAccountBalance(), row.generalAccountBalance(), marginAccount.GetBalance(), generalAccount.GetBalance(), row.trader(),
+	return formatDiff(
+		fmt.Sprintf("account balances did not match for party(%s)", row.trader()),
+		map[string]string{
+			"margin account balance":  u64ToS(row.marginAccountBalance()),
+			"general account balance": u64ToS(row.generalAccountBalance()),
+		},
+		map[string]string{
+			"margin account balance": u64ToS(marginAccount.GetBalance()),
+			"general account balance": u64ToS(generalAccount.GetBalance()),
+		},
 	)
 }
 

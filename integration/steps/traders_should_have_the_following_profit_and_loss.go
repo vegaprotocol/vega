@@ -2,7 +2,6 @@ package steps
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/cucumber/godog/gherkin"
@@ -55,14 +54,14 @@ func errProfitAndLossValuesForTrader(pos []*types.Position, row pnlRow) error {
 	return formatDiff(
 		fmt.Sprintf("invalid positions values for party(%v)", row.trader()),
 		map[string]string{
-			"volume":         strconv.FormatInt(row.volume(), 10),
-			"unrealised PNL": strconv.FormatInt(row.unrealisedPNL(), 10),
-			"realised PNL":   strconv.FormatInt(row.realisedPNL(), 10),
+			"volume":         i64ToS(row.volume()),
+			"unrealised PNL": i64ToS(row.unrealisedPNL()),
+			"realised PNL":   i64ToS(row.realisedPNL()),
 		},
 		map[string]string{
-			"volume":         strconv.FormatInt(pos[0].OpenVolume, 10),
-			"unrealised PNL": strconv.FormatInt(pos[0].UnrealisedPnl, 10),
-			"realised PNL":   strconv.FormatInt(pos[0].RealisedPnl, 10),
+			"volume":         i64ToS(pos[0].OpenVolume),
+			"unrealised PNL": i64ToS(pos[0].UnrealisedPnl),
+			"realised PNL":   i64ToS(pos[0].RealisedPnl),
 		},
 	)
 }

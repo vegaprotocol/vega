@@ -13,7 +13,7 @@ func DebugTransfers(broker *stubs.BrokerStub, log *logging.Logger) error {
 	for _, e := range transferEvents {
 		for _, t := range e.TransferResponses() {
 			for _, v := range t.GetTransfers() {
-				log.Info(fmt.Sprintf("transfer: %v\n", *v))
+				log.Info(fmt.Sprintf("transfer: %v\n", v.String()))
 			}
 		}
 	}
