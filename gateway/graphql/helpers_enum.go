@@ -457,6 +457,8 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonInvalidFeeAmount, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE:
 		return ProposalRejectionReasonInvalidShape, nil
+	case types.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER:
+		return ProposalRejectionReasonInvalidRiskParameter, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return "", err
