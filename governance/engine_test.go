@@ -49,6 +49,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a proposal with bad closing time fails", testSubmittingProposalWithBadClosingTimeFails)
 	t.Run("Submitting a proposal with bad enactment time fails", testSubmittingProposalWithBadEnactmentTimeFails)
 	t.Run("Submitting a proposal with closing time before validation time fails", testSubmittingProposalWithClosingTimeBeforeValidationTimeFails)
+	t.Run("Submitting a proposal with bad risk parameter fail", testSubmittingProposalWithBadRiskParameter)
 	t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonexistingAccountFails)
 	t.Run("Submitting a proposal without enough stake fails", testSubmittingProposalWithoutEnoughStakeFails)
 	t.Run("Submit valid market proposal return a market to submit", testNewValidMarketProposalReturnsAMarketToSubmit)
@@ -452,6 +453,33 @@ func testSubmittingProposalWithBadEnactmentTimeFails(t *testing.T) {
 			assert.Contains(t, err.Error(), c.error)
 		})
 	}
+}
+
+func testSubmittingProposalWithBadRiskParameter(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	now := time.Now()
+	party := eng.newValidPartyTimes("a-valid-party", 1, 1)
+	eng.expectAnyAsset()
+
+	proposal := eng.newOpenProposal(party.Id, now)
+	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfiguration_LogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			Params: nil, // it's nil by zero value, but eh, let's show that's what we test
+		},
+	}
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), proposal, proposal.Id)
+
+	// then
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid risk parameter")
 }
 
 func testSubmittingProposalWithClosingTimeBeforeValidationTimeFails(t *testing.T) {

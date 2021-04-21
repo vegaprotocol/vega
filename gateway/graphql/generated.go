@@ -6466,6 +6466,8 @@ enum ProposalRejectionReason {
   InvalidFeeAmount
   "Market proposal have one or more invalid shape"
   InvalidShape
+  "Market proposal use an invalid risk parameter"
+  InvalidRiskParameter
 }
 
 "Reason for the order being rejected by the core node"

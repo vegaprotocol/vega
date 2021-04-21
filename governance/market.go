@@ -45,6 +45,8 @@ var (
 	ErrMissingFutureProduct = errors.New("missing future product")
 	// ErrInvalidOracleSpecBinding ...
 	ErrInvalidOracleSpecBinding = errors.New("invalid oracle spec binding")
+	// ErrInvalidRiskParameter ...
+	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
 )
 
 func assignProduct(
@@ -288,9 +290,13 @@ func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalErr
 }
 
 func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
-	switch rp.(type) {
-	case *types.NewMarketConfiguration_Simple,
-		*types.NewMarketConfiguration_LogNormal:
+	switch r := rp.(type) {
+	case *types.NewMarketConfiguration_Simple:
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	case *types.NewMarketConfiguration_LogNormal:
+		if r.LogNormal.Params == nil {
+			return types.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER, ErrInvalidRiskParameter
+		}
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	case nil:
 		return types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS, ErrMissingRiskParameters

@@ -259,6 +259,8 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_FEE_AMOUNT = 28;
   // Market proposal have invalid shape
   PROPOSAL_ERROR_INVALID_SHAPE = 29;
+  // Market proposal invalid risk parameter
+  PROPOSAL_ERROR_INVALID_RISK_PARAMETER = 30;
 }
 
 // Governance vote
