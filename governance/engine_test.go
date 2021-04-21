@@ -547,20 +547,6 @@ func testSubmittingVoteOnNonexistingProposalFails(t *testing.T) {
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: "id-of-non-existent-proposal",
 	}
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
-		// check we're getting the corret event
-		assert.Equal(t, events.TxErrEvent, evt.Type())
-		se, ok := evt.(streamEvt)
-		assert.True(t, ok)
-		be := se.StreamMessage()
-		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
-		txErr := be.GetTxErrEvent()
-		assert.NotNil(t, txErr)
-		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
-		v := txErr.GetVote()
-		assert.NotNil(t, v)
-		assert.Equal(t, vote, *v)
-	})
 
 	// setup
 	eng.expectAnyAsset()
@@ -1111,7 +1097,7 @@ func (e *tstEngine) expectSendProposalNotFoundErrorEvent(t *testing.T, vote type
 		se, ok := evt.(streamEvt)
 		assert.True(t, ok)
 		be := se.StreamMessage()
-		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
 		txErr := be.GetTxErrEvent()
 		assert.NotNil(t, txErr)
 		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
@@ -1127,7 +1113,7 @@ func (e *tstEngine) expectSendAccountNotFoundErrorEvent(t *testing.T, vote types
 		se, ok := evt.(streamEvt)
 		assert.True(t, ok)
 		be := se.StreamMessage()
-		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
 		txErr := be.GetTxErrEvent()
 		assert.NotNil(t, txErr)
 		assert.Equal(t, errStubbedAccountNotFound.Error(), txErr.ErrMsg)

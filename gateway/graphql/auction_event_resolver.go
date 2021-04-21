@@ -3,6 +3,7 @@ package gql
 import (
 	"context"
 
+	types "code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -24,8 +25,8 @@ func (r *auctionEventResolver) Trigger(ctx context.Context, obj *eventspb.Auctio
 	return convertAuctionTriggerFromProto(obj.Trigger)
 }
 
-func (r *auctionEventResolver) ExtensionTrigger(ctx context.Context, obj *proto.AuctionEvent) (*AuctionTrigger, error) {
-	if obj.ExtensionTrigger == proto.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED {
+func (r *auctionEventResolver) ExtensionTrigger(ctx context.Context, obj *eventspb.AuctionEvent) (*AuctionTrigger, error) {
+	if obj.ExtensionTrigger == types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED {
 		return nil, nil
 	}
 	t, err := convertAuctionTriggerFromProto(obj.ExtensionTrigger)
