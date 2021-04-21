@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -18,6 +19,8 @@ type AuctionState struct {
 	start, stop bool                     // flags to clarify whether we're entering or leaving auction
 	m           *types.Market            // keep market definition handy, useful to end auctions when default is FBA
 	extension   *types.AuctionTrigger    // Set if the current auction was extended, reset after the event was created
+	// openingAuctionTimer tracks the elapsed time spend in opening auction.
+	openingAuctionTimer *metrics.TimeCounter
 }
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
@@ -212,6 +215,7 @@ func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
 
 // AuctionStarted is called by the execution package to set flags indicating the market has started the auction
 func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
+	a.openingAuctionTimer = metrics.NewTimeCounter("-", "auction", "Auction duration")
 	a.start = false
 	end := int64(0)
 	if a.begin == nil {
@@ -226,6 +230,8 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 
 // AuctionEnded is called by execution to update internal state indicating this auction was closed
 func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.Auction {
+	a.openingAuctionTimer.EngineTimeCounterAdd()
+
 	// the end-of-auction event
 	var start int64 = 0
 	if a.begin != nil {
