@@ -941,6 +941,8 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 		m.log.Debug("could not update liquidity", logging.Error(err))
 	}
 
+	m.updateLiquidityFee(ctx)
+
 	// Store the lastest prices so we can see if anything moves
 	m.lastMidBuyPrice, _ = m.getStaticMidPrice(types.Side_SIDE_BUY)
 	m.lastMidSellPrice, _ = m.getStaticMidPrice(types.Side_SIDE_SELL)

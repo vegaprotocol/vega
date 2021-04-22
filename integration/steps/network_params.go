@@ -2,7 +2,6 @@ package steps
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/cucumber/godog/gherkin"
@@ -22,11 +21,6 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 			if err := netParams.Update(ctx, netparams.MarketAuctionMinimumDuration, d.String()); err != nil {
 				return err
 			}
-		case netparams.MarketTargetStakeTimeWindow:
-			d := row.MustDurationSec("value")
-			if err := netParams.Update(ctx, netparams.MarketTargetStakeTimeWindow, d.String()); err != nil {
-				return err
-			}
 		case netparams.MarketTargetStakeScalingFactor:
 			f := row.MustF64("value")
 			n := strconv.FormatFloat(f, 'f', -1, 64)
@@ -34,7 +28,10 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 				return err
 			}
 		default:
-			return fmt.Errorf("unimplemented network param %v in feature test", name)
+			value := row.MustStr("value")
+			if err := netParams.Update(ctx, name, value); err != nil {
+				return err
+			}
 		}
 	}
 

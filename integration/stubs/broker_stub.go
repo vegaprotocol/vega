@@ -202,6 +202,24 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy ma
 	return
 }
 
+func (b *BrokerStub) GetMarket(marketID string) *types.Market {
+	batch := b.GetBatch(events.MarketUpdatedEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	for i := len(batch) - 1; i >= 0; i-- {
+		switch mkt := batch[i].(type) {
+		case *events.MarketUpdated:
+			return mkt.Market().DeepClone()
+		case events.MarketUpdated:
+			return mkt.Market().DeepClone()
+		}
+	}
+
+	return nil
+}
+
 func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []types.Order {
 	orders := b.GetOrderEvents()
 	ret := []types.Order{}
@@ -338,6 +356,17 @@ func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
+func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
 			return v, nil
 		}
 	}

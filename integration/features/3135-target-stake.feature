@@ -6,7 +6,7 @@ Feature: Target stake
   Background:
     Given the following network parameters are set:
       | name                              | value   |
-      | market.stake.target.timeWindow    | 604800  |
+      | market.stake.target.timeWindow    | 168h    |
       | market.stake.target.scalingFactor | 1.5     |
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
