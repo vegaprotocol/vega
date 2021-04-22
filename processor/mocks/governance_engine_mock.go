@@ -37,17 +37,17 @@ func (m *MockGovernanceEngine) EXPECT() *MockGovernanceEngineMockRecorder {
 }
 
 // AddVote mocks base method
-func (m *MockGovernanceEngine) AddVote(arg0 context.Context, arg1 proto.Vote) error {
+func (m *MockGovernanceEngine) AddVote(arg0 context.Context, arg1 proto.VoteSubmission, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddVote", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddVote", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddVote indicates an expected call of AddVote
-func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddVote), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddVote), arg0, arg1, arg2)
 }
 
 // OnChainTimeUpdate mocks base method

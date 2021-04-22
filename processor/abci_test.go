@@ -120,7 +120,7 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	}, nil)
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
 	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
 
 	for cmd, msg := range data {
@@ -360,6 +360,7 @@ type txStub struct {
 func (tx *txStub) Command() txn.Command          { return tx.cmd }
 func (tx *txStub) Unmarshal(v interface{}) error { return json.Unmarshal(tx.data, v) }
 func (tx *txStub) PubKey() []byte                { return tx.pubkey }
+func (tx *txStub) Party() string                 { return hex.EncodeToString(tx.pubkey) }
 func (txStub) Hash() []byte                      { return nil }
 func (txStub) Signature() []byte                 { return nil }
 func (txStub) Validate() error                   { return nil }

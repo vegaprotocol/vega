@@ -90,9 +90,6 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 		txn.AmendOrderCommand: &types.OrderAmendment{
 			PartyId: party,
 		},
-		txn.VoteCommand: &types.Vote{
-			PartyId: party,
-		},
 		txn.WithdrawCommand: &types.WithdrawSubmission{
 			PartyId: party,
 		},
@@ -115,7 +112,7 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 }
 
 func (s *TxTestSuite) testValidateSignedInvalidCommand(t *testing.T) {
-	cmd := txn.VoteCommand
+	cmd := txn.CancelOrderCommand
 	party := []byte("party-id")
 	// wrong type for this command
 	prop := &types.Proposal{

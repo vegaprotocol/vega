@@ -527,11 +527,10 @@ func testSubmittingValidVoteOnExistingProposalSucceeds(t *testing.T) {
 	eng.expectSendVoteEvent(t, voter, proposal)
 
 	// when
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voter.Id,
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
-	})
+	}, voter.Id)
 
 	// then
 	assert.NoError(t, err)
@@ -543,18 +542,17 @@ func testSubmittingVoteOnNonexistingProposalFails(t *testing.T) {
 
 	// when
 	voter := eng.newValidPartyTimes("voter", 1, 0)
-	vote := types.Vote{
-		PartyId:    voter.Id,
+	voteSub := types.VoteSubmission{
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: "id-of-non-existent-proposal",
 	}
 
 	// setup
 	eng.expectAnyAsset()
-	eng.expectSendProposalNotFoundErrorEvent(t, vote)
+	eng.expectSendProposalNotFoundErrorEvent(t, voteSub)
 
 	// when
-	err := eng.AddVote(context.Background(), vote)
+	err := eng.AddVote(context.Background(), voteSub, voter.Id)
 
 	// then
 	assert.Error(t, err)
@@ -581,8 +579,7 @@ func testSubmittingVoteWithNonexistingAccountFails(t *testing.T) {
 
 	// given
 	voterNoAccount := "voter-no-account"
-	vote := types.Vote{
-		PartyId:    voterNoAccount,
+	vote := types.VoteSubmission{
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
 	}
@@ -592,7 +589,7 @@ func testSubmittingVoteWithNonexistingAccountFails(t *testing.T) {
 	eng.expectSendAccountNotFoundErrorEvent(t, vote)
 
 	// when
-	err = eng.AddVote(context.Background(), vote)
+	err = eng.AddVote(context.Background(), vote, voterNoAccount)
 
 	// then
 	assert.Error(t, err)
@@ -624,11 +621,10 @@ func testSubmittingVoteWithoutTokenFails(t *testing.T) {
 	eng.expectSendInsufficientTokensErrorEvent(t)
 
 	// when
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voterWithEmptyAccount.Id,
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
-	})
+	}, voterWithEmptyAccount.Id)
 
 	// then
 	assert.Error(t, err)
@@ -660,11 +656,10 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	eng.expectSendVoteEvent(t, voter1, proposal)
 
 	// then
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voter1.Id,
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
-	})
+	}, voter1.Id)
 
 	// then
 	assert.NoError(t, err)
@@ -693,11 +688,10 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 
 	// when
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voter2.Id,
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
 		Value:      types.Vote_VALUE_NO,
 		ProposalId: proposal.Id,
-	})
+	}, voter2.Id)
 
 	// then
 	assert.Error(t, err)
@@ -718,11 +712,10 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 
 	// when
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voter2.Id,
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
 		Value:      types.Vote_VALUE_NO,
 		ProposalId: proposal.Id,
-	})
+	}, voter2.Id)
 
 	// then
 	assert.Error(t, err)
@@ -754,11 +747,10 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 	eng.expectSendVoteEvent(t, voter, proposal)
 
 	// when
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voter.Id,
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
-	})
+	}, voter.Id)
 
 	// then
 	assert.NoError(t, err)
@@ -767,11 +759,10 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 	eng.expectSendVoteEvent(t, voter, proposal)
 
 	// when
-	err = eng.AddVote(context.Background(), types.Vote{
-		PartyId:    voter.Id,
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
 		Value:      types.Vote_VALUE_NO,
 		ProposalId: proposal.Id,
-	})
+	}, voter.Id)
 
 	// then
 	assert.NoError(t, err)
@@ -878,17 +869,15 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			vote := ve.Vote()
 			assert.Equal(t, id, vote.ProposalId)
 		})
-		err := eng.AddVote(context.Background(), types.Vote{
-			PartyId:    partyA,
+		err := eng.AddVote(context.Background(), types.VoteSubmission{
 			Value:      types.Vote_VALUE_YES, // matters!
 			ProposalId: id,
-		})
+		}, partyA)
 		assert.NoError(t, err)
-		err = eng.AddVote(context.Background(), types.Vote{
-			PartyId:    partyB,
+		err = eng.AddVote(context.Background(), types.VoteSubmission{
 			Value:      types.Vote_VALUE_NO, // matters!
 			ProposalId: id,
-		})
+		}, partyB)
 		assert.NoError(t, err)
 	}
 	for id := range declined {
@@ -898,17 +887,15 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			vote := ve.Vote()
 			assert.Equal(t, id, vote.ProposalId)
 		})
-		err := eng.AddVote(context.Background(), types.Vote{
-			PartyId:    partyA,
+		err := eng.AddVote(context.Background(), types.VoteSubmission{
 			Value:      types.Vote_VALUE_NO, // matters!
 			ProposalId: id,
-		})
+		}, partyA)
 		assert.NoError(t, err)
-		err = eng.AddVote(context.Background(), types.Vote{
-			PartyId:    partyB,
+		err = eng.AddVote(context.Background(), types.VoteSubmission{
 			Value:      types.Vote_VALUE_YES, // matters!
 			ProposalId: id,
-		})
+		}, partyB)
 		assert.NoError(t, err)
 	}
 
@@ -1103,7 +1090,7 @@ func (e *tstEngine) expectSendRejectedProposalEvent(t *testing.T, partyID string
 	})
 }
 
-func (e *tstEngine) expectSendProposalNotFoundErrorEvent(t *testing.T, vote types.Vote) {
+func (e *tstEngine) expectSendProposalNotFoundErrorEvent(t *testing.T, vote types.VoteSubmission) {
 	e.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
 		assert.Equal(t, events.TxErrEvent, evt.Type())
 		se, ok := evt.(streamEvt)
@@ -1113,13 +1100,13 @@ func (e *tstEngine) expectSendProposalNotFoundErrorEvent(t *testing.T, vote type
 		txErr := be.GetTxErrEvent()
 		assert.NotNil(t, txErr)
 		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
-		v := txErr.GetVote()
+		v := txErr.GetVoteSubmission()
 		assert.NotNil(t, v)
 		assert.Equal(t, vote, *v)
 	})
 }
 
-func (e *tstEngine) expectSendAccountNotFoundErrorEvent(t *testing.T, vote types.Vote) {
+func (e *tstEngine) expectSendAccountNotFoundErrorEvent(t *testing.T, vote types.VoteSubmission) {
 	e.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
 		assert.Equal(t, events.TxErrEvent, evt.Type())
 		se, ok := evt.(streamEvt)
@@ -1129,7 +1116,7 @@ func (e *tstEngine) expectSendAccountNotFoundErrorEvent(t *testing.T, vote types
 		txErr := be.GetTxErrEvent()
 		assert.NotNil(t, txErr)
 		assert.Equal(t, errStubbedAccountNotFound.Error(), txErr.ErrMsg)
-		v := txErr.GetVote()
+		v := txErr.GetVoteSubmission()
 		assert.NotNil(t, v)
 		assert.Equal(t, vote, *v)
 	})
@@ -1188,7 +1175,7 @@ func (v voteMatcher) Matches(x interface{}) bool {
 	if txErr == nil {
 		return false
 	}
-	if vote := txErr.GetVote(); vote == nil {
+	if vote := txErr.GetVoteSubmission(); vote == nil {
 		return false
 	}
 	return true

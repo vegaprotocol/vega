@@ -293,3 +293,8 @@ message Vote {
   // The weight of this vote based on the total of governance token
   string total_governance_token_weight = 6;
 }
+
+message VoteSubmission {
+  string proposal_id = 1 [(validator.field) = {string_not_empty : true}];
+  Vote.Value value = 2 [(validator.field) = {is_in_enum : true}];
+}

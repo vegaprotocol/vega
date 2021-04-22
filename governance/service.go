@@ -344,10 +344,10 @@ func (s *Svc) PrepareProposal(
 }
 
 // PrepareVote - some additional validation on the vote message we're preparing
-func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
+func (s *Svc) PrepareVote(vote *types.VoteSubmission) (*types.VoteSubmission, error) {
 	// to check if the enum value is correct:
 	_, ok := types.Vote_Value_value[vote.Value.String()]
-	if vote.ProposalId == "" || vote.PartyId == "" || !ok {
+	if vote.ProposalId == "" || !ok {
 		return nil, ErrMissingVoteData
 	}
 	return vote, nil
