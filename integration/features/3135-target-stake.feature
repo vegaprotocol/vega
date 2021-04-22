@@ -68,7 +68,7 @@ Feature: Target stake
     # Target stake is mark_price x max_oi x target_stake_scaling_factor x rf_short
     # rf_short should have been set above to 0.1
     # target_stake = 110 x 60 x 1.5 x 0.1
-    And the target stake for the market "ETH/DEC21" is "990"
+    And the target stake should be "990" for the market "ETH/DEC21"
 
     # T0 + 8 days + 1 hour
     When time is updated to "2021-03-08T01:00:00Z"
@@ -82,7 +82,7 @@ Feature: Target stake
 
     # the maximum oi over the last 7 days is still unchanged
     # target_stake = 90 x 60 x 1.5 x 0.1
-    And the target stake for the market "ETH/DEC21" is "810"
+    And the target stake should be "810" for the market "ETH/DEC21"
 
     # T0 + 15 days + 2 hour
     # so now the peak of 60 should have passed from window
@@ -91,4 +91,4 @@ Feature: Target stake
     Then the mark price should be "90" for the market "ETH/DEC21"
 
     # target_stake = 90 x 40 x 1.5 x 0.1
-    And the target stake for the market "ETH/DEC21" is "540"
+    And the target stake should be "540" for the market "ETH/DEC21"
