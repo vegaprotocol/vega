@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheOpenInterestForTheMarketIs(engine *execution.Engine, marketID string, wantOpenInterest string) error {
+func TheOpenInterestShouldBeForTheMarket(engine *execution.Engine, marketID string, wantOpenInterest string) error {
 	marketData, err := engine.GetMarketData(marketID)
 	if err != nil {
 		return errMarketDataNotFound(marketID, err)
