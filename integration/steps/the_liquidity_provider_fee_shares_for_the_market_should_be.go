@@ -31,7 +31,7 @@ func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine *execution.Engine,
 				// something like 0.6666666666666, and I don't want to create
 				// a float, so just checking if they start the same should be fine...
 				strings.HasPrefix(v.EquityLikeShare, expected.EquityLikeShare) &&
-				v.AverageEntryValuation == expected.AverageEntryValuation {
+				strings.HasPrefix(v.AverageEntryValuation, expected.AverageEntryValuation) {
 				found = true
 			}
 		}

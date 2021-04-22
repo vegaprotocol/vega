@@ -368,3 +368,65 @@ Feature: Test liquidity provider reward distribution
 
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And debug trades
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader2 | 951   | 20   | lp1     |
+
+    And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
+
+    # opening auction + time window
+    Then time is updated to "2019-11-30T00:10:05Z"
+
+    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
+    Then the following transfers should happen:
+      | from    | to  | from account                | to account           | market id | amount  | asset |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 16      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 4       | ETH   |
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+    And the traders submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp3 | lp3   | ETH/DEC21 | 10000              | 0.001 | buy        | BID             | 1                | -2           |
+      | lp3 | lp3   | ETH/DEC21 | 10000              | 0.001 | buy        | MID             | 2                | -1           |
+      | lp3 | lp3   | ETH/DEC21 | 10000              | 0.001 | sell       | ASK             | 1                | 2            |
+      | lp3 | lp3   | ETH/DEC21 | 10000              | 0.001 | sell       | MID             | 2                | 1            |
+
+    And the liquidity provider fee shares for the market "ETH/DEC21" should be:
+      | party | equity like share  | average entry valuation |
+      | lp1   |             0.7765 |                    8000 |
+      | lp2   |             0.1553 |                   10000 |
+      | lp3   |             0.0681 |                  113930 |
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 40     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader1 | 951   | 25   | lp1     |
+      | trader1 | 951   | 15   | lp2     |
+
+    And the accumulated liquidity fees should be "39" for the market "ETH/DEC21"
+
+    # opening auction + time window
+    Then time is updated to "2019-11-30T00:20:06Z"
+
+    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
+    Then the following transfers should happen:
+      | from    | to  | from account                | to account           | market id | amount  | asset |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 30      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 6       | ETH   |
+      | market  | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 3       | ETH   |
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
