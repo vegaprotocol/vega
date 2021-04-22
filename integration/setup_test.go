@@ -100,6 +100,70 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.errorHandler = helpers.NewErrorHandler()
 
 	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
+	if err := execsetup.registerNetParamsCallbacks(); err != nil {
+		panic(err)
+	}
 
 	return execsetup
+}
+
+func (e *executionTestSetup) registerNetParamsCallbacks() error {
+	return e.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.MarketMarginScalingFactors,
+			Watcher: e.executionEngine.OnMarketMarginScalingFactorsUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsMakerFee,
+			Watcher: e.executionEngine.OnMarketFeeFactorsMakerFeeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketFeeFactorsInfrastructureFee,
+			Watcher: e.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
+			Watcher: e.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketValueWindowLength,
+			Watcher: e.executionEngine.OnMarketValueWindowLengthUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketTargetStakeScalingFactor,
+			Watcher: e.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketTargetStakeTimeWindow,
+			Watcher: e.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
+			Watcher: e.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
+			Watcher: e.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
+			Watcher: e.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityBondPenaltyParameter,
+			Watcher: e.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
+			Watcher: e.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketAuctionMinimumDuration,
+			Watcher: e.executionEngine.OnMarketAuctionMinimumDurationUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketProbabilityOfTradingTauScaling,
+			Watcher: e.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
+		},
+	)
 }

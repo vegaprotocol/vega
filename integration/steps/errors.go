@@ -27,6 +27,11 @@ func errOrderNotFound(reference string, trader string, err error) error {
 	return fmt.Errorf("order not found for trader(%s) with reference(%s): %v", trader, reference, err)
 }
 
+
+func errMarketDataNotFound(marketID string, err error) error {
+	return fmt.Errorf("market data not found for market(%v): %s", marketID, err.Error())
+}
+
 type CancelOrderError struct {
 	reference string
 	request   types.OrderCancellation
