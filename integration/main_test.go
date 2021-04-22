@@ -211,6 +211,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the price monitoring bounds for the market "([^"]*)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
 		return steps.ThePriceMonitoringBoundsForTheMarketShouldBe(execsetup.executionEngine, marketID, table)
 	})
+	s.Step(`^the accumulated liquidity fees should be "([^"]*)" for the market "([^"]*)"$`, func(amount, marketID string) error {
+		return steps.TheAccumulatedLiquidityFeesShouldBeForTheMarket(execsetup.broker, amount, marketID)
+	})
 
 	// Debug steps
 	s.Step(`^debug transfers$`, func() error {

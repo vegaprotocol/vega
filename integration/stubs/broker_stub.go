@@ -344,6 +344,17 @@ func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account
 	return types.Account{}, errors.New("account does not exist")
 }
 
+func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
 func (b *BrokerStub) GetTraderMarginAccount(trader, market string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {

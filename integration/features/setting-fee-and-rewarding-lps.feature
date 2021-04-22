@@ -5,7 +5,7 @@ Feature: Test liquidity provider reward distribution
   Background:
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
-      | 0.1  | 0.1   | 10          | -10           | 0.1                    |
+      | 0.1  | 0.1   | 500         | -500          | 0.1                    |
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau                    | mu | r  | sigma |
       | 0.000001      | 0.00011407711613050422 | -1 | -1 | -1    |
@@ -71,7 +71,52 @@ Feature: Test liquidity provider reward distribution
 
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
-      |       990 |     1010  |
+      |       500 |     1500  |
 
 
+    # need new step for that
     # And the liquidity fee factor is "0.001"
+
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And debug market data for "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
+
+    # opening auction + time window
+    Then time is updated to "2019-11-30T00:10:05Z"
+
+    Then the following transfers should happen:
+      | from    | to  | from account                | to account           | market id | amount  | asset |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 20      | ETH   |
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    Then time is updated to "2019-11-30T00:20:05Z"
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader1 | 951   | 40   | lp1 |
+
+    # this is slightly different than expected, as the trades happen against the LP,
+    # which is probably not what you expected initially
+    And the accumulated liquidity fees should be "39" for the market "ETH/DEC21"
+
+    # opening auction + time window
+    Then time is updated to "2019-11-30T00:30:05Z"
+
+    Then the following transfers should happen:
+      | from    | to  | from account                | to account           | market id | amount  | asset |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 39      | ETH   |
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
