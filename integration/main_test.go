@@ -199,7 +199,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the target stake should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
 		return steps.TheTargetStakeShouldBeForMarket(execsetup.executionEngine, marketID, stake)
 	})
-	s.Step(`^the supplied stake for the market "([^"]*)" is "([^"]*)"$`, func(marketID, stake string) error {
+	s.Step(`^the supplied stake should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
 		return steps.TheSuppliedStakeForTheMarketIs(execsetup.executionEngine, marketID, stake)
 	})
 	s.Step(`^the open interest for the market "([^"]*)" is "([^"]*)"$`, func(marketID, stake string) error {
