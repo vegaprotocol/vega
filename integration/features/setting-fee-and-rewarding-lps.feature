@@ -208,3 +208,163 @@ Feature: Test liquidity provider reward distribution
       | from    | to  | from account                | to account           | market id | amount  | asset |
       | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 51      | ETH   |
       | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 26      | ETH   |
+
+  Scenario: 2 LPs joining at start, unequal commitments
+
+    Given the traders deposit on asset's general account the following amount:
+      | trader  | asset | amount     |
+      | lp1     | ETH   | 1000000000 |
+      | lp2     | ETH   | 1000000000 |
+      | trader1 | ETH   | 100000000  |
+      | trader2 | ETH   | 100000000  |
+
+    And the traders submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy        | BID             | 1                | -2           |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy        | MID             | 2                | -1           |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell       | ASK             | 1                | 2            |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell       | MID             | 2                | 1            |
+    And the traders submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy        | BID             | 1                | -2           |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy        | MID             | 2                | -1           |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell       | ASK             | 1                | 2            |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell       | MID             | 2                | 1            |
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC21 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC21"
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader1 | 1000  | 60   | trader2 |
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the mark price should be "1000" for the market "ETH/DEC21"
+    And the open interest should be "60" for the market "ETH/DEC21"
+    And the target stake for the market "ETH/DEC21" is "6000"
+    And the supplied stake should be "10000" for the market "ETH/DEC21"
+
+    And the liquidity provider fee shares for the market "ETH/DEC21" should be:
+      | party | equity like share  | average entry valuation |
+      | lp1   |              0.833 |                    8000 |
+      | lp2   |              0.166 |                   10000 |
+
+    And the price monitoring bounds for the market "ETH/DEC21" should be:
+      | min bound | max bound |
+      |       500 |     1500  |
+
+    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+
+    # no fees in auction
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader2 | 951   | 20   | lp1     |
+
+    And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
+
+    # opening auction + time window
+    Then time is updated to "2019-11-30T00:10:05Z"
+
+    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
+    Then the following transfers should happen:
+      | from    | to  | from account                | to account           | market id | amount  | asset |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 16      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 4       | ETH   |
+
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 40     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader1 | 951   | 25   | lp1     |
+      | trader1 | 951   | 15   | lp2     |
+
+    And the accumulated liquidity fees should be "39" for the market "ETH/DEC21"
+
+    # opening auction + time window
+    Then time is updated to "2019-11-30T00:20:06Z"
+
+    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
+    Then the following transfers should happen:
+      | from    | to  | from account                | to account           | market id | amount  | asset |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 32      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 7       | ETH   |
+
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+  Scenario: 2 LPs joining at start, unequal commitments, 1 LP joining later
+
+    Given the traders deposit on asset's general account the following amount:
+      | trader  | asset | amount     |
+      | lp1     | ETH   | 1000000000 |
+      | lp2     | ETH   | 1000000000 |
+      | lp3     | ETH   | 1000000000 |
+      | trader1 | ETH   | 100000000  |
+      | trader2 | ETH   | 100000000  |
+
+    And the traders submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy        | BID             | 1                | -2           |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy        | MID             | 2                | -1           |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell       | ASK             | 1                | 2            |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell       | MID             | 2                | 1            |
+    And the traders submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy        | BID             | 1                | -2           |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy        | MID             | 2                | -1           |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell       | ASK             | 1                | 2            |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell       | MID             | 2                | 1            |
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC21 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC21"
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader1 | 1000  | 60   | trader2 |
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the mark price should be "1000" for the market "ETH/DEC21"
+    And the open interest should be "60" for the market "ETH/DEC21"
+    And the target stake for the market "ETH/DEC21" is "6000"
+    And the supplied stake should be "10000" for the market "ETH/DEC21"
+
+    And the liquidity provider fee shares for the market "ETH/DEC21" should be:
+      | party | equity like share  | average entry valuation |
+      | lp1   |              0.833 |                    8000 |
+      | lp2   |              0.166 |                   10000 |
+
+    And the price monitoring bounds for the market "ETH/DEC21" should be:
+      | min bound | max bound |
+      |       500 |     1500  |
+
+    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+
+    # no fees in auction
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
