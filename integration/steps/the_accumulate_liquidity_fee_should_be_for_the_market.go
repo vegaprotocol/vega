@@ -2,7 +2,6 @@ package steps
 
 import (
 	"fmt"
-	"strconv"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 )
@@ -11,7 +10,7 @@ func TheAccumulatedLiquidityFeesShouldBeForTheMarket(
 	broker *stubs.BrokerStub,
 	amountStr, market string,
 ) error {
-	amount, err := strconv.ParseUint(amountStr, 10, 0)
+	amount, err := U64(amountStr)
 	if err != nil {
 		return fmt.Errorf("invalid amount: %w", err)
 	}

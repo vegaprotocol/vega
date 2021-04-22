@@ -32,7 +32,6 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 			if err := netParams.Update(ctx, name, value); err != nil {
 				return err
 			}
-			// return fmt.Errorf("unimplemented network param %v in feature test", name)
 		}
 	}
 

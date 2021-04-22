@@ -55,9 +55,9 @@ Feature: Test liquidity provider reward distribution
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
-    And the open interest for the market "ETH/DEC21" is "10"
+    And the open interest should be "10" for the market "ETH/DEC21"
     And the target stake for the market "ETH/DEC21" is "1000"
-    And the supplied stake for the market "ETH/DEC21" is "10000"
+    And the supplied stake should be "10000" for the market "ETH/DEC21"
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share | average entry valuation |
@@ -149,9 +149,9 @@ Feature: Test liquidity provider reward distribution
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
-    And the open interest for the market "ETH/DEC21" is "90"
+    And the open interest should be "90" for the market "ETH/DEC21"
     And the target stake for the market "ETH/DEC21" is "9000"
-    And the supplied stake for the market "ETH/DEC21" is "10000"
+    And the supplied stake should be "10000" for the market "ETH/DEC21"
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share  | average entry valuation |
