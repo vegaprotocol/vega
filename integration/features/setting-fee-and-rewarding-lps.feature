@@ -6,21 +6,15 @@ Feature: Test liquidity provider reward distribution
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 500         | -500          | 0.1                    |
-    And the log normal risk model named "log-normal-risk-model-1":
-      | risk aversion | tau                    | mu | r  | sigma |
-      | 0.000001      | 0.00011407711613050422 | -1 | -1 | -1    |
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.0004    | 0.001              | 0.3         |
-    And the margin calculator named "margin-calculator-1":
-      | search factor | initial factor | release factor |
-      | 1.1           | 1.2            | 1.4            |
-    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+      | maker fee | infrastructure fee |
+      | 0.0004    | 0.001              |
+    And the price monitoring updated every "1" seconds named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          | maturity date        |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1     | default-eth-for-future | 2019-12-31T23:59:59Z |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring     | default-eth-for-future | 2019-12-31T23:59:59Z |
 
     And the following network parameters are set:
       | name                                                | value   |
@@ -80,7 +74,6 @@ Feature: Test liquidity provider reward distribution
       | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    And debug market data for "ETH/DEC21"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -117,3 +110,56 @@ Feature: Test liquidity provider reward distribution
       | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 39      | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+
+  Scenario: 2 LPs joining at start, equal commitments
+
+    Given the traders deposit on asset's general account the following amount:
+      | trader  | asset | amount     |
+      | lp1     | ETH   | 1000000000 |
+      | lp2     | ETH   | 1000000000 |
+      | trader1 | ETH   | 100000000  |
+      | trader2 | ETH   | 100000000  |
+
+    And the traders submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 1                | -2           |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy        | MID             | 2                | -1           |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 1                | 2            |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell       | MID             | 2                | 1            |
+    And the traders submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy        | BID             | 1                | -2           |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy        | MID             | 2                | -1           |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell       | ASK             | 1                | 2            |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell       | MID             | 2                | 1            |
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC21 | buy  | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC21"
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader1 | 1000  | 90   | trader2 |
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the mark price should be "1000" for the market "ETH/DEC21"
+    And the open interest for the market "ETH/DEC21" is "90"
+    And the target stake for the market "ETH/DEC21" is "9000"
+    And the supplied stake for the market "ETH/DEC21" is "10000"
+
+    And the liquidity provider fee shares for the market "ETH/DEC21" should be:
+      | party | equity like share  | average entry valuation |
+      | lp1   |              0.666 |                    5000 |
+      | lp2   |              0.333 |                   10000 |
+
+    And the price monitoring bounds for the market "ETH/DEC21" should be:
+      | min bound | max bound |
+      |       500 |     1500  |
+
+    And the liquidity fee factor should "0.002" for the market "ETH/DEC21"

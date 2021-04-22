@@ -2,6 +2,7 @@ package steps
 
 import (
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
@@ -22,22 +23,27 @@ func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine *execution.Engine,
 		}
 
 		var found bool
+		var got []types.LiquidityProviderFeeShare
 		for _, v := range marketData.LiquidityProviderFeeShare {
+			got = append(got, *v)
 			if v.Party == expected.Party &&
-				v.EquityLikeShare == expected.EquityLikeShare &&
+				// ok it's trick not pretty here, but the actual numbers are
+				// something like 0.6666666666666, and I don't want to create
+				// a float, so just checking if they start the same should be fine...
+				strings.HasPrefix(v.EquityLikeShare, expected.EquityLikeShare) &&
 				v.AverageEntryValuation == expected.AverageEntryValuation {
 				found = true
 			}
 		}
 
 		if !found {
-			return errMissingLPFeeShare(marketID, expected)
+			return errMissingLPFeeShare(marketID, expected, got)
 		}
 	}
 
 	return nil
 }
 
-func errMissingLPFeeShare(market string, expected types.LiquidityProviderFeeShare) error {
-	return fmt.Errorf("missing fee share for market %s got %v, want %v", market, expected)
+func errMissingLPFeeShare(market string, expected types.LiquidityProviderFeeShare, got []types.LiquidityProviderFeeShare) error {
+	return fmt.Errorf("missing fee share for market %s got %#v, want %#v", market, expected, got)
 }
