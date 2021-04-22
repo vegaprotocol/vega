@@ -199,6 +199,18 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the target stake should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
 		return steps.TheTargetStakeShouldBeForMarket(execsetup.executionEngine, marketID, stake)
 	})
+	s.Step(`^the supplied stake for the market "([^"]*)" is "([^"]*)"$`, func(marketID, stake string) error {
+		return steps.TheSuppliedStakeForTheMarketIs(execsetup.executionEngine, marketID, stake)
+	})
+	s.Step(`^the open interest for the market "([^"]*)" is "([^"]*)"$`, func(marketID, stake string) error {
+		return steps.TheOpenInterestForTheMarketIs(execsetup.executionEngine, marketID, stake)
+	})
+	s.Step(`^the liquidity provider fee shares for the market "([^"]*)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
+		return steps.TheLiquidityProviderFeeSharesForTheMarketShouldBe(execsetup.executionEngine, marketID, table)
+	})
+	s.Step(`^the price monitoring bounds for the market "([^"]*)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
+		return steps.ThePriceMonitoringBoundsForTheMarketShouldBe(execsetup.executionEngine, marketID, table)
+	})
 
 	// Debug steps
 	s.Step(`^debug transfers$`, func() error {

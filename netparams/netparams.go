@@ -192,7 +192,10 @@ func (s *Store) Validate(key, value string) error {
 	if !ok {
 		return ErrUnknownKey
 	}
-	return svalue.Validate(value)
+	if err := svalue.Validate(value); err != nil {
+		return fmt.Errorf("unable to validate %s: %w", key, err)
+	}
+	return nil
 }
 
 // Update will update the stored value for a given key
@@ -206,7 +209,7 @@ func (s *Store) Update(ctx context.Context, key, value string) error {
 	}
 
 	if err := svalue.Update(value); err != nil {
-		return err
+		return fmt.Errorf("unable to update %s: %w", key, err)
 	}
 
 	// update was successful we want to notify watchers
