@@ -48,7 +48,7 @@ steps:
           ./script/build-multiarch-no-cgo.sh default || exit 1 ;
         else
           echo "No Go files changed. Skipping building of binary." ;
-          rm -f cmd/vega/vega-* ;
+          rm -f cmd/vega/vega-* cmd/vegabenchmark/vegabenchmark-* ;
         fi
     depends_on:
       - fetch
@@ -67,6 +67,35 @@ steps:
         else
           echo "No md files changed. Skipping mdspell." ;
         fi
+    depends_on:
+      - build-PR
+    when:
+      event:
+        - pull_request
+
+  - name: build_docker_image-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:18.09.9
+    volumes:
+      - name: dockersock
+        path: /run/docker.sock
+    environment:
+      DOCKER_HOST: unix:///run/docker.sock
+      DOCKER_CONFIG_JSON:
+        from_secret: dockerconfig
+    commands:
+      - mkdir -p docker/bin
+      - find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
+          if test -f "cmd/$$app/$$app-linux-amd64" ; then
+            cp -a "cmd/$$app/$$app-linux-amd64" "docker/bin/$$app" || exit 1 ;
+          else
+            echo "dummy_noop" >"docker/bin/$$app" ;
+          fi ;
+        done
+      - tmptag="$$(openssl rand -hex 10)"
+      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" docker/
+      - rm -rf docker/bin
+      - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
+      - docker rmi "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag"
     depends_on:
       - build-PR
     when:
