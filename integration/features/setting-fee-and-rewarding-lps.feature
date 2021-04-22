@@ -163,3 +163,48 @@ Feature: Test liquidity provider reward distribution
       |       500 |     1500  |
 
     And the liquidity fee factor should "0.002" for the market "ETH/DEC21"
+
+    # no fees in auction
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader2 | 951   | 20   | lp1     |
+
+    And the accumulated liquidity fees should be "39" for the market "ETH/DEC21"
+
+    # opening auction + time window
+    Then time is updated to "2019-11-30T00:10:05Z"
+
+    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
+    Then the following transfers should happen:
+      | from    | to  | from account                | to account           | market id | amount  | asset |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 26      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 13      | ETH   |
+
+
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 40     | 1100  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the following trades should be executed:
+      | buyer   | price | size | seller  |
+      | trader1 | 951   | 4    | lp1     |
+      | trader1 | 951   | 36   | lp2     |
+
+    And the accumulated liquidity fees should be "77" for the market "ETH/DEC21"
+
+    # opening auction + time window
+    Then time is updated to "2019-11-30T00:20:08Z"
+
+    # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
+    Then the following transfers should happen:
+      | from    | to  | from account                | to account           | market id | amount  | asset |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 51      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 26      | ETH   |
