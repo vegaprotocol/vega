@@ -60,31 +60,35 @@ Feature: Target stake
       | tt_2   | ETH/DEC21 | buy  | 20     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
       | tt_3   | ETH/DEC21 | buy  | 30     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
 
+    Then the opening auction period ends for market "ETH/DEC21"
+
     # So now traders 1,2,3 are long 10+20+30 = 60.
-    Then the mark price should be "0" for the market "ETH/DEC21"
+    Then the mark price should be "110" for the market "ETH/DEC21"
 
     # Target stake is mark_price x max_oi x target_stake_scaling_factor x rf_short
     # rf_short should have been set above to 0.1
     # target_stake = 110 x 60 x 1.5 x 0.1
-    And the target stake for the market "ETH/DEC21" is "0"
+    And the target stake for the market "ETH/DEC21" is "990"
 
     # T0 + 8 days + 1 hour
     When time is updated to "2021-03-08T01:00:00Z"
 
     # Trader 3 closes out 20
+    When the traders place the following orders:
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3 | ETH/DEC21 | sell | 20 | 90 | 1 | TYPE_LIMIT | TIF_GTC | tt_2_1 |
 
-    Then the mark price should be "110" for the market "ETH/DEC21"
+    Then the mark price should be "90" for the market "ETH/DEC21"
 
     # the maximum oi over the last 7 days is still unchanged
     # target_stake = 90 x 60 x 1.5 x 0.1
-    And the target stake for the market "ETH/DEC21" is "990"
+    And the target stake for the market "ETH/DEC21" is "810"
 
     # T0 + 15 days + 2 hour
     # so now the peak of 60 should have passed from window
     When time is updated to "2021-03-15T02:00:00Z"
 
-    Then the mark price should be "110" for the market "ETH/DEC21"
+    Then the mark price should be "90" for the market "ETH/DEC21"
 
     # target_stake = 90 x 40 x 1.5 x 0.1
-    And the target stake for the market "ETH/DEC21" is "990"
+    And the target stake for the market "ETH/DEC21" is "540"
