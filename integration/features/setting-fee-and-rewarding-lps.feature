@@ -56,7 +56,7 @@ Feature: Test liquidity provider reward distribution
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
     And the open interest should be "10" for the market "ETH/DEC21"
-    And the target stake for the market "ETH/DEC21" is "1000"
+    And the target stake should be "1000" for the market "ETH/DEC21"
     And the supplied stake should be "10000" for the market "ETH/DEC21"
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
@@ -150,7 +150,7 @@ Feature: Test liquidity provider reward distribution
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
     And the open interest should be "90" for the market "ETH/DEC21"
-    And the target stake for the market "ETH/DEC21" is "9000"
+    And the target stake should be "9000" for the market "ETH/DEC21"
     And the supplied stake should be "10000" for the market "ETH/DEC21"
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
@@ -247,7 +247,7 @@ Feature: Test liquidity provider reward distribution
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
     And the open interest should be "60" for the market "ETH/DEC21"
-    And the target stake for the market "ETH/DEC21" is "6000"
+    And the target stake should be "6000" for the market "ETH/DEC21"
     And the supplied stake should be "10000" for the market "ETH/DEC21"
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
@@ -352,7 +352,7 @@ Feature: Test liquidity provider reward distribution
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
     And the open interest should be "60" for the market "ETH/DEC21"
-    And the target stake for the market "ETH/DEC21" is "6000"
+    And the target stake should be "6000" for the market "ETH/DEC21"
     And the supplied stake should be "10000" for the market "ETH/DEC21"
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:

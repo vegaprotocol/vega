@@ -62,7 +62,7 @@ func TradersPlaceTheFollowingOrders(
 				request:   order,
 				Err:       err,
 			})
-			return fmt.Errorf("could not submit order %w", err)
+			return nil
 		}
 
 		if resultingTrades != -1 && len(resp.Trades) != int(resultingTrades) {
