@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func MarketShouldHaveTargetStake(engine *execution.Engine, marketID string, wantTargetStake string) error {
+func TheTargetStakeShouldBeForMarket(engine *execution.Engine, marketID string, wantTargetStake string) error {
 	marketData, err := engine.GetMarketData(marketID)
 	if err != nil {
 		return errMarketDataNotFound(marketID, err)
