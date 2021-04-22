@@ -214,6 +214,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the accumulated liquidity fees should be "([^"]*)" for the market "([^"]*)"$`, func(amount, marketID string) error {
 		return steps.TheAccumulatedLiquidityFeesShouldBeForTheMarket(execsetup.broker, amount, marketID)
 	})
+	s.Step(`^the liquidity fee factor should "([^"]*)" for the market "([^"]*)"$`, func(fee, marketID string) error {
+		return steps.TheLiquidityFeeFactorShouldForTheMarket(execsetup.broker, fee, marketID)
+	})
 
 	// Debug steps
 	s.Step(`^debug transfers$`, func() error {

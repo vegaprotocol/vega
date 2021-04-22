@@ -73,10 +73,7 @@ Feature: Test liquidity provider reward distribution
       | min bound | max bound |
       |       500 |     1500  |
 
-
-    # need new step for that
-    # And the liquidity fee factor is "0.001"
-
+    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
