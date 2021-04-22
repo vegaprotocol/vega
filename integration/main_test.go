@@ -203,7 +203,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TheSuppliedStakeShouldBeForTheMarket(execsetup.executionEngine, marketID, stake)
 	})
 	s.Step(`^the open interest should be "([^"]*)" for the market "([^"]*)"$`, func(stake , marketID string) error {
-		return steps.TheOpenInterestForTheMarketIs(execsetup.executionEngine, marketID, stake)
+		return steps.TheOpenInterestShouldBeForTheMarket(execsetup.executionEngine, marketID, stake)
 	})
 	s.Step(`^the liquidity provider fee shares for the market "([^"]*)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
 		return steps.TheLiquidityProviderFeeSharesForTheMarketShouldBe(execsetup.executionEngine, marketID, table)
