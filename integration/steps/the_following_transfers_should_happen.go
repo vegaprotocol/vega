@@ -38,8 +38,14 @@ func TheFollowingTransfersShouldHappen(
 }
 
 func errTransferFoundButNotRightAmount(row transferRow, divergingAmounts []uint64) error {
-	return fmt.Errorf("invalid amount for transfer from %v to %v, expected(%d) got(%v)",
-		row.fromAccountID(), row.toAccountID(), row.amount(), divergingAmounts,
+	return formatDiff(
+		fmt.Sprintf("invalid amount for transfer from %s to %s", row.fromAccountID(), row.toAccountID()),
+		map[string]string{
+			"amount": u64ToS(row.amount()),
+		},
+		map[string]string{
+			"amount": u64SToS(divergingAmounts),
+		},
 	)
 }
 

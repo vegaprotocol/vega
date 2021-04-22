@@ -12,7 +12,7 @@ func DebugOrders(broker *stubs.BrokerStub, log *logging.Logger) error {
 	data := broker.GetOrderEvents()
 	for _, v := range data {
 		o := *v.Order()
-		log.Info(fmt.Sprintf("order %s: %v\n", o.Id, o))
+		log.Info(fmt.Sprintf("order %s: %v\n", o.Id, o.String()))
 	}
 	return nil
 }

@@ -1,8 +1,6 @@
 Feature: Test loss socialization case 1
 
   Background:
-
-
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
@@ -24,7 +22,7 @@ Feature: Test loss socialization case 1
       | trader3          | BTC   | 50000     |
       | aux1             | BTC   | 100000000 |
       | aux2             | BTC   | 100000000 |
-# setup orderbook
+# setup order book
     When the traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |

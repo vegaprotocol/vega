@@ -2,6 +2,7 @@ package steps
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -10,7 +11,7 @@ import (
 func formatDiff(msg string, expected, got map[string]string) error {
 	var expectedStr strings.Builder
 	var gotStr strings.Builder
-	formatStr := "\n\t%s(%s)"
+	formatStr := "\n\t%s\t(%s)"
 	for name, value := range expected {
 		_, _ = fmt.Fprintf(&expectedStr, formatStr, name, value)
 		_, _ = fmt.Fprintf(&gotStr, formatStr, name, got[name])
@@ -21,6 +22,22 @@ func formatDiff(msg string, expected, got map[string]string) error {
 		expectedStr.String(),
 		gotStr.String(),
 	)
+}
+
+func u64ToS(n uint64) string {
+	return strconv.FormatUint(n, 10)
+}
+
+func u64SToS(ns []uint64) string {
+	ss := []string{}
+	for _, n := range ns {
+		ss = append(ss, u64ToS(n))
+	}
+	return strings.Join(ss, " ")
+}
+
+func i64ToS(n int64) string {
+	return strconv.FormatInt(n, 10)
 }
 
 func errOrderNotFound(reference string, trader string, err error) error {

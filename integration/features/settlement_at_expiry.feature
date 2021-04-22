@@ -43,20 +43,25 @@ Feature: Test mark to market settlement
 
   Scenario: Settlement happened when market is being closed
     Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
-      | trader2 | ETH   | 1000   |
-      | trader3 | ETH   | 5000   |
-      | aux1    | ETH   | 100000 |
-      | aux2    | ETH   | 100000 |
+      | trader    | asset | amount    |
+      | trader1   | ETH   | 10000     |
+      | trader2   | ETH   | 1000      |
+      | trader3   | ETH   | 5000      |
+      | aux1      | ETH   | 100000    |
+      | aux2      | ETH   | 100000    |
+      | trader-lp | ETH   | 100000000 |
+    And the traders submit the following liquidity provision:
+      | id  | party     | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
+      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0   | buy        | BID             | 50               | -10          |
+      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0   | sell       | ASK             | 50               | 10           |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader   | market id | side | volume  | price | resulting trades | type        | tif     | reference |
-      | aux1     | ETH/DEC19 | buy  | 1       |  999  | 0                | TYPE_LIMIT  | TIF_GTC | ref-1     |
-      | aux2     | ETH/DEC19 | sell | 1       | 1001  | 0                | TYPE_LIMIT  | TIF_GTC | ref-2     |
-      | aux1     | ETH/DEC19 | buy  | 1       | 1000  | 0                | TYPE_LIMIT  | TIF_GTC | ref-3     |
-      | aux2     | ETH/DEC19 | sell | 1       | 1000  | 0                | TYPE_LIMIT  | TIF_GTC | ref-4     |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1   | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2   | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | aux2   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "1000" for the market "ETH/DEC19"
 
@@ -79,23 +84,21 @@ Feature: Test mark to market settlement
       | trader2 | ETH   | ETH/DEC19 | 132    | 868     |
       | trader3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the cumulated balance for all accounts should be worth "216000"
+    And the cumulated balance for all accounts should be worth "100216000"
 
     # Close positions by aux traders
     When the traders place the following orders:
       | trader  | market id | side | volume  | price | resulting trades | type        | tif     |
       | aux1    | ETH/DEC19 | sell | 1       | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux2    | ETH/DEC19 | buy  | 1       | 1000  | 1                | TYPE_LIMIT  | TIF_GTC |
-
-    Then time is updated to "2020-01-01T01:01:01Z"
-    When the traders place the following orders:
+    And time is updated to "2020-01-01T01:01:01Z"
+    And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the system should return error "OrderError: Invalid Market ID"
-
-    Then the traders should have the following account balances:
+    And the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 | 0      | 8084    |
       | trader2 | ETH   | ETH/DEC19 | 0      | 1826    |
       | trader3 | ETH   | ETH/DEC19 | 0      | 5826    |
-    And the cumulated balance for all accounts should be worth "214513"
+    And the cumulated balance for all accounts should be worth "100214513"

@@ -3,8 +3,8 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
   Background:
 
     And the fees configuration named "my-fees-config":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.00025   | 0.0005             | 0.001         |
+      | maker fee | infrastructure fee |
+      | 0.00025   | 0.0005             |
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees           | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future |
@@ -18,22 +18,26 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
     Given the traders deposit on asset's general account the following amount:
-      | trader | asset | amount    |
-      | tt_12  | BTC   | 10000000  |
-      | tt_13  | BTC   | 10000000  |
-      | tt_14  | BTC   | 10000000  |
-      | tt_15  | BTC   | 100       |
-      | tt_16  | BTC   | 10000000  |
-      | tt_aux | BTC   | 100000000 |
-      | t2_aux | BTC   | 100000000 |
-
+      | trader    | asset | amount    |
+      | tt_12     | BTC   | 10000000  |
+      | tt_13     | BTC   | 10000000  |
+      | tt_14     | BTC   | 10000000  |
+      | tt_15     | BTC   | 100       |
+      | tt_16     | BTC   | 10000000  |
+      | tt_aux    | BTC   | 100000000 |
+      | t2_aux    | BTC   | 100000000 |
+      | trader-lp | BTC   | 100000000 |
+    And the traders submit the following liquidity provision:
+      | id  | party     | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | buy        | BID             | 50               | -10          |
+      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | sell       | ASK             | 50               | 10           |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
-      | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-1   |
-      | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-1   |
-      | t2_aux | ETH/DEC19 | buy  | 1      | 20    | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-2   |
-      | tt_aux | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-2   |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
+      | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      | t2_aux | ETH/DEC19 | buy  | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
+      | tt_aux | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
     Then the opening auction period ends for market "ETH/DEC19"
 
     # place orders and generate trades
