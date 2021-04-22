@@ -13,86 +13,11 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-// MarketPosition represents the position of a party inside a market
-type MarketPosition struct {
-	// Actual volume
-	size int64
-	// Potential volume (orders not yet accepted/rejected)
-	buy, sell int64
-
-	partyID string
-	price   uint64
-
-	// volume weighted buy/sell prices
-	vwBuyPrice, vwSellPrice uint64
-}
-
 // Errors
 var (
 	// ErrPositionNotFound signal that a position was not found for a given party.
 	ErrPositionNotFound = errors.New("position not found")
 )
-
-// String returns a string representation of a market
-func (m MarketPosition) String() string {
-	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
-		m.size, m.buy, m.sell, m.price, m.partyID)
-}
-
-// Buy will returns the potential buys for a given position
-func (m MarketPosition) Buy() int64 {
-	return m.buy
-}
-
-// Sell returns the potential sells for the position
-func (m MarketPosition) Sell() int64 {
-	return m.sell
-}
-
-// Size returns the current size of the position
-func (m MarketPosition) Size() int64 {
-	return m.size
-}
-
-// Party returns the party to which this positions is associated
-func (m MarketPosition) Party() string {
-	return m.partyID
-}
-
-// Price returns the current price for this position
-func (m MarketPosition) Price() uint64 {
-	return m.price
-}
-
-// VWBuy - get volume weighted buy price for unmatched buy orders
-func (m MarketPosition) VWBuy() uint64 {
-	return m.vwBuyPrice
-}
-
-// VWSell - get volume weighted sell price for unmatched sell orders
-func (m MarketPosition) VWSell() uint64 {
-	return m.vwSellPrice
-}
-
-// I64MaxAbs - get max value based on absolute values of int64 vals
-// keep this function, perhaps we can reuse it in a numutil package
-// once we have to deal with decimals etc...
-func I64MaxAbs(vals ...int64) int64 {
-	var (
-		r, m int64
-	)
-	for _, v := range vals {
-		av := v
-		if av < 0 {
-			av *= -1
-		}
-		if av > m {
-			r = v
-			m = av // current max abs is av
-		}
-	}
-	return r
-}
 
 // Engine represents the positions engine
 type Engine struct {
@@ -176,92 +101,40 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
-	if order.Side == types.Side_SIDE_BUY {
-		// calculate vwBuyPrice: total worth of orders divided by total size
-		if buyVol := uint64(pos.buy) + order.Remaining; buyVol != 0 {
-			pos.vwBuyPrice = (pos.vwBuyPrice*uint64(pos.buy) + order.Price*order.Remaining) / buyVol
-		} else {
-			pos.vwBuyPrice = 0
-		}
-		pos.buy += int64(order.Remaining)
-	} else {
-		// calculate vwSellPrice: total worth of orders divided by total size
-		if sellVol := uint64(pos.sell) + order.Remaining; sellVol != 0 {
-			pos.vwSellPrice = (pos.vwSellPrice*uint64(pos.sell) + order.Price*order.Remaining) / sellVol
-		} else {
-			pos.vwSellPrice = 0
-		}
-		pos.sell += int64(order.Remaining)
-	}
+	pos.RegisterOrder(order)
 	timer.EngineTimeCounterAdd()
 	return pos
 }
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
-func (e *Engine) UnregisterOrder(order *types.Order) (*MarketPosition, error) {
+func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 	defer metrics.NewTimeCounter("-", "positions", "UnregisterOrder").EngineTimeCounterAdd()
 
 	pos, found := e.positions[order.PartyId]
 	if !found {
-		return nil, ErrPositionNotFound
+		e.log.Panic("could not find position in engine when unregistering order",
+			logging.Order(*order))
 	}
 
-	if order.Side == types.Side_SIDE_BUY {
-		// recalculate vwap
-		vwap := pos.vwBuyPrice*uint64(pos.buy) - order.Price*order.Remaining
-		pos.buy -= int64(order.Remaining)
-		if pos.buy != 0 {
-			pos.vwBuyPrice = vwap / uint64(pos.buy)
-		} else {
-			pos.vwBuyPrice = 0
-		}
-	} else {
-		vwap := pos.vwSellPrice*uint64(pos.sell) - order.Price*order.Remaining
-		pos.sell -= int64(order.Remaining)
-		if pos.sell != 0 {
-			pos.vwSellPrice = vwap / uint64(pos.sell)
-		} else {
-			pos.vwSellPrice = 0
-		}
-	}
-	return pos, nil
+	pos.UnregisterOrder(e.log, order)
+	return pos
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
-func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPosition, err error) {
+func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
 
 	pos, found := e.positions[originalOrder.PartyId]
 	if !found {
-		// If we can't find the original, we can't amend it
-		err = ErrPositionNotFound
-		return
+		e.log.Panic("could not find position in engine when amending order",
+			logging.Order(*originalOrder),
+			logging.Order(*newOrder))
 	}
-
-	if originalOrder.Side == types.Side_SIDE_BUY {
-		vwap := pos.vwBuyPrice*uint64(pos.buy) - originalOrder.Price*originalOrder.Remaining
-		pos.buy -= int64(originalOrder.Remaining)
-		if pos.buy != 0 {
-			pos.vwBuyPrice = vwap / uint64(pos.buy)
-		} else {
-			pos.vwBuyPrice = 0
-		}
-		pos.buy += int64(newOrder.Remaining)
-	} else {
-		vwap := pos.vwSellPrice*uint64(pos.sell) - originalOrder.Price*originalOrder.Remaining
-		pos.sell -= int64(originalOrder.Remaining)
-		if pos.sell != 0 {
-			pos.vwSellPrice = vwap / uint64(pos.sell)
-		} else {
-			pos.vwSellPrice = 0
-		}
-		pos.sell += int64(newOrder.Remaining)
-	}
-
+	pos.AmendOrder(e.log, originalOrder, newOrder)
 	timer.EngineTimeCounterAdd()
-	return
+	return pos
 }
 
 // UpdateNetwork - functionally the same as the Update func, except for ignoring the network
@@ -270,30 +143,41 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) (pos *MarketPo
 // wasteful, and would only serve to add complexity to the Update func, and slow it down
 func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 	// there's only 1 position
-	var pos *MarketPosition
+	var (
+		ok  bool
+		pos *MarketPosition
+	)
 	size := int64(trade.Size)
 	if trade.Buyer != "network" {
-		if b, ok := e.positions[trade.Buyer]; !ok {
-			pos = &MarketPosition{
-				partyID: trade.Buyer,
-			}
-			e.positions[trade.Buyer] = pos
-			e.positionsCpy = append(e.positionsCpy, pos)
-		} else {
-			pos = b
+		pos, ok = e.positions[trade.Buyer]
+		if !ok {
+			e.log.Panic("could not find buyer position",
+				logging.Trade(*trade))
 		}
+
+		if pos.buy < int64(trade.Size) {
+			e.log.Panic("network trade with a potential buy position < to the trade size",
+				logging.PartyID(trade.Buyer),
+				logging.Int64("potential-buy", pos.buy),
+				logging.Trade(*trade))
+		}
+
 		// potential buy pos is smaller now
 		pos.buy -= int64(trade.Size)
 	} else {
-		if s, ok := e.positions[trade.Seller]; !ok {
-			pos = &MarketPosition{
-				partyID: trade.Seller,
-			}
-			e.positions[trade.Seller] = pos
-			e.positionsCpy = append(e.positionsCpy, pos)
-		} else {
-			pos = s
+		pos, ok = e.positions[trade.Seller]
+		if !ok {
+			e.log.Panic("could not find seller position",
+				logging.Trade(*trade))
 		}
+
+		if pos.sell < int64(trade.Size) {
+			e.log.Panic("network trade with a potential sell position < to the trade size",
+				logging.PartyID(trade.Seller),
+				logging.Int64("potential-sell", pos.sell),
+				logging.Trade(*trade))
+		}
+
 		// potential sell pos is smaller now
 		pos.sell -= int64(trade.Size)
 		// size is negative in case of a sale
@@ -305,26 +189,34 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
 func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
-	// todo(cdm): overflow should be managed at the trade/order creation point. We shouldn't accept an order onto
-	// your book that would overflow your position. Order validation requires position store/state lookup.
-
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
-		buyer = &MarketPosition{
-			partyID: trade.Buyer,
-		}
-		e.positions[trade.Buyer] = buyer
-		e.positionsCpy = append(e.positionsCpy, buyer)
+		e.log.Panic("could not find buyer position",
+			logging.Trade(*trade))
 	}
 
 	seller, ok := e.positions[trade.Seller]
 	if !ok {
-		seller = &MarketPosition{
-			partyID: trade.Seller,
-		}
-		e.positions[trade.Seller] = seller
-		e.positionsCpy = append(e.positionsCpy, seller)
+		e.log.Panic("could not find seller position",
+			logging.Trade(*trade))
 	}
+
+	// now we check if the trade is possible based on the potential positions
+	// this should always be true, no trade can happen without the equivalent
+	// potential position
+	if buyer.buy < int64(trade.Size) {
+		e.log.Panic("trade with a potential buy position < to the trade size",
+			logging.PartyID(trade.Buyer),
+			logging.Int64("potential-buy", buyer.buy),
+			logging.Trade(*trade))
+	}
+	if seller.sell < int64(trade.Size) {
+		e.log.Panic("trade with a potential sell position < to the trade size",
+			logging.PartyID(trade.Seller),
+			logging.Int64("potential-sell", buyer.sell),
+			logging.Trade(*trade))
+	}
+
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
 	buyer.size += int64(trade.Size)
@@ -449,4 +341,24 @@ func (e *Engine) Parties() []string {
 		parties = append(parties, v.Party())
 	}
 	return parties
+}
+
+// I64MaxAbs - get max value based on absolute values of int64 vals
+// keep this function, perhaps we can reuse it in a numutil package
+// once we have to deal with decimals etc...
+func I64MaxAbs(vals ...int64) int64 {
+	var (
+		r, m int64
+	)
+	for _, v := range vals {
+		av := v
+		if av < 0 {
+			av *= -1
+		}
+		if av > m {
+			r = v
+			m = av // current max abs is av
+		}
+	}
+	return r
 }

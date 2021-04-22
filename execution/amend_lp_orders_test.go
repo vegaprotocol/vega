@@ -2,7 +2,6 @@ package execution_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -124,8 +123,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		}
 
 		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-1": types.LiquidityProvision_STATUS_CANCELLED,
-			"liquidity-submission-2": types.LiquidityProvision_STATUS_ACTIVE,
+			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -216,8 +214,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		}
 
 		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-2": types.LiquidityProvision_STATUS_CANCELLED,
-			"liquidity-submission-3": types.LiquidityProvision_STATUS_ACTIVE,
+			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -310,8 +307,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		}
 
 		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-3":     types.LiquidityProvision_STATUS_CANCELLED,
-			"liquidity-submission-3-bis": types.LiquidityProvision_STATUS_ACTIVE,
+			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -663,7 +659,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 	})
 }
 
-func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailAfterAuction(t *testing.T) {
+func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuringAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
@@ -795,304 +791,10 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailAfte
 
 	// the submission should be all OK
 	// order are not deployed while still in auction
-	require.NoError(t,
+	require.EqualError(t,
 		tm.market.SubmitLiquidityProvision(
 			ctx, lpSubmissionUpdate, lpparty, "liquidity-submission-2"),
+		"margin would be below maintenance: insufficient margin",
 	)
 
-	// add some stupidly high price order
-	// so the mid price move a lot, and it'll fuck up our order
-	mpOrders := []*types.Order{
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        400,
-			Remaining:   400,
-			Price:       900,
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     lpparty,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        1,
-			Remaining:   1,
-			Price:       900,
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     lpparty,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        1,
-			Remaining:   1,
-			Price:       900,
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     lpparty,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        1,
-			Remaining:   1,
-			Price:       900,
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     lpparty,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        1,
-			Remaining:   1,
-			Price:       900,
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     lpparty,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        1,
-			Remaining:   1,
-			Price:       2500,
-			Side:        types.Side_SIDE_SELL,
-			PartyId:     "party-yolo",
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        1,
-			Remaining:   1,
-			Price:       3000,
-			Side:        types.Side_SIDE_SELL,
-			PartyId:     lpparty,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        140,
-			Remaining:   140,
-			Price:       4000,
-			Side:        types.Side_SIDE_SELL,
-			PartyId:     lpparty,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-	}
-
-	// submit the auctions orders
-	tm.WithSubmittedOrders(t, mpOrders...)
-
-	// then we are leaving the auction period
-	tm.events = nil
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(50*time.Second))
-
-	t.Run("LP orders are re-submitted and fail after auction", func(t *testing.T) {
-		// First collect all the orders events
-		found := []*types.Order{}
-		var lp *types.LiquidityProvision
-		for _, e := range tm.events {
-			switch evt := e.(type) {
-			case *events.Order:
-				found = append(found, evt.Order())
-			case *events.LiquidityProvision:
-				tmpLP := evt.LiquidityProvision()
-				lp = &tmpLP
-			}
-		}
-
-		assert.NotNil(t, lp)
-		assert.Equal(t, types.LiquidityProvision_STATUS_CANCELLED, lp.Status)
-
-		for _, v := range found {
-			fmt.Printf("%#v\n", *v)
-		}
-
-		// FIXME(JEREMY): ALL is good here. justto things to notice:
-		// needs to fix assertion
-		// and th funds are not moved out of the margin
-
-		// require.Len(t, found, 7)
-
-		// statuses := []types.Order_Status{
-		// 	// 3 first orders are the LP being submitted
-		// 	types.Order_STATUS_ACTIVE,
-		// 	types.Order_STATUS_ACTIVE,
-		// 	types.Order_STATUS_ACTIVE,
-		// 	// next one is rejected with margin check failed
-		// 	types.Order_STATUS_REJECTED,
-		// 	// 3 next are the cancel of the previous ones
-		// 	types.Order_STATUS_CANCELLED,
-		// 	types.Order_STATUS_CANCELLED,
-		// 	types.Order_STATUS_CANCELLED,
-		// }
-
-		// for i, o := range found {
-		// 	assert.Equal(t,
-		// 		statuses[i].String(),
-		// 		o.Status.String(),
-		// 	)
-		// }
-	})
-
-	t.Run("margin account is updated", func(t *testing.T) {
-		acc, err := tm.collateralEngine.GetPartyMarginAccount(
-			tm.market.GetID(), lpparty, tm.asset)
-		assert.NoError(t, err)
-		assert.Equal(t, 781648, int(acc.Balance))
-	})
-
-	t.Run("bond account", func(t *testing.T) {
-		acc, err := tm.collateralEngine.GetPartyBondAccount(
-			tm.market.GetID(), lpparty, tm.asset)
-		assert.NoError(t, err)
-		assert.Equal(t, 0, int(acc.Balance))
-	})
-
-}
-
-func TestLPIsactivatedWithPriceMonitoring(t *testing.T) {
-	now := time.Unix(10, 0)
-	closingAt := time.Unix(1000000000, 0)
-	ctx := context.Background()
-
-	auctionEnd := now.Add(10001 * time.Second)
-	priceMonitorSettings := &types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{
-				{
-					Horizon:          5,
-					Probability:      0.95,
-					AuctionExtension: 6,
-				},
-				{
-					Horizon:          10,
-					Probability:      0.99,
-					AuctionExtension: 8,
-				},
-			},
-		},
-		UpdateFrequency: 4,
-	}
-
-	mktCfg := getMarket(closingAt, priceMonitorSettings, &types.AuctionDuration{
-		Duration: 10000,
-	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			LiquidityFee:      "0.001",
-			InfrastructureFee: "0.0005",
-			MakerFee:          "0.00025",
-		},
-	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
-		LogNormalRiskModel: &types.LogNormalRiskModel{
-			RiskAversionParameter: 0.001,
-			Tau:                   0.00011407711613050422,
-			Params: &types.LogNormalModelParams{
-				Mu:    0,
-				R:     0.016,
-				Sigma: 20,
-			},
-		},
-	}
-
-	lpparty := "lp-party-1"
-
-	tm := newTestMarket(t, now).Run(ctx, mktCfg)
-	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
-	tm.StartOpeningAuction().
-		// the liquidity provider
-		WithAccountAndAmount(lpparty, 50000000)
-
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.2)
-	tm.market.OnChainTimeUpdate(ctx, now)
-
-	// Add a LPSubmission
-	// this is a log of stake, enough to cover all
-	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 200000,
-		Fee:              "0.01",
-		Reference:        "ref-lp-submission-1",
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -1},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 7, Offset: -2},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 1},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 5, Offset: 2},
-		},
-	}
-
-	// submit our lp
-	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
-	)
-
-	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
-		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
-		assert.NoError(t, err)
-		assert.Equal(t, 200000, int(acc.Balance))
-	})
-
-	for _, v := range tm.market.GetMarketData().PriceMonitoringBounds {
-		fmt.Printf("%#v\n", v)
-	}
-
-	tm.events = nil
-	tm.EndOpeningAuction2(t, auctionEnd, true)
-
-	tm.events = nil
-	// then increase time
-	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(60*time.Second))
-
-	t.Run("LP orders get deployed", func(t *testing.T) {
-		// First collect all the orders events
-		found := map[string]*types.Order{}
-		var lp *types.LiquidityProvision
-		for _, e := range tm.events {
-			switch evt := e.(type) {
-			case *events.Order:
-				if evt.Order().PartyId == lpparty {
-					found[evt.Order().Id] = evt.Order()
-				}
-			case *events.LiquidityProvision:
-				tmpLP := evt.LiquidityProvision()
-				lp = &tmpLP
-			}
-		}
-
-		fmt.Printf("%#v\n", found)
-
-		assert.NotNil(t, lp)
-		assert.Equal(t, types.LiquidityProvision_STATUS_ACTIVE, lp.Status)
-
-		// we check the order which are created
-		statuses := map[string]types.Order_Status{
-			"V0000000000-0000000007": types.Order_STATUS_ACTIVE,
-			"V0000000000-0000000008": types.Order_STATUS_ACTIVE,
-		}
-
-		for id, o := range found {
-			status, ok := statuses[id]
-			if !assert.True(t, ok, id) {
-				continue
-			}
-			assert.Equal(t,
-				status.String(),
-				o.Status.String(),
-				id,
-			)
-		}
-
-		assert.Equal(t, len(statuses), len(found))
-
-		o8 := found["V0000000000-0000000007"]
-		o10 := found["V0000000000-0000000008"]
-		// now we check as well we are inside the bounds
-		for _, v := range tm.market.GetMarketData().PriceMonitoringBounds {
-			assert.True(t, o8.Price > v.MinValidPrice && o8.Price < v.MaxValidPrice)
-			assert.True(t, o10.Price > v.MinValidPrice && o10.Price < v.MaxValidPrice)
-		}
-	})
 }

@@ -26,7 +26,15 @@ func TheTradingModeShouldBeForMarket(
 }
 
 func errMismatchedTradingMode(market string, expectedTradingMode, gotTradingMode types.Market_TradingMode) error {
-	return fmt.Errorf("market trading tradingMode is wrong for market(%v), expected(%v) got(%v)", market, expectedTradingMode, gotTradingMode)
+	return formatDiff(
+		fmt.Sprintf("unexpected market trading mode for market \"%s\"", market),
+		map[string]string{
+			"trading mode": expectedTradingMode.String(),
+		},
+		map[string]string{
+			"trading mode": gotTradingMode.String(),
+		},
+	)
 }
 
 func errCannotGetMarketData(marketID string, err error) error {

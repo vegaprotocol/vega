@@ -13,7 +13,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
@@ -41,22 +40,21 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets     Assets
-	banking    Banking
-	broker     Broker
-	cmd        Commander
-	erc        ExtResChecker
-	evtfwd     EvtForwarder
-	exec       ExecutionEngine
-	ghandler   *genesis.Handler
-	gov        GovernanceEngine
-	notary     Notary
-	stats      Stats
-	time       TimeService
-	top        ValidatorTopology
-	vegaWallet nodewallet.Wallet
-	netp       NetworkParameters
-	oracles    *Oracle
+	assets   Assets
+	banking  Banking
+	broker   Broker
+	cmd      Commander
+	erc      ExtResChecker
+	evtfwd   EvtForwarder
+	exec     ExecutionEngine
+	ghandler *genesis.Handler
+	gov      GovernanceEngine
+	notary   Notary
+	stats    Stats
+	time     TimeService
+	top      ValidatorTopology
+	netp     NetworkParameters
+	oracles  *Oracle
 }
 
 func NewApp(
@@ -83,11 +81,6 @@ func NewApp(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	vegaWallet, ok := wallet.Get(nodewallet.Vega)
-	if !ok {
-		return nil, ErrVegaWalletRequired
-	}
-
 	app := &App{
 		abci: abci.New(&codec{}),
 
@@ -98,22 +91,21 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:     assets,
-		banking:    banking,
-		broker:     broker,
-		cmd:        cmd,
-		erc:        erc,
-		evtfwd:     evtfwd,
-		exec:       exec,
-		ghandler:   ghandler,
-		gov:        gov,
-		notary:     notary,
-		stats:      stats,
-		time:       time,
-		top:        top,
-		vegaWallet: vegaWallet,
-		netp:       netp,
-		oracles:    oracles,
+		assets:   assets,
+		banking:  banking,
+		broker:   broker,
+		cmd:      cmd,
+		erc:      erc,
+		evtfwd:   evtfwd,
+		exec:     exec,
+		ghandler: ghandler,
+		gov:      gov,
+		notary:   notary,
+		stats:    stats,
+		time:     time,
+		top:      top,
+		netp:     netp,
+		oracles:  oracles,
 	}
 
 	// setup handlers
@@ -284,6 +276,8 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	} else if !app.banking.HasBalance(party) {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
+		msgType := tx.Command().String()
+		app.log.Error("Rejected as party has no accounts", logging.PartyID(party), logging.String("Command", msgType))
 	}
 
 	return ctx, resp

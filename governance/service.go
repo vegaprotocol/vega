@@ -405,6 +405,6 @@ func (s *Svc) validateNewMarketChanges(
 
 	// just validate things which cannot be done straight with
 	_, err = validateNewMarket(
-		time.Time{}, nm.Changes, nil, false, s.netp, enactTime.Sub(closeTime))
+		time.Time{}, nm, nil, false, s.netp, enactTime.Sub(closeTime))
 	return
 }

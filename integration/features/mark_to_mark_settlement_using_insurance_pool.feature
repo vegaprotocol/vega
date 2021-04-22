@@ -1,18 +1,18 @@
 Feature: Test mark to market settlement with insurance pool
 
   Background:
-    Given the initial insurance pool balance is "10000" for the markets:
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | market.auction.minimumDuration |
-      | 1                              |
+      | name                           | value  |
+      | market.auction.minimumDuration | 1      |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
 
   Scenario: If settlement amount > trader’s margin account balance + trader’s general account balance for the asset, the full balance of the trader’s margin account is transferred to the market’s temporary settlement account, the full balance of the trader’s general account for the assets are transferred to the market’s temporary settlement account, the minimum insurance pool account balance for the market & asset, and the remainder, i.e. the difference between the total amount transferred from the trader’s margin + general accounts and the settlement amount, is transferred from the insurance pool account for the market to the temporary settlement account for the market
+    Given the initial insurance pool balance is "10000" for the markets:
     Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount |
       | trader1 | ETH   | 5122   |

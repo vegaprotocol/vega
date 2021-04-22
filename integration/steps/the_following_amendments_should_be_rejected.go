@@ -52,6 +52,7 @@ func isExpectedRejectedOrderAmendment(err *OrderAmendmentError, party string, re
 
 func errUnexpectedRejectedOrderAmendment(err *OrderAmendmentError, party string, reference string, errMessage string) error {
 	return formatDiff(
+		"rejected amendment does not match",
 		map[string]string{
 			"party": party,
 			"order": reference,

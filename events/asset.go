@@ -12,9 +12,10 @@ type Asset struct {
 }
 
 func NewAssetEvent(ctx context.Context, a types.Asset) *Asset {
+	cpy := a.DeepClone()
 	return &Asset{
 		Base: newBase(ctx, AssetEvent),
-		a:    a,
+		a:    *cpy,
 	}
 }
 

@@ -47,3 +47,17 @@ func (mr *MockOrderbookMockRecorder) GetCloseoutPrice(arg0, arg1 interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCloseoutPrice", reflect.TypeOf((*MockOrderbook)(nil).GetCloseoutPrice), arg0, arg1)
 }
+
+// GetIndicativePrice mocks base method
+func (m *MockOrderbook) GetIndicativePrice() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIndicativePrice")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// GetIndicativePrice indicates an expected call of GetIndicativePrice
+func (mr *MockOrderbookMockRecorder) GetIndicativePrice() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndicativePrice", reflect.TypeOf((*MockOrderbook)(nil).GetIndicativePrice))
+}

@@ -1,0 +1,92 @@
+{
+  "id": "076BB86A5AA41E3E",
+  "tradableInstrument": {
+    "instrument": {
+      "id": "unused-id",
+      "code": "BTCUSD.MF21",
+      "name": "BTCUSD Monthly (30 Jun 2021)",
+      "metadata": {
+        "tags": [
+          "base:BTC",
+          "quote:USD",
+          "class:fx/crypto",
+          "monthly",
+          "sector:crypto"
+        ]
+      },
+      "future": {
+        "maturity": "2021-06-30T23:59:59Z",
+        "settlementAsset": "fDAI",
+        "quoteName": "USD",
+        "oracleSpec": {
+          "pubKeys": [
+            "0x51a3a77554709b5db7b769d4376560ad6398c7b08380b5a3e49bda1236697f4f"
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "prices.BTC.value",
+                "type": "TYPE_INTEGER"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        },
+        "oracleSpecBinding": {
+          "settlementPriceProperty": "prices.BTC.value"
+        }
+      }
+    },
+    "marginCalculator": {
+      "scalingFactors": {
+        "searchLevel": 1.1,
+        "initialMargin": 1.2,
+        "collateralRelease": 1.5
+      }
+    },
+    "logNormalRiskModel": {
+      "riskAversionParameter": 0.0001,
+      "tau": 0.0000190129,
+      "params": {
+        "mu": 0,
+        "r": 0.016,
+        "sigma": 1.25
+      }
+    }
+  },
+  "decimalPlaces": "5",
+  "fees": {
+    "factors": {
+      "makerFee": "0.00075",
+      "infrastructureFee": "0.00175",
+      "liquidityFee": "0.0025"
+    }
+  },
+  "openingAuction": {
+    "duration": "10",
+    "volume": "0"
+  },
+  "priceMonitoringSettings": {
+    "parameters": {
+      "triggers": [
+        {
+          "horizon": 43200,
+          "probability": 0.9999999,
+          "auctionExtension": 600
+        }
+      ]
+    },
+    "updateFrequency": "1"
+  },
+  "continuous": {
+    "tickSize": "0.00001"
+  },
+  "liquidityMonitoringParameters": {
+    "targetStakeParameters": {
+      "timeWindow": "3600",
+      "scalingFactor": 10
+    },
+    "triggeringRatio": 0
+  }
+}

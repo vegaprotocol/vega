@@ -1,19 +1,19 @@
 Feature: Test loss socialization case 4
 
   Background:
-    Given the initial insurance pool balance is "2900" for the markets:
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | market.auction.minimumDuration |
-      | 1                              |
+      | name                           | value  |
+      | market.auction.minimumDuration | 1      |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
 
   Scenario: case 4 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 # setup accounts
+    Given the initial insurance pool balance is "2900" for the markets:
     Given the traders deposit on asset's general account the following amount:
       | trader           | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |

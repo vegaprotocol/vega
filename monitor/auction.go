@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/metrics"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -17,6 +18,9 @@ type AuctionState struct {
 	end         *types.AuctionDuration   // will be set when in auction, defines parameters that end an auction period
 	start, stop bool                     // flags to clarify whether we're entering or leaving auction
 	m           *types.Market            // keep market definition handy, useful to end auctions when default is FBA
+	extension   *types.AuctionTrigger    // Set if the current auction was extended, reset after the event was created
+	// timer tracks the elapsed time spend in opening auction.
+	timer *metrics.TimeCounter
 }
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
@@ -80,7 +84,24 @@ func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration
 	a.end = d
 }
 
+// ExtendAuctionPrice - call from price monitoring to extend the auction
+// sets the extension trigger field accordingly
+func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
+	t := types.AuctionTrigger_AUCTION_TRIGGER_PRICE
+	a.extension = &t
+	a.ExtendAuction(delta)
+}
+
+// ExtendAuctionLiquidity - call from liquidity monitoring to extend the auction
+// sets the extension trigger field accordingly
+func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
+	t := types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
+	a.extension = &t
+	a.ExtendAuction(delta)
+}
+
 // ExtendAuction extends the current auction, leaving trigger etc... in tact
+// @TODO private this function once we´ve ensured it´s no longer used elsewhere
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume
@@ -171,8 +192,30 @@ func (a AuctionState) AuctionStart() bool {
 	return a.start
 }
 
+// AuctionExtended - called to confirm we will not leave auction, returns the event to be sent
+// or nil if the auction wasn't extended
+func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
+	if a.extension == nil {
+		return nil
+	}
+	a.start = false
+	end := int64(0)
+	if a.begin == nil {
+		b := vegatime.Now()
+		a.begin = &b
+	}
+	if a.end != nil && a.end.Duration > 0 {
+		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
+	}
+	ext := *a.extension
+	// set extension flag to nil
+	a.extension = nil
+	return events.NewAuctionEvent(ctx, a.m.Id, false, a.begin.UnixNano(), end, a.trigger, ext)
+}
+
 // AuctionStarted is called by the execution package to set flags indicating the market has started the auction
 func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
+	a.timer = metrics.NewTimeCounter(a.m.Id, "Auction duration", a.trigger.String())
 	a.start = false
 	end := int64(0)
 	if a.begin == nil {
@@ -187,6 +230,8 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 
 // AuctionEnded is called by execution to update internal state indicating this auction was closed
 func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.Auction {
+	a.timer.EngineTimeCounterAdd()
+
 	// the end-of-auction event
 	var start int64 = 0
 	if a.begin != nil {

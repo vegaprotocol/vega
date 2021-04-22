@@ -1,7 +1,7 @@
 Feature: Price monitoring test using forward risk model (bounds for the valid price moves around price of 100000 for the two horizons are: [99460,100541], [98999,101008])
 
   Background:
-    Given the markets start on "2020-10-16T00:00:00Z" and expire on "2020-12-31T23:59:59Z"
+    Given time is updated to "2020-10-16T00:00:00Z"
     And the price monitoring updated every "60" seconds named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 240               |
@@ -10,11 +10,11 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.000001      | 0.00011407711613050422 | 0  | 0.016 | 2.0   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | maturity date        | risk model                    | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-log-normal-risk-model | default-margin-calculator | 60               | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | market.auction.minimumDuration |
-      | 60                             |
+      | name                           | value  |
+      | market.auction.minimumDuration | 60     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -433,14 +433,14 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |
+      | trader1 | ETH/DEC20 | sell | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader2 | ETH/DEC20 | buy  | 10     | 303000 | 0                | TYPE_LIMIT | TIF_GFA | ref-2-last|
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     And the mark price should be "110000" for the market "ETH/DEC20"
 
-    #T1 + 10min01s (extended auction finished)
+    #T1 + 10min01s (extended auction finished) // this is not finished, not order left in the book.
     Then time is updated to "2020-10-16T00:12:11Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"

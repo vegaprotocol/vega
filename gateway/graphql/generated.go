@@ -109,12 +109,13 @@ type ComplexityRoot struct {
 	}
 
 	AuctionEvent struct {
-		AuctionEnd     func(childComplexity int) int
-		AuctionStart   func(childComplexity int) int
-		Leave          func(childComplexity int) int
-		MarketId       func(childComplexity int) int
-		OpeningAuction func(childComplexity int) int
-		Trigger        func(childComplexity int) int
+		AuctionEnd       func(childComplexity int) int
+		AuctionStart     func(childComplexity int) int
+		ExtensionTrigger func(childComplexity int) int
+		Leave            func(childComplexity int) int
+		MarketId         func(childComplexity int) int
+		OpeningAuction   func(childComplexity int) int
+		Trigger          func(childComplexity int) int
 	}
 
 	BuiltinAsset struct {
@@ -847,6 +848,7 @@ type AuctionEventResolver interface {
 	AuctionStart(ctx context.Context, obj *proto.AuctionEvent) (string, error)
 	AuctionEnd(ctx context.Context, obj *proto.AuctionEvent) (string, error)
 	Trigger(ctx context.Context, obj *proto.AuctionEvent) (AuctionTrigger, error)
+	ExtensionTrigger(ctx context.Context, obj *proto.AuctionEvent) (*AuctionTrigger, error)
 }
 type CandleResolver interface {
 	Timestamp(ctx context.Context, obj *proto.Candle) (string, error)
@@ -1303,6 +1305,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AuctionEvent.AuctionStart(childComplexity), true
+
+	case "AuctionEvent.extensionTrigger":
+		if e.complexity.AuctionEvent.ExtensionTrigger == nil {
+			break
+		}
+
+		return e.complexity.AuctionEvent.ExtensionTrigger(childComplexity), true
 
 	case "AuctionEvent.leave":
 		if e.complexity.AuctionEvent.Leave == nil {
@@ -6451,7 +6460,14 @@ enum ProposalRejectionReason {
   CouldNotInstantiateMarket
   "Market proposal market contained invalid product definition"
   InvalidFutureProduct
-
+  "Market proposal is missing commitment amount"
+  MissingCommitmentAmount
+  "Market proposal have invalid fee amount"
+  InvalidFeeAmount
+  "Market proposal have one or more invalid shape"
+  InvalidShape
+  "Market proposal use an invalid risk parameter"
+  InvalidRiskParameter
 }
 
 "Reason for the order being rejected by the core node"
@@ -7322,6 +7338,8 @@ type AuctionEvent {
   auctionEnd: String!
   "What triggered the auction"
   trigger: AuctionTrigger!
+  "What, if anything, extended the ongoing auction"
+  extensionTrigger: AuctionTrigger
 }
 
 enum AuctionTrigger {
@@ -9522,6 +9540,37 @@ func (ec *executionContext) _AuctionEvent_trigger(ctx context.Context, field gra
 	res := resTmp.(AuctionTrigger)
 	fc.Result = res
 	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AuctionEvent_extensionTrigger(ctx context.Context, field graphql.CollectedField, obj *proto.AuctionEvent) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AuctionEvent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.AuctionEvent().ExtensionTrigger(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*AuctionTrigger)
+	fc.Result = res
+	return ec.marshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BuiltinAsset_id(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
@@ -26912,6 +26961,17 @@ func (ec *executionContext) _AuctionEvent(ctx context.Context, sel ast.Selection
 				}
 				return res
 			})
+		case "extensionTrigger":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._AuctionEvent_extensionTrigger(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -34892,6 +34952,30 @@ func (ec *executionContext) marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Asset(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, v interface{}) (AuctionTrigger, error) {
+	var res AuctionTrigger
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, sel ast.SelectionSet, v AuctionTrigger) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, v interface{}) (*AuctionTrigger, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx context.Context, sel ast.SelectionSet, v *AuctionTrigger) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

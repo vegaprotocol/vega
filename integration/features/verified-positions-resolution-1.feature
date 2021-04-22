@@ -1,13 +1,13 @@
 Feature: Position resolution case 1
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets:
+
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | market.auction.minimumDuration |
-      | 1                              |
+      | name                           | value  |
+      | market.auction.minimumDuration | 1      |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -71,7 +71,7 @@ Feature: Position resolution case 1
 # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-# now we check what's left in the orderbook
+# now we check what's left in the order book
 # we expect 1 order at price of 40 to be left there on the buy side
 # we sell a first time 1 to consume the book
 # then try to sell 1 again with low price -> result in no trades -> buy side empty

@@ -147,6 +147,14 @@ func (e *Engine) RemovePending(party string) {
 	delete(e.pendings, party)
 }
 
+func (e *Engine) GetLiquidityOrders(party string) []*types.Order {
+	orders := []*types.Order{}
+	for _, v := range e.liquidityOrders[party] {
+		orders = append(orders, v)
+	}
+	return orders
+}
+
 // GetInactiveParties returns a set of all the parties
 // with inactive commitment
 func (e *Engine) GetInactiveParties() map[string]struct{} {
@@ -223,7 +231,7 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
 }
 
-func (e *Engine) validateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
+func (e *Engine) ValidateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
 	// we check if the commitment is 0 which would mean this is a cancel
 	// a cancel does not need validations
 	if lp.CommitmentAmount == 0 {
@@ -276,7 +284,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
-	if err := e.validateLiquidityProvisionSubmission(lps); err != nil {
+	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
 		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
 		return err
 	}
@@ -334,21 +342,36 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvision_STATUS_PENDING
 	e.undeployedProvisions = true
+
+	e.buildLiquidityProvisionShapesReferences(lp, lps)
+
+	return nil
+}
+
+func (e *Engine) buildLiquidityProvisionShapesReferences(
+	lp *types.LiquidityProvision,
+	lps *types.LiquidityProvisionSubmission,
+) {
+	// this order is just a stub to send to the id generator,
+	// and get an ID assigned per references in the shapes
+	order := &types.Order{}
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
 	for _, buy := range lps.Buys {
+		e.idGen.SetID(order)
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
+			OrderId:        order.Id,
 			LiquidityOrder: buy,
 		})
 	}
 
 	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(lps.Sells))
 	for _, sell := range lps.Sells {
+		e.idGen.SetID(order)
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
+			OrderId:        order.Id,
 			LiquidityOrder: sell,
 		})
 	}
-
-	return nil
 }
 
 // LiquidityProvisionByPartyID returns the LP associated to a Party if any.
@@ -663,7 +686,6 @@ func (e *Engine) undeployOrdersFromShape(
 
 			// then we can delete the order from our mapping
 			delete(lm, ref.OrderId)
-			ref.OrderId = ""
 		}
 	}
 
@@ -713,15 +735,19 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 
 			// then we can delete the order from our mapping
 			delete(lm, ref.OrderId)
-			ref.OrderId = ""
 		}
 
 		// We either don't need this order anymore or
 		// we have just nothing to do about it.
-		// we check o.Price == 0 just to make sure we are able to price
-		// the order, in which case the size will have been calculated
-		// properly by the engine.
-		if o.LiquidityImpliedVolume == 0 || (order != nil && (!order.HasTraded()) || o.Price == 0) {
+		if o.LiquidityImpliedVolume == 0 ||
+			// we check if the order was not nil, which mean we alread had a deployed order
+			// if the order as not traded, and the size haven't changed, then we have nothing
+			// to do about it. If the size has changed, then we will want to recreate one.
+			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume)) ||
+			// we check o.Price == 0 just to make sure we are able to price
+			// the order, in which case the size will have been calculated
+			// properly by the engine.
+			o.Price == 0 {
 			continue
 		}
 
@@ -733,7 +759,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			Offset:    ref.LiquidityOrder.Offset,
 		}
 		order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
-		e.idGen.SetID(order)
+		order.Id = ref.OrderId
 		newOrders = append(newOrders, order)
 		lm[order.Id] = order
 		ref.OrderId = order.Id

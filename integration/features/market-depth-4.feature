@@ -1,14 +1,13 @@
 Feature: Test market depth events for pegged orders (cancelling pegged orders)
 
   Background:
-    Given the initial insurance pool balance is "0" for the markets:
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | market.auction.minimumDuration |
-      | 1                              |
+      | name                           | value  |
+      | market.auction.minimumDuration | 1      |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -27,17 +26,17 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | aux2             | BTC   | 100000000 |
 # setup pegged orders
     When the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset | price |
-      | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 100   |
-      | pegged2 | ETH/DEC19 | sell | 500    | MID       | 15     | 100   |
-      | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    | 100   |
-      | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    | 100   |
+      | trader  | market id | side | volume | reference | offset |
+      | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     |
+      | pegged2 | ETH/DEC19 | sell | 500    | MID       | 15     |
+      | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    |
+      | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    |
     Then I see the following order events:
       | trader  | market id | side | volume | reference | offset | price | status        |
-      | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 100   | STATUS_PARKED |
-      | pegged2 | ETH/DEC19 | sell | 500    | MID       | 15     | 100   | STATUS_PARKED |
-      | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    | 100   | STATUS_PARKED |
-      | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    | 100   | STATUS_PARKED |
+      | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 0     | STATUS_PARKED |
+      | pegged2 | ETH/DEC19 | sell | 500    | MID       | 15     | 0     | STATUS_PARKED |
+      | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    | 0     | STATUS_PARKED |
+      | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    | 0     | STATUS_PARKED |
 # keep things simple: remove the events we've just verified
     Given clear order events
 # setup orderbook

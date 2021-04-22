@@ -556,6 +556,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.2)
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
 	tm.mas.AuctionStarted(ctx)
@@ -678,8 +679,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	// Now attempt to amend the LP submission with something invalid
 	lps.Buys = nil
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
-	// We will not get an error because the previous submission will be re-used
-	require.NoError(t, err)
+	require.EqualError(t, err, "empty SIDE_BUY shape")
 
 	// Check that the original LP submission is still working fine
 	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("trader-A").String())
@@ -745,9 +745,10 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 	ctx := context.Background()
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 10*time.Second)
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 700000)
+	addAccountWithAmount(tm, "trader-A", 70000000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -777,13 +778,15 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
+	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_OPENING, tm.market.GetMarketData().Trigger)
 	// Leave the auction so we can uncross the book
-	now = now.Add(time.Second * 20)
-	tm.market.LeaveAuction(ctx, now)
+	now = now.Add(time.Second * 11)
 	tm.market.OnChainTimeUpdate(ctx, now)
+	// ensure we left auction
+	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, tm.market.GetMarketData().Trigger)
 
 	// Move the price enough that we go into a price auction
-	now = now.Add(time.Second * 20)
+	// now = now.Add(time.Second * 61)
 	o5 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
@@ -904,16 +907,13 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 	ctx := context.Background()
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second*10)
 
 	// Create a new trader account with very little funding
 	addAccountWithAmount(tm, "trader-A", 700000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
-	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
 	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 1000)
@@ -977,7 +977,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	assert.Equal(t, totalFunds, tm.market.GetTotalAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
 }
 
-func TestLpCanResubmitAfterBeingClosedOut(t *testing.T) {
+func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
@@ -1061,54 +1061,6 @@ func TestLpCanResubmitAfterBeingClosedOut(t *testing.T) {
 		}
 
 		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
-		}
-
-		require.Len(t, found, len(expectedStatus))
-
-		for k, v := range expectedStatus {
-			assert.Equal(t, v.String(), found[k].Status.String())
-		}
-	})
-
-	// now set the markprice
-	mpOrders := []*types.Order{
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        100,
-			Remaining:   100,
-			Price:       2000,
-			Side:        types.Side_SIDE_SELL,
-			PartyId:     party1,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-		{
-			Type:        types.Order_TYPE_LIMIT,
-			Size:        100,
-			Remaining:   100,
-			Price:       2000,
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     party0,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		},
-	}
-
-	// submit the auctions orders
-	tm.WithSubmittedOrders(t, mpOrders...)
-
-	// make sure LP order is cancelled
-	t.Run("expect commitment statuses", func(t *testing.T) {
-		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
-		for _, e := range tm.events {
-			switch evt := e.(type) {
-			case *events.LiquidityProvision:
-				lp := evt.LiquidityProvision()
-				found[lp.Id] = lp
-			}
-		}
-
-		expectedStatus := map[string]types.LiquidityProvision_Status{
 			"liquidity-submission-1": types.LiquidityProvision_STATUS_CANCELLED,
 		}
 
@@ -1118,41 +1070,6 @@ func TestLpCanResubmitAfterBeingClosedOut(t *testing.T) {
 			assert.Equal(t, v.String(), found[k].Status.String())
 		}
 	})
-
-	// now redeposit-funds
-	// log more
-	tm.WithAccountAndAmount(lpparty, 25000000)
-
-	tm.events = nil
-	// an re-submit the lp
-	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-2"),
-	)
-
-	// make sure LP order is deployed
-	t.Run("new LP order is active", func(t *testing.T) {
-		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
-		for _, e := range tm.events {
-			switch evt := e.(type) {
-			case *events.LiquidityProvision:
-				lp := evt.LiquidityProvision()
-				found[lp.Id] = lp
-			}
-		}
-
-		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-2": types.LiquidityProvision_STATUS_ACTIVE,
-		}
-
-		require.Len(t, found, len(expectedStatus))
-
-		for k, v := range expectedStatus {
-			assert.Equal(t, v.String(), found[k].Status.String())
-		}
-	})
-
 }
 
 func TestCloseOutLPTraderContIssue3086(t *testing.T) {
@@ -1489,7 +1406,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 			ctx, lpSubmission2, lpparty2, "liquidity-submission-2"),
 	)
 
-	t.Run("current liquidity fee is still 0.5", func(t *testing.T) {
+	t.Run("current liquidity fee is again 0.1", func(t *testing.T) {
 		// First collect all the orders events
 		found := types.Market{}
 		for _, e := range tm.events {
@@ -1654,11 +1571,11 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 		}
 
 		expect := map[string]uint64{
-			"V0000000000-0000000005": 214,
-			"V0000000000-0000000006": 3,
-			"V0000000000-0000000007": 3,
-			"V0000000000-0000000008": 5,
-			"V0000000000-0000000009": 197,
+			"V0000000000-0000000001": 214,
+			"V0000000000-0000000002": 3,
+			"V0000000000-0000000003": 3,
+			"V0000000000-0000000004": 5,
+			"V0000000000-0000000005": 197,
 		}
 
 		for id, v := range found {
@@ -1936,7 +1853,6 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 
 	tm.events = nil
 	t.Run("party place a new order which should unpark the pegged order", func(t *testing.T) {
-		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(10*time.Second))
 		o := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, party4, 10, 2400)
 		conf, err := tm.market.SubmitOrder(ctx, o)
 		assert.NoError(t, err)
@@ -1945,6 +1861,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 		conf2, err := tm.market.SubmitOrder(ctx, o2)
 		assert.NoError(t, err)
 		assert.NotNil(t, conf2)
+		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(10*time.Second))
 	})
 
 	t.Run("pegged order is REJECTED", func(t *testing.T) {

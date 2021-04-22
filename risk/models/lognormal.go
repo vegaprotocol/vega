@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"math"
 	"time"
 
@@ -8,6 +9,10 @@ import (
 	pd "code.vegaprotocol.io/quant/pricedistribution"
 	"code.vegaprotocol.io/quant/riskmodelbs"
 	types "code.vegaprotocol.io/vega/proto"
+)
+
+var (
+	ErrMissingLogNormalParameter = errors.New("missing log normal parameters")
 )
 
 // LogNormal represent a future risk model
@@ -23,6 +28,9 @@ type LogNormal struct {
 
 // NewBuiltinFutures instantiate a new builtin future
 func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, error) {
+	if pf.Params == nil {
+		return nil, ErrMissingLogNormalParameter
+	}
 	return &LogNormal{
 		riskAversionParameter: pf.RiskAversionParameter,
 		tau:                   pf.Tau,

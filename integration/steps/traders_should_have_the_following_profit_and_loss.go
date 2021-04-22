@@ -2,6 +2,7 @@ package steps
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/cucumber/godog/gherkin"
@@ -51,8 +52,19 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 }
 
 func errProfitAndLossValuesForTrader(pos []*types.Position, row pnlRow) error {
-	return fmt.Errorf("invalid positions api values for party(%v): volume (expected %v, got %v), unrealisedPNL (expected %v, got %v), realisedPNL (expected %v, got %v)",
-		row.trader(), row.volume(), pos[0].OpenVolume, row.unrealisedPNL(), pos[0].UnrealisedPnl, row.realisedPNL(), pos[0].RealisedPnl)
+	return formatDiff(
+		fmt.Sprintf("invalid positions values for party(%v)", row.trader()),
+		map[string]string{
+			"volume":         strconv.FormatInt(row.volume(), 10),
+			"unrealised PNL": strconv.FormatInt(row.unrealisedPNL(), 10),
+			"realised PNL":   strconv.FormatInt(row.realisedPNL(), 10),
+		},
+		map[string]string{
+			"volume":         strconv.FormatInt(pos[0].OpenVolume, 10),
+			"unrealised PNL": strconv.FormatInt(pos[0].UnrealisedPnl, 10),
+			"realised PNL":   strconv.FormatInt(pos[0].RealisedPnl, 10),
+		},
+	)
 }
 
 func errNoPositionForMarket(trader string) error {

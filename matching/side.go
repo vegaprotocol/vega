@@ -117,7 +117,7 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (uint64, uint64, error) {
 	return 0, 0, errors.New("no non pegged orders found on the book")
 }
 
-func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
+func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	priceLevelIndex := -1
 	orderIndex := -1
 	var oldOrder *types.Order
@@ -137,25 +137,25 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) error {
 	}
 
 	if oldOrder == nil || priceLevelIndex == -1 || orderIndex == -1 {
-		return types.ErrOrderNotFound
+		return 0, types.ErrOrderNotFound
 	}
 
 	if oldOrder.PartyId != orderAmend.PartyId {
-		return types.ErrOrderAmendFailure
+		return 0, types.ErrOrderAmendFailure
 	}
 
 	if oldOrder.Remaining < orderAmend.Size {
-		return types.ErrOrderAmendFailure
+		return 0, types.ErrOrderAmendFailure
 	}
 
 	if oldOrder.Reference != orderAmend.Reference {
-		return types.ErrOrderAmendFailure
+		return 0, types.ErrOrderAmendFailure
 	}
 
 	reduceBy := oldOrder.Remaining - orderAmend.Size
 	*s.levels[priceLevelIndex].orders[orderIndex] = *orderAmend
 	s.levels[priceLevelIndex].reduceVolume(reduceBy)
-	return nil
+	return reduceBy, nil
 }
 
 // ExtractOrders removes the orders from the top of the book until the volume amount is hit
@@ -277,10 +277,10 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 func (s *OrderBookSide) getPriceLevelIfExists(price uint64) *PriceLevel {
 	var i int
 	if s.side == types.Side_SIDE_BUY {
-		// buy side levels should be ordered in descending
+		// buy side levels should be ordered in ascending
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
 	} else {
-		// sell side levels should be ordered in ascending
+		// sell side levels should be ordered in descending
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
 	}
 

@@ -1,13 +1,13 @@
 package proto
 
-func (l *NewMarketCommitment) IntoSubmission(
+func (n *NewMarketCommitment) IntoSubmission(
 	market string) *LiquidityProvisionSubmission {
 	return &LiquidityProvisionSubmission{
 		MarketId:         market,
-		CommitmentAmount: l.CommitmentAmount,
-		Fee:              l.Fee,
-		Sells:            l.Sells,
-		Buys:             l.Buys,
-		Reference:        l.Reference,
+		CommitmentAmount: n.CommitmentAmount,
+		Fee:              n.Fee,
+		Sells:            n.Sells,
+		Buys:             n.Buys,
+		Reference:        n.Reference,
 	}
 }
