@@ -19,6 +19,9 @@ var (
 	ErrNotEnoughOrders   = errors.New("insufficient orders")
 	ErrOrderDoesNotExist = errors.New("order does not exist")
 	ErrInvalidVolume     = errors.New("invalid volume")
+	ErrNoBestBid         = errors.New("no best bid")
+	ErrNoBestAsk         = errors.New("no best ask")
+	ErrNotCrossed        = errors.New("not crossed")
 )
 
 // OrderBook represents the book holding all orders in the system.
@@ -324,23 +327,14 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (retprice uint64, retvol uint64, retside types.Side) {
-
-	bestBid, err := b.GetBestBidPrice()
-	if err != nil {
-		return 0, 0, types.Side_SIDE_UNSPECIFIED
-	}
-	bestAsk, err := b.GetBestAskPrice()
-	if err != nil {
-		return 0, 0, types.Side_SIDE_UNSPECIFIED
-	}
-
-	// Short circuit if the book is not crossed
-	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
-		return 0, 0, types.Side_SIDE_UNSPECIFIED
-	}
-
 	// Generate a set of price level pairs with their maximum tradable volumes
-	cumulativeVolumes, maxTradableAmount := b.buildCumulativePriceLevels(bestBid, bestAsk)
+	cumulativeVolumes, maxTradableAmount, err := b.buildCumulativePriceLevels()
+	if err != nil {
+		if b.log.GetLevel() <= logging.DebugLevel {
+			b.log.Debug("could not get cumulative price levels", logging.Error(err))
+		}
+		return 0, 0, types.Side_SIDE_UNSPECIFIED
+	}
 
 	// Pull out all prices that match that volume
 	prices := make([]uint64, 0, len(cumulativeVolumes))
@@ -376,22 +370,14 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice uint64, retvol uint6
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePrice() (retprice uint64) {
-	bestBid, err := b.GetBestBidPrice()
-	if err != nil {
-		return 0
-	}
-	bestAsk, err := b.GetBestAskPrice()
-	if err != nil {
-		return 0
-	}
-
-	// Short circuit if the book is not crossed
-	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
-		return 0
-	}
-
 	// Generate a set of price level pairs with their maximum tradable volumes
-	cumulativeVolumes, maxTradableAmount := b.buildCumulativePriceLevels(bestBid, bestAsk)
+	cumulativeVolumes, maxTradableAmount, err := b.buildCumulativePriceLevels()
+	if err != nil {
+		if b.log.GetLevel() <= logging.DebugLevel {
+			b.log.Debug("could not get cumulative price levels", logging.Error(err))
+		}
+		return 0
+	}
 
 	// Pull out all prices that match that volume
 	prices := make([]uint64, 0, len(cumulativeVolumes))
@@ -410,8 +396,23 @@ func (b *OrderBook) GetIndicativePrice() (retprice uint64) {
 
 // buildCumulativePriceLevels this returns a slice of all the price levels with the
 // cumulative volume for each level. Also returns the max tradable size
-func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) ([]CumulativeVolumeLevel, uint64) {
-	return b.indicativePriceAndVolume.GetCumulativePriceLevels(maxPrice, minPrice)
+func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint64, error) {
+	bestBid, err := b.GetBestBidPrice()
+	if err != nil {
+		return nil, 0, ErrNoBestBid
+	}
+	bestAsk, err := b.GetBestAskPrice()
+	if err != nil {
+		return nil, 0, ErrNoBestAsk
+	}
+	// Short circuit if the book is not crossed
+	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
+		return nil, 0, ErrNotCrossed
+	}
+
+	volume, maxTradableAmount := b.indicativePriceAndVolume.
+		GetCumulativePriceLevels(bestBid, bestAsk)
+	return volume, maxTradableAmount, nil
 }
 
 // Uncrosses the book to generate the maximum volume set of trades
@@ -599,29 +600,24 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		return err
 	}
 
-	var reduceBy uint64
+	var (
+		reduceBy uint64
+		side     *OrderBookSide = b.sell
+		err      error
+	)
 	if amendedOrder.Side == types.Side_SIDE_BUY {
-		var err error
-		if reduceBy, err = b.buy.amendOrder(amendedOrder); err != nil {
-			if b.log.GetLevel() == logging.DebugLevel {
-				b.log.Debug("Failed to amend (buy side)",
-					logging.Order(*amendedOrder),
-					logging.Error(err),
-					logging.String("order-book", b.marketID))
-			}
-			return err
+		side = b.buy
+	}
+
+	if reduceBy, err = side.amendOrder(amendedOrder); err != nil {
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Failed to amend (buy side)",
+				logging.Order(*amendedOrder),
+				logging.String("market", b.marketID),
+				logging.Error(err),
+			)
 		}
-	} else {
-		var err error
-		if reduceBy, err = b.sell.amendOrder(amendedOrder); err != nil {
-			if b.log.GetLevel() == logging.DebugLevel {
-				b.log.Debug("Failed to amend (sell side)",
-					logging.Order(*amendedOrder),
-					logging.Error(err),
-					logging.String("order-book", b.marketID))
-			}
-			return err
-		}
+		return err
 	}
 
 	if b.auction && reduceBy != 0 {
@@ -636,6 +632,11 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 // GetTrades returns the trades a given order generates if we were to submit it now
 // this is used to calculate fees, perform price monitoring, etc...
 func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
+	// this should always return straight away in an auction
+	if b.auction {
+		return nil, nil
+	}
+
 	if err := b.validateOrder(order); err != nil {
 		return nil, err
 	}
@@ -643,21 +644,15 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	if b.auction {
-		return nil, nil
-	}
-
 	_, trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
-
-	if err != nil {
-		if err == ErrWashTrade {
-			// we still want to submit this order, there might be trades coming out of it
-			return trades, nil
-		}
+	// it's fine for the error to be a wash trade here,
+	// it's just be stopped when really uncrossing.
+	if err != nil && err != ErrWashTrade {
 		// some random error happened, return both trades and error
 		// this is a case that isn't covered by the current SubmitOrder call
 		return trades, err
 	}
+
 	// no error uncrossing, in all other cases, return trades (could be empty) without an error
 	return trades, nil
 }
