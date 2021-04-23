@@ -213,7 +213,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 					return nil, ErrInvalidVolume
 				}
 			}
-			if toRemove > 0 {
+			for toRemove > 0 {
 				toRemove--
 				pricelevel.removeOrder(0)
 			}
