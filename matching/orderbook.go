@@ -424,66 +424,65 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		return nil, nil
 	}
 
-	var uncrossedOrder *types.OrderConfirmation
-	var allOrders []*types.OrderConfirmation
+	var (
+		err           error
+		uncrossOrders []*types.Order
+		opSide        *OrderBookSide
+	)
 
 	// Remove all the orders from that side of the book up to the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
 		// Pull out the trades we want to process
-		uncrossOrders, err := b.buy.ExtractOrders(price, volume)
+		uncrossOrders, err = b.buy.ExtractOrders(price, volume)
 		if err != nil {
 			return nil, err
 		}
-
-		// Uncross each one
-		for _, order := range uncrossOrders {
-			trades, affectedOrders, _, err := b.sell.uncross(order, false)
-
-			if err != nil {
-				return nil, err
-			}
-			// Update all the trades to have the correct uncrossing price
-			for index := 0; index < len(trades); index++ {
-				trades[index].Price = price
-			}
-			// If the affected order is fully filled set the status
-			for _, affectedOrder := range affectedOrders {
-				if affectedOrder.Remaining == 0 {
-					affectedOrder.Status = types.Order_STATUS_FILLED
-				}
-			}
-			uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
-			allOrders = append(allOrders, uncrossedOrder)
-		}
+		opSide = b.sell
 	} else {
 		// Pull out the trades we want to process
-		uncrossOrders, err := b.sell.ExtractOrders(price, volume)
+		uncrossOrders, err = b.sell.ExtractOrders(price, volume)
 		if err != nil {
 			return nil, err
 		}
+		opSide = b.buy
+	}
 
-		// Uncross each one
-		for _, order := range uncrossOrders {
-			trades, affectedOrders, _, err := b.buy.uncross(order, false)
+	return b.uncrossBookSide(uncrossOrders, opSide, price)
+}
 
-			if err != nil {
-				return nil, err
-			}
-			// Update all the trades to have the correct uncrossing price
-			for index := 0; index < len(trades); index++ {
-				trades[index].Price = price
-			}
-			// If the affected order is fully filled set the status
-			for _, affectedOrder := range affectedOrders {
-				if affectedOrder.Remaining == 0 {
-					affectedOrder.Status = types.Order_STATUS_FILLED
-				}
-			}
-			uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
-			allOrders = append(allOrders, uncrossedOrder)
+// Takes extracted order from a side of the book, and uncross them
+// with the opposite side.
+func (b *OrderBook) uncrossBookSide(
+	uncrossOrders []*types.Order,
+	opSide *OrderBookSide,
+	price uint64,
+) ([]*types.OrderConfirmation, error) {
+	var (
+		uncrossedOrder *types.OrderConfirmation
+		allOrders      []*types.OrderConfirmation
+	)
+	// Uncross each one
+	for _, order := range uncrossOrders {
+		trades, affectedOrders, _, err := opSide.uncross(order, false)
+
+		if err != nil {
+			return nil, err
 		}
+		// Update all the trades to have the correct uncrossing price
+		for index := 0; index < len(trades); index++ {
+			trades[index].Price = price
+		}
+		// If the affected order is fully filled set the status
+		for _, affectedOrder := range affectedOrders {
+			if affectedOrder.Remaining == 0 {
+				affectedOrder.Status = types.Order_STATUS_FILLED
+			}
+		}
+		uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
+		allOrders = append(allOrders, uncrossedOrder)
 	}
 	return allOrders, nil
+
 }
 
 func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
