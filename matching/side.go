@@ -388,60 +388,38 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		impactedOrders    []*types.Order
 		lastTradedPrice   uint64
 		totalVolumeToFill uint64
+		checkPrice        func(uint64) bool
 	)
 
-	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
-		if agg.Side == types.Side_SIDE_SELL {
-			// Process these backwards
-			for i := len(s.levels) - 1; i >= 0; i-- {
-				level := s.levels[i]
-				if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-					// We have to process every order to check for wash trades
-					for _, order := range level.orders {
-						// Check for wash trading
-						if agg.PartyId == order.PartyId {
-							// Stop the order and return
-							agg.Status = types.Order_STATUS_STOPPED
-							return nil, nil, 0, ErrWashTrade
-						}
-						// in case of network trades, we want to calculate an accurate average price to return
-						totalVolumeToFill += order.Remaining
+	if agg.Side == types.Side_SIDE_SELL {
+		checkPrice = func(levelPrice uint64) bool { return levelPrice >= agg.Price }
+	} else {
+		checkPrice = func(levelPrice uint64) bool { return levelPrice <= agg.Price }
+	}
 
-						if totalVolumeToFill >= agg.Remaining {
-							break
-						}
+	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
+		// Process these backwards
+		for i := len(s.levels) - 1; i >= 0; i-- {
+			level := s.levels[i]
+			if checkPrice(level.price) || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
+				// We have to process every order to check for wash trades
+				for _, order := range level.orders {
+					// Check for wash trading
+					if agg.PartyId == order.PartyId {
+						// Stop the order and return
+						agg.Status = types.Order_STATUS_STOPPED
+						return nil, nil, 0, ErrWashTrade
 					}
-				}
-				if totalVolumeToFill >= agg.Remaining {
-					break
+					// in case of network trades, we want to calculate an accurate average price to return
+					totalVolumeToFill += order.Remaining
+
+					if totalVolumeToFill >= agg.Remaining {
+						break
+					}
 				}
 			}
-		}
-
-		if agg.Side == types.Side_SIDE_BUY {
-			for i := len(s.levels) - 1; i >= 0; i-- {
-				level := s.levels[i]
-				// in case of network trades, we want to calculate an accurate average price to return
-				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-					// We have to process every order to check for wash trades
-					for _, order := range level.orders {
-						// Check for wash trading
-						if agg.PartyId == order.PartyId {
-							// Stop the order and return
-							agg.Status = types.Order_STATUS_STOPPED
-							return nil, nil, 0, ErrWashTrade
-						}
-						totalVolumeToFill += level.volume
-
-						// No need to keep looking once we pass the required amount
-						if totalVolumeToFill >= agg.Remaining {
-							break
-						}
-					}
-				}
-				if totalVolumeToFill >= agg.Remaining {
-					break
-				}
+			if totalVolumeToFill >= agg.Remaining {
+				break
 			}
 		}
 
@@ -463,76 +441,38 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		err     error
 	)
 
-	if agg.Side == types.Side_SIDE_SELL {
-		// in here we iterate from the end, as it's easier to remove the
-		// price levels from the back of the slice instead of from the front
-		// also it will allow us to reduce allocations
-		for !filled && idx >= 0 {
-			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
-				trades = append(trades, ntrades...)
-				impactedOrders = append(impactedOrders, nimpact...)
-				// break if a wash trade is detected
-				if err != nil && err == ErrWashTrade {
-					break
-				}
-				if len(s.levels[idx].orders) <= 0 {
-					idx--
-				}
-			} else {
+	// in here we iterate from the end, as it's easier to remove the
+	// price levels from the back of the slice instead of from the front
+	// also it will allow us to reduce allocations
+	for !filled && idx >= 0 {
+		if checkPrice(s.levels[idx].price) || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
+			filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
+			trades = append(trades, ntrades...)
+			impactedOrders = append(impactedOrders, nimpact...)
+			// break if a wash trade is detected
+			if err != nil && err == ErrWashTrade {
 				break
 			}
-		}
-
-		// now we nil the price levels that have been completely emptied out
-		// then we resize the slice
-		if idx < 0 || len(s.levels[idx].orders) > 0 {
-			// do not remove this one as it's not emptied already
-			idx++
-		}
-		if idx < len(s.levels) {
-			// nil out the pricelevels so they get collected at some point
-			for i := idx; i < len(s.levels); i++ {
-				s.levels[i] = nil
+			if len(s.levels[idx].orders) <= 0 {
+				idx--
 			}
-			s.levels = s.levels[:idx]
+		} else {
+			break
 		}
 	}
 
-	if agg.Side == types.Side_SIDE_BUY {
-		// in here we iterate from the end, as it's easier to remove the
-		// price levels from the back of the slice instead of from the front
-		// also it will allow us to reduce allocations
-		for !filled && idx >= 0 {
-			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
-				trades = append(trades, ntrades...)
-				impactedOrders = append(impactedOrders, nimpact...)
-				if err != nil && err == ErrWashTrade {
-					break
-				}
-				if len(s.levels[idx].orders) <= 0 {
-					idx--
-				}
-			} else {
-				break
-			}
+	// now we nil the price levels that have been completely emptied out
+	// then we resize the slice
+	if idx < 0 || len(s.levels[idx].orders) > 0 {
+		// do not remove this one as it's not emptied already
+		idx++
+	}
+	if idx < len(s.levels) {
+		// nil out the pricelevels so they get collected at some point
+		for i := idx; i < len(s.levels); i++ {
+			s.levels[i] = nil
 		}
-
-		// now we nil the price levels that have been completely emptied out
-		// then we resize the slice
-		// idx can be < to 0 if we went through all price levels
-		if idx < 0 || len(s.levels[idx].orders) > 0 {
-			// do not remove this one as it's not emptied already
-			idx++
-		}
-		if idx < len(s.levels) {
-			// nil out the pricelevels so they get collected at some point
-			for i := idx; i < len(s.levels); i++ {
-				s.levels[i] = nil
-			}
-			s.levels = s.levels[:idx]
-		}
+		s.levels = s.levels[:idx]
 	}
 
 	if agg.Type == types.Order_TYPE_NETWORK {
