@@ -611,7 +611,8 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 
 	if reduceBy, err = side.amendOrder(amendedOrder); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
-			b.log.Debug("Failed to amend (buy side)",
+			b.log.Debug("Failed to amend",
+				logging.String("side", amendedOrder.Side.String()),
 				logging.Order(*amendedOrder),
 				logging.String("market", b.marketID),
 				logging.Error(err),
