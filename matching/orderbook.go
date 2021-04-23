@@ -93,7 +93,6 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 // GetCloseoutPrice returns the exit price which would be achieved for a given
 // volume and give side of the book
 func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
-	var price uint64
 	if b.auction {
 		p := b.GetIndicativePrice()
 		return p, nil
@@ -102,31 +101,18 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 	if volume == 0 {
 		return 0, ErrInvalidVolume
 	}
-	vol := volume
+
+	var (
+		price  uint64
+		vol    = volume
+		levels []*PriceLevel
+	)
 	if side == types.Side_SIDE_SELL {
-		levels := b.sell.getLevels()
-		for i := len(levels) - 1; i >= 0; i-- {
-			lvl := levels[i]
-			if lvl.volume >= vol {
-				price += lvl.price * vol
-				return price / volume, nil
-			}
-			price += lvl.price * lvl.volume
-			vol -= lvl.volume
-		}
-		// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
-		// still return the price for the volume we could close out, so the caller can make a decision on what to do
-		if vol == volume {
-			return b.lastTradedPrice, ErrNotEnoughOrders
-		}
-		price = price / (volume - vol)
-		if vol != 0 {
-			return price, ErrNotEnoughOrders
-		}
-		return price, nil
+		levels = b.sell.getLevels()
+	} else {
+		levels = b.buy.getLevels()
 	}
-	// side == buy
-	levels := b.buy.getLevels()
+
 	for i := len(levels) - 1; i >= 0; i-- {
 		lvl := levels[i]
 		if lvl.volume >= vol {
@@ -136,7 +122,8 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		price += lvl.price * lvl.volume
 		vol -= lvl.volume
 	}
-	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
+	// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
+	// still return the price for the volume we could close out, so the caller can make a decision on what to do
 	if vol == volume {
 		return b.lastTradedPrice, ErrNotEnoughOrders
 	}
