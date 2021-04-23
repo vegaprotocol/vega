@@ -92,6 +92,9 @@ models:
         resolver: true
   Proposal:
     model: code.vegaprotocol.io/vega/proto.GovernanceData
+    fields:
+      votes:
+        resolver: true
   ProposalTerms:
     model: code.vegaprotocol.io/vega/proto.ProposalTerms
   NewMarket:

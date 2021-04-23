@@ -287,5 +287,9 @@ message Vote {
   // Identifier of the proposal being voted on
   string proposal_id = 3 [(validator.field) = {string_not_empty : true}];
   // Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network
-  int64 timestamp  = 4;
+  int64 timestamp = 4;
+  // Total number of governance token for the party that casted the vote
+  uint64 total_governance_token_balance = 5;
+  // The weight of this vote based on the total of governance token
+  string total_governance_token_weight = 6;
 }

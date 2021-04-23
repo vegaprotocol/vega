@@ -43,6 +43,18 @@ func (v *Vote) Value() types.Vote_Value {
 	return v.v.Value
 }
 
+// TotalGovernanceTokenBalance returns the total balance of token used for this
+// vote
+func (v *Vote) TotalGovernanceTokenBalance() uint64 {
+	return v.v.TotalGovernanceTokenBalance
+}
+
+// TotalGovernanceTokenWeight returns the total weight of token used for this
+// vote
+func (v *Vote) TotalGovernanceTokenWeight() string {
+	return v.v.TotalGovernanceTokenWeight
+}
+
 func (v Vote) Proto() types.Vote {
 	return v.v
 }

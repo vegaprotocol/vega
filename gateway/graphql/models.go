@@ -568,6 +568,24 @@ type ProposalVote struct {
 	ProposalID string `json:"proposalId"`
 }
 
+type ProposalVoteSide struct {
+	// All votes casted for this side
+	Votes []*proto.Vote `json:"votes"`
+	// Total number of votes casted for this side
+	TotalNumber string `json:"totalNumber"`
+	// Total weight of governance token from the votes casted for this side
+	TotalWeight string `json:"totalWeight"`
+	// Total tokens of governance token from the votes casted for this side
+	TotalTokens string `json:"totalTokens"`
+}
+
+type ProposalVotes struct {
+	// Yes votes cast for this proposal
+	Yes *ProposalVoteSide `json:"yes"`
+	// No votes cast for this proposal
+	No *ProposalVoteSide `json:"no"`
+}
+
 type RiskParametersInput struct {
 	// Simple risk model parameters. Set only if risk model is Simple
 	Simple *SimpleRiskModelParamsInput `json:"simple"`
