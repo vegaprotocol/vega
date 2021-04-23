@@ -180,7 +180,7 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		j := ln - i
 		// reset just to make sure
 		cumulativeVolumes[j].bidVolume = 0
-		cumulativeVolumes[j].askVolume = 0
+		cumulativeVolumes[i].askVolume = 0
 
 		// always set the price
 		cumulativeVolumes[i].price = rangedLevels[i].price
