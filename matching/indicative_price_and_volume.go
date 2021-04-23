@@ -175,12 +175,18 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		ln                = len(rangedLevels) - 1
 	)
 
+	half := ln / 2
 	// now we iterate other all the OK price levels
 	for i := ln; i >= 0; i-- {
 		j := ln - i
 		// reset just to make sure
 		cumulativeVolumes[j].bidVolume = 0
 		cumulativeVolumes[i].askVolume = 0
+
+		if j < i {
+			cumulativeVolumes[j].cumulativeAskVolume = 0
+			cumulativeVolumes[i].cumulativeBidVolume = 0
+		}
 
 		// always set the price
 		cumulativeVolumes[i].price = rangedLevels[i].price
@@ -214,9 +220,11 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		// 120   | 13   | 5   | 5   | 5    | 5
 		// 130   | 11   | 6   | 6   | 6    | 0
 		// 150   | 10   | 0   | 0   | 0    | 0
-		cumulativeVolumes[i].maxTradableAmount = min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
-		cumulativeVolumes[j].maxTradableAmount = min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
-		maxTradable = max(maxTradable, max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
+		if j >= half {
+			cumulativeVolumes[i].maxTradableAmount = min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
+			cumulativeVolumes[j].maxTradableAmount = min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
+			maxTradable = max(maxTradable, max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
+		}
 	}
 
 	return cumulativeVolumes, maxTradable
