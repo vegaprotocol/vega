@@ -5634,10 +5634,10 @@ type OracleSpec {
 
 "Status describe the status of the oracle spec"
 enum OracleSpecStatus {
-  "STATUS_ACTIVE describes an active oracle spec."
+  "StatusActive describes an active oracle spec."
   StatusActive
   """
-  STATUS_ACTIVE describes an oracle spec that is not listening to data
+  StatusUnused describes an oracle spec that is not listening to data
   anymore.
   """
   StatusUnused
@@ -6677,59 +6677,59 @@ enum OrderRejectionReason {
 
 enum OrderType {
   "the default order type"
-  MARKET
+  Market
 
   "mentioned in ticket, but as yet unused order type"
-  LIMIT
+  Limit
 
   """
   Used for distressed traders, an order placed by the network to close out distressed traders
-  similar to MARKET order, only no party is attached to the order.
+  similar to Market order, only no party is attached to the order.
   """
-  NETWORK
+  Network
 }
 
 "The current state of a market"
 enum MarketState {
   "The Governance proposal valid and accepted"
-  PROPOSED
+  Proposed
   "Outcome of governance votes is to reject the market"
-  REJECTED
+  Rejected
   "Governance vote passes/wins"
-  PENDING
+  Pending
   """
   Market triggers cancellation condition or governance
   votes to close before market becomes Active
   """
-  CANCELLED
+  Cancelled
   "Enactment date reached and usual auction exit checks pass"
-  ACTIVE
+  Active
   "Price monitoring or liquidity monitoring trigger"
-  SUSPENDED
+  Suspended
   "Governance vote (to close)"
-  CLOSED
+  Closed
   """
   Defined by the product (i.e. from a product parameter,
   specified in market definition, giving close date/time)
   """
-  TRADING_TERMINATED
+  TradingTerminated
   "Settlement triggered and completed as defined by product"
-  SETTLED
+  Settled
 }
 
 "What market trading mode are we in"
 enum MarketTradingMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
-  CONTINUOUS
+  Continuous
 
   "Auction trading where orders are uncrossed at the end of the opening auction period"
-  OPENING_AUCTION
+  OpeningAuction
 
   "Auction as normal trading mode for the market, where orders are uncrossed periodically"
-  BATCH_AUCTION
+  BatchAuction
 
   "Auction triggered by price/liquidity monitoring"
-  MONITORING_AUCTION
+  MonitoringAuction
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -7266,10 +7266,10 @@ type PreparedProposal {
 }
 
 enum VoteValue {
-  "NO reject a proposal"
-  NO
-  "YES accept a proposal"
-  YES
+  "No reject a proposal"
+  No
+  "Yes accept a proposal"
+  Yes
 }
 
 type Vote {
