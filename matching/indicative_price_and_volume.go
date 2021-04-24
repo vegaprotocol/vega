@@ -175,26 +175,56 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		ln                = len(rangedLevels) - 1
 	)
 
+	half := ln / 2
 	// now we iterate other all the OK price levels
 	for i := ln; i >= 0; i-- {
 		j := ln - i
+		// reset just to make sure
+		cumulativeVolumes[j].bidVolume = 0
+		cumulativeVolumes[i].askVolume = 0
+
+		if j < i {
+			cumulativeVolumes[j].cumulativeAskVolume = 0
+			cumulativeVolumes[i].cumulativeBidVolume = 0
+		}
+
+		// always set the price
 		cumulativeVolumes[i].price = rangedLevels[i].price
+
+		// if we had a price level in the bug side, use it
 		if rangedLevels[j].buypl != nil {
 			cumulativeVolumeBuy += rangedLevels[j].buypl.volume
 			cumulativeVolumes[j].bidVolume = rangedLevels[j].buypl.volume
 		}
 
+		// same same
 		if rangedLevels[i].sellpl != nil {
 			cumulativeVolumeSell += rangedLevels[i].sellpl.volume
 			cumulativeVolumes[i].askVolume = rangedLevels[i].sellpl.volume
-
 		}
+
+		// this will always erase the previous values
 		cumulativeVolumes[j].cumulativeBidVolume = cumulativeVolumeBuy
 		cumulativeVolumes[i].cumulativeAskVolume = cumulativeVolumeSell
 
-		cumulativeVolumes[i].maxTradableAmount = min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
-		cumulativeVolumes[j].maxTradableAmount = min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
-		maxTradable = max(maxTradable, max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
+		// we just do that
+		// price | sell | buy | vol | ibuy | isell
+		// 100   | 0    | 1   | 0   | 0    | 0
+		// 110   | 14   | 2   | 2   | 0    | 2
+		// 120   | 13   | 5   | 5   | 5    | 0
+		// 130   | 10   | 0   | 0   | 0    | 0
+		// or we just do that
+		// price | sell | buy | vol | ibuy | isell
+		// 100   | 0    | 1   | 0   | 0    | 0
+		// 110   | 14   | 2   | 2   | 0    | 2
+		// 120   | 13   | 5   | 5   | 5    | 5
+		// 130   | 11   | 6   | 6   | 6    | 0
+		// 150   | 10   | 0   | 0   | 0    | 0
+		if j >= half {
+			cumulativeVolumes[i].maxTradableAmount = min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
+			cumulativeVolumes[j].maxTradableAmount = min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
+			maxTradable = max(maxTradable, max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
+		}
 	}
 
 	return cumulativeVolumes, maxTradable

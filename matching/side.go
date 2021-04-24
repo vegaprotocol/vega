@@ -65,12 +65,8 @@ func (s *OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, 0, errors.New("no orders on the book")
 	}
-	for i := len(s.levels) - 1; i >= 0; i-- {
-		if lvl := s.levels[i]; lvl.price > 0 && lvl.volume > 0 {
-			return lvl.price, lvl.volume, nil
-		}
-	}
-	return 0, 0, errors.New("no orders on the book")
+	last := len(s.levels) - 1
+	return s.levels[last].price, s.levels[last].volume, nil
 }
 
 // BestStaticPrice returns the top of book price for non pegged orders
