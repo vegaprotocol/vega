@@ -436,14 +436,18 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		// Pull out the trades we want to process
 		uncrossOrders, err = b.buy.ExtractOrders(price, volume)
 		if err != nil {
-			return nil, err
+			b.log.Panic("Failed to extract buy side orders for uncrossing",
+				logging.Uint64("price", price),
+				logging.Uint64("volume", volume))
 		}
 		opSide = b.sell
 	} else {
 		// Pull out the trades we want to process
 		uncrossOrders, err = b.sell.ExtractOrders(price, volume)
 		if err != nil {
-			return nil, err
+			b.log.Panic("Failed to extract sell side orders for uncrossing",
+				logging.Uint64("price", price),
+				logging.Uint64("volume", volume))
 		}
 		opSide = b.buy
 	}
