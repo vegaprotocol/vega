@@ -426,33 +426,27 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	}
 
 	var (
-		err           error
-		uncrossOrders []*types.Order
-		opSide        *OrderBookSide
+		err            error
+		uncrossOrders  []*types.Order
+		uncrossingSide *OrderBookSide
 	)
 
-	// Remove all the orders from that side of the book up to the given volume
 	if uncrossSide == types.Side_SIDE_BUY {
-		// Pull out the trades we want to process
-		uncrossOrders, err = b.buy.ExtractOrders(price, volume)
-		if err != nil {
-			b.log.Panic("Failed to extract buy side orders for uncrossing",
-				logging.Uint64("price", price),
-				logging.Uint64("volume", volume))
-		}
-		opSide = b.sell
+		uncrossingSide = b.buy
 	} else {
-		// Pull out the trades we want to process
-		uncrossOrders, err = b.sell.ExtractOrders(price, volume)
-		if err != nil {
-			b.log.Panic("Failed to extract sell side orders for uncrossing",
-				logging.Uint64("price", price),
-				logging.Uint64("volume", volume))
-		}
-		opSide = b.buy
+		uncrossingSide = b.sell
 	}
 
-	return b.uncrossBookSide(uncrossOrders, opSide, price)
+	// Remove all the orders from that side of the book up to the given volume
+	uncrossOrders, err = uncrossingSide.ExtractOrders(price, volume)
+	if err != nil {
+		b.log.Panic("Failed to extract side orders for uncrossing",
+			logging.String("side", uncrossSide.String()),
+			logging.Uint64("price", price),
+			logging.Uint64("volume", volume))
+	}
+
+	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price)
 }
 
 // Takes extracted order from a side of the book, and uncross them
