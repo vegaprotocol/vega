@@ -121,7 +121,7 @@ http:
     - selector: api.v1.TradingDataService.Deposit
       get: '/deposits/{id}'
     - selector: api.v1.TradingDataService.Deposits
-      get: '/deposits/party/{party_id}'
+      get: '/parties/{party_id}/deposits'
 
     # Governance
     - selector: api.v1.TradingService.PrepareProposal
