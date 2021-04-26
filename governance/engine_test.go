@@ -35,7 +35,7 @@ type tstEngine struct {
 	ctrl            *gomock.Controller
 	accounts        *mocks.MockAccounts
 	broker          *mocks.MockBroker
-	erc             *mocks.MockExtResChecker
+	witness         *mocks.MockWitness
 	assets          *mocks.MockAssets
 	netp            *netparams.Store
 	proposalCounter uint // to streamline proposal generation
@@ -947,7 +947,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	accounts := mocks.NewMockAccounts(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	broker := mocks.NewMockBroker(ctrl)
-	erc := mocks.NewMockExtResChecker(ctrl)
+	witness := mocks.NewMockWitness(ctrl)
 
 	log := logging.NewTestLogger()
 	broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -955,7 +955,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	_ = netp.Update(context.Background(), netparams.GovernanceProposalMarketMinVoterBalance, "1")
 	now := time.Now()
 	now = now.Truncate(time.Second)
-	eng, err := governance.NewEngine(log, cfg, accounts, broker, assets, erc, netp, now) // started as a validator
+	eng, err := governance.NewEngine(log, cfg, accounts, broker, assets, witness, netp, now) // started as a validator
 	assert.NotNil(t, eng)
 	assert.NoError(t, err)
 	return &tstEngine{
@@ -964,7 +964,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 		accounts: accounts,
 		broker:   broker,
 		assets:   assets,
-		erc:      erc,
+		witness:  witness,
 		netp:     netp,
 	}
 }

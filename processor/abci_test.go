@@ -54,7 +54,7 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 		proc.assets,
 		proc.bank,
 		nil, // broker
-		proc.erc,
+		proc.witness,
 		proc.evtfwd,
 		proc.eng,
 		proc.cmd,

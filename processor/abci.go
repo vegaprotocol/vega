@@ -44,7 +44,7 @@ type App struct {
 	banking  Banking
 	broker   Broker
 	cmd      Commander
-	erc      ExtResChecker
+	witness  Witness
 	evtfwd   EvtForwarder
 	exec     ExecutionEngine
 	ghandler *genesis.Handler
@@ -64,7 +64,7 @@ func NewApp(
 	assets Assets,
 	banking Banking,
 	broker Broker,
-	erc ExtResChecker,
+	witness Witness,
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
 	cmd Commander,
@@ -95,7 +95,7 @@ func NewApp(
 		banking:  banking,
 		broker:   broker,
 		cmd:      cmd,
-		erc:      erc,
+		witness:  witness,
 		evtfwd:   evtfwd,
 		exec:     exec,
 		ghandler: ghandler,
@@ -512,7 +512,7 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return app.erc.AddNodeCheck(ctx, vote)
+	return app.witness.AddNodeCheck(ctx, vote)
 }
 
 func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) error {

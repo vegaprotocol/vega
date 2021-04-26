@@ -53,9 +53,9 @@ type TimeService interface {
 	GetTimeNow() (time.Time, error)
 }
 
-// ExtResChecker ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ext_res_checker_mock.go -package mocks code.vegaprotocol.io/vega/governance ExtResChecker
-type ExtResChecker interface {
+// Witness ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/governance Witness
+type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 }
 
@@ -92,14 +92,14 @@ func NewEngine(
 	accs Accounts,
 	broker Broker,
 	assets Assets,
-	erc ExtResChecker,
+	witness Witness,
 	netp NetParams,
 	now time.Time,
 ) (*Engine, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
 	// ensure params are set
-	nodeValidation, err := NewNodeValidation(log, assets, now, erc)
+	nodeValidation, err := NewNodeValidation(log, assets, now, witness)
 	if err != nil {
 		return nil, err
 	}

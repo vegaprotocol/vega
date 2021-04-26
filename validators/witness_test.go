@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testExtResChecker struct {
-	*validators.ExtResChecker
+type testWitness struct {
+	*validators.Witness
 	ctrl      *gomock.Controller
 	top       *mocks.MockValidatorTopology
 	cmd       *mocks.MockCommander
@@ -23,7 +23,7 @@ type testExtResChecker struct {
 	startTime time.Time
 }
 
-func getTestExtResChecker(t *testing.T) *testExtResChecker {
+func getTestWitness(t *testing.T) *testWitness {
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
@@ -32,17 +32,17 @@ func getTestExtResChecker(t *testing.T) *testExtResChecker {
 	now := time.Now()
 	tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	nv := validators.NewExtResChecker(
+	w := validators.NewWitness(
 		logging.NewTestLogger(), validators.NewDefaultConfig(), top, cmd, tsvc)
-	assert.NotNil(t, nv)
+	assert.NotNil(t, w)
 
-	return &testExtResChecker{
-		ExtResChecker: nv,
-		ctrl:          ctrl,
-		top:           top,
-		cmd:           cmd,
-		tsvc:          tsvc,
-		startTime:     now,
+	return &testWitness{
+		Witness:   w,
+		ctrl:      ctrl,
+		top:       top,
+		cmd:       cmd,
+		tsvc:      tsvc,
+		startTime: now,
 	}
 }
 
@@ -59,7 +59,7 @@ func TestExtResCheck(t *testing.T) {
 }
 
 func testStartErrorDuplicate(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -77,7 +77,7 @@ func testStartErrorDuplicate(t *testing.T) {
 }
 
 func testStartErrorCheckFailed(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -93,7 +93,7 @@ func testStartErrorCheckFailed(t *testing.T) {
 }
 
 func testStartOK(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -109,7 +109,7 @@ func testStartOK(t *testing.T) {
 }
 
 func testNodeVoteInvalidProposalReference(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -128,7 +128,7 @@ func testNodeVoteInvalidProposalReference(t *testing.T) {
 }
 
 func testNodeVoteNotAValidator(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -148,7 +148,7 @@ func testNodeVoteNotAValidator(t *testing.T) {
 }
 
 func testNodeVoteOK(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -168,7 +168,7 @@ func testNodeVoteOK(t *testing.T) {
 }
 
 func testNodeVoteDuplicateVote(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -194,7 +194,7 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 }
 
 func testOnChainTimeUpdate(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -245,7 +245,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 }
 
 func testOnChainTimeUpdateNonValidator(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 

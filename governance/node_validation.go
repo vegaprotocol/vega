@@ -34,7 +34,7 @@ type NodeValidation struct {
 	assets           Assets
 	currentTimestamp time.Time
 	nodeProposals    []*nodeProposal
-	erc              ExtResChecker
+	witness          Witness
 }
 
 type nodeProposal struct {
@@ -55,14 +55,14 @@ func NewNodeValidation(
 	log *logging.Logger,
 	assets Assets,
 	now time.Time,
-	erc ExtResChecker,
+	witness Witness,
 ) (*NodeValidation, error) {
 	return &NodeValidation{
 		log:              log,
 		nodeProposals:    []*nodeProposal{},
 		assets:           assets,
 		currentTimestamp: now,
-		erc:              erc,
+		witness:          witness,
 	}, nil
 }
 
@@ -169,7 +169,8 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 	}
 	n.nodeProposals = append(n.nodeProposals, np)
 
-	return n.erc.StartCheck(np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
+	return n.witness.StartCheck(
+		np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
 }
 
 func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
