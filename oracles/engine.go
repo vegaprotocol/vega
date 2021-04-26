@@ -45,7 +45,7 @@ func NewEngine(
 }
 
 // UpdateCurrentTime listens to update of the current Vega time.
-func (e *Engine) UpdateCurrentTime(ctx context.Context, ts time.Time) {
+func (e *Engine) UpdateCurrentTime(_ context.Context, ts time.Time) {
 	e.CurrentTime = ts
 }
 
@@ -101,7 +101,7 @@ func (e *Engine) Unsubscribe(ctx context.Context, id SubscriptionID) {
 // This may be a subscription to a brand new oracle spec, or an additional one.
 func (e *Engine) sendNewOracleSpecSubscription(ctx context.Context, update updatedSubscription) {
 	specAsProto := update.specProto
-	specAsProto.CreatedAt = update.specActivatedAt.Unix()
+	specAsProto.CreatedAt = update.specActivatedAt.UnixNano()
 	specAsProto.Status = oraclespb.OracleSpec_STATUS_ACTIVE
 	e.broker.Send(events.NewOracleSpecEvent(ctx, specAsProto))
 }
@@ -111,7 +111,7 @@ func (e *Engine) sendNewOracleSpecSubscription(ctx context.Context, update updat
 // This may be a subscription to a brand new oracle spec, or an additional one.
 func (e *Engine) sendOracleSpecDeactivation(ctx context.Context, update updatedSubscription) {
 	specAsProto := update.specProto
-	specAsProto.CreatedAt = update.specActivatedAt.Unix()
+	specAsProto.CreatedAt = update.specActivatedAt.UnixNano()
 	specAsProto.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
 	e.broker.Send(events.NewOracleSpecEvent(ctx, specAsProto))
 }
@@ -137,7 +137,7 @@ func (e *Engine) sendOracleDataBroadcast(ctx context.Context, data OracleData, s
 		PubKeys:        data.PubKeys,
 		Data:           payload,
 		MatchedSpecIds: ids,
-		BroadcastAt:    e.CurrentTime.Unix(),
+		BroadcastAt:    e.CurrentTime.UnixNano(),
 	}
 	e.broker.Send(events.NewOracleDataEvent(ctx, dataProto))
 }
