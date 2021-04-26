@@ -12,8 +12,8 @@ import (
 	"code.vegaprotocol.io/vega/oracles/mocks"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 

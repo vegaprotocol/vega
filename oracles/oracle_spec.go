@@ -12,10 +12,10 @@ var (
 	// ErrMissingPubKeys is returned when the oraclespb.OracleSpec is missing
 	// its public keys.
 	ErrMissingPubKeys = errors.New("public keys are required")
-	// ErrMissingFilters is returned when the oraclespb.OracleSpec
+	// ErrAtLeastOneFilterIsRequired is returned when the oraclespb.OracleSpec
 	// has no expected properties nor filters. At least one of these should be
 	// defined.
-	ErrMissingFilters = errors.New("at least one filter is required")
+	ErrAtLeastOneFilterIsRequired = errors.New("at least one filter is required")
 	// ErrInvalidTimestamp is returned when the timestamp has a negative value
 	// which may happen in case of unsigned integer overflow.
 	ErrInvalidTimestamp = errors.New("invalid timestamp")
@@ -61,7 +61,7 @@ func NewOracleSpec(proto oraclespb.OracleSpec) (*OracleSpec, error) {
 	}
 
 	if len(proto.Filters) == 0 {
-		return nil, ErrMissingFilters
+		return nil, ErrAtLeastOneFilterIsRequired
 	}
 
 	typedFilters := map[string]*filter{}
