@@ -92,7 +92,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		wallet{pubKey},
 	)
 
-	erc := validators.NewExtResChecker(
+	witness := validators.NewWitness(
 		log,
 		validators.NewDefaultConfig(),
 		topology,
@@ -104,7 +104,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		log,
 		banking.NewDefaultConfig(),
 		collateral,
-		erc,
+		witness,
 		timeService,
 		assets,
 		notary,
@@ -137,7 +137,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		assets,
 		banking,
 		broker,
-		erc,
+		witness,
 		evtfwd,
 		exec,
 		commander,

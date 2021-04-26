@@ -494,7 +494,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
 
-	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
+	l.erc = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 

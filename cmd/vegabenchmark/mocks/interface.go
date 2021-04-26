@@ -34,8 +34,8 @@ type Notary interface {
 	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination ext_res_checker_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks ExtResChecker
-type ExtResChecker interface {
+//go:generate go run github.com/golang/mock/mockgen -destination witness_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Witness
+type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 	AddNodeCheck(ctx context.Context, nv *types.NodeVote) error
 }

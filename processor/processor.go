@@ -132,9 +132,9 @@ type Notary interface {
 	IsSigned(context.Context, string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
-// ExtResChecker ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/erc_mock.go -package mocks code.vegaprotocol.io/vega/processor ExtResChecker
-type ExtResChecker interface {
+// Witness ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/processor Witness
+type Witness interface {
 	AddNodeCheck(ctx context.Context, nv *types.NodeVote) error
 }
 

@@ -53,9 +53,9 @@ type Collateral interface {
 	HasBalance(party string) bool
 }
 
-// ExtResChecker provide foreign chain resources validations
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ext_res_checker_mock.go -package mocks code.vegaprotocol.io/vega/banking ExtResChecker
-type ExtResChecker interface {
+// Witness provide foreign chain resources validations
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/banking Witness
+type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
 }
 
@@ -87,7 +87,7 @@ type Engine struct {
 	log           *logging.Logger
 	broker        Broker
 	col           Collateral
-	erc           ExtResChecker
+	witness       Witness
 	notary        Notary
 	assets        Assets
 	assetActs     map[string]*assetAction
@@ -105,7 +105,7 @@ type withdrawalRef struct {
 	ref *big.Int
 }
 
-func New(log *logging.Logger, cfg Config, col Collateral, erc ExtResChecker, tsvc TimeService, assets Assets, notary Notary, broker Broker) (e *Engine) {
+func New(log *logging.Logger, cfg Config, col Collateral, witness Witness, tsvc TimeService, assets Assets, notary Notary, broker Broker) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -115,7 +115,7 @@ func New(log *logging.Logger, cfg Config, col Collateral, erc ExtResChecker, tsv
 		log:           log,
 		broker:        broker,
 		col:           col,
-		erc:           erc,
+		witness:       witness,
 		assetActs:     map[string]*assetAction{},
 		assets:        assets,
 		seen:          map[txRef]struct{}{},
@@ -230,7 +230,7 @@ func (e *Engine) DepositBuiltinAsset(
 	}
 	e.assetActs[aa.id] = aa
 	e.deposits[dep.Id] = dep
-	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
+	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
 func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64, txHash string) error {
@@ -246,7 +246,7 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 		hash:        txHash,
 	}
 	e.assetActs[aa.id] = aa
-	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
+	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
 func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id string, blockNumber, txIndex uint64, txHash string) error {
@@ -286,7 +286,7 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 	}
 	e.assetActs[aa.id] = aa
 	e.deposits[dep.Id] = dep
-	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
+	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
 func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
@@ -327,7 +327,7 @@ func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, 
 		},
 	}
 	e.assetActs[aa.id] = aa
-	return e.erc.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
+	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
 func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID string, amount uint64, ext *types.Erc20WithdrawExt) error {

@@ -24,7 +24,7 @@ type procTest struct {
 	gov     *mocks.MockGovernanceEngine
 	notary  *mocks.MockNotary
 	evtfwd  *mocks.MockEvtForwarder
-	erc     *mocks.MockExtResChecker
+	witness *mocks.MockWitness
 	bank    *mocks.MockBanking
 	netp    *mocks.MockNetworkParameters
 	oracles *stubOracles
@@ -38,7 +38,7 @@ type stubWallet struct {
 }
 
 type stubOracles struct {
-	Engine *mocks.MockOraclesEngine
+	Engine   *mocks.MockOraclesEngine
 	Adaptors *mocks.MockOracleAdaptors
 }
 
@@ -54,7 +54,7 @@ func getTestProcessor(t *testing.T) *procTest {
 	gov := mocks.NewMockGovernanceEngine(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
 	evtfwd := mocks.NewMockEvtForwarder(ctrl)
-	erc := mocks.NewMockExtResChecker(ctrl)
+	witness := mocks.NewMockWitness(ctrl)
 	bank := mocks.NewMockBanking(ctrl)
 	netp := mocks.NewMockNetworkParameters(ctrl)
 	oracles := &stubOracles{
@@ -84,7 +84,7 @@ func getTestProcessor(t *testing.T) *procTest {
 		gov:     gov,
 		notary:  notary,
 		evtfwd:  evtfwd,
-		erc:     erc,
+		witness: witness,
 		bank:    bank,
 		netp:    netp,
 		oracles: oracles,
