@@ -37,11 +37,11 @@ var (
 	// ErrMissingRiskParameters ...
 	ErrMissingRiskParameters = errors.New("missing risk parameters")
 
-	// ErrMissingOracleSpecBinging is return when the oracle spec binding is absent.
+	// ErrMissingOracleSpecBinding is returned when the oracle spec binding is absent.
 	ErrMissingOracleSpecBinding = errors.New("missing oracle spec binding")
-	// ErrMissingOracleSpec is return when the oracle spec is absent.
+	// ErrMissingOracleSpec is returned when the oracle spec is absent.
 	ErrMissingOracleSpec = errors.New("missing oracle spec")
-	// ErrMissingFutureProduct is return when future product is absent from the instrument.
+	// ErrMissingFutureProduct is returned when future product is absent from the instrument.
 	ErrMissingFutureProduct = errors.New("missing future product")
 	// ErrInvalidOracleSpecBinding ...
 	ErrInvalidOracleSpecBinding = errors.New("invalid oracle spec binding")

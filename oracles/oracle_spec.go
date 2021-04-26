@@ -12,7 +12,7 @@ var (
 	// ErrMissingPubKeys is returned when the oraclespb.OracleSpec is missing
 	// its public keys.
 	ErrMissingPubKeys = errors.New("public keys are required")
-	// ErrMissingPropertiesAndFilters is returned when the oraclespb.OracleSpec
+	// ErrMissingFilters is returned when the oraclespb.OracleSpec
 	// has no expected properties nor filters. At least one of these should be
 	// defined.
 	ErrMissingFilters = errors.New("at least one filter is required")
