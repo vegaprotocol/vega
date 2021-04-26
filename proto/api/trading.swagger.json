@@ -84,32 +84,6 @@
         ]
       }
     },
-    "/deposits/party/{party_id}": {
-      "get": {
-        "summary": "Get deposits for a party",
-        "operationId": "Deposits",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1DepositsResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "party_id",
-            "description": "The party to get the deposits for",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "TradingDataService"
-        ]
-      }
-    },
     "/deposits/{id}": {
       "get": {
         "summary": "Get a deposit by its identifier",
@@ -1222,6 +1196,32 @@
             "description": "Asset identifier.",
             "in": "query",
             "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TradingDataService"
+        ]
+      }
+    },
+    "/parties/{party_id}/deposits": {
+      "get": {
+        "summary": "Get deposits for a party",
+        "operationId": "Deposits",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DepositsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "party_id",
+            "description": "The party to get the deposits for",
+            "in": "path",
+            "required": true,
             "type": "string"
           }
         ],

@@ -2563,7 +2563,7 @@ var (
 
 	pattern_TradingDataService_Deposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1}, []string{"deposits", "id"}, ""))
 
-	pattern_TradingDataService_Deposits_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"deposits", "party", "party_id"}, ""))
+	pattern_TradingDataService_Deposits_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"parties", "party_id", "deposits"}, ""))
 
 	pattern_TradingDataService_NetworkParameters_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"network", "parameters"}, ""))
 
