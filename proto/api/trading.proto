@@ -33,7 +33,7 @@ service TradingService {
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 
   // Prepare a governance proposal
-  rpc PrepareProposal(PrepareProposalRequest) returns (PrepareProposalResponse);
+  rpc PrepareProposalSubmission(PrepareProposalSubmissionRequest) returns (PrepareProposalSubmissionResponse);
 
   // Prepare a governance vote
   rpc PrepareVoteSubmission(PrepareVoteSubmissionRequest) returns (PrepareVoteSubmissionResponse);
@@ -996,21 +996,16 @@ message FeeInfrastructureAccountsResponse {
 }
 
 // Request to prepare a governance proposal
-message PrepareProposalRequest {
-  // Party identifier, required field
-  string party_id = 1 [(validator.field) = {string_not_empty : true}];
-  // Unique reference
-  string reference = 2;
-  // Proposal terms, required field
-  vega.ProposalTerms proposal = 3 [(validator.field) = {msg_exists : true}];
+message PrepareProposalSubmissionRequest {
+  vega.ProposalSubmission submission = 1;
 }
 
 // Response to prepare a governance proposal
-message PrepareProposalResponse {
+message PrepareProposalSubmissionResponse {
   // A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction
   bytes blob = 1;
   // A copy of the prepared proposal
-  vega.Proposal pending_proposal = 2;
+  vega.ProposalSubmission submission = 2;
 }
 
 // Request to prepare a governance vote
