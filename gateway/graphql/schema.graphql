@@ -2457,14 +2457,28 @@ type Proposal {
   datetime: String!
   "Terms of the proposal"
   terms: ProposalTerms!
-
-  "Yes votes cast for this proposal"
-  yesVotes: [Vote]
-  "No votes cast for this proposal"
-  noVotes: [Vote]
-
+  "Votes cast for this proposal"
+  votes: ProposalVotes!
   "Reason for the proposal to be rejected by the core"
   rejectionReason: ProposalRejectionReason
+}
+
+type ProposalVotes {
+  "Yes votes cast for this proposal"
+  yes: ProposalVoteSide!
+  "No votes cast for this proposal"
+  no: ProposalVoteSide!
+}
+
+type ProposalVoteSide {
+  "All votes casted for this side"
+  votes: [Vote!]
+  "Total number of votes casted for this side"
+  totalNumber: String!
+  "Total weight of governance token from the votes casted for this side"
+  totalWeight: String!
+  "Total tokens of governance token from the votes casted for this side"
+  totalTokens: String!
 }
 
 type PreparedProposal {
@@ -2493,6 +2507,12 @@ type Vote {
 
   "The ID of the proposal this vote applies to"
   proposalId: ID!
+
+  "Total number of governance token for the party that casted the vote"
+  governanceTokenBalance: String!
+
+  "The weight of this vote based on the total of governance token"
+  governanceTokenWeight: String!
 }
 
 type ProposalVote {

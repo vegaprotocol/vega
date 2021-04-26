@@ -2,6 +2,7 @@ package gql
 
 import (
 	"context"
+	"strconv"
 
 	types "code.vegaprotocol.io/vega/proto"
 )
@@ -24,14 +25,14 @@ func (r *proposalResolver) RejectionReason(_ context.Context, data *types.Govern
 	return &reason, nil
 }
 
-func (r *proposalResolver) ID(ctx context.Context, data *types.GovernanceData) (*string, error) {
+func (r *proposalResolver) ID(_ context.Context, data *types.GovernanceData) (*string, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return &data.Proposal.Id, nil
 }
 
-func (r *proposalResolver) Reference(ctx context.Context, data *types.GovernanceData) (string, error) {
+func (r *proposalResolver) Reference(_ context.Context, data *types.GovernanceData) (string, error) {
 	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
@@ -53,14 +54,14 @@ func (r *proposalResolver) Party(ctx context.Context, data *types.GovernanceData
 	return p, err
 }
 
-func (r *proposalResolver) State(ctx context.Context, data *types.GovernanceData) (ProposalState, error) {
+func (r *proposalResolver) State(_ context.Context, data *types.GovernanceData) (ProposalState, error) {
 	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
 	return convertProposalStateFromProto(data.Proposal.State)
 }
 
-func (r *proposalResolver) Datetime(ctx context.Context, data *types.GovernanceData) (string, error) {
+func (r *proposalResolver) Datetime(_ context.Context, data *types.GovernanceData) (string, error) {
 	if data == nil || data.Proposal == nil {
 		return "", ErrInvalidProposal
 	}
@@ -71,23 +72,53 @@ func (r *proposalResolver) Datetime(ctx context.Context, data *types.GovernanceD
 	return nanoTSToDatetime(data.Proposal.Timestamp), nil
 }
 
-func (r *proposalResolver) Terms(ctx context.Context, data *types.GovernanceData) (*types.ProposalTerms, error) {
+func (r *proposalResolver) Terms(_ context.Context, data *types.GovernanceData) (*types.ProposalTerms, error) {
 	if data == nil || data.Proposal == nil {
 		return nil, ErrInvalidProposal
 	}
 	return data.Proposal.Terms, nil
 }
 
-func (r *proposalResolver) YesVotes(ctx context.Context, obj *types.GovernanceData) ([]*types.Vote, error) {
+func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (*ProposalVotes, error) {
 	if obj == nil {
 		return nil, ErrInvalidProposal
 	}
-	return obj.Yes, nil
-}
 
-func (r *proposalResolver) NoVotes(ctx context.Context, obj *types.GovernanceData) ([]*types.Vote, error) {
-	if obj == nil {
-		return nil, ErrInvalidProposal
+	var yesWeight float64
+	var yesToken uint64
+	for _, yes := range obj.Yes {
+		weight, err := strconv.ParseFloat(yes.TotalGovernanceTokenWeight, 64)
+		if err != nil {
+			return nil, err
+		}
+		yesWeight += weight
+		yesToken += yes.TotalGovernanceTokenBalance
 	}
-	return obj.No, nil
+	var noWeight float64
+	var noToken uint64
+	for _, no := range obj.Yes {
+		weight, err := strconv.ParseFloat(no.TotalGovernanceTokenWeight, 64)
+		if err != nil {
+			return nil, err
+		}
+		noWeight += weight
+		noToken += no.TotalGovernanceTokenBalance
+	}
+
+	votes := &ProposalVotes{
+		Yes: &ProposalVoteSide{
+			Votes:       obj.Yes,
+			TotalNumber: strconv.Itoa(len(obj.Yes)),
+			TotalWeight: strconv.FormatFloat(yesWeight, 'f', -1, 64),
+			TotalTokens: strconv.FormatUint(yesToken, 10),
+		},
+		No: &ProposalVoteSide{
+			Votes:       obj.No,
+			TotalNumber: strconv.Itoa(len(obj.No)),
+			TotalWeight: strconv.FormatFloat(noWeight, 'f', -1, 64),
+			TotalTokens: strconv.FormatUint(noToken, 10),
+		},
+	}
+
+	return votes, nil
 }

@@ -3,6 +3,7 @@ package governance
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -29,6 +30,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/governance Broker
 type Broker interface {
 	Send(e events.Event)
+	SendBatch(es []events.Event)
 }
 
 // Accounts ...
@@ -77,17 +79,11 @@ type Engine struct {
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
-	activeProposals        []*proposalData
+	activeProposals        []*proposal
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
 	assets                 Assets
 	netp                   NetParams
-}
-
-type proposalData struct {
-	*types.Proposal
-	yes map[string]*types.Vote
-	no  map[string]*types.Vote
 }
 
 func NewEngine(
@@ -113,7 +109,7 @@ func NewEngine(
 		accs:                   accs,
 		log:                    log,
 		currentTime:            now,
-		activeProposals:        []*proposalData{},
+		activeProposals:        []*proposal{},
 		nodeProposalValidation: nodeValidation,
 		broker:                 broker,
 		assets:                 assets,
@@ -201,30 +197,11 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	if len(e.activeProposals) > 0 {
 		now := t.Unix()
 
-		// we can't reach a point where the vote asset would not
-		// so we can panic here if it were to happen
-		voteAsset, err := e.netp.Get(netparams.GovernanceVoteAsset)
-		if err != nil {
-			e.log.Panic("error trying to get the vote asset from network parameters",
-				logging.Error(err))
-		}
-
-		totalStake, err := e.accs.GetAssetTotalSupply(voteAsset)
-		if err != nil {
-			// an error here mean the asset has not been enabled,
-			// which might happen eventually, we can just continue
-			// return and do nothing for now I suppose
-			e.log.Debug("governance asset is not enabled yet",
-				logging.Error(err))
-			return nil, nil
-		}
-		counter := newStakeCounter(e.log, e.accs, voteAsset)
-
 		for _, proposal := range e.activeProposals {
 			// only enter this if the proposal state is OPEN
 			// or we would return many times the voteClosed eventually
 			if proposal.State == types.Proposal_STATE_OPEN && proposal.Terms.ClosingTimestamp < now {
-				e.closeProposal(ctx, proposal, counter, totalStake)
+				e.closeProposal(ctx, proposal)
 				voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal.Proposal))
 			}
 
@@ -271,7 +248,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	return toBeEnacted, voteClosed
 }
 
-func (e *Engine) getProposal(id string) (*proposalData, bool) {
+func (e *Engine) getProposal(id string) (*proposal, bool) {
 	for _, v := range e.activeProposals {
 		if v.Id == id {
 			return v, true
@@ -370,7 +347,7 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 }
 
 func (e *Engine) startProposal(p *types.Proposal) {
-	e.activeProposals = append(e.activeProposals, &proposalData{
+	e.activeProposals = append(e.activeProposals, &proposal{
 		Proposal: p,
 		yes:      map[string]*types.Vote{},
 		no:       map[string]*types.Vote{},
@@ -539,7 +516,7 @@ func (e *Engine) AddVote(ctx context.Context, vote types.Vote) error {
 	return nil
 }
 
-func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
+func (e *Engine) validateVote(vote types.Vote) (*proposal, error) {
 	proposal, found := e.getProposal(vote.ProposalId)
 	if !found {
 		return nil, ErrProposalNotFound
@@ -571,84 +548,119 @@ func (e *Engine) validateVote(vote types.Vote) (*proposalData, error) {
 	return proposal, nil
 }
 
-// sets proposal in either declined or passed state
-func (e *Engine) closeProposal(ctx context.Context, proposal *proposalData, counter *stakeCounter, totalStake uint64) error {
-	if proposal.State == types.Proposal_STATE_OPEN {
-		proposal.State = types.Proposal_STATE_DECLINED // declined unless passed
-
-		params, err := e.getProposalParams(proposal.Terms)
-		if err != nil {
-			return err
-		}
-
-		yes := counter.countVotes(proposal.yes)
-		no := counter.countVotes(proposal.no)
-		totalVotes := float64(yes + no)
-
-		// yes          > (yes + no)* required majority ratio
-		if float64(yes) > totalVotes*params.RequiredMajority &&
-			//(yes+no) >= (yes + no + novote)* required participation ratio
-			totalVotes >= float64(totalStake)*params.RequiredParticipation {
-			proposal.State = types.Proposal_STATE_PASSED
-			e.log.Debug("Proposal passed", logging.String("proposal-id", proposal.Id))
-		} else if totalVotes == 0 {
-			e.log.Info("Proposal declined - no votes", logging.String("proposal-id", proposal.Id))
-		} else {
-			e.log.Info(
-				"Proposal declined",
-				logging.String("proposal-id", proposal.Id),
-				logging.Uint64("yes-votes", yes),
-				logging.Float64("min-yes-required", totalVotes*params.RequiredMajority),
-				logging.Float64("total-votes", totalVotes),
-				logging.Float64("min-total-votes-required", float64(totalStake)*params.RequiredParticipation),
-				logging.Float32("tokens", float32(totalStake)),
-			)
-		}
-		e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
+// closeProposal determines the state of the proposal, passed or declined. I
+// also computes the vote balance and weight for the API.
+func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
+	if !proposal.IsOpen() {
+		return
 	}
-	return nil
-}
 
-// stakeCounter caches token balance per party and counts votes
-// reads from accounts on every miss and does not have expiration policy
-type stakeCounter struct {
-	log       *logging.Logger
-	accounts  Accounts
-	voteAsset string
-	balances  map[string]uint64
-}
+	asset := e.mustGetGovernanceVoteAsset()
+	params := e.mustGetProposalParams(proposal)
 
-func newStakeCounter(log *logging.Logger, accounts Accounts, voteAsset string) *stakeCounter {
-	return &stakeCounter{
-		log:       log,
-		accounts:  accounts,
-		balances:  map[string]uint64{},
-		voteAsset: voteAsset,
+	finalState := proposal.Close(asset, params, e.accs)
+
+	if finalState == types.Proposal_STATE_PASSED {
+		e.log.Debug("Proposal passed", logging.ProposalID(proposal.Id))
+	} else if finalState == types.Proposal_STATE_DECLINED {
+		e.log.Debug("Proposal declined", logging.ProposalID(proposal.Id))
 	}
+
+	e.broker.SendBatch(newUpdatedProposalEvents(ctx, proposal))
 }
-func (s *stakeCounter) countVotes(votes map[string]*types.Vote) uint64 {
+
+func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.Event {
+	evts := []events.Event{events.NewProposalEvent(ctx, *proposal.Proposal)}
+
+	for _, y := range proposal.yes {
+		evts = append(evts, events.NewVoteEvent(ctx, *y))
+	}
+	for _, n := range proposal.no {
+		evts = append(evts, events.NewVoteEvent(ctx, *n))
+	}
+
+	return evts
+}
+
+func (e *Engine) mustGetProposalParams(proposal *proposal) *ProposalParameters {
+	params, err := e.getProposalParams(proposal.Terms)
+	if err != nil {
+		e.log.Panic("failed to get the proposal parameters from the terms",
+			logging.Error(err),
+		)
+	}
+	return params
+}
+
+func (e *Engine) mustGetGovernanceVoteAsset() string {
+	asset, err := e.netp.Get(netparams.GovernanceVoteAsset)
+	if err != nil {
+		e.log.Panic("failed to get the vote asset from network parameters",
+			logging.Error(err),
+		)
+	}
+	return asset
+}
+
+type proposal struct {
+	*types.Proposal
+	yes map[string]*types.Vote
+	no  map[string]*types.Vote
+}
+
+func (p *proposal) IsOpen() bool {
+	return p.State == types.Proposal_STATE_OPEN
+}
+
+func (p *proposal) Close(asset string, params *ProposalParameters, accounts Accounts) types.Proposal_State {
+	if !p.IsOpen() {
+		return p.State
+	}
+
+	totalStake, err := accounts.GetAssetTotalSupply(asset)
+	if err != nil {
+		return p.State
+	}
+
+	yes := p.countVotes(p.yes, accounts, asset)
+	no := p.countVotes(p.no, accounts, asset)
+	totalVotes := float64(yes + no)
+	p.weightVotes(p.yes, totalVotes)
+	p.weightVotes(p.no, totalVotes)
+
+	majorityThreshold := totalVotes * params.RequiredMajority
+	participationThreshold := float64(totalStake) * params.RequiredParticipation
+
+	if float64(yes) > majorityThreshold && totalVotes >= participationThreshold {
+		p.State = types.Proposal_STATE_PASSED
+	} else {
+		p.State = types.Proposal_STATE_DECLINED
+	}
+
+	return p.State
+}
+
+func (p *proposal) countVotes(votes map[string]*types.Vote, accounts Accounts, voteAsset string) uint64 {
 	var tally uint64
 	for _, v := range votes {
-		tally += s.getTokens(v.PartyId)
+		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyId, voteAsset)
+		tally += v.TotalGovernanceTokenBalance
 	}
 	return tally
 }
 
-func (s *stakeCounter) getTokens(partyID string) uint64 {
-	if balance, found := s.balances[partyID]; found {
-		return balance
+func (p *proposal) weightVotes(votes map[string]*types.Vote, totalVotes float64) {
+	for _, v := range votes {
+		weight := float64(v.TotalGovernanceTokenBalance) / totalVotes
+		v.TotalGovernanceTokenWeight = strconv.FormatFloat(weight, 'f', -1, 64)
 	}
-	balance, err := getGovernanceTokens(s.accounts, partyID, s.voteAsset)
+}
+
+func getTokensBalance(accounts Accounts, partyID, voteAsset string) uint64 {
+	balance, err := getGovernanceTokens(accounts, partyID, voteAsset)
 	if err != nil {
-		s.log.Error(
-			"Failed to get governance tokens balance for party",
-			logging.String("party-id", partyID),
-			logging.Error(err),
-		)
-		// not much we can do with the error as there is nowhere to bubble up the error on tick
 		return 0
 	}
-	s.balances[partyID] = balance
 	return balance
 }
 

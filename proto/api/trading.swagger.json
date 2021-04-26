@@ -5960,6 +5960,15 @@
           "type": "string",
           "format": "int64",
           "title": "Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network"
+        },
+        "total_governance_token_balance": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Total number of governance token for the party that casted the vote"
+        },
+        "total_governance_token_weight": {
+          "type": "string",
+          "title": "The weight of this vote based on the total of governance token"
         }
       },
       "title": "Governance vote"

@@ -5,35 +5,34 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
-// MockRangeProvider is a mock of RangeProvider interface.
+// MockRangeProvider is a mock of RangeProvider interface
 type MockRangeProvider struct {
 	ctrl     *gomock.Controller
 	recorder *MockRangeProviderMockRecorder
 }
 
-// MockRangeProviderMockRecorder is the mock recorder for MockRangeProvider.
+// MockRangeProviderMockRecorder is the mock recorder for MockRangeProvider
 type MockRangeProviderMockRecorder struct {
 	mock *MockRangeProvider
 }
 
-// NewMockRangeProvider creates a new mock instance.
+// NewMockRangeProvider creates a new mock instance
 func NewMockRangeProvider(ctrl *gomock.Controller) *MockRangeProvider {
 	mock := &MockRangeProvider{ctrl: ctrl}
 	mock.recorder = &MockRangeProviderMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockRangeProvider) EXPECT() *MockRangeProviderMockRecorder {
 	return m.recorder
 }
 
-// PriceRange mocks base method.
+// PriceRange mocks base method
 func (m *MockRangeProvider) PriceRange(arg0, arg1, arg2 float64) (float64, float64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PriceRange", arg0, arg1, arg2)
@@ -42,7 +41,7 @@ func (m *MockRangeProvider) PriceRange(arg0, arg1, arg2 float64) (float64, float
 	return ret0, ret1
 }
 
-// PriceRange indicates an expected call of PriceRange.
+// PriceRange indicates an expected call of PriceRange
 func (mr *MockRangeProviderMockRecorder) PriceRange(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PriceRange", reflect.TypeOf((*MockRangeProvider)(nil).PriceRange), arg0, arg1, arg2)
