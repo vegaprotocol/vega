@@ -160,3 +160,74 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 	side.uncross(aggressiveOrder, true)
 	assert.Len(t, side.levels, 1)
 }
+
+func getPopulatedTestSide(side types.Side) *OrderBookSide {
+	obs := getTestSide(types.Side_SIDE_SELL)
+
+	type testOrder struct {
+		ID    string
+		Price uint64
+		Size  uint64
+	}
+
+	testOrders := []testOrder{
+		{"Order01", 100, 1},
+		{"Order02", 100, 1},
+		{"Order03", 100, 1},
+		{"Order04", 101, 1},
+		{"Order05", 101, 1},
+		{"Order06", 101, 1},
+	}
+
+	for _, order := range testOrders {
+		o := &types.Order{
+			Id:          order.ID,
+			MarketId:    "testmarket",
+			PartyId:     "A",
+			Side:        types.Side_SIDE_SELL,
+			Price:       order.Price,
+			Size:        order.Size,
+			Remaining:   order.Size,
+			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		}
+		// add the order to the side
+		obs.addOrder(o)
+	}
+	return obs
+}
+
+func TestExtractOrdersFullLevel(t *testing.T) {
+	side := getPopulatedTestSide(types.Side_SIDE_SELL)
+
+	assert.Len(t, side.levels, 2)
+
+	orders, err := side.ExtractOrders(100, 3)
+	assert.NoError(t, err)
+	assert.Len(t, side.levels, 1)
+	assert.Len(t, orders, 3)
+	assert.EqualValues(t, 3, side.getOrderCount())
+}
+
+func TestExtractOrdersPartialLevel(t *testing.T) {
+	side := getPopulatedTestSide(types.Side_SIDE_SELL)
+
+	assert.Len(t, side.levels, 2)
+
+	orders, err := side.ExtractOrders(100, 2)
+	assert.NoError(t, err)
+	assert.Len(t, side.levels, 2)
+	assert.Len(t, orders, 2)
+	assert.EqualValues(t, 4, side.getOrderCount())
+}
+
+func TestExtractOrdersCrossLevel(t *testing.T) {
+	side := getPopulatedTestSide(types.Side_SIDE_SELL)
+
+	assert.Len(t, side.levels, 2)
+
+	orders, err := side.ExtractOrders(101, 5)
+	assert.NoError(t, err)
+	assert.Len(t, side.levels, 1)
+	assert.Len(t, orders, 5)
+	assert.EqualValues(t, 1, side.getOrderCount())
+}
