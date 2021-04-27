@@ -165,7 +165,7 @@ func getPopulatedTestSide(side types.Side) *OrderBookSide {
 	obs := getTestSide(types.Side_SIDE_SELL)
 
 	type testOrder struct {
-		Id    string
+		ID    string
 		Price uint64
 		Size  uint64
 	}
