@@ -211,6 +211,33 @@
         ]
       }
     },
+    "/governance/prepare/vote": {
+      "post": {
+        "summary": "Prepare a governance vote",
+        "operationId": "PrepareVoteSubmission",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PrepareVoteSubmissionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1PrepareVoteSubmissionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TradingService"
+        ]
+      }
+    },
     "/governance/proposal/reference/{reference}": {
       "get": {
         "summary": "Get governance data (proposals and votes) for a proposal located by reference",
@@ -2639,6 +2666,16 @@
         }
       },
       "title": "Response for preparing an order submission"
+    },
+    "v1PrepareVoteSubmissionRequest": {
+      "type": "object",
+      "properties": {
+        "submission": {
+          "$ref": "#/definitions/vegaVoteSubmission",
+          "title": "Vote, required field"
+        }
+      },
+      "title": "Request to prepare a governance vote"
     },
     "v1PrepareVoteSubmissionResponse": {
       "type": "object",

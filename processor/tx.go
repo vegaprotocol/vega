@@ -104,7 +104,6 @@ func (t *Tx) toProto() (interface{}, error) {
 		return nil, err
 	}
 
-	fmt.Printf("UNMARSHALLED: %#v\n", msg)
 	return msg, nil
 }
 
