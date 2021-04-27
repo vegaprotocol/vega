@@ -185,14 +185,22 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 				// and volume are not correct
 				return nil, ErrInvalidVolume
 			}
+
+			// If we have the right amount, stop processing
+			if totalVolume == volume {
+				break
+			}
+
 		}
 		for toRemove > 0 {
 			toRemove--
 			pricelevel.removeOrder(0)
 		}
 		// Erase this price level which will be at the end of the slice
-		s.levels[i] = nil
-		s.levels = s.levels[:len(s.levels)-1]
+		if len(pricelevel.orders) == 0 {
+			s.levels[i] = nil
+			s.levels = s.levels[:len(s.levels)-1]
+		}
 
 		// Check if we have done enough
 		if totalVolume == volume {
