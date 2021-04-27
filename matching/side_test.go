@@ -181,7 +181,7 @@ func getPopulatedTestSide(side types.Side) *OrderBookSide {
 
 	for _, order := range testOrders {
 		o := &types.Order{
-			Id:          order.Id,
+			Id:          order.ID,
 			MarketId:    "testmarket",
 			PartyId:     "A",
 			Side:        types.Side_SIDE_SELL,
