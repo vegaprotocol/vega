@@ -496,13 +496,21 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
-func (e *Engine) AddVote(ctx context.Context, vote types.Vote) error {
-	proposal, err := e.validateVote(vote)
+func (e *Engine) AddVote(ctx context.Context, voteSub types.VoteSubmission, party string) error {
+	proposal, err := e.validateVote(voteSub, party)
 	if err != nil {
 		// vote was not created/accepted, send TxErrEvent
-		e.broker.Send(events.NewTxErrEvent(ctx, err, vote.PartyId, vote))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, voteSub))
 		return err
 	}
+
+	vote := types.Vote{
+		PartyId:    party,
+		ProposalId: voteSub.ProposalId,
+		Value:      voteSub.Value,
+		Timestamp:  e.currentTime.UnixNano(),
+	}
+
 	// we only want to count the last vote, so add to yes/no map, delete from the other
 	// if the party hasn't cast a vote yet, the delete is just a noop
 	if vote.Value == types.Vote_VALUE_YES {
@@ -516,7 +524,7 @@ func (e *Engine) AddVote(ctx context.Context, vote types.Vote) error {
 	return nil
 }
 
-func (e *Engine) validateVote(vote types.Vote) (*proposal, error) {
+func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposal, error) {
 	proposal, found := e.getProposal(vote.ProposalId)
 	if !found {
 		return nil, ErrProposalNotFound
@@ -537,7 +545,7 @@ func (e *Engine) validateVote(vote types.Vote) (*proposal, error) {
 			logging.Error(err))
 	}
 
-	voterTokens, err := getGovernanceTokens(e.accs, vote.PartyId, voteAsset)
+	voterTokens, err := getGovernanceTokens(e.accs, party, voteAsset)
 	if err != nil {
 		return nil, err
 	}

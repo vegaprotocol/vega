@@ -48,7 +48,7 @@ type AccountService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
 type GovernanceService interface {
 	PrepareProposal(ctx context.Context, author, reference string, terms *types.ProposalTerms) (*types.Proposal, error)
-	PrepareVote(vote *types.Vote) (*types.Vote, error)
+	PrepareVote(vote *types.VoteSubmission) (*types.VoteSubmission, error)
 }
 
 // EvtForwarder
@@ -216,7 +216,7 @@ func (s *tradingService) PrepareProposal(
 	}, nil
 }
 
-func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareVoteRequest) (*protoapi.PrepareVoteResponse, error) {
+func (s *tradingService) PrepareVoteSubmission(ctx context.Context, req *protoapi.PrepareVoteSubmissionRequest) (*protoapi.PrepareVoteSubmissionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareVote", startTime)
 
@@ -224,11 +224,11 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 
-	if req.Vote.Value == types.Vote_VALUE_UNSPECIFIED {
+	if req.Submission.Value == types.Vote_VALUE_UNSPECIFIED {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	vote, err := s.governanceService.PrepareVote(req.Vote)
+	vote, err := s.governanceService.PrepareVote(req.Submission)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
@@ -239,9 +239,9 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 	if raw, err = txn.Encode(raw, txn.VoteCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
-	return &protoapi.PrepareVoteResponse{
-		Blob: raw,
-		Vote: vote,
+	return &protoapi.PrepareVoteSubmissionResponse{
+		Blob:       raw,
+		Submission: vote,
 	}, nil
 }
 

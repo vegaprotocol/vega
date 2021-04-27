@@ -36,7 +36,7 @@ service TradingService {
   rpc PrepareProposal(PrepareProposalRequest) returns (PrepareProposalResponse);
 
   // Prepare a governance vote
-  rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
+  rpc PrepareVoteSubmission(PrepareVoteSubmissionRequest) returns (PrepareVoteSubmissionResponse);
 
   // Propagate a chain event
   rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
@@ -83,7 +83,7 @@ message SubmitTransactionRequest {
   // - AmendOrder, see [PrepareAmendOrder](#api.trading)
   // - CancelOrder, see [PrepareCancelOrder](#api.trading)
   // - PrepareProposal, see [PrepareProposal](#api.trading)
-  // - PrepareVote, see [PrepareVote](#api.trading)
+  // - PrepareVoteSubmission, see [PrepareVote](#api.trading)
   // - Withdraw, see [WithdrawRequest](#api.trading)
   // All of these can be prepared using this API, payload data must be signed using Vega Wallet before submitting a transaction
 
@@ -1014,17 +1014,17 @@ message PrepareProposalResponse {
 }
 
 // Request to prepare a governance vote
-message PrepareVoteRequest {
+message PrepareVoteSubmissionRequest {
   // Vote, required field
-  vega.Vote vote = 1 [(validator.field) = {msg_exists: true}];
+  vega.VoteSubmission submission = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Response to prepare a governance vote
-message PrepareVoteResponse {
+message PrepareVoteSubmissionResponse {
   // A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction
   bytes blob = 1;
   // A copy of the prepared vote
-  vega.Vote vote = 2;
+  vega.VoteSubmission submission = 2;
 }
 
 // Request to prepare liquiditity provision

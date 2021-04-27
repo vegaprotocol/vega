@@ -41,6 +41,9 @@ func (t *Tx) Hash() []byte { return t.tx.InputData[:TxHashLen] }
 // PubKey returns the Tx's public key.
 func (t *Tx) PubKey() []byte { return t.tx.GetPubKey() }
 
+// Party returns the Tx's public key in a hex encoded format
+func (t *Tx) Party() string { return hex.EncodeToString(t.tx.GetPubKey()) }
+
 // BlockHeight returns the target block for which the Tx has been broadcasted.
 // The Tx might be included on a higher block height.
 // Depending on the tolerance of the chain the Tx might be included or rejected.
@@ -78,7 +81,7 @@ func (t *Tx) toProto() (interface{}, error) {
 	case txn.ProposeCommand:
 		msg = &types.Proposal{}
 	case txn.VoteCommand:
-		msg = &types.Vote{}
+		msg = &types.VoteSubmission{}
 	case txn.NodeVoteCommand:
 		msg = &types.NodeVote{}
 	case txn.WithdrawCommand:

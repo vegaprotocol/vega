@@ -49,10 +49,10 @@ func (this *TxErrorEvent) Validate() error {
 			}
 		}
 	}
-	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_Vote); ok {
-		if oneOfNester.Vote != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Vote); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_VoteSubmission); ok {
+		if oneOfNester.VoteSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.VoteSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("VoteSubmission", err)
 			}
 		}
 	}

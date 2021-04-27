@@ -50,10 +50,10 @@ func (mr *MockGovernanceServiceMockRecorder) PrepareProposal(arg0, arg1, arg2, a
 }
 
 // PrepareVote mocks base method
-func (m *MockGovernanceService) PrepareVote(arg0 *proto.Vote) (*proto.Vote, error) {
+func (m *MockGovernanceService) PrepareVote(arg0 *proto.VoteSubmission) (*proto.VoteSubmission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareVote", arg0)
-	ret0, _ := ret[0].(*proto.Vote)
+	ret0, _ := ret[0].(*proto.VoteSubmission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

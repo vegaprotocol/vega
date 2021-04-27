@@ -214,12 +214,12 @@
     "/governance/prepare/vote": {
       "post": {
         "summary": "Prepare a governance vote",
-        "operationId": "PrepareVote",
+        "operationId": "PrepareVoteSubmission",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1PrepareVoteResponse"
+              "$ref": "#/definitions/v1PrepareVoteSubmissionResponse"
             }
           }
         },
@@ -229,7 +229,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1PrepareVoteRequest"
+              "$ref": "#/definitions/v1PrepareVoteSubmissionRequest"
             }
           }
         ],
@@ -2667,17 +2667,17 @@
       },
       "title": "Response for preparing an order submission"
     },
-    "v1PrepareVoteRequest": {
+    "v1PrepareVoteSubmissionRequest": {
       "type": "object",
       "properties": {
-        "vote": {
-          "$ref": "#/definitions/vegaVote",
+        "submission": {
+          "$ref": "#/definitions/vegaVoteSubmission",
           "title": "Vote, required field"
         }
       },
       "title": "Request to prepare a governance vote"
     },
-    "v1PrepareVoteResponse": {
+    "v1PrepareVoteSubmissionResponse": {
       "type": "object",
       "properties": {
         "blob": {
@@ -2685,8 +2685,8 @@
           "format": "byte",
           "title": "A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction"
         },
-        "vote": {
-          "$ref": "#/definitions/vegaVote",
+        "submission": {
+          "$ref": "#/definitions/vegaVoteSubmission",
           "title": "A copy of the prepared vote"
         }
       },
@@ -5901,8 +5901,8 @@
         "proposal": {
           "$ref": "#/definitions/vegaProposal"
         },
-        "vote": {
-          "$ref": "#/definitions/vegaVote"
+        "vote_submission": {
+          "$ref": "#/definitions/vegaVoteSubmission"
         },
         "liquidity_provision_submission": {
           "$ref": "#/definitions/vegaLiquidityProvisionSubmission"
@@ -5972,6 +5972,17 @@
         }
       },
       "title": "Governance vote"
+    },
+    "vegaVoteSubmission": {
+      "type": "object",
+      "properties": {
+        "proposal_id": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/VoteValue"
+        }
+      }
     },
     "vegaWithdrawExt": {
       "type": "object",

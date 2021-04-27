@@ -269,7 +269,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// this is a party
 	// and if we may not want to rate limit it.
 	// in which case we may want to check if it has a balance
-	party := hex.EncodeToString(tx.PubKey())
+	party := tx.Party()
 	if limit {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
@@ -473,18 +473,18 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
-	vote := &types.Vote{}
+	vote := &types.VoteSubmission{}
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
 
+	party := tx.Party()
 	app.log.Debug("Voting on proposal",
 		logging.String("proposal-id", vote.ProposalId),
-		logging.String("vote-party", vote.PartyId),
+		logging.String("vote-party", party),
 		logging.String("vote-value", vote.Value.String()))
 
-	vote.Timestamp = app.currentTimestamp.UnixNano()
-	return app.gov.AddVote(ctx, *vote)
+	return app.gov.AddVote(ctx, *vote, party)
 }
 
 func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
@@ -502,7 +502,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 		return err
 	}
 
-	partyID := hex.EncodeToString(tx.PubKey())
+	partyID := tx.Party()
 	return app.exec.SubmitLiquidityProvision(ctx, sub, partyID, id)
 }
 

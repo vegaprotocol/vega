@@ -187,15 +187,13 @@ func TestPrepareVote(t *testing.T) {
 func testPrepareVoteSuccess(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
-	vote := types.Vote{
-		PartyId:    "party-1",
+	vote := types.VoteSubmission{
 		ProposalId: "prop-1",
 		Value:      types.Vote_VALUE_YES,
 	}
 	v, err := svc.PrepareVote(&vote)
 	assert.NoError(t, err)
 	assert.Equal(t, vote.Value, v.Value)
-	assert.Equal(t, vote.PartyId, v.PartyId)
 	assert.Equal(t, vote.ProposalId, v.ProposalId)
 }
 
@@ -203,18 +201,12 @@ func testPrepareVoteFail(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	data := map[string]types.Vote{
-		"Missing PartyID": {
-			ProposalId: "prop1",
-			Value:      types.Vote_VALUE_NO,
-		},
+	data := map[string]types.VoteSubmission{
 		"Missing ProposalID": {
-			PartyId: "Party1",
-			Value:   types.Vote_VALUE_YES,
+			Value: types.Vote_VALUE_YES,
 		},
 		"Invalid vote value": {
 			ProposalId: "prop1",
-			PartyId:    "party1",
 			Value:      types.Vote_Value(213),
 		},
 	}

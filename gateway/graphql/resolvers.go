@@ -1814,22 +1814,25 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-	req := &protoapi.PrepareVoteRequest{
-		Vote: &types.Vote{
+	req := &protoapi.PrepareVoteSubmissionRequest{
+		Submission: &types.VoteSubmission{
 			Value:      protoValue,
-			PartyId:    partyID,
 			ProposalId: proposalID,
 		},
 	}
-	resp, err := r.tradingClient.PrepareVote(ctx, req)
+	resp, err := r.tradingClient.PrepareVoteSubmission(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &PreparedVote{
 		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 		Vote: &ProposalVote{
-			Vote:       req.Vote,
-			ProposalID: resp.Vote.ProposalId,
+			Vote: &types.Vote{
+				Value:      req.Submission.Value,
+				PartyId:    partyID,
+				ProposalId: proposalID,
+			},
+			ProposalID: resp.Submission.ProposalId,
 		},
 	}, nil
 }

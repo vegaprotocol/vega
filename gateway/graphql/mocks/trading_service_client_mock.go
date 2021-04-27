@@ -135,24 +135,24 @@ func (mr *MockTradingServiceClientMockRecorder) PrepareSubmitOrder(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareSubmitOrder", reflect.TypeOf((*MockTradingServiceClient)(nil).PrepareSubmitOrder), varargs...)
 }
 
-// PrepareVote mocks base method
-func (m *MockTradingServiceClient) PrepareVote(arg0 context.Context, arg1 *api.PrepareVoteRequest, arg2 ...grpc.CallOption) (*api.PrepareVoteResponse, error) {
+// PrepareVoteSubmission mocks base method
+func (m *MockTradingServiceClient) PrepareVoteSubmission(arg0 context.Context, arg1 *api.PrepareVoteSubmissionRequest, arg2 ...grpc.CallOption) (*api.PrepareVoteSubmissionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "PrepareVote", varargs...)
-	ret0, _ := ret[0].(*api.PrepareVoteResponse)
+	ret := m.ctrl.Call(m, "PrepareVoteSubmission", varargs...)
+	ret0, _ := ret[0].(*api.PrepareVoteSubmissionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// PrepareVote indicates an expected call of PrepareVote
-func (mr *MockTradingServiceClientMockRecorder) PrepareVote(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// PrepareVoteSubmission indicates an expected call of PrepareVoteSubmission
+func (mr *MockTradingServiceClientMockRecorder) PrepareVoteSubmission(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareVote", reflect.TypeOf((*MockTradingServiceClient)(nil).PrepareVote), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareVoteSubmission", reflect.TypeOf((*MockTradingServiceClient)(nil).PrepareVoteSubmission), varargs...)
 }
 
 // PrepareWithdraw mocks base method

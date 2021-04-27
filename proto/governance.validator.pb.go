@@ -256,3 +256,12 @@ func (this *Vote) Validate() error {
 	}
 	return nil
 }
+func (this *VoteSubmission) Validate() error {
+	if this.ProposalId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProposalId", fmt.Errorf(`value '%v' must not be an empty string`, this.ProposalId))
+	}
+	if _, ok := Vote_Value_name[int32(this.Value)]; !ok {
+		return github_com_mwitkow_go_proto_validators.FieldError("Value", fmt.Errorf(`value '%v' must be a valid Vote_Value field`, this.Value))
+	}
+	return nil
+}
