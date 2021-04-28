@@ -10,11 +10,6 @@ As a (who - the type of user/actor the feature serves)
 I want (what - the action to be performed / made possible)
 So that (why - the goal/result/value it achieves to the user/actor or the business)
 
-** API Calls 
-A list of the API calls that are needed for this feature, written in an implementation-agnostic format:
-
-- "Get a list of widgets, categorised by X", rather than "GET /widgets?category=X"
-
 # Tasks
 A checklist of the tasks that are needed to develop the feature and meet the accceptance criteria and feature test scenarios. Ideally, tasks would reflect the pull requests likely to be created when developing the feature. 
 
@@ -57,7 +52,7 @@ See https://github.com/vegaprotocol/vega/tree/develop/integration/ for more form
 
 _TBC whether these should be separate files  - will come back to this_
 
-** Impacted Engines
+# Impacted Engines
 A list of the engines that we believe will be impacted by the development of this feature.
 
 - [ ] banking
@@ -72,7 +67,12 @@ A list of the engines that we believe will be impacted by the development of thi
 - [ ] settlement
 - [ ] monitor
 
-** Dependencies
+# API Calls 
+A list of the API calls that are needed for this feature, written in an implementation-agnostic format:
+
+- "Get a list of widgets, categorised by X", rather than "GET /widgets?category=X"
+
+# Dependencies
 Links to the tickets that reflect all our known dependencies, along with a categorisation of the type of dependency - mandatory/hard OR discretionary/soft - and whether it is internal or external to the team.
 
 # Additional Details (optional)
@@ -82,5 +82,5 @@ Link to the feature spec:
 Link to the release overview document:
 Link to the release board:
 
-** Examples (optional)
+# Examples (optional)
 Code snippets from the spec for reference
