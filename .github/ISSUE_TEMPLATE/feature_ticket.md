@@ -3,7 +3,9 @@ A simple overview that describes what this feature (or sub feature) needs to do 
 This should be brief, understandable by anyone in the business and use the format: 
 
 As a (who - the type of user/actor the feature serves)
+
 I want (what - the action to be performed / made possible)
+
 So that (why - the goal/result/value it achieves to the user/actor or the business)
 
 # Tasks
@@ -28,7 +30,9 @@ A list of criteria (aim for 3!) that have to be met for this feature to be accep
 Links to scenarios (at least 1!) that can be executed as feature tests to verify that the feature has been implemented as expected. We use the follow format:
 
 GIVEN (setup/context) 
+
 WHEN (action) 
+
 THEN (assertion) 
 
 For example...
@@ -36,12 +40,19 @@ For example...
 Feature: Account Holder withdraws cash
 
   Scenario: Account has sufficient funds
+   
    GIVEN the account balance is $100
-     AND the card is valid
-     AND the machine contains enough money  
+    
+    AND the card is valid
+    
+    AND the machine contains enough money  
+    
     WHEN the Account Holder requests $20
+    
     THEN the ATM should dispense $20
+     
      AND the account balance should be $80
+     
      AND the card should be returned
      
 See https://github.com/vegaprotocol/vega/tree/develop/integration/ for more format information and examples.
@@ -75,7 +86,9 @@ Links to the tickets that reflect all our known dependencies, along with a categ
 Any additional information that provides context or gives information that will help us develop the feature. 
 
 Link to the feature spec:
+
 Link to the release overview document:
+
 Link to the release board:
 
 # Examples (optional)
