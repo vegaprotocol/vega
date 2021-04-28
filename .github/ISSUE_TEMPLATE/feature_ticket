@@ -1,0 +1,57 @@
+---
+name: Feature ticket
+about: Create a template that defines all the information we need to consider a feature ticket 'ready for development'
+title: ''
+labels: "Release \U0001F41E, Feature \U0001F41ELow"
+assignees: ''
+
+---
+
+# Feature Overview
+A simple overview that describes what this feature (or sub feature) needs to do and why it's valuable. 
+This should be brief, understandable by anyone in the business and use the format: 
+
+As a (who does the feature serve - doesn't have to be a person, could be a system etc.) 
+I want (what the feature needs does / makes possible)
+So that (why it's valuable to the actor or the business)
+
+** API Calls 
+A list of the API calls that are needed for this feature
+
+# Product Owner
+The name of the person in the Product team that is responsible for this feature. This will be the go-to person for the engineer working on this ticket for questions / clarifications, get feedback on work in progress from and ultimately accept the feature ticket as 'done'. The Product Owner
+
+# Acceptance Criteria
+A list of criteria (aim for 3!) that have to be met for the story this feature story to be accepted as 'done' by the product team. Acceptance criteria should be simple, single sentence statements written from the perspective of the work already having been done. Each statement should be able to be objectively determined to be true or false. For example:
+
+- I can
+- I can
+- Vega does
+- Vega does
+
+# Feature Test Scenarios
+Links to scenarios (at least 1!) that can be executed by the team as tests to verify that the feature has been implemented as expected.
+
+Do we already have a feature test template??
+
+** Impacted Packages / Engines
+A list of the packages and engines that we believe will be impacted by the development of this feature.
+
+- [ ] could we pre-populate a list here?
+
+** Dependencies
+Links to the tickets that reflect all our known dependencies, along with a description of the type of dependency.
+
+# Tasks
+A checklist of the tasks that are needed to develop the feature and meet the accceptance criteria and feature test scenarios.  
+
+
+# Additional Details (optional)
+Any additional information that provides context or gives information that will help us develop the feature. 
+
+Link to the spec:
+Link to the release document:
+Link to the release board:
+
+** Examples (optional)
+Code snippets from the spec for reference
