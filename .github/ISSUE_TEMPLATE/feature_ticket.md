@@ -2,10 +2,6 @@
 A simple overview that describes what this feature (or sub feature) needs to do and why it's valuable. 
 This should be brief, understandable by anyone in the business and use the format: 
 
-As a (type of user/actor the feature serves - doesn't have to be a person, could be another system etc.) 
-I want (the action that needs to be performed / made possible)
-So that (the goal/result/value that is achievedthe actor or the business)
-
 As a (who - the type of user/actor the feature serves) 
 I want (what - the action to be performed / made possible)
 So that (why - the goal/result/value it achieves to the user/actor or the business)
