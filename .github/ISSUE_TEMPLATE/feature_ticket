@@ -1,43 +1,69 @@
----
-name: Feature ticket
-about: Create a template that defines all the information we need to consider a feature ticket 'ready for development'
-title: ''
-labels: "Release \U0001F41E, Feature \U0001F41ELow"
-assignees: ''
-
----
-
 # Feature Overview
 A simple overview that describes what this feature (or sub feature) needs to do and why it's valuable. 
 This should be brief, understandable by anyone in the business and use the format: 
 
-As a (who does the feature serve - doesn't have to be a person, could be a system etc.) 
-I want (what the feature needs does / makes possible)
-So that (why it's valuable to the actor or the business)
+As a (type of user/actor the feature serves - doesn't have to be a person, could be another system etc.) 
+I want (the action that needs to be performed / made possible)
+So that (the goal/result/value that is achievedthe actor or the business)
+
+As a (who - the type of user/actor the feature serves) 
+I want (what - the action to be performed / made possible)
+So that (why - the goal/result/value it achieves to the user/actor or the business)
 
 ** API Calls 
-A list of the API calls that are needed for this feature
+A list of the API calls that are needed for this feature, written in an implementation-agnostic format:
+
+- "Get a list of widgets, categorised by X", rather than "GET /widgets?category=X"
 
 # Product Owner
-The name of the person in the Product team that is responsible for this feature. This will be the go-to person for the engineer working on this ticket for questions / clarifications, get feedback on work in progress from and ultimately accept the feature ticket as 'done'. The Product Owner
+The name of the person in the Product team that is responsible for this feature. This will be the go-to person for the engineer working on this ticket for any questions / clarifications, to get feedback on work in progress and who will ultimately accept the feature ticket as 'done'.
 
 # Acceptance Criteria
-A list of criteria (aim for 3!) that have to be met for the story this feature story to be accepted as 'done' by the product team. Acceptance criteria should be simple, single sentence statements written from the perspective of the work already having been done. Each statement should be able to be objectively determined to be true or false. For example:
+A list of criteria (aim for 3!) that have to be met for this feature to be accepted as 'done' by the product team. Acceptance criteria should be simple, single sentence statements written from the perspective of the work already having been done. Each statement should be able to be objectively determined to be true or false. For example:
 
-- I can
-- I can
+- It is possible to
+- It is possible to
 - Vega does
 - Vega does
 
 # Feature Test Scenarios
-Links to scenarios (at least 1!) that can be executed by the team as tests to verify that the feature has been implemented as expected.
+Links to scenarios (at least 1!) that can be executed as feature tests to verify that the feature has been implemented as expected. We use the follow format:
 
-Do we already have a feature test template??
+GIVEN (setup/context) 
+WHEN (action) 
+THEN (assertion) 
 
-** Impacted Packages / Engines
-A list of the packages and engines that we believe will be impacted by the development of this feature.
+For example...
 
-- [ ] could we pre-populate a list here?
+Feature: Account Holder withdraws cash
+
+  Scenario: Account has sufficient funds
+   GIVEN the account balance is $100
+     AND the card is valid
+     AND the machine contains enough money  
+    WHEN the Account Holder requests $20
+    THEN the ATM should dispense $20
+     AND the account balance should be $80
+     AND the card should be returned
+     
+See https://github.com/vegaprotocol/vega/tree/develop/integration/ for more format information and examples.
+
+_TBC whether these should be separate files  - will come back to this_
+
+** Impacted Engines
+A list of the engines that we believe will be impacted by the development of this feature.
+
+- [ ] banking
+- [ ] collateral
+- [ ] execution
+- [ ] fee
+- [ ] governance
+- [ ] liquidity
+- [ ] oracles
+- [ ] positions
+- [ ] risk
+- [ ] settlement
+- [ ] monitor
 
 ** Dependencies
 Links to the tickets that reflect all our known dependencies, along with a description of the type of dependency.
