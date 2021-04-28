@@ -29,14 +29,12 @@ Feature: Test market depth events for pegged orders
       | pegged1 | ETH/DEC19 | sell | 10     | MID       | 10     |
       | pegged2 | ETH/DEC19 | buy  | 5      | MID       | -15    |
       | pegged3 | ETH/DEC19 | buy  | 5      | MID       | -10    |
-    And debug orders
     Then I see the following order events:
       | trader  | market id | side | volume | reference | offset | price | status        |
       | pegged1 | ETH/DEC19 | sell | 10     | MID       | 10     | 0     | STATUS_PARKED |
       | pegged2 | ETH/DEC19 | buy  | 5      | MID       | -15    | 0     | STATUS_PARKED |
       | pegged3 | ETH/DEC19 | buy  | 5      | MID       | -10    | 0     | STATUS_PARKED |
 # keep things simple: remove the events we've just verified
-    And debug orders
     And clear order events
     When the traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
