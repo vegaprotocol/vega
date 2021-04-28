@@ -37,23 +37,23 @@ THEN (assertion)
 
 For example...
 
-Feature: Account Holder withdraws cash
+    Feature: Account Holder withdraws cash
 
-  Scenario: Account has sufficient funds
+    Scenario: Account has sufficient funds
    
-   GIVEN the account balance is $100
+    GIVEN the account balance is $100
     
-    AND the card is valid
+      AND the card is valid
     
-    AND the machine contains enough money  
+      AND the machine contains enough money  
     
     WHEN the Account Holder requests $20
     
     THEN the ATM should dispense $20
      
-     AND the account balance should be $80
+      AND the account balance should be $80
      
-     AND the card should be returned
+      AND the card should be returned
      
 See https://github.com/vegaprotocol/vega/tree/develop/integration/ for more format information and examples.
 
@@ -85,11 +85,11 @@ Links to the tickets that reflect all our known dependencies, along with a categ
 # Additional Details (optional)
 Any additional information that provides context or gives information that will help us develop the feature. 
 
-Link to the feature spec:
+Feature spec:
 
-Link to the release overview document:
+Release overview document:
 
-Link to the release board:
+Release board:
 
 # Examples (optional)
 Code snippets from the spec for reference
