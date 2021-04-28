@@ -207,6 +207,12 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 			break
 		}
 	}
+	// If we get here and don't have the full amount of volume
+	// something has gone wrong
+	if totalVolume != volume {
+		return nil, ErrInvalidVolume
+	}
+
 	return extractedOrders, nil
 }
 
