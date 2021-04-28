@@ -30,23 +30,18 @@ Feature: Verify the order size is correctly cumulated.
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "12000000" for the market "ETH/DEC19"
 
-    Then debug market data for "ETH/DEC19"
-
-
     When the traders submit the following liquidity provision:
-      | id  | party       | market id | commitment amount | fee | order side | order reference | order proportion | order offset |reference |
-      | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy        | BID             | 1                | -9          | lp-1-ref |
-      | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell       | ASK             | 1                | 9           | lp-1-ref |
+      | id  | party       | market id | commitment amount | fee | order side | order reference | order proportion | order offset | reference |
+      | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy        | BID             | 1                | -9           | lp-1-ref  |
+      | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell       | ASK             | 1                | 9            | lp-1-ref  |
     Then I see the LP events:
       | id  | party       | market    | commitment amount | status        |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | STATUS_ACTIVE |
-
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
-    And I see the following order events:
-      | trader      | market id | side | volume | reference | offset | price    | status        |
-      | trader-lp-1 | ETH/DEC19 | buy  | 167    |           | 0      | 11999990 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | sell | 167    |           | 0      | 12000010 | STATUS_ACTIVE |
+    And the orders should have the following states:
+      | trader      | market id | side | volume | price    | status        |
+      | trader-lp-1 | ETH/DEC19 | buy  | 167    | 11999990 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | sell | 167    | 12000010 | STATUS_ACTIVE |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |

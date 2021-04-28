@@ -30,13 +30,10 @@ Feature: Verify the order size is correctly cumulated.
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "12000010" for the market "ETH/DEC19"
 
-    Then the traders place the following orders:
+    When the traders place the following orders:
       | trader      | market id | side | volume | price     | resulting trades | type       | tif     | reference |
       | trader-lp-1 | ETH/DEC19 | sell | 50      | 12000013 | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
-
-    Then debug market data for "ETH/DEC19"
-
-    When the traders submit the following liquidity provision:
+    And the traders submit the following liquidity provision:
       | id  | party       | market id | commitment amount | fee | order side | order reference | order proportion | order offset |reference |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy        | MID             | 1                | -10          | lp-1-ref |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy        | MID             | 1                | -9           | lp-1-ref |
@@ -61,24 +58,24 @@ Feature: Verify the order size is correctly cumulated.
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    And I see the following order events:
-      | trader      | market id | side | volume | reference | offset | price    | status        |
-      | trader-lp-1 | ETH/DEC19 | sell | 17     |           | 0      | 12000014 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | sell | 17     |           | 0      | 12000015 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | sell | 17     |           | 0      | 12000016 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | sell | 17     |           | 0      | 12000017 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | sell | 17     |           | 0      | 12000018 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | sell | 17     |           | 0      | 12000019 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | sell | 17     |           | 0      | 12000020 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000008 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000007 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000006 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000005 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000004 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000003 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000002 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000001 | STATUS_ACTIVE |
-      | trader-lp-1 | ETH/DEC19 | buy  | 19     |           | 0      | 12000000 | STATUS_ACTIVE |
+    And the orders should have the following states:
+      | trader      | market id | side | volume | price    | status        |
+      | trader-lp-1 | ETH/DEC19 | sell | 17     | 12000014 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | sell | 17     | 12000015 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | sell | 17     | 12000016 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | sell | 17     | 12000017 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | sell | 17     | 12000018 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | sell | 17     | 12000019 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | sell | 17     | 12000020 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000008 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000007 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000006 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000005 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000004 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000003 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000002 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000001 | STATUS_ACTIVE |
+      | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000000 | STATUS_ACTIVE |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference  |

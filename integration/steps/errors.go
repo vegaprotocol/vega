@@ -72,3 +72,7 @@ func (s SubmitOrderError) Error() string {
 }
 
 func (s *SubmitOrderError) Unwrap() error { return s.Err }
+
+func errOrderEventsNotFound(trader, marketID string, side types.Side, size, price uint64) error {
+	return fmt.Errorf("no matching order event found %v, %v, %v, %v, %v", trader, marketID, side.String(), size, price)
+}

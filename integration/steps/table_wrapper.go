@@ -29,10 +29,18 @@ func GetFirstRow(table gherkin.DataTable) (RowWrapper, error) {
 
 type TableWrapper gherkin.DataTable
 
-func (t TableWrapper) Parse() []RowWrapper {
+// StrictParse parses and verifies the table integrity.
+func (t TableWrapper) StrictParse(columns ...string) []RowWrapper {
 	dt := gherkin.DataTable(t)
-	out := make([]RowWrapper, 0, len(dt.Rows)-1)
 
+	tableLen := len(dt.Rows)
+	if tableLen < 1 {
+		panic("A table is required.")
+	}
+
+	verifyTableIntegrity(columns, dt.Rows[0])
+
+	out := make([]RowWrapper, 0, tableLen-1)
 	for _, row := range dt.Rows[1:] {
 		wrapper := RowWrapper{values: map[string]string{}}
 		for i := range row.Cells {
@@ -42,6 +50,40 @@ func (t TableWrapper) Parse() []RowWrapper {
 	}
 
 	return out
+}
+
+// Parse parses the table without verifying the integrity.
+func (t TableWrapper) Parse() []RowWrapper {
+	return t.StrictParse()
+}
+
+// verifyTableIntegrity ensures the table declares the expected columns and does
+// not declared any unexpected columns.
+func verifyTableIntegrity(columns []string, header *gherkin.TableRow) {
+	if len(columns) == 0 {
+		return
+	}
+
+	requiredColumnsSet := map[string]interface{}{}
+	for _, column := range columns {
+		requiredColumnsSet[column] = nil
+	}
+
+	declaredColumnsSet := map[string]interface{}{}
+	for _, cell := range header.Cells {
+		_, ok := requiredColumnsSet[cell.Value]
+		if !ok {
+			panic(fmt.Errorf("the column \"%s\" is not expected by this table", cell.Value))
+		}
+		declaredColumnsSet[cell.Value] = nil
+	}
+
+	for requiredColumn, _ := range requiredColumnsSet {
+		_, ok := declaredColumnsSet[requiredColumn]
+		if !ok {
+			panic(fmt.Errorf("a column \"%s\" is required by this table", requiredColumn))
+		}
+	}
 }
 
 type RowWrapper struct {
