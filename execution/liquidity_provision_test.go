@@ -2411,8 +2411,6 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
-			case *events.Order:
-				fmt.Printf("%#v\n", evt.Order().String())
 			}
 		}
 		// no update to the liquidity fee
