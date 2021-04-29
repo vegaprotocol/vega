@@ -348,7 +348,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 
 		// FOK order could not be filled
 		if totalVolumeToFill < agg.Remaining {
-			return nil, ErrFOKNotFilled
+			return nil, nil
 		}
 	}
 

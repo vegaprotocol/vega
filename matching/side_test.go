@@ -456,5 +456,5 @@ func TestFakeUncrossNotEnoughVolume(t *testing.T) {
 
 	trades, err := buySide.fakeUncross(&order)
 	assert.Len(t, trades, 0)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 }
