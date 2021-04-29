@@ -124,7 +124,7 @@ http:
       get: '/parties/{party_id}/deposits'
 
     # Governance
-    - selector: api.v1.TradingService.PrepareProposal
+    - selector: api.v1.TradingService.PrepareProposalSubmission
       post: '/governance/prepare/proposal'
       body: "*"
     - selector: api.v1.TradingService.PrepareVoteSubmission

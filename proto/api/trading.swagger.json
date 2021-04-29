@@ -184,6 +184,33 @@
         ]
       }
     },
+    "/governance/prepare/proposal": {
+      "post": {
+        "summary": "Prepare a governance proposal",
+        "operationId": "PrepareProposalSubmission",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PrepareProposalSubmissionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1PrepareProposalSubmissionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TradingService"
+        ]
+      }
+    },
     "/governance/prepare/vote": {
       "post": {
         "summary": "Prepare a governance vote",
@@ -2865,6 +2892,15 @@
         }
       },
       "title": "Response to a liquidity provision request"
+    },
+    "v1PrepareProposalSubmissionRequest": {
+      "type": "object",
+      "properties": {
+        "submission": {
+          "$ref": "#/definitions/vegaProposalSubmission"
+        }
+      },
+      "title": "Request to prepare a governance proposal"
     },
     "v1PrepareProposalSubmissionResponse": {
       "type": "object",
