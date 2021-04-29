@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package vega;
-option go_package = "code.vegaprotocol.io/vega/proto";
+package vega.events.v1;
+option go_package = "code.vegaprotocol.io/vega/proto/events/v1";
 
 import "markets.proto";
 import "assets.proto";

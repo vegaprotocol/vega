@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type MarketCreated struct {
@@ -37,25 +38,25 @@ func (m MarketCreated) Proto() types.Market {
 	return m.m
 }
 
-func (m MarketCreated) MarketProto() types.MarketEvent {
-	return types.MarketEvent{
+func (m MarketCreated) MarketProto() eventspb.MarketEvent {
+	return eventspb.MarketEvent{
 		MarketId: m.m.Id,
 		Payload:  m.MarketEvent(),
 	}
 }
 
-func (m MarketCreated) StreamMessage() *types.BusEvent {
+func (m MarketCreated) StreamMessage() *eventspb.BusEvent {
 	p := m.MarketProto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    m.eventID(),
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
-		Event: &types.BusEvent_Market{
+		Event: &eventspb.BusEvent_Market{
 			Market: &p,
 		},
 	}
 }
 
-func (m MarketCreated) StreamMarketMessage() *types.BusEvent {
+func (m MarketCreated) StreamMarketMessage() *eventspb.BusEvent {
 	return m.StreamMessage()
 }

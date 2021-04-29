@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/subscribers Broker
@@ -25,9 +25,9 @@ func NewService(broker Broker) *Service {
 	}
 }
 
-func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...EventFilter) (<-chan []*types.BusEvent, chan<- int) {
+func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...EventFilter) (<-chan []*eventspb.BusEvent, chan<- int) {
 	// one batch buffer for the out channel
-	in, out := make(chan int), make(chan []*types.BusEvent, 1)
+	in, out := make(chan int), make(chan []*eventspb.BusEvent, 1)
 	ctx, cfunc := context.WithCancel(ctx)
 	// use stream subscriber
 	// use buffer size of 0 for the time being
@@ -39,7 +39,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 	retries = 200
 
 	go func() {
-		data := []*types.BusEvent{}
+		data := []*eventspb.BusEvent{}
 		defer func() {
 			s.broker.Unsubscribe(id)
 			close(out)
@@ -54,7 +54,7 @@ func (s *Service) ObserveEvents(ctx context.Context, retries int, eTypes []event
 			case <-ctx.Done():
 				return
 			case out <- data:
-				data = []*types.BusEvent{}
+				data = []*eventspb.BusEvent{}
 				ret = retries
 			case <-t.C:
 				if ret == 0 {

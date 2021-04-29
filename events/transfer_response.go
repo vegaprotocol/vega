@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type TransferResponse struct {
@@ -40,19 +41,19 @@ func (t TransferResponse) IsParty(id string) bool {
 	return false
 }
 
-func (t *TransferResponse) Proto() types.TransferResponses {
-	return types.TransferResponses{
+func (t *TransferResponse) Proto() eventspb.TransferResponses {
+	return eventspb.TransferResponses{
 		Responses: t.responses,
 	}
 }
 
-func (t TransferResponse) StreamMessage() *types.BusEvent {
+func (t TransferResponse) StreamMessage() *eventspb.BusEvent {
 	p := t.Proto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    t.eventID(),
 		Block: t.TraceID(),
 		Type:  t.et.ToProto(),
-		Event: &types.BusEvent_TransferResponses{
+		Event: &eventspb.BusEvent_TransferResponses{
 			TransferResponses: &p,
 		},
 	}

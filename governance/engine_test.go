@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
@@ -25,7 +26,7 @@ var (
 
 type streamEvt interface {
 	events.Event
-	StreamMessage() *types.BusEvent
+	StreamMessage() *eventspb.BusEvent
 }
 
 type voteMatcher struct{}
@@ -1096,7 +1097,7 @@ func (e *tstEngine) expectSendProposalNotFoundErrorEvent(t *testing.T, vote type
 		se, ok := evt.(streamEvt)
 		assert.True(t, ok)
 		be := se.StreamMessage()
-		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
 		txErr := be.GetTxErrEvent()
 		assert.NotNil(t, txErr)
 		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
@@ -1112,7 +1113,7 @@ func (e *tstEngine) expectSendAccountNotFoundErrorEvent(t *testing.T, vote types
 		se, ok := evt.(streamEvt)
 		assert.True(t, ok)
 		be := se.StreamMessage()
-		assert.Equal(t, types.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
+		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
 		txErr := be.GetTxErrEvent()
 		assert.NotNil(t, txErr)
 		assert.Equal(t, errStubbedAccountNotFound.Error(), txErr.ErrMsg)

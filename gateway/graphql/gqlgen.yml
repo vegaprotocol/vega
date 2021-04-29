@@ -142,7 +142,7 @@ models:
   Property:
     model: code.vegaprotocol.io/vega/proto/oracles/v1.Property
   AuctionEvent:
-    model: code.vegaprotocol.io/vega/proto.AuctionEvent
+    model: code.vegaprotocol.io/vega/proto/events/v1.AuctionEvent
   FeeFactors:
     model: code.vegaprotocol.io/vega/proto.FeeFactors
   Fees:

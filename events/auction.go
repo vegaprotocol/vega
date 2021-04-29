@@ -6,6 +6,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type Auction struct {
@@ -87,8 +88,8 @@ func (a Auction) MarketEvent() string {
 }
 
 // Proto wrap event data in a proto message
-func (a Auction) Proto() types.AuctionEvent {
-	return types.AuctionEvent{
+func (a Auction) Proto() eventspb.AuctionEvent {
+	return eventspb.AuctionEvent{
 		MarketId:         a.marketID,
 		OpeningAuction:   a.openingAuction,
 		Leave:            a.leave,
@@ -100,13 +101,13 @@ func (a Auction) Proto() types.AuctionEvent {
 }
 
 // StreamMessage returns the BusEvent message for the event stream API
-func (a Auction) StreamMessage() *types.BusEvent {
+func (a Auction) StreamMessage() *eventspb.BusEvent {
 	p := a.Proto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    a.eventID(),
 		Block: a.TraceID(),
 		Type:  a.et.ToProto(),
-		Event: &types.BusEvent_Auction{
+		Event: &eventspb.BusEvent_Auction{
 			Auction: &p,
 		},
 	}
@@ -114,13 +115,13 @@ func (a Auction) StreamMessage() *types.BusEvent {
 
 // StreamMarketMessage - allows for this event to be streamed as just a market event
 // containing just market ID and a string akin to a log message
-func (a Auction) StreamMarketMessage() *types.BusEvent {
-	return &types.BusEvent{
+func (a Auction) StreamMarketMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{
 		Id:    a.eventID(),
 		Block: a.TraceID(),
-		Type:  types.BusEventType_BUS_EVENT_TYPE_MARKET,
-		Event: &types.BusEvent_Market{
-			Market: &types.MarketEvent{
+		Type:  eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
+		Event: &eventspb.BusEvent_Market{
+			Market: &eventspb.MarketEvent{
 				MarketId: a.marketID,
 				Payload:  a.MarketEvent(),
 			},

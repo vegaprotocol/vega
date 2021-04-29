@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type LiquidityProvision struct {
@@ -41,12 +42,12 @@ func (p LiquidityProvision) Proto() types.LiquidityProvision {
 	return p.p
 }
 
-func (p LiquidityProvision) StreamMessage() *types.BusEvent {
-	return &types.BusEvent{
+func (p LiquidityProvision) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{
 		Id:    p.eventID(),
 		Block: p.TraceID(),
 		Type:  p.et.ToProto(),
-		Event: &types.BusEvent_LiquidityProvision{
+		Event: &eventspb.BusEvent_LiquidityProvision{
 			LiquidityProvision: &p.p,
 		},
 	}

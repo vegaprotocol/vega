@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type BrokerStub struct {
@@ -113,7 +114,7 @@ func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 }
 
 func (b *BrokerStub) GetRejectedOrderAmendments() []events.TxErr {
-	return b.filterTxErr(func(errProto types.TxErrorEvent) bool {
+	return b.filterTxErr(func(errProto eventspb.TxErrorEvent) bool {
 		return errProto.GetOrderAmendment() != nil
 	})
 }
@@ -477,7 +478,7 @@ func (b *BrokerStub) ResetType(t events.Type) {
 	b.mu.Unlock()
 }
 
-func (b *BrokerStub) filterTxErr(predicate func(errProto types.TxErrorEvent) bool) []events.TxErr {
+func (b *BrokerStub) filterTxErr(predicate func(errProto eventspb.TxErrorEvent) bool) []events.TxErr {
 	batch := b.GetBatch(events.TxErrEvent)
 	if len(batch) == 0 {
 		return nil

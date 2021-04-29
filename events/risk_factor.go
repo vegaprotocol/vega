@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type RiskFactor struct {
@@ -31,12 +32,12 @@ func (r RiskFactor) Proto() types.RiskFactor {
 	return r.r
 }
 
-func (r RiskFactor) StreamMessage() *types.BusEvent {
-	return &types.BusEvent{
+func (r RiskFactor) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{
 		Id:    r.eventID(),
 		Block: r.TraceID(),
 		Type:  r.et.ToProto(),
-		Event: &types.BusEvent_RiskFactor{
+		Event: &eventspb.BusEvent_RiskFactor{
 			RiskFactor: &r.r,
 		},
 	}

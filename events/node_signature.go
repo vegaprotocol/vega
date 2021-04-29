@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 // NodeSignature ...
@@ -28,12 +29,12 @@ func (n NodeSignature) Proto() types.NodeSignature {
 	return n.e
 }
 
-func (n NodeSignature) StreamMessage() *types.BusEvent {
-	return &types.BusEvent{
+func (n NodeSignature) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{
 		Id:    n.eventID(),
 		Block: n.TraceID(),
 		Type:  n.et.ToProto(),
-		Event: &types.BusEvent_NodeSignature{
+		Event: &eventspb.BusEvent_NodeSignature{
 			NodeSignature: &n.e,
 		},
 	}

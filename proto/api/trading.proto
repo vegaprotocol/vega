@@ -7,7 +7,7 @@ import "markets.proto";
 import "governance.proto";
 import "chain_events.proto";
 import "assets.proto";
-import "events.proto";
+import "events/v1/events.proto";
 import "oracles/v1/oracle_spec.proto";
 import "oracles/v1/oracle_data.proto";
 
@@ -1100,7 +1100,7 @@ message EstimateMarginResponse {
 // Request to subscribe to a stream of one or more event types from the Vega event bus
 message ObserveEventBusRequest {
   // One or more types of event, required field
-  repeated vega.BusEventType type = 1;
+  repeated vega.events.v1.BusEventType type = 1;
   // Market identifier, optional field
   string market_id = 2;
   // Party identifier, optional field
@@ -1118,7 +1118,7 @@ message ObserveEventBusRequest {
 // Response to a subscribed stream of events from the Vega event bus
 message ObserveEventBusResponse {
   // One or more events
-  repeated vega.BusEvent events = 1;
+  repeated vega.events.v1.BusEvent events = 1;
 }
 
 // A a request for statistics about the Vega network

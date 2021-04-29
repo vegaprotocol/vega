@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type Asset struct {
@@ -27,12 +28,12 @@ func (a Asset) Proto() types.Asset {
 	return a.a
 }
 
-func (a Asset) StreamMessage() *types.BusEvent {
-	return &types.BusEvent{
+func (a Asset) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{
 		Id:    a.eventID(),
 		Block: a.TraceID(),
 		Type:  a.et.ToProto(),
-		Event: &types.BusEvent_Asset{
+		Event: &eventspb.BusEvent_Asset{
 			Asset: &a.a,
 		},
 	}
