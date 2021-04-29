@@ -285,7 +285,6 @@ func (e *Engine) SubmitProposal(
 		}
 		e.broker.Send(events.NewProposalEvent(ctx, p))
 	}()
-
 	perr, err := e.validateOpenProposal(p)
 	if err != nil {
 		p.State = types.Proposal_STATE_REJECTED
