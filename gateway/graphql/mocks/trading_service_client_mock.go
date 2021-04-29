@@ -95,24 +95,24 @@ func (mr *MockTradingServiceClientMockRecorder) PrepareLiquidityProvision(arg0, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareLiquidityProvision", reflect.TypeOf((*MockTradingServiceClient)(nil).PrepareLiquidityProvision), varargs...)
 }
 
-// PrepareProposal mocks base method
-func (m *MockTradingServiceClient) PrepareProposal(arg0 context.Context, arg1 *api.PrepareProposalRequest, arg2 ...grpc.CallOption) (*api.PrepareProposalResponse, error) {
+// PrepareProposalSubmission mocks base method
+func (m *MockTradingServiceClient) PrepareProposalSubmission(arg0 context.Context, arg1 *api.PrepareProposalSubmissionRequest, arg2 ...grpc.CallOption) (*api.PrepareProposalSubmissionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "PrepareProposal", varargs...)
-	ret0, _ := ret[0].(*api.PrepareProposalResponse)
+	ret := m.ctrl.Call(m, "PrepareProposalSubmission", varargs...)
+	ret0, _ := ret[0].(*api.PrepareProposalSubmissionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// PrepareProposal indicates an expected call of PrepareProposal
-func (mr *MockTradingServiceClientMockRecorder) PrepareProposal(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// PrepareProposalSubmission indicates an expected call of PrepareProposalSubmission
+func (mr *MockTradingServiceClientMockRecorder) PrepareProposalSubmission(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareProposal", reflect.TypeOf((*MockTradingServiceClient)(nil).PrepareProposal), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareProposalSubmission", reflect.TypeOf((*MockTradingServiceClient)(nil).PrepareProposalSubmission), varargs...)
 }
 
 // PrepareSubmitOrder mocks base method

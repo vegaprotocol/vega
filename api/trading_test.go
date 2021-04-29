@@ -333,14 +333,15 @@ func TestPrepareProposal(t *testing.T) {
 	client := protoapi.NewTradingServiceClient(conn)
 	assert.NotNil(t, client)
 
-	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
-		PartyId: "invalid-party",
-		Proposal: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateNetworkParameter{
-				UpdateNetworkParameter: &types.UpdateNetworkParameter{
-					Changes: &types.NetworkParameter{
-						Key:   "key",
-						Value: "value",
+	proposal, err := client.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
+		Submission: &types.ProposalSubmission{
+			Terms: &types.ProposalTerms{
+				Change: &types.ProposalTerms_UpdateNetworkParameter{
+					UpdateNetworkParameter: &types.UpdateNetworkParameter{
+						Changes: &types.NetworkParameter{
+							Key:   "key",
+							Value: "value",
+						},
 					},
 				},
 			},
