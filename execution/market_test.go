@@ -982,7 +982,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 
 	orderSell2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
@@ -1135,7 +1135,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 
 	orderBuy2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid3",
 		Side:        types.Side_SIDE_BUY,
@@ -1663,7 +1663,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	openEnd := now.Add(time.Duration(extension)*time.Second + time.Second)
 	// auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	// we don't have to add both anymore, the first auction period is determined by network parameter
-	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension) * time.Second)
+	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	var initialPrice uint64 = 100
 	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{
@@ -1787,7 +1787,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 
 	orderSell2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
@@ -2988,7 +2988,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 
 	orderSell2 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
 		Id:          "someid4",
 		Side:        types.Side_SIDE_SELL,
