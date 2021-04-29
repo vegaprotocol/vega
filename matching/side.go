@@ -210,7 +210,8 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 	// If we get here and don't have the full amount of volume
 	// something has gone wrong
 	if totalVolume != volume {
-		return nil, ErrInvalidVolume
+		s.log.Panic("Failed to extract orders as not enough volume on the book",
+			logging.Uint64("Price", price), logging.Uint64("volume", volume))
 	}
 
 	return extractedOrders, nil
