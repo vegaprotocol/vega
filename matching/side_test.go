@@ -318,16 +318,13 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 }
 
 func TestExtractOrdersWrongVolume(t *testing.T) {
-	// Attempt to extract more volume than we have
+	// Attempt to extract more volume than we have on the book
 	side := getPopulatedTestSide(types.Side_SIDE_SELL)
-	orders, err := side.ExtractOrders(101, 30)
-	assert.Error(t, err)
-	assert.Nil(t, orders)
+	assert.Panics(t, func() { side.ExtractOrders(101, 30) })
 
+	// Attempt to extract more than we have at this price level
 	side = getPopulatedTestSide(types.Side_SIDE_SELL)
-	orders, err = side.ExtractOrders(100, 4)
-	assert.Error(t, err)
-	assert.Nil(t, orders)
+	assert.Panics(t, func() { side.ExtractOrders(100, 4) })
 }
 
 func TestBestStatic(t *testing.T) {

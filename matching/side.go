@@ -183,7 +183,8 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 			} else {
 				// We should never get to here unless the passed in price
 				// and volume are not correct
-				return nil, ErrInvalidVolume
+				s.log.Panic("Failed to extract orders as not enough volume within price limits",
+					logging.Uint64("Price", price), logging.Uint64("volume", volume))
 			}
 
 			// If we have the right amount, stop processing
