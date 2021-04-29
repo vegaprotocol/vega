@@ -6667,6 +6667,9 @@ enum OrderRejectionReason {
 
   "Unable to amend pegged order price"
   UnableToAmendPeggedOrderPrice
+
+  "Non-persistent order exceeds price bounds"
+  NonPersistentOrderExceedsPriceBounds
 }
 
 enum OrderType {
