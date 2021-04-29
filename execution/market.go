@@ -105,7 +105,7 @@ var (
 // PriceMonitor interface to handle price monitoring/auction triggers
 // @TODO the interface shouldn't be imported here
 type PriceMonitor interface {
-	CheckPrice(ctx context.Context, as price.AuctionState, p uint64, v uint64, now time.Time) error
+	CheckPrice(ctx context.Context, as price.AuctionState, p, v uint64, now time.Time, persistent bool) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 }
@@ -542,7 +542,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) && m.matching.CanUncross() {
 				// mark opening auction as ending
 				// Prime price monitoring engine with the uncrossing price of the opening auction
-				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
+				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t, true); err != nil {
 					m.log.Panic("unable to run check price with price monitor",
 						logging.String("market-id", m.GetID()),
 						logging.Error(err))
@@ -563,7 +563,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			}
 		} else if m.as.IsPriceAuction() || m.as.IsLiquidityAuction() {
 			isPrice := m.as.IsPriceAuction()
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t); err != nil {
+			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t, true); err != nil {
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
@@ -914,7 +914,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 			// @TODO we should update this once
 			for _, trade := range uncrossedOrder.Trades {
 				err := m.pMonitor.CheckPrice(
-					ctx, m.as, trade.Price, trade.Size, now,
+					ctx, m.as, trade.Price, trade.Size, now, true,
 				)
 				if err != nil {
 					m.log.Panic("unable to run check price with price monitor",
@@ -1342,9 +1342,18 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	if err != nil {
 		return nil, err
 	}
+	persistent := true
+	switch order.TimeInForce {
+	case types.Order_TIME_IN_FORCE_FOK, types.Order_TIME_IN_FORCE_GFN, types.Order_TIME_IN_FORCE_IOC:
+		persistent = false
+	}
 
 	for _, t := range trades {
-		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime); merr != nil {
+		if merr := m.pMonitor.CheckPrice(ctx, m.as, t.Price, t.Size, m.currentTime, persistent); merr != nil {
+			// a specific order error
+			if err, ok := merr.(types.OrderError); ok {
+				return nil, err
+			}
 			m.log.Panic("unable to run check price with price monitor",
 				logging.String("market-id", m.GetID()),
 				logging.Error(merr))
@@ -3145,7 +3154,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	// end the liquidity monitoring auction if possible
 	if m.as.InAuction() && m.as.AuctionEnd() && !m.as.IsOpeningAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime); err != nil {
+		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime, true); err != nil {
 			m.log.Panic("unable to run check price with price monitor",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))

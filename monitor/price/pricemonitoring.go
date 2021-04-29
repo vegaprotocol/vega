@@ -187,7 +187,7 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 }
 
 // CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
-func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v uint64, now time.Time) error {
+func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, now time.Time, persistent bool) error {
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
@@ -211,6 +211,9 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 				e.recordPriceChange(p, v)
 			}
 			return nil
+		}
+		if !persistent {
+			return types.ErrNonPersistentOrderOutOfBounds
 		}
 		// we're dealing with a batch auction that's about to end -> extend it?
 		if fba && as.AuctionEnd() {

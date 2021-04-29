@@ -41,7 +41,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100" for the market "ETH/DEC20"
 
@@ -66,7 +66,7 @@ Feature: Price monitoring test using simple risk model
 
     And the mark price should be "111" for the market "ETH/DEC20"
 
-  Scenario: GFN orders results in auction (issue #2657)
+  Scenario: GFN orders don't result in auction
     Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount       |
       | trader1 | ETH   | 10000        |
@@ -88,7 +88,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100" for the market "ETH/DEC20"
 
@@ -99,10 +99,10 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | type       | tif     | reference |
       | trader2 | ETH/DEC20 | buy  | 1      | 111   | TYPE_LIMIT | TIF_GFN | ref-1     |
-    Then the system should return error "OrderError: invalid time in force"
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    Then the system should return error "OrderError: non-persistent order trades out of price bounds"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-  Scenario: Non-persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates.
+  Scenario: Non-persistent order don't result in an auction (both triggers breached)
     Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount       |
       | trader1 | ETH   | 10000        |
@@ -111,7 +111,7 @@ Feature: Price monitoring test using simple risk model
       | aux2    | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
       | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
       | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
@@ -124,17 +124,15 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
-
-    And the mark price should be "100" for the market "ETH/DEC20"
+      | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    Then the mark price should be "100" for the market "ETH/DEC20"
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
+    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
 
     #T0 + 10min
@@ -147,7 +145,16 @@ Feature: Price monitoring test using simple risk model
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "100" for the market "ETH/DEC20"
+    And the mark price should be "111" for the market "ETH/DEC20"
+
+    When the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader1 | ETH/DEC20 | sell | 1      | 211   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 211   | 0                | TYPE_LIMIT | TIF_FOK | ref-4     |
+
+    Then the system should return error "OrderError: non-persistent order trades out of price bounds"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    And the mark price should be "111" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.
 
@@ -172,14 +179,14 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100" for the market "ETH/DEC20"
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
@@ -226,7 +233,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -238,7 +245,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -250,7 +257,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -317,7 +324,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -329,7 +336,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -341,7 +348,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -353,7 +360,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
@@ -365,11 +372,11 @@ Feature: Price monitoring test using simple risk model
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T1 + 04min01s
-    Then time is updated to "2020-10-16T00:14:11Z"
+    Then time is updated to "2020-10-16T00:24:21Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "105" for the market "ETH/DEC20"
+    And the mark price should be "120" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in a trade with indicative price outside the price monitoring bounds, hence auction get extended, no further orders placed, auction concludes.
 
@@ -394,7 +401,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -406,7 +413,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -418,7 +425,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -430,7 +437,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
@@ -490,7 +497,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -502,7 +509,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 115   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 115   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -514,7 +521,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 105   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 105   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -526,7 +533,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 

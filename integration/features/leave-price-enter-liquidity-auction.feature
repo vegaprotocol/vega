@@ -42,7 +42,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
     When the traders place the following orders:
       | trader           | market id | side | volume | price  | resulting trades | type       | tif     | reference       |
       | trader1          | ETH/DEC19 | sell | 1      | 99844  | 0                | TYPE_LIMIT | TIF_GTC | t1-s-3          |
-      | trader0          | ETH/DEC19 | buy  | 1      | 99844  | 0                | TYPE_LIMIT | TIF_FOK | t0-b-3          |
+      | trader0          | ETH/DEC19 | buy  | 1      | 99844  | 0                | TYPE_LIMIT | TIF_GTC | t0-b-3          |
 
     And time is updated to "2019-11-30T00:00:03Z"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"

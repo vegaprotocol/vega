@@ -51,11 +51,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader4 | trader4-1 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    And the mark price should be "100000" for the market "ETH/DEC20"
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -64,7 +65,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
@@ -73,7 +74,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -82,7 +83,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -98,7 +99,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "95877" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by 1st trigger, upper bound
     Given the traders deposit on asset's general account the following amount:
@@ -135,7 +136,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -144,7 +145,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
@@ -153,7 +154,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -162,7 +163,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -178,7 +179,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "104252" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by 1 trigger (upper bound breached)
     Given the traders deposit on asset's general account the following amount:
@@ -213,7 +214,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -222,7 +223,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
@@ -231,7 +232,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -240,7 +241,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -256,7 +257,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "104252" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by both triggers (lower bound breached)
     Given the traders deposit on asset's general account the following amount:
@@ -291,7 +292,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -300,7 +301,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
@@ -309,7 +310,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -318,7 +319,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 90496 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -346,7 +347,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "90496" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by both triggers, upper bound
     Given the traders deposit on asset's general account the following amount:
@@ -381,7 +382,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -390,7 +391,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
@@ -399,7 +400,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -408,7 +409,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110402 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -436,7 +437,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "104251" for the market "ETH/DEC20"
+    And the mark price should be "110402" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by 1st trigger (lower bound breached), extended by second (upper bound)
     Given the traders deposit on asset's general account the following amount:
@@ -471,7 +472,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -482,7 +483,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
@@ -491,7 +492,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -500,7 +501,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_FOK |           |
+      | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
