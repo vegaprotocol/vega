@@ -54,7 +54,6 @@ Feature: Regression test for issue 596
     Then the traders place the following orders:
       | trader    | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And debug trades
 # checking margins
     Then the traders should have the following account balances:
       | trader    | asset | market id | margin    | general   |

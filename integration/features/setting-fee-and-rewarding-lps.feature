@@ -375,8 +375,6 @@ Feature: Test liquidity provider reward distribution
       | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    And debug trades
-
     And the following trades should be executed:
       | buyer   | price | size | seller  |
       | trader2 | 951   | 20   | lp1     |
