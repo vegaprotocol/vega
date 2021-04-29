@@ -31,8 +31,7 @@ type MarketConfig struct {
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 
-	Markets                     MarketConfig `group:"Markets" namespace:"markets"`
-	InsurancePoolInitialBalance uint64       `long:"insurance-pool-initial-balance"`
+	Markets MarketConfig `group:"Markets" namespace:"markets"`
 
 	Matching   matching.Config   `group:"Matching" namespace:"matching"`
 	Risk       risk.Config       `group:"Risk" namespace:"risk"`
@@ -51,13 +50,12 @@ func NewDefaultConfig(defaultConfigDirPath string) Config {
 			Path:    filepath.Join(defaultConfigDirPath, MarketConfigPath),
 			Configs: []string{},
 		},
-		InsurancePoolInitialBalance: 0,
-		Matching:                    matching.NewDefaultConfig(),
-		Risk:                        risk.NewDefaultConfig(),
-		Position:                    positions.NewDefaultConfig(),
-		Settlement:                  settlement.NewDefaultConfig(),
-		Fee:                         fee.NewDefaultConfig(),
-		Liquidity:                   liquidity.NewDefaultConfig(),
+		Matching:   matching.NewDefaultConfig(),
+		Risk:       risk.NewDefaultConfig(),
+		Position:   positions.NewDefaultConfig(),
+		Settlement: settlement.NewDefaultConfig(),
+		Fee:        fee.NewDefaultConfig(),
+		Liquidity:  liquidity.NewDefaultConfig(),
 	}
 	return c
 }

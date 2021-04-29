@@ -1824,7 +1824,7 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 
 // CreateMarketAccounts will create all required accounts for a market once
 // a new market is accepted through the network
-func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string, insurance uint64) (insuranceID, settleID string, err error) {
+func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string) (insuranceID, settleID string, err error) {
 	if !e.AssetExists(asset) {
 		return "", "", ErrInvalidAssetID
 	}
@@ -1835,7 +1835,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Id:       insuranceID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  insurance,
+			Balance:  0,
 			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_INSURANCE,
 		}
@@ -2131,6 +2131,11 @@ func (e *Engine) accountID(marketID, partyID, asset string, ty types.AccountType
 func (e *Engine) GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error) {
 	liquidityAccID := e.accountID(market, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 	return e.GetAccountByID(liquidityAccID)
+}
+
+func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Account, error) {
+	insuranceAccID := e.accountID(market, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_INSURANCE)
+	return e.GetAccountByID(insuranceAccID)
 }
 
 // TopUpInsurancePool - this is used only for test purposed for now

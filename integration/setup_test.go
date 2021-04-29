@@ -57,8 +57,6 @@ type executionTestSetup struct {
 	// save trader accounts state
 	markets []types.Market
 
-	InsurancePoolInitialBalance uint64
-
 	errorHandler *helpers.ErrorHandler
 
 	netParams *netparams.Store
@@ -74,7 +72,6 @@ func newExecutionTestSetup() *executionTestSetup {
 	ctrl := gomock.NewController(&reporter)
 	execsetup.ctrl = ctrl
 	execsetup.cfg = execution.NewDefaultConfig("")
-	execsetup.cfg.InsurancePoolInitialBalance = execsetup.InsurancePoolInitialBalance
 	execsetup.log = logging.NewTestLogger()
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()

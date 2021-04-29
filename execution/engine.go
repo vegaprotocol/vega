@@ -335,7 +335,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 
 	// we ignore the response, this cannot fail as the asset
 	// is already proven to exists a few line before
-	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset)
 
 	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
 		return err
