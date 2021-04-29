@@ -54,7 +54,7 @@ func testFOKStopped(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 	assert.Equal(t, types.Order_STATUS_STOPPED, order.Status)
@@ -80,7 +80,7 @@ func testFOKFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our fok order to be filled
@@ -95,7 +95,7 @@ func testFOKFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
@@ -117,7 +117,7 @@ func testIOCStopped(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 	assert.Equal(t, types.Order_STATUS_STOPPED, order.Status)
@@ -143,7 +143,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our IOC order to be filled
@@ -158,7 +158,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, types.Order_STATUS_PARTIALLY_FILLED, order.Status)
@@ -184,7 +184,7 @@ func testIOCFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our fok order to be filled
@@ -199,7 +199,7 @@ func testIOCFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
@@ -225,7 +225,7 @@ func testGTCActive(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, order1.Status)
 }
@@ -250,11 +250,11 @@ func testGTCStoppedNotFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// then stop the order
-	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
+	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
 	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
@@ -280,11 +280,11 @@ func testGTCCancelledNotFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// then stop the order
-	confirm, err := book.CancelOrder(&order1)
+	confirm, err := book.ob.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
 }
@@ -311,7 +311,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
@@ -326,7 +326,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Len(t, confirm.PassiveOrdersAffected, 1)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, confirm.PassiveOrdersAffected[0].Status)
@@ -354,7 +354,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
@@ -369,11 +369,11 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err = book.SubmitOrder(&order)
+	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	// then stop the order
-	confirm, err := book.CancelOrder(&order1)
+	confirm, err := book.ob.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
@@ -401,7 +401,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
@@ -416,11 +416,11 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err = book.SubmitOrder(&order)
+	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	// then stop the order
-	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
+	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
 	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
@@ -446,7 +446,7 @@ func testGTCFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our GTC order to be filled
@@ -461,7 +461,7 @@ func testGTCFilled(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Type:        types.Order_TYPE_LIMIT,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
@@ -488,7 +488,7 @@ func testGTTActive(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, order1.Status)
 }
@@ -514,11 +514,11 @@ func testGTTStoppedNotFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// then stop the order
-	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
+	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
 	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
@@ -545,11 +545,11 @@ func testGTTCancelledNotFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// then stop the order
-	confirm, err := book.CancelOrder(&order1)
+	confirm, err := book.ob.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
 }
@@ -577,7 +577,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
@@ -593,7 +593,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Len(t, confirm.PassiveOrdersAffected, 1)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, confirm.PassiveOrdersAffected[0].Status)
@@ -622,7 +622,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
@@ -638,11 +638,11 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err = book.SubmitOrder(&order)
+	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	// then stop the order
-	confirm, err := book.CancelOrder(&order1)
+	confirm, err := book.ob.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
@@ -671,7 +671,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
@@ -687,11 +687,11 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err = book.SubmitOrder(&order)
+	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	// then stop the order
-	rmOrders, err := book.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
+	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
 	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
@@ -718,7 +718,7 @@ func testGTTFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	_, err := book.SubmitOrder(&order1)
+	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our GTT order to be filled
@@ -734,7 +734,7 @@ func testGTTFilled(t *testing.T) {
 		Type:        types.Order_TYPE_LIMIT,
 		ExpiresAt:   10,
 	}
-	confirm, err := book.SubmitOrder(&order)
+	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)

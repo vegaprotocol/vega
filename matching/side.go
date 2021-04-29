@@ -313,7 +313,7 @@ func (s *OrderBookSide) GetVolume(price uint64) (uint64, error) {
 	return priceLevel.volume, nil
 }
 
-func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, error) {
+func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 	var (
 		trades            []*types.Trade
 		totalVolumeToFill uint64
@@ -333,7 +333,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 			if checkPrice(level.price) || agg.Type == types.Order_TYPE_MARKET {
 				for _, order := range level.orders {
 					if agg.PartyId == order.PartyId {
-						return false, nil, ErrWashTrade
+						return nil, ErrWashTrade
 					}
 					totalVolumeToFill += order.Remaining
 					if totalVolumeToFill >= agg.Remaining {
@@ -348,7 +348,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 
 		// FOK order could not be filled
 		if totalVolumeToFill < agg.Remaining {
-			return false, nil, nil
+			return nil, ErrFOKNotFilled
 		}
 	}
 
@@ -387,7 +387,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 		idx--
 	}
 
-	return fake.Remaining == 0, trades, nil
+	return trades, nil
 }
 
 func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, uint64, error) {

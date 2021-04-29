@@ -44,7 +44,7 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 	var totalPrice, totalSize, expectedPrice uint64
 	for _, v := range orders {
 		v := v
-		_, err := book.SubmitOrder(&v)
+		_, err := book.ob.SubmitOrder(&v)
 		assert.NoError(t, err)
 		totalPrice += v.Price * v.Size
 		totalSize += v.Size
@@ -66,7 +66,7 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 		Type:        types.Order_TYPE_NETWORK,
 	}
 
-	_, err := book.SubmitOrder(&netorder)
+	_, err := book.ob.SubmitOrder(&netorder)
 	assert.NoError(t, err)
 	// now we expect the price of the order to be updated
 	assert.Equal(t, int(expectedPrice), int(netorder.Price))

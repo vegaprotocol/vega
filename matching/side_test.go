@@ -162,7 +162,7 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 }
 
 func getPopulatedTestSide(side types.Side) *OrderBookSide {
-	obs := getTestSide(types.Side_SIDE_SELL)
+	obs := getTestSide(side)
 
 	type testOrder struct {
 		ID    string
@@ -184,7 +184,7 @@ func getPopulatedTestSide(side types.Side) *OrderBookSide {
 			Id:          order.ID,
 			MarketId:    "testmarket",
 			PartyId:     "A",
-			Side:        types.Side_SIDE_SELL,
+			Side:        side,
 			Price:       order.Price,
 			Size:        order.Size,
 			Remaining:   order.Size,
@@ -197,7 +197,7 @@ func getPopulatedTestSide(side types.Side) *OrderBookSide {
 }
 
 func getPopulatedTestSideWithPegs(side types.Side) *OrderBookSide {
-	obs := getTestSide(types.Side_SIDE_SELL)
+	obs := getTestSide(side)
 
 	type testOrder struct {
 		ID     string
@@ -220,7 +220,7 @@ func getPopulatedTestSideWithPegs(side types.Side) *OrderBookSide {
 			Id:          order.ID,
 			MarketId:    "testmarket",
 			PartyId:     "A",
-			Side:        types.Side_SIDE_SELL,
+			Side:        side,
 			Price:       order.Price,
 			Size:        order.Size,
 			Remaining:   order.Size,
@@ -239,7 +239,7 @@ func getPopulatedTestSideWithPegs(side types.Side) *OrderBookSide {
 }
 
 func getPopulatedTestSideWithOnlyPegs(side types.Side) *OrderBookSide {
-	obs := getTestSide(types.Side_SIDE_SELL)
+	obs := getTestSide(side)
 
 	type testOrder struct {
 		ID     string
@@ -260,7 +260,7 @@ func getPopulatedTestSideWithOnlyPegs(side types.Side) *OrderBookSide {
 			Id:          order.ID,
 			MarketId:    "testmarket",
 			PartyId:     "A",
-			Side:        types.Side_SIDE_SELL,
+			Side:        side,
 			Price:       order.Price,
 			Size:        order.Size,
 			Remaining:   order.Size,
@@ -405,4 +405,56 @@ func TestGetVolume(t *testing.T) {
 
 	totSellVol := buySide.getTotalVolume()
 	assert.EqualValues(t, 6, totSellVol)
+}
+
+func TestFakeUncrossNormal(t *testing.T) {
+	buySide := getPopulatedTestSideWithPegs(types.Side_SIDE_BUY)
+
+	order := types.Order{
+		Id:          "Id",
+		Side:        types.Side_SIDE_SELL,
+		Size:        5,
+		Remaining:   5,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+		Type:        types.Order_TYPE_MARKET,
+	}
+
+	trades, err := buySide.fakeUncross(&order)
+	assert.Len(t, trades, 5)
+	assert.NoError(t, err)
+}
+
+func TestFakeUncrossSelfTrade(t *testing.T) {
+	buySide := getPopulatedTestSideWithPegs(types.Side_SIDE_BUY)
+
+	order := types.Order{
+		Id:          "Id",
+		PartyId:     "A",
+		Side:        types.Side_SIDE_SELL,
+		Size:        5,
+		Remaining:   5,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+		Type:        types.Order_TYPE_MARKET,
+	}
+
+	trades, err := buySide.fakeUncross(&order)
+	assert.Len(t, trades, 0)
+	assert.Error(t, err)
+}
+
+func TestFakeUncrossNotEnoughVolume(t *testing.T) {
+	buySide := getPopulatedTestSideWithPegs(types.Side_SIDE_BUY)
+
+	order := types.Order{
+		Id:          "Id",
+		Side:        types.Side_SIDE_SELL,
+		Size:        7,
+		Remaining:   7,
+		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+		Type:        types.Order_TYPE_MARKET,
+	}
+
+	trades, err := buySide.fakeUncross(&order)
+	assert.Len(t, trades, 0)
+	assert.Error(t, err)
 }

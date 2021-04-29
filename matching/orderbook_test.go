@@ -23,7 +23,7 @@ type aggressiveOrderScenario struct {
 }
 
 type tstOB struct {
-	*matching.OrderBook
+	ob  *matching.CachedOrderBook
 	log *logging.Logger
 }
 
@@ -39,9 +39,9 @@ func getTestOrderBook(t *testing.T, market string) *tstOB {
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
-	tob.OrderBook = matching.NewOrderBook(tob.log, matching.NewDefaultConfig(), market, false)
+	tob.ob = matching.NewCachedOrderBook(tob.log, matching.NewDefaultConfig(), market, false)
 
-	tob.OrderBook.LogRemovedOrdersDebug = true
+	tob.ob.LogRemovedOrdersDebug = true
 	return &tob
 }
 
@@ -117,11 +117,11 @@ func TestHash(t *testing.T) {
 	}
 
 	for _, o := range orders {
-		_, err := book.SubmitOrder(o)
+		_, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 	}
 
-	hash := book.Hash()
+	hash := book.ob.Hash()
 	require.Equal(t,
 		"ff7190c637406cf6907a73f8eab20c0465e3ee0f471ca95f739aa5f4e4192a8e",
 		hex.EncodeToString(hash),
@@ -129,7 +129,7 @@ func TestHash(t *testing.T) {
 	)
 	// compute the hash 100 times for determinism verification
 	for i := 0; i < 100; i++ {
-		got := book.Hash()
+		got := book.ob.Hash()
 		require.Equal(t, hash, got)
 	}
 }
@@ -189,11 +189,11 @@ func cancelAllOrderForAParty(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 	}
-	confs, err := book.CancelAllOrders("A")
+	confs, err := book.ob.CancelAllOrders("A")
 	assert.NoError(t, err)
 	assert.Len(t, confs, 3)
 	expectedIDs := map[string]struct{}{
@@ -265,11 +265,11 @@ func getAllOrderForAParty(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 	}
-	ordersLs := book.GetOrdersPerParty("A")
+	ordersLs := book.ob.GetOrdersPerParty("A")
 	assert.Len(t, ordersLs, 3)
 	expectedIDs := map[string]struct{}{
 		"1111111111111111111111": {},
@@ -340,11 +340,11 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 	}
-	ordersLs := book.GetOrdersPerParty("X")
+	ordersLs := book.ob.GetOrdersPerParty("X")
 	assert.Len(t, ordersLs, 0)
 }
 
@@ -400,15 +400,15 @@ func testBestBidPriceAndVolume(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		trades, getErr := book.GetTrades(o)
+		trades, getErr := book.ob.GetTrades(o)
 		assert.NoError(t, getErr)
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 		assert.Equal(t, len(confirm.Trades), len(trades))
 	}
 
-	price, volume, err := book.BestBidPriceAndVolume()
+	price, volume, err := book.ob.BestBidPriceAndVolume()
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(300), price)
 	assert.Equal(t, uint64(15), volume)
@@ -466,15 +466,15 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		trades, getErr := book.GetTrades(o)
+		trades, getErr := book.ob.GetTrades(o)
 		assert.NoError(t, getErr)
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 		assert.Equal(t, len(trades), len(confirm.Trades))
 	}
 
-	price, volume, err := book.BestOfferPriceAndVolume()
+	price, volume, err := book.ob.BestOfferPriceAndVolume()
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(10), price)
 	assert.Equal(t, uint64(15), volume)
@@ -512,9 +512,9 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		trades, getErr := book.GetTrades(o)
+		trades, getErr := book.ob.GetTrades(o)
 		assert.NoError(t, getErr)
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 		assert.Equal(t, len(trades), len(confirm.Trades))
@@ -526,11 +526,11 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.GetCloseoutPrice(vol, types.Side_SIDE_BUY)
+		price, err := book.ob.GetCloseoutPrice(vol, types.Side_SIDE_BUY)
 		assert.Equal(t, exp, price)
 		assert.NoError(t, err)
 	}
-	price, err := book.GetCloseoutPrice(3, types.Side_SIDE_BUY)
+	price, err := book.ob.GetCloseoutPrice(3, types.Side_SIDE_BUY)
 	assert.Equal(t, callExp[2], price)
 	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
@@ -567,9 +567,9 @@ func getClosePNLIncompleteSell(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		trades, getErr := book.GetTrades(o)
+		trades, getErr := book.ob.GetTrades(o)
 		assert.NoError(t, getErr)
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 		assert.Equal(t, len(trades), len(confirm.Trades))
@@ -581,11 +581,11 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.GetCloseoutPrice(vol, types.Side_SIDE_SELL)
+		price, err := book.ob.GetCloseoutPrice(vol, types.Side_SIDE_SELL)
 		assert.Equal(t, exp, price)
 		assert.NoError(t, err)
 	}
-	price, err := book.GetCloseoutPrice(3, types.Side_SIDE_SELL)
+	price, err := book.ob.GetCloseoutPrice(3, types.Side_SIDE_SELL)
 	assert.Equal(t, callExp[2], price)
 	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
@@ -634,9 +634,9 @@ func getClosePNLBuy(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		trades, getErr := book.GetTrades(o)
+		trades, getErr := book.ob.GetTrades(o)
 		assert.NoError(t, getErr)
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 		assert.Equal(t, len(trades), len(confirm.Trades))
@@ -649,7 +649,7 @@ func getClosePNLBuy(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.GetCloseoutPrice(vol, types.Side_SIDE_BUY)
+		price, err := book.ob.GetCloseoutPrice(vol, types.Side_SIDE_BUY)
 		assert.Equal(t, int(exp), int(price))
 		assert.NoError(t, err)
 	}
@@ -699,9 +699,9 @@ func getClosePNLSell(t *testing.T) {
 		},
 	}
 	for _, o := range orders {
-		trades, getErr := book.GetTrades(o)
+		trades, getErr := book.ob.GetTrades(o)
 		assert.NoError(t, getErr)
-		confirm, err := book.SubmitOrder(o)
+		confirm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(confirm.Trades))
 		assert.Equal(t, len(trades), len(confirm.Trades))
@@ -714,7 +714,7 @@ func getClosePNLSell(t *testing.T) {
 	}
 	// this calculates the actual volume
 	for vol, exp := range callExp {
-		price, err := book.GetCloseoutPrice(vol, types.Side_SIDE_SELL)
+		price, err := book.ob.GetCloseoutPrice(vol, types.Side_SIDE_SELL)
 		assert.NoError(t, err)
 		assert.Equal(t, exp, price)
 	}
@@ -755,13 +755,13 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Id:          "v0000000000000-0000001",
 	}
 
-	trades, getErr := book.GetTrades(&order1)
+	trades, getErr := book.ob.GetTrades(&order1)
 	assert.NoError(t, getErr)
-	confirm, err := book.SubmitOrder(&order1)
+	confirm, err := book.ob.SubmitOrder(&order1)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
-	o, err := book.CancelOrder(&order2)
+	o, err := book.ob.CancelOrder(&order2)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, o.Order.Remaining, order1.Remaining)
 }
@@ -789,9 +789,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpiresAt:   someTimeLater,
 		Id:          "1",
 	}
-	trades, getErr := book.GetTrades(order1)
+	trades, getErr := book.ob.GetTrades(order1)
 	assert.NoError(t, getErr)
-	confirm, err := book.SubmitOrder(order1)
+	confirm, err := book.ob.SubmitOrder(order1)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -809,9 +809,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpiresAt:   someTimeLater + 1,
 		Id:          "2",
 	}
-	trades, getErr = book.GetTrades(order2)
+	trades, getErr = book.ob.GetTrades(order2)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order2)
+	confirm, err = book.ob.SubmitOrder(order2)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -829,9 +829,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpiresAt:   someTimeLater,
 		Id:          "3",
 	}
-	trades, getErr = book.GetTrades(order3)
+	trades, getErr = book.ob.GetTrades(order3)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order3)
+	confirm, err = book.ob.SubmitOrder(order3)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -848,9 +848,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		CreatedAt:   currentTimestamp,
 		Id:          "4",
 	}
-	trades, getErr = book.GetTrades(order4)
+	trades, getErr = book.ob.GetTrades(order4)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order4)
+	confirm, err = book.ob.SubmitOrder(order4)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -869,9 +869,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		Id:          "5",
 	}
 
-	trades, getErr = book.GetTrades(order5)
+	trades, getErr = book.ob.GetTrades(order5)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order5)
+	confirm, err = book.ob.SubmitOrder(order5)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -888,9 +888,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		CreatedAt:   currentTimestamp,
 		Id:          "6",
 	}
-	trades, getErr = book.GetTrades(order6)
+	trades, getErr = book.ob.GetTrades(order6)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order6)
+	confirm, err = book.ob.SubmitOrder(order6)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -908,9 +908,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpiresAt:   someTimeLater + 9999,
 		Id:          "7",
 	}
-	trades, getErr = book.GetTrades(order7)
+	trades, getErr = book.ob.GetTrades(order7)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order7)
+	confirm, err = book.ob.SubmitOrder(order7)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -928,9 +928,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpiresAt:   someTimeLater - 9999,
 		Id:          "8",
 	}
-	trades, getErr = book.GetTrades(order8)
+	trades, getErr = book.ob.GetTrades(order8)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order8)
+	confirm, err = book.ob.SubmitOrder(order8)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -947,9 +947,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		CreatedAt:   currentTimestamp,
 		Id:          "9",
 	}
-	trades, getErr = book.GetTrades(order9)
+	trades, getErr = book.ob.GetTrades(order9)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order9)
+	confirm, err = book.ob.SubmitOrder(order9)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 
@@ -967,9 +967,9 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		ExpiresAt:   someTimeLater - 1,
 		Id:          "10",
 	}
-	trades, getErr = book.GetTrades(order10)
+	trades, getErr = book.ob.GetTrades(order10)
 	assert.NoError(t, getErr)
-	confirm, err = book.SubmitOrder(order10)
+	confirm, err = book.ob.SubmitOrder(order10)
 	assert.Equal(t, err, nil)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 }
@@ -990,13 +990,13 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		Size:      1,
 		Remaining: 1,
 	}
-	trades, getErr := book.GetTrades(&timeStampOrder)
+	trades, getErr := book.ob.GetTrades(&timeStampOrder)
 	assert.NoError(t, getErr)
-	confirm, err := book.SubmitOrder(&timeStampOrder)
+	confirm, err := book.ob.SubmitOrder(&timeStampOrder)
 	assert.NoError(t, err)
 	assert.Equal(t, len(trades), len(confirm.Trades))
 	// cancel order again, just so we set the timestamp as expected
-	book.CancelOrder(&timeStampOrder)
+	book.ob.CancelOrder(&timeStampOrder)
 
 	invalidRemainingSizeOrdertypes := &types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
@@ -1011,8 +1011,8 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		CreatedAt:   10,
 		Id:          "id-number-one",
 	}
-	trades, getErr = book.GetTrades(invalidRemainingSizeOrdertypes)
-	_, err = book.SubmitOrder(invalidRemainingSizeOrdertypes)
+	trades, getErr = book.ob.GetTrades(invalidRemainingSizeOrdertypes)
+	_, err = book.ob.SubmitOrder(invalidRemainingSizeOrdertypes)
 	assert.Equal(t, err, getErr)
 	assert.Equal(t, types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE, err)
 	assert.Equal(t, 0, len(trades))
@@ -1036,16 +1036,49 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 		CreatedAt:   0,
 	}
 
-	trades, err := book.GetTrades(newOrder)
+	trades, err := book.ob.GetTrades(newOrder)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(trades))
-	book.SubmitOrder(newOrder)
+	book.ob.SubmitOrder(newOrder)
 
-	if _, err := book.DeleteOrder(newOrder); err != nil {
+	if _, err := book.ob.DeleteOrder(newOrder); err != nil {
 		fmt.Println(err, "ORDER_NOT_FOUND")
 	}
 
-	book.PrintState("AFTER REMOVE ORDER")
+	book.ob.PrintState("AFTER REMOVE ORDER")
+}
+
+func TestOrderBook_RemoveOrder(t *testing.T) {
+	market := "testOrderbook"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	newOrder := &types.Order{
+		Status:      types.Order_STATUS_ACTIVE,
+		Type:        types.Order_TYPE_LIMIT,
+		MarketId:    market,
+		PartyId:     "A",
+		Side:        types.Side_SIDE_SELL,
+		Price:       101,
+		Size:        100,
+		Remaining:   100,
+		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		CreatedAt:   0,
+	}
+
+	trades, err := book.ob.GetTrades(newOrder)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(trades))
+	book.ob.SubmitOrder(newOrder)
+
+	// First time we remove the order it should succeed
+	err = book.ob.RemoveOrder(newOrder)
+	assert.NoError(t, err)
+	assert.Equal(t, types.Order_STATUS_PARKED, newOrder.Status)
+
+	// Second time we try to remove the order it should fail
+	err = book.ob.RemoveOrder(newOrder)
+	assert.Error(t, err)
 }
 
 func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
@@ -1067,10 +1100,10 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		Id:          fmt.Sprintf("V%010d-%010d", 1, 1),
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.Error(t, getErr)
 	assert.Equal(t, 0, len(trades))
-	_, err := book.SubmitOrder(newOrder)
+	_, err := book.ob.SubmitOrder(newOrder)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -1105,15 +1138,15 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 		Id:          id,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
 	// Act
-	res, err := book.CancelOrder(orderAdded)
+	res, err := book.ob.CancelOrder(orderAdded)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -1123,7 +1156,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	assert.Equal(t, id, res.Order.Id)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, res.Order.Status)
 
-	book.PrintState("AFTER CANCEL ORDER")
+	book.ob.PrintState("AFTER CANCEL ORDER")
 }
 
 func TestOrderBook_CancelBuyOrder(t *testing.T) {
@@ -1151,15 +1184,15 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 		Id:          id,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 	assert.NoError(t, err)
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 	orderAdded := confirmation.Order
 
 	// Act
-	res, err := book.CancelOrder(orderAdded)
+	res, err := book.ob.CancelOrder(orderAdded)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -1169,7 +1202,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	assert.Equal(t, id, res.Order.Id)
 	assert.Equal(t, types.Order_STATUS_CANCELLED, res.Order.Status)
 
-	book.PrintState("AFTER CANCEL ORDER")
+	book.ob.PrintState("AFTER CANCEL ORDER")
 }
 
 func TestOrderBook_CancelOrderByID(t *testing.T) {
@@ -1196,28 +1229,28 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 		Id:          id,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 	assert.NotNil(t, confirmation, "submit order should succeed")
 	assert.NoError(t, err, "submit order should succeed")
 	orderAdded := confirmation.Order
 	assert.NotNil(t, orderAdded, "submitted order is expected to be valid")
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
-	orderFound, err := book.GetOrderByID(orderAdded.Id)
+	orderFound, err := book.ob.GetOrderByID(orderAdded.Id)
 	assert.NotNil(t, orderFound, "order lookup should work for the order just submitted")
 	assert.NoError(t, err, "order lookup should not fail")
 
-	res, err := book.CancelOrder(orderFound)
+	res, err := book.ob.CancelOrder(orderFound)
 	assert.NotNil(t, res, "cancelling should work for a valid order that was just found")
 	assert.NoError(t, err, "order cancel should not fail")
 
-	orderFound, err = book.GetOrderByID(orderAdded.Id)
+	orderFound, err = book.ob.GetOrderByID(orderAdded.Id)
 	assert.Error(t, err, "order lookup for an already cancelled order should fail")
 	assert.Nil(t, orderFound, "order lookup for an already cancelled order should not be possible")
 
-	book.PrintState("AFTER CANCEL ORDER BY ID")
+	book.ob.PrintState("AFTER CANCEL ORDER BY ID")
 }
 
 func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
@@ -1238,16 +1271,16 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 		Remaining: 100,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
 	orderAdded.MarketId = "invalid" // Bad market, malformed?
 
-	_, err = book.CancelOrder(orderAdded)
+	_, err = book.ob.CancelOrder(orderAdded)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -1273,14 +1306,14 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 		Remaining: 100,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 	assert.NoError(t, err)
 	orderAdded := confirmation.Order
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
-	_, err = book.CancelOrder(orderAdded)
+	_, err = book.ob.CancelOrder(orderAdded)
 	if err != nil {
 		logger.Debug("error cancelling order", logging.Error(err))
 	}
@@ -1328,7 +1361,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 	if err != nil {
 		t.Log(err)
 	}
@@ -1351,7 +1384,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	err = book.AmendOrder(newOrder, editedOrder)
+	err = book.ob.AmendOrder(newOrder, editedOrder)
 	if err != nil {
 		t.Log(err)
 	}
@@ -1377,9 +1410,9 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
@@ -1399,7 +1432,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		Remaining:   200,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
-	err = book.AmendOrder(newOrder, editedOrder)
+	err = book.ob.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE {
 		t.Log(err)
 	}
@@ -1424,8 +1457,8 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
-	confirmation, err := book.SubmitOrder(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -1447,7 +1480,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	err = book.AmendOrder(newOrder, editedOrder)
+	err = book.ob.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_ERROR_NOT_FOUND {
 		fmt.Println(err)
 	}
@@ -1476,9 +1509,9 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
@@ -1499,7 +1532,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	err = book.AmendOrder(newOrder, editedOrder)
+	err = book.ob.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_ERROR_AMEND_FAILURE {
 		t.Log(err)
 	}
@@ -1530,9 +1563,9 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		CreatedAt:   10,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
@@ -1554,7 +1587,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		CreatedAt:   5,
 	}
 
-	err = book.AmendOrder(newOrder, editedOrder)
+	err = book.ob.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE {
 		t.Log(err)
 	}
@@ -1585,9 +1618,9 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		CreatedAt:   10,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
@@ -1609,7 +1642,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		CreatedAt:   10,
 	}
 
-	err = book.AmendOrder(newOrder, editedOrder)
+	err = book.ob.AmendOrder(newOrder, editedOrder)
 	if err != types.OrderError_ORDER_ERROR_AMEND_FAILURE {
 		t.Log(err)
 	}
@@ -1717,9 +1750,9 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	timestamps := []int64{0, 1}
 	for _, timestamp := range timestamps {
 		for _, o := range m[timestamp] {
-			trades, getErr := book.GetTrades(o)
+			trades, getErr := book.ob.GetTrades(o)
 			assert.NoError(t, getErr)
-			confirmation, err := book.SubmitOrder(o)
+			confirmation, err := book.ob.SubmitOrder(o)
 			// this should not return any errors
 			assert.Equal(t, nil, err)
 			// this should not generate any trades
@@ -1964,9 +1997,9 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		fmt.Println("expectedTrades: ", s.expectedTrades)
 		fmt.Println()
 
-		trades, getErr := book.GetTrades(s.aggressiveOrder)
+		trades, getErr := book.ob.GetTrades(s.aggressiveOrder)
 		assert.NoError(t, getErr)
-		confirmationtypes, err := book.SubmitOrder(s.aggressiveOrder)
+		confirmationtypes, err := book.ob.SubmitOrder(s.aggressiveOrder)
 
 		//this should not return any errors
 		assert.Equal(t, nil, err)
@@ -2000,12 +2033,12 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		// }
 
 		// call remove expired orders every scenario
-		// book.RemoveExpiredOrders(s.aggressiveOrder.CreatedAt)
+		// book.ob.RemoveExpiredOrders(s.aggressiveOrder.CreatedAt)
 	}
 }
 
 // Validate that an IOC order that is not fully filled
-// is not added to the order book.
+// is not added to the order book.ob.
 func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2029,9 +2062,9 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 		CreatedAt:   10,
 	}
 
-	trades, getErr := book.GetTrades(newOrder)
+	trades, getErr := book.ob.GetTrades(newOrder)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(newOrder)
+	confirmation, err := book.ob.SubmitOrder(newOrder)
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
@@ -2053,9 +2086,9 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 		CreatedAt:   10,
 	}
-	trades, getErr = book.GetTrades(iocOrder)
+	trades, getErr = book.ob.GetTrades(iocOrder)
 	assert.NoError(t, getErr)
-	confirmation, err = book.SubmitOrder(iocOrder)
+	confirmation, err = book.ob.SubmitOrder(iocOrder)
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
@@ -2064,14 +2097,14 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
 	// Check to see if the order still exists (it should not)
-	nonorder, err := book.GetOrderByID(iocOrderID)
+	nonorder, err := book.ob.GetOrderByID(iocOrderID)
 	assert.Equal(t, matching.ErrOrderDoesNotExist, err)
 	assert.Nil(t, nonorder)
 }
 
 func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
 	order := getOrder(t, orderbook, market, id, side, price, partyid, size)
-	_, err := orderbook.SubmitOrder(order)
+	_, err := orderbook.ob.SubmitOrder(order)
 	assert.Equal(t, err, nil)
 }
 
@@ -2109,7 +2142,7 @@ func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
 	buyOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	buyOrder.Type = types.Order_TYPE_MARKET
 	buyOrder.ExpiresAt = 0
-	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	buyOrderConf, err := book.ob.SubmitOrder(buyOrder)
 	assert.NoError(t, err)
 	assert.NotNil(t, buyOrderConf)
 
@@ -2118,7 +2151,7 @@ func TestOrderBook_GFNMarketNoExpiry(t *testing.T) {
 	sellOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	sellOrder.Type = types.Order_TYPE_MARKET
 	sellOrder.ExpiresAt = 0
-	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	sellOrderConf, err := book.ob.SubmitOrder(sellOrder)
 	assert.NoError(t, err)
 	assert.NotNil(t, sellOrderConf)
 }
@@ -2136,7 +2169,7 @@ func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
 	buyOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	buyOrder.Type = types.Order_TYPE_MARKET
 	buyOrder.ExpiresAt = 100
-	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	buyOrderConf, err := book.ob.SubmitOrder(buyOrder)
 	assert.Error(t, err, types.ErrInvalidExpirationDatetime)
 	assert.Nil(t, buyOrderConf)
 
@@ -2145,7 +2178,7 @@ func TestOrderBook_GFNMarketWithExpiry(t *testing.T) {
 	sellOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	sellOrder.Type = types.Order_TYPE_MARKET
 	sellOrder.ExpiresAt = 100
-	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	sellOrderConf, err := book.ob.SubmitOrder(sellOrder)
 	assert.Error(t, err, types.ErrInvalidExpirationDatetime)
 	assert.Nil(t, sellOrderConf)
 }
@@ -2160,7 +2193,7 @@ func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
 
 	// Normal limit buy order to match against
 	buyOrder := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
-	buyOrderConf, err := book.SubmitOrder(buyOrder)
+	buyOrderConf, err := book.ob.SubmitOrder(buyOrder)
 	assert.NoError(t, err)
 	assert.NotNil(t, buyOrderConf)
 
@@ -2168,7 +2201,7 @@ func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
 	sellOrder := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 10)
 	sellOrder.TimeInForce = types.Order_TIME_IN_FORCE_GFN
 	sellOrder.Type = types.Order_TYPE_LIMIT
-	sellOrderConf, err := book.SubmitOrder(sellOrder)
+	sellOrderConf, err := book.ob.SubmitOrder(sellOrder)
 	assert.NoError(t, err)
 	assert.NotNil(t, sellOrderConf)
 }
@@ -2185,13 +2218,13 @@ func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
-	assert.True(t, book.InAuction())
+	book.ob.EnterAuction()
+	assert.True(t, book.ob.InAuction())
 
 	// Try to add an order of type GFN which should be rejected
 	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
 	order.TimeInForce = types.Order_TIME_IN_FORCE_GFN
-	orderConf, err := book.SubmitOrder(order)
+	orderConf, err := book.ob.SubmitOrder(order)
 	assert.Equal(t, err, types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE)
 	assert.Nil(t, orderConf)
 }
@@ -2205,12 +2238,12 @@ func TestOrderBook_ContinuousGFAAreRejected(t *testing.T) {
 	defer logger.Sync()
 
 	// We start in continuous mode
-	assert.False(t, book.InAuction())
+	assert.False(t, book.ob.InAuction())
 
 	// Try to add an order of type GFA which should be rejected
 	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
 	order.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	orderConf, err := book.SubmitOrder(order)
+	orderConf, err := book.ob.SubmitOrder(order)
 	assert.Equal(t, err, types.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE)
 	assert.Nil(t, orderConf)
 }
@@ -2224,20 +2257,20 @@ func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
 	defer logger.Sync()
 
 	// We start in continuous mode
-	assert.False(t, book.InAuction())
+	assert.False(t, book.ob.InAuction())
 
 	// Add a GFN order
 	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
 	order.TimeInForce = types.Order_TIME_IN_FORCE_GFN
-	orderConf, err := book.SubmitOrder(order)
+	orderConf, err := book.ob.SubmitOrder(order)
 	assert.NoError(t, err)
 	assert.NotNil(t, orderConf)
 
 	// Switch to auction and makes sure the order is cancelled
-	orders, err := book.EnterAuction()
+	orders, err := book.ob.EnterAuction()
 	assert.NoError(t, err)
 	assert.Equal(t, len(orders), 1)
-	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(1))
+	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(1))
 }
 
 func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
@@ -2249,22 +2282,22 @@ func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
 	defer logger.Sync()
 
 	// Flip straight to auction mode
-	_, err := book.EnterAuction()
+	_, err := book.ob.EnterAuction()
 	assert.NoError(t, err)
-	assert.True(t, book.InAuction())
+	assert.True(t, book.ob.InAuction())
 
 	// Add a GFA order
 	order := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
 	order.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	orderConf, err := book.SubmitOrder(order)
+	orderConf, err := book.ob.SubmitOrder(order)
 	assert.NoError(t, err)
 	assert.NotNil(t, orderConf)
 
 	// Switch to continuous mode and makes sure the order is cancelled
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.NoError(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
-	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(1))
+	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(1))
 	assert.Equal(t, len(cancels), 1)
 }
 
@@ -2277,35 +2310,35 @@ func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
 	defer logger.Sync()
 
 	// We start in continuous trading mode
-	assert.False(t, book.InAuction())
-	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+	assert.False(t, book.ob.InAuction())
+	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(0))
 
 	// Get indicative auction price and volume which should be zero as we are out of auction
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price, uint64(0))
 
 	// Switch to auction mode
-	book.EnterAuction()
-	assert.True(t, book.InAuction())
-	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+	book.ob.EnterAuction()
+	assert.True(t, book.ob.InAuction())
+	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(0))
 
 	// Get indicative auction price and volume
-	price, volume, side = book.GetIndicativePriceAndVolume()
+	price, volume, side = book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
-	assert.False(t, book.InAuction())
-	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(0))
+	assert.False(t, book.ob.InAuction())
+	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(0))
 	assert.Equal(t, len(uncrossedOrders), 0)
 	assert.Equal(t, len(cancels), 0)
 }
@@ -2319,22 +2352,22 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
-	assert.True(t, book.InAuction())
+	book.ob.EnterAuction()
+	assert.True(t, book.ob.InAuction())
 
 	// No trades!
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
-	assert.False(t, book.InAuction())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
+	assert.False(t, book.ob.InAuction())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
 	assert.Equal(t, len(cancels), 0)
@@ -2349,7 +2382,7 @@ func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Trades on just one side of the book
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 10)
@@ -2357,21 +2390,21 @@ func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
 	makeOrder(t, book, market, "BuyOrder03", types.Side_SIDE_BUY, 98, "party01", 10)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
 	assert.Equal(t, len(cancels), 0)
 
 	// All of the orders should remain on the book
-	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(3))
+	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(3))
 }
 
 func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
@@ -2383,7 +2416,7 @@ func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Trades on just one side of the book
 	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 10)
@@ -2391,21 +2424,21 @@ func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 98, "party01", 10)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, price, uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price, uint64(0))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
 	assert.Equal(t, len(cancels), 0)
 
 	// All of the orders should remain on the book
-	assert.Equal(t, book.GetTotalNumberOfOrders(), int64(3))
+	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(3))
 }
 
 func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
@@ -2417,7 +2450,7 @@ func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 101, "party01", 20)
@@ -2432,15 +2465,15 @@ func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 103, "party02", 10)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, price, uint64(101))
 	assert.Equal(t, volume, uint64(20))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price, uint64(101))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 0)
@@ -2455,7 +2488,7 @@ func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 101, "party01", 30)
@@ -2471,15 +2504,15 @@ func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 103, "party02", 10)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, uint64(100), price)
 	assert.Equal(t, uint64(30), volume)
 	assert.Equal(t, types.Side_SIDE_BUY, side)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, uint64(100), price)
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
@@ -2494,7 +2527,7 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 104, "party01", 10)
@@ -2507,15 +2540,15 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 96, "party02", 15)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, 100, int(price))
 	assert.Equal(t, 45, int(volume))
 	assert.Equal(t, types.Side_SIDE_BUY, side)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, 100, int(price))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
@@ -2530,7 +2563,7 @@ func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 99, "party01", 10)
@@ -2543,15 +2576,15 @@ func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder03", types.Side_SIDE_SELL, 100, "party02", 5)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, uint64(0), price)
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, types.Side_SIDE_UNSPECIFIED, side)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, uint64(0), price)
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 0)
 	assert.Equal(t, len(cancels), 0)
@@ -2566,7 +2599,7 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
@@ -2593,15 +2626,15 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder10", types.Side_SIDE_SELL, 96, "party02", 10)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, uint64(99), price)
 	assert.Equal(t, uint64(34), volume)
 	assert.Equal(t, types.Side_SIDE_BUY, side)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, uint64(99), price)
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
@@ -2617,7 +2650,7 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
@@ -2632,15 +2665,15 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 96, "party02", 4)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, 101, int(price))
 	assert.Equal(t, 10, int(volume))
 	assert.Equal(t, types.Side_SIDE_BUY, side)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, 101, int(price))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 0)
@@ -2656,7 +2689,7 @@ func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
@@ -2675,15 +2708,15 @@ func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 96, "party02", 7)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, uint64(99), price)
 	assert.Equal(t, uint64(37), volume)
 	assert.Equal(t, types.Side_SIDE_SELL, side)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, uint64(99), price)
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
@@ -2698,7 +2731,7 @@ func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 103, "party01", 10)
@@ -2717,15 +2750,15 @@ func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder04", types.Side_SIDE_SELL, 96, "party02", 9)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, 99, int(price))
 	assert.Equal(t, 38, int(volume))
 	assert.Equal(t, types.Side_SIDE_BUY, side)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, 99, int(price))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 8, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
@@ -2740,7 +2773,7 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	// Populate buy side
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 110, "party01", 1)
@@ -2756,15 +2789,15 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 303, "party02", 10)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, 303, int(price))
 	assert.Equal(t, 10, int(volume))
 	assert.Equal(t, types.Side_SIDE_BUY, side)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, 303, int(price))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(uncrossedOrders))
 	assert.Equal(t, 0, len(cancels))
@@ -2779,34 +2812,34 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	bo1 := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 5)
 	bo1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	book.SubmitOrder(bo1)
+	book.ob.SubmitOrder(bo1)
 
 	so1 := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party02", 5)
 	so1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	book.SubmitOrder(so1)
+	book.ob.SubmitOrder(so1)
 
 	bo2 := getOrder(t, book, market, "BuyOrder02", types.Side_SIDE_BUY, 100, "party01", 5)
 	bo2.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	book.SubmitOrder(bo2)
+	book.ob.SubmitOrder(bo2)
 
 	so2 := getOrder(t, book, market, "SellOrder02", types.Side_SIDE_SELL, 101, "party02", 5)
 	so2.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	book.SubmitOrder(so2)
+	book.ob.SubmitOrder(so2)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, price, uint64(100))
 	assert.Equal(t, volume, uint64(5))
 	assert.Equal(t, side, types.Side_SIDE_SELL)
-	price = book.GetIndicativePrice()
+	price = book.ob.GetIndicativePrice()
 	assert.Equal(t, price, uint64(100))
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 2)
@@ -2849,7 +2882,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 
 	// now we add the trades to the book
 	for _, o := range orders {
-		cnfm, err := book.SubmitOrder(o)
+		cnfm, err := book.ob.SubmitOrder(o)
 		assert.NoError(t, err)
 		assert.Len(t, cnfm.Trades, 0)
 	}
@@ -2869,7 +2902,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 		CreatedAt:   12,
 	}
 
-	cnfm, err := book.SubmitOrder(netorder)
+	cnfm, err := book.ob.SubmitOrder(netorder)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_FILLED, netorder.Status)
 	assert.Equal(t, 50, int(netorder.Price))
@@ -2881,7 +2914,7 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
 
-	orders, err := book.EnterAuction()
+	orders, err := book.ob.EnterAuction()
 
 	assert.Equal(t, 0, len(orders))
 	assert.Nil(t, err)
@@ -2902,9 +2935,9 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 		CreatedAt:   10,
 	}
 
-	trades, getErr := book.GetTrades(order1)
+	trades, getErr := book.ob.GetTrades(order1)
 	assert.NoError(t, getErr)
-	confirmation, err := book.SubmitOrder(order1)
+	confirmation, err := book.ob.SubmitOrder(order1)
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
@@ -2925,9 +2958,9 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		CreatedAt:   10,
 	}
-	trades, getErr = book.GetTrades(order2)
+	trades, getErr = book.ob.GetTrades(order2)
 	assert.NoError(t, getErr)
-	confirmation, err = book.SubmitOrder(order2)
+	confirmation, err = book.ob.SubmitOrder(order2)
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
@@ -2936,10 +2969,10 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
 	// Confirm both orders still on the book
-	order, err := book.GetOrderByID(order1Id)
+	order, err := book.ob.GetOrderByID(order1Id)
 	assert.NotNil(t, order)
 	assert.Nil(t, err)
-	order, err = book.GetOrderByID(order2Id)
+	order, err = book.ob.GetOrderByID(order2Id)
 	assert.NotNil(t, order)
 	assert.Nil(t, err)
 }
@@ -2953,24 +2986,24 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	bo1 := getOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 100, "party01", 5)
 	bo1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	book.SubmitOrder(bo1)
+	book.ob.SubmitOrder(bo1)
 
 	so1 := getOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 100, "party01", 5)
 	so1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	book.SubmitOrder(so1)
+	book.ob.SubmitOrder(so1)
 
 	// Get indicative auction price and volume
-	price, volume, side := book.GetIndicativePriceAndVolume()
+	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	assert.Equal(t, price, uint64(100))
 	assert.Equal(t, volume, uint64(5))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	assert.Nil(t, err)
 	assert.Equal(t, len(uncrossedOrders), 1)
 	assert.Equal(t, len(cancels), 0)
@@ -2985,70 +3018,70 @@ func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
+	book.ob.EnterAuction()
 
 	order1 := getOrder(t, book, market, "Order1", types.Side_SIDE_BUY, 16, "Tamlyn", 100)
 	order1.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err := book.SubmitOrder(order1)
+	conf, err := book.ob.SubmitOrder(order1)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order2 := getOrder(t, book, market, "Order2", types.Side_SIDE_SELL, 20, "Tamlyn", 100)
 	order2.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err = book.SubmitOrder(order2)
+	conf, err = book.ob.SubmitOrder(order2)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order3 := getOrder(t, book, market, "Order3", types.Side_SIDE_SELL, 3, "Tamlyn", 100)
 	order3.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err = book.SubmitOrder(order3)
+	conf, err = book.ob.SubmitOrder(order3)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order4 := getOrder(t, book, market, "Order4", types.Side_SIDE_SELL, 18, "David", 100)
 	order4.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err = book.SubmitOrder(order4)
+	conf, err = book.ob.SubmitOrder(order4)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order5 := getOrder(t, book, market, "Order5", types.Side_SIDE_BUY, 1000, "Tamlyn", 100)
 	order5.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err = book.SubmitOrder(order5)
+	conf, err = book.ob.SubmitOrder(order5)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order6 := getOrder(t, book, market, "Order6", types.Side_SIDE_BUY, 2000, "David", 100)
 	order6.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err = book.SubmitOrder(order6)
+	conf, err = book.ob.SubmitOrder(order6)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order7 := getOrder(t, book, market, "Order7", types.Side_SIDE_SELL, 14, "Tamlyn", 15)
 	order7.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err = book.SubmitOrder(order7)
+	conf, err = book.ob.SubmitOrder(order7)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order8 := getOrder(t, book, market, "Order8", types.Side_SIDE_BUY, 14, "Tamlyn", 2)
 	order8.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err = book.SubmitOrder(order8)
+	conf, err = book.ob.SubmitOrder(order8)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	order9 := getOrder(t, book, market, "Order9", types.Side_SIDE_SELL, 1, "David", 10)
 	order9.TimeInForce = types.Order_TIME_IN_FORCE_GFA
-	conf, err = book.SubmitOrder(order9)
+	conf, err = book.ob.SubmitOrder(order9)
 	require.NoError(t, err)
 	assert.NotNil(t, conf)
 
 	// Get indicative auction price and volume
-	//	price, volume, side := book.GetIndicativePriceAndVolume()
+	//	price, volume, side := book.ob.GetIndicativePriceAndVolume()
 	//	assert.Equal(t, price, uint64(100))
 	//	assert.Equal(t, volume, uint64(5))
 	//	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	//	uncrossedOrders, cancels, err := book.LeaveAuction(time.Now())
+	//	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
 	//	assert.Nil(t, err)
 	//	assert.Equal(t, len(uncrossedOrders), 1)
 	//	assert.Equal(t, len(cancels), 0)
@@ -3067,9 +3100,9 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	makeOrder(t, book, market, "PriceSetterBuy", types.Side_SIDE_BUY, 100, "party01", 1)
 	makeOrder(t, book, market, "PriceSetterSell", types.Side_SIDE_SELL, 101, "party01", 1)
 
-	bestask, err := book.GetBestAskPrice()
+	bestask, err := book.ob.GetBestAskPrice()
 	assert.NoError(t, err)
-	bestbid, err := book.GetBestBidPrice()
+	bestbid, err := book.ob.GetBestBidPrice()
 	assert.NoError(t, err)
 	assert.Equal(t, bestask, uint64(101))
 	assert.Equal(t, bestbid, uint64(100))
@@ -3077,15 +3110,15 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	bp1 := getOrder(t, book, market, "BuyPeg1", types.Side_SIDE_BUY, 100, "party01", 5)
 	bp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
 		Offset: -3}
-	book.SubmitOrder(bp1)
+	book.ob.SubmitOrder(bp1)
 
 	sp1 := getOrder(t, book, market, "SellPeg1", types.Side_SIDE_SELL, 100, "party01", 5)
 	sp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
 		Offset: +3}
-	book.SubmitOrder(bp1)
+	book.ob.SubmitOrder(bp1)
 
 	// Leave auction and uncross the book
-	cancels, err := book.EnterAuction()
+	cancels, err := book.ob.EnterAuction()
 	assert.Nil(t, err)
 	assert.Equal(t, len(cancels), 0)
 }
@@ -3099,49 +3132,49 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 	defer logger.Sync()
 
 	// Switch to auction mode
-	book.EnterAuction()
-	assert.True(t, book.InAuction())
+	book.ob.EnterAuction()
+	assert.True(t, book.ob.InAuction())
 
-	require.Equal(t, false, book.BidAndAskPresentAfterAuction())
-	require.Equal(t, false, book.CanUncross())
+	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
+	require.Equal(t, false, book.ob.CanUncross())
 
 	matchingPrice := uint64(100)
 	party1 := "party1"
 	party2 := "party2"
 	makeOrder(t, book, market, "needTwentyTwoCharacts1", types.Side_SIDE_BUY, matchingPrice-1, party1, 1)
 
-	require.Equal(t, false, book.BidAndAskPresentAfterAuction())
-	require.Equal(t, false, book.CanUncross())
+	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
+	require.Equal(t, false, book.ob.CanUncross())
 
 	makeOrder(t, book, market, "needTwentyTwoCharacts2", types.Side_SIDE_SELL, matchingPrice+1, party2, 1)
 
-	require.Equal(t, true, book.BidAndAskPresentAfterAuction())
-	require.Equal(t, false, book.CanUncross())
+	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
+	require.Equal(t, false, book.ob.CanUncross())
 
 	makeOrder(t, book, market, "needTwentyTwoCharacts3", types.Side_SIDE_BUY, matchingPrice, party1, 1)
 
-	require.Equal(t, true, book.BidAndAskPresentAfterAuction())
-	require.Equal(t, false, book.CanUncross())
+	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
+	require.Equal(t, false, book.ob.CanUncross())
 
 	makeOrder(t, book, market, "needTwentyTwoCharacts4", types.Side_SIDE_SELL, matchingPrice, party2, 1)
 
-	require.Equal(t, true, book.BidAndAskPresentAfterAuction())
-	require.Equal(t, true, book.CanUncross())
+	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
+	require.Equal(t, true, book.ob.CanUncross())
 
-	_, err := book.CancelAllOrders(party1)
+	_, err := book.ob.CancelAllOrders(party1)
 	require.NoError(t, err)
-	_, err = book.CancelAllOrders(party2)
+	_, err = book.ob.CancelAllOrders(party2)
 	require.NoError(t, err)
 
-	require.Equal(t, int64(0), book.GetTotalNumberOfOrders())
+	require.Equal(t, int64(0), book.ob.GetTotalNumberOfOrders())
 
 	makeOrder(t, book, market, "needTwentyTwoCharacts5", types.Side_SIDE_BUY, matchingPrice, party1, 1)
 
-	require.Equal(t, false, book.BidAndAskPresentAfterAuction())
-	require.Equal(t, false, book.CanUncross())
+	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
+	require.Equal(t, false, book.ob.CanUncross())
 
 	makeOrder(t, book, market, "needTwentyTwoCharacts6", types.Side_SIDE_SELL, matchingPrice, party2, 1)
 
-	require.Equal(t, false, book.BidAndAskPresentAfterAuction())
-	require.Equal(t, false, book.CanUncross())
+	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
+	require.Equal(t, false, book.ob.CanUncross())
 }
