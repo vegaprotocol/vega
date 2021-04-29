@@ -153,7 +153,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	asset, err := mktCfg.GetAsset()
 	require.NoError(tm.t, err)
 
-	_, _, err = collateralEngine.CreateMarketAccounts(ctx, mktEngine.GetID(), asset, 0)
+	_, _, err = collateralEngine.CreateMarketAccounts(ctx, mktEngine.GetID(), asset)
 	require.NoError(tm.t, err)
 
 	tm.market = mktEngine
@@ -305,7 +305,7 @@ func getTestMarket2(
 	assert.NoError(t, err)
 
 	// ignore response ids here + this cannot fail
-	_, _, err = collateralEngine.CreateMarketAccounts(context.Background(), mktEngine.GetID(), asset, 0)
+	_, _, err = collateralEngine.CreateMarketAccounts(context.Background(), mktEngine.GetID(), asset)
 	assert.NoError(t, err)
 
 	tm.market = mktEngine
