@@ -32,12 +32,12 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		}
 	case *types.VoteSubmission:
 		cpy := *tv
-		evt.evt.Transaction = &eventspb.TxErrorEvent_Vote{
-			Vote: &cpy,
+		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
+			VoteSubmission: &cpy,
 		}
-	case types.Vote:
-		evt.evt.Transaction = &eventspb.TxErrorEvent_Vote{
-			Vote: &tv,
+	case types.VoteSubmission:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
+			VoteSubmission: &tv,
 		}
 	case *types.OrderSubmission:
 		cpy := *tv
