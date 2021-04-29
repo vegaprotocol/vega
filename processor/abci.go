@@ -426,18 +426,22 @@ func (app *App) DeliverWithdraw(
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
-	prop := &types.Proposal{}
+	prop := &types.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
 	}
 
-	app.log.Debug("submitting proposal",
-		logging.ProposalID(prop.Id),
-		logging.String("proposal-reference", prop.Reference),
-		logging.String("proposal-party", prop.PartyId),
-		logging.String("proposal-terms", prop.Terms.String()))
+	party := tx.Party()
 
-	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id)
+	if app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Debug("submitting proposal",
+			logging.ProposalID(id),
+			logging.String("proposal-reference", prop.Reference),
+			logging.String("proposal-party", party),
+			logging.String("proposal-terms", prop.Terms.String()))
+	}
+
+	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
 			logging.ProposalID(id),
@@ -452,7 +456,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		// the lp provision ID (well it's still deterministic...)
 		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().Id)))
 		err := app.exec.SubmitMarketWithLiquidityProvision(
-			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), prop.PartyId, lpid)
+			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid)
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().Id),
