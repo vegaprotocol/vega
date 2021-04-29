@@ -60,12 +60,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     #T0 + 10min 10s
-    Then time is updated to "2020-10-16T00:10:10Z"
+    Then time is updated to "2020-10-16T00:16:10Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 11min01s
-    Then time is updated to "2020-10-16T00:11:01Z"
+    Then time is updated to "2020-10-16T00:20:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -111,12 +111,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     #T0 + 10min + 10s
-    Then time is updated to "2020-10-16T00:10:10Z"
+    Then time is updated to "2020-10-16T00:15:01Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 11min01s
-    Then time is updated to "2020-10-16T00:11:01Z"
+    Then time is updated to "2020-10-16T00:20:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -174,7 +174,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     #T0 + 11min01s (opening period, min auction duration + 1 second, auction is over)
-    Then time is updated to "2020-10-16T00:11:01Z"
+    Then time is updated to "2020-10-16T00:20:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -230,7 +230,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T1 + 04min01s (auction ended)
-    Then time is updated to "2020-10-16T00:13:11Z"
+    Then time is updated to "2020-10-16T00:20:11Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 

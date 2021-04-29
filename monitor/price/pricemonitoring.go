@@ -215,22 +215,21 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 		if !persistent {
 			return types.ErrNonPersistentOrderOutOfBounds
 		}
+		duration := types.AuctionDuration{}
+		for _, b := range bounds {
+			duration.Duration += b.AuctionExtension
+		}
 		// we're dealing with a batch auction that's about to end -> extend it?
 		if fba && as.AuctionEnd() {
 			// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
-			var duration int64
-			for _, b := range bounds {
-				duration += b.AuctionExtension
-			}
-			as.ExtendAuctionPrice(types.AuctionDuration{
-				Duration: duration,
-			})
+			as.ExtendAuctionPrice(duration)
 			return nil
 		}
+		if min := int64(e.minDuration / time.Second); duration.Duration < min {
+			duration.Duration = min
+		}
 
-		as.StartPriceAuction(now, &types.AuctionDuration{
-			Duration: int64(e.minDuration / time.Second), // unfortunate, but this is multiplied by time.Second later on
-		})
+		as.StartPriceAuction(now, &duration)
 		return nil
 	}
 	// market is in auction

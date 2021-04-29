@@ -203,7 +203,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     # T + 8s (6s)
-    When time is updated to "2020-10-16T00:01:02Z"
+    When time is updated to "2020-10-16T00:01:12Z"
 
     Then the mark price should be "100650" for the market "ETH/DEC20"
 
