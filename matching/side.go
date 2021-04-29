@@ -183,7 +183,8 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 			} else {
 				// We should never get to here unless the passed in price
 				// and volume are not correct
-				return nil, ErrInvalidVolume
+				s.log.Panic("Failed to extract orders as not enough volume within price limits",
+					logging.Uint64("Price", price), logging.Uint64("volume", volume))
 			}
 
 			// If we have the right amount, stop processing
@@ -207,6 +208,13 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 			break
 		}
 	}
+	// If we get here and don't have the full amount of volume
+	// something has gone wrong
+	if totalVolume != volume {
+		s.log.Panic("Failed to extract orders as not enough volume on the book",
+			logging.Uint64("Price", price), logging.Uint64("volume", volume))
+	}
+
 	return extractedOrders, nil
 }
 
@@ -307,7 +315,7 @@ func (s *OrderBookSide) GetVolume(price uint64) (uint64, error) {
 	return priceLevel.volume, nil
 }
 
-func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, error) {
+func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 	var (
 		trades            []*types.Trade
 		totalVolumeToFill uint64
@@ -327,7 +335,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 			if checkPrice(level.price) || agg.Type == types.Order_TYPE_MARKET {
 				for _, order := range level.orders {
 					if agg.PartyId == order.PartyId {
-						return false, nil, ErrWashTrade
+						return nil, ErrWashTrade
 					}
 					totalVolumeToFill += order.Remaining
 					if totalVolumeToFill >= agg.Remaining {
@@ -342,7 +350,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 
 		// FOK order could not be filled
 		if totalVolumeToFill < agg.Remaining {
-			return false, nil, nil
+			return nil, nil
 		}
 	}
 
@@ -381,7 +389,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 		idx--
 	}
 
-	return fake.Remaining == 0, trades, nil
+	return trades, nil
 }
 
 func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, uint64, error) {

@@ -643,7 +643,7 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	_, trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
+	trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
 	// it's fine for the error to be a wash trade here,
 	// it's just be stopped when really uncrossing.
 	if err != nil && err != ErrWashTrade {
