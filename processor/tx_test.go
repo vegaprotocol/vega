@@ -48,7 +48,6 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
 			PartyId: party,
 		},
-		txn.CancelOrderCommand: &commandspb.OrderCancellation{},
 		txn.AmendOrderCommand: &commandspb.OrderAmendment{
 			PartyId: party,
 		},
@@ -83,7 +82,7 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
 			PartyId: party,
 		},
-		txn.AmendOrderCommand: &types.OrderAmendment{
+		txn.AmendOrderCommand: &commandspb.OrderAmendment{
 			PartyId: party,
 		},
 		txn.WithdrawCommand: &commandspb.WithdrawSubmission{
