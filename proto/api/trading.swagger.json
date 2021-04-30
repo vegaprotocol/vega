@@ -3510,10 +3510,6 @@
     "v1WithdrawSubmission": {
       "type": "object",
       "properties": {
-        "party_id": {
-          "type": "string",
-          "title": "Unique party identifier for the user wanting to withdraw funds"
-        },
         "amount": {
           "type": "string",
           "format": "uint64",

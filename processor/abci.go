@@ -423,7 +423,7 @@ func (app *App) DeliverWithdraw(
 		return err
 	}
 
-	return app.processWithdraw(ctx, w, id)
+	return app.processWithdraw(ctx, w, id, tx.Party())
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
