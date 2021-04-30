@@ -232,7 +232,7 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
 }
 
-func (e *Engine) ValidateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
+func (e *Engine) ValidateLiquidityProvisionSubmission(lp *commandspb.LiquidityProvisionSubmission) (err error) {
 	// we check if the commitment is 0 which would mean this is a cancel
 	// a cancel does not need validations
 	if lp.CommitmentAmount == 0 {
@@ -248,7 +248,7 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(lp *types.LiquidityProvisi
 	return validateShape(lp.Sells, types.Side_SIDE_SELL, e.maxShapesSize)
 }
 
-func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
+func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *commandspb.LiquidityProvisionSubmission, party, id string) {
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
 	lp := &types.LiquidityProvision{
@@ -284,7 +284,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *commandspb.LiquidityProvisionSubmission, party, id string) error {
 	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
 		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
 		return err
@@ -351,7 +351,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 
 func (e *Engine) buildLiquidityProvisionShapesReferences(
 	lp *types.LiquidityProvision,
-	lps *types.LiquidityProvisionSubmission,
+	lps *commandspb.LiquidityProvisionSubmission,
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes

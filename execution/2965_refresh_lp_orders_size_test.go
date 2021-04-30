@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -148,7 +149,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000000,
 		Fee:              "0.01",
@@ -276,7 +277,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 150000,
 		Fee:              "0.01",
@@ -342,7 +343,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.01",

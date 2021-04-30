@@ -92,7 +92,7 @@ func (t *Tx) toProto() (interface{}, error) {
 	case txn.NodeSignatureCommand:
 		msg = &types.NodeSignature{}
 	case txn.LiquidityProvisionCommand:
-		msg = &types.LiquidityProvisionSubmission{}
+		msg = &commandspb.LiquidityProvisionSubmission{}
 	case txn.ChainEventCommand:
 		msg = &types.ChainEvent{}
 	case txn.SubmitOracleDataCommand:

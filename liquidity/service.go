@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 )
 
@@ -60,7 +61,7 @@ func (s *Svc) ReloadConf(config Config) {
 	s.config = config
 }
 
-func (s *Svc) PrepareLiquidityProvisionSubmission(_ context.Context, _ *types.LiquidityProvisionSubmission) error {
+func (s *Svc) PrepareLiquidityProvisionSubmission(_ context.Context, _ *commandspb.LiquidityProvisionSubmission) error {
 	return nil
 }
 

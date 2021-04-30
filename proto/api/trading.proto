@@ -1026,7 +1026,7 @@ message PrepareVoteSubmissionResponse {
 // Request to prepare liquiditity provision
 message PrepareLiquidityProvisionRequest {
   // Submission, required field
-  vega.LiquidityProvisionSubmission submission = 1 [(validator.field) = {msg_exists: true}];
+  vega.commands.v1.LiquidityProvisionSubmission submission = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Response to a liquidity provision request

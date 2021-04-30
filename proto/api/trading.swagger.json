@@ -2245,6 +2245,43 @@
       },
       "title": "Response for the latest trade that occurred on Vega for a given market"
     },
+    "v1LiquidityProvisionSubmission": {
+      "type": "object",
+      "properties": {
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the order, required field"
+        },
+        "commitment_amount": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Specified as a unitless number that represents the amount of settlement asset of the market"
+        },
+        "fee": {
+          "type": "string",
+          "title": "Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers"
+        },
+        "sells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "title": "A set of liquidity sell orders to meet the liquidity provision obligation"
+        },
+        "buys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "title": "A set of liquidity buy orders to meet the liquidity provision obligation"
+        },
+        "reference": {
+          "type": "string",
+          "title": "A reference to be added to every order created out of this liquidityProvisionSubmission"
+        }
+      },
+      "title": "A liquidity provision submitted for a given market"
+    },
     "v1LiquidityProvisionsResponse": {
       "type": "object",
       "properties": {
@@ -2991,7 +3028,7 @@
       "type": "object",
       "properties": {
         "submission": {
-          "$ref": "#/definitions/vegaLiquidityProvisionSubmission",
+          "$ref": "#/definitions/v1LiquidityProvisionSubmission",
           "title": "Submission, required field"
         }
       },
@@ -3378,7 +3415,7 @@
           "$ref": "#/definitions/vegaVoteSubmission"
         },
         "liquidity_provision_submission": {
-          "$ref": "#/definitions/vegaLiquidityProvisionSubmission"
+          "$ref": "#/definitions/v1LiquidityProvisionSubmission"
         }
       }
     },
@@ -4384,42 +4421,6 @@
       "default": "STATUS_UNSPECIFIED",
       "description": "- STATUS_UNSPECIFIED: The default value\n - STATUS_ACTIVE: The liquidity provision is active\n - STATUS_STOPPED: The liquidity provision was stopped by the network\n - STATUS_CANCELLED: The liquidity provision was cancelled by the liquidity provider\n - STATUS_REJECTED: The liquidity provision was invalid and got rejected\n - STATUS_UNDEPLOYED: The liquidity provision is valid and accepted by network, but orders aren't deployed\n - STATUS_PENDING: The liquidity provision is valid and accepted by network\nbut have never been deployed. I when it's possible to deploy them for the first time\nmargin check fails, then they will be cancelled without any penalties.",
       "title": "Status of a liquidity provision order"
-    },
-    "vegaLiquidityProvisionSubmission": {
-      "type": "object",
-      "properties": {
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the order, required field"
-        },
-        "commitment_amount": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Specified as a unitless number that represents the amount of settlement asset of the market"
-        },
-        "fee": {
-          "type": "string",
-          "title": "Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers"
-        },
-        "sells": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaLiquidityOrder"
-          },
-          "title": "A set of liquidity sell orders to meet the liquidity provision obligation"
-        },
-        "buys": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaLiquidityOrder"
-          },
-          "title": "A set of liquidity buy orders to meet the liquidity provision obligation"
-        },
-        "reference": {
-          "type": "string",
-          "title": "A reference to be added to every order created out of this liquidityProvisionSubmission"
-        }
-      }
     },
     "vegaLogNormalModelParams": {
       "type": "object",

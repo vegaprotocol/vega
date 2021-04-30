@@ -2785,7 +2785,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000000,
 		Fee:              "0.01",

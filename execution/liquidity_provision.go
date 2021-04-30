@@ -8,10 +8,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/positions"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 func (m *Market) amendLiquidityProvision(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
 ) (err error) {
 	bondRollback, err := m.ensureLiquidityProvisionBond(ctx, sub, party)
 	if err != nil {
@@ -59,7 +60,7 @@ func (m *Market) amendLiquidityProvision(
 // - third, none of them are available, which just accept the change, all
 // hel may break loose when coming out of auction, but we know this.
 func (m *Market) amendLiquidityProvisionAuction(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
 ) error {
 	// first try to get the indicative uncrossing price from the book
 	price := m.matching.GetIndicativePrice()
@@ -88,7 +89,7 @@ func (m *Market) amendLiquidityProvisionAuction(
 // from there, then move the funds in the party margin account
 func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	ctx context.Context,
-	sub *types.LiquidityProvisionSubmission,
+	sub *commandspb.LiquidityProvisionSubmission,
 	party string,
 	price uint64,
 ) error {
@@ -160,7 +161,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 }
 
 func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
@@ -185,7 +186,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 }
 
 func (m *Market) amendLiquidityProvisionContinuous(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
 ) error {
 	midPriceBid, _, err := m.getStaticMidPrices()
 	if err != nil {
@@ -245,7 +246,7 @@ func (m *Market) amendLiquidityProvisionContinuous(
 }
 
 func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
@@ -290,7 +291,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 
 // returns the rollback transfer in case of error
 func (m *Market) ensureLiquidityProvisionBond(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
 ) (*types.Transfer, error) {
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(

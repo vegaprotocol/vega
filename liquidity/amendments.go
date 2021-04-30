@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 )
 
 func (e *Engine) CanAmend(
-	lps *types.LiquidityProvisionSubmission,
+	lps *commandspb.LiquidityProvisionSubmission,
 	party string,
 ) error {
 	// does the party is an LP
@@ -35,7 +36,7 @@ func (e *Engine) CanAmend(
 
 func (e *Engine) AmendLiquidityProvision(
 	ctx context.Context,
-	lps *types.LiquidityProvisionSubmission,
+	lps *commandspb.LiquidityProvisionSubmission,
 	party string,
 ) ([]*types.Order, error) {
 	if err := e.CanAmend(lps, party); err != nil {
@@ -84,7 +85,7 @@ func (e *Engine) AmendLiquidityProvision(
 func (e *Engine) GetPotentialShapeOrders(
 	party string,
 	price uint64,
-	lps *types.LiquidityProvisionSubmission,
+	lps *commandspb.LiquidityProvisionSubmission,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
 	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {

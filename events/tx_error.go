@@ -67,12 +67,12 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderAmendment{
 			OrderAmendment: &tv,
 		}
-	case *types.LiquidityProvisionSubmission:
+	case *commandspb.LiquidityProvisionSubmission:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_LiquidityProvisionSubmission{
 			LiquidityProvisionSubmission: &cpy,
 		}
-	case types.LiquidityProvisionSubmission:
+	case commandspb.LiquidityProvisionSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_LiquidityProvisionSubmission{
 			LiquidityProvisionSubmission: &tv,
 		}

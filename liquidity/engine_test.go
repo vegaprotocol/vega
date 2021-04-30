@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/liquidity/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -104,12 +105,12 @@ func testSubmissionCRUD(t *testing.T) {
 		},
 	}
 
-	lps1 := &types.LiquidityProvisionSubmission{
+	lps1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
 
-	lps3 := &types.LiquidityProvisionSubmission{
+	lps3 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 000, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
@@ -171,7 +172,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
@@ -218,7 +219,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	)
 	defer tng.ctrl.Finish()
 
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tng.marketID,
 		CommitmentAmount: 0,
 		Buys: []*types.LiquidityOrder{
@@ -261,7 +262,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	defer tng.ctrl.Finish()
 
 	// Expectations
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
 		Fee:              "0.1",
@@ -300,7 +301,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
 
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
 		Fee:              "0.2",
@@ -339,7 +340,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
 
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.3",
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
@@ -379,7 +380,7 @@ func TestUpdate(t *testing.T) {
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
@@ -450,7 +451,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
-	lp1 := &types.LiquidityProvisionSubmission{
+	lp1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
@@ -467,7 +468,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake := tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
 
-	lp2 := &types.LiquidityProvisionSubmission{
+	lp2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 500, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -3},
@@ -483,7 +484,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount, suppliedStake)
 
-	lp3 := &types.LiquidityProvisionSubmission{
+	lp3 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 962, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -5},

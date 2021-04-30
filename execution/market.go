@@ -3199,7 +3199,7 @@ func (m *Market) cancelLiquidityProvision(
 }
 
 func (m *Market) amendOrCancelLiquidityProvision(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string,
+	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, id string,
 ) error {
 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
 	if lp == nil {
@@ -3236,7 +3236,7 @@ func (m *Market) amendOrCancelLiquidityProvision(
 }
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
-func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, id string) (err error) {
 	defer func() {
 		if err != nil {
 			m.broker.Send(events.NewTxErrEvent(ctx, err, party, sub))

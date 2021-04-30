@@ -502,7 +502,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
-	sub := &types.LiquidityProvisionSubmission{}
+	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}

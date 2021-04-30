@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/liquidity"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -66,8 +67,8 @@ func testCanAmend(t *testing.T) {
 	)
 }
 
-func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
-	return &types.LiquidityProvisionSubmission{
+func getTestAmendSimpleSubmission() *commandspb.LiquidityProvisionSubmission {
+	return &commandspb.LiquidityProvisionSubmission{
 		MarketId:         market,
 		CommitmentAmount: 10000,
 		Fee:              "0.5",

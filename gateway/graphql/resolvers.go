@@ -1940,7 +1940,7 @@ func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, mark
 	}
 
 	req := &protoapi.PrepareLiquidityProvisionRequest{
-		Submission: &types.LiquidityProvisionSubmission{
+		Submission: &commandspb.LiquidityProvisionSubmission{
 			MarketId:         marketID,
 			CommitmentAmount: uint64(commitmentAmount),
 			Fee:              fee,

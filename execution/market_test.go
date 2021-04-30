@@ -416,7 +416,7 @@ func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id st
 	buys, sells []*types.LiquidityOrder) *testMarket {
 	ctx := context.Background()
 
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: amount,
 		Fee:              fee,
@@ -2089,7 +2089,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	_, err = tm.market.SubmitOrder(ctx, orderBuy1)
 	require.NoError(t, err)
 
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000,
 		Fee:              "0.05",
@@ -2181,7 +2181,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
-	lp1 := &types.LiquidityProvisionSubmission{
+	lp1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -2196,7 +2196,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(context.Background(), lp1, party1, "id-lp1")
 	require.NoError(t, err)
 
-	lp2 := &types.LiquidityProvisionSubmission{
+	lp2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 100,
 		Fee:              "0.06",
@@ -2237,7 +2237,7 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
-	lp1 := &types.LiquidityProvisionSubmission{
+	lp1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -2294,7 +2294,7 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	addAccount(tm, p2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	lp1 := &types.LiquidityProvisionSubmission{
+	lp1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -2410,7 +2410,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	require.Equal(t, mktData.BestOfferPrice, mktData.BestStaticOfferPrice)
 	require.Equal(t, mktData.BestOfferVolume, mktData.BestStaticOfferVolume)
 
-	lp1 := &types.LiquidityProvisionSubmission{
+	lp1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -3940,7 +3940,7 @@ func TestMarket_LeaveAuctionRepricePeggedOrdersShouldFailIfNoMargin(t *testing.T
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 20, Proportion: 50},
 	}
 
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000000000,
@@ -3995,7 +3995,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 20, Proportion: 50},
 	}
 
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000000000,
@@ -4037,7 +4037,7 @@ func TestOrderBook_ParkLiquidityProvisionOrders(t *testing.T) {
 
 	addAccount(tm, "trader-A")
 
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200000,
 		Fee:              "0.01",
@@ -4073,7 +4073,7 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 	addAccount(tm, "trader-A")
 
 	// Add a LPSubmission
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200000,
 		Fee:              "0.01",
@@ -4091,7 +4091,7 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	// Remove the LPSubmission by setting the commitment to 0
-	lp2 := &types.LiquidityProvisionSubmission{
+	lp2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 0,
 		Fee:              "0.01",
@@ -4162,7 +4162,7 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a LP order for trader-A
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 500,
 		Fee:              "0.01",
@@ -4569,7 +4569,7 @@ func TestLPOrdersRollback(t *testing.T) {
 
 	tm.WithSubmittedOrders(t, orders...)
 
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 195000,
 		Fee:              "0.01",
@@ -4792,7 +4792,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 	tm.WithSubmittedOrders(t, orders...)
 
 	// Add a LPSubmission
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200000,
 		Fee:              "0.01",
@@ -4813,7 +4813,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	// now we do a cancellation
-	lpCancel := &types.LiquidityProvisionSubmission{
+	lpCancel := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 0,
 	}
@@ -4961,7 +4961,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000000,
 		Fee:              "0.01",
@@ -4983,7 +4983,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 
 	// this is our second stake provider
 	// small player
-	lp2 := &types.LiquidityProvisionSubmission{
+	lp2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
 		Fee:              "0.01",
@@ -5035,7 +5035,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
 
 	// now we do a cancellation
-	lpCancel := &types.LiquidityProvisionSubmission{
+	lpCancel := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 0,
 	}
@@ -5269,7 +5269,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000000,
 		Fee:              "0.01",
@@ -5291,7 +5291,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 
 	// this is our second stake provider
 	// small player
-	lp2 := &types.LiquidityProvisionSubmission{
+	lp2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
 		Fee:              "0.01",
@@ -5456,7 +5456,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000000,
 		Fee:              "0.01",
@@ -5478,7 +5478,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 
 	// this is our second stake provider
 	// small player
-	lp2 := &types.LiquidityProvisionSubmission{
+	lp2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
 		Fee:              "0.01",
@@ -5614,7 +5614,7 @@ func TestAverageEntryValuation(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := types.LiquidityProvisionSubmission{
+	lpSubmission := commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 8000,
 		Fee:              "0.01",
@@ -5713,7 +5713,7 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 150000,
 		Fee:              "0.01",
@@ -5812,7 +5812,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
 
-	lp1sub := &types.LiquidityProvisionSubmission{
+	lp1sub := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: lp1Commitment,
 		Fee:              "0.05",
@@ -5824,7 +5824,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 		},
 	}
 
-	lp2sub := &types.LiquidityProvisionSubmission{
+	lp2sub := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: lp2Commitment,
 		Fee:              "0.1",
@@ -6098,7 +6098,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
 
-	lp1sub := &types.LiquidityProvisionSubmission{
+	lp1sub := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: lp1Commitment,
 		Fee:              "0.05",

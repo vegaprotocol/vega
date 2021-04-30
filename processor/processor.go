@@ -42,12 +42,12 @@ type ExecutionEngine interface {
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
-	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid string) error
+	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *commandspb.LiquidityProvisionSubmission, party, lpid string) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 
 	// LP stuff
-	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
+	SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, id string) error
 
 	Hash() []byte
 }

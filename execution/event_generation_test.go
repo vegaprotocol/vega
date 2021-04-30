@@ -1007,7 +1007,7 @@ func TestEvents_LPOrderRecalcDueToFill(t *testing.T) {
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50},
 	}
 
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.05",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10,

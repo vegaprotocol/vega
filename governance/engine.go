@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/pkg/errors"
@@ -350,7 +351,8 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 			m: mkt,
 		}
 		if change.NewMarket.LiquidityCommitment != nil {
-			tsb.m.l = change.NewMarket.LiquidityCommitment.IntoSubmission(p.Id)
+			tsb.m.l = commandspb.LiquidityProvisionSubmissionFromMarketCommitment(
+				change.NewMarket.LiquidityCommitment, p.Id)
 		}
 	}
 

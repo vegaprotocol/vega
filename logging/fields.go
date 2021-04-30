@@ -185,7 +185,8 @@ func LiquidityID(id string) zap.Field {
 	return zap.String("liquidity-id", id)
 }
 
-func LiquidityProvisionSubmission(lp types.LiquidityProvisionSubmission) zap.Field {
+func LiquidityProvisionSubmission(
+	lp commandspb.LiquidityProvisionSubmission) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
 }
 

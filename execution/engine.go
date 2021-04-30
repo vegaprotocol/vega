@@ -213,7 +213,7 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
 // the usual governance process
-func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
@@ -643,7 +643,7 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit liquidity provision",
 			logging.LiquidityProvisionSubmission(*sub),

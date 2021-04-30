@@ -74,7 +74,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
 	// but can place liquidity submission
-	lpsub := &types.LiquidityProvisionSubmission{
+	lpsub := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1,
 		Fee:              "0.1",

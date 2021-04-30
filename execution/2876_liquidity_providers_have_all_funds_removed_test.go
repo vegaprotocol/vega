@@ -6,6 +6,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,7 +59,7 @@ func TestIssue2876(t *testing.T) {
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
-	lporder := types.LiquidityProvisionSubmission{
+	lporder := commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000000,
 		Fee:              "0.01",
