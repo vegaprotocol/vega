@@ -11,5 +11,5 @@ func (n NodeSignature) DeepClone() *NodeSignature {
 	return &n
 }
 
-// required for graphq event stream
+// IsEvent required for graphql event stream
 func (NodeSignature) IsEvent() {}

@@ -5,7 +5,6 @@ option go_package = "code.vegaprotocol.io/vega/proto/api";
 import "vega.proto";
 import "markets.proto";
 import "governance.proto";
-import "chain_events.proto";
 import "assets.proto";
 import "events/v1/events.proto";
 import "oracles/v1/oracle_spec.proto";

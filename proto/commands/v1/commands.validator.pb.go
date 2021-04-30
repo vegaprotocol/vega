@@ -8,7 +8,6 @@ import (
 	math "math"
 
 	_ "code.vegaprotocol.io/vega/proto"
-	_ "code.vegaprotocol.io/vega/proto/oracles/v1"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/golang/protobuf/ptypes/wrappers"
 	_ "github.com/mwitkow/go-proto-validators"

@@ -3,12 +3,8 @@ syntax = "proto3";
 package vega.commands.v1;
 option go_package = "code.vegaprotocol.io/vega/proto/commands/v1";
 
-import "markets.proto";
-import "assets.proto";
 import "governance.proto";
 import "vega.proto";
-import "oracles/v1/oracle_spec.proto";
-import "oracles/v1/oracle_data.proto";
 import "google/protobuf/wrappers.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 

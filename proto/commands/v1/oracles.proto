@@ -3,8 +3,6 @@ syntax = "proto3";
 package vega.commands.v1;
 option go_package = "code.vegaprotocol.io/vega/proto/commands/v1";
 
-import "vega.proto";
-
 // Command to submit new Oracle data from third party providers
 message OracleDataSubmission {
   // The supported Oracle sources
