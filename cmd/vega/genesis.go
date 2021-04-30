@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallet/eth"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
@@ -105,9 +106,12 @@ func loadVegaPubKey(log *logging.Logger, rootPath, pass string) (string, error) 
 	}
 
 	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return "", err
+	var ethclt eth.ETHClient = nil
+	if conf.NodeWallet.ETH.Address != "" {
+		ethclt, err = ethclient.Dial(conf.NodeWallet.ETH.Address)
+		if err != nil {
+			return "", fmt.Errorf("failed to connect to Ethereum at %s: %w", conf.NodeWallet.ETH.Address, err)
+		}
 	}
 
 	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethclt)

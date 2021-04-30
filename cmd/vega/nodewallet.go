@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallet/eth"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
 )
@@ -69,17 +70,17 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 
 	nodePass, err := nodeWalletCmd.Passphrase.Get("node wallet")
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid node wallet passphrase: %w", err)
 	}
 
 	walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid blockchain wallet passphrase: %w", err)
 	}
 
 	conf, err := config.Read(nodeWalletCmd.RootPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get config: %w", err)
 	}
 	opts.Config = conf.NodeWallet
 
@@ -88,9 +89,12 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 	}
 
 	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(opts.Config.ETH.Address)
-	if err != nil {
-		return err
+	var ethclt eth.ETHClient = nil
+	if opts.Config.ETH.Address != "" {
+		ethclt, err = ethclient.Dial(opts.Config.ETH.Address)
+		if err != nil {
+			return fmt.Errorf("failed to connect to Ethereum at %s: %w", opts.Config.ETH.Address, err)
+		}
 	}
 
 	nw, err := nodewallet.New(log, conf.NodeWallet, nodePass, ethclt)
@@ -139,9 +143,12 @@ func (opts *nodeWalletVerify) Execute(_ []string) error {
 	}
 
 	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return err
+	var ethclt eth.ETHClient = nil
+	if opts.Config.ETH.Address != "" {
+		ethclt, err = ethclient.Dial(opts.Config.ETH.Address)
+		if err != nil {
+			return fmt.Errorf("failed to connect to Ethereum at %s: %w", opts.Config.ETH.Address, err)
+		}
 	}
 
 	err = nodewallet.Verify(conf.NodeWallet, pass, ethclt)

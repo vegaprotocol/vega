@@ -130,9 +130,12 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}
 
 	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return err
+	var ethclt eth.ETHClient = nil
+	if conf.NodeWallet.ETH.Address != "" {
+		ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
+		if err != nil {
+			return err
+		}
 	}
 
 	// nodewallet

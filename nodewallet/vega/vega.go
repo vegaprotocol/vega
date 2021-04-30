@@ -27,7 +27,7 @@ func DevInit(path, passphrase string) (string, error) {
 
 	w, err := wallet.CreateWalletFile(fullpath, defaultVegaWalletOwner, passphrase)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create Vega wallet file %s: %w", fullpath, err)
 	}
 
 	// gen the keypair
@@ -40,10 +40,10 @@ func DevInit(path, passphrase string) (string, error) {
 	w.Keypairs = append(w.Keypairs, *kp)
 	_, err = wallet.WriteWalletFile(w, fullpath, passphrase)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to write Vega wallet file: %w", err)
 	}
 
-	return fullpath, err
+	return fullpath, nil
 }
 
 func New(path, passphrase string) (*Wallet, error) {
@@ -58,7 +58,7 @@ func New(path, passphrase string) (*Wallet, error) {
 
 	pubBytes, err := hex.DecodeString(wal.Keypairs[0].Pub)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode string: %w", err)
 	}
 
 	return &Wallet{

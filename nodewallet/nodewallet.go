@@ -128,12 +128,15 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, path string) error
 	case Vega:
 		w, err = vega.New(path, walletPassphrase)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to initialise Vega chain: %w", err)
 		}
 	case Ethereum:
+		if s.ethclt == nil {
+			return fmt.Errorf("cannot import Ethereum wallet without config NodeWallet.ETH.Address")
+		}
 		w, err = eth.New(s.cfg.ETH, path, walletPassphrase, s.ethclt)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to initialise Ethereum chain: %w", err)
 		}
 	default:
 		return fmt.Errorf("unsupported chain wallet %v", chain)
@@ -197,7 +200,7 @@ func DevInit(path, devKeyPath, passphrase string) error {
 	// generate eth keys
 	ethWalletPath, err := eth.DevInit(devKeyPath, passphrase)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to initialise Ethereum wallet at %s: %w", devKeyPath, err)
 	}
 	cfgs = append(cfgs, WalletConfig{
 		Chain:      string(Ethereum),
@@ -207,6 +210,7 @@ func DevInit(path, devKeyPath, passphrase string) error {
 	// generate the vega keys
 	vegaWalletPath, err := vega.DevInit(devKeyPath, passphrase)
 	if err != nil {
+		return fmt.Errorf("failed to initialise Vega wallet at %s: %w", devKeyPath, err)
 		return err
 	}
 	cfgs = append(cfgs, WalletConfig{

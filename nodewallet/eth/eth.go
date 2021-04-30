@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/pkg/errors"
 )
 
 // ETHClient ...
@@ -49,7 +48,7 @@ func DevInit(path, passphrase string) (string, error) {
 	ks := keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
 	acc, err := ks.NewAccount(passphrase)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create Ethereum account: %w", err)
 	}
 	return acc.URL.Path, nil
 }
@@ -70,22 +69,22 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 		filepath.Join(os.TempDir(), randomFolder()), keystore.StandardScryptN, keystore.StandardScryptP)
 	jsonBytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 
 	// just trying to call to make sure there's not issue
 	_, err = ethclt.ChainID(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get Ethereum chain ID: %w", err)
 	}
 
 	acc, err := ks.Import(jsonBytes, passphrase, passphrase)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get import Ethereum wallet: %w", err)
 	}
 
 	if err := ks.Unlock(acc, passphrase); err != nil {
-		return nil, errors.Wrap(err, "unable to unlock wallet")
+		return nil, fmt.Errorf("unable to unlock wallet: %w", err)
 	}
 
 	return &Wallet{
@@ -100,11 +99,11 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 func (w *Wallet) SetEthereumConfig(pcfg *types.EthereumConfig) error {
 	nid, err := w.clt.NetworkID(context.Background())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get Ethereum network ID: %w", err)
 	}
 	chid, err := w.clt.ChainID(context.Background())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get Ethereum chain ID: %w", err)
 	}
 	if nid.String() != pcfg.NetworkId {
 		return fmt.Errorf("ethereum network id does not match, expected %v got %v", pcfg.NetworkId, nid)
