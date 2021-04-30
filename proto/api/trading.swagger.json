@@ -4987,10 +4987,6 @@
         "market_id": {
           "type": "string",
           "title": "Market identifier for the order, required field"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier for the order, required field"
         }
       },
       "title": "An order cancellation is a request to cancel an existing order on Vega"

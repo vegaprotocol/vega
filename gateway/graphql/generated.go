@@ -412,7 +412,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, reference *string) int
 		PrepareOrderAmend         func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) int
-		PrepareOrderCancel        func(childComplexity int, id *string, partyID string, marketID *string) int
+		PrepareOrderCancel        func(childComplexity int, id *string, marketID *string) int
 		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote               func(childComplexity int, value VoteValue, partyID string, proposalID string) int
@@ -988,7 +988,7 @@ type MarketTimestampsResolver interface {
 }
 type MutationResolver interface {
 	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) (*PreparedSubmitOrder, error)
-	PrepareOrderCancel(ctx context.Context, id *string, partyID string, marketID *string) (*PreparedCancelOrder, error)
+	PrepareOrderCancel(ctx context.Context, id *string, marketID *string) (*PreparedCancelOrder, error)
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, proposalID string) (*PreparedVote, error)
@@ -2653,7 +2653,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderCancel(childComplexity, args["id"].(*string), args["partyId"].(string), args["marketId"].(*string)), true
+		return e.complexity.Mutation.PrepareOrderCancel(childComplexity, args["id"].(*string), args["marketId"].(*string)), true
 
 	case "Mutation.prepareOrderSubmit":
 		if e.complexity.Mutation.PrepareOrderSubmit == nil {
@@ -4820,8 +4820,6 @@ type Mutation {
   prepareOrderCancel(
     "ID of the order to cancel"
     id: ID
-    "ID of the party placing the order"
-    partyId: ID!
     "ID of the market where to find the order"
     marketId: ID
   ): PreparedCancelOrder!
@@ -7891,22 +7889,14 @@ func (ec *executionContext) field_Mutation_prepareOrderCancel_args(ctx context.C
 		}
 	}
 	args["id"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
-	var arg2 *string
+	var arg1 *string
 	if tmp, ok := rawArgs["marketId"]; ok {
-		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketId"] = arg2
+	args["marketId"] = arg1
 	return args, nil
 }
 
@@ -15650,7 +15640,7 @@ func (ec *executionContext) _Mutation_prepareOrderCancel(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderCancel(rctx, args["id"].(*string), args["partyId"].(string), args["marketId"].(*string))
+		return ec.resolvers.Mutation().PrepareOrderCancel(rctx, args["id"].(*string), args["marketId"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

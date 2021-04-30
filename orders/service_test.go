@@ -164,7 +164,6 @@ func testPrepareCancelOrderSuccess(t *testing.T) {
 	cancel := types.OrderCancellation{
 		OrderId:  "order.Id",
 		MarketId: "order.MarketId",
-		PartyId:  "order.PartyId",
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
