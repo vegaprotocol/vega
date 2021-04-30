@@ -79,7 +79,7 @@ func (t *Tx) toProto() (interface{}, error) {
 	case txn.AmendOrderCommand:
 		msg = &types.OrderAmendment{}
 	case txn.ProposeCommand:
-		msg = &types.Proposal{}
+		msg = &types.ProposalSubmission{}
 	case txn.VoteCommand:
 		msg = &types.VoteSubmission{}
 	case txn.NodeVoteCommand:

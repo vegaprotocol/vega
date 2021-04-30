@@ -80,16 +80,16 @@ func (mr *MockGovernanceEngineMockRecorder) RejectProposal(arg0, arg1, arg2 inte
 }
 
 // SubmitProposal mocks base method
-func (m *MockGovernanceEngine) SubmitProposal(arg0 context.Context, arg1 proto.Proposal, arg2 string) (*governance.ToSubmit, error) {
+func (m *MockGovernanceEngine) SubmitProposal(arg0 context.Context, arg1 proto.ProposalSubmission, arg2, arg3 string) (*governance.ToSubmit, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitProposal", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SubmitProposal", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*governance.ToSubmit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubmitProposal indicates an expected call of SubmitProposal
-func (mr *MockGovernanceEngineMockRecorder) SubmitProposal(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockGovernanceEngineMockRecorder) SubmitProposal(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).SubmitProposal), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).SubmitProposal), arg0, arg1, arg2, arg3)
 }

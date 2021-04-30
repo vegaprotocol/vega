@@ -259,42 +259,53 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
 // Only open can be submitted and validated at this point. No further validation happens.
-func (e *Engine) SubmitProposal(ctx context.Context, p types.Proposal, id string) (*ToSubmit, error) {
-	p.Id = id
-	p.Timestamp = e.currentTime.UnixNano()
+func (e *Engine) SubmitProposal(
+	ctx context.Context,
+	psub types.ProposalSubmission,
+	id, party string,
+) (ts *ToSubmit, err error) {
 
-	if _, ok := e.getProposal(p.Id); ok {
+	if _, ok := e.getProposal(id); ok {
 		return nil, ErrProposalIsDuplicate // state is not allowed to change externally
 	}
-	if p.State == types.Proposal_STATE_OPEN {
 
-		defer func() {
-			e.broker.Send(events.NewProposalEvent(ctx, p))
-		}()
-
-		perr, err := e.validateOpenProposal(p)
-		if err != nil {
-			p.State = types.Proposal_STATE_REJECTED
-			p.Reason = perr
-			if e.log.GetLevel() == logging.DebugLevel {
-				e.log.Debug("Proposal rejected", logging.String("proposal-id", p.Id))
-			}
-			return nil, err
-		}
-
-		// now if it's a 2 steps proposal, start the node votes
-		if e.isTwoStepsProposal(&p) {
-			p.State = types.Proposal_STATE_WAITING_FOR_NODE_VOTE
-			err = e.startTwoStepsProposal(&p)
-		} else {
-			e.startProposal(&p)
-		}
-		if err != nil {
-			return nil, err
-		}
-		return e.intoToSubmit(&p)
+	p := types.Proposal{
+		Id:        id,
+		Timestamp: e.currentTime.UnixNano(),
+		PartyId:   party,
+		State:     types.Proposal_STATE_OPEN,
+		Terms:     psub.Terms,
+		Reference: psub.Reference,
 	}
-	return nil, ErrProposalInvalidState
+
+	defer func() {
+		if err != nil {
+			// also submit a TxErr
+			e.broker.Send(events.NewTxErrEvent(ctx, err, party, psub))
+		}
+		e.broker.Send(events.NewProposalEvent(ctx, p))
+	}()
+	perr, err := e.validateOpenProposal(p)
+	if err != nil {
+		p.State = types.Proposal_STATE_REJECTED
+		p.Reason = perr
+		if e.log.GetLevel() == logging.DebugLevel {
+			e.log.Debug("Proposal rejected", logging.String("proposal-id", p.Id))
+		}
+		return nil, err
+	}
+
+	// now if it's a 2 steps proposal, start the node votes
+	if e.isTwoStepsProposal(&p) {
+		p.State = types.Proposal_STATE_WAITING_FOR_NODE_VOTE
+		err = e.startTwoStepsProposal(&p)
+	} else {
+		e.startProposal(&p)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return e.intoToSubmit(&p)
 }
 
 func (e *Engine) RejectProposal(

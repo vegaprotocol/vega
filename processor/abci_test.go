@@ -121,7 +121,7 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
 	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
+	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
 
 	for cmd, msg := range data {
 		tx := txEncode(t, cmd, msg)

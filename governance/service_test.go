@@ -77,8 +77,7 @@ func testPrepareNetworkParameterUpdateProposalSuccess(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, proposal)
@@ -102,8 +101,7 @@ func testPrepareNetworkParameterUpdateProposalFailureEmptyKey(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrEmptyNetParamKey.Error())
 	assert.Nil(t, proposal)
@@ -127,8 +125,7 @@ func testPrepareNetworkParameterUpdateProposalFailureEmptyValue(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrEmptyNetParamValue.Error())
 	assert.Nil(t, proposal)
@@ -143,8 +140,7 @@ func testPrepareProposalWithInvalidChanges(t *testing.T) {
 		Change:             nil,
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrUnsupportedProposalTerms.Error())
 	assert.Nil(t, proposal)
@@ -171,8 +167,7 @@ func testPrepareNetworkParameterUpdateProposalValidationFailure(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, "validation failure")
 	assert.Nil(t, proposal)
@@ -252,14 +247,11 @@ func testPrepareProposalNormal(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, proposal)
 	assert.NotEmpty(t, proposal.Reference, "reference expected to be auto-generated if empty")
-	assert.EqualValues(t, testAuthor, proposal.PartyId)
-	assert.EqualValues(t, types.Proposal_STATE_OPEN, proposal.State)
 	assert.EqualValues(t, terms, *proposal.Terms)
 }
 
@@ -276,7 +268,7 @@ func testPrepareProposalEmpty(t *testing.T) {
 		},
 	}
 
-	proposal, err := svc.PrepareProposal(svc.ctx, "", "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.Error(t, err)
 	assert.Nil(t, proposal)
@@ -301,8 +293,7 @@ func testPrepareProposalNewMarketMissingRisk(t *testing.T) {
 		Change:             newMarket,
 	}
 
-	testAuthor := "test-author"
-	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	_, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrMissingRiskParameters.Error())
 }
@@ -329,8 +320,7 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	_, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "proposal closing time cannot be before validation time, expected >")

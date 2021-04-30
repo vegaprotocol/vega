@@ -1789,10 +1789,11 @@ func (r *myMutationResolver) PrepareProposal(
 		return nil, err
 	}
 
-	pendingProposal, err := r.tradingClient.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
-		PartyId:   partyID,
-		Reference: ref,
-		Proposal:  terms,
+	pendingProposal, err := r.tradingClient.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
+		Submission: &types.ProposalSubmission{
+			Reference: ref,
+			Terms:     terms,
+		},
 	})
 	if err != nil {
 		return nil, customErrorFromStatus(err)
@@ -1800,7 +1801,12 @@ func (r *myMutationResolver) PrepareProposal(
 	return &PreparedProposal{
 		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
 		PendingProposal: &types.GovernanceData{
-			Proposal: pendingProposal.PendingProposal,
+			Proposal: &types.Proposal{
+				Reference: ref,
+				Terms:     terms,
+				PartyId:   partyID,
+				State:     types.Proposal_STATE_OPEN,
+			},
 		},
 	}, nil
 }

@@ -93,9 +93,6 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 		txn.WithdrawCommand: &types.WithdrawSubmission{
 			PartyId: party,
 		},
-		txn.ProposeCommand: &types.Proposal{
-			PartyId: party,
-		},
 	}
 
 	for cmd, msg := range msgs {

@@ -47,7 +47,7 @@ type AccountService interface {
 // GovernanceService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
 type GovernanceService interface {
-	PrepareProposal(ctx context.Context, author, reference string, terms *types.ProposalTerms) (*types.Proposal, error)
+	PrepareProposal(ctx context.Context, reference string, terms *types.ProposalTerms) (*types.ProposalSubmission, error)
 	PrepareVote(vote *types.VoteSubmission) (*types.VoteSubmission, error)
 }
 
@@ -189,16 +189,16 @@ func (s *tradingService) PrepareWithdraw(
 	}, nil
 }
 
-func (s *tradingService) PrepareProposal(
-	ctx context.Context, req *protoapi.PrepareProposalRequest,
-) (*protoapi.PrepareProposalResponse, error) {
+func (s *tradingService) PrepareProposalSubmission(
+	ctx context.Context, req *protoapi.PrepareProposalSubmissionRequest,
+) (*protoapi.PrepareProposalSubmissionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareProposal", startTime)
 
 	if err := req.Validate(); err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
-	proposal, err := s.governanceService.PrepareProposal(ctx, req.PartyId, req.Reference, req.Proposal)
+	proposal, err := s.governanceService.PrepareProposal(ctx, req.Submission.Reference, req.Submission.Terms)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
@@ -210,9 +210,9 @@ func (s *tradingService) PrepareProposal(
 	if raw, err = txn.Encode(raw, txn.ProposeCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
-	return &protoapi.PrepareProposalResponse{
-		Blob:            raw,
-		PendingProposal: proposal,
+	return &protoapi.PrepareProposalSubmissionResponse{
+		Blob:       raw,
+		Submission: proposal,
 	}, nil
 }
 

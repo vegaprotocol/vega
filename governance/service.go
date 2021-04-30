@@ -326,19 +326,16 @@ func (s *Svc) GetNewAssetProposals(inState *types.Proposal_State) []*types.Gover
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal
 func (s *Svc) PrepareProposal(
-	ctx context.Context, party string, reference string, terms *types.ProposalTerms,
-) (*types.Proposal, error) {
-
+	ctx context.Context, reference string, terms *types.ProposalTerms,
+) (*types.ProposalSubmission, error) {
 	if err := s.validateTerms(terms); err != nil {
 		return nil, err
 	}
 	if len(reference) <= 0 {
 		reference = uuid.NewV4().String()
 	}
-	return &types.Proposal{
+	return &types.ProposalSubmission{
 		Reference: reference,
-		PartyId:   party,
-		State:     types.Proposal_STATE_OPEN,
 		Terms:     terms,
 	}, nil
 }

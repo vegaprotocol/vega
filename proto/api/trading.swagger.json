@@ -187,12 +187,12 @@
     "/governance/prepare/proposal": {
       "post": {
         "summary": "Prepare a governance proposal",
-        "operationId": "PrepareProposal",
+        "operationId": "PrepareProposalSubmission",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1PrepareProposalResponse"
+              "$ref": "#/definitions/v1PrepareProposalSubmissionResponse"
             }
           }
         },
@@ -202,7 +202,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1PrepareProposalRequest"
+              "$ref": "#/definitions/v1PrepareProposalSubmissionRequest"
             }
           }
         ],
@@ -2893,25 +2893,16 @@
       },
       "title": "Response to a liquidity provision request"
     },
-    "v1PrepareProposalRequest": {
+    "v1PrepareProposalSubmissionRequest": {
       "type": "object",
       "properties": {
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier, required field"
-        },
-        "reference": {
-          "type": "string",
-          "title": "Unique reference"
-        },
-        "proposal": {
-          "$ref": "#/definitions/vegaProposalTerms",
-          "title": "Proposal terms, required field"
+        "submission": {
+          "$ref": "#/definitions/vegaProposalSubmission"
         }
       },
       "title": "Request to prepare a governance proposal"
     },
-    "v1PrepareProposalResponse": {
+    "v1PrepareProposalSubmissionResponse": {
       "type": "object",
       "properties": {
         "blob": {
@@ -2919,8 +2910,8 @@
           "format": "byte",
           "title": "A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction"
         },
-        "pending_proposal": {
-          "$ref": "#/definitions/vegaProposal",
+        "submission": {
+          "$ref": "#/definitions/vegaProposalSubmission",
           "title": "A copy of the prepared proposal"
         }
       },
@@ -5409,6 +5400,20 @@
       "default": "STATE_UNSPECIFIED",
       "description": "- STATE_UNSPECIFIED: Default value, always invalid\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execution could not be performed\n - STATE_OPEN: Proposal is open for voting\n - STATE_PASSED: Proposal has gained enough support to be executed\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements)\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level)\n - STATE_ENACTED: Proposal enacted\n - STATE_WAITING_FOR_NODE_VOTE: Waiting for node validation of the proposal",
       "title": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state"
+    },
+    "vegaProposalSubmission": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "title": "Proposal reference"
+        },
+        "terms": {
+          "$ref": "#/definitions/vegaProposalTerms",
+          "title": "Proposal configuration and the actual change that is meant to be executed when proposal is enacted"
+        }
+      },
+      "title": "A command to submit a new proposal for the\nvega network governance"
     },
     "vegaProposalTerms": {
       "type": "object",
