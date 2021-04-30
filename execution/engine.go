@@ -460,9 +460,9 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment) (confirmation *types.OrderConfirmation, returnedErr error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
 	defer func() {
-		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, orderAmendment.PartyId)
+		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, party)
 	}()
 
 	if e.log.IsDebug() {
@@ -476,7 +476,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(ctx, orderAmendment)
+	conf, err := mkt.AmendOrder(ctx, orderAmendment, party)
 	if err != nil {
 		return nil, err
 	}

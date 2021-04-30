@@ -46,20 +46,17 @@ func asOrderAmendmentError(e error) *OrderAmendmentError {
 
 func isExpectedRejectedOrderAmendment(err *OrderAmendmentError, party string, reference string, errMessage string) bool {
 	return err.Err.Error() == errMessage &&
-		err.OrderAmendment.PartyId == party &&
 		err.OrderReference == reference
 }
 
 func errUnexpectedRejectedOrderAmendment(err *OrderAmendmentError, party string, reference string, errMessage string) error {
 	return formatDiff(
-		"rejected amendment does not match",
+		fmt.Sprintf("rejected amendment does not match for party \"%s\"", party),
 		map[string]string{
-			"party": party,
 			"order": reference,
 			"error": errMessage,
 		},
 		map[string]string{
-			"party": err.OrderAmendment.PartyId,
 			"order": err.OrderReference,
 			"error": err.Err.Error(),
 		},

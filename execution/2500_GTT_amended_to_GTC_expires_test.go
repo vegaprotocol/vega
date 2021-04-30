@@ -30,11 +30,10 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	// now we edit the order t make it GTC so it should not expire
 	amendment := &commandspb.OrderAmendment{
 		OrderId:     o1.Id,
-		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa")
 	require.NotNil(t, amendConf)
 	require.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, amendConf.Order.Status)

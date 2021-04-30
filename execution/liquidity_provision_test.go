@@ -381,10 +381,9 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 
 	// Attempt to amend one of the pegged orders
 	amend := &commandspb.OrderAmendment{OrderId: orders[0].Id,
-		PartyId:   orders[0].PartyId,
 		MarketId:  orders[0].MarketId,
 		SizeDelta: +5}
-	amendConf, err := tm.market.AmendOrder(ctx, amend)
+	amendConf, err := tm.market.AmendOrder(ctx, amend, orders[0].PartyId)
 	require.Error(t, err)
 	require.Nil(t, amendConf)
 	assert.Equal(t, types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, err)

@@ -38,7 +38,7 @@ type ExecutionEngine interface {
 	// orders stuff
 	SubmitOrder(ctx context.Context, orderSubmission *commandspb.OrderSubmission, party string) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *commandspb.OrderAmendment) (*types.OrderConfirmation, error)
+	AmendOrder(ctx context.Context, order *commandspb.OrderAmendment, party string) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error

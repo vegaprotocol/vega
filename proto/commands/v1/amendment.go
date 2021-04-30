@@ -10,7 +10,6 @@ func AmendSize(o *types.Order, newSize int64) *OrderAmendment {
 	a := &OrderAmendment{
 		OrderId:  o.Id,
 		MarketId: o.MarketId,
-		PartyId:  o.PartyId,
 
 		SizeDelta:   newSize - int64(o.Size),
 		TimeInForce: o.TimeInForce,

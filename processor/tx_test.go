@@ -44,37 +44,7 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
 	msgs := map[txn.Command]proto.Message{
-		txn.AmendOrderCommand: &commandspb.OrderAmendment{
-			PartyId: party,
-		},
-		txn.VoteCommand: &types.Vote{
-			PartyId: party,
-		},
-		txn.ProposeCommand: &types.Proposal{
-			PartyId: party,
-		},
-	}
-
-	for cmd, msg := range msgs {
-		// Build the Tx
-		rawTx := txEncode(t, cmd, msg)
-		rawTx.From = &types.Transaction_PubKey{
-			PubKey: key,
-		}
-		tx, err := processor.NewTx(rawTx, []byte{})
-		require.NoError(t, err)
-
-		require.NoError(t, tx.Validate())
-	}
-}
-
-func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
-	key := []byte("party-id")
-	party := hex.EncodeToString([]byte("another-party"))
-	msgs := map[txn.Command]proto.Message{
-		txn.AmendOrderCommand: &commandspb.OrderAmendment{
-			PartyId: party,
-		},
+		txn.AmendOrderCommand: &commandspb.OrderAmendment{},
 	}
 
 	for cmd, msg := range msgs {

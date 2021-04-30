@@ -64,12 +64,11 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 
 	amendment := &commandspb.OrderAmendment{
 		OrderId:   o1.Id,
-		PartyId:   "trader-A",
 		Price:     &types.Price{Value: 4000},
 		SizeDelta: +10,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "trader-A")
 	assert.Nil(t, amendConf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 

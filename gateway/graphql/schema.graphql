@@ -51,8 +51,6 @@ type Mutation {
   prepareOrderAmend(
     "ID of the order to amend"
     id: ID!
-    "ID of the party which created the order"
-    partyId: ID!
     "New price for this order"
     price: String!
     "New size for this order"

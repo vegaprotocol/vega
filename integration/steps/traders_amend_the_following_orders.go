@@ -39,7 +39,6 @@ func TradersAmendTheFollowingOrders(
 
 		amend := commandspb.OrderAmendment{
 			OrderId:     o.Id,
-			PartyId:     o.PartyId,
 			MarketId:    o.MarketId,
 			Price:       row.price(),
 			SizeDelta:   row.sizeDelta(),
@@ -47,7 +46,7 @@ func TradersAmendTheFollowingOrders(
 			ExpiresAt:   row.expirationDate(),
 		}
 
-		_, err = exec.AmendOrder(context.Background(), &amend)
+		_, err = exec.AmendOrder(context.Background(), &amend, o.PartyId)
 		if err != nil {
 			errHandler.HandleError(OrderAmendmentError{
 				OrderAmendment: amend,
