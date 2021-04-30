@@ -20,7 +20,7 @@ func Encode(input []byte, cmd Command) ([]byte, error) {
 func Decode(input []byte) ([]byte, Command, error) {
 	// Input is typically the bytes that arrive in raw format after consensus is reached.
 	// Split the transaction dropping the unification bytes (uuid&pipe)
-	if len(input) > 37 {
+	if len(input) >= 37 {
 		// obtain command from byte slice (0 indexed)
 		// remaining bytes are payload
 		return input[37:], Command(input[36]), nil
