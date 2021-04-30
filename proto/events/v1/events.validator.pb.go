@@ -65,6 +65,13 @@ func (this *TxErrorEvent) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_WithdrawSubmission); ok {
+		if oneOfNester.WithdrawSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.WithdrawSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("WithdrawSubmission", err)
+			}
+		}
+	}
 	return nil
 }
 func (this *TimeUpdate) Validate() error {

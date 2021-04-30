@@ -42,7 +42,7 @@ message OrderSubmission {
   string reference = 10;
   // Used to specify the details for a pegged order
   // - See [`PeggedOrder`](#vega.PeggedOrder)
-  PeggedOrder pegged_order = 11;
+  vega.PeggedOrder pegged_order = 11;
 }
 
 // An order cancellation is a request to cancel an existing order on Vega
@@ -99,11 +99,23 @@ message LiquidityProvisionSubmission {
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
   string fee = 3;
   // A set of liquidity sell orders to meet the liquidity provision obligation
-  repeated LiquidityOrder sells = 4;
+  repeated vega.LiquidityOrder sells = 4;
   // A set of liquidity buy orders to meet the liquidity provision obligation
-  repeated LiquidityOrder buys = 5;
+  repeated vega.LiquidityOrder buys = 5;
   // A reference to be added to every order created out of this liquidityProvisionSubmission
   string reference = 6;
+}
+
+// Represents the submission request to withdraw funds for a party on Vega
+message WithdrawSubmission {
+  // Unique party identifier for the user wanting to withdraw funds
+  string party_id = 1;
+  // The amount to be withdrawn
+  uint64 amount = 2;
+  // The asset we want to withdraw
+  string asset = 3;
+  // Foreign chain specifics
+  vega.WithdrawExt ext = 4;
 }
 
 // A command to submit a new proposal for the

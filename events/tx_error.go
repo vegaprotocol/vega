@@ -75,6 +75,15 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		evt.evt.Transaction = &eventspb.TxErrorEvent_LiquidityProvisionSubmission{
 			LiquidityProvisionSubmission: &tv,
 		}
+	case *commandspb.WithdrawSubmission:
+		cpy := *tv
+		evt.evt.Transaction = &eventspb.TxErrorEvent_WithdrawSubmission{
+			WithdrawSubmission: &cpy,
+		}
+	case commandspb.WithdrawSubmission:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_WithdrawSubmission{
+			WithdrawSubmission: &tv,
+		}
 	}
 	return evt
 }

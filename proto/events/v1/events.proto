@@ -33,6 +33,7 @@ message TxErrorEvent {
     commands.v1.ProposalSubmission proposal = 104;
     commands.v1.VoteSubmission vote_submission = 105;
     commands.v1.LiquidityProvisionSubmission liquidity_provision_submission = 106;
+    commands.v1.WithdrawSubmission withdraw_submission = 107;
   }
 }
 

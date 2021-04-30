@@ -1604,7 +1604,7 @@ func (r *myMutationResolver) PrepareWithdrawal(
 	}
 
 	req := protoapi.PrepareWithdrawRequest{
-		Withdraw: &types.WithdrawSubmission{
+		Withdraw: &commandspb.WithdrawSubmission{
 			PartyId: partyID,
 			Asset:   asset,
 			Amount:  amountU,

@@ -684,22 +684,10 @@ message Withdrawal {
   WithdrawExt ext = 11;
 }
 
-// Represents the submission request to withdraw funds for a party on Vega
-message WithdrawSubmission {
-  // Unique party identifier for the user wanting to withdraw funds
-  string party_id = 1;
-  // The amount to be withdrawn
-  uint64 amount = 2;
-  // The asset we want to withdraw
-  string asset = 3;
+// Withdrawal external details
+message WithdrawExt {
   // Foreign chain specifics
-  WithdrawExt ext = 4;
-}
-
-  // Withdrawal external details
-  message WithdrawExt {
-  // Foreign chain specifics
-  oneof ext {
+    oneof ext {
     // ERC20 withdrawal details
     Erc20WithdrawExt erc20 = 1;
   }

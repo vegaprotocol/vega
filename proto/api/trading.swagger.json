@@ -3123,7 +3123,7 @@
       "type": "object",
       "properties": {
         "withdraw": {
-          "$ref": "#/definitions/vegaWithdrawSubmission",
+          "$ref": "#/definitions/v1WithdrawSubmission",
           "title": "An asset withdrawal"
         }
       },
@@ -3430,6 +3430,9 @@
         },
         "liquidity_provision_submission": {
           "$ref": "#/definitions/v1LiquidityProvisionSubmission"
+        },
+        "withdraw_submission": {
+          "$ref": "#/definitions/v1WithdrawSubmission"
         }
       }
     },
@@ -3446,6 +3449,29 @@
         }
       },
       "description": "A command to submit a new vote for a governance\nproposal."
+    },
+    "v1WithdrawSubmission": {
+      "type": "object",
+      "properties": {
+        "party_id": {
+          "type": "string",
+          "title": "Unique party identifier for the user wanting to withdraw funds"
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64",
+          "title": "The amount to be withdrawn"
+        },
+        "asset": {
+          "type": "string",
+          "title": "The asset we want to withdraw"
+        },
+        "ext": {
+          "$ref": "#/definitions/vegaWithdrawExt",
+          "title": "Foreign chain specifics"
+        }
+      },
+      "title": "Represents the submission request to withdraw funds for a party on Vega"
     },
     "v1WithdrawalResponse": {
       "type": "object",
@@ -6002,29 +6028,6 @@
         }
       },
       "title": "Withdrawal external details"
-    },
-    "vegaWithdrawSubmission": {
-      "type": "object",
-      "properties": {
-        "party_id": {
-          "type": "string",
-          "title": "Unique party identifier for the user wanting to withdraw funds"
-        },
-        "amount": {
-          "type": "string",
-          "format": "uint64",
-          "title": "The amount to be withdrawn"
-        },
-        "asset": {
-          "type": "string",
-          "title": "The asset we want to withdraw"
-        },
-        "ext": {
-          "$ref": "#/definitions/vegaWithdrawExt",
-          "title": "Foreign chain specifics"
-        }
-      },
-      "title": "Represents the submission request to withdraw funds for a party on Vega"
     },
     "vegaWithdrawal": {
       "type": "object",

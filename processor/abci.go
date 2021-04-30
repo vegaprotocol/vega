@@ -418,7 +418,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverWithdraw(
 	ctx context.Context, tx abci.Tx, id string) error {
-	w := &types.WithdrawSubmission{}
+	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
 	}

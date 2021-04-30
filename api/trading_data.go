@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/stats"
@@ -114,7 +115,7 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
-	PrepareWithdraw(context.Context, *types.WithdrawSubmission) error
+	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // TransferResponseService ...

@@ -85,7 +85,7 @@ func (t *Tx) toProto() (interface{}, error) {
 	case txn.VoteCommand:
 		msg = &commandspb.VoteSubmission{}
 	case txn.WithdrawCommand:
-		msg = &types.WithdrawSubmission{}
+		msg = &commandspb.WithdrawSubmission{}
 	case txn.LiquidityProvisionCommand:
 		msg = &commandspb.LiquidityProvisionSubmission{}
 	// Node commands

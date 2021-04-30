@@ -87,6 +87,14 @@ func (this *LiquidityProvisionSubmission) Validate() error {
 	}
 	return nil
 }
+func (this *WithdrawSubmission) Validate() error {
+	if this.Ext != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Ext); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Ext", err)
+		}
+	}
+	return nil
+}
 func (this *ProposalSubmission) Validate() error {
 	if nil == this.Terms {
 		return github_com_mwitkow_go_proto_validators.FieldError("Terms", fmt.Errorf("message must exist"))

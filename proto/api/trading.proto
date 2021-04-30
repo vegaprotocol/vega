@@ -104,7 +104,7 @@ message SubmitTransactionResponse {
 // Request for preparing a withdrawal
 message PrepareWithdrawRequest {
   // An asset withdrawal
-  vega.WithdrawSubmission withdraw = 1;
+  vega.commands.v1.WithdrawSubmission withdraw = 1;
 }
 
 // Response for preparing a withdrawal
