@@ -669,6 +669,10 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	order.UpdatedAt = m.currentTime.UnixNano()
 	order.Status = types.Order_STATUS_REJECTED
 	if oerr, ok := types.IsOrderError(err); ok {
+		// the order wasn't invalid, so stopped is a better status, rather than rejected.
+		if oerr == types.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS {
+			order.Status = types.Order_STATUS_STOPPED
+		}
 		order.Reason = oerr
 	} else {
 		// should not happened but still...
