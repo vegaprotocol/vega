@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -1666,7 +1667,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
 	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrderInput) (*PreparedSubmitOrder, error) {
 
-	order := &types.OrderSubmission{}
+	order := &commandspb.OrderSubmission{}
 
 	var (
 		p   uint64
@@ -1749,8 +1750,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 }
 
 func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, market *string) (*PreparedCancelOrder, error) {
-	order := &types.OrderCancellation{}
-
+	order := &commandspb.OrderCancellation{}
 	if market != nil {
 		order.MarketId = *market
 	}
@@ -1841,7 +1841,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 
 func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string,
 	expiration *string, tif OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
-	order := &types.OrderAmendment{}
+	order := &commandspb.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
 	if len(id) == 0 {

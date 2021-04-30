@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
@@ -39,30 +40,30 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
 			VoteSubmission: &tv,
 		}
-	case *types.OrderSubmission:
+	case *commandspb.OrderSubmission:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderSubmission{
 			OrderSubmission: &cpy,
 		}
-	case types.OrderSubmission:
+	case commandspb.OrderSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderSubmission{
 			OrderSubmission: &tv,
 		}
-	case *types.OrderCancellation:
+	case *commandspb.OrderCancellation:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderCancellation{
 			OrderCancellation: &cpy,
 		}
-	case types.OrderCancellation:
+	case commandspb.OrderCancellation:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderCancellation{
 			OrderCancellation: &tv,
 		}
-	case *types.OrderAmendment:
+	case *commandspb.OrderAmendment:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderAmendment{
 			OrderAmendment: &cpy,
 		}
-	case types.OrderAmendment:
+	case commandspb.OrderAmendment:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderAmendment{
 			OrderAmendment: &tv,
 		}

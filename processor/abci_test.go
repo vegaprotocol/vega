@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
@@ -79,10 +80,10 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &types.OrderSubmission{
+		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
 			PartyId: party,
 		},
-		txn.CancelOrderCommand: &types.OrderCancellation{},
+		txn.CancelOrderCommand: &commandspb.OrderCancellation{},
 		txn.ProposeCommand: &types.Proposal{
 			PartyId: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset

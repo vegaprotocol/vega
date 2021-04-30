@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -36,8 +37,8 @@ type TimeService interface {
 type ExecutionEngine interface {
 	// orders stuff
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *commandspb.OrderAmendment) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error

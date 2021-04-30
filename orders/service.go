@@ -5,10 +5,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
-
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -123,7 +123,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) error {
+func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *commandspb.OrderSubmission) error {
 	if submission == nil {
 		return ErrEmptyPrepareRequest
 	}
@@ -136,7 +136,7 @@ func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *types.OrderSub
 	return nil
 }
 
-func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
+func (s *Svc) validateOrderSubmission(sub *commandspb.OrderSubmission) error {
 	if err := sub.Validate(); err != nil {
 		return errors.Wrap(err, "order validation failed")
 	}
@@ -227,7 +227,7 @@ func (s *Svc) validateOrderSubmission(sub *types.OrderSubmission) error {
 	return nil
 }
 
-func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancellation) error {
+func (s *Svc) PrepareCancelOrder(ctx context.Context, order *commandspb.OrderCancellation) error {
 	if order == nil {
 		return ErrEmptyPrepareRequest
 	}
@@ -243,7 +243,7 @@ func (s *Svc) PrepareCancelOrder(ctx context.Context, order *types.OrderCancella
 	return nil
 }
 
-func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error {
+func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *commandspb.OrderAmendment) error {
 	if amendment == nil {
 		return ErrEmptyPrepareRequest
 	}

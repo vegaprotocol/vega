@@ -27,16 +27,16 @@ message OrderSubmission {
   // Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
   uint64 size = 5 [(validator.field) = {int_gt: 0}];
   // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field - See [`Side`](#vega.Side)
-  Side side = 6 [(validator.field) = {is_in_enum: true}];
+  vega.Side side = 6;
   // Time in force indicates how long an order will remain active before it is executed or expires, required field
   // - See [`Order.TimeInForce`](#vega.Order.TimeInForce)
-  Order.TimeInForce time_in_force = 7 [(validator.field) = {is_in_enum: true}];
+  vega.Order.TimeInForce time_in_force = 7;
   // Timestamp for when the order will expire, in nanoseconds since the epoch,
   // required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 expires_at = 8;
   // Type for the order, required field - See [`Order.Type`](#vega.Order.Type)
-  Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
+  vega.Order.Type type = 9;
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
   // set internally by the node to return a unique reference identifier for the order submission
   string reference = 10;
@@ -71,7 +71,7 @@ message OrderAmendment {
   // All fields below can be altered by this command:
 
   // Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)
-  Price price = 4;
+  vega.Price price = 4;
   // Amend the size for the order by the delta specified:
   // - To reduce the size from the current value set a negative integer value
   // - To increase the size from the current value, set a positive integer value
@@ -79,13 +79,13 @@ message OrderAmendment {
   int64 size_delta = 5;
   // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  Timestamp expires_at = 6;
+  vega.Timestamp expires_at = 6;
   // Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
   // - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
-  Order.TimeInForce time_in_force = 7;
+  vega.Order.TimeInForce time_in_force = 7;
   // Amend the pegged order offset for the order
   google.protobuf.Int64Value pegged_offset = 8;
   // Amend the pegged order reference for the order
   // - See [`PeggedReference`](#vega.PeggedReference)
-  PeggedReference pegged_reference = 9;
+  vega.PeggedReference pegged_reference = 9;
 }

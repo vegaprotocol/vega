@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	cancel = proto.OrderCancellation{
+	cancel = commandspb.OrderCancellation{
 		OrderId:  "order_id",
 		MarketId: "market",
 	}
@@ -35,7 +35,7 @@ func testCancelOrderNoOrderID(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	ctx := context.Background()
-	arg := proto.OrderCancellation{
+	arg := commandspb.OrderCancellation{
 		MarketId: "marketid",
 	}
 	err := svc.svc.PrepareCancelOrder(ctx, &arg)
@@ -46,7 +46,7 @@ func testCancelOrderNoMarketID(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	ctx := context.Background()
-	arg := proto.OrderCancellation{
+	arg := commandspb.OrderCancellation{
 		OrderId: "orderid",
 	}
 

@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/products"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 
@@ -2242,7 +2243,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 }
 
 // AmendOrder amend an existing order from the order book
-func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment) (*types.OrderConfirmation, error) {
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
@@ -2263,7 +2264,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	return conf, nil
 }
 
-func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (cnf *types.OrderConfirmation, returnedErr error) {
+func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment) (cnf *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2564,7 +2565,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 func (m *Market) validateOrderAmendment(
 	order *types.Order,
-	amendment *types.OrderAmendment,
+	amendment *commandspb.OrderAmendment,
 ) error {
 	// check TIME_IN_FORCE and expiry
 	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GTT {
@@ -2625,7 +2626,7 @@ func (m *Market) validateOrderAmendment(
 func (m *Market) applyOrderAmendment(
 	ctx context.Context,
 	existingOrder *types.Order,
-	amendment *types.OrderAmendment,
+	amendment *commandspb.OrderAmendment,
 ) (order *types.Order, err error) {
 	m.mu.Lock()
 	currentTime := m.currentTime
@@ -3508,7 +3509,7 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 func (m *Market) updateAndCreateOrders(
 	ctx context.Context,
 	newOrders []*types.Order,
-	amendments []*types.OrderAmendment,
+	amendments []*commandspb.OrderAmendment,
 ) error {
 
 	for _, order := range amendments {

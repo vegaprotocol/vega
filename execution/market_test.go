@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
@@ -770,7 +771,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	t.Log("amending order now")
 
 	// now try to amend and make sure monies are updated
-	amendedOrder := &types.OrderAmendment{
+	amendedOrder := &commandspb.OrderAmendment{
 		OrderId:     orderBuy.Id,
 		PartyId:     party1,
 		Price:       &types.Price{Value: 200},
@@ -1390,7 +1391,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
-	amendedOrder := &types.OrderAmendment{
+	amendedOrder := &commandspb.OrderAmendment{
 		OrderId:     orderBuy2.Id,
 		PartyId:     party1,
 		Price:       &types.Price{Value: auctionTriggeringPrice},
@@ -2434,7 +2435,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeBidPrev := mktData.BestBidVolume - mktData.BestStaticBidVolume
 	lpOrderVolumeOfferPrev := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
 	// Amend limit order
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:   confirmationBuy.Order.Id,
 		PartyId:   confirmationBuy.Order.PartyId,
 		SizeDelta: 9,
@@ -3126,7 +3127,7 @@ func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
 	assert.Equal(t, uint64(0), o1.Price)
 
 	// Try to amend the price
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId: o1.Id,
 		PartyId: "aaa",
 		Price:   &types.Price{Value: 200},
@@ -3262,7 +3263,7 @@ func TestOrderBook_CrashWithDistressedTraderPeggedOrderNotRemovedFromPeggedList2
 	require.NoError(t, err)
 
 	// Try to amend the price
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId: o3.Id,
 		PartyId: "trader-C",
 		Price:   &types.Price{Value: 1002},
@@ -3345,7 +3346,7 @@ func TestOrderBook_Bug2747(t *testing.T) {
 	require.NoError(t, err)
 
 	// Try to amend the price
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:         o1.Id,
 		PartyId:         "trader-A",
 		PeggedOffset:    &wrapperspb.Int64Value{Value: 20},
@@ -3412,7 +3413,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	// Amend the pegged order from GTT to GTC
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:     o2.Id,
 		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -3492,7 +3493,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 	require.NoError(t, err)
 
 	// Amend the pegged order so that is has an expiry
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:     o2.Id,
 		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -3575,7 +3576,7 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend the pegged order so that is has an expiry
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId: o2.Id,
 		PartyId: "trader-B",
 		Price:   &types.Price{Value: 5000},
@@ -3641,7 +3642,7 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 
 	// then amend
 	// Amend the pegged order so that is has an expiry
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:      o3.Id,
 		PartyId:      "trader-C",
 		PeggedOffset: &wrapperspb.Int64Value{Value: -6500},
@@ -3706,7 +3707,7 @@ func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
 
 	// then amend
 	// Amend the pegged order so that is has an expiry
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:     o1.Id,
 		PartyId:     "trader-A",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -3761,7 +3762,7 @@ func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Try to amend the price
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:   o1.Id,
 		PartyId:   "trader-A",
 		Price:     &types.Price{Value: 4000},
@@ -3796,7 +3797,7 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Try to amend the price
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:   o1.Id,
 		PartyId:   "trader-A",
 		SizeDelta: -1,
@@ -3830,7 +3831,7 @@ func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Try to amend the price
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:   o1.Id,
 		PartyId:   "trader-A",
 		SizeDelta: -10,

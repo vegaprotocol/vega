@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +26,7 @@ func TestPrepareAmendOrder(t *testing.T) {
 }
 
 func testPrepareAmendOrderJustPriceSuccess(t *testing.T) {
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId: "orderid",
 		PartyId: "partyid",
 		Price:   &proto.Price{Value: 1000},
@@ -38,7 +39,7 @@ func testPrepareAmendOrderJustPriceSuccess(t *testing.T) {
 }
 
 func testPrepareAmendOrderJustReduceSuccess(t *testing.T) {
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId:   "orderid",
 		PartyId:   "partyid",
 		SizeDelta: -10,
@@ -51,7 +52,7 @@ func testPrepareAmendOrderJustReduceSuccess(t *testing.T) {
 }
 
 func testPrepareAmendOrderJustIncreaseSuccess(t *testing.T) {
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId:   "orderid",
 		PartyId:   "partyid",
 		SizeDelta: 10,
@@ -66,7 +67,7 @@ func testPrepareAmendOrderJustIncreaseSuccess(t *testing.T) {
 func testPrepareAmendOrderJustExpirySuccess(t *testing.T) {
 	now := vegatime.Now()
 	expires := now.Add(-2 * time.Hour)
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId:   "orderid",
 		PartyId:   "partyid",
 		ExpiresAt: &proto.Timestamp{Value: expires.UnixNano()},
@@ -79,7 +80,7 @@ func testPrepareAmendOrderJustExpirySuccess(t *testing.T) {
 }
 
 func testPrepareAmendOrderJustTIFSuccess(t *testing.T) {
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		PartyId:     "partyid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
@@ -92,14 +93,14 @@ func testPrepareAmendOrderJustTIFSuccess(t *testing.T) {
 }
 
 func testPrepareAmendOrderEmptyFail(t *testing.T) {
-	arg := proto.OrderAmendment{}
+	arg := commandspb.OrderAmendment{}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
 	err := svc.svc.PrepareAmendOrder(context.Background(), &arg)
 	assert.Error(t, err)
 
-	arg2 := proto.OrderAmendment{
+	arg2 := commandspb.OrderAmendment{
 		OrderId: "orderid",
 		PartyId: "partyid",
 	}
@@ -108,7 +109,7 @@ func testPrepareAmendOrderEmptyFail(t *testing.T) {
 }
 
 func testPrepareAmendOrderNilFail(t *testing.T) {
-	var arg proto.OrderAmendment
+	var arg commandspb.OrderAmendment
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -117,7 +118,7 @@ func testPrepareAmendOrderNilFail(t *testing.T) {
 }
 
 func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		PartyId:     "partyid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
@@ -143,7 +144,7 @@ func testPrepareAmendOrderInvalidExpiryFail(t *testing.T) {
  * The validation should take place inside the core
  */
 func testPrepareAmendOrderPastExpiry(t *testing.T) {
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		PartyId:     "partyid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTT,
@@ -157,7 +158,7 @@ func testPrepareAmendOrderPastExpiry(t *testing.T) {
 }
 
 func testPrepareAmendOrderToGFN(t *testing.T) {
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		PartyId:     "partyid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFN,
@@ -171,7 +172,7 @@ func testPrepareAmendOrderToGFN(t *testing.T) {
 }
 
 func testPrepareAmendOrderToGFA(t *testing.T) {
-	arg := proto.OrderAmendment{
+	arg := commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		PartyId:     "partyid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFA,

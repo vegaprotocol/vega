@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -379,7 +380,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	assert.Equal(t, types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, err)
 
 	// Attempt to amend one of the pegged orders
-	amend := &types.OrderAmendment{OrderId: orders[0].Id,
+	amend := &commandspb.OrderAmendment{OrderId: orders[0].Id,
 		PartyId:   orders[0].PartyId,
 		MarketId:  orders[0].MarketId,
 		SizeDelta: +5}

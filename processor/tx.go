@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -73,11 +74,11 @@ func (t *Tx) toProto() (interface{}, error) {
 	var msg proto.Message
 	switch t.Command() {
 	case txn.SubmitOrderCommand:
-		msg = &types.OrderSubmission{}
+		msg = &commandspb.OrderSubmission{}
 	case txn.CancelOrderCommand:
-		msg = &types.OrderCancellation{}
+		msg = &commandspb.OrderCancellation{}
 	case txn.AmendOrderCommand:
-		msg = &types.OrderAmendment{}
+		msg = &commandspb.OrderAmendment{}
 	case txn.ProposeCommand:
 		msg = &types.ProposalSubmission{}
 	case txn.VoteCommand:

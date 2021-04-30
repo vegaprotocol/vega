@@ -6,6 +6,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ func TestVersioning(t *testing.T) {
 	orderID := confirmation.GetOrder().Id
 
 	// Amend price up, check version moves to 2
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:  orderID,
 		MarketId: tm.market.GetID(),
 		PartyId:  party1,

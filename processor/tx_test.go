@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -44,11 +45,11 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString(key)
 	msgs := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &types.OrderSubmission{
+		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
 			PartyId: party,
 		},
-		txn.CancelOrderCommand: &types.OrderCancellation{},
-		txn.AmendOrderCommand: &types.OrderAmendment{
+		txn.CancelOrderCommand: &commandspb.OrderCancellation{},
+		txn.AmendOrderCommand: &commandspb.OrderAmendment{
 			PartyId: party,
 		},
 		txn.VoteCommand: &types.Vote{
@@ -79,7 +80,7 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 	key := []byte("party-id")
 	party := hex.EncodeToString([]byte("another-party"))
 	msgs := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &types.OrderSubmission{
+		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
 			PartyId: party,
 		},
 		txn.AmendOrderCommand: &types.OrderAmendment{

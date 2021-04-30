@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -317,7 +318,7 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
-	s := &types.OrderSubmission{}
+	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
 	}
@@ -370,7 +371,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
-	order := &types.OrderCancellation{}
+	order := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
@@ -394,7 +395,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
-	order := &types.OrderAmendment{}
+	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}

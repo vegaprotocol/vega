@@ -7,6 +7,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/golang/mock/gomock"
@@ -534,7 +535,7 @@ func TestEvents_Amending(t *testing.T) {
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:  o1.Id,
 		PartyId:  o1.PartyId,
 		MarketId: o1.MarketId,
@@ -614,7 +615,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:  o2.Id,
 		PartyId:  o2.PartyId,
 		MarketId: o2.MarketId,
@@ -682,7 +683,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:  o1.Id,
 		PartyId:  o1.PartyId,
 		MarketId: o1.MarketId,
@@ -739,7 +740,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:  o3.Id,
 		PartyId:  o3.PartyId,
 		MarketId: o3.MarketId,
@@ -796,7 +797,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:   o3.Id,
 		PartyId:   o3.PartyId,
 		MarketId:  o3.MarketId,

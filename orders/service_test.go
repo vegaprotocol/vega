@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/orders/mocks"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/mock/gomock"
@@ -18,7 +19,7 @@ import (
 )
 
 var (
-	orderSubmission = types.OrderSubmission{
+	orderSubmission = commandspb.OrderSubmission{
 		Type:        types.Order_TYPE_LIMIT,
 		Id:          "order_id",
 		MarketId:    "market_id",
@@ -161,7 +162,7 @@ func testCreateOrderFailNetworkOrderType(t *testing.T) {
 }
 
 func testPrepareCancelOrderSuccess(t *testing.T) {
-	cancel := types.OrderCancellation{
+	cancel := commandspb.OrderCancellation{
 		OrderId:  "order.Id",
 		MarketId: "order.MarketId",
 	}

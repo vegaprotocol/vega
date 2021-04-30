@@ -6,6 +6,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	require.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 
 	// now we edit the order t make it GTC so it should not expire
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:     o1.Id,
 		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -45,7 +46,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	require.Equal(t, 1, tm.market.GetPeggedExpiryOrderCount())
 
 	// now we edit the order t make it GTC so it should not expire
-	amendment2 := &types.OrderAmendment{
+	amendment2 := &commandspb.OrderAmendment{
 		OrderId:     o1.Id,
 		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -61,7 +62,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	require.Equal(t, 1, tm.market.GetPeggedExpiryOrderCount())
 
 	// now we edit the order t make it GTC so it should not expire
-	amendment3 := &types.OrderAmendment{
+	amendment3 := &commandspb.OrderAmendment{
 		OrderId:     o1.Id,
 		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
