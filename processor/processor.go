@@ -177,5 +177,5 @@ type OraclesEngine interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors
 type OracleAdaptors interface {
-	Normalise(types.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(commandspb.OracleDataSubmission) (*oracles.OracleData, error)
 }

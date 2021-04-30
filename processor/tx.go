@@ -99,7 +99,7 @@ func (t *Tx) toProto() (interface{}, error) {
 		msg = &commandspb.ChainEvent{}
 	// oracles
 	case txn.SubmitOracleDataCommand:
-		msg = &types.OracleDataSubmission{}
+		msg = &commandspb.OracleDataSubmission{}
 	default:
 		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", t.Command().String())
 	}

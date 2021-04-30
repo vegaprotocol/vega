@@ -1113,18 +1113,3 @@ message EthereumConfig {
   // Number of confirmations
   uint32 confirmations = 4;
 }
-
-// Command to submit new Oracle data from third party providers
-message OracleDataSubmission {
-  // The supported Oracle sources
-  enum OracleSource {
-    // The default value
-    ORACLE_SOURCE_UNSPECIFIED = 0;
-    // Support for Open Oracle standard
-    ORACLE_SOURCE_OPEN_ORACLE = 1;
-  }
-  // The source from which the data is coming from
-  OracleSource source = 1;
-  // The data provided by the third party provider
-  bytes payload = 2;
-}

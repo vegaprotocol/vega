@@ -530,7 +530,7 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 }
 
 func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
-	data := &types.OracleDataSubmission{}
+	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
 	}
@@ -544,7 +544,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
-	data := &types.OracleDataSubmission{}
+	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
 	}
