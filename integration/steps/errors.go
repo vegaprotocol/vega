@@ -63,7 +63,7 @@ func (c *CancelOrderError) Unwrap() error { return c.Err }
 
 type SubmitOrderError struct {
 	reference string
-	request   types.Order
+	request   commandspb.OrderSubmission
 	Err       error
 }
 

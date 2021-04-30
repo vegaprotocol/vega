@@ -323,31 +323,14 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	order := &types.Order{
-		Id:          s.Id,
-		MarketId:    s.MarketId,
-		PartyId:     s.PartyId,
-		Price:       s.Price,
-		Size:        s.Size,
-		Side:        s.Side,
-		TimeInForce: s.TimeInForce,
-		Type:        s.Type,
-		ExpiresAt:   s.ExpiresAt,
-		Reference:   s.Reference,
-		Status:      types.Order_STATUS_ACTIVE,
-		CreatedAt:   app.currentTimestamp.UnixNano(),
-		Remaining:   s.Size,
-		PeggedOrder: s.PeggedOrder,
-	}
-
 	app.stats.IncTotalCreateOrder()
 
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, order)
+	conf, err := app.exec.SubmitOrder(ctx, s, tx.Party())
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
-				logging.Order(*order),
+				logging.OrderSubmission(s),
 				logging.OrderWithTag(*conf.Order, "aggressive-order"),
 				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
 				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
@@ -363,7 +346,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 	if err != nil && app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("error message on creating order",
-			logging.Order(*order),
+			logging.OrderSubmission(s),
 			logging.Error(err))
 	}
 

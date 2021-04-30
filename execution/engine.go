@@ -423,15 +423,24 @@ func (e *Engine) removeMarket(mktID string) {
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.OrderSubmission, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+	defer func() {
+		e.notifyFailureOnError(ctx, returnedErr, orderSubmission, party)
+	}()
+
 	if e.log.IsDebug() {
-		e.log.Debug("submit order", logging.Order(*order))
+		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	timer := metrics.NewTimeCounter(order.MarketId, "execution", "SubmitOrder")
+	timer := metrics.NewTimeCounter(orderSubmission.MarketId, "execution", "SubmitOrder")
 
-	mkt, ok := e.markets[order.MarketId]
+	order := orderSubmission.IntoOrder(party)
+
+	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {
+		// FIXME(jeremy) We shouldn't define an ID on a failed submission order
+		//   but this is a dirty fix for storage purpose. We'll improve this
+		//   later on.
 		e.idgen.SetID(order)
 
 		// adding rejected order to the buf
@@ -466,7 +475,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment) (confirmation *types.OrderConfirmation, returnedErr error) {
 	defer func() {
-		e.notifyFailureOnError(ctx, returnedErr, orderAmendment.PartyId, orderAmendment)
+		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, orderAmendment.PartyId)
 	}()
 
 	if e.log.IsDebug() {
@@ -899,7 +908,7 @@ func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Contex
 	return nil
 }
 
-func (e *Engine) notifyFailureOnError(ctx context.Context, err error, partyID string, tx interface{}) {
+func (e *Engine) notifyFailureOnError(ctx context.Context, err error, tx interface{}, partyID string) {
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, partyID, tx))
 	}

@@ -114,7 +114,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TradersAmendTheFollowingOrders(execsetup.errorHandler, execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders place the following pegged orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlacePeggedOrders(execsetup.executionEngine, table)
+		return steps.TradersPlaceTheFollowingPeggedOrders(execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders deposit on asset's general account the following amount:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersDepositAssets(execsetup.collateralEngine, execsetup.broker, table)

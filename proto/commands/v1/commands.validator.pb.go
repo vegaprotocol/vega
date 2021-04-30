@@ -23,9 +23,6 @@ func (this *OrderSubmission) Validate() error {
 	if this.MarketId == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("MarketId", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketId))
 	}
-	if this.PartyId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
-	}
 	if !(this.Size > 0) {
 		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
 	}

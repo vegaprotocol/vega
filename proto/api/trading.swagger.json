@@ -2834,17 +2834,9 @@
     "v1OrderSubmission": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "title": "Unique identifier for the order (set by the system after consensus)"
-        },
         "market_id": {
           "type": "string",
           "title": "Market identifier for the order, required field"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier for the order, required field"
         },
         "price": {
           "type": "string",

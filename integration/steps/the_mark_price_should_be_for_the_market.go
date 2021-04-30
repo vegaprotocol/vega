@@ -32,7 +32,7 @@ func parseMarkPrice(markPriceStr string) uint64 {
 }
 
 func errWrongMarkPrice(market string, markPrice uint64, marketData types.MarketData) error {
-	return fmt.Errorf("mark price if wrong for market(%v), expected(%v) got(%v)",
+	return fmt.Errorf("wrong mark price for market(%v), expected(%v) got(%v)",
 		market, markPrice, marketData.MarkPrice,
 	)
 }

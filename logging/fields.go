@@ -213,6 +213,11 @@ func OrderAmendment(oa *commandspb.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
+// OrderSubmission constructs a single string field to contain all the object information
+func OrderSubmission(os *commandspb.OrderSubmission) zap.Field {
+	return zap.String("order-submission", os.String())
+}
+
 func OrderCancellation(oc *commandspb.OrderCancellation) zap.Field {
 	return zap.String("order-cancellation", oc.String())
 }

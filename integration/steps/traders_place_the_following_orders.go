@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog/gherkin"
-	uuid "github.com/satori/go.uuid"
-
 	"code.vegaprotocol.io/vega/integration/helpers"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"github.com/cucumber/godog/gherkin"
 
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
@@ -39,27 +38,22 @@ func TradersPlaceTheFollowingOrders(
 			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
 		}
 
-		order := types.Order{
-			Status:      types.Order_STATUS_ACTIVE,
-			Id:          uuid.NewV4().String(),
+		orderSubmission := commandspb.OrderSubmission{
 			MarketId:    marketID,
-			PartyId:     trader,
 			Side:        side,
 			Price:       price,
 			Size:        volume,
-			Remaining:   volume,
 			ExpiresAt:   expiresAt,
 			Type:        oty,
 			TimeInForce: tif,
-			CreatedAt:   time.Now().UnixNano(),
 			Reference:   reference,
 		}
 
-		resp, err := exec.SubmitOrder(context.Background(), &order)
+		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, trader)
 		if err != nil {
 			errorHandler.HandleError(SubmitOrderError{
 				reference: reference,
-				request:   order,
+				request:   orderSubmission,
 				Err:       err,
 			})
 			return nil
@@ -68,7 +62,7 @@ func TradersPlaceTheFollowingOrders(
 		if resultingTrades != -1 && len(resp.Trades) != int(resultingTrades) {
 			errorHandler.HandleError(SubmitOrderError{
 				reference: reference,
-				request:   order,
+				request:   orderSubmission,
 				Err:       fmt.Errorf("expected %d trades executed, but got %d confirmations", resultingTrades, len(resp.Trades)),
 			})
 		}
