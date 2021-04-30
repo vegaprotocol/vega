@@ -10,6 +10,7 @@ import "assets.proto";
 import "events/v1/events.proto";
 import "oracles/v1/oracle_spec.proto";
 import "oracles/v1/oracle_data.proto";
+import "commands/v1/commands.proto";
 
 package api.v1;
 
@@ -135,19 +136,19 @@ message PrepareAmendOrderResponse {
 // Request to submit a new order
 message PrepareSubmitOrderRequest {
   // An order submission
-  vega.OrderSubmission submission = 1;
+  vega.commands.v1.OrderSubmission submission = 1;
 }
 
 // Request to cancel an existing order
 message PrepareCancelOrderRequest {
   // An order cancellation
-  vega.OrderCancellation cancellation = 1;
+  vega.commands.v1.OrderCancellation cancellation = 1;
 }
 
 // Request to amend an existing order
 message PrepareAmendOrderRequest {
   // An order amendment
-  vega.OrderAmendment amendment = 1;
+  vega.commands.v1.OrderAmendment amendment = 1;
 }
 
 service TradingDataService {

@@ -9,6 +9,7 @@ import "governance.proto";
 import "vega.proto";
 import "oracles/v1/oracle_spec.proto";
 import "oracles/v1/oracle_data.proto";
+import "commands/v1/commands.proto";
 
 // MarketEvent - the common denominator for all market events
 // interface has a method to return a string for logging
@@ -26,9 +27,9 @@ message TxErrorEvent {
   string err_msg = 2;
   // The transaction that failed
   oneof transaction {
-    OrderSubmission order_submission = 101;
-    OrderAmendment order_amendment = 102;
-    OrderCancellation order_cancellation = 103;
+    commands.v1.OrderSubmission order_submission = 101;
+    commands.v1.OrderAmendment order_amendment = 102;
+    commands.v1.OrderCancellation order_cancellation = 103;
     Proposal proposal = 104;
     VoteSubmission vote_submission = 105;
     LiquidityProvisionSubmission liquidity_provision_submission = 106;
