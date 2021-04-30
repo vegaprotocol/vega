@@ -11,6 +11,7 @@ import "events/v1/events.proto";
 import "oracles/v1/oracle_spec.proto";
 import "oracles/v1/oracle_data.proto";
 import "commands/v1/commands.proto";
+import "commands/v1/validator_commands.proto";
 
 package api.v1;
 
@@ -49,7 +50,7 @@ service TradingService {
 // Request for a new event sent by the blockchain queue to be propagated on Vega
 message PropagateChainEventRequest {
   // Chain event
-  vega.ChainEvent evt = 1;
+  vega.commands.v1.ChainEvent evt = 1;
   // Public key
   string pub_key = 2;
   // Signature
@@ -399,7 +400,7 @@ message GetNodeSignaturesAggregateRequest {
 // Response to specify the identifier of the resource we want to retrieve aggregated signatures for
 message GetNodeSignaturesAggregateResponse {
   // A list of 0 or more signatures
-  repeated vega.NodeSignature signatures = 1;
+  repeated vega.commands.v1.NodeSignature signatures = 1;
 }
 
 // Optional proposal state

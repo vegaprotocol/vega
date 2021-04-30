@@ -111,7 +111,7 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(nr *types.NodeRegistration) error
+	AddNodeRegistration(nr *commandspb.NodeRegistration) error
 	UpdateValidatorSet(keys [][]byte)
 	Exists(key []byte) bool
 	Len() int
@@ -128,21 +128,21 @@ type Broker interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
 type Notary interface {
-	StartAggregate(resID string, kind types.NodeSignatureKind) error
-	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
-	IsSigned(context.Context, string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
+	AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
+	IsSigned(context.Context, string, commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 }
 
 // Witness ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/processor Witness
 type Witness interface {
-	AddNodeCheck(ctx context.Context, nv *types.NodeVote) error
+	AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error
 }
 
 // EvtForwarder ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evtforwarder_mock.go -package mocks code.vegaprotocol.io/vega/processor EvtForwarder
 type EvtForwarder interface {
-	Ack(*types.ChainEvent) bool
+	Ack(*commandspb.ChainEvent) bool
 }
 
 // Banking ...

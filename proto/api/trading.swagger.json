@@ -1832,7 +1832,7 @@
           "title": "Market data events"
         },
         "node_signature": {
-          "$ref": "#/definitions/vegaNodeSignature",
+          "$ref": "#/definitions/v1NodeSignature",
           "title": "Node signature events"
         },
         "loss_socialization": {
@@ -1965,6 +1965,37 @@
           "$ref": "#/definitions/vegaCandle"
         }
       }
+    },
+    "v1ChainEvent": {
+      "type": "object",
+      "properties": {
+        "tx_id": {
+          "type": "string",
+          "title": "The identifier of the transaction in which the events happened, usually a hash"
+        },
+        "nonce": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Arbitrary one-time integer used to prevent replay attacks"
+        },
+        "builtin": {
+          "$ref": "#/definitions/vegaBuiltinAssetEvent",
+          "title": "Built-in asset event"
+        },
+        "erc20": {
+          "$ref": "#/definitions/vegaERC20Event",
+          "title": "Ethereum ERC20 event"
+        },
+        "btc": {
+          "$ref": "#/definitions/vegaBTCEvent",
+          "title": "Bitcoin BTC event"
+        },
+        "validator": {
+          "$ref": "#/definitions/vegaValidatorEvent",
+          "title": "Validator event"
+        }
+      },
+      "title": "An event forwarded to the Vega network to provide information on events happening on other networks"
     },
     "v1Condition": {
       "type": "object",
@@ -2145,7 +2176,7 @@
         "signatures": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaNodeSignature"
+            "$ref": "#/definitions/v1NodeSignature"
           },
           "title": "A list of 0 or more signatures"
         }
@@ -2490,6 +2521,36 @@
         }
       },
       "title": "A response containing all of the vega network parameters"
+    },
+    "v1NodeSignature": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The identifier of the resource being signed"
+        },
+        "sig": {
+          "type": "string",
+          "format": "byte",
+          "title": "The signature"
+        },
+        "kind": {
+          "$ref": "#/definitions/v1NodeSignatureKind",
+          "title": "The kind of resource being signed"
+        }
+      },
+      "title": "Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network"
+    },
+    "v1NodeSignatureKind": {
+      "type": "string",
+      "enum": [
+        "NODE_SIGNATURE_KIND_UNSPECIFIED",
+        "NODE_SIGNATURE_KIND_ASSET_NEW",
+        "NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL"
+      ],
+      "default": "NODE_SIGNATURE_KIND_UNSPECIFIED",
+      "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: Represents an unspecified or missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: Represents a signature for a new asset allow-listing\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: Represents a signature for an asset withdrawal",
+      "title": "The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc"
     },
     "v1ObserveEventBusResponse": {
       "type": "object",
@@ -3827,37 +3888,6 @@
       },
       "title": "Represents the high, low, open, and closing prices for an interval of trading,\nreferred to commonly as a candlestick or candle"
     },
-    "vegaChainEvent": {
-      "type": "object",
-      "properties": {
-        "tx_id": {
-          "type": "string",
-          "title": "The identifier of the transaction in which the events happened, usually a hash"
-        },
-        "nonce": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Arbitrary one-time integer used to prevent replay attacks"
-        },
-        "builtin": {
-          "$ref": "#/definitions/vegaBuiltinAssetEvent",
-          "title": "Built-in asset event"
-        },
-        "erc20": {
-          "$ref": "#/definitions/vegaERC20Event",
-          "title": "Ethereum ERC20 event"
-        },
-        "btc": {
-          "$ref": "#/definitions/vegaBTCEvent",
-          "title": "Bitcoin BTC event"
-        },
-        "validator": {
-          "$ref": "#/definitions/vegaValidatorEvent",
-          "title": "Validator event"
-        }
-      },
-      "title": "An event forwarded to the Vega network to provide information on events happening on other networks"
-    },
     "vegaChainStatus": {
       "type": "string",
       "enum": [
@@ -4972,36 +5002,6 @@
         }
       },
       "title": "Configuration for a new market on Vega"
-    },
-    "vegaNodeSignature": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "The identifier of the resource being signed"
-        },
-        "sig": {
-          "type": "string",
-          "format": "byte",
-          "title": "The signature"
-        },
-        "kind": {
-          "$ref": "#/definitions/vegaNodeSignatureKind",
-          "title": "The kind of resource being signed"
-        }
-      },
-      "title": "Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network"
-    },
-    "vegaNodeSignatureKind": {
-      "type": "string",
-      "enum": [
-        "NODE_SIGNATURE_KIND_UNSPECIFIED",
-        "NODE_SIGNATURE_KIND_ASSET_NEW",
-        "NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL"
-      ],
-      "default": "NODE_SIGNATURE_KIND_UNSPECIFIED",
-      "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: Represents an unspecified or missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: Represents a signature for a new asset allow-listing\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: Represents a signature for an asset withdrawal",
-      "title": "The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc"
     },
     "vegaOracleSpecToFutureBinding": {
       "type": "object",

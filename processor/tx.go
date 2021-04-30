@@ -90,13 +90,13 @@ func (t *Tx) toProto() (interface{}, error) {
 		msg = &commandspb.LiquidityProvisionSubmission{}
 	// Node commands
 	case txn.NodeVoteCommand:
-		msg = &types.NodeVote{}
+		msg = &commandspb.NodeVote{}
 	case txn.RegisterNodeCommand:
-		msg = &types.NodeRegistration{}
+		msg = &commandspb.NodeRegistration{}
 	case txn.NodeSignatureCommand:
-		msg = &types.NodeSignature{}
+		msg = &commandspb.NodeSignature{}
 	case txn.ChainEventCommand:
-		msg = &types.ChainEvent{}
+		msg = &commandspb.ChainEvent{}
 	// oracles
 	case txn.SubmitOracleDataCommand:
 		msg = &types.OracleDataSubmission{}
@@ -127,7 +127,7 @@ func (t *Tx) Validate() error {
 	}
 
 	switch t := cmd.(type) {
-	case *types.NodeRegistration:
+	case *commandspb.NodeRegistration:
 		if hex.EncodeToString(t.PubKey) != pubkey {
 			return errors.New("pubkey mismatch")
 		}

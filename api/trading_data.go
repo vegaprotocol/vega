@@ -159,7 +159,7 @@ type RiskService interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NotaryService
 type NotaryService interface {
-	GetByID(id string) ([]types.NodeSignature, error)
+	GetByID(id string) ([]commandspb.NodeSignature, error)
 }
 
 // Withdrawal ...
@@ -507,7 +507,7 @@ func (t *tradingDataService) GetNodeSignaturesAggregate(ctx context.Context,
 		return nil, apiError(codes.NotFound, err)
 	}
 
-	out := make([]*types.NodeSignature, 0, len(sigs))
+	out := make([]*commandspb.NodeSignature, 0, len(sigs))
 	for _, v := range sigs {
 		v := v
 		out = append(out, &v)

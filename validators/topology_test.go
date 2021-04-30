@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/validators/mocks"
 
@@ -75,7 +75,7 @@ func testAddNodeRegistrationSuccess(t *testing.T) {
 		tmTestPubKey().Bytes(),
 	})
 
-	nr := types.NodeRegistration{
+	nr := commandspb.NodeRegistration{
 		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}
@@ -90,14 +90,14 @@ func testAddNodeRegistrationFailure(t *testing.T) {
 		tmTestPubKey().Bytes(),
 	})
 
-	nr := types.NodeRegistration{
+	nr := commandspb.NodeRegistration{
 		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}
 	err := top.AddNodeRegistration(&nr)
 	assert.NoError(t, err)
 
-	nr = types.NodeRegistration{
+	nr = commandspb.NodeRegistration{
 		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key-2"),
 	}
@@ -115,7 +115,7 @@ func testGetLen(t *testing.T) {
 	// first len is 0
 	assert.Equal(t, 0, top.Len())
 
-	nr := types.NodeRegistration{
+	nr := commandspb.NodeRegistration{
 		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}
@@ -134,7 +134,7 @@ func testExists(t *testing.T) {
 
 	assert.False(t, top.Exists([]byte("vega-key")))
 
-	nr := types.NodeRegistration{
+	nr := commandspb.NodeRegistration{
 		ChainPubKey: tmTestPubKey().bytes,
 		PubKey:      []byte("vega-key"),
 	}

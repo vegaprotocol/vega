@@ -178,15 +178,6 @@ func (this *WithdrawExt) Validate() error {
 func (this *Erc20WithdrawExt) Validate() error {
 	return nil
 }
-func (this *NodeRegistration) Validate() error {
-	return nil
-}
-func (this *NodeVote) Validate() error {
-	if this.Reference == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
-	}
-	return nil
-}
 func (this *Account) Validate() error {
 	return nil
 }
@@ -292,9 +283,6 @@ func (this *SignedBundle) Validate() error {
 			return github_com_mwitkow_go_proto_validators.FieldError("Sig", err)
 		}
 	}
-	return nil
-}
-func (this *NodeSignature) Validate() error {
 	return nil
 }
 func (this *NetworkParameter) Validate() error {

@@ -10,6 +10,7 @@ import "vega.proto";
 import "oracles/v1/oracle_spec.proto";
 import "oracles/v1/oracle_data.proto";
 import "commands/v1/commands.proto";
+import "commands/v1/validator_commands.proto";
 
 // MarketEvent - the common denominator for all market events
 // interface has a method to return a string for logging
@@ -238,7 +239,7 @@ message BusEvent {
     // Market data events
     MarketData market_data = 111;
     // Node signature events
-    NodeSignature node_signature = 112;
+    vega.commands.v1.NodeSignature node_signature = 112;
     // Loss socialization events - See [LossSocialization](#vega.LossSocialization)
     LossSocialization loss_socialization = 113;
     // Position settlement events - See [SettlePosition](#vega.SettlePosition)

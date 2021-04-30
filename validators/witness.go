@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
@@ -149,7 +149,7 @@ func (w Witness) Stop() {
 }
 
 // AddNodeCheck registers a vote from a validator node for a given resource
-func (w *Witness) AddNodeCheck(ctx context.Context, nv *types.NodeVote) error {
+func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error {
 	// get the node proposal first
 	r, ok := w.resources[nv.Reference]
 	if !ok {
@@ -289,7 +289,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 		// if we are a validator, and the resource was validated
 		// then we try to send our vote.
 		if isValidator && state == validated {
-			nv := &types.NodeVote{
+			nv := &commandspb.NodeVote{
 				PubKey:    w.top.SelfVegaPubKey(),
 				Reference: v.res.GetID(),
 			}

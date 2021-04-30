@@ -29,21 +29,21 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination notary_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Notary
 type Notary interface {
-	StartAggregate(resID string, kind types.NodeSignatureKind) error
-	SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error
-	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
-	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
+	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
+	SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error
+	IsSigned(ctx context.Context, id string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
+	AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination witness_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
-	AddNodeCheck(ctx context.Context, nv *types.NodeVote) error
+	AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination evtforwarder_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks EvtForwarder
 type EvtForwarder interface {
-	Ack(*types.ChainEvent) bool
+	Ack(*commandspb.ChainEvent) bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks OracleEngine

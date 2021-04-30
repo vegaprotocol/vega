@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 var (
@@ -107,7 +107,7 @@ func (t *Topology) UpdateValidatorSet(keys [][]byte) {
 	t.chainValidators = keys
 }
 
-func (t *Topology) AddNodeRegistration(nr *types.NodeRegistration) error {
+func (t *Topology) AddNodeRegistration(nr *commandspb.NodeRegistration) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -161,7 +161,7 @@ func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) e
 			t.isValidator = true
 		}
 
-		nr := &types.NodeRegistration{
+		nr := &commandspb.NodeRegistration{
 			PubKey:      vegaBytes,
 			ChainPubKey: tmBytes,
 		}

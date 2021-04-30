@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,7 +34,7 @@ func (m *MockValidatorTopology) EXPECT() *MockValidatorTopologyMockRecorder {
 }
 
 // AddNodeRegistration mocks base method
-func (m *MockValidatorTopology) AddNodeRegistration(arg0 *proto.NodeRegistration) error {
+func (m *MockValidatorTopology) AddNodeRegistration(arg0 *v1.NodeRegistration) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddNodeRegistration", arg0)
 	ret0, _ := ret[0].(error)

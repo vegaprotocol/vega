@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockNotary) EXPECT() *MockNotaryMockRecorder {
 }
 
 // IsSigned mocks base method
-func (m *MockNotary) IsSigned(arg0 context.Context, arg1 string, arg2 proto.NodeSignatureKind) ([]proto.NodeSignature, bool) {
+func (m *MockNotary) IsSigned(arg0 context.Context, arg1 string, arg2 v1.NodeSignatureKind) ([]v1.NodeSignature, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSigned", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]proto.NodeSignature)
+	ret0, _ := ret[0].([]v1.NodeSignature)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }
@@ -50,7 +50,7 @@ func (mr *MockNotaryMockRecorder) IsSigned(arg0, arg1, arg2 interface{}) *gomock
 }
 
 // SendSignature mocks base method
-func (m *MockNotary) SendSignature(arg0 context.Context, arg1 string, arg2 []byte, arg3 proto.NodeSignatureKind) error {
+func (m *MockNotary) SendSignature(arg0 context.Context, arg1 string, arg2 []byte, arg3 v1.NodeSignatureKind) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendSignature", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -64,7 +64,7 @@ func (mr *MockNotaryMockRecorder) SendSignature(arg0, arg1, arg2, arg3 interface
 }
 
 // StartAggregate mocks base method
-func (m *MockNotary) StartAggregate(arg0 string, arg1 proto.NodeSignatureKind) error {
+func (m *MockNotary) StartAggregate(arg0 string, arg1 v1.NodeSignatureKind) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StartAggregate", arg0, arg1)
 	ret0, _ := ret[0].(error)

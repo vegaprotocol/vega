@@ -55,7 +55,7 @@ type GovernanceService interface {
 // EvtForwarder
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
 type EvtForwarder interface {
-	Forward(ctx context.Context, e *types.ChainEvent, pk string) error
+	Forward(ctx context.Context, e *commandspb.ChainEvent, pk string) error
 }
 
 // Blockchain ...

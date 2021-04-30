@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/evtforward/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -141,10 +142,10 @@ func testAckFailureAlreadyAcked(t *testing.T) {
 	assert.False(t, ko)
 }
 
-func getTestChainEvent() *types.ChainEvent {
-	return &types.ChainEvent{
+func getTestChainEvent() *commandspb.ChainEvent {
+	return &commandspb.ChainEvent{
 		TxId: "somehash",
-		Event: &types.ChainEvent_Erc20{
+		Event: &commandspb.ChainEvent_Erc20{
 			Erc20: &types.ERC20Event{
 				Index: 1,
 				Block: 100,

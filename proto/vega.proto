@@ -699,23 +699,6 @@ message Erc20WithdrawExt {
   string receiver_address = 1;
 }
 
-// Used to Register a node as a validator during network start-up
-message NodeRegistration {
-  // Public key, required field
-  bytes pub_key = 1 [(validator.field) = {string_not_empty: true}];
-  // Public key for the blockchain, required field
-  bytes chain_pub_key = 2 [(validator.field) = {string_not_empty: true}];
-}
-
-// Used when a node votes for validating a given resource exists or is valid,
-// for example, an ERC20 deposit is valid and exists on ethereum
-message NodeVote {
-  // Public key, required field
-  bytes pub_key = 1 [(validator.field) = {string_not_empty: true}];
-  // Reference, required field
-  string reference = 2 [(validator.field) = {string_not_empty: true}];
-}
-
 // Various collateral/account types as used by Vega
 enum AccountType {
   // Default value
@@ -1041,26 +1024,6 @@ message SignedBundle {
   bytes tx = 1;
   // The signature authenticating the transaction
   Signature sig = 2;
-}
-
-// The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc
-enum NodeSignatureKind {
-  // Represents an unspecified or missing value from the input
-  NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
-  // Represents a signature for a new asset allow-listing
-  NODE_SIGNATURE_KIND_ASSET_NEW = 1;
-  // Represents a signature for an asset withdrawal
-  NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 2;
-}
-
-// Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network
-message NodeSignature {
-  // The identifier of the resource being signed
-  string id = 1;
-  // The signature
-  bytes sig = 2;
-  // The kind of resource being signed
-  NodeSignatureKind kind = 3;
 }
 
 // Represents a network parameter on Vega
