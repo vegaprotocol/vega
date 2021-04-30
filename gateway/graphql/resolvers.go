@@ -1786,7 +1786,7 @@ func (r *myMutationResolver) PrepareProposal(
 	}
 
 	pendingProposal, err := r.tradingClient.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
-		Submission: &types.ProposalSubmission{
+		Submission: &commandspb.ProposalSubmission{
 			Reference: ref,
 			Terms:     terms,
 		},
@@ -1817,7 +1817,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 		return nil, err
 	}
 	req := &protoapi.PrepareVoteSubmissionRequest{
-		Submission: &types.VoteSubmission{
+		Submission: &commandspb.VoteSubmission{
 			Value:      protoValue,
 			ProposalId: proposalID,
 		},

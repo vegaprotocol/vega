@@ -105,3 +105,21 @@ message LiquidityProvisionSubmission {
   // A reference to be added to every order created out of this liquidityProvisionSubmission
   string reference = 6;
 }
+
+// A command to submit a new proposal for the
+// vega network governance
+message ProposalSubmission {
+  // Proposal reference
+  string reference = 1;
+  // Proposal configuration and the actual change that is meant to be executed when proposal is enacted
+  vega.ProposalTerms terms = 2 [(validator.field) = {msg_exists: true}];
+}
+
+// A command to submit a new vote for a governance
+// proposal.
+message VoteSubmission {
+  // The ID of the proposal to vote for.
+  string proposal_id = 1 [(validator.field) = {string_not_empty : true}];
+  // The actual value of the vote
+  vega.Vote.Value value = 2;
+}

@@ -3,7 +3,6 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
@@ -22,21 +21,21 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		},
 	}
 	switch tv := tx.(type) {
-	case *types.Proposal:
+	case *commandspb.ProposalSubmission:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
 			Proposal: &cpy,
 		}
-	case types.Proposal:
+	case commandspb.ProposalSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
 			Proposal: &tv,
 		}
-	case *types.VoteSubmission:
+	case *commandspb.VoteSubmission:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
 			VoteSubmission: &cpy,
 		}
-	case types.VoteSubmission:
+	case commandspb.VoteSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
 			VoteSubmission: &tv,
 		}

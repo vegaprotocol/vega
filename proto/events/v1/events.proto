@@ -30,8 +30,8 @@ message TxErrorEvent {
     commands.v1.OrderSubmission order_submission = 101;
     commands.v1.OrderAmendment order_amendment = 102;
     commands.v1.OrderCancellation order_cancellation = 103;
-    Proposal proposal = 104;
-    VoteSubmission vote_submission = 105;
+    commands.v1.ProposalSubmission proposal = 104;
+    commands.v1.VoteSubmission vote_submission = 105;
     commands.v1.LiquidityProvisionSubmission liquidity_provision_submission = 106;
   }
 }

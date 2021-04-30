@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +36,10 @@ func (m *MockGovernanceService) EXPECT() *MockGovernanceServiceMockRecorder {
 }
 
 // PrepareProposal mocks base method
-func (m *MockGovernanceService) PrepareProposal(arg0 context.Context, arg1 string, arg2 *proto.ProposalTerms) (*proto.ProposalSubmission, error) {
+func (m *MockGovernanceService) PrepareProposal(arg0 context.Context, arg1 string, arg2 *proto.ProposalTerms) (*v1.ProposalSubmission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareProposal", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*proto.ProposalSubmission)
+	ret0, _ := ret[0].(*v1.ProposalSubmission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +51,10 @@ func (mr *MockGovernanceServiceMockRecorder) PrepareProposal(arg0, arg1, arg2 in
 }
 
 // PrepareVote mocks base method
-func (m *MockGovernanceService) PrepareVote(arg0 *proto.VoteSubmission) (*proto.VoteSubmission, error) {
+func (m *MockGovernanceService) PrepareVote(arg0 *v1.VoteSubmission) (*v1.VoteSubmission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareVote", arg0)
-	ret0, _ := ret[0].(*proto.VoteSubmission)
+	ret0, _ := ret[0].(*v1.VoteSubmission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

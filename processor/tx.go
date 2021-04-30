@@ -73,6 +73,7 @@ func (t *Tx) Unmarshal(i interface{}) error {
 func (t *Tx) toProto() (interface{}, error) {
 	var msg proto.Message
 	switch t.Command() {
+	// user commands
 	case txn.SubmitOrderCommand:
 		msg = &commandspb.OrderSubmission{}
 	case txn.CancelOrderCommand:
@@ -80,21 +81,23 @@ func (t *Tx) toProto() (interface{}, error) {
 	case txn.AmendOrderCommand:
 		msg = &commandspb.OrderAmendment{}
 	case txn.ProposeCommand:
-		msg = &types.ProposalSubmission{}
+		msg = &commandspb.ProposalSubmission{}
 	case txn.VoteCommand:
-		msg = &types.VoteSubmission{}
-	case txn.NodeVoteCommand:
-		msg = &types.NodeVote{}
+		msg = &commandspb.VoteSubmission{}
 	case txn.WithdrawCommand:
 		msg = &types.WithdrawSubmission{}
+	case txn.LiquidityProvisionCommand:
+		msg = &commandspb.LiquidityProvisionSubmission{}
+	// Node commands
+	case txn.NodeVoteCommand:
+		msg = &types.NodeVote{}
 	case txn.RegisterNodeCommand:
 		msg = &types.NodeRegistration{}
 	case txn.NodeSignatureCommand:
 		msg = &types.NodeSignature{}
-	case txn.LiquidityProvisionCommand:
-		msg = &commandspb.LiquidityProvisionSubmission{}
 	case txn.ChainEventCommand:
 		msg = &types.ChainEvent{}
+	// oracles
 	case txn.SubmitOracleDataCommand:
 		msg = &types.OracleDataSubmission{}
 	default:

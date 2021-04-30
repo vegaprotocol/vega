@@ -87,3 +87,20 @@ func (this *LiquidityProvisionSubmission) Validate() error {
 	}
 	return nil
 }
+func (this *ProposalSubmission) Validate() error {
+	if nil == this.Terms {
+		return github_com_mwitkow_go_proto_validators.FieldError("Terms", fmt.Errorf("message must exist"))
+	}
+	if this.Terms != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Terms); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Terms", err)
+		}
+	}
+	return nil
+}
+func (this *VoteSubmission) Validate() error {
+	if this.ProposalId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("ProposalId", fmt.Errorf(`value '%v' must not be an empty string`, this.ProposalId))
+	}
+	return nil
+}

@@ -48,8 +48,8 @@ type AccountService interface {
 // GovernanceService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
 type GovernanceService interface {
-	PrepareProposal(ctx context.Context, reference string, terms *types.ProposalTerms) (*types.ProposalSubmission, error)
-	PrepareVote(vote *types.VoteSubmission) (*types.VoteSubmission, error)
+	PrepareProposal(ctx context.Context, reference string, terms *types.ProposalTerms) (*commandspb.ProposalSubmission, error)
+	PrepareVote(vote *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error)
 }
 
 // EvtForwarder

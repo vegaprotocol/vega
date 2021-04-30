@@ -7,6 +7,7 @@ package mocks
 import (
 	governance "code.vegaprotocol.io/vega/governance"
 	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -37,7 +38,7 @@ func (m *MockGovernanceEngine) EXPECT() *MockGovernanceEngineMockRecorder {
 }
 
 // AddVote mocks base method
-func (m *MockGovernanceEngine) AddVote(arg0 context.Context, arg1 proto.VoteSubmission, arg2 string) error {
+func (m *MockGovernanceEngine) AddVote(arg0 context.Context, arg1 v1.VoteSubmission, arg2 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddVote", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -80,7 +81,7 @@ func (mr *MockGovernanceEngineMockRecorder) RejectProposal(arg0, arg1, arg2 inte
 }
 
 // SubmitProposal mocks base method
-func (m *MockGovernanceEngine) SubmitProposal(arg0 context.Context, arg1 proto.ProposalSubmission, arg2, arg3 string) (*governance.ToSubmit, error) {
+func (m *MockGovernanceEngine) SubmitProposal(arg0 context.Context, arg1 v1.ProposalSubmission, arg2, arg3 string) (*governance.ToSubmit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitProposal", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*governance.ToSubmit)

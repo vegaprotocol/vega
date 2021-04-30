@@ -427,7 +427,7 @@ func (app *App) DeliverWithdraw(
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
-	prop := &types.ProposalSubmission{}
+	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
 	}
@@ -478,7 +478,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
-	vote := &types.VoteSubmission{}
+	vote := &commandspb.VoteSubmission{}
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}

@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -182,7 +183,7 @@ func TestPrepareVote(t *testing.T) {
 func testPrepareVoteSuccess(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
-	vote := types.VoteSubmission{
+	vote := commandspb.VoteSubmission{
 		ProposalId: "prop-1",
 		Value:      types.Vote_VALUE_YES,
 	}
@@ -196,7 +197,7 @@ func testPrepareVoteFail(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	data := map[string]types.VoteSubmission{
+	data := map[string]commandspb.VoteSubmission{
 		"Missing ProposalID": {
 			Value: types.Vote_VALUE_YES,
 		},

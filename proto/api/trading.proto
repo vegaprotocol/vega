@@ -998,7 +998,7 @@ message FeeInfrastructureAccountsResponse {
 
 // Request to prepare a governance proposal
 message PrepareProposalSubmissionRequest {
-  vega.ProposalSubmission submission = 1;
+  vega.commands.v1.ProposalSubmission submission = 1;
 }
 
 // Response to prepare a governance proposal
@@ -1006,13 +1006,13 @@ message PrepareProposalSubmissionResponse {
   // A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction
   bytes blob = 1;
   // A copy of the prepared proposal
-  vega.ProposalSubmission submission = 2;
+  vega.commands.v1.ProposalSubmission submission = 2;
 }
 
 // Request to prepare a governance vote
 message PrepareVoteSubmissionRequest {
   // Vote, required field
-  vega.VoteSubmission submission = 1 [(validator.field) = {msg_exists: true}];
+  vega.commands.v1.VoteSubmission submission = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Response to prepare a governance vote
@@ -1020,7 +1020,7 @@ message PrepareVoteSubmissionResponse {
   // A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction
   bytes blob = 1;
   // A copy of the prepared vote
-  vega.VoteSubmission submission = 2;
+  vega.commands.v1.VoteSubmission submission = 2;
 }
 
 // Request to prepare liquiditity provision

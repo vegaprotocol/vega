@@ -335,7 +335,7 @@ func TestPrepareProposal(t *testing.T) {
 	assert.NotNil(t, client)
 
 	proposal, err := client.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
-		Submission: &types.ProposalSubmission{
+		Submission: &commandspb.ProposalSubmission{
 			Terms: &types.ProposalTerms{
 				Change: &types.ProposalTerms_UpdateNetworkParameter{
 					UpdateNetworkParameter: &types.UpdateNetworkParameter{
