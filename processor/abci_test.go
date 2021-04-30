@@ -82,12 +82,7 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 		txn.SubmitOrderCommand: &types.OrderSubmission{
 			PartyId: party,
 		},
-		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyId: party,
-		},
-		// txn.AmendOrderCommand: &types.OrderAmendment{
-		// 	PartyId: party,
-		// },
+		txn.CancelOrderCommand: &types.OrderCancellation{},
 		txn.ProposeCommand: &types.Proposal{
 			PartyId: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
@@ -95,13 +90,9 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 		txn.VoteCommand: &types.Vote{
 			PartyId: party,
 		},
-		// txn.WithdrawCommand: &types.Withdraw{
-		// 	PartyId: party,
-		// },
 	}
 	zero := uint64(0)
 
-	// proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
 	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
 	proc.stat.EXPECT().Height().AnyTimes()
 	proc.stat.EXPECT().SetAverageTxSizeBytes(gomock.Any()).AnyTimes()
@@ -118,8 +109,7 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{
 		Order: &types.Order{},
 	}, nil)
-	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
-	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
+	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any(), party).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
 
@@ -143,7 +133,7 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 
 }
 
-func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App, proc *procTest) {
+func (s *AbciTestSuite) testBeginCommitSuccess(_ *testing.T, app *processor.App, proc *procTest) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 
@@ -189,7 +179,7 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 	app.OnCommit()
 }
 
-func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor.App, proc *procTest) {
+func (s *AbciTestSuite) testBeginCallsCommanderOnce(_ *testing.T, app *processor.App, proc *procTest) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	proc.ts.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(2)

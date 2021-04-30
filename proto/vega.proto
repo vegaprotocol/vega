@@ -779,14 +779,10 @@ message OrderSubmission {
 
 // An order cancellation is a request to cancel an existing order on Vega
 message OrderCancellation {
-  // The following three fields are used for lookup of the order only:
-
   // Unique identifier for the order (set by the system after consensus), required field
   string order_id = 1;
   // Market identifier for the order, required field
   string market_id = 2;
-  // Party identifier for the order, required field
-  string party_id = 3 [(validator.field) = {string_not_empty: true}];
 }
 
 // Used to Register a node as a validator during network start-up

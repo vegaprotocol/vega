@@ -1748,7 +1748,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, party string, market *string) (*PreparedCancelOrder, error) {
+func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, market *string) (*PreparedCancelOrder, error) {
 	order := &types.OrderCancellation{}
 
 	if market != nil {
@@ -1757,10 +1757,6 @@ func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string,
 	if id != nil {
 		order.OrderId = *id
 	}
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-	order.PartyId = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
 

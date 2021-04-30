@@ -237,9 +237,6 @@ func (this *OrderSubmission) Validate() error {
 	return nil
 }
 func (this *OrderCancellation) Validate() error {
-	if this.PartyId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
-	}
 	return nil
 }
 func (this *NodeRegistration) Validate() error {

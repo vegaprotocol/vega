@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	// ErrMarketAlreadyExist signals that a market already exist
+	// ErrMarketDoesNotExist is returned when the market does not exist
 	ErrMarketDoesNotExist = errors.New("market does not exist")
 
 	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
@@ -491,7 +491,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.IsDebug() {
 		e.log.Debug("cancel order", logging.OrderCancellation(order))
 	}
@@ -501,17 +501,13 @@ func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation
 		return nil, ErrInvalidOrderCancellation
 	}
 
-	if len(order.PartyId) > 0 {
-		if len(order.MarketId) > 0 {
-			if len(order.OrderId) > 0 {
-				return e.cancelOrder(ctx, order.PartyId, order.MarketId, order.OrderId)
-			}
-			return e.cancelOrderByMarket(ctx, order.PartyId, order.MarketId)
+	if len(order.MarketId) > 0 {
+		if len(order.OrderId) > 0 {
+			return e.cancelOrder(ctx, party, order.MarketId, order.OrderId)
 		}
-		return e.cancelAllPartyOrders(ctx, order.PartyId)
+		return e.cancelOrderByMarket(ctx, party, order.MarketId)
 	}
-
-	return nil, ErrInvalidOrderCancellation
+	return e.cancelAllPartyOrders(ctx, party)
 }
 
 func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string) ([]*types.OrderCancellationConfirmation, error) {

@@ -42,8 +42,6 @@ type Mutation {
   prepareOrderCancel(
     "ID of the order to cancel"
     id: ID
-    "ID of the party placing the order"
-    partyId: ID!
     "ID of the market where to find the order"
     marketId: ID
   ): PreparedCancelOrder!

@@ -195,9 +195,8 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	cancelOrder := &types.OrderCancellation{
 		OrderId:  confirmation.GetOrder().Id,
 		MarketId: confirmation.GetOrder().MarketId,
-		PartyId:  party2,
 	}
-	cancelconf, err := tm.market.CancelOrder(context.TODO(), cancelOrder.PartyId, cancelOrder.OrderId)
+	cancelconf, err := tm.market.CancelOrder(context.TODO(), party2, cancelOrder.OrderId)
 	assert.Nil(t, cancelconf)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
@@ -605,7 +604,7 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	}
 }
 
-func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce,
+func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce,
 	expiresAt int64, side types.Side, party string, size uint64, price uint64) types.Order {
 	order := types.Order{
 		Status:      types.Order_STATUS_ACTIVE,
