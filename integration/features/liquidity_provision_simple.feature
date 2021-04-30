@@ -45,7 +45,7 @@ Feature: Test LP orders
       | id  | party   | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
       | lp1 | trader1 | ETH/DEC19 | 10000             | 0.1 | buy        | BID             | 500              | -10          |
       | lp1 | trader1 | ETH/DEC19 | 10000             | 0.1 | sell       | ASK             | 500              | 10           |
-    Then I see the LP events:
+    Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
       | lp1 | trader1 | ETH/DEC19 | 10000             | STATUS_ACTIVE |
     Then the orders should have the following states:

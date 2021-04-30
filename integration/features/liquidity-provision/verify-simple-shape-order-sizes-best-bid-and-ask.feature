@@ -34,7 +34,7 @@ Feature: Verify the order size is correctly cumulated.
       | id  | party       | market id | commitment amount | fee | order side | order reference | order proportion | order offset | reference |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy        | BID             | 1                | -9           | lp-1-ref  |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell       | ASK             | 1                | 9            | lp-1-ref  |
-    Then I see the LP events:
+    Then the liquidity provisions should have the following states:
       | id  | party       | market    | commitment amount | status        |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | STATUS_ACTIVE |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"

@@ -52,7 +52,7 @@ Feature: Verify the order size is correctly cumulated.
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell       | MID             | 1                | 9            | lp-1-ref |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell       | MID             | 1                | 10           | lp-1-ref |
 
-    Then I see the LP events:
+    Then the liquidity provisions should have the following states:
       | id  | party       | market    | commitment amount | status        |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | STATUS_ACTIVE |
 

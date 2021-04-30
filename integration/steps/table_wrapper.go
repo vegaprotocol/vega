@@ -78,7 +78,7 @@ func verifyTableIntegrity(columns []string, header *gherkin.TableRow) {
 		declaredColumnsSet[cell.Value] = nil
 	}
 
-	for requiredColumn, _ := range requiredColumnsSet {
+	for requiredColumn := range requiredColumnsSet {
 		_, ok := declaredColumnsSet[requiredColumn]
 		if !ok {
 			panic(fmt.Errorf("a column \"%s\" is required by this table", requiredColumn))
