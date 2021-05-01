@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/pkg/errors"
@@ -261,7 +262,7 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 // Only open can be submitted and validated at this point. No further validation happens.
 func (e *Engine) SubmitProposal(
 	ctx context.Context,
-	psub types.ProposalSubmission,
+	psub commandspb.ProposalSubmission,
 	id, party string,
 ) (ts *ToSubmit, err error) {
 
@@ -350,7 +351,8 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 			m: mkt,
 		}
 		if change.NewMarket.LiquidityCommitment != nil {
-			tsb.m.l = change.NewMarket.LiquidityCommitment.IntoSubmission(p.Id)
+			tsb.m.l = commandspb.LiquidityProvisionSubmissionFromMarketCommitment(
+				change.NewMarket.LiquidityCommitment, p.Id)
 		}
 	}
 
@@ -507,7 +509,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
-func (e *Engine) AddVote(ctx context.Context, voteSub types.VoteSubmission, party string) error {
+func (e *Engine) AddVote(ctx context.Context, voteSub commandspb.VoteSubmission, party string) error {
 	proposal, err := e.validateVote(voteSub, party)
 	if err != nil {
 		// vote was not created/accepted, send TxErrEvent
@@ -535,7 +537,7 @@ func (e *Engine) AddVote(ctx context.Context, voteSub types.VoteSubmission, part
 	return nil
 }
 
-func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposal, error) {
+func (e *Engine) validateVote(vote commandspb.VoteSubmission, party string) (*proposal, error) {
 	proposal, found := e.getProposal(vote.ProposalId)
 	if !found {
 		return nil, ErrProposalNotFound

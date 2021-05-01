@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/oracles"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAdaptors(t *testing.T) {
@@ -28,8 +27,8 @@ func testCreatingAdaptorsSucceeds(t *testing.T) {
 
 func testAdaptorsNormalisingDataFromUnknownOracleFails(t *testing.T) {
 	// given
-	rawData := types.OracleDataSubmission{
-		Source:  types.OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED,
+	rawData := commandspb.OracleDataSubmission{
+		Source:  commandspb.OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED,
 		Payload: dummyOraclePayload(),
 	}
 
@@ -44,8 +43,8 @@ func testAdaptorsNormalisingDataFromUnknownOracleFails(t *testing.T) {
 
 func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 	// given
-	rawData := types.OracleDataSubmission{
-		Source:  types.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE,
+	rawData := commandspb.OracleDataSubmission{
+		Source:  commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE,
 		Payload: dummyOraclePayload(),
 	}
 
@@ -59,8 +58,8 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 
 func stubbedAdaptors() *Adaptors {
 	return &Adaptors{
-		adaptors: map[types.OracleDataSubmission_OracleSource]Adaptor{
-			types.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{},
+		adaptors: map[commandspb.OracleDataSubmission_OracleSource]Adaptor{
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{},
 		},
 	}
 }

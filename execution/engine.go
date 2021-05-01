@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/products"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 var (
@@ -212,7 +213,7 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
 // the usual governance process
-func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
@@ -463,7 +464,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (confirmation *types.OrderConfirmation, returnedErr error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment) (confirmation *types.OrderConfirmation, returnedErr error) {
 	defer func() {
 		e.notifyFailureOnError(ctx, returnedErr, orderAmendment.PartyId, orderAmendment)
 	}()
@@ -491,7 +492,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.IsDebug() {
 		e.log.Debug("cancel order", logging.OrderCancellation(order))
 	}
@@ -642,7 +643,7 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit liquidity provision",
 			logging.LiquidityProvisionSubmission(*sub),

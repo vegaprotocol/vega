@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,7 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 	}
 
 	// Submitting a zero or smaller fee should cause a reject
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "-0.50",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -51,7 +52,7 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
 	// Submitting a fee greater than 1.0 should cause a reject
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "1.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -88,7 +89,7 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 	}
 
 	// Submitting a shape with no buys should cause a reject
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -99,7 +100,7 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
 	// Submitting a shape with no sells should cause a reject
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -162,7 +163,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -174,7 +175,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	// Try to reduce our commitment to below the minimum level
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1,
@@ -216,7 +217,7 @@ func TestLiquidity_TooManyShapeLevels(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -269,7 +270,7 @@ func TestLiquidityProvisionFeeValidation(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 70000,
 		Fee:              "-0.1",
@@ -350,7 +351,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 2, Proportion: 50}}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -379,7 +380,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	assert.Equal(t, types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, err)
 
 	// Attempt to amend one of the pegged orders
-	amend := &types.OrderAmendment{OrderId: orders[0].Id,
+	amend := &commandspb.OrderAmendment{OrderId: orders[0].Id,
 		PartyId:   orders[0].PartyId,
 		MarketId:  orders[0].MarketId,
 		SizeDelta: +5}
@@ -433,7 +434,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -508,7 +509,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -593,7 +594,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -663,7 +664,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -708,7 +709,7 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	sells := []*types.LiquidityOrder{{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50}}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -806,7 +807,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -867,7 +868,7 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 6, Proportion: 50}}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -940,7 +941,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	buys := []*types.LiquidityOrder{{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50}}
 	sells := []*types.LiquidityOrder{{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50}}
 
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -1023,7 +1024,7 @@ func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 150000,
 		Fee:              "0.01",
@@ -1118,7 +1119,7 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000,
 		Fee:              "0.01",
@@ -1232,7 +1233,7 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 		assert.Equal(t, 90000000, int(acc.Balance))
 	})
 
-	lpSubmission2 := &types.LiquidityProvisionSubmission{
+	lpSubmission2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200000,
 		Fee:              "0.01",
@@ -1319,7 +1320,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 70000,
 		Fee:              "0.5",
@@ -1359,7 +1360,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 	// now we submit a second LP, with a lower fee,
 	// but we still need the first LP to cover liquidity
 	// so its fee is selected
-	lpSubmission2 := &types.LiquidityProvisionSubmission{
+	lpSubmission2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 20000,
 		Fee:              "0.1",
@@ -1464,7 +1465,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000000,
 		Fee:              "0.5",
@@ -1648,7 +1649,7 @@ func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000000,
 		Fee:              "0.5",
@@ -1742,7 +1743,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000000,
 		Fee:              "0.5",
@@ -1931,7 +1932,7 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000000,
 		Fee:              "0.5",
@@ -2111,7 +2112,7 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000,
 		Fee:              "0.5",
@@ -2249,7 +2250,7 @@ func TestFeesNotPaidToUndeployedLPs(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000,
 		Fee:              "0.5",
@@ -2380,7 +2381,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
 	tm.market.OnChainTimeUpdate(ctx, now)
 
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000,
 		Fee:              "0.5",

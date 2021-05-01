@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
@@ -152,9 +153,9 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
-	ce := &types.ChainEvent{
+	ce := &commandspb.ChainEvent{
 		Nonce: makeNonce(),
-		Event: &types.ChainEvent_Builtin{
+		Event: &commandspb.ChainEvent_Builtin{
 			Builtin: &types.BuiltinAssetEvent{
 				Action: &types.BuiltinAssetEvent_Deposit{
 					Deposit: &types.BuiltinAssetDeposit{

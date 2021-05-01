@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -532,7 +533,7 @@ func (r *myQueryResolver) Assets(ctx context.Context) ([]*types.Asset, error) {
 	return r.r.allAssets(ctx)
 }
 
-func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string) ([]*types.NodeSignature, error) {
+func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string) ([]*commandspb.NodeSignature, error) {
 	if len(resourceID) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
@@ -727,12 +728,12 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 
 type myNodeSignatureResolver VegaResolverRoot
 
-func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *types.NodeSignature) (*string, error) {
+func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *commandspb.NodeSignature) (*string, error) {
 	sig := base64.StdEncoding.EncodeToString(obj.Sig)
 	return &sig, nil
 }
 
-func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *types.NodeSignature) (*NodeSignatureKind, error) {
+func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *commandspb.NodeSignature) (*NodeSignatureKind, error) {
 	kind, err := convertNodeSignatureKindFromProto(obj.Kind)
 	if err != nil {
 		return nil, err
@@ -1603,7 +1604,7 @@ func (r *myMutationResolver) PrepareWithdrawal(
 	}
 
 	req := protoapi.PrepareWithdrawRequest{
-		Withdraw: &types.WithdrawSubmission{
+		Withdraw: &commandspb.WithdrawSubmission{
 			PartyId: partyID,
 			Asset:   asset,
 			Amount:  amountU,
@@ -1666,7 +1667,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
 	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrderInput) (*PreparedSubmitOrder, error) {
 
-	order := &types.OrderSubmission{}
+	order := &commandspb.OrderSubmission{}
 
 	var (
 		p   uint64
@@ -1749,8 +1750,7 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 }
 
 func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, market *string) (*PreparedCancelOrder, error) {
-	order := &types.OrderCancellation{}
-
+	order := &commandspb.OrderCancellation{}
 	if market != nil {
 		order.MarketId = *market
 	}
@@ -1786,7 +1786,7 @@ func (r *myMutationResolver) PrepareProposal(
 	}
 
 	pendingProposal, err := r.tradingClient.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
-		Submission: &types.ProposalSubmission{
+		Submission: &commandspb.ProposalSubmission{
 			Reference: ref,
 			Terms:     terms,
 		},
@@ -1817,7 +1817,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 		return nil, err
 	}
 	req := &protoapi.PrepareVoteSubmissionRequest{
-		Submission: &types.VoteSubmission{
+		Submission: &commandspb.VoteSubmission{
 			Value:      protoValue,
 			ProposalId: proposalID,
 		},
@@ -1841,7 +1841,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 
 func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string,
 	expiration *string, tif OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
-	order := &types.OrderAmendment{}
+	order := &commandspb.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
 	if len(id) == 0 {
@@ -1940,7 +1940,7 @@ func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, mark
 	}
 
 	req := &protoapi.PrepareLiquidityProvisionRequest{
-		Submission: &types.LiquidityProvisionSubmission{
+		Submission: &commandspb.LiquidityProvisionSubmission{
 			MarketId:         marketID,
 			CommitmentAmount: uint64(commitmentAmount),
 			Fee:              fee,

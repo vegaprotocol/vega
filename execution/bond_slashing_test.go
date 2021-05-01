@@ -7,6 +7,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -119,7 +120,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
-	lp1 := &types.LiquidityProvisionSubmission{
+	lp1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -176,7 +177,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
-	lp1 := &types.LiquidityProvisionSubmission{
+	lp1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -258,7 +259,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -355,7 +356,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	assert.NoError(t, err)
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -453,7 +454,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.0",
@@ -575,7 +576,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",
@@ -683,7 +684,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	assert.NoError(t, err)
 	require.Equal(t, 0, len(confirmationBuy1.Trades))
 
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200,
 		Fee:              "0.05",

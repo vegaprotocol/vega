@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,7 +34,7 @@ func (m *MockEvtForwarder) EXPECT() *MockEvtForwarderMockRecorder {
 }
 
 // Ack mocks base method
-func (m *MockEvtForwarder) Ack(arg0 *proto.ChainEvent) bool {
+func (m *MockEvtForwarder) Ack(arg0 *v1.ChainEvent) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Ack", arg0)
 	ret0, _ := ret[0].(bool)

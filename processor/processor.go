@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -36,25 +37,25 @@ type TimeService interface {
 type ExecutionEngine interface {
 	// orders stuff
 	SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *commandspb.OrderAmendment) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
-	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid string) error
+	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *commandspb.LiquidityProvisionSubmission, party, lpid string) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 
 	// LP stuff
-	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
+	SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, id string) error
 
 	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
-	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
-	AddVote(context.Context, types.VoteSubmission, string) error
+	SubmitProposal(context.Context, commandspb.ProposalSubmission, string, string) (*governance.ToSubmit, error)
+	AddVote(context.Context, commandspb.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError) error
 }
@@ -110,7 +111,7 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(nr *types.NodeRegistration) error
+	AddNodeRegistration(nr *commandspb.NodeRegistration) error
 	UpdateValidatorSet(keys [][]byte)
 	Exists(key []byte) bool
 	Len() int
@@ -127,21 +128,21 @@ type Broker interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
 type Notary interface {
-	StartAggregate(resID string, kind types.NodeSignatureKind) error
-	AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error)
-	IsSigned(context.Context, string, types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
+	AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
+	IsSigned(context.Context, string, commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 }
 
 // Witness ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/processor Witness
 type Witness interface {
-	AddNodeCheck(ctx context.Context, nv *types.NodeVote) error
+	AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error
 }
 
 // EvtForwarder ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evtforwarder_mock.go -package mocks code.vegaprotocol.io/vega/processor EvtForwarder
 type EvtForwarder interface {
-	Ack(*types.ChainEvent) bool
+	Ack(*commandspb.ChainEvent) bool
 }
 
 // Banking ...
@@ -176,5 +177,5 @@ type OraclesEngine interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors
 type OracleAdaptors interface {
-	Normalise(types.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(commandspb.OracleDataSubmission) (*oracles.OracleData, error)
 }

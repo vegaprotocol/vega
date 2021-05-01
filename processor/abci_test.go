@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
@@ -79,10 +80,9 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &types.OrderSubmission{
+		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
 			PartyId: party,
 		},
-		txn.CancelOrderCommand: &types.OrderCancellation{},
 		txn.ProposeCommand: &types.Proposal{
 			PartyId: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
@@ -98,7 +98,6 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	proc.stat.EXPECT().SetAverageTxSizeBytes(gomock.Any()).AnyTimes()
 	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
 
-	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
 	// creating an order, should be no trades
 	proc.stat.EXPECT().IncTotalOrders().Times(1)
@@ -109,7 +108,6 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{
 		Order: &types.Order{},
 	}, nil)
-	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any(), party).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
 

@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -50,7 +51,7 @@ func (mr *MockLiquidityServiceMockRecorder) Get(arg0, arg1 interface{}) *gomock.
 }
 
 // PrepareLiquidityProvisionSubmission mocks base method
-func (m *MockLiquidityService) PrepareLiquidityProvisionSubmission(arg0 context.Context, arg1 *proto.LiquidityProvisionSubmission) error {
+func (m *MockLiquidityService) PrepareLiquidityProvisionSubmission(arg0 context.Context, arg1 *v1.LiquidityProvisionSubmission) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareLiquidityProvisionSubmission", arg0, arg1)
 	ret0, _ := ret[0].(error)

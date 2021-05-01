@@ -2,13 +2,13 @@ package notary
 
 import (
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 // Plugin ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/notary Plugin
 type Plugin interface {
-	GetByID(string) ([]types.NodeSignature, error)
+	GetByID(string) ([]commandspb.NodeSignature, error)
 }
 
 // Svc is governance service, responsible for managing proposals and votes.
@@ -44,6 +44,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.cfg = cfg
 }
 
-func (s *Svc) GetByID(id string) ([]types.NodeSignature, error) {
+func (s *Svc) GetByID(id string) ([]commandspb.NodeSignature, error) {
 	return s.p.GetByID(id)
 }

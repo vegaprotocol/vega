@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,7 +36,7 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 }
 
 // AmendOrder mocks base method
-func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (*proto.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *v1.OrderAmendment) (*proto.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1)
 	ret0, _ := ret[0].(*proto.OrderConfirmation)
@@ -50,7 +51,7 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1 interface{}) *g
 }
 
 // CancelOrder mocks base method
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation, arg2 string) ([]*proto.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *v1.OrderCancellation, arg2 string) ([]*proto.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*proto.OrderCancellationConfirmation)
@@ -107,7 +108,7 @@ func (mr *MockExecutionEngineMockRecorder) StartOpeningAuction(arg0, arg1 interf
 }
 
 // SubmitLiquidityProvision mocks base method
-func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *proto.LiquidityProvisionSubmission, arg2, arg3 string) error {
+func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *v1.LiquidityProvisionSubmission, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitLiquidityProvision", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -135,7 +136,7 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1 interface{}) 
 }
 
 // SubmitMarketWithLiquidityProvision mocks base method
-func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *proto.Market, arg2 *proto.LiquidityProvisionSubmission, arg3, arg4 string) error {
+func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *proto.Market, arg2 *v1.LiquidityProvisionSubmission, arg3, arg4 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitMarketWithLiquidityProvision", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -317,7 +318,7 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
-	s := &types.OrderSubmission{}
+	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
 	}
@@ -370,7 +371,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
-	order := &types.OrderCancellation{}
+	order := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
@@ -394,7 +395,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
-	order := &types.OrderAmendment{}
+	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
@@ -417,7 +418,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverWithdraw(
 	ctx context.Context, tx abci.Tx, id string) error {
-	w := &types.WithdrawSubmission{}
+	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
 	}
@@ -426,7 +427,7 @@ func (app *App) DeliverWithdraw(
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
-	prop := &types.ProposalSubmission{}
+	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
 	}
@@ -477,7 +478,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
-	vote := &types.VoteSubmission{}
+	vote := &commandspb.VoteSubmission{}
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
@@ -492,7 +493,7 @@ func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
-	ns := &types.NodeSignature{}
+	ns := &commandspb.NodeSignature{}
 	if err := tx.Unmarshal(ns); err != nil {
 		return err
 	}
@@ -501,7 +502,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
-	sub := &types.LiquidityProvisionSubmission{}
+	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
@@ -511,7 +512,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
-	vote := &types.NodeVote{}
+	vote := &commandspb.NodeVote{}
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
@@ -520,7 +521,7 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) error {
-	ce := &types.ChainEvent{}
+	ce := &commandspb.ChainEvent{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
@@ -529,7 +530,7 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 }
 
 func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
-	data := &types.OracleDataSubmission{}
+	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
 	}
@@ -543,7 +544,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
-	data := &types.OracleDataSubmission{}
+	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
 	}
@@ -627,7 +628,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 
 	// then instruct the notary to start getting signature from validators
-	if err := app.notary.StartAggregate(prop.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
+	if err := app.notary.StartAggregate(prop.Id, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
 		prop.State = types.Proposal_STATE_FAILED
 		app.log.Error("unable to enact proposal",
 			logging.ProposalID(prop.Id),
@@ -654,10 +655,10 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		prop.State = types.Proposal_STATE_FAILED
 		return
 	}
-	payload := &types.NodeSignature{
+	payload := &commandspb.NodeSignature{
 		Id:   prop.Id,
 		Sig:  sig,
-		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
+		Kind: commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
 	if err := app.cmd.Command(ctx, txn.NodeSignatureCommand, payload); err != nil {
 		// do nothing for now, we'll need a retry mechanism for this and all command soon

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -124,7 +125,7 @@ func TestMargins(t *testing.T) {
 	orderID := confirmation.GetOrder().Id
 
 	// Amend size up
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:   orderID,
 		MarketId:  tm.market.GetID(),
 		PartyId:   party1,
@@ -271,7 +272,7 @@ func TestPartialFillMargins(t *testing.T) {
 	orderID := confirmation.Order.Id
 
 	// Attempt to amend it to the same size as the failed new order
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:   orderID,
 		MarketId:  tm.market.GetID(),
 		PartyId:   party1,

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/stats"
@@ -114,7 +115,7 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
-	PrepareWithdraw(context.Context, *types.WithdrawSubmission) error
+	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // TransferResponseService ...
@@ -158,7 +159,7 @@ type RiskService interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_service_mock.go -package mocks code.vegaprotocol.io/vega/api  NotaryService
 type NotaryService interface {
-	GetByID(id string) ([]types.NodeSignature, error)
+	GetByID(id string) ([]commandspb.NodeSignature, error)
 }
 
 // Withdrawal ...
@@ -506,7 +507,7 @@ func (t *tradingDataService) GetNodeSignaturesAggregate(ctx context.Context,
 		return nil, apiError(codes.NotFound, err)
 	}
 
-	out := make([]*types.NodeSignature, 0, len(sigs))
+	out := make([]*commandspb.NodeSignature, 0, len(sigs))
 	for _, v := range sigs {
 		v := v
 		out = append(out, &v)

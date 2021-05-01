@@ -17,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/validators"
 )
 
@@ -38,9 +39,9 @@ type Assets interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/banking Notary
 type Notary interface {
-	StartAggregate(resID string, kind types.NodeSignatureKind) error
-	SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error
-	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
+	SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error
+	IsSigned(ctx context.Context, id string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 }
 
 // Collateral engine
@@ -310,7 +311,7 @@ func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, 
 		return ErrInvalidWithdrawalState
 	}
 	withd.TxHash = txHash
-	if _, ok := e.notary.IsSigned(ctx, withd.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); !ok {
+	if _, ok := e.notary.IsSigned(ctx, withd.Id, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); !ok {
 		return ErrWithdrawalNotReady
 	}
 
@@ -371,7 +372,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 
 	// we were able to lock the funds, then we can send the vote through the network
-	if err := e.notary.StartAggregate(w.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); err != nil {
+	if err := e.notary.StartAggregate(w.Id, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); err != nil {
 		w.Status = types.Withdrawal_STATUS_CANCELLED
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.Id] = withdrawalRef{w, ref}
@@ -401,7 +402,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 	}
 
 	err = e.notary.SendSignature(
-		ctx, w.Id, sig, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL)
+		ctx, w.Id, sig, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL)
 	if err != nil {
 		// we don't cancel it here
 		// we may not be able to sign for some reason, but other may be able

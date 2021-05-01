@@ -1832,7 +1832,7 @@
           "title": "Market data events"
         },
         "node_signature": {
-          "$ref": "#/definitions/vegaNodeSignature",
+          "$ref": "#/definitions/v1NodeSignature",
           "title": "Node signature events"
         },
         "loss_socialization": {
@@ -1965,6 +1965,37 @@
           "$ref": "#/definitions/vegaCandle"
         }
       }
+    },
+    "v1ChainEvent": {
+      "type": "object",
+      "properties": {
+        "tx_id": {
+          "type": "string",
+          "title": "The identifier of the transaction in which the events happened, usually a hash"
+        },
+        "nonce": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Arbitrary one-time integer used to prevent replay attacks"
+        },
+        "builtin": {
+          "$ref": "#/definitions/vegaBuiltinAssetEvent",
+          "title": "Built-in asset event"
+        },
+        "erc20": {
+          "$ref": "#/definitions/vegaERC20Event",
+          "title": "Ethereum ERC20 event"
+        },
+        "btc": {
+          "$ref": "#/definitions/vegaBTCEvent",
+          "title": "Bitcoin BTC event"
+        },
+        "validator": {
+          "$ref": "#/definitions/vegaValidatorEvent",
+          "title": "Validator event"
+        }
+      },
+      "title": "An event forwarded to the Vega network to provide information on events happening on other networks"
     },
     "v1Condition": {
       "type": "object",
@@ -2145,7 +2176,7 @@
         "signatures": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/vegaNodeSignature"
+            "$ref": "#/definitions/v1NodeSignature"
           },
           "title": "A list of 0 or more signatures"
         }
@@ -2244,6 +2275,43 @@
         }
       },
       "title": "Response for the latest trade that occurred on Vega for a given market"
+    },
+    "v1LiquidityProvisionSubmission": {
+      "type": "object",
+      "properties": {
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the order, required field"
+        },
+        "commitment_amount": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Specified as a unitless number that represents the amount of settlement asset of the market"
+        },
+        "fee": {
+          "type": "string",
+          "title": "Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers"
+        },
+        "sells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "title": "A set of liquidity sell orders to meet the liquidity provision obligation"
+        },
+        "buys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/vegaLiquidityOrder"
+          },
+          "title": "A set of liquidity buy orders to meet the liquidity provision obligation"
+        },
+        "reference": {
+          "type": "string",
+          "title": "A reference to be added to every order created out of this liquidityProvisionSubmission"
+        }
+      },
+      "title": "A liquidity provision submitted for a given market"
     },
     "v1LiquidityProvisionsResponse": {
       "type": "object",
@@ -2454,6 +2522,36 @@
       },
       "title": "A response containing all of the vega network parameters"
     },
+    "v1NodeSignature": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "The identifier of the resource being signed"
+        },
+        "sig": {
+          "type": "string",
+          "format": "byte",
+          "title": "The signature"
+        },
+        "kind": {
+          "$ref": "#/definitions/v1NodeSignatureKind",
+          "title": "The kind of resource being signed"
+        }
+      },
+      "title": "Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network"
+    },
+    "v1NodeSignatureKind": {
+      "type": "string",
+      "enum": [
+        "NODE_SIGNATURE_KIND_UNSPECIFIED",
+        "NODE_SIGNATURE_KIND_ASSET_NEW",
+        "NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL"
+      ],
+      "default": "NODE_SIGNATURE_KIND_UNSPECIFIED",
+      "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: Represents an unspecified or missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: Represents a signature for a new asset allow-listing\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: Represents a signature for an asset withdrawal",
+      "title": "The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc"
+    },
     "v1ObserveEventBusResponse": {
       "type": "object",
       "properties": {
@@ -2647,6 +2745,50 @@
       },
       "title": "The response for a list of withdrawals"
     },
+    "v1OrderAmendment": {
+      "type": "object",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "title": "Order identifier, this is required to find the order and will not be updated, required field"
+        },
+        "party_id": {
+          "type": "string",
+          "title": "Party identifier, this is required to find the order and will not be updated, required field"
+        },
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier, this is required to find the order and will not be updated"
+        },
+        "price": {
+          "$ref": "#/definitions/vegaPrice",
+          "title": "Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)"
+        },
+        "size_delta": {
+          "type": "string",
+          "format": "int64",
+          "title": "Amend the size for the order by the delta specified:\n- To reduce the size from the current value set a negative integer value\n- To increase the size from the current value, set a positive integer value\n- To leave the size unchanged set a value of zero"
+        },
+        "expires_at": {
+          "$ref": "#/definitions/vegaTimestamp",
+          "title": "Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged\n- See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`"
+        },
+        "time_in_force": {
+          "$ref": "#/definitions/OrderTimeInForce",
+          "title": "Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged\n- See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`"
+        },
+        "pegged_offset": {
+          "type": "string",
+          "format": "int64",
+          "title": "Amend the pegged order offset for the order"
+        },
+        "pegged_reference": {
+          "$ref": "#/definitions/vegaPeggedReference",
+          "title": "Amend the pegged order reference for the order\n- See [`PeggedReference`](#vega.PeggedReference)"
+        }
+      },
+      "title": "An order amendment is a request to amend or update an existing order on Vega"
+    },
     "v1OrderByIDResponse": {
       "type": "object",
       "properties": {
@@ -2674,6 +2816,73 @@
         }
       },
       "title": "Response for an order given an order reference"
+    },
+    "v1OrderCancellation": {
+      "type": "object",
+      "properties": {
+        "order_id": {
+          "type": "string",
+          "title": "Unique identifier for the order (set by the system after consensus), required field"
+        },
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the order, required field"
+        }
+      },
+      "title": "An order cancellation is a request to cancel an existing order on Vega"
+    },
+    "v1OrderSubmission": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Unique identifier for the order (set by the system after consensus)"
+        },
+        "market_id": {
+          "type": "string",
+          "title": "Market identifier for the order, required field"
+        },
+        "party_id": {
+          "type": "string",
+          "title": "Party identifier for the order, required field"
+        },
+        "price": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Price for the order, the price is an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places,\n, required field for limit orders, however it is not required for market orders"
+        },
+        "size": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative"
+        },
+        "side": {
+          "$ref": "#/definitions/vegaSide",
+          "title": "Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field - See [`Side`](#vega.Side)"
+        },
+        "time_in_force": {
+          "$ref": "#/definitions/OrderTimeInForce",
+          "title": "Time in force indicates how long an order will remain active before it is executed or expires, required field\n- See [`Order.TimeInForce`](#vega.Order.TimeInForce)"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "int64",
+          "title": "Timestamp for when the order will expire, in nanoseconds since the epoch,\nrequired field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`\n- See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`"
+        },
+        "type": {
+          "$ref": "#/definitions/vegaOrderType",
+          "title": "Type for the order, required field - See [`Order.Type`](#vega.Order.Type)"
+        },
+        "reference": {
+          "type": "string",
+          "title": "Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently\nset internally by the node to return a unique reference identifier for the order submission"
+        },
+        "pegged_order": {
+          "$ref": "#/definitions/vegaPeggedOrder",
+          "title": "Used to specify the details for a pegged order\n- See [`PeggedOrder`](#vega.PeggedOrder)"
+        }
+      },
+      "title": "An order submission is a request to submit or create a new order on Vega"
     },
     "v1OrderVersionsByIDResponse": {
       "type": "object",
@@ -2834,7 +3043,7 @@
       "type": "object",
       "properties": {
         "amendment": {
-          "$ref": "#/definitions/vegaOrderAmendment",
+          "$ref": "#/definitions/v1OrderAmendment",
           "title": "An order amendment"
         }
       },
@@ -2855,7 +3064,7 @@
       "type": "object",
       "properties": {
         "cancellation": {
-          "$ref": "#/definitions/vegaOrderCancellation",
+          "$ref": "#/definitions/v1OrderCancellation",
           "title": "An order cancellation"
         }
       },
@@ -2876,7 +3085,7 @@
       "type": "object",
       "properties": {
         "submission": {
-          "$ref": "#/definitions/vegaLiquidityProvisionSubmission",
+          "$ref": "#/definitions/v1LiquidityProvisionSubmission",
           "title": "Submission, required field"
         }
       },
@@ -2897,7 +3106,7 @@
       "type": "object",
       "properties": {
         "submission": {
-          "$ref": "#/definitions/vegaProposalSubmission"
+          "$ref": "#/definitions/v1ProposalSubmission"
         }
       },
       "title": "Request to prepare a governance proposal"
@@ -2911,7 +3120,7 @@
           "title": "A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction"
         },
         "submission": {
-          "$ref": "#/definitions/vegaProposalSubmission",
+          "$ref": "#/definitions/v1ProposalSubmission",
           "title": "A copy of the prepared proposal"
         }
       },
@@ -2921,7 +3130,7 @@
       "type": "object",
       "properties": {
         "submission": {
-          "$ref": "#/definitions/vegaOrderSubmission",
+          "$ref": "#/definitions/v1OrderSubmission",
           "title": "An order submission"
         }
       },
@@ -2946,7 +3155,7 @@
       "type": "object",
       "properties": {
         "submission": {
-          "$ref": "#/definitions/vegaVoteSubmission",
+          "$ref": "#/definitions/v1VoteSubmission",
           "title": "Vote, required field"
         }
       },
@@ -2961,7 +3170,7 @@
           "title": "A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction"
         },
         "submission": {
-          "$ref": "#/definitions/vegaVoteSubmission",
+          "$ref": "#/definitions/v1VoteSubmission",
           "title": "A copy of the prepared vote"
         }
       },
@@ -2971,7 +3180,7 @@
       "type": "object",
       "properties": {
         "withdraw": {
-          "$ref": "#/definitions/vegaWithdrawSubmission",
+          "$ref": "#/definitions/v1WithdrawSubmission",
           "title": "An asset withdrawal"
         }
       },
@@ -3040,6 +3249,20 @@
       ],
       "default": "TYPE_UNSPECIFIED",
       "description": "Type describes the type of properties that are supported by the oracle\nengine.\n\n - TYPE_UNSPECIFIED: The default value.\n - TYPE_EMPTY: Any type.\n - TYPE_INTEGER: Integer type.\n - TYPE_STRING: String type.\n - TYPE_BOOLEAN: Boolean type.\n - TYPE_DECIMAL: Any floating point decimal type.\n - TYPE_TIMESTAMP: Timestamp date type."
+    },
+    "v1ProposalSubmission": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string",
+          "title": "Proposal reference"
+        },
+        "terms": {
+          "$ref": "#/definitions/vegaProposalTerms",
+          "title": "Proposal configuration and the actual change that is meant to be executed when proposal is enacted"
+        }
+      },
+      "title": "A command to submit a new proposal for the\nvega network governance"
     },
     "v1SettleDistressed": {
       "type": "object",
@@ -3248,24 +3471,64 @@
           "title": "An error message describing what went wrong"
         },
         "order_submission": {
-          "$ref": "#/definitions/vegaOrderSubmission"
+          "$ref": "#/definitions/v1OrderSubmission"
         },
         "order_amendment": {
-          "$ref": "#/definitions/vegaOrderAmendment"
+          "$ref": "#/definitions/v1OrderAmendment"
         },
         "order_cancellation": {
-          "$ref": "#/definitions/vegaOrderCancellation"
+          "$ref": "#/definitions/v1OrderCancellation"
         },
         "proposal": {
-          "$ref": "#/definitions/vegaProposal"
+          "$ref": "#/definitions/v1ProposalSubmission"
         },
         "vote_submission": {
-          "$ref": "#/definitions/vegaVoteSubmission"
+          "$ref": "#/definitions/v1VoteSubmission"
         },
         "liquidity_provision_submission": {
-          "$ref": "#/definitions/vegaLiquidityProvisionSubmission"
+          "$ref": "#/definitions/v1LiquidityProvisionSubmission"
+        },
+        "withdraw_submission": {
+          "$ref": "#/definitions/v1WithdrawSubmission"
         }
       }
+    },
+    "v1VoteSubmission": {
+      "type": "object",
+      "properties": {
+        "proposal_id": {
+          "type": "string",
+          "description": "The ID of the proposal to vote for."
+        },
+        "value": {
+          "$ref": "#/definitions/VoteValue",
+          "title": "The actual value of the vote"
+        }
+      },
+      "description": "A command to submit a new vote for a governance\nproposal."
+    },
+    "v1WithdrawSubmission": {
+      "type": "object",
+      "properties": {
+        "party_id": {
+          "type": "string",
+          "title": "Unique party identifier for the user wanting to withdraw funds"
+        },
+        "amount": {
+          "type": "string",
+          "format": "uint64",
+          "title": "The amount to be withdrawn"
+        },
+        "asset": {
+          "type": "string",
+          "title": "The asset we want to withdraw"
+        },
+        "ext": {
+          "$ref": "#/definitions/vegaWithdrawExt",
+          "title": "Foreign chain specifics"
+        }
+      },
+      "title": "Represents the submission request to withdraw funds for a party on Vega"
     },
     "v1WithdrawalResponse": {
       "type": "object",
@@ -3620,37 +3883,6 @@
         }
       },
       "title": "Represents the high, low, open, and closing prices for an interval of trading,\nreferred to commonly as a candlestick or candle"
-    },
-    "vegaChainEvent": {
-      "type": "object",
-      "properties": {
-        "tx_id": {
-          "type": "string",
-          "title": "The identifier of the transaction in which the events happened, usually a hash"
-        },
-        "nonce": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Arbitrary one-time integer used to prevent replay attacks"
-        },
-        "builtin": {
-          "$ref": "#/definitions/vegaBuiltinAssetEvent",
-          "title": "Built-in asset event"
-        },
-        "erc20": {
-          "$ref": "#/definitions/vegaERC20Event",
-          "title": "Ethereum ERC20 event"
-        },
-        "btc": {
-          "$ref": "#/definitions/vegaBTCEvent",
-          "title": "Bitcoin BTC event"
-        },
-        "validator": {
-          "$ref": "#/definitions/vegaValidatorEvent",
-          "title": "Validator event"
-        }
-      },
-      "title": "An event forwarded to the Vega network to provide information on events happening on other networks"
     },
     "vegaChainStatus": {
       "type": "string",
@@ -4270,42 +4502,6 @@
       "description": "- STATUS_UNSPECIFIED: The default value\n - STATUS_ACTIVE: The liquidity provision is active\n - STATUS_STOPPED: The liquidity provision was stopped by the network\n - STATUS_CANCELLED: The liquidity provision was cancelled by the liquidity provider\n - STATUS_REJECTED: The liquidity provision was invalid and got rejected\n - STATUS_UNDEPLOYED: The liquidity provision is valid and accepted by network, but orders aren't deployed\n - STATUS_PENDING: The liquidity provision is valid and accepted by network\nbut have never been deployed. I when it's possible to deploy them for the first time\nmargin check fails, then they will be cancelled without any penalties.",
       "title": "Status of a liquidity provision order"
     },
-    "vegaLiquidityProvisionSubmission": {
-      "type": "object",
-      "properties": {
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the order, required field"
-        },
-        "commitment_amount": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Specified as a unitless number that represents the amount of settlement asset of the market"
-        },
-        "fee": {
-          "type": "string",
-          "title": "Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers"
-        },
-        "sells": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaLiquidityOrder"
-          },
-          "title": "A set of liquidity sell orders to meet the liquidity provision obligation"
-        },
-        "buys": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/vegaLiquidityOrder"
-          },
-          "title": "A set of liquidity buy orders to meet the liquidity provision obligation"
-        },
-        "reference": {
-          "type": "string",
-          "title": "A reference to be added to every order created out of this liquidityProvisionSubmission"
-        }
-      }
-    },
     "vegaLogNormalModelParams": {
       "type": "object",
       "properties": {
@@ -4803,36 +4999,6 @@
       },
       "title": "Configuration for a new market on Vega"
     },
-    "vegaNodeSignature": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "The identifier of the resource being signed"
-        },
-        "sig": {
-          "type": "string",
-          "format": "byte",
-          "title": "The signature"
-        },
-        "kind": {
-          "$ref": "#/definitions/vegaNodeSignatureKind",
-          "title": "The kind of resource being signed"
-        }
-      },
-      "title": "Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network"
-    },
-    "vegaNodeSignatureKind": {
-      "type": "string",
-      "enum": [
-        "NODE_SIGNATURE_KIND_UNSPECIFIED",
-        "NODE_SIGNATURE_KIND_ASSET_NEW",
-        "NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL"
-      ],
-      "default": "NODE_SIGNATURE_KIND_UNSPECIFIED",
-      "description": "- NODE_SIGNATURE_KIND_UNSPECIFIED: Represents an unspecified or missing value from the input\n - NODE_SIGNATURE_KIND_ASSET_NEW: Represents a signature for a new asset allow-listing\n - NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL: Represents a signature for an asset withdrawal",
-      "title": "The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc"
-    },
     "vegaOracleSpecToFutureBinding": {
       "type": "object",
       "properties": {
@@ -4933,64 +5099,6 @@
       },
       "title": "An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties"
     },
-    "vegaOrderAmendment": {
-      "type": "object",
-      "properties": {
-        "order_id": {
-          "type": "string",
-          "title": "Order identifier, this is required to find the order and will not be updated, required field"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier, this is required to find the order and will not be updated, required field"
-        },
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier, this is required to find the order and will not be updated"
-        },
-        "price": {
-          "$ref": "#/definitions/vegaPrice",
-          "title": "Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)"
-        },
-        "size_delta": {
-          "type": "string",
-          "format": "int64",
-          "title": "Amend the size for the order by the delta specified:\n- To reduce the size from the current value set a negative integer value\n- To increase the size from the current value, set a positive integer value\n- To leave the size unchanged set a value of zero"
-        },
-        "expires_at": {
-          "$ref": "#/definitions/vegaTimestamp",
-          "title": "Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged\n- See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`"
-        },
-        "time_in_force": {
-          "$ref": "#/definitions/OrderTimeInForce",
-          "title": "Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged\n- See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`"
-        },
-        "pegged_offset": {
-          "type": "string",
-          "format": "int64",
-          "title": "Amend the pegged order offset for the order"
-        },
-        "pegged_reference": {
-          "$ref": "#/definitions/vegaPeggedReference",
-          "title": "Amend the pegged order reference for the order\n- See [`PeggedReference`](#vega.PeggedReference)"
-        }
-      },
-      "title": "An order amendment is a request to amend or update an existing order on Vega"
-    },
-    "vegaOrderCancellation": {
-      "type": "object",
-      "properties": {
-        "order_id": {
-          "type": "string",
-          "title": "Unique identifier for the order (set by the system after consensus), required field"
-        },
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the order, required field"
-        }
-      },
-      "title": "An order cancellation is a request to cancel an existing order on Vega"
-    },
     "vegaOrderError": {
       "type": "string",
       "enum": [
@@ -5061,59 +5169,6 @@
       ],
       "default": "STATUS_UNSPECIFIED",
       "description": "Status values for an order\nSee resulting status in [What order types are available to trade on Vega?](https://docs.testnet.vega.xyz/docs/trading-questions/#what-order-types-are-available-to-trade-on-vega) for more detail.\n\n - STATUS_UNSPECIFIED: Default value, always invalid\n - STATUS_ACTIVE: Used for active unfilled or partially filled orders\n - STATUS_EXPIRED: Used for expired GTT orders\n - STATUS_CANCELLED: Used for orders cancelled by the party that created the order\n - STATUS_STOPPED: Used for unfilled FOK or IOC orders, and for orders that were stopped by the network\n - STATUS_FILLED: Used for closed fully filled orders\n - STATUS_REJECTED: Used for orders when not enough collateral was available to fill the margin requirements\n - STATUS_PARTIALLY_FILLED: Used for closed partially filled IOC orders\n - STATUS_PARKED: Order has been removed from the order book and has been parked, this applies to pegged orders only"
-    },
-    "vegaOrderSubmission": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "Unique identifier for the order (set by the system after consensus)"
-        },
-        "market_id": {
-          "type": "string",
-          "title": "Market identifier for the order, required field"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier for the order, required field"
-        },
-        "price": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Price for the order, the price is an integer, for example `123456` is a correctly\nformatted price of `1.23456` assuming market configured to 5 decimal places,\n, required field for limit orders, however it is not required for market orders"
-        },
-        "size": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative"
-        },
-        "side": {
-          "$ref": "#/definitions/vegaSide",
-          "title": "Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field - See [`Side`](#vega.Side)"
-        },
-        "time_in_force": {
-          "$ref": "#/definitions/OrderTimeInForce",
-          "title": "Time in force indicates how long an order will remain active before it is executed or expires, required field\n- See [`Order.TimeInForce`](#vega.Order.TimeInForce)"
-        },
-        "expires_at": {
-          "type": "string",
-          "format": "int64",
-          "title": "Timestamp for when the order will expire, in nanoseconds since the epoch,\nrequired field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`\n- See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`"
-        },
-        "type": {
-          "$ref": "#/definitions/vegaOrderType",
-          "title": "Type for the order, required field - See [`Order.Type`](#vega.Order.Type)"
-        },
-        "reference": {
-          "type": "string",
-          "title": "Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently\nset internally by the node to return a unique reference identifier for the order submission"
-        },
-        "pegged_order": {
-          "$ref": "#/definitions/vegaPeggedOrder",
-          "title": "Used to specify the details for a pegged order\n- See [`PeggedOrder`](#vega.PeggedOrder)"
-        }
-      },
-      "title": "An order submission is a request to submit or create a new order on Vega"
     },
     "vegaOrderType": {
       "type": "string",
@@ -5396,20 +5451,6 @@
       "default": "STATE_UNSPECIFIED",
       "description": "- STATE_UNSPECIFIED: Default value, always invalid\n - STATE_FAILED: Proposal enactment has failed - even though proposal has passed, its execution could not be performed\n - STATE_OPEN: Proposal is open for voting\n - STATE_PASSED: Proposal has gained enough support to be executed\n - STATE_REJECTED: Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements)\n - STATE_DECLINED: Proposal didn't get enough votes (either failing to gain required participation or majority level)\n - STATE_ENACTED: Proposal enacted\n - STATE_WAITING_FOR_NODE_VOTE: Waiting for node validation of the proposal",
       "title": "Proposal state transition:\nOpen -\u003e\n  - Passed -\u003e Enacted.\n  - Passed -\u003e Failed.\n  - Declined\nRejected\nProposal can enter Failed state from any other state"
-    },
-    "vegaProposalSubmission": {
-      "type": "object",
-      "properties": {
-        "reference": {
-          "type": "string",
-          "title": "Proposal reference"
-        },
-        "terms": {
-          "$ref": "#/definitions/vegaProposalTerms",
-          "title": "Proposal configuration and the actual change that is meant to be executed when proposal is enacted"
-        }
-      },
-      "title": "A command to submit a new proposal for the\nvega network governance"
     },
     "vegaProposalTerms": {
       "type": "object",
@@ -5974,17 +6015,6 @@
       },
       "title": "Governance vote"
     },
-    "vegaVoteSubmission": {
-      "type": "object",
-      "properties": {
-        "proposal_id": {
-          "type": "string"
-        },
-        "value": {
-          "$ref": "#/definitions/VoteValue"
-        }
-      }
-    },
     "vegaWithdrawExt": {
       "type": "object",
       "properties": {
@@ -5994,29 +6024,6 @@
         }
       },
       "title": "Withdrawal external details"
-    },
-    "vegaWithdrawSubmission": {
-      "type": "object",
-      "properties": {
-        "party_id": {
-          "type": "string",
-          "title": "Unique party identifier for the user wanting to withdraw funds"
-        },
-        "amount": {
-          "type": "string",
-          "format": "uint64",
-          "title": "The amount to be withdrawn"
-        },
-        "asset": {
-          "type": "string",
-          "title": "The asset we want to withdraw"
-        },
-        "ext": {
-          "$ref": "#/definitions/vegaWithdrawExt",
-          "title": "Foreign chain specifics"
-        }
-      },
-      "title": "Represents the submission request to withdraw funds for a party on Vega"
     },
     "vegaWithdrawal": {
       "type": "object",

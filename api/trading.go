@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
@@ -26,35 +27,35 @@ var (
 // TradeOrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/api TradeOrderService
 type TradeOrderService interface {
-	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) error
-	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) error
-	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error
+	PrepareSubmitOrder(ctx context.Context, submission *commandspb.OrderSubmission) error
+	PrepareCancelOrder(ctx context.Context, cancellation *commandspb.OrderCancellation) error
+	PrepareAmendOrder(ctx context.Context, amendment *commandspb.OrderAmendment) error
 }
 
 // LiquidityService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
 type LiquidityService interface {
-	PrepareLiquidityProvisionSubmission(context.Context, *types.LiquidityProvisionSubmission) error
+	PrepareLiquidityProvisionSubmission(context.Context, *commandspb.LiquidityProvisionSubmission) error
 	Get(party, market string) ([]types.LiquidityProvision, error)
 }
 
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	PrepareWithdraw(context.Context, *types.WithdrawSubmission) error
+	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // GovernanceService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
 type GovernanceService interface {
-	PrepareProposal(ctx context.Context, reference string, terms *types.ProposalTerms) (*types.ProposalSubmission, error)
-	PrepareVote(vote *types.VoteSubmission) (*types.VoteSubmission, error)
+	PrepareProposal(ctx context.Context, reference string, terms *types.ProposalTerms) (*commandspb.ProposalSubmission, error)
+	PrepareVote(vote *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error)
 }
 
 // EvtForwarder
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
 type EvtForwarder interface {
-	Forward(ctx context.Context, e *types.ChainEvent, pk string) error
+	Forward(ctx context.Context, e *commandspb.ChainEvent, pk string) error
 }
 
 // Blockchain ...

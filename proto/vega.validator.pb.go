@@ -8,7 +8,6 @@ import (
 	math "math"
 
 	proto "github.com/golang/protobuf/proto"
-	_ "github.com/golang/protobuf/ptypes/wrappers"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
 )
@@ -165,14 +164,6 @@ func (this *Withdrawal) Validate() error {
 	}
 	return nil
 }
-func (this *WithdrawSubmission) Validate() error {
-	if this.Ext != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Ext); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Ext", err)
-		}
-	}
-	return nil
-}
 func (this *WithdrawExt) Validate() error {
 	if oneOfNester, ok := this.GetExt().(*WithdrawExt_Erc20); ok {
 		if oneOfNester.Erc20 != nil {
@@ -184,68 +175,6 @@ func (this *WithdrawExt) Validate() error {
 	return nil
 }
 func (this *Erc20WithdrawExt) Validate() error {
-	return nil
-}
-func (this *OrderAmendment) Validate() error {
-	if this.OrderId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("OrderId", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderId))
-	}
-	if this.PartyId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
-	}
-	if this.Price != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Price); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Price", err)
-		}
-	}
-	if this.ExpiresAt != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.ExpiresAt); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("ExpiresAt", err)
-		}
-	}
-	if this.PeggedOffset != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PeggedOffset); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("PeggedOffset", err)
-		}
-	}
-	return nil
-}
-func (this *OrderSubmission) Validate() error {
-	if this.MarketId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("MarketId", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketId))
-	}
-	if this.PartyId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
-	}
-	if !(this.Size > 0) {
-		return github_com_mwitkow_go_proto_validators.FieldError("Size_", fmt.Errorf(`value '%v' must be greater than '0'`, this.Size))
-	}
-	if _, ok := Side_name[int32(this.Side)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("Side", fmt.Errorf(`value '%v' must be a valid Side field`, this.Side))
-	}
-	if _, ok := Order_TimeInForce_name[int32(this.TimeInForce)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("TimeInForce", fmt.Errorf(`value '%v' must be a valid Order_TimeInForce field`, this.TimeInForce))
-	}
-	if _, ok := Order_Type_name[int32(this.Type)]; !ok {
-		return github_com_mwitkow_go_proto_validators.FieldError("Type", fmt.Errorf(`value '%v' must be a valid Order_Type field`, this.Type))
-	}
-	if this.PeggedOrder != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PeggedOrder); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("PeggedOrder", err)
-		}
-	}
-	return nil
-}
-func (this *OrderCancellation) Validate() error {
-	return nil
-}
-func (this *NodeRegistration) Validate() error {
-	return nil
-}
-func (this *NodeVote) Validate() error {
-	if this.Reference == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("Reference", fmt.Errorf(`value '%v' must not be an empty string`, this.Reference))
-	}
 	return nil
 }
 func (this *Account) Validate() error {
@@ -355,33 +284,10 @@ func (this *SignedBundle) Validate() error {
 	}
 	return nil
 }
-func (this *NodeSignature) Validate() error {
-	return nil
-}
 func (this *NetworkParameter) Validate() error {
 	return nil
 }
 func (this *LiquidityOrder) Validate() error {
-	return nil
-}
-func (this *LiquidityProvisionSubmission) Validate() error {
-	if this.MarketId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("MarketId", fmt.Errorf(`value '%v' must not be an empty string`, this.MarketId))
-	}
-	for _, item := range this.Sells {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Sells", err)
-			}
-		}
-	}
-	for _, item := range this.Buys {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Buys", err)
-			}
-		}
-	}
 	return nil
 }
 func (this *LiquidityOrderReference) Validate() error {
@@ -413,8 +319,5 @@ func (this *LiquidityProvision) Validate() error {
 	return nil
 }
 func (this *EthereumConfig) Validate() error {
-	return nil
-}
-func (this *OracleDataSubmission) Validate() error {
 	return nil
 }

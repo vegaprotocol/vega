@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/contextutil"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 
 	"github.com/pkg/errors"
@@ -236,7 +237,7 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 	case types.MarketData:
 		e := NewMarketDataEvent(ctx, tv)
 		return e, nil
-	case types.NodeSignature:
+	case commandspb.NodeSignature:
 		e := NewNodeSignatureEvent(ctx, tv)
 		return e, nil
 	case types.Asset:

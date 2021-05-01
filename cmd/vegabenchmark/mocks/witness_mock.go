@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	validators "code.vegaprotocol.io/vega/validators"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -37,7 +37,7 @@ func (m *MockWitness) EXPECT() *MockWitnessMockRecorder {
 }
 
 // AddNodeCheck mocks base method
-func (m *MockWitness) AddNodeCheck(arg0 context.Context, arg1 *proto.NodeVote) error {
+func (m *MockWitness) AddNodeCheck(arg0 context.Context, arg1 *v1.NodeVote) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddNodeCheck", arg0, arg1)
 	ret0, _ := ret[0].(error)

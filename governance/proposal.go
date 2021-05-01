@@ -4,6 +4,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 // ProposalParameters stores proposal specific parameters
@@ -103,14 +104,14 @@ func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
 
 type ToSubmitNewMarket struct {
 	m *types.Market
-	l *types.LiquidityProvisionSubmission
+	l *commandspb.LiquidityProvisionSubmission
 }
 
 func (t *ToSubmitNewMarket) Market() *types.Market {
 	return t.m
 }
 
-func (t *ToSubmitNewMarket) LiquidityProvisionSubmission() *types.LiquidityProvisionSubmission {
+func (t *ToSubmitNewMarket) LiquidityProvisionSubmission() *commandspb.LiquidityProvisionSubmission {
 	return t.l
 }
 

@@ -29,7 +29,7 @@ models:
   MarginLevels:
     model: code.vegaprotocol.io/vega/proto.MarginLevels
   NodeSignature:
-    model: code.vegaprotocol.io/vega/proto.NodeSignature
+    model: code.vegaprotocol.io/vega/proto/commands/v1.NodeSignature
   ProposalEvent:
     model: code.vegaprotocol.io/vega/proto.Proposal
   RiskFactor:

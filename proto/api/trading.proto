@@ -5,11 +5,12 @@ option go_package = "code.vegaprotocol.io/vega/proto/api";
 import "vega.proto";
 import "markets.proto";
 import "governance.proto";
-import "chain_events.proto";
 import "assets.proto";
 import "events/v1/events.proto";
 import "oracles/v1/oracle_spec.proto";
 import "oracles/v1/oracle_data.proto";
+import "commands/v1/commands.proto";
+import "commands/v1/validator_commands.proto";
 
 package api.v1;
 
@@ -48,7 +49,7 @@ service TradingService {
 // Request for a new event sent by the blockchain queue to be propagated on Vega
 message PropagateChainEventRequest {
   // Chain event
-  vega.ChainEvent evt = 1;
+  vega.commands.v1.ChainEvent evt = 1;
   // Public key
   string pub_key = 2;
   // Signature
@@ -103,7 +104,7 @@ message SubmitTransactionResponse {
 // Request for preparing a withdrawal
 message PrepareWithdrawRequest {
   // An asset withdrawal
-  vega.WithdrawSubmission withdraw = 1;
+  vega.commands.v1.WithdrawSubmission withdraw = 1;
 }
 
 // Response for preparing a withdrawal
@@ -135,19 +136,19 @@ message PrepareAmendOrderResponse {
 // Request to submit a new order
 message PrepareSubmitOrderRequest {
   // An order submission
-  vega.OrderSubmission submission = 1;
+  vega.commands.v1.OrderSubmission submission = 1;
 }
 
 // Request to cancel an existing order
 message PrepareCancelOrderRequest {
   // An order cancellation
-  vega.OrderCancellation cancellation = 1;
+  vega.commands.v1.OrderCancellation cancellation = 1;
 }
 
 // Request to amend an existing order
 message PrepareAmendOrderRequest {
   // An order amendment
-  vega.OrderAmendment amendment = 1;
+  vega.commands.v1.OrderAmendment amendment = 1;
 }
 
 service TradingDataService {
@@ -398,7 +399,7 @@ message GetNodeSignaturesAggregateRequest {
 // Response to specify the identifier of the resource we want to retrieve aggregated signatures for
 message GetNodeSignaturesAggregateResponse {
   // A list of 0 or more signatures
-  repeated vega.NodeSignature signatures = 1;
+  repeated vega.commands.v1.NodeSignature signatures = 1;
 }
 
 // Optional proposal state
@@ -997,7 +998,7 @@ message FeeInfrastructureAccountsResponse {
 
 // Request to prepare a governance proposal
 message PrepareProposalSubmissionRequest {
-  vega.ProposalSubmission submission = 1;
+  vega.commands.v1.ProposalSubmission submission = 1;
 }
 
 // Response to prepare a governance proposal
@@ -1005,13 +1006,13 @@ message PrepareProposalSubmissionResponse {
   // A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction
   bytes blob = 1;
   // A copy of the prepared proposal
-  vega.ProposalSubmission submission = 2;
+  vega.commands.v1.ProposalSubmission submission = 2;
 }
 
 // Request to prepare a governance vote
 message PrepareVoteSubmissionRequest {
   // Vote, required field
-  vega.VoteSubmission submission = 1 [(validator.field) = {msg_exists: true}];
+  vega.commands.v1.VoteSubmission submission = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Response to prepare a governance vote
@@ -1019,13 +1020,13 @@ message PrepareVoteSubmissionResponse {
   // A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction
   bytes blob = 1;
   // A copy of the prepared vote
-  vega.VoteSubmission submission = 2;
+  vega.commands.v1.VoteSubmission submission = 2;
 }
 
 // Request to prepare liquiditity provision
 message PrepareLiquidityProvisionRequest {
   // Submission, required field
-  vega.LiquidityProvisionSubmission submission = 1 [(validator.field) = {msg_exists: true}];
+  vega.commands.v1.LiquidityProvisionSubmission submission = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Response to a liquidity provision request

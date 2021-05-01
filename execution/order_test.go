@@ -6,6 +6,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
@@ -50,7 +51,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		MarketId: tm.market.GetID(),
 		PartyId:  party1,
 		OrderId:  orderAmend.Id,
@@ -140,7 +141,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 
 	// Amend the price to force a cancel+resubmit to the order book
 
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:  orderID,
 		PartyId:  confirmation.GetOrder().GetPartyId(),
 		MarketId: confirmation.GetOrder().GetMarketId(),
@@ -150,7 +151,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
-	amend = &types.OrderAmendment{
+	amend = &commandspb.OrderAmendment{
 		OrderId:   orderID,
 		PartyId:   confirmation.GetOrder().GetPartyId(),
 		MarketId:  confirmation.GetOrder().GetMarketId(),
@@ -192,7 +193,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Now attempt to cancel it with the wrong partyID
-	cancelOrder := &types.OrderCancellation{
+	cancelOrder := &commandspb.OrderCancellation{
 		OrderId:  confirmation.GetOrder().Id,
 		MarketId: confirmation.GetOrder().MarketId,
 	}
@@ -317,7 +318,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	// Move the current time forward
 	tm.market.OnChainTimeUpdate(context.Background(), time.Unix(10, 100))
 
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:     buyConfirmation.GetOrder().GetId(),
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
@@ -414,7 +415,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NotNil(t, sellConfirmation)
 	assert.NoError(t, err)
 
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:  buyConfirmation.GetOrder().GetId(),
 		PartyId:  party1,
 		MarketId: tm.market.GetID(),
@@ -459,7 +460,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Send an amend but use the wrong partyID
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:  confirmation.GetOrder().GetId(),
 		PartyId:  party2,
 		MarketId: confirmation.GetOrder().GetMarketId(),
@@ -572,9 +573,9 @@ func TestPartialFilledWashTrade(t *testing.T) {
 }
 
 func getAmend(market string, party string, orderID string, sizeDelta int64, price uint64,
-	tif types.Order_TimeInForce, expiresAt int64) *types.OrderAmendment {
+	tif types.Order_TimeInForce, expiresAt int64) *commandspb.OrderAmendment {
 
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:     orderID,
 		PartyId:     party,
 		MarketId:    market,
@@ -2784,7 +2785,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lp := &types.LiquidityProvisionSubmission{
+	lp := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000000,
 		Fee:              "0.01",

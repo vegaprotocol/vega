@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 var (
@@ -231,7 +232,7 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
 }
 
-func (e *Engine) ValidateLiquidityProvisionSubmission(lp *types.LiquidityProvisionSubmission) (err error) {
+func (e *Engine) ValidateLiquidityProvisionSubmission(lp *commandspb.LiquidityProvisionSubmission) (err error) {
 	// we check if the commitment is 0 which would mean this is a cancel
 	// a cancel does not need validations
 	if lp.CommitmentAmount == 0 {
@@ -247,7 +248,7 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(lp *types.LiquidityProvisi
 	return validateShape(lp.Sells, types.Side_SIDE_SELL, e.maxShapesSize)
 }
 
-func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
+func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *commandspb.LiquidityProvisionSubmission, party, id string) {
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
 	lp := &types.LiquidityProvision{
@@ -283,7 +284,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *commandspb.LiquidityProvisionSubmission, party, id string) error {
 	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
 		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
 		return err
@@ -350,7 +351,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 
 func (e *Engine) buildLiquidityProvisionShapesReferences(
 	lp *types.LiquidityProvision,
-	lps *types.LiquidityProvisionSubmission,
+	lps *commandspb.LiquidityProvisionSubmission,
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
@@ -426,7 +427,7 @@ func (e *Engine) CreateInitialOrders(
 	party string,
 	orders []*types.Order,
 	repriceFn RepricePeggedOrder,
-) ([]*types.Order, []*types.OrderAmendment, error) {
+) ([]*types.Order, []*commandspb.OrderAmendment, error) {
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
 	kills := e.killExistingLiquidityOrders(party)
@@ -443,10 +444,10 @@ func (e *Engine) Update(
 	midPriceBid, midPriceAsk uint64,
 	repriceFn RepricePeggedOrder,
 	orders []*types.Order,
-) ([]*types.Order, []*types.OrderAmendment, error) {
+) ([]*types.Order, []*commandspb.OrderAmendment, error) {
 	var (
 		newOrders        []*types.Order
-		amendments       []*types.OrderAmendment
+		amendments       []*commandspb.OrderAmendment
 		updatedLPParties []string
 	)
 
@@ -510,12 +511,12 @@ func (e *Engine) CalculateSuppliedStake() uint64 {
 	return ss
 }
 
-func (e *Engine) killExistingLiquidityOrders(party string) []*types.OrderAmendment {
+func (e *Engine) killExistingLiquidityOrders(party string) []*commandspb.OrderAmendment {
 	lm, ok := e.liquidityOrders[party]
-	amendments := make([]*types.OrderAmendment, 0, len(lm))
+	amendments := make([]*commandspb.OrderAmendment, 0, len(lm))
 	if ok {
 		for _, o := range lm {
-			amendments = append(amendments, o.AmendSize(0))
+			amendments = append(amendments, commandspb.AmendSize(o, 0))
 		}
 		e.liquidityOrders[party] = make(map[string]*types.Order)
 	}
@@ -527,7 +528,7 @@ func (e *Engine) createOrUpdateForParty(
 	midPriceBid, midPriceAsk uint64,
 	party string,
 	repriceFn RepricePeggedOrder,
-) ([]*types.Order, []*types.OrderAmendment, error) {
+) ([]*types.Order, []*commandspb.OrderAmendment, error) {
 	lp := e.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return nil, nil, nil
@@ -578,7 +579,7 @@ func (e *Engine) createOrUpdateForParty(
 
 	var (
 		needsCreateBuys, needsCreateSells []*types.Order
-		needsUpdateBuys, needsUpdateSells []*types.OrderAmendment
+		needsUpdateBuys, needsUpdateSells []*commandspb.OrderAmendment
 	)
 
 	if repriceFailure {
@@ -644,7 +645,7 @@ func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price ui
 
 func (e *Engine) undeployOrdersFromShape(
 	party string, supplied []*supplied.LiquidityOrder, side types.Side,
-) []*types.OrderAmendment {
+) []*commandspb.OrderAmendment {
 	lm, ok := e.liquidityOrders[party]
 	if !ok {
 		lm = map[string]*types.Order{}
@@ -655,7 +656,7 @@ func (e *Engine) undeployOrdersFromShape(
 	}
 
 	var (
-		amendments []*types.OrderAmendment
+		amendments []*commandspb.OrderAmendment
 		lp         = e.LiquidityProvisionByPartyID(party)
 	)
 
@@ -675,7 +676,7 @@ func (e *Engine) undeployOrdersFromShape(
 			// if not the market already took care in cleaning
 			// up everything
 			if order.Remaining != 0 {
-				amendment := order.Update(e.currentTime).AmendSize(0)
+				amendment := commandspb.AmendSize(order.Update(e.currentTime), 0)
 				// so it's cancelled via an amend
 				amendments = append(
 					amendments,
@@ -692,7 +693,7 @@ func (e *Engine) undeployOrdersFromShape(
 	return amendments
 }
 
-func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*types.OrderAmendment) {
+func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*commandspb.OrderAmendment) {
 	lm, ok := e.liquidityOrders[party]
 	if !ok {
 		lm = map[string]*types.Order{}
@@ -705,7 +706,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 
 	var (
 		newOrders  []*types.Order
-		amendments []*types.OrderAmendment
+		amendments []*commandspb.OrderAmendment
 	)
 
 	for i, o := range supplied {
@@ -724,7 +725,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			// if not the market already took care in cleaning
 			// up everything
 			if order.Remaining != 0 {
-				amendment := order.Update(e.currentTime).AmendSize(0)
+				amendment := commandspb.AmendSize(order.Update(e.currentTime), 0)
 				// so it's cancelled via an amend
 				amendments = append(
 					amendments,

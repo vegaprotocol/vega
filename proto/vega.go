@@ -29,7 +29,6 @@ func (Trade) IsEvent()                           {}
 func (Party) IsEvent()                           {}
 func (MarginLevels) IsEvent()                    {}
 func (MarketData) IsEvent()                      {}
-func (NodeSignature) IsEvent()                   {}
 func (GovernanceData) IsEvent()                  {}
 func (RiskFactor) IsEvent()                      {}
 func (Deposit) IsEvent()                         {}

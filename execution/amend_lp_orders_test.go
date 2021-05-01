@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +53,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 70000,
 		Fee:              "0.01",
@@ -83,7 +84,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpSmallerCommitment := &types.LiquidityProvisionSubmission{
+	lpSmallerCommitment := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 60000,
 		Fee:              "0.01",
@@ -174,7 +175,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpHigherCommitment := &types.LiquidityProvisionSubmission{
+	lpHigherCommitment := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 80000,
 		Fee:              "0.01",
@@ -265,7 +266,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpDifferentShapeCommitment := &types.LiquidityProvisionSubmission{
+	lpDifferentShapeCommitment := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 80000,
 		Fee:              "0.01",
@@ -360,7 +361,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// the expected stake.
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpTooSmallCommitment := &types.LiquidityProvisionSubmission{
+	lpTooSmallCommitment := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 30000, // required commitment is 50000
 		Fee:              "0.01",
@@ -387,7 +388,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// at a point where we cannot fill the bond requirement
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpTooHighCommitment := &types.LiquidityProvisionSubmission{
+	lpTooHighCommitment := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 600000000000, // required commitment is 50000
 		Fee:              "0.01",
@@ -414,7 +415,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// at a point where we cannot fill the bond requirement
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpCancelCommitment := &types.LiquidityProvisionSubmission{
+	lpCancelCommitment := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 0, // required commitment is 50000
 		Fee:              "0.01",
@@ -474,7 +475,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 70000,
 		Fee:              "0.01",
@@ -504,7 +505,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmissionCancel := &types.LiquidityProvisionSubmission{
+	lpSubmissionCancel := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 0,
 		Fee:              "0.01",
@@ -567,7 +568,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 150000,
 		Fee:              "0.01",
@@ -702,7 +703,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 150000,
 		Fee:              "0.01",
@@ -774,7 +775,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	})
 
 	// commitment is being updated during auction
-	lpSubmissionUpdate := &types.LiquidityProvisionSubmission{
+	lpSubmissionUpdate := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200000,
 		Fee:              "0.01",

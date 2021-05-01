@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
@@ -21,59 +21,68 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		},
 	}
 	switch tv := tx.(type) {
-	case *types.Proposal:
+	case *commandspb.ProposalSubmission:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
 			Proposal: &cpy,
 		}
-	case types.Proposal:
+	case commandspb.ProposalSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
 			Proposal: &tv,
 		}
-	case *types.VoteSubmission:
+	case *commandspb.VoteSubmission:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
 			VoteSubmission: &cpy,
 		}
-	case types.VoteSubmission:
+	case commandspb.VoteSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
 			VoteSubmission: &tv,
 		}
-	case *types.OrderSubmission:
+	case *commandspb.OrderSubmission:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderSubmission{
 			OrderSubmission: &cpy,
 		}
-	case types.OrderSubmission:
+	case commandspb.OrderSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderSubmission{
 			OrderSubmission: &tv,
 		}
-	case *types.OrderCancellation:
+	case *commandspb.OrderCancellation:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderCancellation{
 			OrderCancellation: &cpy,
 		}
-	case types.OrderCancellation:
+	case commandspb.OrderCancellation:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderCancellation{
 			OrderCancellation: &tv,
 		}
-	case *types.OrderAmendment:
+	case *commandspb.OrderAmendment:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderAmendment{
 			OrderAmendment: &cpy,
 		}
-	case types.OrderAmendment:
+	case commandspb.OrderAmendment:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_OrderAmendment{
 			OrderAmendment: &tv,
 		}
-	case *types.LiquidityProvisionSubmission:
+	case *commandspb.LiquidityProvisionSubmission:
 		cpy := *tv
 		evt.evt.Transaction = &eventspb.TxErrorEvent_LiquidityProvisionSubmission{
 			LiquidityProvisionSubmission: &cpy,
 		}
-	case types.LiquidityProvisionSubmission:
+	case commandspb.LiquidityProvisionSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_LiquidityProvisionSubmission{
 			LiquidityProvisionSubmission: &tv,
+		}
+	case *commandspb.WithdrawSubmission:
+		cpy := *tv
+		evt.evt.Transaction = &eventspb.TxErrorEvent_WithdrawSubmission{
+			WithdrawSubmission: &cpy,
+		}
+	case commandspb.WithdrawSubmission:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_WithdrawSubmission{
+			WithdrawSubmission: &tv,
 		}
 	}
 	return evt

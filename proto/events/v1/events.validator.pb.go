@@ -8,6 +8,7 @@ import (
 	math "math"
 
 	_ "code.vegaprotocol.io/vega/proto"
+	_ "code.vegaprotocol.io/vega/proto/commands/v1"
 	_ "code.vegaprotocol.io/vega/proto/oracles/v1"
 	proto "github.com/golang/protobuf/proto"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
@@ -61,6 +62,13 @@ func (this *TxErrorEvent) Validate() error {
 		if oneOfNester.LiquidityProvisionSubmission != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.LiquidityProvisionSubmission); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("LiquidityProvisionSubmission", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetTransaction().(*TxErrorEvent_WithdrawSubmission); ok {
+		if oneOfNester.WithdrawSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.WithdrawSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("WithdrawSubmission", err)
 			}
 		}
 	}
