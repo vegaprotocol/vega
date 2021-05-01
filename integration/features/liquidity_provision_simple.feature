@@ -36,19 +36,19 @@ Feature: Test LP orders
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | trader1          | ETH/DEC19 | buy  | 500    | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-1        |
       | trader1          | ETH/DEC19 | sell | 500    | 120   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-2        |
-    Then I see the following order events:
-      | trader           | market id | side | volume | reference | offset | price | status        |
-      | sellSideProvider | ETH/DEC19 | sell | 1000   |           | 0      | 120   | STATUS_ACTIVE |
-      | buySideProvider  | ETH/DEC19 | buy  | 1000   |           | 0      | 80    | STATUS_ACTIVE |
+    Then the orders should have the following states:
+      | trader           | market id | side | volume | price | status        |
+      | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
+      | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
     And clear order events
     Then the traders submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
       | lp1 | trader1 | ETH/DEC19 | 10000             | 0.1 | buy        | BID             | 500              | -10          |
       | lp1 | trader1 | ETH/DEC19 | 10000             | 0.1 | sell       | ASK             | 500              | 10           |
-    Then I see the LP events:
+    Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
       | lp1 | trader1 | ETH/DEC19 | 10000             | STATUS_ACTIVE |
-    Then I see the following order events:
-      | trader  | market id | side | volume | reference | offset | price | status        |
-      | trader1 | ETH/DEC19 | buy  | 450    |           | 0      | 100   | STATUS_ACTIVE |
-      | trader1 | ETH/DEC19 | sell | 308    |           | 0      | 130   | STATUS_ACTIVE |
+    Then the orders should have the following states:
+      | trader  | market id | side | volume | price | status        |
+      | trader1 | ETH/DEC19 | buy  | 450    | 100   | STATUS_ACTIVE |
+      | trader1 | ETH/DEC19 | sell | 308    | 130   | STATUS_ACTIVE |

@@ -154,6 +154,12 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the orders should have the following status:$`, func(table *gherkin.DataTable) error {
 		return steps.TheOrdersShouldHaveTheFollowingStatus(execsetup.broker, table)
 	})
+	s.Step(`^the orders should have the following states:$`, func(table *gherkin.DataTable) error {
+		return steps.TheOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
+	})
+	s.Step(`^the pegged orders should have the following states:$`, func(table *gherkin.DataTable) error {
+		return steps.ThePeggedOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
+	})
 	s.Step(`^the following orders should be rejected:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingOrdersShouldBeRejected(execsetup.broker, table)
 	})
@@ -190,11 +196,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the mark price should be "([^"]*)" for the market "([^"]*)"$`, func(rawMarkPrice, marketID string) error {
 		return steps.TheMarkPriceForTheMarketIs(execsetup.executionEngine, marketID, rawMarkPrice)
 	})
-	s.Step(`^I see the following order events:$`, func(table *gherkin.DataTable) error {
-		return steps.OrderEventsSent(execsetup.broker, table)
-	})
-	s.Step(`^I see the LP events:$`, func(table *gherkin.DataTable) error {
-		return steps.LiquidityProvisionEventsSent(execsetup.broker, table)
+	s.Step(`^the liquidity provisions should have the following states:$`, func(table *gherkin.DataTable) error {
+		return steps.TheLiquidityProvisionsShouldHaveTheFollowingStates(execsetup.broker, table)
 	})
 	s.Step(`^the target stake should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
 		return steps.TheTargetStakeShouldBeForMarket(execsetup.executionEngine, marketID, stake)

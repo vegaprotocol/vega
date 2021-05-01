@@ -190,7 +190,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy ma
 		}
 	}
 
-	// now we haveall active orders, let's build both sides
+	// now we have all active orders, let's build both sides
 	sell, buy = map[uint64]uint64{}, map[uint64]uint64{}
 	for _, v := range activeOrders {
 		if v.Side == types.Side_SIDE_BUY {
