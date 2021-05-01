@@ -102,8 +102,6 @@ type Mutation {
   Returns a pending withdrawSubmission with a transaction blob for signing.
   """
   prepareWithdrawal(
-    "The party which wants to withdraw funds"
-    partyId: ID!
     "The amount to be withdrawn"
     amount: String!
     "The asset from which we want to withdraw funds"

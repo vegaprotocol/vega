@@ -686,7 +686,7 @@ message Withdrawal {
 // Withdrawal external details
 message WithdrawExt {
   // Foreign chain specifics
-    oneof ext {
+  oneof ext {
     // ERC20 withdrawal details
     Erc20WithdrawExt erc20 = 1;
   }

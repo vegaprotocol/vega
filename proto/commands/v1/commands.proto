@@ -100,14 +100,12 @@ message LiquidityProvisionSubmission {
 
 // Represents the submission request to withdraw funds for a party on Vega
 message WithdrawSubmission {
-  // Unique party identifier for the user wanting to withdraw funds
-  string party_id = 1;
   // The amount to be withdrawn
-  uint64 amount = 2;
+  uint64 amount = 1;
   // The asset we want to withdraw
-  string asset = 3;
+  string asset = 2;
   // Foreign chain specifics
-  vega.WithdrawExt ext = 4;
+  vega.WithdrawExt ext = 3;
 }
 
 // A command to submit a new proposal for the

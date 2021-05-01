@@ -1590,7 +1590,7 @@ type myMutationResolver VegaResolverRoot
 
 func (r *myMutationResolver) PrepareWithdrawal(
 	ctx context.Context,
-	partyID, amount, asset string,
+	amount, asset string,
 	erc20Details *Erc20WithdrawalDetailsInput,
 ) (*PreparedWithdrawal, error) {
 	var ext *types.WithdrawExt
@@ -1605,10 +1605,9 @@ func (r *myMutationResolver) PrepareWithdrawal(
 
 	req := protoapi.PrepareWithdrawRequest{
 		Withdraw: &commandspb.WithdrawSubmission{
-			PartyId: partyID,
-			Asset:   asset,
-			Amount:  amountU,
-			Ext:     ext,
+			Asset:  asset,
+			Amount: amountU,
+			Ext:    ext,
 		},
 	}
 

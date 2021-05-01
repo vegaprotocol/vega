@@ -54,9 +54,6 @@ func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
 		txn.VoteCommand: &types.Vote{
 			PartyId: party,
 		},
-		txn.WithdrawCommand: &commandspb.WithdrawSubmission{
-			PartyId: party,
-		},
 		txn.ProposeCommand: &types.Proposal{
 			PartyId: party,
 		},
@@ -83,9 +80,6 @@ func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
 			PartyId: party,
 		},
 		txn.AmendOrderCommand: &commandspb.OrderAmendment{
-			PartyId: party,
-		},
-		txn.WithdrawCommand: &commandspb.WithdrawSubmission{
 			PartyId: party,
 		},
 	}
