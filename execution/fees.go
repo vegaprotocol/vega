@@ -2,8 +2,10 @@ package execution
 
 import (
 	"errors"
-	"math"
+	"math/big"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type FeeSplitter struct {
@@ -51,13 +53,15 @@ func (fs *FeeSplitter) activeWindowLength(mvw time.Duration) time.Duration {
 
 // MarketValueProxy returns the market value proxy according to the spec:
 // https://github.com/vegaprotocol/product/blob/master/specs/0042-setting-fees-and-rewarding-lps.md
-func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStake float64) float64 {
+func (fs *FeeSplitter) MarketValueProxy(mvwl time.Duration, totalStakeU64 uint64) decimal.Decimal {
+	totalStake := decimal.NewFromBigInt(new(big.Int).SetUint64(totalStakeU64), 0)
 	// t is the distance between
 	awl := fs.activeWindowLength(mvwl)
 	if awl > 0 {
-		factor := mvwl.Seconds() / awl.Seconds()
-		tv := fs.tradeValue
-		return math.Max(totalStake, factor*float64(tv))
+		factor := decimal.NewFromFloat(mvwl.Seconds()).Div(
+			decimal.NewFromFloat(awl.Seconds()))
+		tv := decimal.NewFromBigInt(new(big.Int).SetUint64(fs.tradeValue), 0)
+		return decimal.Max(totalStake, factor.Mul(tv))
 	}
 	return totalStake
 }

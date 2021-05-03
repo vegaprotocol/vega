@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/shopspring/decimal"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network
@@ -198,7 +199,7 @@ type Market struct {
 	lastMidBuyPrice  uint64
 	lastMidSellPrice uint64
 
-	lastMarketValueProxy    float64
+	lastMarketValueProxy    decimal.Decimal
 	bondPenaltyFactor       float64
 	marketValueWindowLength time.Duration
 
@@ -351,7 +352,7 @@ func NewMarket(
 		tsCalc:             tsCalc,
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
-		equityShares:       NewEquityShares(0),
+		equityShares:       NewEquityShares(decimal.Zero),
 	}
 
 	return market, nil
@@ -366,7 +367,6 @@ func appendBytes(bz ...[]byte) []byte {
 }
 
 func (m *Market) Hash() []byte {
-
 	mID := logging.String("market-id", m.GetID())
 	matchingHash := m.matching.Hash()
 	m.log.Debug("orderbook state hash", logging.Hash(matchingHash), mID)
@@ -436,7 +436,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		TargetStake:               strconv.FormatUint(uint64(math.Ceil(m.getTargetStake())), 10),
 		SuppliedStake:             strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
-		MarketValueProxy:          strconv.FormatFloat(m.lastMarketValueProxy, 'f', -1, 64),
+		MarketValueProxy:          m.lastMarketValueProxy.String(),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
 	}
 }
@@ -616,7 +616,7 @@ func (m *Market) updateMarketValueProxy() {
 	// not have a mvp of 0
 	ts := m.liquidity.ProvisionsPerParty().TotalStake()
 	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
-		m.marketValueWindowLength, float64(ts))
+		m.marketValueWindowLength, ts)
 	m.equityShares.WithMVP(m.lastMarketValueProxy)
 }
 
@@ -3184,7 +3184,7 @@ func (m *Market) cancelLiquidityProvision(
 		// now let's update the fee selection
 		m.updateLiquidityFee(ctx)
 		// and remove the party from the equity share like calculation
-		m.equityShares.SetPartyStake(party, float64(0))
+		m.equityShares.SetPartyStake(party, 0)
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 	}
@@ -3361,7 +3361,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 			// now we can update the liquidity fee to be taken
 			m.updateLiquidityFee(ctx)
 			// now we can setup our party stake to calculate equities
-			m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
+			m.equityShares.SetPartyStake(party, sub.CommitmentAmount)
 			// force update of shares so they are updated for all
 			_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 
@@ -3866,8 +3866,8 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp) []*types.LiquidityProvid
 	for k, v := range lps {
 		out = append(out, &types.LiquidityProviderFeeShare{
 			Party:                 k,
-			EquityLikeShare:       strconv.FormatFloat(v.share, 'f', -1, 64),
-			AverageEntryValuation: strconv.FormatFloat(v.avg, 'f', -1, 64),
+			EquityLikeShare:       v.share.String(),
+			AverageEntryValuation: v.avg.String(),
 		})
 	}
 

@@ -174,7 +174,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 	// now we can update the liquidity fee to be taken
 	m.updateLiquidityFee(ctx)
 	// now we can setup our party stake to calculate equities
-	m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
+	m.equityShares.SetPartyStake(party, sub.CommitmentAmount)
 	// force update of shares so they are updated for all
 	_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 
@@ -272,7 +272,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 		// now we can update the liquidity fee to be taken
 		m.updateLiquidityFee(ctx)
 		// now we can setup our party stake to calculate equities
-		m.equityShares.SetPartyStake(party, float64(sub.CommitmentAmount))
+		m.equityShares.SetPartyStake(party, sub.CommitmentAmount)
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 

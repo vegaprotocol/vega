@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -22,43 +23,43 @@ func TestEquityShares(t *testing.T) {
 // TestEquitySharesAverageEntryValuation is based on the spec example:
 // https://github.com/vegaprotocol/product/blob/02af55e048a92a204e9ee7b7ae6b4475a198c7ff/specs/0042-setting-fees-and-rewarding-lps.md#calculating-liquidity-provider-equity-like-share
 func testAverageEntryValuation(t *testing.T) {
-	es := execution.NewEquityShares(100)
+	es := execution.NewEquityShares(decimal.NewFromFloat(100.))
 
-	es.SetPartyStake("LP1", 100)
-	require.EqualValues(t, 100, es.AvgEntryValuation("LP1"))
+	es.SetPartyStake("LP1", uint64(100))
+	require.EqualValues(t, decimal.NewFromFloat(100.), es.AvgEntryValuation("LP1"))
 
-	es.SetPartyStake("LP1", 200)
-	require.EqualValues(t, 100, es.AvgEntryValuation("LP1"))
+	es.SetPartyStake("LP1", uint64(200))
+	require.True(t, decimal.NewFromFloat(100.).Equal(es.AvgEntryValuation("LP1")))
 
-	es.WithMVP(200).SetPartyStake("LP2", 200)
-	require.EqualValues(t, 200, es.AvgEntryValuation("LP2"))
-	require.EqualValues(t, 100, es.AvgEntryValuation("LP1"))
+	es.WithMVP(decimal.NewFromFloat(200.)).SetPartyStake("LP2", uint64(200))
+	require.True(t, decimal.NewFromFloat(200.).Equal(es.AvgEntryValuation("LP2")))
+	require.True(t, decimal.NewFromFloat(100.).Equal(es.AvgEntryValuation("LP1")))
 
-	es.WithMVP(400).SetPartyStake("LP1", 300)
-	require.EqualValues(t, 120, es.AvgEntryValuation("LP1"))
+	es.WithMVP(decimal.NewFromFloat(400.)).SetPartyStake("LP1", uint64(300))
+	require.True(t, decimal.NewFromFloat(120.).Equal(es.AvgEntryValuation("LP1")))
 
-	es.SetPartyStake("LP1", 1)
-	require.EqualValues(t, 120, es.AvgEntryValuation("LP1"))
-	require.EqualValues(t, 200, es.AvgEntryValuation("LP2"))
+	es.SetPartyStake("LP1", uint64(1))
+	require.True(t, decimal.NewFromFloat(120.).Equal(es.AvgEntryValuation("LP1")))
+	require.True(t, decimal.NewFromFloat(200.).Equal(es.AvgEntryValuation("LP2")))
 }
 
 func testShares(t *testing.T) {
 	var (
-		oneSixth    = 1.0 / 6
-		oneThird    = 1.0 / 3
-		oneFourth   = 1.0 / 4
-		threeFourth = 3.0 / 4
-		twoThirds   = 2.0 / 3
-		half        = 1.0 / 2
+		oneSixth    = decimal.NewFromFloat(1.0).Div(decimal.NewFromFloat(6.))
+		oneThird    = decimal.NewFromFloat(1.0).Div(decimal.NewFromFloat(3.))
+		oneFourth   = decimal.NewFromFloat(1.0).Div(decimal.NewFromFloat(4.))
+		threeFourth = decimal.NewFromFloat(3.0).Div(decimal.NewFromFloat(4.))
+		twoThirds   = decimal.NewFromFloat(2.0).Div(decimal.NewFromFloat(3.))
+		half        = decimal.NewFromFloat(1.0).Div(decimal.NewFromFloat(2.))
 	)
 
-	es := execution.NewEquityShares(100)
+	es := execution.NewEquityShares(decimal.NewFromFloat(100.))
 
 	// Set LP1
 	es.SetPartyStake("LP1", 100)
 	t.Run("LP1", func(t *testing.T) {
 		s := es.Shares(map[string]struct{}{})
-		assert.Equal(t, 1.0, s["LP1"])
+		assert.True(t, decimal.NewFromFloat(1.0).Equal(s["LP1"]))
 	})
 
 	// Set LP2
@@ -69,7 +70,7 @@ func testShares(t *testing.T) {
 
 		assert.Equal(t, oneThird, lp1)
 		assert.Equal(t, twoThirds, lp2)
-		assert.Equal(t, 1.0, lp1+lp2)
+		assert.True(t, decimal.NewFromFloat(1.0).Equal(lp1.Add(lp2)))
 	})
 
 	// Set LP3
@@ -82,7 +83,7 @@ func testShares(t *testing.T) {
 		assert.Equal(t, oneSixth, lp1)
 		assert.Equal(t, oneThird, lp2)
 		assert.Equal(t, half, lp3)
-		assert.Equal(t, 1.0, lp1+lp2+lp3)
+		assert.True(t, decimal.NewFromFloat(1.0).Equal(lp1.Add(lp2).Add(lp3)))
 	})
 
 	// LP2 is undeployed
@@ -97,7 +98,7 @@ func testShares(t *testing.T) {
 		assert.Equal(t, oneFourth, lp1)
 		// assert.Equal(t, oneThird, lp2)
 		assert.Equal(t, threeFourth, lp3)
-		assert.Equal(t, 1.0, lp1+lp3)
+		assert.True(t, decimal.NewFromFloat(1.0).Equal(lp1.Add(lp3)))
 	})
 }
 

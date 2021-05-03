@@ -2,46 +2,50 @@ package execution
 
 import (
 	"fmt"
+	"math/big"
+
+	"github.com/shopspring/decimal"
 )
 
 // lp holds LiquidityProvider stake and avg values
 type lp struct {
-	stake float64
-	share float64
-	avg   float64
+	stake decimal.Decimal
+	share decimal.Decimal
+	avg   decimal.Decimal
 }
 
 // EquityShares module controls the Equity sharing algorithm described on the spec:
 // https://github.com/vegaprotocol/product/blob/02af55e048a92a204e9ee7b7ae6b4475a198c7ff/specs/0042-setting-fees-and-rewarding-lps.md#calculating-liquidity-provider-equity-like-share
 type EquityShares struct {
 	// mvp is the MarketValueProxy
-	mvp float64
+	mvp decimal.Decimal
 
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
 }
 
-func NewEquityShares(mvp float64) *EquityShares {
+func NewEquityShares(mvp decimal.Decimal) *EquityShares {
 	return &EquityShares{
 		mvp: mvp,
 		lps: map[string]*lp{},
 	}
 }
 
-func (es *EquityShares) WithMVP(mvp float64) *EquityShares {
+func (es *EquityShares) WithMVP(mvp decimal.Decimal) *EquityShares {
 	es.mvp = mvp
 	return es
 }
 
 // SetPartyStake sets LP values for a given party.
-func (es *EquityShares) SetPartyStake(id string, newStake float64) {
+func (es *EquityShares) SetPartyStake(id string, newStakeU64 uint64) {
+	newStake := decimal.NewFromBigInt(new(big.Int).SetUint64(newStakeU64), 0)
 	v, found := es.lps[id]
 	// first time we set the newStake and mvp as avg.
 	if !found {
-		if newStake > 0 {
+		if newStake.GreaterThan(decimal.Zero) {
 			// if marketValueProxy == 0
 			// we assume mvp will be our stake?
-			if es.mvp == 0 {
+			if es.mvp.Equal(decimal.Zero) {
 				es.mvp = newStake
 			}
 			es.lps[id] = &lp{stake: newStake, avg: es.mvp}
@@ -51,33 +55,34 @@ func (es *EquityShares) SetPartyStake(id string, newStake float64) {
 		return
 	}
 
-	if newStake <= 0 {
+	if newStake.Equal(decimal.Zero) {
 		// We are removing an existing stake
 		delete(es.lps, id)
 		return
 	}
 
-	if newStake <= v.stake {
+	if newStake.LessThanOrEqual(v.stake) {
 		v.stake = newStake
 		return
 	}
 
 	// delta will allways be > 0 at this point
-	delta := newStake - v.stake
+	delta := newStake.Sub(v.stake)
 	eq := es.mustEquity(id)
-	v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
+	// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
+	v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
 	v.stake = newStake
 }
 
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
-func (es *EquityShares) AvgEntryValuation(id string) float64 {
+func (es *EquityShares) AvgEntryValuation(id string) decimal.Decimal {
 	if v, ok := es.lps[id]; ok {
 		return v.avg
 	}
-	return 0
+	return decimal.Zero
 }
 
-func (es *EquityShares) mustEquity(party string) float64 {
+func (es *EquityShares) mustEquity(party string) decimal.Decimal {
 	eq, err := es.equity(party)
 	if err != nil {
 		panic(err)
@@ -90,20 +95,20 @@ func (es *EquityShares) mustEquity(party string) float64 {
 // given a party id (i).
 //
 // Returns an error if the party has no stake.
-func (es *EquityShares) equity(id string) (float64, error) {
+func (es *EquityShares) equity(id string) (decimal.Decimal, error) {
 	if v, ok := es.lps[id]; ok {
-		return (v.stake * es.mvp) / v.avg, nil
+		return (v.stake.Mul(es.mvp)).Div(v.avg), nil
 	}
 
-	return 0, fmt.Errorf("party %s has no stake", id)
+	return decimal.Zero, fmt.Errorf("party %s has no stake", id)
 }
 
 // Shares returns the ratio of equity for a given party
-func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]float64 {
+func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]decimal.Decimal {
 	// Calculate the equity for each party and the totalEquity (the sum of all
 	// the equities)
-	var totalEquity float64
-	shares := map[string]float64{}
+	var totalEquity decimal.Decimal
+	shares := map[string]decimal.Decimal{}
 	for id := range es.lps {
 		// if the party is not one of the deployed parties,
 		// we just skip
@@ -118,11 +123,11 @@ func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]float6
 			panic(err)
 		}
 		shares[id] = eq
-		totalEquity += eq
+		totalEquity = totalEquity.Add(eq)
 	}
 
 	for id, eq := range shares {
-		eqshare := eq / totalEquity
+		eqshare := eq.Div(totalEquity)
 		shares[id] = eqshare
 		es.lps[id].share = eqshare
 	}

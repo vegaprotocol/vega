@@ -5655,9 +5655,9 @@ func TestAverageEntryValuation(t *testing.T) {
 		found bool
 		value string
 	}{
-		lpparty:  {value: "0.5454545454545454"},
+		lpparty:  {value: "0.5454545454545455"},
 		lpparty2: {value: "0.2727272727272727"},
-		lpparty3: {value: "0.18181818181818182"},
+		lpparty3: {value: "0.1818181818181818"},
 	}
 
 	for _, v := range marketData.LiquidityProviderFeeShare {
