@@ -4,39 +4,40 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFeeSplitter(t *testing.T) {
 	var (
-		totalStake              float64 = 100
-		timeWindowStart                 = time.Now()
-		marketValueWindowLength         = 1 * time.Minute
+		totalStake              uint64 = 100
+		timeWindowStart                = time.Now()
+		marketValueWindowLength        = 1 * time.Minute
 	)
 
 	tests := []struct {
 		currentTime        time.Time
 		tradedValue        uint64
-		expectedValueProxy float64
+		expectedValueProxy decimal.Decimal
 	}{
 		{
 			currentTime:        timeWindowStart,
-			expectedValueProxy: 100,
+			expectedValueProxy: decimal.NewFromFloat(100.),
 		},
 		{
 			tradedValue:        10,
 			currentTime:        timeWindowStart.Add(10 * time.Second),
-			expectedValueProxy: 100,
+			expectedValueProxy: decimal.NewFromFloat(100.),
 		},
 		{
 			tradedValue:        100,
 			currentTime:        timeWindowStart.Add(30 * time.Second),
-			expectedValueProxy: 200,
+			expectedValueProxy: decimal.NewFromFloat(200.),
 		},
 		{
 			tradedValue:        300,
 			currentTime:        timeWindowStart.Add(3 * marketValueWindowLength),
-			expectedValueProxy: 300,
+			expectedValueProxy: decimal.NewFromFloat(300.),
 		},
 	}
 
@@ -50,7 +51,7 @@ func TestFeeSplitter(t *testing.T) {
 			fs.AddTradeValue(test.tradedValue)
 
 			got := fs.MarketValueProxy(marketValueWindowLength, totalStake)
-			require.Equal(t, test.expectedValueProxy, got)
+			require.True(t, test.expectedValueProxy.Equal(got))
 		})
 	}
 }

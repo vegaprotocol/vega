@@ -35,6 +35,7 @@ require (
 	github.com/pseudomuto/protoc-gen-doc v1.3.2 // indirect
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/afero v1.1.2
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/tendermint v0.33.8
