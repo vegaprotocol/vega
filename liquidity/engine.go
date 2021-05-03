@@ -427,14 +427,13 @@ func (e *Engine) CreateInitialOrders(
 	party string,
 	orders []*types.Order,
 	repriceFn RepricePeggedOrder,
-) ([]*types.Order, *ToCancel, error) {
+) ([]*types.Order, error) {
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
-	kills := e.killExistingLiquidityOrders(party)
 	// ignoring amends as there won't be any since we kill all the orders first
 	creates, _, err := e.createOrUpdateForParty(ctx,
 		midPriceBid, midPriceAsk, party, repriceFn)
-	return creates, kills, err
+	return creates, err
 }
 
 // Update gets the order changes.
@@ -513,22 +512,6 @@ func (e *Engine) CalculateSuppliedStake() uint64 {
 		ss += v.CommitmentAmount
 	}
 	return ss
-}
-
-func (e *Engine) killExistingLiquidityOrders(party string) *ToCancel {
-	lm, ok := e.liquidityOrders[party]
-	toCancel := &ToCancel{
-		Party:    party,
-		OrderIDs: make([]string, 0, len(lm)),
-	}
-
-	if ok {
-		for _, o := range lm {
-			toCancel.OrderIDs = append(toCancel.OrderIDs, o.Id)
-		}
-		e.liquidityOrders[party] = make(map[string]*types.Order)
-	}
-	return toCancel
 }
 
 func (e *Engine) createOrUpdateForParty(
