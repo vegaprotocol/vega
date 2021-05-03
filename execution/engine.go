@@ -424,7 +424,10 @@ func (e *Engine) removeMarket(mktID string) {
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
 func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.OrderSubmission, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+	timer := metrics.NewTimeCounter(orderSubmission.MarketId, "execution", "SubmitOrder")
+
 	defer func() {
+		timer.EngineTimeCounterAdd()
 		e.notifyFailureOnError(ctx, returnedErr, orderSubmission, party)
 	}()
 
@@ -432,24 +435,10 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	timer := metrics.NewTimeCounter(orderSubmission.MarketId, "execution", "SubmitOrder")
-
 	order := orderSubmission.IntoOrder(party)
 
 	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {
-		// FIXME(jeremy) We shouldn't define an ID on a failed submission order
-		//   but this is a dirty fix for storage purpose. We'll improve this
-		//   later on.
-		e.idgen.SetID(order)
-
-		// adding rejected order to the buf
-		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
-		evt := events.NewOrderEvent(ctx, order)
-		e.broker.Send(evt)
-
-		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -459,7 +448,6 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 
 	conf, err := mkt.SubmitOrder(ctx, order)
 	if err != nil {
-		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 
@@ -467,7 +455,6 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 		metrics.OrderGaugeAdd(-1, order.MarketId)
 	}
 
-	timer.EngineTimeCounterAdd()
 	return conf, nil
 }
 
