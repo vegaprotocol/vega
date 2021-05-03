@@ -427,7 +427,7 @@ func (e *Engine) CreateInitialOrders(
 	party string,
 	orders []*types.Order,
 	repriceFn RepricePeggedOrder,
-) ([]*types.Order, []*commandspb.OrderAmendment, error) {
+) ([]*types.Order, *ToCancel, error) {
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
 	kills := e.killExistingLiquidityOrders(party)
@@ -444,10 +444,10 @@ func (e *Engine) Update(
 	midPriceBid, midPriceAsk uint64,
 	repriceFn RepricePeggedOrder,
 	orders []*types.Order,
-) ([]*types.Order, []*commandspb.OrderAmendment, error) {
+) ([]*types.Order, []*ToCancel, error) {
 	var (
 		newOrders        []*types.Order
-		amendments       []*commandspb.OrderAmendment
+		toCancel         []*ToCancel
 		updatedLPParties []string
 	)
 
@@ -460,13 +460,15 @@ func (e *Engine) Update(
 		// update our internal orders
 		e.updatePartyOrders(po.Party, po.Orders)
 
-		creates, updates, err := e.createOrUpdateForParty(ctx, midPriceBid, midPriceAsk, po.Party, repriceFn)
+		creates, cancels, err := e.createOrUpdateForParty(ctx, midPriceBid, midPriceAsk, po.Party, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		newOrders = append(newOrders, creates...)
-		amendments = append(amendments, updates...)
+		if !cancels.Empty() {
+			toCancel = append(toCancel, cancels)
+		}
 	}
 
 	if e.undeployedProvisions {
@@ -476,13 +478,15 @@ func (e *Engine) Update(
 		for _, lp := range e.provisions.slice() {
 			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED ||
 				lp.Status == types.LiquidityProvision_STATUS_PENDING {
-				creates, updates, err := e.createOrUpdateForParty(ctx, midPriceBid, midPriceAsk, lp.PartyId, repriceFn)
+				creates, cancels, err := e.createOrUpdateForParty(ctx, midPriceBid, midPriceAsk, lp.PartyId, repriceFn)
 				if err != nil {
 					return nil, nil, err
 				}
 				updatedLPParties = append(updatedLPParties, lp.PartyId)
 				newOrders = append(newOrders, creates...)
-				amendments = append(amendments, updates...)
+				if !cancels.Empty() {
+					toCancel = append(toCancel, cancels)
+				}
 				stillUndeployed = stillUndeployed ||
 					(lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED ||
 						lp.Status == types.LiquidityProvision_STATUS_PENDING)
@@ -499,7 +503,7 @@ func (e *Engine) Update(
 	}
 	e.broker.SendBatch(evts)
 
-	return newOrders, amendments, nil
+	return newOrders, toCancel, nil
 }
 
 // CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers
@@ -511,16 +515,20 @@ func (e *Engine) CalculateSuppliedStake() uint64 {
 	return ss
 }
 
-func (e *Engine) killExistingLiquidityOrders(party string) []*commandspb.OrderAmendment {
+func (e *Engine) killExistingLiquidityOrders(party string) *ToCancel {
 	lm, ok := e.liquidityOrders[party]
-	amendments := make([]*commandspb.OrderAmendment, 0, len(lm))
+	toCancel := &ToCancel{
+		Party:    party,
+		OrderIDs: make([]string, 0, len(lm)),
+	}
+
 	if ok {
 		for _, o := range lm {
-			amendments = append(amendments, commandspb.AmendSize(o, 0))
+			toCancel.OrderIDs = append(toCancel.OrderIDs, o.Id)
 		}
 		e.liquidityOrders[party] = make(map[string]*types.Order)
 	}
-	return amendments
+	return toCancel
 }
 
 func (e *Engine) createOrUpdateForParty(
@@ -528,7 +536,7 @@ func (e *Engine) createOrUpdateForParty(
 	midPriceBid, midPriceAsk uint64,
 	party string,
 	repriceFn RepricePeggedOrder,
-) ([]*types.Order, []*commandspb.OrderAmendment, error) {
+) ([]*types.Order, *ToCancel, error) {
 	lp := e.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return nil, nil, nil
@@ -579,7 +587,7 @@ func (e *Engine) createOrUpdateForParty(
 
 	var (
 		needsCreateBuys, needsCreateSells []*types.Order
-		needsUpdateBuys, needsUpdateSells []*commandspb.OrderAmendment
+		needsUpdateBuys, needsUpdateSells *ToCancel
 	)
 
 	if repriceFailure {
@@ -622,7 +630,7 @@ func (e *Engine) createOrUpdateForParty(
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 
 	return append(needsCreateBuys, needsCreateSells...),
-		append(needsUpdateBuys, needsUpdateSells...),
+		needsUpdateBuys.Merge(needsUpdateSells),
 		nil
 }
 
@@ -645,7 +653,7 @@ func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price ui
 
 func (e *Engine) undeployOrdersFromShape(
 	party string, supplied []*supplied.LiquidityOrder, side types.Side,
-) []*commandspb.OrderAmendment {
+) *ToCancel {
 	lm, ok := e.liquidityOrders[party]
 	if !ok {
 		lm = map[string]*types.Order{}
@@ -656,8 +664,10 @@ func (e *Engine) undeployOrdersFromShape(
 	}
 
 	var (
-		amendments []*commandspb.OrderAmendment
-		lp         = e.LiquidityProvisionByPartyID(party)
+		toCancel = &ToCancel{
+			Party: party,
+		}
+		lp = e.LiquidityProvisionByPartyID(party)
 	)
 
 	for i, o := range supplied {
@@ -676,13 +686,7 @@ func (e *Engine) undeployOrdersFromShape(
 			// if not the market already took care in cleaning
 			// up everything
 			if order.Remaining != 0 {
-				amendment := commandspb.AmendSize(order.Update(e.currentTime), 0)
-				// so it's cancelled via an amend
-				amendments = append(
-					amendments,
-					// we amend the order size, to be 0
-					amendment,
-				)
+				toCancel.Add(order.Id)
 			}
 
 			// then we can delete the order from our mapping
@@ -690,10 +694,12 @@ func (e *Engine) undeployOrdersFromShape(
 		}
 	}
 
-	return amendments
+	return toCancel
 }
 
-func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.LiquidityOrder, side types.Side) ([]*types.Order, []*commandspb.OrderAmendment) {
+func (e *Engine) createOrdersFromShape(
+	party string, supplied []*supplied.LiquidityOrder, side types.Side,
+) ([]*types.Order, *ToCancel) {
 	lm, ok := e.liquidityOrders[party]
 	if !ok {
 		lm = map[string]*types.Order{}
@@ -705,8 +711,10 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 	lp := e.LiquidityProvisionByPartyID(party)
 
 	var (
-		newOrders  []*types.Order
-		amendments []*commandspb.OrderAmendment
+		newOrders []*types.Order
+		toCancel  = &ToCancel{
+			Party: party,
+		}
 	)
 
 	for i, o := range supplied {
@@ -725,13 +733,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 			// if not the market already took care in cleaning
 			// up everything
 			if order.Remaining != 0 {
-				amendment := commandspb.AmendSize(order.Update(e.currentTime), 0)
-				// so it's cancelled via an amend
-				amendments = append(
-					amendments,
-					// we amend the order size, to be 0
-					amendment,
-				)
+				toCancel.Add(order.Id)
 			}
 
 			// then we can delete the order from our mapping
@@ -766,7 +768,7 @@ func (e *Engine) createOrdersFromShape(party string, supplied []*supplied.Liquid
 		ref.OrderId = order.Id
 	}
 
-	return newOrders, amendments
+	return newOrders, toCancel
 }
 
 func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) error {

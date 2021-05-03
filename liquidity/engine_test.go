@@ -421,20 +421,16 @@ func TestUpdate(t *testing.T) {
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	newOrders, amendments, err := tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
+	newOrders, toCancels, err := tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
-	require.Len(t, amendments, 3)
-	for i, amend := range amendments {
-		assert.Zero(t, creates[i].Size+uint64(amend.SizeDelta),
-			"Size should be cancelled (== 0)  by the amendment",
-		)
-	}
+	require.Len(t, toCancels[0].OrderIDs, 3)
+	require.Equal(t, toCancels[0].Party, party)
 
-	newOrders, amendments, err = tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
+	newOrders, toCancels, err = tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
-	require.Len(t, amendments, 0)
+	require.Len(t, toCancels, 0)
 }
 func TestCalculateSuppliedStake(t *testing.T) {
 	var (
