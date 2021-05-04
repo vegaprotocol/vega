@@ -110,11 +110,6 @@ func testSubmissionCRUD(t *testing.T) {
 		Buys: buyShape, Sells: sellShape,
 	}
 
-	lps3 := &commandspb.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 000, Fee: "0.5",
-		Buys: buyShape, Sells: sellShape,
-	}
-
 	expected := &types.LiquidityProvision{
 		Id:               "some-id-1",
 		MarketId:         tng.marketID,
@@ -132,10 +127,9 @@ func testSubmissionCRUD(t *testing.T) {
 			{LiquidityOrder: sellShape[0], OrderId: "liquidity-order-2"},
 		},
 	}
-
 	// Create a submission should fire an event
 	tng.broker.EXPECT().Send(
-		eq(t, events.NewLiquidityProvisionEvent(ctx, expected)),
+		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps1, party, "some-id-1"),
@@ -143,17 +137,13 @@ func testSubmissionCRUD(t *testing.T) {
 	got := tng.engine.LiquidityProvisionByPartyID(party)
 	require.Equal(t, expected, got)
 
-	// Submit with 0 CommitmentAmount amount should remove the LP and CANCEL it
-	// via event
-	expected.CommitmentAmount = 0
 	expected.Status = types.LiquidityProvision_STATUS_CANCELLED
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps3, party, "some-id-3"),
-	)
+	_, err := tng.engine.CancelLiquidityProvision(ctx, party)
+	require.NoError(t, err)
 	require.Nil(t, tng.engine.LiquidityProvisionByPartyID(party),
 		"Party '%s' should not be a LiquidityProvider after Committing 0 amount", party)
 }
@@ -219,35 +209,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	)
 	defer tng.ctrl.Finish()
 
-	lps := &commandspb.LiquidityProvisionSubmission{
-		MarketId:         tng.marketID,
-		CommitmentAmount: 0,
-		Buys: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
-				Offset:     -1,
-				Proportion: 1,
-			},
-		},
-		Sells: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
-				Offset:     1,
-				Proportion: 1,
-			},
-		},
-	}
-	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		Id:        "some-id",
-		MarketId:  tng.marketID,
-		PartyId:   party,
-		CreatedAt: now.UnixNano(),
-		Status:    types.LiquidityProvision_STATUS_REJECTED,
-	})
-
-	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
-	err := tng.engine.SubmitLiquidityProvision(ctx,
-		lps, party, "some-id")
+	_, err := tng.engine.CancelLiquidityProvision(ctx, party)
 	require.Error(t, err)
 }
 
@@ -414,7 +376,7 @@ func TestUpdate(t *testing.T) {
 		{Id: "2", PartyId: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
-	creates, _, err := tng.engine.CreateInitialOrders(ctx, markPrice, markPrice, party, orders, fn)
+	creates, err := tng.engine.CreateInitialOrders(ctx, markPrice, markPrice, party, orders, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 
@@ -497,12 +459,10 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
 
-	lp1.CommitmentAmount -= 100
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1"),
-	)
+	_, err := tng.engine.CancelLiquidityProvision(ctx, party1)
+	require.NoError(t, err)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
-	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
+	require.Equal(t, lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
 }
 
 type idGenStub struct {

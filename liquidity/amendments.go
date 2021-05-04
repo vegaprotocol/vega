@@ -26,7 +26,7 @@ func (e *Engine) CanAmend(
 	}
 
 	// is the new submission valid?
-	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
+	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
 		return err
 	}
 
@@ -88,7 +88,7 @@ func (e *Engine) GetPotentialShapeOrders(
 	lps *commandspb.LiquidityProvisionSubmission,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
-	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
+	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
 		return nil, err
 	}
 
