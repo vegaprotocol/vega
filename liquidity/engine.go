@@ -16,8 +16,10 @@ import (
 )
 
 var (
-	ErrLiquidityProvisionDoesNotExist = errors.New("liquidity provision does not exist")
-	ErrEmptyShape                     = errors.New("liquidity provision contains an empty shape")
+	ErrLiquidityProvisionDoesNotExist  = errors.New("liquidity provision does not exist")
+	ErrLiquidityProvisionAlreadyExists = errors.New("liquidity provision already exists")
+	ErrCommitmentAmountIsZero          = errors.New("commitment amount is zero")
+	ErrEmptyShape                      = errors.New("liquidity provision contains an empty shape")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
@@ -232,12 +234,19 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 	return e.provisions
 }
 
-func (e *Engine) ValidateLiquidityProvisionSubmission(lp *commandspb.LiquidityProvisionSubmission) (err error) {
+func (e *Engine) ValidateLiquidityProvisionSubmission(
+	lp *commandspb.LiquidityProvisionSubmission,
+	zeroCommitmentIsValid bool,
+) (err error) {
 	// we check if the commitment is 0 which would mean this is a cancel
 	// a cancel does not need validations
 	if lp.CommitmentAmount == 0 {
-		return nil
+		if zeroCommitmentIsValid {
+			return nil
+		}
+		return ErrCommitmentAmountIsZero
 	}
+
 	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee < 0 || len(lp.Fee) <= 0 || fee > e.maxFee {
 		return errors.New("invalid liquidity provision fee")
 	}
@@ -285,26 +294,18 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *co
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *commandspb.LiquidityProvisionSubmission, party, id string) error {
-	if err := e.ValidateLiquidityProvisionSubmission(lps); err != nil {
+	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
 		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
 		return err
 	}
 
+	if lp := e.LiquidityProvisionByPartyID(party); lp != nil {
+		return ErrLiquidityProvisionAlreadyExists
+	}
+
 	var (
-		lp  = e.LiquidityProvisionByPartyID(party)
 		now = e.currentTime.UnixNano()
-	)
-
-	// regardless of the final operation (create,update or delete) we finish
-	// sending an event.
-	defer func() {
-		evt := events.NewLiquidityProvisionEvent(ctx, lp)
-		e.broker.Send(evt)
-	}()
-
-	newLp := lp == nil
-	if newLp {
-		lp = &types.LiquidityProvision{
+		lp  = &types.LiquidityProvision{
 			Id:        id,
 			MarketId:  lps.MarketId,
 			PartyId:   party,
@@ -313,32 +314,18 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *commandspb.L
 			Status:    types.LiquidityProvision_STATUS_REJECTED,
 			Reference: lps.Reference,
 		}
-	}
+	)
 
-	if len(lps.Buys) == 0 || len(lps.Sells) == 0 {
-		return ErrEmptyShape
-	}
+	// regardless of the final operation (create,update or delete) we finish
+	// sending an event.
+	defer func() {
+		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+	}()
 
-	// We are trying to delete the provision
-	if lps.CommitmentAmount == 0 {
-		// Reject a delete attempt for a non existing LP.
-		if newLp {
-			return ErrLiquidityProvisionDoesNotExist
-		}
-		// Cancel the request
-		lp.Status = types.LiquidityProvision_STATUS_CANCELLED
-		lp.CommitmentAmount = 0
-		delete(e.provisions, party)
-		return nil
-	}
-
-	if newLp {
-		e.provisions[party] = lp
-		e.orders[party] = map[string]*types.Order{}
-		e.liquidityOrders[party] = map[string]*types.Order{}
-		e.pendings[party] = struct{}{}
-	}
-
+	e.provisions[party] = lp
+	e.orders[party] = map[string]*types.Order{}
+	e.liquidityOrders[party] = map[string]*types.Order{}
+	e.pendings[party] = struct{}{}
 	lp.UpdatedAt = now
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvision_STATUS_PENDING

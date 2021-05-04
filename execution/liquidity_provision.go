@@ -32,7 +32,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.L
 		needsBondRollback bool
 	)
 
-	if err := m.liquidity.ValidateLiquidityProvisionSubmission(sub); err != nil {
+	if err := m.liquidity.ValidateLiquidityProvisionSubmission(sub, true); err != nil {
 		return err
 	}
 
