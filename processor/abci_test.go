@@ -81,7 +81,6 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
 		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
-			PartyId: party,
 		},
 		txn.ProposeCommand: &types.Proposal{
 			PartyId: party,
@@ -105,7 +104,7 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
 	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
 
-	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{
+	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), party).Times(1).Return(&types.OrderConfirmation{
 		Order: &types.Order{},
 	}, nil)
 	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)

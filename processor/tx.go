@@ -119,6 +119,7 @@ func (t *Tx) Validate() error {
 	}
 
 	pubkey := hex.EncodeToString(t.PubKey())
+	// TODO Remove this verification once all party ID are removed from commands
 	// Verify party ID on those types who have it.
 	if t, ok := cmd.(interface{ GetPartyId() string }); ok {
 		if t.GetPartyId() != pubkey {

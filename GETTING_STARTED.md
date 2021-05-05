@@ -90,7 +90,6 @@ git clone git@github.com:vegaprotocol/vega.git
 cd vega
 git status # On branch develop, Your branch is up to date with 'origin/develop'.
 
-make gettools_build # get the build tools
 make deps # get the source dependencies
 make install # build the binaries and put them in $GOPATH/bin
 

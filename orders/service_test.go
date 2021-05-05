@@ -21,9 +21,7 @@ import (
 var (
 	orderSubmission = commandspb.OrderSubmission{
 		Type:        types.Order_TYPE_LIMIT,
-		Id:          "order_id",
 		MarketId:    "market_id",
-		PartyId:     "party",
 		Price:       10000,
 		Size:        1,
 		Side:        types.Side(1),
@@ -175,9 +173,7 @@ func testPrepareCancelOrderSuccess(t *testing.T) {
 
 func testGetByOrderIDDefaultVersion(t *testing.T) {
 	order := &types.Order{
-		Id:          orderSubmission.Id,
 		MarketId:    orderSubmission.MarketId,
-		PartyId:     orderSubmission.PartyId,
 		Side:        orderSubmission.Side,
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,
@@ -199,9 +195,7 @@ func testGetByOrderIDDefaultVersion(t *testing.T) {
 
 func testGetByOrderIDFirstVersion(t *testing.T) {
 	order := &types.Order{
-		Id:          orderSubmission.Id,
 		MarketId:    orderSubmission.MarketId,
-		PartyId:     orderSubmission.PartyId,
 		Side:        orderSubmission.Side,
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,

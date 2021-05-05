@@ -1663,10 +1663,10 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
+func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market string, price *string, size string, side Side,
 	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrderInput) (*PreparedSubmitOrder, error) {
 
-	order := &commandspb.OrderSubmission{}
+	orderSubmission := &commandspb.OrderSubmission{}
 
 	var (
 		p   uint64
@@ -1680,28 +1680,24 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 			return nil, err
 		}
 	}
-	order.Price = p
+	orderSubmission.Price = p
 	s, err := safeStringUint64(size)
 	if err != nil {
 		return nil, err
 	}
-	order.Size = s
+	orderSubmission.Size = s
 	if len(market) <= 0 {
 		return nil, errors.New("market missing or empty")
 	}
-	order.MarketId = market
-	if len(party) <= 0 {
-		return nil, errors.New("party missing or empty")
-	}
+	orderSubmission.MarketId = market
 
-	order.PartyId = party
-	if order.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
+	if orderSubmission.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
 		return nil, err
 	}
-	if order.Side, err = convertSideToProto(side); err != nil {
+	if orderSubmission.Side, err = convertSideToProto(side); err != nil {
 		return nil, err
 	}
-	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
+	if orderSubmission.Type, err = convertOrderTypeToProto(ty); err != nil {
 		return nil, err
 	}
 
@@ -1714,12 +1710,12 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		if err != nil {
 			return nil, err
 		}
-		order.PeggedOrder = &types.PeggedOrder{Reference: pegreference,
+		orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: pegreference,
 			Offset: offset}
 	}
 
 	// GTT must have an expiration value
-	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
+	if orderSubmission.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
 		var expiresAt time.Time
 		expiresAt, err = vegatime.Parse(*expiration)
 		if err != nil {
@@ -1727,14 +1723,14 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		}
 
 		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
+		orderSubmission.ExpiresAt = expiresAt.UnixNano()
 	}
 	if reference != nil {
-		order.Reference = *reference
+		orderSubmission.Reference = *reference
 	}
 
 	req := protoapi.PrepareSubmitOrderRequest{
-		Submission: order,
+		Submission: orderSubmission,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)

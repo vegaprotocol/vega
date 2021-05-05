@@ -414,7 +414,7 @@ type ComplexityRoot struct {
 		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, reference *string) int
 		PrepareOrderAmend         func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) int
 		PrepareOrderCancel        func(childComplexity int, id *string, marketID *string) int
-		PrepareOrderSubmit        func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
+		PrepareOrderSubmit        func(childComplexity int, marketID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
 		PrepareVote               func(childComplexity int, value VoteValue, partyID string, proposalID string) int
 		PrepareWithdrawal         func(childComplexity int, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
@@ -988,7 +988,7 @@ type MarketTimestampsResolver interface {
 	Close(ctx context.Context, obj *proto.MarketTimestamps) (*string, error)
 }
 type MutationResolver interface {
-	PrepareOrderSubmit(ctx context.Context, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) (*PreparedSubmitOrder, error)
+	PrepareOrderSubmit(ctx context.Context, marketID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) (*PreparedSubmitOrder, error)
 	PrepareOrderCancel(ctx context.Context, id *string, marketID *string) (*PreparedCancelOrder, error)
 	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
@@ -2666,7 +2666,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrderInput)), true
+		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrderInput)), true
 
 	case "Mutation.prepareProposal":
 		if e.complexity.Mutation.PrepareProposal == nil {
@@ -4794,8 +4794,6 @@ type Mutation {
   prepareOrderSubmit(
     "ID of the market to place the order"
     marketId: ID!
-    "ID of the party placing the order"
-    partyId: ID!
     "Price of the asset"
     price: String
     "Size of the order"
@@ -7910,78 +7908,70 @@ func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.C
 		}
 	}
 	args["marketId"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
-	var arg2 *string
+	var arg1 *string
 	if tmp, ok := rawArgs["price"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["price"] = arg2
-	var arg3 string
+	args["price"] = arg1
+	var arg2 string
 	if tmp, ok := rawArgs["size"]; ok {
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["size"] = arg3
-	var arg4 Side
+	args["size"] = arg2
+	var arg3 Side
 	if tmp, ok := rawArgs["side"]; ok {
-		arg4, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
+		arg3, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["side"] = arg4
-	var arg5 OrderTimeInForce
+	args["side"] = arg3
+	var arg4 OrderTimeInForce
 	if tmp, ok := rawArgs["timeInForce"]; ok {
-		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
+		arg4, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["timeInForce"] = arg5
-	var arg6 *string
+	args["timeInForce"] = arg4
+	var arg5 *string
 	if tmp, ok := rawArgs["expiration"]; ok {
-		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["expiration"] = arg6
-	var arg7 OrderType
+	args["expiration"] = arg5
+	var arg6 OrderType
 	if tmp, ok := rawArgs["type"]; ok {
-		arg7, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
+		arg6, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg7
-	var arg8 *string
+	args["type"] = arg6
+	var arg7 *string
 	if tmp, ok := rawArgs["reference"]; ok {
-		arg8, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg7, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["reference"] = arg8
-	var arg9 *PeggedOrderInput
+	args["reference"] = arg7
+	var arg8 *PeggedOrderInput
 	if tmp, ok := rawArgs["peggedOrder"]; ok {
-		arg9, err = ec.unmarshalOPeggedOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx, tmp)
+		arg8, err = ec.unmarshalOPeggedOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["peggedOrder"] = arg9
+	args["peggedOrder"] = arg8
 	return args, nil
 }
 
@@ -15590,7 +15580,7 @@ func (ec *executionContext) _Mutation_prepareOrderSubmit(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrderInput))
+		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrderInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

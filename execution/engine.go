@@ -423,24 +423,22 @@ func (e *Engine) removeMarket(mktID string) {
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.OrderSubmission, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+	timer := metrics.NewTimeCounter(orderSubmission.MarketId, "execution", "SubmitOrder")
+
+	defer func() {
+		timer.EngineTimeCounterAdd()
+		e.notifyFailureOnError(ctx, returnedErr, orderSubmission, party)
+	}()
+
 	if e.log.IsDebug() {
-		e.log.Debug("submit order", logging.Order(*order))
+		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	timer := metrics.NewTimeCounter(order.MarketId, "execution", "SubmitOrder")
+	order := orderSubmission.IntoOrder(party)
 
-	mkt, ok := e.markets[order.MarketId]
+	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {
-		e.idgen.SetID(order)
-
-		// adding rejected order to the buf
-		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
-		evt := events.NewOrderEvent(ctx, order)
-		e.broker.Send(evt)
-
-		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -450,7 +448,6 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	conf, err := mkt.SubmitOrder(ctx, order)
 	if err != nil {
-		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 
@@ -458,7 +455,6 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		metrics.OrderGaugeAdd(-1, order.MarketId)
 	}
 
-	timer.EngineTimeCounterAdd()
 	return conf, nil
 }
 
@@ -466,7 +462,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment) (confirmation *types.OrderConfirmation, returnedErr error) {
 	defer func() {
-		e.notifyFailureOnError(ctx, returnedErr, orderAmendment.PartyId, orderAmendment)
+		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, orderAmendment.PartyId)
 	}()
 
 	if e.log.IsDebug() {
@@ -899,7 +895,7 @@ func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Contex
 	return nil
 }
 
-func (e *Engine) notifyFailureOnError(ctx context.Context, err error, partyID string, tx interface{}) {
+func (e *Engine) notifyFailureOnError(ctx context.Context, err error, tx interface{}, partyID string) {
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, partyID, tx))
 	}

@@ -15,8 +15,6 @@ type Mutation {
   prepareOrderSubmit(
     "ID of the market to place the order"
     marketId: ID!
-    "ID of the party placing the order"
-    partyId: ID!
     "Price of the asset"
     price: String
     "Size of the order"

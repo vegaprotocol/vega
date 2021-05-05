@@ -29,9 +29,7 @@ race: ## Run data race detector
 
 .PHONY: mocks
 mocks: ## Make mocks
-	@[ -d vendor ] && mv vendor vendor.tmp
-	@go generate ./...
-	@[ -d vendor.tmp ] && mv vendor.tmp vendor
+	@./script/build.sh -a mocks
 
 .PHONY: msan
 msan: ## Run memory sanitizer
@@ -124,10 +122,6 @@ print_check: ## Check for fmt.Print functions in Go code
 	count="$$(wc -l <"$$f")" && \
 	rm -f "$$f" && \
 	if test "$$count" -gt 0 ; then exit 1 ; fi
-
-.PHONY: gettools_build
-gettools_build:
-	@./script/gettools.sh build
 
 .PHONY: gettools_develop
 gettools_develop:

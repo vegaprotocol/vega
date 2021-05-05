@@ -10,35 +10,31 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 
 // An order submission is a request to submit or create a new order on Vega
 message OrderSubmission {
-  // Unique identifier for the order (set by the system after consensus)
-  string id = 1 [(validator.field) = {string_not_empty: false}];
   // Market identifier for the order, required field
-  string market_id = 2 [(validator.field) = {string_not_empty: true}];
-  // Party identifier for the order, required field
-  string party_id = 3 [(validator.field) = {string_not_empty: true}];
+  string market_id = 1 [(validator.field) = {string_not_empty: true}];
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places,
   // , required field for limit orders, however it is not required for market orders
-  uint64 price = 4;
+  uint64 price = 2;
   // Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
-  uint64 size = 5 [(validator.field) = {int_gt: 0}];
+  uint64 size = 3 [(validator.field) = {int_gt: 0}];
   // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field - See [`Side`](#vega.Side)
-  vega.Side side = 6;
+  vega.Side side = 4;
   // Time in force indicates how long an order will remain active before it is executed or expires, required field
   // - See [`Order.TimeInForce`](#vega.Order.TimeInForce)
-  vega.Order.TimeInForce time_in_force = 7;
+  vega.Order.TimeInForce time_in_force = 5;
   // Timestamp for when the order will expire, in nanoseconds since the epoch,
   // required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  int64 expires_at = 8;
+  int64 expires_at = 6;
   // Type for the order, required field - See [`Order.Type`](#vega.Order.Type)
-  vega.Order.Type type = 9;
+  vega.Order.Type type = 7;
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
   // set internally by the node to return a unique reference identifier for the order submission
-  string reference = 10;
+  string reference = 8;
   // Used to specify the details for a pegged order
   // - See [`PeggedOrder`](#vega.PeggedOrder)
-  vega.PeggedOrder pegged_order = 11;
+  vega.PeggedOrder pegged_order = 9;
 }
 
 // An order cancellation is a request to cancel an existing order on Vega
