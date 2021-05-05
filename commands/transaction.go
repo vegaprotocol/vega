@@ -90,6 +90,9 @@ func checkInputData(inputData []byte) Errors {
 			errs.Merge(checkVoteSubmission(cmd.VoteSubmission))
 		case *commandspb.InputData_WithdrawSubmission:
 			errs.Merge(checkWithdrawSubmission(cmd.WithdrawSubmission))
+		case *commandspb.InputData_LiquidityProvisionSubmission:
+			errs.Merge(checkLiquidityProvisionSubmission(
+				cmd.LiquidityProvisionSubmission))
 		default:
 			errs.AddForProperty("input_data.command", ErrIsNotSupported)
 		}
