@@ -25,6 +25,7 @@ message InputData {
     WithdrawSubmission withdraw_submission = 1004;
     ProposalSubmission proposal_submission = 1005;
     VoteSubmission vote_submission = 1006;
+    LiquidityProvisionSubmission liquidity_provision_submission = 1007;
     // validator commands
     NodeRegistration node_registration = 2001;
     NodeVote node_vote = 2002;
