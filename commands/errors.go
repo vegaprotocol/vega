@@ -2,21 +2,63 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"sort"
+	"strings"
 )
 
-type Errors []error
+var (
+	ErrIsRequired     = errors.New("is required")
+	ErrMustBePositive = errors.New("must be positive")
+	ErrIsNotValid     = errors.New("is not a valid value")
+	ErrIsNotSupported = errors.New("is not supported")
+)
+
+type Errors map[string]error
+
+func NewErrors() Errors {
+	return Errors{}
+}
 
 func (e Errors) Error() string {
 	if len(e) <= 0 {
 		return ""
 	}
 
-	out := e[0].Error()
-	for _, err := range e[1:] {
-		out = fmt.Sprintf("%v, %v", out, err.Error())
+	messages := []string{}
+	for prop, err := range e {
+		messages = append(messages, fmt.Sprintf("%v(%v)", prop, err.Error()))
 	}
-	return out
+	sort.Strings(messages)
+	return strings.Join(messages, ", ")
+}
+
+func (e Errors) Empty() bool {
+	return len(e) == 0
+}
+
+// AddForProperty adds an error for a given property.
+func (e Errors) AddForProperty(prop string, err error) {
+	e[prop] = err
+}
+
+// Add adds a general error that is not related to a specific property.
+func (e Errors) Add(err error) {
+	e.AddForProperty("*", err)
+}
+
+// FinalAdd behaves like Add, but is meant to be called in a "return" statement.
+// This helper is usually used for terminal errors.
+func (e Errors) FinalAdd(err error) Errors {
+	e.Add(err)
+	return e
+}
+
+func (e Errors) Merge(oth Errors) {
+	for prop, err := range oth {
+		e.AddForProperty(prop, err)
+	}
 }
 
 func (e Errors) ErrorOrNil() error {
@@ -27,9 +69,9 @@ func (e Errors) ErrorOrNil() error {
 }
 
 func (e Errors) MarshalJSON() ([]byte, error) {
-	out := []string{}
-	for _, v := range e {
-		out = append(out, v.Error())
+	out := map[string]string{}
+	for k, v := range e {
+		out[k] = v.Error()
 	}
 	return json.Marshal(out)
 }
