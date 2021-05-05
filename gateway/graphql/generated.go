@@ -4802,7 +4802,7 @@ type Mutation {
     side: Side!
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    "exiration of the the order"
+    "expiration of the the order"
     expiration: String
     "type of the order"
     type: OrderType!
