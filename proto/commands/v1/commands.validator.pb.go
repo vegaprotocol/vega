@@ -40,9 +40,6 @@ func (this *OrderAmendment) Validate() error {
 	if this.OrderId == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("OrderId", fmt.Errorf(`value '%v' must not be an empty string`, this.OrderId))
 	}
-	if this.PartyId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
-	}
 	if this.Price != nil {
 		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Price); err != nil {
 			return github_com_mwitkow_go_proto_validators.FieldError("Price", err)

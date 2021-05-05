@@ -387,7 +387,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, order)
+	msg, err := app.exec.AmendOrder(ctx, order, tx.Party())
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err

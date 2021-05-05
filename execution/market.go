@@ -2246,16 +2246,16 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 }
 
 // AmendOrder amend an existing order from the order book
-func (m *Market) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment, party string) (*types.OrderConfirmation, error) {
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
 
 	// explicitly/directly ordering an LP commitment order is not allowed
-	if m.liquidity.IsLiquidityOrder(orderAmendment.PartyId, orderAmendment.OrderId) {
+	if m.liquidity.IsLiquidityOrder(party, orderAmendment.OrderId) {
 		return nil, types.ErrEditNotAllowed
 	}
-	conf, err := m.amendOrder(ctx, orderAmendment)
+	conf, err := m.amendOrder(ctx, orderAmendment, party)
 	if err != nil {
 		return nil, err
 	}
@@ -2267,7 +2267,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 	return conf, nil
 }
 
-func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment) (cnf *types.OrderConfirmation, returnedErr error) {
+func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment, party string) (cnf *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2282,20 +2282,20 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Invalid order ID",
-				logging.String("id", orderAmendment.GetOrderId()),
-				logging.String("party", orderAmendment.GetPartyId()),
-				logging.String("market", orderAmendment.GetMarketId()),
+				logging.OrderID(orderAmendment.GetOrderId()),
+				logging.PartyID(party),
+				logging.MarketID(orderAmendment.GetMarketId()),
 				logging.Error(err))
 		}
 		return nil, types.ErrInvalidOrderID
 	}
 
 	// We can only amend this order if we created it
-	if existingOrder.PartyId != orderAmendment.PartyId {
+	if existingOrder.PartyId != party {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Invalid party ID",
 				logging.String("original party id:", existingOrder.PartyId),
-				logging.String("amend party id:", orderAmendment.PartyId))
+				logging.PartyID(party))
 		}
 		return nil, types.ErrInvalidPartyID
 	}
@@ -2304,7 +2304,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 	if existingOrder.MarketId != m.mkt.Id {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Market ID mismatch",
-				logging.String("market-id", m.mkt.Id),
+				logging.MarketID(m.mkt.Id),
 				logging.Order(*existingOrder))
 		}
 		return nil, types.ErrInvalidMarketID

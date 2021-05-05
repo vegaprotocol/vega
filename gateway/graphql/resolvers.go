@@ -1834,7 +1834,7 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string,
+func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id, price, size string,
 	expiration *string, tif OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
 	order := &commandspb.OrderAmendment{}
 
@@ -1843,20 +1843,16 @@ func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, p
 		return nil, errors.New("id missing or empty")
 	}
 	order.OrderId = id
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-	order.PartyId = party
 
 	var err error
-	pricevalue, err := strconv.ParseUint(price, 10, 64)
+	priceValue, err := strconv.ParseUint(price, 10, 64)
 	if err != nil {
 		if r.log.GetLevel() == logging.DebugLevel {
 			r.log.Debug("unable to convert price from string in order amend", logging.Error(err))
 		}
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
-	order.Price = &types.Price{Value: pricevalue}
+	order.Price = &types.Price{Value: priceValue}
 
 	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {

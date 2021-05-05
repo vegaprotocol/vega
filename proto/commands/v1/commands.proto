@@ -51,31 +51,29 @@ message OrderAmendment {
 
   // Order identifier, this is required to find the order and will not be updated, required field
   string order_id = 1 [(validator.field) = {string_not_empty : true}];
-  // Party identifier, this is required to find the order and will not be updated, required field
-  string party_id = 2 [(validator.field) = {string_not_empty: true}];
   // Market identifier, this is required to find the order and will not be updated
-  string market_id = 3;
+  string market_id = 2;
 
   // All fields below can be altered by this command:
 
   // Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)
-  vega.Price price = 4;
+  vega.Price price = 3;
   // Amend the size for the order by the delta specified:
   // - To reduce the size from the current value set a negative integer value
   // - To increase the size from the current value, set a positive integer value
   // - To leave the size unchanged set a value of zero
-  int64 size_delta = 5;
+  int64 size_delta = 4;
   // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  vega.Timestamp expires_at = 6;
+  vega.Timestamp expires_at = 5;
   // Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
   // - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
-  vega.Order.TimeInForce time_in_force = 7;
+  vega.Order.TimeInForce time_in_force = 6;
   // Amend the pegged order offset for the order
-  google.protobuf.Int64Value pegged_offset = 8;
+  google.protobuf.Int64Value pegged_offset = 7;
   // Amend the pegged order reference for the order
   // - See [`PeggedReference`](#vega.PeggedReference)
-  vega.PeggedReference pegged_reference = 9;
+  vega.PeggedReference pegged_reference = 8;
 }
 
 // A liquidity provision submitted for a given market

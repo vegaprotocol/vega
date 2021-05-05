@@ -32,14 +32,13 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	// now we edit the order t make it GTC so it should not expire
 	amendment := &commandspb.OrderAmendment{
 		OrderId:     o1.Id,
-		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		ExpiresAt: &types.Timestamp{
 			Value: now.Add(10 * time.Second).UnixNano(),
 		},
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa")
 	require.NotNil(t, amendConf)
 	require.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, amendConf.Order.Status)
@@ -48,14 +47,13 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	// now we edit the order t make it GTC so it should not expire
 	amendment2 := &commandspb.OrderAmendment{
 		OrderId:     o1.Id,
-		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 		ExpiresAt: &types.Timestamp{
 			Value: now.Add(20 * time.Second).UnixNano(),
 		},
 	}
 
-	amendConf2, err := tm.market.AmendOrder(ctx, amendment2)
+	amendConf2, err := tm.market.AmendOrder(ctx, amendment2, "aaa")
 	require.NotNil(t, amendConf2)
 	require.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, amendConf2.Order.Status)
@@ -64,11 +62,10 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	// now we edit the order t make it GTC so it should not expire
 	amendment3 := &commandspb.OrderAmendment{
 		OrderId:     o1.Id,
-		PartyId:     "aaa",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
 
-	amendConf3, err := tm.market.AmendOrder(ctx, amendment3)
+	amendConf3, err := tm.market.AmendOrder(ctx, amendment3, "aaa")
 	require.NotNil(t, amendConf3)
 	require.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, amendConf3.Order.Status)

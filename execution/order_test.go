@@ -53,32 +53,31 @@ func TestOrderBufferOutputCount(t *testing.T) {
 
 	amend := &commandspb.OrderAmendment{
 		MarketId: tm.market.GetID(),
-		PartyId:  party1,
 		OrderId:  orderAmend.Id,
 	}
 
 	// Amend price down (generates one order message)
 	amend.Price = &types.Price{Value: orderBuy.Price - 1}
-	amendConf, err := tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err := tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend price up (generates one order message)
 	amend.Price = &types.Price{Value: orderBuy.Price + 1}
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend size down (generates one order message)
 	amend.Price = nil
 	amend.SizeDelta = -1
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend size up (generates one order message)
 	amend.SizeDelta = +1
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -86,26 +85,26 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	amend.SizeDelta = 0
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend TIME_IN_FORCE -> GTC (generates one order message)
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTC
 	amend.ExpiresAt = nil
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend ExpiresAt (generates two order messages)
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 200000000000}
-	amendConf, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 }
@@ -143,22 +142,20 @@ func TestAmendCancelResubmit(t *testing.T) {
 
 	amend := &commandspb.OrderAmendment{
 		OrderId:  orderID,
-		PartyId:  confirmation.GetOrder().GetPartyId(),
 		MarketId: confirmation.GetOrder().GetMarketId(),
 		Price:    &types.Price{Value: 101},
 	}
-	amended, err := tm.market.AmendOrder(context.TODO(), amend)
+	amended, err := tm.market.AmendOrder(context.TODO(), amend, confirmation.GetOrder().GetPartyId())
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
 	amend = &commandspb.OrderAmendment{
 		OrderId:   orderID,
-		PartyId:   confirmation.GetOrder().GetPartyId(),
 		MarketId:  confirmation.GetOrder().GetMarketId(),
 		Price:     &types.Price{Value: 101},
 		SizeDelta: 1,
 	}
-	amended, err = tm.market.AmendOrder(context.TODO(), amend)
+	amended, err = tm.market.AmendOrder(context.TODO(), amend, confirmation.GetOrder().GetPartyId())
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 }
@@ -320,12 +317,11 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 
 	amend := &commandspb.OrderAmendment{
 		OrderId:     buyConfirmation.GetOrder().GetId(),
-		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		ExpiresAt:   &types.Timestamp{Value: 10000000010},
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 	}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend, party1)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -417,11 +413,10 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 
 	amend := &commandspb.OrderAmendment{
 		OrderId:  buyConfirmation.GetOrder().GetId(),
-		PartyId:  party1,
 		MarketId: tm.market.GetID(),
 		Price:    &types.Price{Value: 20},
 	}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend, party1)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -462,11 +457,10 @@ func TestAmendWrongPartyID(t *testing.T) {
 	// Send an amend but use the wrong partyID
 	amend := &commandspb.OrderAmendment{
 		OrderId:  confirmation.GetOrder().GetId(),
-		PartyId:  party2,
 		MarketId: confirmation.GetOrder().GetMarketId(),
 		Price:    &types.Price{Value: 101},
 	}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend, party2)
 	assert.Nil(t, amended)
 	assert.Error(t, err, types.ErrInvalidPartyID)
 }
@@ -572,12 +566,10 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	assert.Equal(t, confirmation.Order.Remaining, uint64(15))
 }
 
-func getAmend(market string, party string, orderID string, sizeDelta int64, price uint64,
-	tif types.Order_TimeInForce, expiresAt int64) *commandspb.OrderAmendment {
+func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif types.Order_TimeInForce, expiresAt int64) *commandspb.OrderAmendment {
 
 	amend := &commandspb.OrderAmendment{
 		OrderId:     orderID,
-		PartyId:     party,
 		MarketId:    market,
 		SizeDelta:   sizeDelta,
 		TimeInForce: tif,
@@ -596,9 +588,9 @@ func getAmend(market string, party string, orderID string, sizeDelta int64, pric
 
 func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
 	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
-	amend := getAmend(tm.market.GetID(), party, orderID, sizeDelta, price, tif, expiresAt)
+	amend := getAmend(tm.market.GetID(), orderID, sizeDelta, price, tif, expiresAt)
 
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend, party)
 	if pass {
 		assert.NotNil(t, amended)
 		assert.NoError(t, err)
@@ -2010,9 +2002,9 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend offset so we can reprice
-	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -5}
-	amended, err := tm.market.AmendOrder(ctx, amend)
+	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
 	assert.Equal(t, int64(-5), amended.Order.PeggedOrder.Offset)
 	assert.NoError(t, err)
@@ -2051,9 +2043,9 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend offset so we can reprice
-	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -15}
-	amended, err := tm.market.AmendOrder(ctx, amend)
+	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
 	assert.Equal(t, int64(-15), amended.Order.PeggedOrder.Offset)
 	assert.NoError(t, err)
@@ -2087,9 +2079,9 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -15}
-	amended, err := tm.market.AmendOrder(ctx, amend)
+	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -2127,9 +2119,9 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -5}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -2179,9 +2171,9 @@ func testPeggedOrderAmendReference(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -2219,9 +2211,9 @@ func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -2259,11 +2251,11 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: 20000000000}
-	amended, err := tm.market.AmendOrder(ctx, amend)
+	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
@@ -2316,11 +2308,11 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), "party1", confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
 	amend.ExpiresAt = &types.Timestamp{Value: 20000000000}
-	amended, err := tm.market.AmendOrder(context.Background(), amend)
+	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 

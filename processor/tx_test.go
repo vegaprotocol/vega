@@ -2,12 +2,10 @@ package processor_test
 
 import (
 	"bytes"
-	"encoding/hex"
 	"testing"
 
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -38,56 +36,6 @@ func txEncode(t *testing.T, cmd txn.Command, msg proto.Message) *types.Transacti
 }
 
 type TxTestSuite struct {
-}
-
-func (s *TxTestSuite) testValidateCommandSuccess(t *testing.T) {
-	key := []byte("party-id")
-	party := hex.EncodeToString(key)
-	msgs := map[txn.Command]proto.Message{
-		txn.AmendOrderCommand: &commandspb.OrderAmendment{
-			PartyId: party,
-		},
-		txn.VoteCommand: &types.Vote{
-			PartyId: party,
-		},
-		txn.ProposeCommand: &types.Proposal{
-			PartyId: party,
-		},
-	}
-
-	for cmd, msg := range msgs {
-		// Build the Tx
-		rawTx := txEncode(t, cmd, msg)
-		rawTx.From = &types.Transaction_PubKey{
-			PubKey: key,
-		}
-		tx, err := processor.NewTx(rawTx, []byte{})
-		require.NoError(t, err)
-
-		require.NoError(t, tx.Validate())
-	}
-}
-
-func (s *TxTestSuite) testValidateCommandsFail(t *testing.T) {
-	key := []byte("party-id")
-	party := hex.EncodeToString([]byte("another-party"))
-	msgs := map[txn.Command]proto.Message{
-		txn.AmendOrderCommand: &commandspb.OrderAmendment{
-			PartyId: party,
-		},
-	}
-
-	for cmd, msg := range msgs {
-		// Build the Tx
-		rawTx := txEncode(t, cmd, msg)
-		rawTx.From = &types.Transaction_PubKey{
-			PubKey: key,
-		}
-		tx, err := processor.NewTx(rawTx, []byte{})
-		require.NoError(t, err)
-
-		require.Error(t, tx.Validate())
-	}
 }
 
 func (s *TxTestSuite) testValidateSignedInvalidPayload(t *testing.T) {
@@ -121,7 +69,5 @@ func (s *TxTestSuite) testValidateSignedInvalidPayload(t *testing.T) {
 func TestTxValidation(t *testing.T) {
 	s := &TxTestSuite{}
 
-	t.Run("Test all signed commands basic - success", s.testValidateCommandSuccess)
-	t.Run("Test all signed commands basic - failure", s.testValidateCommandsFail)
 	t.Run("Test validate signed invalid payload", s.testValidateSignedInvalidPayload)
 }

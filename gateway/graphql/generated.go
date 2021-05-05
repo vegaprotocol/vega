@@ -412,7 +412,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, reference *string) int
-		PrepareOrderAmend         func(childComplexity int, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) int
+		PrepareOrderAmend         func(childComplexity int, id string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) int
 		PrepareOrderCancel        func(childComplexity int, id *string, marketID *string) int
 		PrepareOrderSubmit        func(childComplexity int, marketID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
 		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
@@ -990,7 +990,7 @@ type MarketTimestampsResolver interface {
 type MutationResolver interface {
 	PrepareOrderSubmit(ctx context.Context, marketID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) (*PreparedSubmitOrder, error)
 	PrepareOrderCancel(ctx context.Context, id *string, marketID *string) (*PreparedCancelOrder, error)
-	PrepareOrderAmend(ctx context.Context, id string, partyID string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
+	PrepareOrderAmend(ctx context.Context, id string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
 	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
 	PrepareVote(ctx context.Context, value VoteValue, partyID string, proposalID string) (*PreparedVote, error)
 	PrepareWithdrawal(ctx context.Context, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
@@ -2642,7 +2642,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(*PeggedReference), args["peggedOffset"].(*string)), true
+		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(*PeggedReference), args["peggedOffset"].(*string)), true
 
 	case "Mutation.prepareOrderCancel":
 		if e.complexity.Mutation.PrepareOrderCancel == nil {
@@ -4830,8 +4830,6 @@ type Mutation {
   prepareOrderAmend(
     "ID of the order to amend"
     id: ID!
-    "ID of the party which created the order"
-    partyId: ID!
     "New price for this order"
     price: String!
     "New size for this order"
@@ -7817,61 +7815,53 @@ func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Co
 	}
 	args["id"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+	if tmp, ok := rawArgs["price"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyId"] = arg1
+	args["price"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["price"]; ok {
+	if tmp, ok := rawArgs["sizeDelta"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["price"] = arg2
-	var arg3 string
-	if tmp, ok := rawArgs["sizeDelta"]; ok {
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sizeDelta"] = arg3
-	var arg4 *string
+	args["sizeDelta"] = arg2
+	var arg3 *string
 	if tmp, ok := rawArgs["expiration"]; ok {
-		arg4, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["expiration"] = arg4
-	var arg5 OrderTimeInForce
+	args["expiration"] = arg3
+	var arg4 OrderTimeInForce
 	if tmp, ok := rawArgs["timeInForce"]; ok {
-		arg5, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
+		arg4, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["timeInForce"] = arg5
-	var arg6 *PeggedReference
+	args["timeInForce"] = arg4
+	var arg5 *PeggedReference
 	if tmp, ok := rawArgs["peggedReference"]; ok {
-		arg6, err = ec.unmarshalOPeggedReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, tmp)
+		arg5, err = ec.unmarshalOPeggedReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["peggedReference"] = arg6
-	var arg7 *string
+	args["peggedReference"] = arg5
+	var arg6 *string
 	if tmp, ok := rawArgs["peggedOffset"]; ok {
-		arg7, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["peggedOffset"] = arg7
+	args["peggedOffset"] = arg6
 	return args, nil
 }
 
@@ -15662,7 +15652,7 @@ func (ec *executionContext) _Mutation_prepareOrderAmend(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["partyId"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(*PeggedReference), args["peggedOffset"].(*string))
+		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(*PeggedReference), args["peggedOffset"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

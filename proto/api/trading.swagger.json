@@ -2752,10 +2752,6 @@
           "type": "string",
           "title": "Order identifier, this is required to find the order and will not be updated, required field"
         },
-        "party_id": {
-          "type": "string",
-          "title": "Party identifier, this is required to find the order and will not be updated, required field"
-        },
         "market_id": {
           "type": "string",
           "title": "Market identifier, this is required to find the order and will not be updated"
