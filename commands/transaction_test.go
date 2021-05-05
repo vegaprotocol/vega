@@ -10,10 +10,10 @@ import (
 )
 
 func TestCheckTransaction(t *testing.T) {
-	t.Run("check empty transaction", testEmptyTransaction)
+	t.Run("Empty transaction should fail", testEmptyTransactionShouldFail)
 }
 
-func testEmptyTransaction(t *testing.T) {
+func testEmptyTransactionShouldFail(t *testing.T) {
 	err := commands.CheckTransaction(&commandspb.Transaction{})
-	assert.EqualError(t, err, "tx.input_data is required, tx.signature is required, tx.from is required")
+	assert.EqualError(t, err, "tx.from(is required), tx.input_data(is required), tx.signature(is required)")
 }
