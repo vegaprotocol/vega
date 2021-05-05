@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package vega.commands.v1;
+option go_package = "code.vegaprotocol.io/vega/proto/commands/v1";
+
+import "commands/v1/commands.proto";
+import "commands/v1/validator_commands.proto";
+import "commands/v1/oracles.proto";
+
+message InputData {
+  // A random number used to provided uniqueness and prevents
+  // against replay attack.
+  uint64 nonce = 1;
+
+  // The block height associated to the transaction.
+  // This should always be current height of the node at the time of sending the Tx.
+  // BlockHeight is used as a mechanism for replay protection.
+  uint64 blockHeight = 2;
+
+  oneof command {
+    // user commands
+    OrderSubmission orderSubmission = 1001;
+    OrderCancellation orderCancellation = 1002;
+    OrderAmendment orderAmendment = 1003;
+    WithdrawSubmission withdrawSubmission = 1004;
+    ProposalSubmission proposalSubmission = 1005;
+    VoteSubmission voteSubmission = 1006;
+    // validator commands
+    NodeRegistration nodeRegistration = 2001;
+    NodeVote nodeVote = 2002;
+    NodeSignature nodeSignature = 2003;
+    ChainEvent chainEvent = 2004;
+    // Oracles
+    OracleDataSubmission oracleDataSubmission = 3001;
+  }
+}
+
+// Represents a transaction to be sent to Vega.
+message Transaction {
+  // One of the set of Vega commands (proto marshalled).
+  bytes inputData = 1;
+
+  // The signature of the inputData
+  Signature signature = 2;
+
+  // The sender of the transaction.
+  // Any of the following would be valid:
+  oneof from {
+    // The address of the sender.
+    bytes address = 1001;
+    // The public key of the sender.
+    bytes pubKey = 1002;
+  }
+
+  // A version of the transaction, to be used
+  // in the future in case we want to implement
+  // changes to the Transaction format
+  uint32 version = 2000;
+}
+
+// A signature to be authenticate a transaction
+// and to be verified by the vega network
+message Signature {
+  // The bytes of the signature
+  bytes bytes = 1;
+  // The algorithm used to create the signature
+  string algo = 2;
+  // The version of the signature used to create the signature
+  uint32 version = 3;
+}
