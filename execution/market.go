@@ -3039,6 +3039,10 @@ func (m *Market) getSuppliedStake() uint64 {
 	return m.liquidity.CalculateSuppliedStake()
 }
 
+func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context, f float64) {
+	m.liquidity.OnMinProbabilityOfTradingLPOrdersUpdate(f)
+}
+
 func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, v float64) {
 	m.bondPenaltyFactor = v
 }
@@ -3180,6 +3184,10 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 		ctx, bestBidPrice, bestAskPrice, m.repriceFuncW, orders)
 	if err != nil {
 		return err
+	}
+
+	for _, v := range newOrders {
+		fmt.Printf("%#v\n", v)
 	}
 
 	timer.EngineTimeCounterAdd()

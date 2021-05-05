@@ -1012,7 +1012,7 @@ func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
 	tm.StartOpeningAuction().
 		// the liquidity provider
-		WithAccountAndAmount(lpparty, 300000).
+		WithAccountAndAmount(lpparty, 200000).
 		WithAccountAndAmount(party1, 1000000000).
 		WithAccountAndAmount(party0, 1000000000)
 
@@ -1570,17 +1570,17 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 		}
 
 		expect := map[string]uint64{
-			"V0000000000-0000000001": 214,
-			"V0000000000-0000000002": 3,
-			"V0000000000-0000000003": 3,
-			"V0000000000-0000000004": 5,
-			"V0000000000-0000000005": 197,
+			"V0000000000-0000000001": 112,
+			"V0000000000-0000000002": 2,
+			"V0000000000-0000000003": 2,
+			"V0000000000-0000000004": 3,
+			"V0000000000-0000000005": 105,
 		}
 
 		for id, v := range found {
 			size, ok := expect[id]
 			assert.True(t, ok, "unexpected order id")
-			assert.Equal(t, v.Size, size)
+			assert.Equal(t, v.Size, size, id)
 		}
 	})
 
@@ -2406,19 +2406,24 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 	t.Run("lp submission is active", func(t *testing.T) {
 		// First collect all the orders events
 		found := types.LiquidityProvision{}
+		var ord *types.Order
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
+			case *events.Order:
+				ord = evt.Order()
 			}
 		}
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_ACTIVE.String())
+		// no update to the liquidity fee
+		assert.Equal(t, 15, int(ord.Size))
 	})
 
 	// then we'll submit an order which would expire
 	// we submit the order at the price of the LP shape generated order
-	expiringOrder := getMarketOrder(tm, auctionEnd, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "GTT-1", types.Side_SIDE_BUY, lpparty, 500, 890)
+	expiringOrder := getMarketOrder(tm, auctionEnd, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "GTT-1", types.Side_SIDE_BUY, lpparty, 10, 890)
 	expiringOrder.ExpiresAt = auctionEnd.Add(10 * time.Second).UnixNano()
 
 	tm.events = nil
@@ -2440,8 +2445,8 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 		assert.Len(t, found, 2)
 
 		expected := map[string]uint64{
-			"V0000000000-0000000001": 6,
-			"V0000000000-0000000007": 500,
+			"V0000000000-0000000001": 9,
+			"V0000000000-0000000007": 10,
 		}
 
 		// no ensure that the orders in the map matches the size we have
@@ -2473,7 +2478,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 			size   uint64
 			status types.Order_Status
 		}{
-			"V0000000000-0000000001": {506, types.Order_STATUS_ACTIVE},
+			"V0000000000-0000000001": {19, types.Order_STATUS_ACTIVE},
 			// no event sent for expired orders
 			// this is done by the excution engine, we may want to do
 			// that from the market someday

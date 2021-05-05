@@ -15,6 +15,11 @@ var (
 	ErrNoValidOrders = errors.New("no valid orders to cover the liquidity obligation with")
 )
 
+const (
+	defaultInRangeProbabilityOfTrading = .5
+	defaultMinimumProbabilityOfTrading = 1e-8
+)
+
 // LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book
 type LiquidityOrder struct {
 	OrderID string
@@ -45,6 +50,7 @@ type Engine struct {
 
 	horizon                        float64 // projection horizon used in probability calculations
 	probabilityOfTradingTauScaling float64
+	minProbabilityOfTrading        float64
 
 	cachedMin float64
 	cachedMax float64
@@ -60,9 +66,14 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 
 		horizon:                        riskModel.GetProjectionHorizon(),
 		probabilityOfTradingTauScaling: 1, // this is the same as the default in the netparams
+		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
 		bCache:                         map[uint64]float64{},
 		sCache:                         map[uint64]float64{},
 	}
+}
+
+func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v float64) {
+	e.minProbabilityOfTrading = v
 }
 
 func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v float64) {
@@ -93,11 +104,13 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(
 		bestBidPrice, bestAskPrice, orders, minPrice, maxPrice)
 
+	fmt.Printf("buy obligation(%v), supplied(%v)\n", liquidityObligation, buySupplied)
 	buyRemaining := liquidityObligation - buySupplied
 	if err := e.updateSizes(buyRemaining, bestBidPrice, bestAskPrice, buyShapes, true, minPrice, maxPrice); err != nil {
 		return err
 	}
 
+	fmt.Printf("sell obligation(%v), supplied(%v)\n", liquidityObligation, sellSupplied)
 	sellRemaining := liquidityObligation - sellSupplied
 	if err := e.updateSizes(sellRemaining, bestBidPrice, bestAskPrice, sellShapes, false, minPrice, maxPrice); err != nil {
 		return err
@@ -153,7 +166,6 @@ func (e *Engine) updateSizes(
 		probs = append(probs, prob)
 
 	}
-	fmt.Printf("sum(%f)\n", sum)
 	if sum == 0 {
 		return ErrNoValidOrders
 	}
@@ -180,20 +192,11 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 		e.cachedMin, e.cachedMax = minPrice, maxPrice
 	}
 
-	cache := e.sCache
-	if isBid {
-		cache = e.bCache
-	}
-
-	defer func() {
-		fmt.Printf("prob(%f), bestBid(%d), bestAsk(%d) orderPrice(%d)\n", f, bestBidPrice, bestAskPrice, orderPrice)
-	}()
-
 	// Any part of shape that's pegged between or equal to
 	// best_static_bid and best_static_ask
 	// has probability of trading = 1.
 	if orderPrice >= bestBidPrice && orderPrice <= bestAskPrice {
-		return 1
+		return defaultInRangeProbabilityOfTrading
 	}
 
 	// Any part of shape that the peg puts at lower price
@@ -207,13 +210,36 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 		currentPrice = bestBidPrice
 	}
 
-	if _, ok := cache[orderPrice]; !ok {
-		tauScaled := e.horizon * e.probabilityOfTradingTauScaling
-		prob := e.rm.ProbabilityOfTrading(float64(currentPrice), tauScaled, float64(orderPrice), isBid, true, minPrice, maxPrice)
-		cache[orderPrice] = prob
+	prob := e.calcProbabilityOfTrading(currentPrice, orderPrice, isBid, minPrice, maxPrice)
+
+	// if prob of trading is > than the minimum
+	// ew can return now.
+	if prob > e.minProbabilityOfTrading {
+		return prob
 	}
 
-	return cache[orderPrice]
+	// now prob is not high enough, will get the probability of trading using min and max prices
+	// first if the price is < to minPrice, we'll use the minPrice for the orderPrice
+	if float64(orderPrice) < minPrice {
+		return e.calcProbabilityOfTrading(currentPrice, uint64(minPrice), isBid, minPrice, maxPrice)
+	}
+	// second if orderPrice was > to maxPrice, then we'll use maxPrice for orderPrice.
+	return e.calcProbabilityOfTrading(currentPrice, uint64(maxPrice), isBid, minPrice, maxPrice)
+}
+
+func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice uint64, isBid bool, minPrice float64, maxPrice float64) (f float64) {
+	cache := e.sCache
+	if isBid {
+		cache = e.bCache
+	}
+
+	prob, ok := cache[orderPrice]
+	if !ok {
+		tauScaled := e.horizon * e.probabilityOfTradingTauScaling
+		prob = e.rm.ProbabilityOfTrading(float64(currentPrice), tauScaled, float64(orderPrice), isBid, true, minPrice, maxPrice)
+		cache[orderPrice] = prob
+	}
+	return prob
 }
 
 func setSizesTo0(orders []*LiquidityOrder) {

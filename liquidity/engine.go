@@ -119,6 +119,10 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
 }
 
+func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v float64) {
+	e.suppliedEngine.OnMinProbabilityOfTradingLPOrdersUpdate(v)
+}
+
 func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v float64) {
 	e.suppliedEngine.OnProbabilityOfTradingTauScalingUpdate(v)
 }
@@ -418,12 +422,6 @@ func (e *Engine) CreateInitialOrders(
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
 
-	if bestBidPrice == 0 || bestAskPrice == 0 {
-		// this is not an error, there's just nothing
-		// that can be done if we do not have best bid or ask
-		return nil, nil
-	}
-
 	// ignoring amends as there won't be any since we kill all the orders first
 	creates, _, err := e.createOrUpdateForParty(ctx,
 		bestBidPrice, bestAskPrice, party, repriceFn)
@@ -438,12 +436,6 @@ func (e *Engine) Update(
 	repriceFn RepricePeggedOrder,
 	orders []*types.Order,
 ) ([]*types.Order, []*ToCancel, error) {
-	if bestBidPrice == 0 || bestAskPrice == 0 {
-		// this is not an error, there's just nothing
-		// that can be done if we do not have best bid or ask
-		return nil, nil, nil
-	}
-
 	var (
 		newOrders        []*types.Order
 		toCancel         []*ToCancel
@@ -574,6 +566,7 @@ func (e *Engine) createOrUpdateForParty(
 	)
 
 	if repriceFailure {
+		fmt.Printf("REPRICE FAILURE\n")
 		needsUpdateBuys = e.undeployOrdersFromShape(
 			party, buysShape, types.Side_SIDE_BUY)
 		needsUpdateSells = e.undeployOrdersFromShape(

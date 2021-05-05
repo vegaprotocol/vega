@@ -13,6 +13,7 @@ const (
 	MarketLiquidityProvidersFeeDistribitionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
 	MarketProbabilityOfTradingTauScaling            = "market.liquidity.probabilityOfTrading.tau.scaling"
+	MarketMinProbabilityOfTradingForLPOrders        = "market.liquidity.minimum.probabilityOfTrading.lpOrders"
 	MarketTargetStakeTimeWindow                     = "market.stake.target.timeWindow"
 	MarketTargetStakeScalingFactor                  = "market.stake.target.scalingFactor"
 	MarketValueWindowLength                         = "market.value.windowLength"
@@ -117,4 +118,5 @@ var AllKeys = map[string]struct{}{
 	BlockchainsEthereumConfig:                             {},
 	MarketLiquidityProvisionShapesMaxSize:                 {},
 	MarketProbabilityOfTradingTauScaling:                  {},
+	MarketMinProbabilityOfTradingForLPOrders:              {},
 }
