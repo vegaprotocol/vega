@@ -20,7 +20,7 @@ func TestCheckOrderAmendment(t *testing.T) {
 	t.Run("amend order tif - success", testAmendOrderJustTIFSuccess)
 	t.Run("amend order expiry before creation time - success", testAmendOrderPastExpiry)
 	t.Run("amend order empty - fail", testAmendOrderEmptyFail)
-	t.Run("amend order empty - fail", testAmendOrderEmptyFail)
+	t.Run("amend order empty - fail", testAmendEmptyFail)
 	t.Run("amend order invalid expiry type - fail", testAmendOrderInvalidExpiryFail)
 	t.Run("amend order tif to GFA - fail", testAmendOrderToGFA)
 	t.Run("amend order tif to GFN - fail", testAmendOrderToGFN)
