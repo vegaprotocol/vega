@@ -9,14 +9,18 @@ import (
 )
 
 var (
-	ErrIsRequired           = errors.New("is required")
-	ErrMustBePositive       = errors.New("must be positive")
-	ErrMustBePositiveOrZero = errors.New("must be positive or zero")
-	ErrMustBeNegative       = errors.New("must be negative")
-	ErrMustBeNegativeOrZero = errors.New("must be negative or zero")
-	ErrIsNotValid           = errors.New("is not a valid value")
-	ErrIsNotSupported       = errors.New("is not supported")
-	ErrIsUnauthorised       = errors.New("is unauthorised")
+	ErrIsRequired            = errors.New("is required")
+	ErrMustBePositive        = errors.New("must be positive")
+	ErrMustBePositiveOrZero  = errors.New("must be positive or zero")
+	ErrMustBeNegative        = errors.New("must be negative")
+	ErrMustBeNegativeOrZero  = errors.New("must be negative or zero")
+	ErrIsNotValid            = errors.New("is not a valid value")
+	ErrIsNotSupported        = errors.New("is not supported")
+	ErrIsUnauthorised        = errors.New("is unauthorised")
+	ErrCannotAmendToGFA      = errors.New("cannot amend to time in force GFA")
+	ErrCannotAmendToGFN      = errors.New("cannot amend to time in force GFN")
+	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
+	ErrGTTOrderWithNoExpiry  = errors.New("GTT order without expiry")
 )
 
 type Errors map[string]error
