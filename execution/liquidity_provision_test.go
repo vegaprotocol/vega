@@ -1723,7 +1723,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 			Params: &types.LogNormalModelParams{
 				Mu:    0,
 				R:     0.016,
-				Sigma: 2,
+				Sigma: 10,
 			},
 		},
 	}
@@ -1735,7 +1735,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 		WithAccountAndAmount(lpparty, 100000000000000)
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.2)
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission

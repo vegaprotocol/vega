@@ -78,13 +78,13 @@ func (e *Engine) AmendLiquidityProvision(
 	return cancels, nil
 }
 
-// GetPotentialShapeOrders is used to create ordes from
+// GetPotentialShapeOrders is used to create orders from
 // shape when amending a liquidity provision this allows us to
 // ensure enough funds can be taken from the margin account in orders
 // to submit orders lateer on.
 func (e *Engine) GetPotentialShapeOrders(
 	party string,
-	price uint64,
+	bestBidPrice, bestAskPrice uint64,
 	lps *commandspb.LiquidityProvisionSubmission,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
@@ -132,7 +132,7 @@ func (e *Engine) GetPotentialShapeOrders(
 	// now try to calculate the implied volume for our shape,
 	// any error would exit straight away
 	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
-		float64(price), float64(price),
+		bestBidPrice, bestAskPrice,
 		obligation,
 		orders,
 		buyShape, sellShape,

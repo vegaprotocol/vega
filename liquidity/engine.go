@@ -410,16 +410,23 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 // created and the other for orders to be updated.
 func (e *Engine) CreateInitialOrders(
 	ctx context.Context,
-	midPriceBid, midPriceAsk uint64,
+	bestBidPrice, bestAskPrice uint64,
 	party string,
 	orders []*types.Order,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
 	// update our internal orders
 	e.updatePartyOrders(party, orders)
+
+	if bestBidPrice == 0 || bestAskPrice == 0 {
+		// this is not an error, there's just nothing
+		// that can be done if we do not have best bid or ask
+		return nil, nil
+	}
+
 	// ignoring amends as there won't be any since we kill all the orders first
 	creates, _, err := e.createOrUpdateForParty(ctx,
-		midPriceBid, midPriceAsk, party, repriceFn)
+		bestBidPrice, bestAskPrice, party, repriceFn)
 	return creates, err
 }
 
@@ -427,10 +434,16 @@ func (e *Engine) CreateInitialOrders(
 // It keeps track of all LP orders.
 func (e *Engine) Update(
 	ctx context.Context,
-	midPriceBid, midPriceAsk uint64,
+	bestBidPrice, bestAskPrice uint64,
 	repriceFn RepricePeggedOrder,
 	orders []*types.Order,
 ) ([]*types.Order, []*ToCancel, error) {
+	if bestBidPrice == 0 || bestAskPrice == 0 {
+		// this is not an error, there's just nothing
+		// that can be done if we do not have best bid or ask
+		return nil, nil, nil
+	}
+
 	var (
 		newOrders        []*types.Order
 		toCancel         []*ToCancel
@@ -446,7 +459,7 @@ func (e *Engine) Update(
 		// update our internal orders
 		e.updatePartyOrders(po.Party, po.Orders)
 
-		creates, cancels, err := e.createOrUpdateForParty(ctx, midPriceBid, midPriceAsk, po.Party, repriceFn)
+		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, po.Party, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -464,7 +477,7 @@ func (e *Engine) Update(
 		for _, lp := range e.provisions.slice() {
 			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED ||
 				lp.Status == types.LiquidityProvision_STATUS_PENDING {
-				creates, cancels, err := e.createOrUpdateForParty(ctx, midPriceBid, midPriceAsk, lp.PartyId, repriceFn)
+				creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.PartyId, repriceFn)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -503,7 +516,7 @@ func (e *Engine) CalculateSuppliedStake() uint64 {
 
 func (e *Engine) createOrUpdateForParty(
 	ctx context.Context,
-	midPriceBid, midPriceAsk uint64,
+	bestBidPrice, bestAskPrice uint64,
 	party string,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, *ToCancel, error) {
@@ -581,7 +594,7 @@ func (e *Engine) createOrUpdateForParty(
 		}
 
 		if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
-			float64(midPriceBid), float64(midPriceAsk),
+			bestBidPrice, bestAskPrice,
 			obligation,
 			orders,
 			buysShape, sellsShape,

@@ -2864,6 +2864,15 @@ func (m *Market) getBestStaticBidPriceAndVolume() (uint64, uint64, error) {
 	return m.matching.GetBestStaticBidPriceAndVolume()
 }
 
+func (m *Market) getBestStaticPrices() (bid, ask uint64, err error) {
+	bid, err = m.getBestStaticBidPrice()
+	if err != nil {
+		return
+	}
+	ask, err = m.getBestStaticAskPrice()
+	return
+}
+
 func (m *Market) getStaticMidPrice(side types.Side) (uint64, error) {
 	bid, err := m.matching.GetBestStaticBidPrice()
 	if err != nil {
@@ -2881,19 +2890,6 @@ func (m *Market) getStaticMidPrice(side types.Side) (uint64, error) {
 	}
 
 	return mid, nil
-}
-
-func (m *Market) getStaticMidPrices() (midBid uint64, midAsk uint64, err error) {
-	bid, err := m.matching.GetBestStaticBidPrice()
-	if err != nil {
-		return 0, 0, err
-	}
-	ask, err := m.matching.GetBestStaticAskPrice()
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return (bid + ask + 1) / 2, (bid + ask) / 2, nil
 }
 
 // checkForReferenceMoves looks to see if the reference prices have moved since the
@@ -3174,14 +3170,14 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 
 func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) error {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "liquidityUpdate")
-	midPriceBid, midPriceAsk, err := m.getStaticMidPrices()
+	bestBidPrice, bestAskPrice, err := m.getBestStaticPrices()
 	if err != nil {
 		m.log.Debug("could not get one of the static mid prices",
 			logging.Error(err))
 		// we do not return here, we could not get one of the prices eventually
 	}
 	newOrders, cancels, err := m.liquidity.Update(
-		ctx, midPriceBid, midPriceAsk, m.repriceFuncW, orders)
+		ctx, bestBidPrice, bestAskPrice, m.repriceFuncW, orders)
 	if err != nil {
 		return err
 	}
