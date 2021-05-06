@@ -35,7 +35,12 @@ func TradersPlaceTheFollowingOrders(
 
 		var expiresAt int64
 		if oty != types.Order_TYPE_MARKET {
-			expiresAt = time.Now().Add(24 * time.Hour).UnixNano()
+			now := time.Now()
+			if tif == types.Order_TIME_IN_FORCE_GTT {
+				expiresAt = now.Add(row.MustDurationSec("expires in")).Local().UnixNano()
+			} else {
+				expiresAt = now.Add(24 * time.Hour).UnixNano()
+			}
 		}
 
 		orderSubmission := commandspb.OrderSubmission{
