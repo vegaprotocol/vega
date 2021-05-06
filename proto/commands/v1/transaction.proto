@@ -15,30 +15,31 @@ message InputData {
   // The block height associated to the transaction.
   // This should always be current height of the node at the time of sending the Tx.
   // BlockHeight is used as a mechanism for replay protection.
-  uint64 blockHeight = 2;
+  uint64 block_height = 2;
 
   oneof command {
     // user commands
-    OrderSubmission orderSubmission = 1001;
-    OrderCancellation orderCancellation = 1002;
-    OrderAmendment orderAmendment = 1003;
-    WithdrawSubmission withdrawSubmission = 1004;
-    ProposalSubmission proposalSubmission = 1005;
-    VoteSubmission voteSubmission = 1006;
+    OrderSubmission order_submission = 1001;
+    OrderCancellation order_cancellation = 1002;
+    OrderAmendment order_amendment = 1003;
+    WithdrawSubmission withdraw_submission = 1004;
+    ProposalSubmission proposal_submission = 1005;
+    VoteSubmission vote_submission = 1006;
+    LiquidityProvisionSubmission liquidity_provision_submission = 1007;
     // validator commands
-    NodeRegistration nodeRegistration = 2001;
-    NodeVote nodeVote = 2002;
-    NodeSignature nodeSignature = 2003;
-    ChainEvent chainEvent = 2004;
+    NodeRegistration node_registration = 2001;
+    NodeVote node_vote = 2002;
+    NodeSignature node_signature = 2003;
+    ChainEvent chain_event = 2004;
     // Oracles
-    OracleDataSubmission oracleDataSubmission = 3001;
+    OracleDataSubmission oracle_data_submission = 3001;
   }
 }
 
 // Represents a transaction to be sent to Vega.
 message Transaction {
   // One of the set of Vega commands (proto marshalled).
-  bytes inputData = 1;
+  bytes input_data = 1;
 
   // The signature of the inputData
   Signature signature = 2;
@@ -49,7 +50,7 @@ message Transaction {
     // The address of the sender.
     bytes address = 1001;
     // The public key of the sender.
-    bytes pubKey = 1002;
+    bytes pub_key = 1002;
   }
 
   // A version of the transaction, to be used

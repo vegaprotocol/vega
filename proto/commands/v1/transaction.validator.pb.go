@@ -59,6 +59,13 @@ func (this *InputData) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetCommand().(*InputData_LiquidityProvisionSubmission); ok {
+		if oneOfNester.LiquidityProvisionSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.LiquidityProvisionSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("LiquidityProvisionSubmission", err)
+			}
+		}
+	}
 	if oneOfNester, ok := this.GetCommand().(*InputData_NodeRegistration); ok {
 		if oneOfNester.NodeRegistration != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.NodeRegistration); err != nil {
