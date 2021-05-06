@@ -54,11 +54,18 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 
 	}
 
+	errs.Merge(checkLiquidityProvisionShape(
+		cmd.Buys, types.Side_SIDE_BUY,
+	))
+	errs.Merge(checkLiquidityProvisionShape(
+		cmd.Sells, types.Side_SIDE_SELL,
+	))
+
 	return errs
 }
 
 func checkLiquidityProvisionShape(
-	sh []*types.LiquidityOrder, side types.Side, maxSize int64,
+	sh []*types.LiquidityOrder, side types.Side,
 ) Errors {
 	var (
 		errs           = NewErrors()
