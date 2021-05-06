@@ -9,10 +9,14 @@ import (
 )
 
 var (
-	ErrIsRequired     = errors.New("is required")
-	ErrMustBePositive = errors.New("must be positive")
-	ErrIsNotValid     = errors.New("is not a valid value")
-	ErrIsNotSupported = errors.New("is not supported")
+	ErrIsRequired           = errors.New("is required")
+	ErrMustBePositive       = errors.New("must be positive")
+	ErrMustBePositiveOrZero = errors.New("must be positive or zero")
+	ErrMustBeNegative       = errors.New("must be negative")
+	ErrMustBeNegativeOrZero = errors.New("must be negative or zero")
+	ErrIsNotValid           = errors.New("is not a valid value")
+	ErrIsNotSupported       = errors.New("is not supported")
+	ErrIsUnauthorised       = errors.New("is unauthorised")
 )
 
 type Errors map[string]error
@@ -59,6 +63,14 @@ func (e Errors) Merge(oth Errors) {
 	for prop, err := range oth {
 		e.AddForProperty(prop, err)
 	}
+}
+
+func (e Errors) Get(prop string) error {
+	msg, ok := e[prop]
+	if !ok {
+		return nil
+	}
+	return msg
 }
 
 func (e Errors) ErrorOrNil() error {

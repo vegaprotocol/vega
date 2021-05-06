@@ -83,7 +83,7 @@ func checkInputData(inputData []byte) Errors {
 	} else {
 		switch cmd := input.Command.(type) {
 		case *commandspb.InputData_OrderSubmission:
-			errs.Merge(CheckOrderSubmission(cmd.OrderSubmission))
+			errs.Merge(checkOrderSubmission(cmd.OrderSubmission))
 		default:
 			errs.AddForProperty("input_data.command", ErrIsNotSupported)
 		}
