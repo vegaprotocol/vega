@@ -103,7 +103,6 @@ func testAmendEmptyFail(t *testing.T) {
 func testAmendOrderInvalidExpiryFail(t *testing.T) {
 	arg := commandspb.OrderAmendment{
 		OrderId:     "orderid",
-		PartyId:     "partyid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
@@ -137,7 +136,6 @@ func testAmendOrderPastExpiry(t *testing.T) {
 func testAmendOrderToGFN(t *testing.T) {
 	arg := commandspb.OrderAmendment{
 		OrderId:     "orderid",
-		PartyId:     "partyid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFN,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
@@ -148,7 +146,6 @@ func testAmendOrderToGFN(t *testing.T) {
 func testAmendOrderToGFA(t *testing.T) {
 	arg := commandspb.OrderAmendment{
 		OrderId:     "orderid",
-		PartyId:     "partyid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFA,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
