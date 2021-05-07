@@ -42,7 +42,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
     When the traders place the following orders:
       | trader           | market id | side | volume | price  | resulting trades | type       | tif     | reference       |
       | trader1          | ETH/DEC19 | sell | 1      | 99844  | 0                | TYPE_LIMIT | TIF_GTC | t1-s-3          |
-      | trader0          | ETH/DEC19 | buy  | 1      | 99844  | 0                | TYPE_LIMIT | TIF_FOK | t0-b-3          |
+      | trader0          | ETH/DEC19 | buy  | 1      | 99844  | 0                | TYPE_LIMIT | TIF_GTC | t0-b-3          |
 
     And time is updated to "2019-11-30T00:00:03Z"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
@@ -56,13 +56,13 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | trader1          | ETH/DEC19 | sell | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4          |
       | trader0          | ETH/DEC19 | buy  | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-4          |
 
-    And time is updated to "2019-11-30T00:00:10Z"
+    And time is updated to "2019-11-30T00:00:20Z"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "100291" for the market "ETH/DEC19"
 
     Then the traders place the following orders:
       | trader   | market id | side | volume | price  | resulting trades | type       | tif     | reference       |
-      | trader3  | ETH/DEC19 | buy | 106    | 110000  | 0                | TYPE_LIMIT | TIF_GTC  | t3-b-1          |
+      | trader3  | ETH/DEC19 | buy  | 106    | 110000  | 0                | TYPE_LIMIT | TIF_GTC  | t3-b-1          |
 
     Then the traders place the following pegged orders:
       | trader  | market id | side | volume | reference | offset |
@@ -76,7 +76,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
-    And time is updated to "2019-11-30T00:00:12Z"
+    And time is updated to "2019-11-30T00:00:22Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 

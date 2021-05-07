@@ -368,6 +368,8 @@ enum OrderError {
   ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 45;
   // It is not possible to amend the price of an existing pegged order
   ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER = 46;
+  // An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds
+  ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS = 47;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

@@ -66,7 +66,7 @@ Feature: Price monitoring test for issue 2668
     When the traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "6630000" for the market "ETH/DEC20"
 
@@ -82,7 +82,8 @@ Feature: Price monitoring test for issue 2668
     # T0 + 15min01s (opening auction, price monitoring + extension due to time update + another period)
     Then time is updated to "2020-10-16T00:15:01Z"
 
-    And the mark price should be "6630000" for the market "ETH/DEC20"
+    # the order was GTC, so after the auction this trade can now happen
+    And the mark price should be "6640000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -134,7 +135,7 @@ Feature: Price monitoring test for issue 2668
     When the traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "6630000" for the market "ETH/DEC20"
 
@@ -150,7 +151,7 @@ Feature: Price monitoring test for issue 2668
     # T0 + 15min01s
     Then time is updated to "2020-10-16T00:15:01Z"
 
-    And the mark price should be "6630000" for the market "ETH/DEC20"
+    And the mark price should be "4840000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -202,7 +203,7 @@ Feature: Price monitoring test for issue 2668
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 664   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 664   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 664   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "663" for the market "ETH/DEC20"
 
@@ -218,6 +219,6 @@ Feature: Price monitoring test for issue 2668
     # T0 + 15min01s
     Then time is updated to "2020-10-16T00:15:01Z"
 
-    And the mark price should be "663" for the market "ETH/DEC20"
+    And the mark price should be "664" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"

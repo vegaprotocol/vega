@@ -461,7 +461,7 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER:
 		return ProposalRejectionReasonInvalidRiskParameter, nil
 	default:
-		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
+		err := fmt.Errorf("failed to convert ProposalRejectionReason from Proto to GraphQL: %v", x)
 		return "", err
 	}
 }
@@ -553,6 +553,8 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonInvalidTimeInForce, nil
 	case types.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER:
 		return OrderRejectionReasonUnableToAmendPeggedOrderPrice, nil
+	case types.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS:
+		return OrderRejectionReasonNonPersistentOrderExceedsPriceBounds, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err

@@ -786,8 +786,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, tm.market.GetMarketData().Trigger)
 
 	// Move the price enough that we go into a price auction
-	// now = now.Add(time.Second * 61)
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-B", 3, 3000)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -961,7 +960,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 
 	// Move the price enough that we go into a price auction
 	now = now.Add(time.Second * 20)
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-B", 3, 3000)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
