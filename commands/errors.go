@@ -23,7 +23,7 @@ var (
 	ErrGTTOrderWithNoExpiry  = errors.New("GTT order without expiry")
 )
 
-type Errors map[string]error
+type Errors map[string][]error
 
 func NewErrors() Errors {
 	return Errors{}
@@ -34,12 +34,19 @@ func (e Errors) Error() string {
 		return ""
 	}
 
-	messages := []string{}
-	for prop, err := range e {
-		messages = append(messages, fmt.Sprintf("%v(%v)", prop, err.Error()))
+	propMessages := []string{}
+	for prop, errs := range e {
+		errMessages := []string{}
+		for _, err := range errs {
+			errMessages = append(errMessages, err.Error())
+		}
+		errMessagesFmt := strings.Join(errMessages, ", ")
+		propMessageFmt := fmt.Sprintf("%v(%v)", prop, errMessagesFmt)
+		propMessages = append(propMessages, propMessageFmt)
 	}
-	sort.Strings(messages)
-	return strings.Join(messages, ", ")
+
+	sort.Strings(propMessages)
+	return strings.Join(propMessages, ", ")
 }
 
 func (e Errors) Empty() bool {
@@ -48,7 +55,19 @@ func (e Errors) Empty() bool {
 
 // AddForProperty adds an error for a given property.
 func (e Errors) AddForProperty(prop string, err error) {
-	e[prop] = err
+	errs, ok := e[prop]
+	if !ok {
+		errs = []error{}
+	}
+
+	e[prop] = append(errs, err)
+}
+
+// FinalAddForProperty behaves like AddForProperty, but is meant to be called in
+// a "return" statement. This helper is usually used for terminal errors.
+func (e Errors) FinalAddForProperty(prop string, err error) Errors {
+	e.AddForProperty(prop, err)
+	return e
 }
 
 // Add adds a general error that is not related to a specific property.
@@ -64,17 +83,19 @@ func (e Errors) FinalAdd(err error) Errors {
 }
 
 func (e Errors) Merge(oth Errors) {
-	for prop, err := range oth {
-		e.AddForProperty(prop, err)
+	for prop, errs := range oth {
+		for _, err := range errs {
+			e.AddForProperty(prop, err)
+		}
 	}
 }
 
-func (e Errors) Get(prop string) error {
-	msg, ok := e[prop]
+func (e Errors) Get(prop string) []error {
+	messages, ok := e[prop]
 	if !ok {
 		return nil
 	}
-	return msg
+	return messages
 }
 
 func (e Errors) ErrorOrNil() error {
@@ -85,9 +106,13 @@ func (e Errors) ErrorOrNil() error {
 }
 
 func (e Errors) MarshalJSON() ([]byte, error) {
-	out := map[string]string{}
-	for k, v := range e {
-		out[k] = v.Error()
+	out := map[string][]string{}
+	for prop, errs := range e {
+		messages := []string{}
+		for _, err := range errs {
+			messages = append(messages, err.Error())
+		}
+		out[prop] = messages
 	}
 	return json.Marshal(out)
 }
