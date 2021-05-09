@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/commands"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
-
 	"github.com/golang/protobuf/proto"
 
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -81,6 +82,20 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 	return c.sendTx(ctx, bundleBytes, ty)
 }
 
+func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error {
+	err := commands.CheckTransaction(tx)
+	if err != nil {
+		return err
+	}
+
+	marshalledTx, err := proto.Marshal(tx)
+	if err != nil {
+		return err
+	}
+
+	return c.sendTxV2(ctx, marshalledTx, ty)
+}
+
 func (c *Client) sendTx(ctx context.Context, bytes []byte, ty api.SubmitTransactionRequest_Type) error {
 	switch ty {
 	case api.SubmitTransactionRequest_TYPE_ASYNC:
@@ -89,6 +104,19 @@ func (c *Client) sendTx(ctx context.Context, bytes []byte, ty api.SubmitTransact
 		return c.clt.SendTransactionSync(ctx, bytes)
 	case api.SubmitTransactionRequest_TYPE_COMMIT:
 		return c.clt.SendTransactionCommit(ctx, bytes)
+	default:
+		return errors.New("invalid submit transaction request type")
+	}
+}
+
+func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionV2Request_Type) error {
+	switch ty {
+	case api.SubmitTransactionV2Request_TYPE_ASYNC:
+		return c.clt.SendTransactionAsync(ctx, msg)
+	case api.SubmitTransactionV2Request_TYPE_SYNC:
+		return c.clt.SendTransactionSync(ctx, msg)
+	case api.SubmitTransactionV2Request_TYPE_COMMIT:
+		return c.clt.SendTransactionCommit(ctx, msg)
 	default:
 		return errors.New("invalid submit transaction request type")
 	}

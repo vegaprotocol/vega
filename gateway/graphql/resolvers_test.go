@@ -233,7 +233,6 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	conf := gateway.NewDefaultConfig()
-	// statusChecker := &monitoring.Status{}
 	tradingClient := mocks.NewMockTradingServiceClient(ctrl)
 	tradingDataClient := mocks.NewMockTradingDataServiceClient(ctrl)
 	resolver := gql.NewResolverRoot(

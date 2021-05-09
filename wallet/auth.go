@@ -12,7 +12,6 @@ import (
 
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
-
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/julienschmidt/httprouter"
 )
@@ -92,7 +91,7 @@ func (a *auth) NewSession(walletname string) (string, error) {
 	return ss, nil
 }
 
-// VerifyToken returns the walletname associated for this session
+// VerifyToken returns the wallet name associated for this session
 func (a *auth) VerifyToken(token string) (string, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()

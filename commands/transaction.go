@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/hex"
 	"errors"
 
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
@@ -10,7 +11,8 @@ import (
 )
 
 var (
-	ErrInvalidSignature = errors.New("invalid signature")
+	ErrInvalidSignature      = errors.New("invalid signature")
+	ErrCannotDecodeSignature = errors.New("cannot decode signature")
 )
 
 func CheckTransaction(tx *commandspb.Transaction) error {
@@ -30,37 +32,39 @@ func CheckTransaction(tx *commandspb.Transaction) error {
 		errs.AddForProperty("tx.from.pub_key", ErrIsRequired)
 	}
 
-	// at this point if we have any error we can leave stop processing already
 	if !errs.Empty() {
 		return errs.ErrorOrNil()
 	}
 
-	// now we should be able to do signature validation
 	errs.Merge(validateSignature(tx.InputData, tx.Signature, tx.GetPubKey()))
 	if !errs.Empty() {
 		return errs.ErrorOrNil()
 	}
 
-	// now we can unmarshal the transaction, and apply validation
-	// on the inputData
 	errs.Merge(checkInputData(tx.InputData))
 
 	return errs.ErrorOrNil()
 }
 
-func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey []byte) Errors {
+func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey string) Errors {
 	errs := NewErrors()
-	// build new signature algorithm using the algo from the sig
+
 	validator, err := crypto.NewSignatureAlgorithm(signature.Algo)
 	if err != nil {
-		return errs.FinalAdd(err)
+		return errs.FinalAddForProperty("tx.signature.algo", err)
 	}
-	ok, err := validator.Verify(pubKey, inputData, signature.Bytes)
+
+	decodedSig, err := hex.DecodeString(signature.Bytes)
+	if err != nil {
+		return errs.FinalAddForProperty("tx.signature.bytes", ErrCannotDecodeSignature)
+	}
+
+	ok, err := validator.Verify(pubKey, inputData, decodedSig)
 	if err != nil {
 		return errs.FinalAdd(err)
 	}
 	if !ok {
-		return errs.FinalAdd(ErrInvalidSignature)
+		return errs.FinalAddForProperty("tx.signature", ErrInvalidSignature)
 	}
 	return errs
 }
@@ -91,10 +95,19 @@ func checkInputData(inputData []byte) Errors {
 		case *commandspb.InputData_WithdrawSubmission:
 			errs.Merge(checkWithdrawSubmission(cmd.WithdrawSubmission))
 		case *commandspb.InputData_LiquidityProvisionSubmission:
-			errs.Merge(checkLiquidityProvisionSubmission(
-				cmd.LiquidityProvisionSubmission))
+			errs.Merge(checkLiquidityProvisionSubmission(cmd.LiquidityProvisionSubmission))
 		case *commandspb.InputData_ProposalSubmission:
 			errs.Merge(checkProposalSubmission(cmd.ProposalSubmission))
+		case *commandspb.InputData_NodeRegistration:
+			errs.Merge(checkNodeRegistration(cmd.NodeRegistration))
+		case *commandspb.InputData_NodeVote:
+			errs.Merge(checkNodeVote(cmd.NodeVote))
+		case *commandspb.InputData_NodeSignature:
+			errs.Merge(checkNodeSignature(cmd.NodeSignature))
+		case *commandspb.InputData_ChainEvent:
+			errs.Merge(checkChainEvent(cmd.ChainEvent))
+		case *commandspb.InputData_OracleDataSubmission:
+			errs.Merge(checkOracleDataSubmission(cmd.OracleDataSubmission))
 		default:
 			errs.AddForProperty("input_data.command", ErrIsNotSupported)
 		}

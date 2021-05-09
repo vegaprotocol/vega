@@ -1,0 +1,88 @@
+package wallet
+
+import (
+	"crypto/rand"
+	"encoding/base64"
+	"math/big"
+
+	types "code.vegaprotocol.io/vega/proto"
+	"github.com/golang/protobuf/proto"
+)
+
+func (h *Handler) SignAny(token, inputData, pubKey string) ([]byte, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	// first the transaction would be in base64, let's decode
+	rawInputData, err := base64.StdEncoding.DecodeString(inputData)
+	if err != nil {
+		return nil, err
+	}
+
+	kp, err := h.getKeyPair(token, pubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if kp.Tainted {
+		return nil, ErrPubKeyIsTainted
+	}
+
+	return kp.Algorithm.Sign(kp.privBytes, rawInputData)
+}
+
+func (h *Handler) SignTx(token, tx, pubKey string) (SignedBundle, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	// first the transaction would be in base64, let's decode
+	rawTx, err := base64.StdEncoding.DecodeString(tx)
+	if err != nil {
+		return SignedBundle{}, err
+	}
+
+	kp, err := h.getKeyPair(token, pubKey)
+	if err != nil {
+		return SignedBundle{}, err
+	}
+
+	if kp.Tainted {
+		return SignedBundle{}, ErrPubKeyIsTainted
+	}
+
+	txTy := &types.Transaction{
+		InputData: rawTx,
+		Nonce:     makeNonce(),
+		From: &types.Transaction_PubKey{
+			PubKey: kp.pubBytes,
+		},
+	}
+
+	rawTxTy, err := proto.Marshal(txTy)
+	if err != nil {
+		return SignedBundle{}, err
+	}
+
+	// then lets sign the stuff and return it
+	sig, err := kp.Algorithm.Sign(kp.privBytes, rawTxTy)
+	if err != nil {
+		return SignedBundle{}, err
+	}
+
+	return SignedBundle{
+		Tx: rawTxTy,
+		Sig: Signature{
+			Sig:     sig,
+			Algo:    kp.Algorithm.Name(),
+			Version: kp.Algorithm.Version(),
+		},
+	}, nil
+}
+
+func makeNonce() uint64 {
+	max := &big.Int{}
+	// set it to the max value of the uint64
+	max.SetUint64(^uint64(0))
+	nonce, _ := rand.Int(rand.Reader, max)
+	return nonce.Uint64()
+}
