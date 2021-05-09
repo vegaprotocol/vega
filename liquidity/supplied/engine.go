@@ -213,18 +213,12 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	prob := e.calcProbabilityOfTrading(currentPrice, orderPrice, isBid, minPrice, maxPrice)
 
 	// if prob of trading is > than the minimum
-	// ew can return now.
-	if prob > e.minProbabilityOfTrading {
+	// we can return now.
+	if prob >= e.minProbabilityOfTrading {
 		return prob
 	}
 
-	// now prob is not high enough, will get the probability of trading using min and max prices
-	// first if the price is < to minPrice, we'll use the minPrice for the orderPrice
-	if float64(orderPrice) < minPrice {
-		return e.calcProbabilityOfTrading(currentPrice, uint64(minPrice), isBid, minPrice, maxPrice)
-	}
-	// second if orderPrice was > to maxPrice, then we'll use maxPrice for orderPrice.
-	return e.calcProbabilityOfTrading(currentPrice, uint64(maxPrice), isBid, minPrice, maxPrice)
+	return e.minProbabilityOfTrading
 }
 
 func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice uint64, isBid bool, minPrice float64, maxPrice float64) (f float64) {

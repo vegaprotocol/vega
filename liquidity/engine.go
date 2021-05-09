@@ -49,7 +49,7 @@ type IDGen interface {
 
 // RepricePeggedOrder reprices a pegged order.
 // This function should be injected by the market.
-type RepricePeggedOrder func(order *types.PeggedOrder) (uint64, error)
+type RepricePeggedOrder func(order *types.PeggedOrder, side types.Side) (uint64, error)
 
 // Engine handles Liquidity provision
 type Engine struct {
@@ -533,7 +533,7 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    buy.OrderId,
 			Proportion: uint64(buy.LiquidityOrder.Proportion),
 		}
-		if price, err := repriceFn(pegged); err != nil {
+		if price, err := repriceFn(pegged, types.Side_SIDE_BUY); err != nil {
 			e.log.Debug("Building Buy Shape", logging.Error(err))
 			repriceFailure = true
 		} else {
@@ -551,7 +551,7 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    sell.OrderId,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
 		}
-		if price, err := repriceFn(pegged); err != nil {
+		if price, err := repriceFn(pegged, types.Side_SIDE_SELL); err != nil {
 			e.log.Debug("Building Sell Shape", logging.Error(err))
 			repriceFailure = true
 		} else {
@@ -566,7 +566,6 @@ func (e *Engine) createOrUpdateForParty(
 	)
 
 	if repriceFailure {
-		fmt.Printf("REPRICE FAILURE\n")
 		needsUpdateBuys = e.undeployOrdersFromShape(
 			party, buysShape, types.Side_SIDE_BUY)
 		needsUpdateSells = e.undeployOrdersFromShape(

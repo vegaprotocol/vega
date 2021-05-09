@@ -92,7 +92,7 @@ func (e *Engine) GetPotentialShapeOrders(
 		return nil, err
 	}
 
-	priceShape := func(loShape []*types.LiquidityOrder) ([]*supplied.LiquidityOrder, bool) {
+	priceShape := func(loShape []*types.LiquidityOrder, side types.Side) ([]*supplied.LiquidityOrder, bool) {
 		shape := make([]*supplied.LiquidityOrder, 0, len(loShape))
 		for _, lorder := range loShape {
 			pegged := &types.PeggedOrder{
@@ -102,7 +102,7 @@ func (e *Engine) GetPotentialShapeOrders(
 			order := &supplied.LiquidityOrder{
 				Proportion: uint64(lorder.Proportion),
 			}
-			price, err := repriceFn(pegged)
+			price, err := repriceFn(pegged, side)
 			if err != nil {
 				return nil, false
 			}
@@ -112,11 +112,11 @@ func (e *Engine) GetPotentialShapeOrders(
 		return shape, true
 	}
 
-	buyShape, ok := priceShape(lps.Buys)
+	buyShape, ok := priceShape(lps.Buys, types.Side_SIDE_BUY)
 	if !ok {
 		return nil, errors.New("unable to price buy shape")
 	}
-	sellShape, ok := priceShape(lps.Sells)
+	sellShape, ok := priceShape(lps.Sells, types.Side_SIDE_SELL)
 	if !ok {
 		return nil, errors.New("unable to price sell shape")
 	}

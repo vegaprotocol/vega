@@ -108,6 +108,7 @@ type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p, v uint64, now time.Time, persistent bool) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
+	GetValidPriceRange() (float64, float64)
 }
 
 // LiquidityMonitor
@@ -3181,7 +3182,7 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 		// we do not return here, we could not get one of the prices eventually
 	}
 	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice, bestAskPrice, m.repriceFuncW, orders)
+		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, orders)
 	if err != nil {
 		return err
 	}
