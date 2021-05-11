@@ -107,18 +107,23 @@ func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 }
 
 func (e *Engine) HasBalance(party string) bool {
-	accs, ok := e.partiesAccs[party]
-	if !ok {
-		return false
-	}
+	// FIXME(): we temporary just want to make
+	// accs, ok := e.partiesAccs[party]
+	// sure that the party ever deposited at least
+	// once
+	// if !ok {
+	// 	return false
+	// }
 
-	for _, acc := range accs {
-		if acc.Balance > 0 {
-			return true
-		}
-	}
+	// for _, acc := range accs {
+	// 	if acc.Balance > 0 {
+	// 		return true
+	// 	}
+	// }
 
-	return false
+	// return false
+	_, ok := e.partiesAccs[party]
+	return ok
 }
 
 func (e *Engine) addPartyAccount(party, accid string, acc *types.Account) {
@@ -139,9 +144,16 @@ func (e *Engine) rmPartyAccount(party, accid string) {
 	delete(accs, accid)
 	// delete if the number of accounts for the party
 	// is down to 0
-	if len(accs) <= 0 {
-		delete(e.partiesAccs, party)
-	}
+	// FIXME(): for now we do not delete the
+	// party, this means that the numbner of
+	// party will grow forever if they were to
+	// get distressed, or people would be adding
+	// funds the withdrawing them forever on load
+	// of party, but that is better than having
+	// transaction stay in the mempool forever.
+	// if len(accs) <= 0 {
+	// 	delete(e.partiesAccs, party)
+	// }
 }
 
 func (e *Engine) removeAccountFromHashableSlice(id string) {
