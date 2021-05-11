@@ -261,7 +261,8 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	resp := tmtypes.ResponseCheckTx{}
 
 	// Check ratelimits
-	limit, isval := app.limitPubkey(tx.PubKey())
+	// FIXME(): temporary disable all rate limiting
+	_, isval := app.limitPubkey(tx.PubKey())
 	if isval {
 		return ctx, resp
 	}
@@ -270,10 +271,11 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// and if we may not want to rate limit it.
 	// in which case we may want to check if it has a balance
 	party := hex.EncodeToString(tx.PubKey())
-	if limit {
-		resp.Code = abci.AbciTxnValidationFailure
-		resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
-	} else if !app.banking.HasBalance(party) {
+	// if limit {
+	// 	resp.Code = abci.AbciTxnValidationFailure
+	// 	resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
+	// } else if !app.banking.HasBalance(party) {
+	if !app.banking.HasBalance(party) {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
 		msgType := tx.Command().String()
