@@ -10,11 +10,14 @@ import (
 
 var (
 	ErrIsRequired            = errors.New("is required")
+	ErrMustBeValidDate       = errors.New("must be a RFC3339 date")
 	ErrMustBePositive        = errors.New("must be positive")
 	ErrMustBePositiveOrZero  = errors.New("must be positive or zero")
 	ErrMustBeNegative        = errors.New("must be negative")
 	ErrMustBeNegativeOrZero  = errors.New("must be negative or zero")
+	ErrMustBeLessThan150     = errors.New("must be less than 150")
 	ErrIsNotValid            = errors.New("is not a valid value")
+	ErrIsNotValidNumber      = errors.New("is not a valid number")
 	ErrIsNotSupported        = errors.New("is not supported")
 	ErrIsUnauthorised        = errors.New("is unauthorised")
 	ErrCannotAmendToGFA      = errors.New("cannot amend to time in force GFA")
@@ -83,6 +86,10 @@ func (e Errors) FinalAdd(err error) Errors {
 }
 
 func (e Errors) Merge(oth Errors) {
+	if oth == nil {
+		return
+	}
+
 	for prop, errs := range oth {
 		for _, err := range errs {
 			e.AddForProperty(prop, err)
