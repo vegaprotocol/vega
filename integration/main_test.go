@@ -39,6 +39,7 @@ func TestMain(m *testing.M) {
 }
 
 func FeatureContext(s *godog.Suite) {
+	var blockDuration int64
 	s.BeforeScenario(func(_ interface{}) {
 		execsetup = newExecutionTestSetup()
 	})
@@ -131,6 +132,14 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *gherkin.DataTable) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
 	})
+	s.Step(`^the average block duration is "([^"]+)"$`, func(blockTime string) error {
+		bt, err := steps.TheBlockTimeIs(blockTime)
+		if err != nil {
+			return err
+		}
+		blockDuration = bt
+		return nil
+	})
 
 	// Assertion steps
 	s.Step(`^the following amendments should be rejected:$`, func(table *gherkin.DataTable) error {
@@ -205,7 +214,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the supplied stake should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
 		return steps.TheSuppliedStakeShouldBeForTheMarket(execsetup.executionEngine, marketID, stake)
 	})
-	s.Step(`^the open interest should be "([^"]*)" for the market "([^"]*)"$`, func(stake , marketID string) error {
+	s.Step(`^the open interest should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
 		return steps.TheOpenInterestShouldBeForTheMarket(execsetup.executionEngine, marketID, stake)
 	})
 	s.Step(`^the liquidity provider fee shares for the market "([^"]*)" should be:$`, func(marketID string, table *gherkin.DataTable) error {

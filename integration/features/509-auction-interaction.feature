@@ -61,8 +61,8 @@ Feature: Test interactions between different auction types
     When the opening auction period ends for market "ETH/DEC19"
     Then the auction ends resulting in traded volume of "10" at a price of "1000"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    And the max_oi for the market "ETH/DEC21" is "10"
-    And the mark price should be "1000" for the market "ETH/DEC21"
+    And the max_oi for the market "ETH/DEC19" is "10"
+    And the mark price should be "1000" for the market "ETH/DEC19"
     And the price monitoring bounds are [[990,1010]]
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
     And the target stake should be "1000" for the market "ETH/DEC21"

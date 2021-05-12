@@ -102,6 +102,16 @@ func (r RowWrapper) MustStr(name string) string {
 	return r.mustColumn(name)
 }
 
+// StrB simply returns the string value, but includes the bool indicating whether or not the column was set
+func (r RowWrapper) StrB(name string) (string, bool) {
+	s, ok := r.values[name]
+	// empty strings don't count - this would mess things up with multi-line checks (e.g. price monitoring in market data)
+	if ok && s == "" {
+		return "", false
+	}
+	return s, ok
+}
+
 func (r RowWrapper) Str(name string) string {
 	return r.values[name]
 }
@@ -125,6 +135,16 @@ func (r RowWrapper) MustU64(name string) uint64 {
 	value, err := U64(r.mustColumn(name))
 	panicW(name, err)
 	return value
+}
+
+// U64B does the same as U64, but returns a bool indicating whether or not an explicit 0 was set
+// or the column simply doesn't exist
+func (r RowWrapper) U64B(name string) (uint64, bool) {
+	if v, ok := r.values[name]; !ok || v == "" {
+		return 0, false
+	}
+	v := r.U64(name)
+	return v, true
 }
 
 func (r RowWrapper) U64(name string) uint64 {
@@ -182,6 +202,15 @@ func (r RowWrapper) MustI64(name string) int64 {
 	value, err := I64(r.mustColumn(name))
 	panicW(name, err)
 	return value
+}
+
+// I64B does the same as U64B (ie same as I64, but returns a bool for empty/missing columns)
+func (r RowWrapper) I64B(name string) (int64, bool) {
+	if v, ok := r.values[name]; !ok || v == "" {
+		return 0, false
+	}
+	v := r.I64(name)
+	return v, true
 }
 
 func (r RowWrapper) I64(name string) int64 {
@@ -451,6 +480,26 @@ func OracleSpecPropertyType(name string) (oraclesv1.PropertyKey_Type, error) {
 		return oraclesv1.PropertyKey_TYPE_UNSPECIFIED, fmt.Errorf("couldn't find %s as property type", name)
 	}
 	return oraclesv1.PropertyKey_Type(ty), nil
+}
+
+func (r RowWrapper) MustAuctionTrigger(name string) types.AuctionTrigger {
+	at, err := AuctionTrigger(r.MustStr(name))
+	panicW(name, err)
+	return at
+}
+
+func (r RowWrapper) AuctionTrigger(name string) types.AuctionTrigger {
+	at, err := AuctionTrigger(r.Str(name))
+	panicW(name, err)
+	return at
+}
+
+func AuctionTrigger(name string) (types.AuctionTrigger, error) {
+	at, ok := types.AuctionTrigger_value[name]
+	if !ok {
+		return types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, fmt.Errorf("couldn't find %s as auction trigger", name)
+	}
+	return types.AuctionTrigger(at), nil
 }
 
 func (r RowWrapper) MustTradingMode(name string) types.Market_TradingMode {
