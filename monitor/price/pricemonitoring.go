@@ -131,6 +131,12 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
 		bounds:          bounds,
 	}
+	// hack to work around the update frequency being 0 causing an infinite loop
+	// for now, this will do
+	// @TODO go through integration and system tests once we validate this properly
+	if settings.UpdateFrequency == 0 {
+		e.updateFrequency = time.Second
+	}
 	return e, nil
 }
 

@@ -70,6 +70,12 @@ func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.D
 			errs = append(errs, fmt.Errorf("expected '%s' for %s, instead got '%s'", *e, s, *g))
 		}
 	}
+	if err := cmpPriceBounds(expect, actual); len(err) > 0 {
+		errs = append(errs, err...)
+	}
+	if err := cmpLPFeeShare(expect, actual); len(err) > 0 {
+		errs = append(errs, err...)
+	}
 	// wrap all errors in a single error type for complete information
 	if len(errs) > 0 {
 		return ErrStack(errs)
@@ -78,11 +84,77 @@ func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.D
 	return nil
 }
 
+func cmpLPFeeShare(expect *MappedMD, got types.MarketData) []error {
+	errs := make([]error, 0, len(expect.md.LiquidityProviderFeeShare))
+	for _, lpfs := range expect.md.LiquidityProviderFeeShare {
+		match := false
+		var found *types.LiquidityProviderFeeShare
+		for _, g := range got.LiquidityProviderFeeShare {
+			if lpfs.Party == g.Party {
+				found = g
+				match = (lpfs.AverageEntryValuation == g.AverageEntryValuation && lpfs.EquityLikeShare == g.EquityLikeShare)
+				break
+			}
+		}
+		if !match {
+			if found == nil {
+				errs = append(errs, fmt.Errorf("no LP fee share found for party %s", lpfs.Party))
+			} else {
+				errs = append(errs, fmt.Errorf(
+					"expected LP fee share for party %s with avg valuation %s and equity like share %s, instead got avg. valuation %s and equity %s",
+					lpfs.Party,
+					lpfs.AverageEntryValuation,
+					lpfs.EquityLikeShare,
+					found.AverageEntryValuation,
+					found.EquityLikeShare,
+				))
+			}
+		}
+	}
+	if len(errs) == 0 {
+		return nil
+	}
+	return errs
+}
+
+func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
+	errs := make([]error, 0, len(expect.md.PriceMonitoringBounds))
+	for _, pmb := range expect.md.PriceMonitoringBounds {
+		var bounds *types.PriceMonitoringBounds
+		match := false
+		for _, g := range got.PriceMonitoringBounds {
+			if g.Trigger.Horizon == pmb.Trigger.Horizon {
+				bounds = g
+				match = (pmb.MaxValidPrice == g.MaxValidPrice && pmb.MinValidPrice == g.MinValidPrice)
+				break
+			}
+		}
+		if !match {
+			if bounds == nil {
+				errs = append(errs, fmt.Errorf("no price bound for horizon %d found", pmb.Trigger.Horizon))
+			} else {
+				errs = append(errs, fmt.Errorf(
+					"expected price bounds %d-%d for horizon %d, instead got %d-%d",
+					pmb.MinValidPrice,
+					pmb.MaxValidPrice,
+					pmb.Trigger.Horizon,
+					bounds.MinValidPrice,
+					bounds.MaxValidPrice,
+				))
+			}
+		}
+	}
+	if len(errs) == 0 {
+		return nil
+	}
+	return errs
+}
+
 func getPriceBounds(data *gherkin.DataTable) (ret []*types.PriceMonitoringBounds) {
 	for _, row := range TableWrapper(*data).Parse() {
-		h := row.I64("horizon")
-		if h == 0 {
-			continue
+		h, ok := row.I64B("horizon")
+		if !ok {
+			return nil
 		}
 		expected := &types.PriceMonitoringBounds{
 			MinValidPrice: row.MustU64("min bound"),
@@ -98,9 +170,9 @@ func getPriceBounds(data *gherkin.DataTable) (ret []*types.PriceMonitoringBounds
 
 func getLPFeeShare(data *gherkin.DataTable) (ret []*types.LiquidityProviderFeeShare) {
 	for _, r := range TableWrapper(*data).Parse() {
-		avg := r.Str("average entry valuation")
-		if avg == "" {
-			continue
+		avg, ok := r.StrB("average entry valuation")
+		if !ok {
+			return nil
 		}
 		ret = append(ret, &types.LiquidityProviderFeeShare{
 			Party:                 r.MustStr("party"),

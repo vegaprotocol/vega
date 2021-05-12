@@ -2,9 +2,11 @@ package core_test
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
@@ -141,6 +143,40 @@ func FeatureContext(s *godog.Suite) {
 		return nil
 	})
 
+	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
+		n, err := strconv.ParseInt(blocks, 10, 0)
+		if err != nil {
+			return err
+		}
+		t, _ := execsetup.timeService.GetTimeNow()
+		fmt.Printf("time is now: %s\n", t)
+		block := time.Duration(blockDuration) * time.Second
+		for i := int64(0); i < n; i++ {
+			t = t.Add(block)
+			fmt.Printf("time is now: %s\n", t)
+			execsetup.timeService.SetTime(t)
+		}
+		return nil
+	})
+
+	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
+		delta, err := time.ParseDuration(total)
+		if err != nil {
+			return err
+		}
+		inc, err := time.ParseDuration(block)
+		if err != nil {
+			return err
+		}
+		t, _ := execsetup.timeService.GetTimeNow()
+		end := t.Add(delta)
+		for t.Before(end) {
+			t = t.Add(inc)
+			execsetup.timeService.SetTime(t)
+		}
+		return nil
+	})
+
 	// Assertion steps
 	s.Step(`^the following amendments should be rejected:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingAmendmentsShouldBeRejected(execsetup.errorHandler, table)
@@ -228,6 +264,13 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^the liquidity fee factor should "([^"]*)" for the market "([^"]*)"$`, func(fee, marketID string) error {
 		return steps.TheLiquidityFeeFactorShouldForTheMarket(execsetup.broker, fee, marketID)
+	})
+	s.Step(`^the market data for the market "([^"]+)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
+		return steps.TheMarketDataShouldBe(execsetup.executionEngine, marketID, table)
+	})
+	s.Step(`the auction ends with a traded volume of "([^"]+)" at a price of "([^"]+)"`, func(vol, price string) error {
+		now, _ := execsetup.timeService.GetTimeNow()
+		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
 	})
 
 	// Debug steps

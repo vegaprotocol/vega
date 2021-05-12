@@ -33,6 +33,12 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 			if err := netParams.Update(ctx, netparams.MarketLiquidityTargetStakeTriggeringRatio, n); err != nil {
 				return err
 			}
+		case netparams.MarketTargetStakeTimeWindow:
+			f := row.MustDurationSec("value")
+			str := f.String()
+			if err := netParams.Update(ctx, netparams.MarketTargetStakeTimeWindow, str); err != nil {
+				return err
+			}
 		default:
 			value := row.MustStr("value")
 			if err := netParams.Update(ctx, name, value); err != nil {
