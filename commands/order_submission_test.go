@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -56,7 +57,7 @@ func testOrderSubmissionWithoutMarketIDFails(t *testing.T) {
 		MarketId: "",
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.market_id", commands.ErrIsRequired))
+	assert.Contains(t, err.Get("order_submission.market_id"), commands.ErrIsRequired)
 }
 
 func testOrderSubmissionWithUnspecifiedSideFails(t *testing.T) {
@@ -64,7 +65,7 @@ func testOrderSubmissionWithUnspecifiedSideFails(t *testing.T) {
 		Side: types.Side_SIDE_UNSPECIFIED,
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.side", commands.ErrIsRequired))
+	assert.Contains(t, err.Get("order_submission.side"), commands.ErrIsRequired)
 }
 
 func testOrderSubmissionWithUndefinedSideFails(t *testing.T) {
@@ -72,7 +73,7 @@ func testOrderSubmissionWithUndefinedSideFails(t *testing.T) {
 		Side: types.Side(-42),
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.side", commands.ErrIsNotValid))
+	assert.Contains(t, err.Get("order_submission.side"), commands.ErrIsNotValid)
 }
 
 func testOrderSubmissionWithUnspecifiedTypeFails(t *testing.T) {
@@ -80,7 +81,7 @@ func testOrderSubmissionWithUnspecifiedTypeFails(t *testing.T) {
 		Type: types.Order_TYPE_UNSPECIFIED,
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.type", commands.ErrIsRequired))
+	assert.Contains(t, err.Get("order_submission.type"), commands.ErrIsRequired)
 }
 
 func testOrderSubmissionWithUndefinedTypeFails(t *testing.T) {
@@ -88,7 +89,7 @@ func testOrderSubmissionWithUndefinedTypeFails(t *testing.T) {
 		Type: types.Order_Type(-42),
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.type", commands.ErrIsNotValid))
+	assert.Contains(t, err.Get("order_submission.type"), commands.ErrIsNotValid)
 }
 
 func testOrderSubmissionWithNetworkTypeFails(t *testing.T) {
@@ -96,7 +97,7 @@ func testOrderSubmissionWithNetworkTypeFails(t *testing.T) {
 		Type: types.Order_TYPE_NETWORK,
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.type", commands.ErrIsUnauthorised))
+	assert.Contains(t, err.Get("order_submission.type"), commands.ErrIsUnauthorised)
 }
 
 func testOrderSubmissionWithUnspecifiedTimeInForceFails(t *testing.T) {
@@ -104,7 +105,7 @@ func testOrderSubmissionWithUnspecifiedTimeInForceFails(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_UNSPECIFIED,
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.time_in_force", commands.ErrIsRequired))
+	assert.Contains(t, err.Get("order_submission.time_in_force"), commands.ErrIsRequired)
 }
 
 func testOrderSubmissionWithUndefinedTimeInForceFails(t *testing.T) {
@@ -112,7 +113,7 @@ func testOrderSubmissionWithUndefinedTimeInForceFails(t *testing.T) {
 		TimeInForce: types.Order_TimeInForce(-42),
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.time_in_force", commands.ErrIsNotValid))
+	assert.Contains(t, err.Get("order_submission.time_in_force"), commands.ErrIsNotValid)
 }
 
 func testOrderSubmissionWithNonPositiveSizeFails(t *testing.T) {
@@ -122,7 +123,7 @@ func testOrderSubmissionWithNonPositiveSizeFails(t *testing.T) {
 		Size: 0,
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.size", commands.ErrMustBePositive))
+	assert.Contains(t, err.Get("order_submission.size"), commands.ErrMustBePositive)
 }
 
 func testOrderSubmissionWithGTTAndNonPositiveExpirationDateFails(t *testing.T) {
@@ -145,7 +146,7 @@ func testOrderSubmissionWithGTTAndNonPositiveExpirationDateFails(t *testing.T) {
 				ExpiresAt:   tc.value,
 			})
 
-			assert.True(t, err.ContainsErr("order_submission.expires_at", commands.ErrMustBePositive))
+			assert.Contains(t, err.Get("order_submission.expires_at"), commands.ErrMustBePositive)
 		})
 	}
 }
@@ -179,7 +180,7 @@ func testOrderSubmissionWithoutGTTAndExpirationDateFails(t *testing.T) {
 				ExpiresAt:   RandomI64(),
 			})
 
-			assert.True(t, err.ContainsStr("order_submission.expires_at", "is only available when the time in force is of type GTT"))
+			assert.Contains(t, err.Get("order_submission.expires_at"), errors.New("is only available when the time in force is of type GTT"))
 		})
 	}
 }
@@ -190,7 +191,7 @@ func testOrderSubmissionWithMarketTypeAndPriceFails(t *testing.T) {
 		Price: RandomPositiveU64(),
 	})
 
-	assert.True(t, err.ContainsStr("order_submission.price", "is unavailable when the order is of type MARKET"))
+	assert.Contains(t, err.Get("order_submission.price"), errors.New("is unavailable when the order is of type MARKET"))
 }
 
 func testOrderSubmissionWithMarketTypeAndWrongTimeInForceFails(t *testing.T) {
@@ -219,7 +220,7 @@ func testOrderSubmissionWithMarketTypeAndWrongTimeInForceFails(t *testing.T) {
 				TimeInForce: tc.value,
 			})
 
-			assert.True(t, err.ContainsStr("order_submission.time_in_force", "is expected to be of type FOK or IOC when order is of type MARKET"))
+			assert.Contains(t, err.Get("order_submission.time_in_force"), errors.New("is expected to be of type FOK or IOC when order is of type MARKET"))
 		})
 	}
 }
@@ -229,7 +230,7 @@ func testOrderSubmissionWithLimitTypeAndNoPriceFails(t *testing.T) {
 		Type: types.Order_TYPE_LIMIT,
 	})
 
-	assert.True(t, err.ContainsStr("order_submission.price", "is required when the order is of type LIMIT"))
+	assert.Contains(t, err.Get("order_submission.price"), errors.New("is required when the order is of type LIMIT"))
 }
 
 func testPeggedOrderSubmissionWithLimitTypeAndNoPriceSucceeds(t *testing.T) {
@@ -238,7 +239,7 @@ func testPeggedOrderSubmissionWithLimitTypeAndNoPriceSucceeds(t *testing.T) {
 		PeggedOrder: &types.PeggedOrder{},
 	})
 
-	assert.True(t, err.EmptyForProperty("order_submission.price"))
+	assert.NotContains(t, err.Get("order_submission.price"), errors.New("is required when the order is of type LIMIT"))
 }
 
 func testPeggedOrderSubmissionWithUnspecifiedReferenceFails(t *testing.T) {
@@ -248,7 +249,7 @@ func testPeggedOrderSubmissionWithUnspecifiedReferenceFails(t *testing.T) {
 		},
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.pegged_order.reference", commands.ErrIsRequired))
+	assert.Contains(t, err.Get("order_submission.pegged_order.reference"), commands.ErrIsRequired)
 }
 
 func testPeggedOrderSubmissionWithUndefinedReferenceFails(t *testing.T) {
@@ -258,7 +259,7 @@ func testPeggedOrderSubmissionWithUndefinedReferenceFails(t *testing.T) {
 		},
 	})
 
-	assert.True(t, err.ContainsErr("order_submission.pegged_order.reference", commands.ErrIsNotValid))
+	assert.Contains(t, err.Get("order_submission.pegged_order.reference"), commands.ErrIsNotValid)
 }
 
 func testPeggedOrderSubmissionWithoutLimitTypeFails(t *testing.T) {
@@ -281,7 +282,7 @@ func testPeggedOrderSubmissionWithoutLimitTypeFails(t *testing.T) {
 				PeggedOrder: &types.PeggedOrder{},
 			})
 
-			assert.True(t, err.ContainsStr("order_submission.type", "is expected to be an order of type LIMIT when the order is pegged"))
+			assert.Contains(t, err.Get("order_submission.type"), errors.New("is expected to be an order of type LIMIT when the order is pegged"))
 		})
 	}
 }
@@ -292,7 +293,7 @@ func testPeggedOrderSubmissionWithLimitTypeSucceeds(t *testing.T) {
 		PeggedOrder: &types.PeggedOrder{},
 	})
 
-	assert.True(t, err.EmptyForProperty("order_submission.type"))
+	assert.NotContains(t, err.Get("order_submission.type"), errors.New("is expected to be an order of type LIMIT when the order is pegged"))
 }
 
 func testPeggedOrderSubmissionWithWrongTimeInForceFails(t *testing.T) {
@@ -321,7 +322,7 @@ func testPeggedOrderSubmissionWithWrongTimeInForceFails(t *testing.T) {
 				PeggedOrder: &types.PeggedOrder{},
 			})
 
-			assert.True(t, err.ContainsStr("order_submission.time_in_force", "is expected to have a time in force of type GTT or GTC when the order is pegged"))
+			assert.Contains(t, err.Get("order_submission.time_in_force"), errors.New("is expected to have a time in force of type GTT or GTC when the order is pegged"))
 		})
 	}
 }
@@ -346,7 +347,7 @@ func testPeggedOrderSubmissionWithRightTimeInForceSucceeds(t *testing.T) {
 				PeggedOrder: &types.PeggedOrder{},
 			})
 
-			assert.True(t, err.EmptyForProperty("order_submission.time_in_force"))
+			assert.NotContains(t, err.Get("order_submission.time_in_force"), errors.New("is expected to have a time in force of type GTT or GTC when the order is pegged"))
 		})
 	}
 }
@@ -359,7 +360,7 @@ func testPeggedOrderSubmissionWithSideBuyAndBestAskReferenceFails(t *testing.T) 
 		},
 	})
 
-	assert.True(t, err.ContainsStr("order_submission.pegged_order.reference", "cannot have a reference of type BEST_ASK when on BUY side"))
+	assert.Contains(t, err.Get("order_submission.pegged_order.reference"), errors.New("cannot have a reference of type BEST_ASK when on BUY side"))
 }
 
 func testPeggedOrderSubmissionWithSideBuyAndBestBidReferenceSucceeds(t *testing.T) {
@@ -370,7 +371,7 @@ func testPeggedOrderSubmissionWithSideBuyAndBestBidReferenceSucceeds(t *testing.
 		},
 	})
 
-	assert.True(t, err.EmptyForProperty("order_submission.pegged_order.reference"))
+	assert.NotContains(t, err.Get("order_submission.pegged_order.reference"), errors.New("cannot have a reference of type BEST_ASK when on BUY side"))
 }
 
 func testPeggedOrderSubmissionWithSideBuyAndBestBidReferenceAndPositiveOffsetFails(t *testing.T) {
@@ -382,7 +383,7 @@ func testPeggedOrderSubmissionWithSideBuyAndBestBidReferenceAndPositiveOffsetFai
 		},
 	})
 
-	assert.True(t, err.ContainsStr("order_submission.pegged_order.offset", "must be negative or zero"))
+	assert.Contains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be negative or zero"))
 }
 
 func testPeggedOrderSubmissionWithSideBuyAndBestBidReferenceAndNonPositiveOffsetSucceeds(t *testing.T) {
@@ -408,7 +409,7 @@ func testPeggedOrderSubmissionWithSideBuyAndBestBidReferenceAndNonPositiveOffset
 				},
 			})
 
-			assert.True(t, err.EmptyForProperty("order_submission.pegged_order.offset"))
+			assert.NotContains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be negative or zero"))
 		})
 	}
 }
@@ -436,7 +437,7 @@ func testPeggedOrderSubmissionWithSideBuyAndMidReferenceAndNonNegativeOffsetFail
 				},
 			})
 
-			assert.True(t, err.ContainsStr("order_submission.pegged_order.offset", "must be negative"))
+			assert.Contains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be negative"))
 		})
 	}
 }
@@ -450,7 +451,7 @@ func testPeggedOrderSubmissionWithSideBuyAndMidReferenceAndNegativeOffsetSucceed
 		},
 	})
 
-	assert.True(t, err.EmptyForProperty("order_submission.pegged_order.offset"))
+	assert.NotContains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be negative"))
 }
 
 func testPeggedOrderSubmissionWithSideSellAndBestBidReferenceFails(t *testing.T) {
@@ -461,7 +462,7 @@ func testPeggedOrderSubmissionWithSideSellAndBestBidReferenceFails(t *testing.T)
 		},
 	})
 
-	assert.True(t, err.ContainsStr("order_submission.pegged_order.reference", "cannot have a reference of type BEST_BID when on SELL side"))
+	assert.Contains(t, err.Get("order_submission.pegged_order.reference"), errors.New("cannot have a reference of type BEST_BID when on SELL side"))
 }
 
 func testPeggedOrderSubmissionWithSideSellAndBestAskReferenceSucceeds(t *testing.T) {
@@ -472,7 +473,7 @@ func testPeggedOrderSubmissionWithSideSellAndBestAskReferenceSucceeds(t *testing
 		},
 	})
 
-	assert.True(t, err.EmptyForProperty("order_submission.pegged_order.reference"))
+	assert.NotContains(t, err.Get("order_submission.pegged_order.reference"), errors.New("cannot have a reference of type BEST_BID when on SELL side"))
 }
 
 func testPeggedOrderSubmissionWithSideSellAndBestAskReferenceAndNegativeOffsetFails(t *testing.T) {
@@ -484,7 +485,7 @@ func testPeggedOrderSubmissionWithSideSellAndBestAskReferenceAndNegativeOffsetFa
 		},
 	})
 
-	assert.True(t, err.ContainsStr("order_submission.pegged_order.offset", "must be positive or zero"))
+	assert.Contains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be positive or zero"))
 }
 
 func testPeggedOrderSubmissionWithSideSellAndBestAskReferenceAndNonNegativeOffsetSucceeds(t *testing.T) {
@@ -510,7 +511,7 @@ func testPeggedOrderSubmissionWithSideSellAndBestAskReferenceAndNonNegativeOffse
 				},
 			})
 
-			assert.True(t, err.EmptyForProperty("order_submission.pegged_order.offset"))
+			assert.NotContains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be positive or zero"))
 		})
 	}
 }
@@ -538,7 +539,7 @@ func testPeggedOrderSubmissionWithSideSellAndMidReferenceAndNonPositiveOffsetFai
 				},
 			})
 
-			assert.True(t, err.ContainsStr("order_submission.pegged_order.offset", "must be positive"))
+			assert.Contains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be positive"))
 		})
 	}
 }
@@ -552,7 +553,7 @@ func testPeggedOrderSubmissionWithSideSellAndMidReferenceAndPositiveOffsetSuccee
 		},
 	})
 
-	assert.True(t, err.EmptyForProperty("order_submission.pegged_order.offset"))
+	assert.NotContains(t, err.Get("order_submission.pegged_order.offset"), errors.New("must be positive"))
 }
 
 func checkOrderSubmission(cmd *commandspb.OrderSubmission) commands.Errors {

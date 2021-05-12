@@ -4630,7 +4630,7 @@
         },
         "market_timestamps": {
           "$ref": "#/definitions/vegaMarketTimestamps",
-          "title": "Timestamps for when the market staye changes"
+          "title": "Timestamps for when the market stay changes"
         }
       },
       "title": "Market definition"
@@ -5336,7 +5336,7 @@
         "probability": {
           "type": "number",
           "format": "double",
-          "title": "Price monitoirng probability level p"
+          "title": "Price monitoring probability level p"
         },
         "auction_extension": {
           "type": "string",

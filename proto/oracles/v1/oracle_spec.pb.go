@@ -299,7 +299,7 @@ type Filter struct {
 	// key is the oracle data property key targeted by the filter.
 	Key *PropertyKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	// conditions are the conditions that should be matched by the data to be
-	//considered of interest.
+	// considered of interest.
 	Conditions           []*Condition `protobuf:"bytes,2,rep,name=conditions,proto3" json:"conditions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
