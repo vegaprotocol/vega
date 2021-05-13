@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.36.0
+*2021-05-13*
+
+### Improvements
+- [#3408](https://github.com/vegaprotocol/vega/pull/3408) - Add more information on token proportion/weight on proposal votes APIs
+- [#3360](https://github.com/vegaprotocol/vega/pull/3360) - :fire: REST: Move deposits endpoint to `/parties/[partyId]/deposits`
+- [#3431](https://github.com/vegaprotocol/vega/pull/3431) - Improve caching of values when exiting auctions
+- [#3459](https://github.com/vegaprotocol/vega/pull/3459) - Add extra validation for Order, Vote, Withdrawal and LP transactions
+- [#3433](https://github.com/vegaprotocol/vega/pull/3433) - Reject non-persistent orders that fall outside price monitoring bounds
+- [#3443](https://github.com/vegaprotocol/vega/pull/3443) - Party is no longer required when submitting an order amendment
+- [#3446](https://github.com/vegaprotocol/vega/pull/3443) - Party is no longer required when submitting an order cancellation
+- [#3449](https://github.com/vegaprotocol/vega/pull/3449) - Party is no longer required when submitting an withdrawal request
+
+### Fixes
+- [#3451](https://github.com/vegaprotocol/vega/pull/3451) - Remove float usage in liquidity engine
+- [#3447](https://github.com/vegaprotocol/vega/pull/3447) - Clean up order submission code
+- [#3436](https://github.com/vegaprotocol/vega/pull/3436) - Break up internal proposal definitions
+- [#3452](https://github.com/vegaprotocol/vega/pull/3452) - Tidy up LP implementation internally
+- [#3458](https://github.com/vegaprotocol/vega/pull/3458) - Fix spelling errors in GraphQL docs
+- [#3434](https://github.com/vegaprotocol/vega/pull/3434) - Improve test coverage around Liquidity Provisions on auction close
+- [#3411](https://github.com/vegaprotocol/vega/pull/3411) - Fix settlement tests
+- [#3418](https://github.com/vegaprotocol/vega/pull/3418) - Rename External Resource Checker to Witness
+- [#3419](https://github.com/vegaprotocol/vega/pull/3419) - Fix blank IDs on oracle specs in genesis markets
+- [#3412](https://github.com/vegaprotocol/vega/pull/3412) - Refactor internal Vote Submission type to be separate from Vote type
+- [#3421](https://github.com/vegaprotocol/vega/pull/3421) - Improve test coverage around order uncrossing
+- [#3425](https://github.com/vegaprotocol/vega/pull/3425) - Remove debug steps from feature tests
+- [#3430](https://github.com/vegaprotocol/vega/pull/3430) - Remove `LiquidityPoolBalance` from configuration
+- [#3468](https://github.com/vegaprotocol/vega/pull/3468) - Increase rate limit that was causing mempools to fill up unnecessarily
+- [#3438](https://github.com/vegaprotocol/vega/pull/3438) - Split protobuf definitions
+- [#3450](https://github.com/vegaprotocol/vega/pull/3450) - Do not emit amendments from liquidity engine
+
 ## 0.35.0
 *2021-04-21*
 
