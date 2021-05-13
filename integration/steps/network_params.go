@@ -34,7 +34,7 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 				return err
 			}
 		case netparams.MarketTargetStakeTimeWindow:
-			f := row.MustDurationSec("value")
+			f := row.MustDurationStr("value")
 			str := f.String()
 			if err := netParams.Update(ctx, netparams.MarketTargetStakeTimeWindow, str); err != nil {
 				return err

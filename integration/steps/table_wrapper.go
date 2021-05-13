@@ -552,6 +552,13 @@ func (r RowWrapper) MustDuration(name string) time.Duration {
 	return time.Duration(r.MustU64(name))
 }
 
+func (r RowWrapper) MustDurationStr(name string) time.Duration {
+	s := r.MustStr(name)
+	d, err := time.ParseDuration(s)
+	panicW(name, err)
+	return d
+}
+
 func (r RowWrapper) Duration(name string) time.Duration {
 	return time.Duration(r.U64(name))
 }
