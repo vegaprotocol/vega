@@ -185,16 +185,13 @@ Scenario: Once market is in continuous trading mode: post a GFN order that shoul
      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
 
-    When the network moves ahead "1" blocks
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GFN |
       | trader2 | ETH/DEC21 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_FOK |
-    And the network moves ahead "1" blocks
     And the market data for the market "ETH/DEC21" should be:
-     | trading mode                    | auction trigger             | target stake | supplied stake | open interest |
-     | TRADING_MODE_CONTINUOUS         | AUCTION_TRIGGER_UNSPECIFIED | 1000         | 1000           | 10            |
-     #| TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 1000           | 10            |
+     | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
+     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 1000           | 10            |
 
 
 Scenario: Once market is in continuous trading mode: post a GFN order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
