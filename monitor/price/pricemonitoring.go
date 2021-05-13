@@ -205,6 +205,14 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 		e.initialised = true
 	}
 
+	last := currentPrice{
+		Price:  p,
+		Volume: v,
+	}
+	if len(e.pricesNow) > 0 {
+		last = e.pricesNow[len(e.pricesNow)-1]
+	}
+
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
 		if err := e.recordTimeChange(now); err != nil {
@@ -219,6 +227,8 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 			return nil
 		}
 		if !persistent {
+			// we're going to stay in continuous trading, make sure we still have bounds
+			e.reset(last.Price, last.Volume, now)
 			return types.ErrNonPersistentOrderOutOfBounds
 		}
 		duration := types.AuctionDuration{}

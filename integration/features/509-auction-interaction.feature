@@ -160,7 +160,44 @@ Scenario: When trying to exit opening auction liquidity monitoring is triggered 
     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
     | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
 
-Scenario: Once market is in continuous trading mode: post a GFN order that should trigger liquidity auction, check that the order gets rejected, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
+Scenario: Once market is in continuous trading mode: post a GFN order that should trigger liquidty auction, appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION
+    Given the following network parameters are set:
+      | name                                          | value |
+      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+
+    And the traders submit the following liquidity provision:
+      | id  | party   | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
+      | lp1 | trader0 | ETH/DEC21 | 1000              | 0.001 | buy        | BID             | 1                | -2           |
+      | lp1 | trader0 | ETH/DEC21 | 1000              | 0.001 | buy        | MID             | 2                | -1           |
+      | lp1 | trader0 | ETH/DEC21 | 1000              | 0.001 | sell       | ASK             | 1                | 2            |
+      | lp1 | trader0 | ETH/DEC21 | 1000              | 0.001 | sell       | MID             | 2                | 1            |
+
+    And the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the opening auction period ends for market "ETH/DEC21"
+    Then the auction ends with a traded volume of "10" at a price of "1000"
+    And the market data for the market "ETH/DEC21" should be:
+     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+     | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+
+    When the network moves ahead "1" blocks
+    Then the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader2 | ETH/DEC21 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_FOK |
+    And the network moves ahead "1" blocks
+    And the market data for the market "ETH/DEC21" should be:
+     | trading mode                    | auction trigger             | target stake | supplied stake | open interest |
+     | TRADING_MODE_CONTINUOUS         | AUCTION_TRIGGER_UNSPECIFIED | 1000         | 1000           | 10            |
+     #| TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 1000           | 10            |
+
+
+Scenario: Once market is in continuous trading mode: post a GFN order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -192,6 +229,9 @@ Scenario: Once market is in continuous trading mode: post a GFN order that shoul
     Then the following orders should be stopped:
       | trader  | market id | reason                                               |
       | trader1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
+    And the market data for the market "ETH/DEC21" should be:
+     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+     | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
 
 
 Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode
