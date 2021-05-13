@@ -2,7 +2,6 @@ package core_test
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"strconv"
 	"testing"
@@ -149,11 +148,9 @@ func FeatureContext(s *godog.Suite) {
 			return err
 		}
 		t, _ := execsetup.timeService.GetTimeNow()
-		fmt.Printf("time is now: %s\n", t)
 		block := time.Duration(blockDuration) * time.Second
 		for i := int64(0); i < n; i++ {
 			t = t.Add(block)
-			fmt.Printf("time is now: %s\n", t)
 			execsetup.timeService.SetTime(t)
 		}
 		return nil
