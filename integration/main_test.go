@@ -205,6 +205,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following orders should be rejected:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingOrdersShouldBeRejected(execsetup.broker, table)
 	})
+	s.Step(`^the following orders should be stopped:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingOrdersShouldBeStopped(execsetup.broker, table)
+	})
 	s.Step(`^"([^"]*)" should have general account balance of "([^"]*)" for asset "([^"]*)"$`, func(trader, balance, asset string) error {
 		return steps.TraderShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, trader, asset, balance)
 	})
