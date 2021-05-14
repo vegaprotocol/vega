@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -21,7 +22,6 @@ var (
 	ErrProposalNotFound        = errors.New("proposal not found")
 	ErrProposalIsDuplicate     = errors.New("proposal with given ID already exists")
 	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
-	ErrProposalInvalidState    = errors.New("proposal state not valid, only open can be submitted")
 	ErrProposalPassed          = errors.New("proposal has passed and can no longer be voted on")
 	ErrUnsupportedProposalType = errors.New("unsupported proposal type")
 	ErrProposalDoesNotExists   = errors.New("proposal does not exists")
@@ -509,18 +509,22 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
-func (e *Engine) AddVote(ctx context.Context, voteSub commandspb.VoteSubmission, party string) error {
-	proposal, err := e.validateVote(voteSub, party)
+func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, party string) error {
+	if err := commands.CheckVoteSubmission(&cmd); err != nil {
+		return err
+	}
+
+	proposal, err := e.validateVote(cmd, party)
 	if err != nil {
 		// vote was not created/accepted, send TxErrEvent
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, voteSub))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cmd))
 		return err
 	}
 
 	vote := types.Vote{
 		PartyId:    party,
-		ProposalId: voteSub.ProposalId,
-		Value:      voteSub.Value,
+		ProposalId: cmd.ProposalId,
+		Value:      cmd.Value,
 		Timestamp:  e.currentTime.UnixNano(),
 	}
 
