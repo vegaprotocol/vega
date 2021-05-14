@@ -156,6 +156,7 @@ func (g *GRPCServer) ReloadConf(cfg Config) {
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
+	g.tradingService.updateConfig(cfg)
 }
 
 func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
@@ -224,6 +225,7 @@ func (g *GRPCServer) Start() {
 
 	tradingSvc := &tradingService{
 		log:               g.log,
+		conf:              g.Config,
 		blockchain:        g.client,
 		tradeOrderService: g.orderService,
 		liquidityService:  g.liquidityService,
