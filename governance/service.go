@@ -2,25 +2,16 @@ package governance
 
 import (
 	"context"
-	"fmt"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/vega/broker"
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 
-	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
-)
-
-const invalidProposalTerms = "invalid proposal terms"
-
-var (
-	ErrMissingVoteData          = errors.New("required fields from vote missing")
-	ErrUnsupportedProposalTerms = errors.New("unsupported proposal terms")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/governance EventBus
@@ -327,82 +318,29 @@ func (s *Svc) GetNewAssetProposals(inState *types.Proposal_State) []*types.Gover
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal
 func (s *Svc) PrepareProposal(
-	ctx context.Context, reference string, terms *types.ProposalTerms,
+	_ context.Context, reference string, terms *types.ProposalTerms,
 ) (*commandspb.ProposalSubmission, error) {
-	if err := s.validateTerms(terms); err != nil {
-		return nil, err
-	}
 	if len(reference) <= 0 {
 		reference = uuid.NewV4().String()
 	}
-	return &commandspb.ProposalSubmission{
+
+	cmd := &commandspb.ProposalSubmission{
 		Reference: reference,
 		Terms:     terms,
-	}, nil
+	}
+
+	if err := commands.CheckProposalSubmission(cmd); err != nil {
+		return nil, err
+	}
+
+	return cmd, nil
 }
 
 // PrepareVote - some additional validation on the vote message we're preparing
-func (s *Svc) PrepareVote(vote *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error) {
-	// to check if the enum value is correct:
-	_, ok := types.Vote_Value_value[vote.Value.String()]
-	if vote.ProposalId == "" || !ok {
-		return nil, ErrMissingVoteData
-	}
-	return vote, nil
-}
-
-// validateTerms performs trivial sanity check
-func (s *Svc) validateTerms(terms *types.ProposalTerms) error {
-	if err := terms.Validate(); err != nil {
-		return errors.Wrap(err, invalidProposalTerms)
+func (s *Svc) PrepareVote(cmd *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error) {
+	if err := commands.CheckVoteSubmission(cmd); err != nil {
+		return nil, err
 	}
 
-	// we should be able to enact a proposal as soon as the voting is closed (and the proposal passed)
-	if terms.EnactmentTimestamp < terms.ClosingTimestamp {
-		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
-		closeTime := time.Unix(terms.ClosingTimestamp, 0)
-		return fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
-	}
-
-	if terms.ValidationTimestamp > 0 && terms.ValidationTimestamp >= terms.ClosingTimestamp {
-		validationTime := time.Unix(terms.ValidationTimestamp, 0)
-		closeTime := time.Unix(terms.ClosingTimestamp, 0)
-		return fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime, closeTime)
-	}
-
-	return s.validateProposalChanges(terms)
-}
-
-func (s *Svc) validateProposalChanges(terms *types.ProposalTerms) error {
-	switch c := terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
-		return s.validateNewMarketChanges(terms, c.NewMarket)
-	case *types.ProposalTerms_UpdateNetworkParameter:
-		return s.validateUpdateNetworkParameterChanges(c.UpdateNetworkParameter)
-	case *types.ProposalTerms_NewAsset:
-		return s.validateNewAssetChanges(c.NewAsset)
-	default:
-		return ErrUnsupportedProposalTerms
-	}
-}
-
-func (s *Svc) validateUpdateNetworkParameterChanges(np *types.UpdateNetworkParameter) (err error) {
-	_, err = validateNetworkParameterUpdate(s.netp, np.Changes)
-	return
-}
-
-func (s *Svc) validateNewAssetChanges(np *types.NewAsset) (err error) {
-	_, err = validateNewAsset(np.Changes)
-	return
-}
-
-func (s *Svc) validateNewMarketChanges(
-	terms *types.ProposalTerms, nm *types.NewMarket) (err error) {
-	closeTime := time.Unix(terms.ClosingTimestamp, 0)
-	enactTime := time.Unix(terms.EnactmentTimestamp, 0)
-
-	// just validate things which cannot be done straight with
-	_, err = validateNewMarket(
-		time.Time{}, nm, nil, false, s.netp, enactTime.Sub(closeTime))
-	return
+	return cmd, nil
 }

@@ -5,14 +5,18 @@ import (
 	"errors"
 	"sync"
 
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
+	// ErrEmptyPrepareRequest empty prepare request
+	ErrEmptyPrepareRequest    = errors.New("empty prepare request")
 	ErrNoMarketOrPartyFilters = errors.New("market or party filters are required")
 )
 
@@ -61,7 +65,19 @@ func (s *Svc) ReloadConf(config Config) {
 	s.config = config
 }
 
-func (s *Svc) PrepareLiquidityProvisionSubmission(_ context.Context, _ *commandspb.LiquidityProvisionSubmission) error {
+func (s *Svc) PrepareLiquidityProvisionSubmission(_ context.Context, cmd *commandspb.LiquidityProvisionSubmission) error {
+	if cmd == nil {
+		return ErrEmptyPrepareRequest
+	}
+
+	if cmd.Reference == "" {
+		cmd.Reference = uuid.NewV4().String()
+	}
+
+	if err := commands.CheckLiquidityProvisionSubmission(cmd); err != nil {
+		return err
+	}
+
 	return nil
 }
 

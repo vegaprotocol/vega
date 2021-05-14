@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -15,54 +16,8 @@ import (
 )
 
 var (
-	// ErrInvalidExpirationDT signals that the time format was invalid
-	ErrInvalidExpirationDT = errors.New("invalid expiration datetime (cannot be in the past)")
-	// ErrInvalidTimeInForceForMarketOrder signals that the time in force used with a market order is not accepted
-	ErrInvalidTimeInForceForMarketOrder = errors.New("invalid time in force for market order (expected: FOK/IOC)")
-	// ErrInvalidPriceForLimitOrder signal that a a price was missing for a limit order
-	ErrInvalidPriceForLimitOrder = errors.New("invalid limit order (missing required price)")
-	// ErrInvalidPriceForMarketOrder signals that a price was specified for a market order but not price is required
-	ErrInvalidPriceForMarketOrder = errors.New("invalid market order (no price required)")
-	// ErrNonGTTOrderWithExpiry signals that a non GTT order what set with an expiry
-	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
-	// ErrGTTOrderWithNoExpiry signals that a GTT order was set without an expiry
-	ErrGTTOrderWithNoExpiry = errors.New("GTT order without expiry")
 	// ErrEmptyPrepareRequest empty prepare request
 	ErrEmptyPrepareRequest = errors.New("empty prepare request")
-	// ErrNoParamsInAmendRequest no amended fields have been provided
-	ErrNoParamsInAmendRequest = errors.New("no amended fields have been provided")
-	// ErrNoTimeInForce no value has been set for the time in force
-	ErrNoTimeInForce = errors.New("no value has been set for the time in force")
-	// ErrNoSide no value has been set for the side
-	ErrNoSide = errors.New("no value has been set for the side")
-	// ErrNoType no value has been set for the type
-	ErrNoType = errors.New("no value has been set for the type")
-	// ErrUnAuthorizedOrderType order type is not allowed (most likely NETWORK)
-	ErrUnAuthorizedOrderType = errors.New("unauthorized order type")
-	// ErrCancelOrderWithOrderID RequireMarketID a cancel order request with an orderID specified requires the marketID in which the order exists
-	ErrCancelOrderWithOrderIDRequireMarketID = errors.New("cancel order with orderID require marketID")
-	// ErrCannotAmendToGFA it is not allowed to amend an order to GFA time in force
-	ErrCannotAmendToGFA = errors.New("cannot amend to time in force GFA")
-	// ErrCannotAmendToGFN it is not allowed to amend an order to GFN time in force
-	ErrCannotAmendToGFN = errors.New("cannot amend to time in force GFN")
-	// ErrPeggedOrderMustBeLimitOrder pegged order must be limit orders
-	ErrPeggedOrderMustBeLimitOrder = errors.New("pegged orders must be limit orders")
-	// ErrPeggedOrderMustBeGTTOrGTC pegged orders must be GTT or GTC orders
-	ErrPeggedOrderMustBeGTTOrGTC = errors.New("pegged orders must be GTT or GTC orders")
-	// ErrPeggedOrderWithoutReferencePrice pegged order message with no reference price
-	ErrPeggedOrderWithoutReferencePrice = errors.New("pegged order missing a reference price")
-	// ErrPeggedOrderBuyCannotReferenceBestAskPrice pegged buy order cannot reference best ask
-	ErrPeggedOrderBuyCannotReferenceBestAskPrice = errors.New("pegged buy order cannot reference best ask")
-	// ErrPeggedOrderOffsetMustBeLessOrEqualToZero pegged order offset must be <= 0
-	ErrPeggedOrderOffsetMustBeLessOrEqualToZero = errors.New("pegged order offset must be <= 0")
-	// ErrPeggedOrderOffsetMustBeLessThanZero pegged order offset must be < 0
-	ErrPeggedOrderOffsetMustBeLessThanZero = errors.New("pegged order offset must be < 0")
-	// ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero pegged order offset must be >= 0
-	ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero = errors.New("pegged order offset must be >= 0")
-	// ErrPeggedOrderSellCannotReferenceBestBidPrice pegged sell order cannot reference best bid
-	ErrPeggedOrderSellCannotReferenceBestBidPrice = errors.New("pegged sell order cannot reference best bid")
-	// ErrPeggedOrderOffsetMustBeGreaterThanZero pegged order offset must be > 0
-	ErrPeggedOrderOffsetMustBeGreaterThanZero = errors.New("pegged order offset must be > 0")
 )
 
 // TimeService ...
@@ -123,170 +78,35 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-func (s *Svc) PrepareSubmitOrder(ctx context.Context, submission *commandspb.OrderSubmission) error {
-	if submission == nil {
+func (s *Svc) PrepareSubmitOrder(_ context.Context, cmd *commandspb.OrderSubmission) error {
+	if cmd == nil {
 		return ErrEmptyPrepareRequest
 	}
-	if err := s.validateOrderSubmission(submission); err != nil {
+
+	if cmd.Reference == "" {
+		cmd.Reference = uuid.NewV4().String()
+	}
+
+	if err := commands.CheckOrderSubmission(cmd); err != nil {
 		return err
 	}
-	if submission.Reference == "" {
-		submission.Reference = uuid.NewV4().String()
-	}
+
 	return nil
 }
 
-func (s *Svc) validateOrderSubmission(sub *commandspb.OrderSubmission) error {
-	if err := sub.Validate(); err != nil {
-		return errors.Wrap(err, "order validation failed")
-	}
-
-	if sub.Side == types.Side_SIDE_UNSPECIFIED {
-		return ErrNoSide
-	}
-
-	if sub.Type == types.Order_TYPE_UNSPECIFIED {
-		return ErrNoType
-	}
-
-	if sub.TimeInForce == types.Order_TIME_IN_FORCE_UNSPECIFIED {
-		return ErrNoTimeInForce
-	}
-
-	if sub.TimeInForce == types.Order_TIME_IN_FORCE_GTT {
-		if sub.ExpiresAt <= 0 {
-			s.log.Error("invalid expiration time")
-			return ErrInvalidExpirationDT
-		}
-	}
-
-	if sub.TimeInForce != types.Order_TIME_IN_FORCE_GTT && sub.ExpiresAt != 0 {
-		return ErrNonGTTOrderWithExpiry
-	}
-
-	if sub.Type == types.Order_TYPE_MARKET && sub.Price != 0 {
-		return ErrInvalidPriceForMarketOrder
-	}
-	if sub.Type == types.Order_TYPE_MARKET &&
-		(sub.TimeInForce != types.Order_TIME_IN_FORCE_FOK && sub.TimeInForce != types.Order_TIME_IN_FORCE_IOC) {
-		return ErrInvalidTimeInForceForMarketOrder
-	}
-	if sub.Type == types.Order_TYPE_LIMIT && sub.Price == 0 &&
-		sub.PeggedOrder == nil {
-		return ErrInvalidPriceForLimitOrder
-	}
-	if sub.Type == types.Order_TYPE_NETWORK {
-		return ErrUnAuthorizedOrderType
-	}
-
-	// Validation for pegged orders
-	if sub.PeggedOrder != nil {
-		if sub.Type != types.Order_TYPE_LIMIT {
-			// All pegged orders must be LIMIT orders
-			return ErrPeggedOrderMustBeLimitOrder
-		}
-
-		if sub.TimeInForce != types.Order_TIME_IN_FORCE_GTT && sub.TimeInForce != types.Order_TIME_IN_FORCE_GTC {
-			// Pegged orders can only be GTC or GTT
-			return ErrPeggedOrderMustBeGTTOrGTC
-		}
-
-		if sub.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
-			// We must specify a valid reference
-			return ErrPeggedOrderWithoutReferencePrice
-		}
-
-		if sub.Side == types.Side_SIDE_BUY {
-			switch sub.PeggedOrder.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				return ErrPeggedOrderBuyCannotReferenceBestAskPrice
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				if sub.PeggedOrder.Offset > 0 {
-					return ErrPeggedOrderOffsetMustBeLessOrEqualToZero
-				}
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
-				if sub.PeggedOrder.Offset >= 0 {
-					return ErrPeggedOrderOffsetMustBeLessThanZero
-				}
-			}
-		} else {
-			switch sub.PeggedOrder.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				if sub.PeggedOrder.Offset < 0 {
-					return ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero
-				}
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				return ErrPeggedOrderSellCannotReferenceBestBidPrice
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
-				if sub.PeggedOrder.Offset <= 0 {
-					return ErrPeggedOrderOffsetMustBeGreaterThanZero
-				}
-			}
-		}
-	}
+func (s *Svc) PrepareCancelOrder(_ context.Context, cmd *commandspb.OrderCancellation) error {
 	return nil
 }
 
-func (s *Svc) PrepareCancelOrder(ctx context.Context, order *commandspb.OrderCancellation) error {
-	if order == nil {
+func (s *Svc) PrepareAmendOrder(_ context.Context, cmd *commandspb.OrderAmendment) error {
+	if cmd == nil {
 		return ErrEmptyPrepareRequest
 	}
-	if err := order.Validate(); err != nil {
-		return errors.Wrap(err, "order cancellation invalid")
+
+	if err := commands.CheckOrderAmendment(cmd); err != nil {
+		return err
 	}
 
-	// ensure that if orderID is specified marketId is as well
-	if len(order.OrderId) > 0 && len(order.MarketId) <= 0 {
-		return ErrCancelOrderWithOrderIDRequireMarketID
-	}
-
-	return nil
-}
-
-func (s *Svc) PrepareAmendOrder(ctx context.Context, amendment *commandspb.OrderAmendment) error {
-	if amendment == nil {
-		return ErrEmptyPrepareRequest
-	}
-	if err := amendment.Validate(); err != nil {
-		return errors.Wrap(err, "order amendment validation failed")
-	}
-
-	// Check we are not trying to amend to a GFA
-	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GFA {
-		return ErrCannotAmendToGFA
-	}
-
-	// Check we are not trying to amend to a GFN
-	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GFN {
-		return ErrCannotAmendToGFN
-	}
-
-	// Check we have at least one field to update
-	if amendment.Price == nil &&
-		amendment.SizeDelta == 0 &&
-		(amendment.ExpiresAt == nil || amendment.ExpiresAt.Value == 0) &&
-		amendment.TimeInForce == types.Order_TIME_IN_FORCE_UNSPECIFIED &&
-		amendment.PeggedOffset == nil &&
-		amendment.PeggedReference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
-		return ErrNoParamsInAmendRequest
-	}
-
-	// Only update ExpiresAt when TIME_IN_FORCE is related
-	if amendment.ExpiresAt != nil && amendment.ExpiresAt.Value > 0 {
-		if amendment.TimeInForce != types.Order_TIME_IN_FORCE_GTT &&
-			amendment.TimeInForce != types.Order_TIME_IN_FORCE_UNSPECIFIED {
-			// We cannot change the expire time for this order type
-			return ErrNonGTTOrderWithExpiry
-		}
-	}
-
-	// if order is GTT convert datetime to blockchain ts
-	if amendment.TimeInForce == types.Order_TIME_IN_FORCE_GTT {
-		if amendment.ExpiresAt == nil {
-			s.log.Error("unable to set trade type to GTT when no expiry given")
-			return ErrGTTOrderWithNoExpiry
-		}
-	}
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -13,10 +14,8 @@ import (
 )
 
 var (
-	// ErrInvalidWithdrawAmount usually the party specified an amount of 0
-	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
-	// ErrMissingAsset signals that an asset was required but not specified
-	ErrMissingAsset = errors.New("missing asset")
+	// ErrEmptyPrepareRequest empty prepare request
+	ErrEmptyPrepareRequest = errors.New("empty prepare request")
 )
 
 // AccountStore represents a store for the accounts
@@ -62,13 +61,15 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-func (s *Svc) PrepareWithdraw(ctx context.Context, w *commandspb.WithdrawSubmission) error {
-	if len(w.Asset) <= 0 {
-		return ErrMissingAsset
+func (s *Svc) PrepareWithdraw(_ context.Context, cmd *commandspb.WithdrawSubmission) error {
+	if cmd == nil {
+		return ErrEmptyPrepareRequest
 	}
-	if w.Amount == 0 {
-		return ErrInvalidWithdrawAmount
+
+	if err := commands.CheckWithdrawSubmission(cmd); err != nil {
+		return err
 	}
+
 	return nil
 }
 
