@@ -140,11 +140,9 @@ func TestEnableAssets(t *testing.T) {}
 func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {}
 ```
 
-Each main test function contains a number of `t.Run("brief description of the specific test", testSpecificCaseFunc)` statements. The advantage is that running `go test -v ./collateral/...` groups the output per functionality, listing each specific test case, and whether or not it succeeded. Opening the file, jumping to a test group and locating the specific test case is faster to do than to filter through the same number of tests in a single file without any grouping applied to them.
+In some cases it is useful to have functions that can access internal state of a type that would not be accessible from the public API. These test helper functions are not required during normal code use, only for when we are testing and want to perform extra checks around the state of the type. For example in the matching-engine, if we delete an order we can check it has gone by querying for that order. However that does not tell us if the price level has been removed, the volume at a price level has reduced or if the number of items in the expiry collection has been reduced. We can add these helper functions in a separate file named <type>_for_test.go and the package name will be the same as the main code for that type.
 
-It's also easier on reviewers to look at a PR and find a new test group when a new feature is added. If no such group is found, then it's pretty obvious no new tests were added. If a new group is added, we can see in a single function what scenario's have a unit test covering them.
-
-When changes to specs, or internal implementations of existing features happen, these groups aid in refactoring. If the MarkToMarket transfers change in whatever way, we should be able to get the tests to pass simply by updating the `TestCollateralMarkToMarket` group.
+Each unit test should be separate and not part of a group of tests. If a test fails we do not want to run through several tests that pass before getting to the failing test. When a test fails the name of the test is displayed so we can search and go straight to the failing test without needing an extra level of redirection. It is also easier for people working with modern development environments to be able to quickly run and inspect a single test from within their editor.
 
 ## Protobuf
 
@@ -224,7 +222,7 @@ Named return values are perfectly fine. They can be useful in certain scenarios 
 
 ## Log levels
 
-We want to be consistent regarding log levels used. We use the standard levels (`DEBUG`, `INFO`, `WARN`, `ERROR`, and `FATAL`). Following the code review document used as a base, we shouldn't use the `PANIC` level.
+We want to be consistent regarding log levels used. We use the standard levels (`DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL` and `PANIC`). 
 
 * `DEBUG`: As the name suggests, debug logs should be used to output information that is **useful to core developers** for debugging. These logs provide information useful for developing features, or fixing bugs. Because logging things like orders has a performance impact, we wrap log statements in an `if`, making sure we only call `log.Debug` if the log level is active.
 
@@ -237,7 +235,7 @@ We want to be consistent regarding log levels used. We use the standard levels (
 * `WARN`: These logs indicate that something unusual (but expected) has happened, the node is now operating in a sub-optimal way, and the node operator could do something to fix this to remove so that the log message would not appear.
 * `ERROR`: These logs indicate that there was a problem with a non-instrumental subsystem (e.g. the REST HTTP server died) but the node can continue, albeit in a degraded state (e.g. gRPC and GraphQL are fine, but not the dead REST HTTP server). The node operator probably needs to take some significant action (e.g. restarting the node, augmenting node hardware).
 * `FATAL`: These logs indicate that the node was unable to continue. Something went terribly wrong, and this is likely due to a bug. Immediate investigation and fixing is required. `os.Exit(1)` is called, which does not run deferred functions.
-* `PANIC`: Simple: don't panic. This should either be a `FATAL` log, or an `ERROR`, depending on the case.
+* `PANIC`: We have got to a state that is critically incorrect and is not fixable. Any further execution of the application could produce incorrect results and is considered dangerous. 
 
 Notable exception: A context with timeout/cancel always returns an error if the context is cancelled (whether it be due to the time limit being reached, or the context being cancelled manually). These errors specify why a context was cancelled. This information is returned by the `ctx.Err()` function, but this should *not* be logged as an error. We log this at the `DEBUG` level. When the context for a (gRPC) stream is cancelled, for example, we should either ignore the error, or log it at the `DEBUG` level.
 The reason we might want to log this could be: to ensure that streams are closed correctly if the client disconnects, or the stream hasn't been read in a while. This information is useful when debugging the application, but should not be spamming the logs with `ERROR` entries: this is expected behaviour after all.
@@ -286,3 +284,4 @@ Some of the wording that was used as a standard 10 years ago is no long consider
 
 * Blacklist/Whitelist -> Denylist/Allowlist
 * Master/Slave -> Primary/Replica
+* Master/Develop -> Main/Develop
