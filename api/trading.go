@@ -145,7 +145,7 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Pr
 }
 
 // value receiver is important, config can be updated, this avoids data race
-func (s tradingService) validateSubmitTx(ty protoapu.SubmitTransactionRequest_Type) (protoapi.SubmitTransactionRequest_Type, error) {
+func (s tradingService) validateSubmitTx(ty protoapi.SubmitTransactionRequest_Type) (protoapi.SubmitTransactionRequest_Type, error) {
 	// ensure this is a known value for the type
 	if _, ok := protoapi.SubmitTransactionRequest_Type_name[ty]; !ok {
 		return protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED, ErrUnknownSubmitTxRequestType
