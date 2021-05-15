@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/pkg/errors"
@@ -18,22 +18,22 @@ var (
 
 type NodeSignatureEvent interface {
 	events.Event
-	NodeSignature() types.NodeSignature
+	NodeSignature() commandspb.NodeSignature
 }
 
 type Notary struct {
 	*subscribers.Base
 
-	sigs map[string][]types.NodeSignature
+	sigs map[string][]commandspb.NodeSignature
 	mu   sync.RWMutex
-	ch   chan types.NodeSignature
+	ch   chan commandspb.NodeSignature
 }
 
 func NewNotary(ctx context.Context) *Notary {
 	n := &Notary{
 		Base: subscribers.NewBase(ctx, 10, true),
-		sigs: map[string][]types.NodeSignature{},
-		ch:   make(chan types.NodeSignature, 100),
+		sigs: map[string][]commandspb.NodeSignature{},
+		ch:   make(chan commandspb.NodeSignature, 100),
 	}
 
 	go n.consume()
@@ -68,7 +68,7 @@ func (n *Notary) consume() {
 	}
 }
 
-func (n *Notary) appendSig(sig types.NodeSignature) {
+func (n *Notary) appendSig(sig commandspb.NodeSignature) {
 	sigs := n.sigs[sig.Id]
 	for _, s := range sigs {
 		if bytes.Equal(s.Sig, sig.Sig) {
@@ -80,7 +80,7 @@ func (n *Notary) appendSig(sig types.NodeSignature) {
 	n.sigs[sig.Id] = append(sigs, sig)
 }
 
-func (n *Notary) GetByID(id string) ([]types.NodeSignature, error) {
+func (n *Notary) GetByID(id string) ([]commandspb.NodeSignature, error) {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 	if v, ok := n.sigs[id]; ok {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
@@ -105,11 +106,11 @@ func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStat
 	}
 }
 
-func convertNodeSignatureKindFromProto(x types.NodeSignatureKind) (NodeSignatureKind, error) {
+func convertNodeSignatureKindFromProto(x commandspb.NodeSignatureKind) (NodeSignatureKind, error) {
 	switch x {
-	case types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW:
+	case commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW:
 		return NodeSignatureKindAssetNew, nil
-	case types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL:
+	case commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL:
 		return NodeSignatureKindAssetWithdrawal, nil
 	default:
 		err := fmt.Errorf("failed to convert NodeSignatureKind from proto to graphql: %v", x)
@@ -460,7 +461,7 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER:
 		return ProposalRejectionReasonInvalidRiskParameter, nil
 	default:
-		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
+		err := fmt.Errorf("failed to convert ProposalRejectionReason from Proto to GraphQL: %v", x)
 		return "", err
 	}
 }
@@ -552,6 +553,8 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonInvalidTimeInForce, nil
 	case types.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER:
 		return OrderRejectionReasonUnableToAmendPeggedOrderPrice, nil
+	case types.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS:
+		return OrderRejectionReasonNonPersistentOrderExceedsPriceBounds, nil
 	default:
 		err := fmt.Errorf("failed to convert OrderRejectionReason from Proto to GraphQL: %v", x)
 		return OrderRejectionReasonInternalError, err

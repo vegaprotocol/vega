@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockNotaryService) EXPECT() *MockNotaryServiceMockRecorder {
 }
 
 // GetByID mocks base method
-func (m *MockNotaryService) GetByID(arg0 string) ([]proto.NodeSignature, error) {
+func (m *MockNotaryService) GetByID(arg0 string) ([]v1.NodeSignature, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
-	ret0, _ := ret[0].([]proto.NodeSignature)
+	ret0, _ := ret[0].([]v1.NodeSignature)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

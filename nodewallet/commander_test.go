@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/nodewallet/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/mock/gomock"
@@ -63,7 +63,7 @@ func testSignedCommandSuccess(t *testing.T) {
 	defer commander.Finish()
 
 	cmd := txn.NodeVoteCommand
-	payload := &types.NodeVote{}
+	payload := &commandspb.NodeVote{}
 	ctx := context.Background()
 
 	commander.chain.EXPECT().SubmitTransaction(ctx, gomock.Any(), gomock.Any()).Times(1)

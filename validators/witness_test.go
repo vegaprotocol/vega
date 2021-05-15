@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/validators/mocks"
 
@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type testExtResChecker struct {
-	*validators.ExtResChecker
+type testWitness struct {
+	*validators.Witness
 	ctrl      *gomock.Controller
 	top       *mocks.MockValidatorTopology
 	cmd       *mocks.MockCommander
@@ -23,7 +23,7 @@ type testExtResChecker struct {
 	startTime time.Time
 }
 
-func getTestExtResChecker(t *testing.T) *testExtResChecker {
+func getTestWitness(t *testing.T) *testWitness {
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
@@ -32,17 +32,17 @@ func getTestExtResChecker(t *testing.T) *testExtResChecker {
 	now := time.Now()
 	tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	nv := validators.NewExtResChecker(
+	w := validators.NewWitness(
 		logging.NewTestLogger(), validators.NewDefaultConfig(), top, cmd, tsvc)
-	assert.NotNil(t, nv)
+	assert.NotNil(t, w)
 
-	return &testExtResChecker{
-		ExtResChecker: nv,
-		ctrl:          ctrl,
-		top:           top,
-		cmd:           cmd,
-		tsvc:          tsvc,
-		startTime:     now,
+	return &testWitness{
+		Witness:   w,
+		ctrl:      ctrl,
+		top:       top,
+		cmd:       cmd,
+		tsvc:      tsvc,
+		startTime: now,
 	}
 }
 
@@ -59,7 +59,7 @@ func TestExtResCheck(t *testing.T) {
 }
 
 func testStartErrorDuplicate(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -77,7 +77,7 @@ func testStartErrorDuplicate(t *testing.T) {
 }
 
 func testStartErrorCheckFailed(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -93,7 +93,7 @@ func testStartErrorCheckFailed(t *testing.T) {
 }
 
 func testStartOK(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -109,7 +109,7 @@ func testStartOK(t *testing.T) {
 }
 
 func testNodeVoteInvalidProposalReference(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -123,12 +123,12 @@ func testNodeVoteInvalidProposalReference(t *testing.T) {
 	err := erc.StartCheck(res, cb, checkUntil)
 	assert.NoError(t, err)
 
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: "bad-id"})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: "bad-id"})
 	assert.EqualError(t, err, validators.ErrInvalidResourceIDForNodeVote.Error())
 }
 
 func testNodeVoteNotAValidator(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -143,12 +143,12 @@ func testNodeVoteNotAValidator(t *testing.T) {
 	assert.NoError(t, err)
 
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(false)
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id})
 	assert.EqualError(t, err, validators.ErrVoteFromNonValidator.Error())
 }
 
 func testNodeVoteOK(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -163,12 +163,12 @@ func testNodeVoteOK(t *testing.T) {
 	assert.NoError(t, err)
 
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id})
 	assert.NoError(t, err)
 }
 
 func testNodeVoteDuplicateVote(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -184,17 +184,17 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 
 	// first vote, all good
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.NoError(t, err)
 
 	// second vote, bad
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.EqualError(t, err, validators.ErrDuplicateVoteFromNode.Error())
 }
 
 func testOnChainTimeUpdate(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -228,12 +228,12 @@ func testOnChainTimeUpdate(t *testing.T) {
 
 	// then we propagate our own vote
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: selfPubKey})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: selfPubKey})
 	assert.NoError(t, err)
 
 	// second vote from another validator
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.NoError(t, err)
 
 	// call onTick again to get the callback called
@@ -245,7 +245,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 }
 
 func testOnChainTimeUpdateNonValidator(t *testing.T) {
-	erc := getTestExtResChecker(t)
+	erc := getTestWitness(t)
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
@@ -272,12 +272,12 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 
 	// then we propagate our own vote
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: selfPubKey})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: selfPubKey})
 	assert.NoError(t, err)
 
 	// second vote from another validator
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &proto.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.NoError(t, err)
 
 	// call onTick again to get the callback called

@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
@@ -54,7 +55,7 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 		proc.assets,
 		proc.bank,
 		nil, // broker
-		proc.erc,
+		proc.witness,
 		proc.evtfwd,
 		proc.eng,
 		proc.cmd,
@@ -79,15 +80,8 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &types.OrderSubmission{
-			PartyId: party,
+		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
 		},
-		txn.CancelOrderCommand: &types.OrderCancellation{
-			PartyId: party,
-		},
-		// txn.AmendOrderCommand: &types.OrderAmendment{
-		// 	PartyId: party,
-		// },
 		txn.ProposeCommand: &types.Proposal{
 			PartyId: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
@@ -95,19 +89,14 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 		txn.VoteCommand: &types.Vote{
 			PartyId: party,
 		},
-		// txn.WithdrawCommand: &types.Withdraw{
-		// 	PartyId: party,
-		// },
 	}
 	zero := uint64(0)
 
-	// proc.stat.EXPECT().IncTotalAmendOrder().Times(1)
 	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
 	proc.stat.EXPECT().Height().AnyTimes()
 	proc.stat.EXPECT().SetAverageTxSizeBytes(gomock.Any()).AnyTimes()
 	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
 
-	proc.stat.EXPECT().IncTotalCancelOrder().Times(1)
 	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
 	// creating an order, should be no trades
 	proc.stat.EXPECT().IncTotalOrders().Times(1)
@@ -115,13 +104,11 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
 	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
 
-	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{
+	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), party).Times(1).Return(&types.OrderConfirmation{
 		Order: &types.Order{},
 	}, nil)
-	proc.eng.EXPECT().CancelOrder(gomock.Any(), gomock.Any()).Times(1).Return([]*types.OrderCancellationConfirmation{}, nil)
-	// proc.eng.EXPECT().AmendOrder(gomock.Any(), gomock.Any()).Times(1).Return(&types.OrderConfirmation{}, nil)
-	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
+	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
 
 	for cmd, msg := range data {
 		tx := txEncode(t, cmd, msg)
@@ -143,7 +130,7 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 
 }
 
-func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App, proc *procTest) {
+func (s *AbciTestSuite) testBeginCommitSuccess(_ *testing.T, app *processor.App, proc *procTest) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 
@@ -189,7 +176,7 @@ func (s *AbciTestSuite) testBeginCommitSuccess(t *testing.T, app *processor.App,
 	app.OnCommit()
 }
 
-func (s *AbciTestSuite) testBeginCallsCommanderOnce(t *testing.T, app *processor.App, proc *procTest) {
+func (s *AbciTestSuite) testBeginCallsCommanderOnce(_ *testing.T, app *processor.App, proc *procTest) {
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	proc.ts.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(2)
@@ -360,6 +347,7 @@ type txStub struct {
 func (tx *txStub) Command() txn.Command          { return tx.cmd }
 func (tx *txStub) Unmarshal(v interface{}) error { return json.Unmarshal(tx.data, v) }
 func (tx *txStub) PubKey() []byte                { return tx.pubkey }
+func (tx *txStub) Party() string                 { return hex.EncodeToString(tx.pubkey) }
 func (txStub) Hash() []byte                      { return nil }
 func (txStub) Signature() []byte                 { return nil }
 func (txStub) Validate() error                   { return nil }

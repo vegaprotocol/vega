@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/notary/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -44,12 +44,12 @@ func TestNotary(t *testing.T) {
 
 func testAddKeyForKOResource(t *testing.T) {
 	notr := getTestNotary(t)
-	kind := types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
+	kind := commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
 	resID := "resid"
 	key := []byte(("123456"))
 	sig := []byte(("123456"))
 
-	ns := types.NodeSignature{
+	ns := commandspb.NodeSignature{
 		Sig:  sig,
 		Id:   resID,
 		Kind: kind,
@@ -70,7 +70,7 @@ func testAddKeyForKOResource(t *testing.T) {
 func testAddKeyForOKResource(t *testing.T) {
 	notr := getTestNotary(t)
 
-	kind := types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
+	kind := commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
 	resID := "resid"
 	key := []byte(("123456"))
 	sig := []byte(("123456"))
@@ -80,7 +80,7 @@ func testAddKeyForOKResource(t *testing.T) {
 
 	notr.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
 
-	ns := types.NodeSignature{
+	ns := commandspb.NodeSignature{
 		Sig:  sig,
 		Id:   resID,
 		Kind: kind,
@@ -95,7 +95,7 @@ func testAddKeyForOKResource(t *testing.T) {
 func testAddKeyFinalize(t *testing.T) {
 	notr := getTestNotary(t)
 
-	kind := types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
+	kind := commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
 	resID := "resid"
 	key := []byte(("123456"))
 	sig := []byte(("123456"))
@@ -107,7 +107,7 @@ func testAddKeyFinalize(t *testing.T) {
 	err := notr.StartAggregate(resID, kind)
 	assert.NoError(t, err)
 
-	ns := types.NodeSignature{
+	ns := commandspb.NodeSignature{
 		Sig:  sig,
 		Id:   resID,
 		Kind: kind,

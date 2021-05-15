@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -532,7 +533,7 @@ func (r *myQueryResolver) Assets(ctx context.Context) ([]*types.Asset, error) {
 	return r.r.allAssets(ctx)
 }
 
-func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string) ([]*types.NodeSignature, error) {
+func (r *myQueryResolver) NodeSignatures(ctx context.Context, resourceID string) ([]*commandspb.NodeSignature, error) {
 	if len(resourceID) <= 0 {
 		return nil, ErrMissingIDOrReference
 	}
@@ -727,12 +728,12 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 
 type myNodeSignatureResolver VegaResolverRoot
 
-func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *types.NodeSignature) (*string, error) {
+func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *commandspb.NodeSignature) (*string, error) {
 	sig := base64.StdEncoding.EncodeToString(obj.Sig)
 	return &sig, nil
 }
 
-func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *types.NodeSignature) (*NodeSignatureKind, error) {
+func (r *myNodeSignatureResolver) Kind(ctx context.Context, obj *commandspb.NodeSignature) (*NodeSignatureKind, error) {
 	kind, err := convertNodeSignatureKindFromProto(obj.Kind)
 	if err != nil {
 		return nil, err
@@ -1589,7 +1590,7 @@ type myMutationResolver VegaResolverRoot
 
 func (r *myMutationResolver) PrepareWithdrawal(
 	ctx context.Context,
-	partyID, amount, asset string,
+	amount, asset string,
 	erc20Details *Erc20WithdrawalDetailsInput,
 ) (*PreparedWithdrawal, error) {
 	var ext *types.WithdrawExt
@@ -1603,11 +1604,10 @@ func (r *myMutationResolver) PrepareWithdrawal(
 	}
 
 	req := protoapi.PrepareWithdrawRequest{
-		Withdraw: &types.WithdrawSubmission{
-			PartyId: partyID,
-			Asset:   asset,
-			Amount:  amountU,
-			Ext:     ext,
+		Withdraw: &commandspb.WithdrawSubmission{
+			Asset:  asset,
+			Amount: amountU,
+			Ext:    ext,
 		},
 	}
 
@@ -1663,10 +1663,10 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, party string, price *string, size string, side Side,
+func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market string, price *string, size string, side Side,
 	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrderInput) (*PreparedSubmitOrder, error) {
 
-	order := &types.OrderSubmission{}
+	orderSubmission := &commandspb.OrderSubmission{}
 
 	var (
 		p   uint64
@@ -1680,28 +1680,24 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 			return nil, err
 		}
 	}
-	order.Price = p
+	orderSubmission.Price = p
 	s, err := safeStringUint64(size)
 	if err != nil {
 		return nil, err
 	}
-	order.Size = s
+	orderSubmission.Size = s
 	if len(market) <= 0 {
 		return nil, errors.New("market missing or empty")
 	}
-	order.MarketId = market
-	if len(party) <= 0 {
-		return nil, errors.New("party missing or empty")
-	}
+	orderSubmission.MarketId = market
 
-	order.PartyId = party
-	if order.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
+	if orderSubmission.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
 		return nil, err
 	}
-	if order.Side, err = convertSideToProto(side); err != nil {
+	if orderSubmission.Side, err = convertSideToProto(side); err != nil {
 		return nil, err
 	}
-	if order.Type, err = convertOrderTypeToProto(ty); err != nil {
+	if orderSubmission.Type, err = convertOrderTypeToProto(ty); err != nil {
 		return nil, err
 	}
 
@@ -1714,12 +1710,12 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		if err != nil {
 			return nil, err
 		}
-		order.PeggedOrder = &types.PeggedOrder{Reference: pegreference,
+		orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: pegreference,
 			Offset: offset}
 	}
 
 	// GTT must have an expiration value
-	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
+	if orderSubmission.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
 		var expiresAt time.Time
 		expiresAt, err = vegatime.Parse(*expiration)
 		if err != nil {
@@ -1727,14 +1723,14 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 		}
 
 		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = expiresAt.UnixNano()
+		orderSubmission.ExpiresAt = expiresAt.UnixNano()
 	}
 	if reference != nil {
-		order.Reference = *reference
+		orderSubmission.Reference = *reference
 	}
 
 	req := protoapi.PrepareSubmitOrderRequest{
-		Submission: order,
+		Submission: orderSubmission,
 	}
 
 	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
@@ -1748,19 +1744,14 @@ func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market, par
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, party string, market *string) (*PreparedCancelOrder, error) {
-	order := &types.OrderCancellation{}
-
+func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, market *string) (*PreparedCancelOrder, error) {
+	order := &commandspb.OrderCancellation{}
 	if market != nil {
 		order.MarketId = *market
 	}
 	if id != nil {
 		order.OrderId = *id
 	}
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-	order.PartyId = party
 
 	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
 
@@ -1789,10 +1780,11 @@ func (r *myMutationResolver) PrepareProposal(
 		return nil, err
 	}
 
-	pendingProposal, err := r.tradingClient.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
-		PartyId:   partyID,
-		Reference: ref,
-		Proposal:  terms,
+	pendingProposal, err := r.tradingClient.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
+		Submission: &commandspb.ProposalSubmission{
+			Reference: ref,
+			Terms:     terms,
+		},
 	})
 	if err != nil {
 		return nil, customErrorFromStatus(err)
@@ -1800,7 +1792,12 @@ func (r *myMutationResolver) PrepareProposal(
 	return &PreparedProposal{
 		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
 		PendingProposal: &types.GovernanceData{
-			Proposal: pendingProposal.PendingProposal,
+			Proposal: &types.Proposal{
+				Reference: ref,
+				Terms:     terms,
+				PartyId:   partyID,
+				State:     types.Proposal_STATE_OPEN,
+			},
 		},
 	}, nil
 }
@@ -1814,49 +1811,48 @@ func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, p
 	if err != nil {
 		return nil, err
 	}
-	req := &protoapi.PrepareVoteRequest{
-		Vote: &types.Vote{
+	req := &protoapi.PrepareVoteSubmissionRequest{
+		Submission: &commandspb.VoteSubmission{
 			Value:      protoValue,
-			PartyId:    partyID,
 			ProposalId: proposalID,
 		},
 	}
-	resp, err := r.tradingClient.PrepareVote(ctx, req)
+	resp, err := r.tradingClient.PrepareVoteSubmission(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return &PreparedVote{
 		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
 		Vote: &ProposalVote{
-			Vote:       req.Vote,
-			ProposalID: resp.Vote.ProposalId,
+			Vote: &types.Vote{
+				Value:      req.Submission.Value,
+				PartyId:    partyID,
+				ProposalId: proposalID,
+			},
+			ProposalID: resp.Submission.ProposalId,
 		},
 	}, nil
 }
 
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id string, party string, price, size string,
+func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id, price, size string,
 	expiration *string, tif OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
-	order := &types.OrderAmendment{}
+	order := &commandspb.OrderAmendment{}
 
 	// Cancellation currently only requires ID and Market to be set, all other fields will be added
 	if len(id) == 0 {
 		return nil, errors.New("id missing or empty")
 	}
 	order.OrderId = id
-	if len(party) == 0 {
-		return nil, errors.New("party missing or empty")
-	}
-	order.PartyId = party
 
 	var err error
-	pricevalue, err := strconv.ParseUint(price, 10, 64)
+	priceValue, err := strconv.ParseUint(price, 10, 64)
 	if err != nil {
 		if r.log.GetLevel() == logging.DebugLevel {
 			r.log.Debug("unable to convert price from string in order amend", logging.Error(err))
 		}
 		return nil, errors.New("invalid price, could not convert to unsigned int")
 	}
-	order.Price = &types.Price{Value: pricevalue}
+	order.Price = &types.Price{Value: priceValue}
 
 	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
 	if err != nil {
@@ -1935,7 +1931,7 @@ func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, mark
 	}
 
 	req := &protoapi.PrepareLiquidityProvisionRequest{
-		Submission: &types.LiquidityProvisionSubmission{
+		Submission: &commandspb.LiquidityProvisionSubmission{
 			MarketId:         marketID,
 			CommitmentAmount: uint64(commitmentAmount),
 			Fee:              fee,

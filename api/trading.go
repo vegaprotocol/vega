@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/monitoring"
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
@@ -26,35 +27,35 @@ var (
 // TradeOrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/api TradeOrderService
 type TradeOrderService interface {
-	PrepareSubmitOrder(ctx context.Context, submission *types.OrderSubmission) error
-	PrepareCancelOrder(ctx context.Context, cancellation *types.OrderCancellation) error
-	PrepareAmendOrder(ctx context.Context, amendment *types.OrderAmendment) error
+	PrepareSubmitOrder(ctx context.Context, submission *commandspb.OrderSubmission) error
+	PrepareCancelOrder(ctx context.Context, cancellation *commandspb.OrderCancellation) error
+	PrepareAmendOrder(ctx context.Context, amendment *commandspb.OrderAmendment) error
 }
 
 // LiquidityService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
 type LiquidityService interface {
-	PrepareLiquidityProvisionSubmission(context.Context, *types.LiquidityProvisionSubmission) error
+	PrepareLiquidityProvisionSubmission(context.Context, *commandspb.LiquidityProvisionSubmission) error
 	Get(party, market string) ([]types.LiquidityProvision, error)
 }
 
 // AccountService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
 type AccountService interface {
-	PrepareWithdraw(context.Context, *types.WithdrawSubmission) error
+	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // GovernanceService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
 type GovernanceService interface {
-	PrepareProposal(ctx context.Context, author, reference string, terms *types.ProposalTerms) (*types.Proposal, error)
-	PrepareVote(vote *types.Vote) (*types.Vote, error)
+	PrepareProposal(ctx context.Context, reference string, terms *types.ProposalTerms) (*commandspb.ProposalSubmission, error)
+	PrepareVote(vote *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error)
 }
 
 // EvtForwarder
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
 type EvtForwarder interface {
-	Forward(ctx context.Context, e *types.ChainEvent, pk string) error
+	Forward(ctx context.Context, e *commandspb.ChainEvent, pk string) error
 }
 
 // Blockchain ...
@@ -189,16 +190,16 @@ func (s *tradingService) PrepareWithdraw(
 	}, nil
 }
 
-func (s *tradingService) PrepareProposal(
-	ctx context.Context, req *protoapi.PrepareProposalRequest,
-) (*protoapi.PrepareProposalResponse, error) {
+func (s *tradingService) PrepareProposalSubmission(
+	ctx context.Context, req *protoapi.PrepareProposalSubmissionRequest,
+) (*protoapi.PrepareProposalSubmissionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareProposal", startTime)
 
 	if err := req.Validate(); err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
-	proposal, err := s.governanceService.PrepareProposal(ctx, req.PartyId, req.Reference, req.Proposal)
+	proposal, err := s.governanceService.PrepareProposal(ctx, req.Submission.Reference, req.Submission.Terms)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
@@ -210,13 +211,13 @@ func (s *tradingService) PrepareProposal(
 	if raw, err = txn.Encode(raw, txn.ProposeCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
-	return &protoapi.PrepareProposalResponse{
-		Blob:            raw,
-		PendingProposal: proposal,
+	return &protoapi.PrepareProposalSubmissionResponse{
+		Blob:       raw,
+		Submission: proposal,
 	}, nil
 }
 
-func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareVoteRequest) (*protoapi.PrepareVoteResponse, error) {
+func (s *tradingService) PrepareVoteSubmission(ctx context.Context, req *protoapi.PrepareVoteSubmissionRequest) (*protoapi.PrepareVoteSubmissionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("PrepareVote", startTime)
 
@@ -224,11 +225,11 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 
-	if req.Vote.Value == types.Vote_VALUE_UNSPECIFIED {
+	if req.Submission.Value == types.Vote_VALUE_UNSPECIFIED {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	vote, err := s.governanceService.PrepareVote(req.Vote)
+	vote, err := s.governanceService.PrepareVote(req.Submission)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
@@ -239,9 +240,9 @@ func (s *tradingService) PrepareVote(ctx context.Context, req *protoapi.PrepareV
 	if raw, err = txn.Encode(raw, txn.VoteCommand); err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
-	return &protoapi.PrepareVoteResponse{
-		Blob: raw,
-		Vote: vote,
+	return &protoapi.PrepareVoteSubmissionResponse{
+		Blob:       raw,
+		Submission: vote,
 	}, nil
 }
 

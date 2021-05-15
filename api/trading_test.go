@@ -39,6 +39,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -69,7 +70,7 @@ func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 	const maxSleep = 2000 // milliseconds
 
 	req := &protoapi.PrepareSubmitOrderRequest{
-		Submission: &types.OrderSubmission{
+		Submission: &commandspb.OrderSubmission{
 			Type:     types.Order_TYPE_LIMIT,
 			MarketId: "nonexistantmarket",
 		},
@@ -333,14 +334,15 @@ func TestPrepareProposal(t *testing.T) {
 	client := protoapi.NewTradingServiceClient(conn)
 	assert.NotNil(t, client)
 
-	proposal, err := client.PrepareProposal(ctx, &protoapi.PrepareProposalRequest{
-		PartyId: "invalid-party",
-		Proposal: &types.ProposalTerms{
-			Change: &types.ProposalTerms_UpdateNetworkParameter{
-				UpdateNetworkParameter: &types.UpdateNetworkParameter{
-					Changes: &types.NetworkParameter{
-						Key:   "key",
-						Value: "value",
+	proposal, err := client.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
+		Submission: &commandspb.ProposalSubmission{
+			Terms: &types.ProposalTerms{
+				Change: &types.ProposalTerms_UpdateNetworkParameter{
+					UpdateNetworkParameter: &types.UpdateNetworkParameter{
+						Changes: &types.NetworkParameter{
+							Key:   "key",
+							Value: "value",
+						},
 					},
 				},
 			},

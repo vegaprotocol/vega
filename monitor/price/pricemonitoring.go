@@ -187,7 +187,7 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 }
 
 // CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
-func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v uint64, now time.Time) error {
+func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, now time.Time, persistent bool) error {
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
@@ -212,22 +212,24 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p uint64, v ui
 			}
 			return nil
 		}
+		if !persistent {
+			return types.ErrNonPersistentOrderOutOfBounds
+		}
+		duration := types.AuctionDuration{}
+		for _, b := range bounds {
+			duration.Duration += b.AuctionExtension
+		}
 		// we're dealing with a batch auction that's about to end -> extend it?
 		if fba && as.AuctionEnd() {
 			// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
-			var duration int64
-			for _, b := range bounds {
-				duration += b.AuctionExtension
-			}
-			as.ExtendAuctionPrice(types.AuctionDuration{
-				Duration: duration,
-			})
+			as.ExtendAuctionPrice(duration)
 			return nil
 		}
+		if min := int64(e.minDuration / time.Second); duration.Duration < min {
+			duration.Duration = min
+		}
 
-		as.StartPriceAuction(now, &types.AuctionDuration{
-			Duration: int64(e.minDuration / time.Second), // unfortunate, but this is multiplied by time.Second later on
-		})
+		as.StartPriceAuction(now, &duration)
 		return nil
 	}
 	// market is in auction

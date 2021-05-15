@@ -4,7 +4,6 @@ package vega;
 option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
-import "google/protobuf/wrappers.proto";
 import "markets.proto";
 
 
@@ -369,6 +368,8 @@ enum OrderError {
   ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER = 45;
   // It is not possible to amend the price of an existing pegged order
   ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER = 46;
+  // An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds
+  ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS = 47;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -684,20 +685,8 @@ message Withdrawal {
   WithdrawExt ext = 11;
 }
 
-// Represents the submission request to withdraw funds for a party on Vega
-message WithdrawSubmission {
-  // Unique party identifier for the user wanting to withdraw funds
-  string party_id = 1;
-  // The amount to be withdrawn
-  uint64 amount = 2;
-  // The asset we want to withdraw
-  string asset = 3;
-  // Foreign chain specifics
-  WithdrawExt ext = 4;
-}
-
-  // Withdrawal external details
-  message WithdrawExt {
+// Withdrawal external details
+message WithdrawExt {
   // Foreign chain specifics
   oneof ext {
     // ERC20 withdrawal details
@@ -709,101 +698,6 @@ message WithdrawSubmission {
 message Erc20WithdrawExt {
   // The address into which the bridge will release the funds
   string receiver_address = 1;
-}
-
-// An order amendment is a request to amend or update an existing order on Vega
-message OrderAmendment {
-  // The `orderID`, `partyID` and `marketID` fields are used for lookup of the order only and cannot be amended by this command
-
-  // Order identifier, this is required to find the order and will not be updated, required field
-  string order_id = 1 [(validator.field) = {string_not_empty : true}];
-  // Party identifier, this is required to find the order and will not be updated, required field
-  string party_id = 2 [(validator.field) = {string_not_empty: true}];
-  // Market identifier, this is required to find the order and will not be updated
-  string market_id = 3;
-
-  // All fields below can be altered by this command:
-
-  // Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)
-  Price price = 4;
-  // Amend the size for the order by the delta specified:
-  // - To reduce the size from the current value set a negative integer value
-  // - To increase the size from the current value, set a positive integer value
-  // - To leave the size unchanged set a value of zero
-  int64 size_delta = 5;
-  // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  Timestamp expires_at = 6;
-  // Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
-  // - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
-  Order.TimeInForce time_in_force = 7;
-  // Amend the pegged order offset for the order
-  google.protobuf.Int64Value pegged_offset = 8;
-  // Amend the pegged order reference for the order
-  // - See [`PeggedReference`](#vega.PeggedReference)
-  PeggedReference pegged_reference = 9;
-}
-
-// An order submission is a request to submit or create a new order on Vega
-message OrderSubmission {
-  // Unique identifier for the order (set by the system after consensus)
-  string id = 1 [(validator.field) = {string_not_empty: false}];
-  // Market identifier for the order, required field
-  string market_id = 2 [(validator.field) = {string_not_empty: true}];
-  // Party identifier for the order, required field
-  string party_id = 3 [(validator.field) = {string_not_empty: true}];
-  // Price for the order, the price is an integer, for example `123456` is a correctly
-  // formatted price of `1.23456` assuming market configured to 5 decimal places,
-  // , required field for limit orders, however it is not required for market orders
-  uint64 price = 4;
-  // Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
-  uint64 size = 5 [(validator.field) = {int_gt: 0}];
-  // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field - See [`Side`](#vega.Side)
-  Side side = 6 [(validator.field) = {is_in_enum: true}];
-  // Time in force indicates how long an order will remain active before it is executed or expires, required field
-  // - See [`Order.TimeInForce`](#vega.Order.TimeInForce)
-  Order.TimeInForce time_in_force = 7 [(validator.field) = {is_in_enum: true}];
-  // Timestamp for when the order will expire, in nanoseconds since the epoch,
-  // required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
-  int64 expires_at = 8;
-  // Type for the order, required field - See [`Order.Type`](#vega.Order.Type)
-  Order.Type type = 9 [(validator.field) = {is_in_enum : true}];
-  // Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
-  // set internally by the node to return a unique reference identifier for the order submission
-  string reference = 10;
-  // Used to specify the details for a pegged order
-  // - See [`PeggedOrder`](#vega.PeggedOrder)
-  PeggedOrder pegged_order = 11;
-}
-
-// An order cancellation is a request to cancel an existing order on Vega
-message OrderCancellation {
-  // The following three fields are used for lookup of the order only:
-
-  // Unique identifier for the order (set by the system after consensus), required field
-  string order_id = 1;
-  // Market identifier for the order, required field
-  string market_id = 2;
-  // Party identifier for the order, required field
-  string party_id = 3 [(validator.field) = {string_not_empty: true}];
-}
-
-// Used to Register a node as a validator during network start-up
-message NodeRegistration {
-  // Public key, required field
-  bytes pub_key = 1 [(validator.field) = {string_not_empty: true}];
-  // Public key for the blockchain, required field
-  bytes chain_pub_key = 2 [(validator.field) = {string_not_empty: true}];
-}
-
-// Used when a node votes for validating a given resource exists or is valid,
-// for example, an ERC20 deposit is valid and exists on ethereum
-message NodeVote {
-  // Public key, required field
-  bytes pub_key = 1 [(validator.field) = {string_not_empty: true}];
-  // Reference, required field
-  string reference = 2 [(validator.field) = {string_not_empty: true}];
 }
 
 // Various collateral/account types as used by Vega
@@ -1133,26 +1027,6 @@ message SignedBundle {
   Signature sig = 2;
 }
 
-// The kind of the signature created by a node, for example, allow-listing a new asset, withdrawal etc
-enum NodeSignatureKind {
-  // Represents an unspecified or missing value from the input
-  NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
-  // Represents a signature for a new asset allow-listing
-  NODE_SIGNATURE_KIND_ASSET_NEW = 1;
-  // Represents a signature for an asset withdrawal
-  NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL = 2;
-}
-
-// Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network
-message NodeSignature {
-  // The identifier of the resource being signed
-  string id = 1;
-  // The signature
-  bytes sig = 2;
-  // The kind of resource being signed
-  NodeSignatureKind kind = 3;
-}
-
 // Represents a network parameter on Vega
 message NetworkParameter {
   // The unique key
@@ -1169,21 +1043,6 @@ message LiquidityOrder {
   uint32 proportion = 2;
   // The offset/amount of units away for the order
   int64 offset = 3;
-}
-
-message LiquidityProvisionSubmission {
-  // Market identifier for the order, required field
-  string market_id = 1 [(validator.field) = {string_not_empty: true}];
-  // Specified as a unitless number that represents the amount of settlement asset of the market
-  uint64 commitment_amount = 2;
-  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
-  string fee = 3;
-  // A set of liquidity sell orders to meet the liquidity provision obligation
-  repeated LiquidityOrder sells = 4;
-  // A set of liquidity buy orders to meet the liquidity provision obligation
-  repeated LiquidityOrder buys = 5;
-  // A reference to be added to every order created out of this liquidityProvisionSubmission
-  string reference = 6;
 }
 
 // A pair of a liquidity order and the id of the generated order by the core
@@ -1254,19 +1113,4 @@ message EthereumConfig {
   string bridge_address = 3;
   // Number of confirmations
   uint32 confirmations = 4;
-}
-
-// Command to submit new Oracle data from third party providers
-message OracleDataSubmission {
-  // The supported Oracle sources
-  enum OracleSource {
-    // The default value
-    ORACLE_SOURCE_UNSPECIFIED = 0;
-    // Support for Open Oracle standard
-    ORACLE_SOURCE_OPEN_ORACLE = 1;
-  }
-  // The source from which the data is coming from
-  OracleSource source = 1;
-  // The data provided by the third party provider
-  bytes payload = 2;
 }

@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,25 +36,25 @@ func (m *MockGovernanceService) EXPECT() *MockGovernanceServiceMockRecorder {
 }
 
 // PrepareProposal mocks base method
-func (m *MockGovernanceService) PrepareProposal(arg0 context.Context, arg1, arg2 string, arg3 *proto.ProposalTerms) (*proto.Proposal, error) {
+func (m *MockGovernanceService) PrepareProposal(arg0 context.Context, arg1 string, arg2 *proto.ProposalTerms) (*v1.ProposalSubmission, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrepareProposal", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*proto.Proposal)
+	ret := m.ctrl.Call(m, "PrepareProposal", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*v1.ProposalSubmission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PrepareProposal indicates an expected call of PrepareProposal
-func (mr *MockGovernanceServiceMockRecorder) PrepareProposal(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockGovernanceServiceMockRecorder) PrepareProposal(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareProposal", reflect.TypeOf((*MockGovernanceService)(nil).PrepareProposal), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareProposal", reflect.TypeOf((*MockGovernanceService)(nil).PrepareProposal), arg0, arg1, arg2)
 }
 
 // PrepareVote mocks base method
-func (m *MockGovernanceService) PrepareVote(arg0 *proto.Vote) (*proto.Vote, error) {
+func (m *MockGovernanceService) PrepareVote(arg0 *v1.VoteSubmission) (*v1.VoteSubmission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareVote", arg0)
-	ret0, _ := ret[0].(*proto.Vote)
+	ret0, _ := ret[0].(*v1.VoteSubmission)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

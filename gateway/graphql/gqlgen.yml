@@ -29,7 +29,7 @@ models:
   MarginLevels:
     model: code.vegaprotocol.io/vega/proto.MarginLevels
   NodeSignature:
-    model: code.vegaprotocol.io/vega/proto.NodeSignature
+    model: code.vegaprotocol.io/vega/proto/commands/v1.NodeSignature
   ProposalEvent:
     model: code.vegaprotocol.io/vega/proto.Proposal
   RiskFactor:
@@ -92,6 +92,9 @@ models:
         resolver: true
   Proposal:
     model: code.vegaprotocol.io/vega/proto.GovernanceData
+    fields:
+      votes:
+        resolver: true
   ProposalTerms:
     model: code.vegaprotocol.io/vega/proto.ProposalTerms
   NewMarket:
@@ -139,7 +142,7 @@ models:
   Property:
     model: code.vegaprotocol.io/vega/proto/oracles/v1.Property
   AuctionEvent:
-    model: code.vegaprotocol.io/vega/proto.AuctionEvent
+    model: code.vegaprotocol.io/vega/proto/events/v1.AuctionEvent
   FeeFactors:
     model: code.vegaprotocol.io/vega/proto.FeeFactors
   Fees:

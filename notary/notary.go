@@ -5,7 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -53,7 +53,7 @@ type Notary struct {
 
 type idKind struct {
 	id   string
-	kind types.NodeSignatureKind
+	kind commandspb.NodeSignatureKind
 }
 
 /// nodeSig is a pair of a node and it signature
@@ -88,7 +88,7 @@ func (n *Notary) ReloadConf(cfg Config) {
 	n.cfg = cfg
 }
 
-func (n *Notary) StartAggregate(resID string, kind types.NodeSignatureKind) error {
+func (n *Notary) StartAggregate(resID string, kind commandspb.NodeSignatureKind) error {
 	if _, ok := n.sigs[idKind{resID, kind}]; ok {
 		return ErrAggregateSigAlreadyStartedForResource
 	}
@@ -96,7 +96,7 @@ func (n *Notary) StartAggregate(resID string, kind types.NodeSignatureKind) erro
 	return nil
 }
 
-func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignature) ([]types.NodeSignature, bool, error) {
+func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error) {
 	sigs, ok := n.sigs[idKind{ns.Id, ns.Kind}]
 	if !ok {
 		return nil, false, ErrUnknownResourceID
@@ -122,7 +122,7 @@ func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns types.NodeSignatu
 	return sigsout, ok, nil
 }
 
-func (n *Notary) IsSigned(ctx context.Context, resID string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool) {
+func (n *Notary) IsSigned(ctx context.Context, resID string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool) {
 	// early exit if we don't have enough sig anyway
 	if float64(len(n.sigs[idKind{resID, kind}]))/float64(n.top.Len()) < n.cfg.SignaturesRequiredPercent {
 		return nil, false
@@ -130,7 +130,7 @@ func (n *Notary) IsSigned(ctx context.Context, resID string, kind types.NodeSign
 
 	// aggregate node sig
 	sig := map[string]struct{}{}
-	out := []types.NodeSignature{}
+	out := []commandspb.NodeSignature{}
 	for k := range n.sigs[idKind{resID, kind}] {
 		// is node sig is part of the registered nodes,
 		// add it to the map
@@ -138,7 +138,7 @@ func (n *Notary) IsSigned(ctx context.Context, resID string, kind types.NodeSign
 		// us checkung
 		if n.top.Exists([]byte(k.node)) {
 			sig[k.node] = struct{}{}
-			out = append(out, types.NodeSignature{
+			out = append(out, commandspb.NodeSignature{
 				Id:   resID,
 				Kind: kind,
 				Sig:  []byte(k.sig),
@@ -154,11 +154,11 @@ func (n *Notary) IsSigned(ctx context.Context, resID string, kind types.NodeSign
 	return nil, false
 }
 
-func (n *Notary) SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error {
+func (n *Notary) SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error {
 	if !n.top.IsValidator() {
 		return nil
 	}
-	nsig := &types.NodeSignature{
+	nsig := &commandspb.NodeSignature{
 		Id:   id,
 		Sig:  sig,
 		Kind: kind,

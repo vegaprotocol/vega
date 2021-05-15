@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/orders/mocks"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/mock/gomock"
@@ -18,11 +19,9 @@ import (
 )
 
 var (
-	orderSubmission = types.OrderSubmission{
+	orderSubmission = commandspb.OrderSubmission{
 		Type:        types.Order_TYPE_LIMIT,
-		Id:          "order_id",
 		MarketId:    "market_id",
-		PartyId:     "party",
 		Price:       10000,
 		Size:        1,
 		Side:        types.Side(1),
@@ -161,10 +160,9 @@ func testCreateOrderFailNetworkOrderType(t *testing.T) {
 }
 
 func testPrepareCancelOrderSuccess(t *testing.T) {
-	cancel := types.OrderCancellation{
+	cancel := commandspb.OrderCancellation{
 		OrderId:  "order.Id",
 		MarketId: "order.MarketId",
-		PartyId:  "order.PartyId",
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -175,9 +173,7 @@ func testPrepareCancelOrderSuccess(t *testing.T) {
 
 func testGetByOrderIDDefaultVersion(t *testing.T) {
 	order := &types.Order{
-		Id:          orderSubmission.Id,
 		MarketId:    orderSubmission.MarketId,
-		PartyId:     orderSubmission.PartyId,
 		Side:        orderSubmission.Side,
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,
@@ -199,9 +195,7 @@ func testGetByOrderIDDefaultVersion(t *testing.T) {
 
 func testGetByOrderIDFirstVersion(t *testing.T) {
 	order := &types.Order{
-		Id:          orderSubmission.Id,
 		MarketId:    orderSubmission.MarketId,
-		PartyId:     orderSubmission.PartyId,
 		Side:        orderSubmission.Side,
 		Price:       orderSubmission.Price,
 		Size:        orderSubmission.Size,

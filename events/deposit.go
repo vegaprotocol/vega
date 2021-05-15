@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type Deposit struct {
@@ -32,13 +33,13 @@ func (d Deposit) Proto() types.Deposit {
 	return d.d
 }
 
-func (d Deposit) StreamMessage() *types.BusEvent {
+func (d Deposit) StreamMessage() *eventspb.BusEvent {
 	dep := d.d
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    d.eventID(),
 		Block: d.TraceID(),
 		Type:  d.et.ToProto(),
-		Event: &types.BusEvent_Deposit{
+		Event: &eventspb.BusEvent_Deposit{
 			Deposit: &dep,
 		},
 	}

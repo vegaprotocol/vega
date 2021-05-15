@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
@@ -28,13 +28,13 @@ func (o OracleData) Proto() oraclespb.OracleData {
 	return o.o
 }
 
-func (o OracleData) StreamMessage() *types.BusEvent {
+func (o OracleData) StreamMessage() *eventspb.BusEvent {
 	spec := o.o
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    o.eventID(),
 		Block: o.TraceID(),
 		Type:  o.et.ToProto(),
-		Event: &types.BusEvent_OracleData{
+		Event: &eventspb.BusEvent_OracleData{
 			OracleData: &spec,
 		},
 	}

@@ -5,19 +5,19 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type EventFilter func(events.Event) bool
 
 type StreamEvent interface {
 	events.Event
-	StreamMessage() *types.BusEvent
+	StreamMessage() *eventspb.BusEvent
 }
 
 type MarketStreamEvent interface {
 	StreamEvent
-	StreamMarketMessage() *types.BusEvent
+	StreamMarketMessage() *eventspb.BusEvent
 }
 
 type StreamSub struct {
@@ -187,7 +187,7 @@ func (s *StreamSub) Push(evts ...events.Event) {
 
 // UpdateBatchSize changes the batch size, and returns whatever the current buffer contains
 // it's effectively a poll of current events ignoring requested batch size
-func (s *StreamSub) UpdateBatchSize(ctx context.Context, size int) []*types.BusEvent {
+func (s *StreamSub) UpdateBatchSize(ctx context.Context, size int) []*eventspb.BusEvent {
 	s.mu.Lock()
 	if size == s.bufSize {
 		s.mu.Unlock()
@@ -214,7 +214,7 @@ func (s *StreamSub) UpdateBatchSize(ctx context.Context, size int) []*types.BusE
 	}
 	s.data = make([]StreamEvent, 0, dc)
 	s.mu.Unlock()
-	messages := make([]*types.BusEvent, 0, len(data))
+	messages := make([]*eventspb.BusEvent, 0, len(data))
 	for _, d := range data {
 		if s.marketEvtsOnly {
 			e, ok := d.(MarketStreamEvent)
@@ -229,7 +229,7 @@ func (s *StreamSub) UpdateBatchSize(ctx context.Context, size int) []*types.BusE
 }
 
 // GetData returns events from buffer, all if bufSize == 0, or max buffer size (rest are kept in data slice)
-func (s *StreamSub) GetData(ctx context.Context) []*types.BusEvent {
+func (s *StreamSub) GetData(ctx context.Context) []*eventspb.BusEvent {
 	select {
 	case <-ctx.Done():
 		// stream was closed
@@ -265,7 +265,7 @@ func (s *StreamSub) GetData(ctx context.Context) []*types.BusEvent {
 		s.changeCount = len(s.data) // keep change count in sync with data slice
 	}
 	s.mu.Unlock()
-	messages := make([]*types.BusEvent, 0, len(data))
+	messages := make([]*eventspb.BusEvent, 0, len(data))
 	for _, d := range data {
 		if s.marketEvtsOnly {
 			e := d.(MarketStreamEvent) // we know this works already

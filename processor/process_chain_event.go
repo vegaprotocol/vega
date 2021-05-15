@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 var (
@@ -16,7 +17,9 @@ var (
 	ErrChainEventAssetListERC20WithoutEnoughSignature = errors.New("chain event for erc20 asset list received with missing node signatures")
 )
 
-func (app *App) processChainEvent(ctx context.Context, ce *types.ChainEvent, pubkey []byte, id string) error {
+func (app *App) processChainEvent(
+	ctx context.Context, ce *commandspb.ChainEvent, pubkey []byte, id string,
+) error {
 	// first verify the event was emitted by a validator
 	if !app.top.Exists(pubkey) {
 		return ErrChainEventFromNonValidator
@@ -32,20 +35,20 @@ func (app *App) processChainEvent(ctx context.Context, ce *types.ChainEvent, pub
 	// OK the event was newly acknowledged, so now we need to
 	// figure out what to do with it.
 	switch ce.Event.(type) {
-	case *types.ChainEvent_Builtin:
+	case *commandspb.ChainEvent_Builtin:
 		return app.processChainEventBuiltinAsset(ctx, ce, id)
-	case *types.ChainEvent_Erc20:
+	case *commandspb.ChainEvent_Erc20:
 		return app.processChainEventERC20(ctx, ce, id)
-	case *types.ChainEvent_Btc:
+	case *commandspb.ChainEvent_Btc:
 		return errors.New("BTC Event not implemented")
-	case *types.ChainEvent_Validator:
+	case *commandspb.ChainEvent_Validator:
 		return errors.New("validator Event not implemented")
 	default:
 		return ErrUnsupportedChainEvent
 	}
 }
 
-func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEvent, id string) error {
+func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *commandspb.ChainEvent, id string) error {
 	evt := ce.GetBuiltin()
 	if evt == nil {
 		return ErrNotABuiltinAssetEvent
@@ -67,7 +70,9 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.Cha
 	}
 }
 
-func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent, id string) error {
+func (app *App) processChainEventERC20(
+	ctx context.Context, ce *commandspb.ChainEvent, id string,
+) error {
 	evt := ce.GetErc20()
 	if evt == nil {
 		return ErrNotAnERC20Event
@@ -83,7 +88,7 @@ func (app *App) processChainEventERC20(ctx context.Context, ce *types.ChainEvent
 		_, ok := app.notary.IsSigned(
 			ctx,
 			act.AssetList.VegaAssetId,
-			types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
+			commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW)
 		if !ok {
 			return ErrChainEventAssetListERC20WithoutEnoughSignature
 		}

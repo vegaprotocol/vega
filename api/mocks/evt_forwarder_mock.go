@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,7 +35,7 @@ func (m *MockEvtForwarder) EXPECT() *MockEvtForwarderMockRecorder {
 }
 
 // Forward mocks base method
-func (m *MockEvtForwarder) Forward(arg0 context.Context, arg1 *proto.ChainEvent, arg2 string) error {
+func (m *MockEvtForwarder) Forward(arg0 context.Context, arg1 *v1.ChainEvent, arg2 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Forward", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

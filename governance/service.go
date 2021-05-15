@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/pkg/errors"
@@ -326,28 +327,25 @@ func (s *Svc) GetNewAssetProposals(inState *types.Proposal_State) []*types.Gover
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal
 func (s *Svc) PrepareProposal(
-	ctx context.Context, party string, reference string, terms *types.ProposalTerms,
-) (*types.Proposal, error) {
-
+	ctx context.Context, reference string, terms *types.ProposalTerms,
+) (*commandspb.ProposalSubmission, error) {
 	if err := s.validateTerms(terms); err != nil {
 		return nil, err
 	}
 	if len(reference) <= 0 {
 		reference = uuid.NewV4().String()
 	}
-	return &types.Proposal{
+	return &commandspb.ProposalSubmission{
 		Reference: reference,
-		PartyId:   party,
-		State:     types.Proposal_STATE_OPEN,
 		Terms:     terms,
 	}, nil
 }
 
 // PrepareVote - some additional validation on the vote message we're preparing
-func (s *Svc) PrepareVote(vote *types.Vote) (*types.Vote, error) {
+func (s *Svc) PrepareVote(vote *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error) {
 	// to check if the enum value is correct:
 	_, ok := types.Vote_Value_value[vote.Value.String()]
-	if vote.ProposalId == "" || vote.PartyId == "" || !ok {
+	if vote.ProposalId == "" || !ok {
 		return nil, ErrMissingVoteData
 	}
 	return vote, nil

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +33,7 @@ func TestMargins(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	// set auction durations to 1 second
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
@@ -124,20 +125,19 @@ func TestMargins(t *testing.T) {
 	orderID := confirmation.GetOrder().Id
 
 	// Amend size up
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:   orderID,
 		MarketId:  tm.market.GetID(),
-		PartyId:   party1,
 		SizeDelta: int64(10000),
 	}
-	amendment, err := tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend price and size up to breach margin
 	amend.SizeDelta = 1000000000
 	amend.Price = &types.Price{Value: 1000000000}
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }
@@ -162,7 +162,7 @@ func TestPartialFillMargins(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	// ensure auction durations are 1 second
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
@@ -271,13 +271,12 @@ func TestPartialFillMargins(t *testing.T) {
 	orderID := confirmation.Order.Id
 
 	// Attempt to amend it to the same size as the failed new order
-	amend := &types.OrderAmendment{
+	amend := &commandspb.OrderAmendment{
 		OrderId:   orderID,
 		MarketId:  tm.market.GetID(),
-		PartyId:   party1,
 		SizeDelta: int64(999),
 	}
-	amendment, err := tm.market.AmendOrder(context.TODO(), amend)
+	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }

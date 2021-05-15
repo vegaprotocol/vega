@@ -5,11 +5,12 @@ option go_package = "code.vegaprotocol.io/vega/proto/api";
 import "vega.proto";
 import "markets.proto";
 import "governance.proto";
-import "chain_events.proto";
 import "assets.proto";
-import "events.proto";
+import "events/v1/events.proto";
 import "oracles/v1/oracle_spec.proto";
 import "oracles/v1/oracle_data.proto";
+import "commands/v1/commands.proto";
+import "commands/v1/validator_commands.proto";
 
 package api.v1;
 
@@ -33,10 +34,10 @@ service TradingService {
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 
   // Prepare a governance proposal
-  rpc PrepareProposal(PrepareProposalRequest) returns (PrepareProposalResponse);
+  rpc PrepareProposalSubmission(PrepareProposalSubmissionRequest) returns (PrepareProposalSubmissionResponse);
 
   // Prepare a governance vote
-  rpc PrepareVote(PrepareVoteRequest) returns (PrepareVoteResponse);
+  rpc PrepareVoteSubmission(PrepareVoteSubmissionRequest) returns (PrepareVoteSubmissionResponse);
 
   // Propagate a chain event
   rpc PropagateChainEvent(PropagateChainEventRequest) returns (PropagateChainEventResponse);
@@ -48,7 +49,7 @@ service TradingService {
 // Request for a new event sent by the blockchain queue to be propagated on Vega
 message PropagateChainEventRequest {
   // Chain event
-  vega.ChainEvent evt = 1;
+  vega.commands.v1.ChainEvent evt = 1;
   // Public key
   string pub_key = 2;
   // Signature
@@ -83,7 +84,7 @@ message SubmitTransactionRequest {
   // - AmendOrder, see [PrepareAmendOrder](#api.trading)
   // - CancelOrder, see [PrepareCancelOrder](#api.trading)
   // - PrepareProposal, see [PrepareProposal](#api.trading)
-  // - PrepareVote, see [PrepareVote](#api.trading)
+  // - PrepareVoteSubmission, see [PrepareVote](#api.trading)
   // - Withdraw, see [WithdrawRequest](#api.trading)
   // All of these can be prepared using this API, payload data must be signed using Vega Wallet before submitting a transaction
 
@@ -103,7 +104,7 @@ message SubmitTransactionResponse {
 // Request for preparing a withdrawal
 message PrepareWithdrawRequest {
   // An asset withdrawal
-  vega.WithdrawSubmission withdraw = 1;
+  vega.commands.v1.WithdrawSubmission withdraw = 1;
 }
 
 // Response for preparing a withdrawal
@@ -135,19 +136,19 @@ message PrepareAmendOrderResponse {
 // Request to submit a new order
 message PrepareSubmitOrderRequest {
   // An order submission
-  vega.OrderSubmission submission = 1;
+  vega.commands.v1.OrderSubmission submission = 1;
 }
 
 // Request to cancel an existing order
 message PrepareCancelOrderRequest {
   // An order cancellation
-  vega.OrderCancellation cancellation = 1;
+  vega.commands.v1.OrderCancellation cancellation = 1;
 }
 
 // Request to amend an existing order
 message PrepareAmendOrderRequest {
   // An order amendment
-  vega.OrderAmendment amendment = 1;
+  vega.commands.v1.OrderAmendment amendment = 1;
 }
 
 service TradingDataService {
@@ -398,7 +399,7 @@ message GetNodeSignaturesAggregateRequest {
 // Response to specify the identifier of the resource we want to retrieve aggregated signatures for
 message GetNodeSignaturesAggregateResponse {
   // A list of 0 or more signatures
-  repeated vega.NodeSignature signatures = 1;
+  repeated vega.commands.v1.NodeSignature signatures = 1;
 }
 
 // Optional proposal state
@@ -996,41 +997,36 @@ message FeeInfrastructureAccountsResponse {
 }
 
 // Request to prepare a governance proposal
-message PrepareProposalRequest {
-  // Party identifier, required field
-  string party_id = 1 [(validator.field) = {string_not_empty : true}];
-  // Unique reference
-  string reference = 2;
-  // Proposal terms, required field
-  vega.ProposalTerms proposal = 3 [(validator.field) = {msg_exists : true}];
+message PrepareProposalSubmissionRequest {
+  vega.commands.v1.ProposalSubmission submission = 1;
 }
 
 // Response to prepare a governance proposal
-message PrepareProposalResponse {
+message PrepareProposalSubmissionResponse {
   // A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction
   bytes blob = 1;
   // A copy of the prepared proposal
-  vega.Proposal pending_proposal = 2;
+  vega.commands.v1.ProposalSubmission submission = 2;
 }
 
 // Request to prepare a governance vote
-message PrepareVoteRequest {
+message PrepareVoteSubmissionRequest {
   // Vote, required field
-  vega.Vote vote = 1 [(validator.field) = {msg_exists: true}];
+  vega.commands.v1.VoteSubmission submission = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Response to prepare a governance vote
-message PrepareVoteResponse {
+message PrepareVoteSubmissionResponse {
   // A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction
   bytes blob = 1;
   // A copy of the prepared vote
-  vega.Vote vote = 2;
+  vega.commands.v1.VoteSubmission submission = 2;
 }
 
 // Request to prepare liquiditity provision
 message PrepareLiquidityProvisionRequest {
   // Submission, required field
-  vega.LiquidityProvisionSubmission submission = 1 [(validator.field) = {msg_exists: true}];
+  vega.commands.v1.LiquidityProvisionSubmission submission = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Response to a liquidity provision request
@@ -1100,7 +1096,7 @@ message EstimateMarginResponse {
 // Request to subscribe to a stream of one or more event types from the Vega event bus
 message ObserveEventBusRequest {
   // One or more types of event, required field
-  repeated vega.BusEventType type = 1;
+  repeated vega.events.v1.BusEventType type = 1;
   // Market identifier, optional field
   string market_id = 2;
   // Party identifier, optional field
@@ -1118,7 +1114,7 @@ message ObserveEventBusRequest {
 // Response to a subscribed stream of events from the Vega event bus
 message ObserveEventBusResponse {
   // One or more events
-  repeated vega.BusEvent events = 1;
+  repeated vega.events.v1.BusEvent events = 1;
 }
 
 // A a request for statistics about the Vega network

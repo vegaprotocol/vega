@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"sort"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -400,7 +403,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 // represented in float64 and fees are uint64, shares are floored and the
 // remainder is assigned to the last party on the share map. Note that the map
 // is sorted lexicographically to keep determinism.
-func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]float64, acc *types.Account) events.FeesTransfer {
+func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]decimal.Decimal, acc *types.Account) events.FeesTransfer {
 	if len(shares) == 0 {
 		return nil
 	}
@@ -418,28 +421,30 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]float64
 	}
 	sort.Strings(keys)
 
-	var floored float64
+	var floored decimal.Decimal
+	balance := decimal.NewFromBigInt(new(big.Int).SetUint64(acc.Balance), 0)
 	for _, key := range keys {
 		share := shares[key]
-		cs := math.Floor(share * float64(acc.Balance))
-		floored += cs
+		cs := share.Mul(balance).Floor()
+		floored = floored.Add(cs)
 
+		amount := cs.BigInt().Uint64()
 		// populate the return value
-		ft.totalFeesAmountsPerParty[key] = uint64(cs)
+		ft.totalFeesAmountsPerParty[key] = amount
 		ft.transfers = append(ft.transfers, &types.Transfer{
 			Owner: key,
 			Amount: &types.FinancialAmount{
-				Amount: uint64(cs),
+				Amount: amount,
 				Asset:  acc.Asset,
 			},
-			MinAmount: uint64(cs),
+			MinAmount: amount,
 			Type:      types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE,
 		})
 	}
 
 	// last is the party who will get the remaining from ceil
 	last := keys[len(keys)-1]
-	diff := acc.Balance - uint64(floored)
+	diff := balance.Sub(floored).BigInt().Uint64()
 	ft.totalFeesAmountsPerParty[last] += diff
 	ft.transfers[len(ft.transfers)-1].Amount.Amount += diff
 

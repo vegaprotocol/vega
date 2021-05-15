@@ -8,6 +8,8 @@ import (
 	math "math"
 
 	_ "code.vegaprotocol.io/vega/proto"
+	_ "code.vegaprotocol.io/vega/proto/commands/v1"
+	_ "code.vegaprotocol.io/vega/proto/events/v1"
 	_ "code.vegaprotocol.io/vega/proto/oracles/v1"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
@@ -815,43 +817,37 @@ func (this *FeeInfrastructureAccountsResponse) Validate() error {
 	}
 	return nil
 }
-func (this *PrepareProposalRequest) Validate() error {
-	if this.PartyId == "" {
-		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
-	}
-	if nil == this.Proposal {
-		return github_com_mwitkow_go_proto_validators.FieldError("Proposal", fmt.Errorf("message must exist"))
-	}
-	if this.Proposal != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Proposal); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Proposal", err)
+func (this *PrepareProposalSubmissionRequest) Validate() error {
+	if this.Submission != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
 		}
 	}
 	return nil
 }
-func (this *PrepareProposalResponse) Validate() error {
-	if this.PendingProposal != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.PendingProposal); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("PendingProposal", err)
+func (this *PrepareProposalSubmissionResponse) Validate() error {
+	if this.Submission != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
 		}
 	}
 	return nil
 }
-func (this *PrepareVoteRequest) Validate() error {
-	if nil == this.Vote {
-		return github_com_mwitkow_go_proto_validators.FieldError("Vote", fmt.Errorf("message must exist"))
+func (this *PrepareVoteSubmissionRequest) Validate() error {
+	if nil == this.Submission {
+		return github_com_mwitkow_go_proto_validators.FieldError("Submission", fmt.Errorf("message must exist"))
 	}
-	if this.Vote != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Vote); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
+	if this.Submission != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
 		}
 	}
 	return nil
 }
-func (this *PrepareVoteResponse) Validate() error {
-	if this.Vote != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Vote); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Vote", err)
+func (this *PrepareVoteSubmissionResponse) Validate() error {
+	if this.Submission != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
 		}
 	}
 	return nil

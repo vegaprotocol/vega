@@ -1,17 +1,17 @@
 Feature: Amend order to trigger price monitoring auction
 
   Background:
-    Given the markets start on "2020-10-16T00:00:00Z" and expire on "2020-12-31T23:59:59Z"
+    Given time is updated to "2020-10-16T00:00:00Z"
     And the price monitoring updated every "4" seconds named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 5       | 0.95        | 6                 |
       | 10      | 0.99        | 8                 |
     And the markets:
-      | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
-      | ETH/DEC20 | ETH        | ETH   | system-test-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | maturity date        | risk model             | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
+      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | system-test-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | market.auction.minimumDuration |
-      | 6                              |
+      | name                           | value |
+      | market.auction.minimumDuration | 6     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |

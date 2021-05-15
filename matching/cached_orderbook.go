@@ -38,32 +38,74 @@ func (b *CachedOrderBook) CancelAllOrders(
 	return b.OrderBook.CancelAllOrders(party)
 }
 
+func (b *CachedOrderBook) maybeInvalidateDuringAuction(order *types.Order) {
+	bestBid, errBestBid := b.GetBestBidPrice()
+	bestAsk, errBestAsk := b.GetBestBidPrice()
+	// if any of side have not best price, let's invalidate
+	if errBestBid != nil || errBestAsk != nil {
+		b.cache.Invalidate()
+		return
+	}
+
+	// only invalidate cache if it gets in the
+	// uncrossing range
+	switch order.Side {
+	case types.Side_SIDE_BUY:
+		if order.Price >= bestAsk {
+			b.cache.Invalidate()
+		}
+	case types.Side_SIDE_SELL:
+		if order.Price <= bestBid {
+			b.cache.Invalidate()
+		}
+	}
+}
+
 func (b *CachedOrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
-	b.cache.Invalidate()
+	if !b.InAuction() {
+		b.cache.Invalidate()
+	} else {
+		b.maybeInvalidateDuringAuction(order)
+	}
 	return b.OrderBook.CancelOrder(order)
 }
 
 func (b *CachedOrderBook) RemoveOrder(order *types.Order) error {
-	b.cache.Invalidate()
+	if !b.InAuction() {
+		b.cache.Invalidate()
+	} else {
+		b.maybeInvalidateDuringAuction(order)
+	}
 	return b.OrderBook.RemoveOrder(order)
 }
 
 func (b *CachedOrderBook) AmendOrder(
 	originalOrder, amendedOrder *types.Order) error {
-	b.cache.Invalidate()
+	if !b.InAuction() {
+		b.cache.Invalidate()
+	} else {
+		b.maybeInvalidateDuringAuction(amendedOrder)
+	}
 	return b.OrderBook.AmendOrder(originalOrder, amendedOrder)
 }
 
 func (b *CachedOrderBook) SubmitOrder(
 	order *types.Order) (*types.OrderConfirmation, error) {
-	b.cache.Invalidate()
+	if !b.InAuction() {
+		b.cache.Invalidate()
+	} else {
+		b.maybeInvalidateDuringAuction(order)
+	}
 	return b.OrderBook.SubmitOrder(order)
 }
 
 func (b *CachedOrderBook) DeleteOrder(
 	order *types.Order) (*types.Order, error) {
-	// invalidate all caches
-	b.cache.Invalidate()
+	if !b.InAuction() {
+		b.cache.Invalidate()
+	} else {
+		b.maybeInvalidateDuringAuction(order)
+	}
 	return b.OrderBook.DeleteOrder(order)
 }
 

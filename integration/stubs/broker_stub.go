@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type BrokerStub struct {
@@ -113,7 +114,7 @@ func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 }
 
 func (b *BrokerStub) GetRejectedOrderAmendments() []events.TxErr {
-	return b.filterTxErr(func(errProto types.TxErrorEvent) bool {
+	return b.filterTxErr(func(errProto eventspb.TxErrorEvent) bool {
 		return errProto.GetOrderAmendment() != nil
 	})
 }
@@ -189,7 +190,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy ma
 		}
 	}
 
-	// now we haveall active orders, let's build both sides
+	// now we have all active orders, let's build both sides
 	sell, buy = map[uint64]uint64{}, map[uint64]uint64{}
 	for _, v := range activeOrders {
 		if v.Side == types.Side_SIDE_BUY {
@@ -200,6 +201,24 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy ma
 	}
 
 	return
+}
+
+func (b *BrokerStub) GetMarket(marketID string) *types.Market {
+	batch := b.GetBatch(events.MarketUpdatedEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	for i := len(batch) - 1; i >= 0; i-- {
+		switch mkt := batch[i].(type) {
+		case *events.MarketUpdated:
+			return mkt.Market().DeepClone()
+		case events.MarketUpdated:
+			return mkt.Market().DeepClone()
+		}
+	}
+
+	return nil
 }
 
 func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []types.Order {
@@ -344,6 +363,17 @@ func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account
 	return types.Account{}, errors.New("account does not exist")
 }
 
+func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Account, error) {
+	batch := b.GetAccounts()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
 func (b *BrokerStub) GetTraderMarginAccount(trader, market string) (types.Account, error) {
 	batch := b.GetAccounts()
 	for _, e := range batch {
@@ -448,7 +478,7 @@ func (b *BrokerStub) ResetType(t events.Type) {
 	b.mu.Unlock()
 }
 
-func (b *BrokerStub) filterTxErr(predicate func(errProto types.TxErrorEvent) bool) []events.TxErr {
+func (b *BrokerStub) filterTxErr(predicate func(errProto eventspb.TxErrorEvent) bool) []events.TxErr {
 	batch := b.GetBatch(events.TxErrEvent)
 	if len(batch) == 0 {
 		return nil

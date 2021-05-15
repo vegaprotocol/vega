@@ -7,6 +7,7 @@ package mocks
 import (
 	governance "code.vegaprotocol.io/vega/governance"
 	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -37,17 +38,17 @@ func (m *MockGovernanceEngine) EXPECT() *MockGovernanceEngineMockRecorder {
 }
 
 // AddVote mocks base method
-func (m *MockGovernanceEngine) AddVote(arg0 context.Context, arg1 proto.Vote) error {
+func (m *MockGovernanceEngine) AddVote(arg0 context.Context, arg1 v1.VoteSubmission, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddVote", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddVote", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddVote indicates an expected call of AddVote
-func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddVote), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddVote), arg0, arg1, arg2)
 }
 
 // OnChainTimeUpdate mocks base method
@@ -80,16 +81,16 @@ func (mr *MockGovernanceEngineMockRecorder) RejectProposal(arg0, arg1, arg2 inte
 }
 
 // SubmitProposal mocks base method
-func (m *MockGovernanceEngine) SubmitProposal(arg0 context.Context, arg1 proto.Proposal, arg2 string) (*governance.ToSubmit, error) {
+func (m *MockGovernanceEngine) SubmitProposal(arg0 context.Context, arg1 v1.ProposalSubmission, arg2, arg3 string) (*governance.ToSubmit, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitProposal", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SubmitProposal", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*governance.ToSubmit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubmitProposal indicates an expected call of SubmitProposal
-func (mr *MockGovernanceEngineMockRecorder) SubmitProposal(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockGovernanceEngineMockRecorder) SubmitProposal(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).SubmitProposal), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitProposal", reflect.TypeOf((*MockGovernanceEngine)(nil).SubmitProposal), arg0, arg1, arg2, arg3)
 }

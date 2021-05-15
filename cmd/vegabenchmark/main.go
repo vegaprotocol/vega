@@ -15,6 +15,7 @@ var (
 	opts = struct {
 		recordings string
 		out        string
+		times      int
 	}{}
 
 	//go:embed configs/*
@@ -35,12 +36,16 @@ var (
 func init() {
 	flag.StringVar(&opts.recordings, "recordings", "", "a coma separated list of paths to the vega recordings")
 	flag.StringVar(&opts.out, "out", "bench.txt", "a file to store the outputs of the benchmarks")
+	flag.IntVar(&opts.times, "times", 5, "how many time should the benchmarks run")
 }
 
 func main() {
 	flag.Parse()
 	if len(opts.recordings) <= 0 {
 		reportError("missing recordings paths argument")
+	}
+	if opts.times <= 0 {
+		reportError("times flag have to be > 0")
 	}
 
 	f, err := os.OpenFile(opts.out, os.O_RDWR|os.O_CREATE, 0644)
@@ -57,7 +62,9 @@ func main() {
 
 func runBenchmark(recording string) string {
 	var stats processor.Stats
+	var totalOrders uint64
 	benchResults := testing.Benchmark(func(b *testing.B) {
+		b.N = opts.times //lint:ignore SA3001 it's OK to use b.N in this kind of usage.
 		for n := 0; n < b.N; n++ {
 			// setup a new vega
 			proc, bstats, err := setupVega(selfPubKey)
@@ -69,11 +76,12 @@ func runBenchmark(recording string) string {
 			if err := replayAll(proc.Abci(), recording); err != nil {
 				reportError(fmt.Sprintf("error replaying blockchain, %v\n", err))
 			}
+			totalOrders += stats.TotalOrders()
 		}
 	})
 
 	return fmt.Sprintf("Benchmark%v\t%v\t%v\t%f orders/s\n",
-		recording, benchResults, benchResults.MemString(), float64(stats.TotalOrders())/benchResults.T.Seconds())
+		recording, benchResults, benchResults.MemString(), float64(totalOrders)/benchResults.T.Seconds())
 }
 
 func reportError(str string) {

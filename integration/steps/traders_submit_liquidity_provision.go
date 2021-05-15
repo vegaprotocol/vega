@@ -7,11 +7,12 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/cucumber/godog/gherkin"
 )
 
 func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.DataTable) error {
-	lps := map[string]*types.LiquidityProvisionSubmission{}
+	lps := map[string]*commandspb.LiquidityProvisionSubmission{}
 	parties := map[string]string{}
 
 	for _, row := range TableWrapper(*table).Parse() {
@@ -32,7 +33,7 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 
 		lp, ok := lps[id]
 		if !ok {
-			lp = &types.LiquidityProvisionSubmission{
+			lp = &commandspb.LiquidityProvisionSubmission{
 				MarketId:         marketID,
 				CommitmentAmount: amount,
 				Fee:              fee,
@@ -66,6 +67,6 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 	return nil
 }
 
-func errSubmittingLiquidityProvision(lp *types.LiquidityProvisionSubmission, party, id string, err error) error {
+func errSubmittingLiquidityProvision(lp *commandspb.LiquidityProvisionSubmission, party, id string, err error) error {
 	return fmt.Errorf("failed to submit [%v] for party %s and id %s: %v", lp, party, id, err)
 }

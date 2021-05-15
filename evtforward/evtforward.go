@@ -13,7 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -54,7 +54,7 @@ type EvtForwarder struct {
 	self string
 
 	evtsmu    sync.Mutex
-	ackedEvts map[string]*types.ChainEvent
+	ackedEvts map[string]*commandspb.ChainEvent
 	evts      map[string]tsEvt
 
 	mu               sync.RWMutex
@@ -67,7 +67,7 @@ type EvtForwarder struct {
 
 type tsEvt struct {
 	ts  time.Time // timestamp of the block when the event has been added
-	evt *types.ChainEvent
+	evt *commandspb.ChainEvent
 }
 
 type nodeHash struct {
@@ -91,7 +91,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		nodes:            []nodeHash{},
 		self:             string(top.SelfVegaPubKey()),
 		currentTime:      now,
-		ackedEvts:        map[string]*types.ChainEvent{},
+		ackedEvts:        map[string]*commandspb.ChainEvent{},
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
@@ -129,7 +129,7 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 
 // Ack will return true if the event is newly acknowledge
 // if the event already exist and was already acknowledge this will return false
-func (e *EvtForwarder) Ack(evt *types.ChainEvent) bool {
+func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 	var res = "ok"
 	defer func() {
 		metrics.EvtForwardInc("ack", res)
@@ -164,7 +164,7 @@ func (e *EvtForwarder) isAllowlisted(pubkey string) bool {
 
 // Forward will forward an ChainEvent to the tendermint network
 // we expect the pubkey to be an ed25519 pubkey hex encoded
-func (e *EvtForwarder) Forward(ctx context.Context, evt *types.ChainEvent, pubkey string) error {
+func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, pubkey string) error {
 	var res = "ok"
 	defer func() {
 		metrics.EvtForwardInc("forward", res)
@@ -210,7 +210,7 @@ func (e *EvtForwarder) updateValidatorsList() {
 	sort.SliceStable(e.nodes, func(i, j int) bool { return e.nodes[i].hash < e.nodes[j].hash })
 }
 
-func (e *EvtForwarder) getEvt(key string) (evt *types.ChainEvent, ok bool, acked bool) {
+func (e *EvtForwarder) getEvt(key string) (evt *commandspb.ChainEvent, ok bool, acked bool) {
 	if evt, ok = e.ackedEvts[key]; ok {
 		return evt, true, true
 	}
@@ -222,11 +222,11 @@ func (e *EvtForwarder) getEvt(key string) (evt *types.ChainEvent, ok bool, acked
 	return nil, false, false
 }
 
-func (e *EvtForwarder) send(ctx context.Context, evt *types.ChainEvent) error {
+func (e *EvtForwarder) send(ctx context.Context, evt *commandspb.ChainEvent) error {
 	return e.cmd.Command(ctx, txn.ChainEventCommand, evt)
 }
 
-func (e *EvtForwarder) isSender(evt *types.ChainEvent) bool {
+func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
 	s := fmt.Sprintf("%v%v", evt.String(), e.currentTime.Unix())
 	h := e.hash([]byte(s))
 	e.mu.RLock()

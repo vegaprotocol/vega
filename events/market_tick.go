@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type MarketTick struct {
@@ -34,32 +34,32 @@ func (m MarketTick) MarketEvent() string {
 	return fmt.Sprintf("Market %s on time %s", m.id, m.t.String())
 }
 
-func (m MarketTick) Proto() types.MarketTick {
-	return types.MarketTick{
+func (m MarketTick) Proto() eventspb.MarketTick {
+	return eventspb.MarketTick{
 		Id:   m.id,
 		Time: m.t.UTC().Unix(),
 	}
 }
 
-func (m MarketTick) MarketProto() types.MarketEvent {
-	return types.MarketEvent{
+func (m MarketTick) MarketProto() eventspb.MarketEvent {
+	return eventspb.MarketEvent{
 		MarketId: m.id,
 		Payload:  m.MarketEvent(),
 	}
 }
 
-func (m MarketTick) StreamMessage() *types.BusEvent {
+func (m MarketTick) StreamMessage() *eventspb.BusEvent {
 	p := m.Proto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    m.eventID(),
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
-		Event: &types.BusEvent_MarketTick{
+		Event: &eventspb.BusEvent_MarketTick{
 			MarketTick: &p,
 		},
 	}
 }
 
-func (m MarketTick) StreamMarketMessage() *types.BusEvent {
+func (m MarketTick) StreamMarketMessage() *eventspb.BusEvent {
 	return m.StreamMessage()
 }

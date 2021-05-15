@@ -44,7 +44,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -60,12 +60,12 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     #T0 + 10min 10s
-    Then time is updated to "2020-10-16T00:10:10Z"
+    Then time is updated to "2020-10-16T00:16:10Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 11min01s
-    Then time is updated to "2020-10-16T00:11:01Z"
+    Then time is updated to "2020-10-16T00:20:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -97,30 +97,30 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     #T0 + 10min + 10s
-    Then time is updated to "2020-10-16T00:10:10Z"
+    Then time is updated to "2020-10-16T00:15:01Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T0 + 11min01s
-    Then time is updated to "2020-10-16T00:11:01Z"
+    Then time is updated to "2020-10-16T00:20:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "100000" for the market "ETH/DEC20"
+    And the mark price should be "111000" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.
 
@@ -148,7 +148,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
@@ -156,7 +156,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
@@ -174,7 +174,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     #T0 + 11min01s (opening period, min auction duration + 1 second, auction is over)
-    Then time is updated to "2020-10-16T00:11:01Z"
+    Then time is updated to "2020-10-16T00:20:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -206,7 +206,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -230,13 +230,13 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     #T1 + 04min01s (auction ended)
-    Then time is updated to "2020-10-16T00:13:11Z"
+    Then time is updated to "2020-10-16T00:20:11Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     And the mark price should be "111000" for the market "ETH/DEC20"
 
-  Scenario: Non-persistent order results in an auction (one trigger breached), no orders placed during auction and auction terminates
+  Scenario: Non-persistent order do not result in an auction (one trigger breached)
 
     Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount      |
@@ -262,33 +262,20 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110000" for the market "ETH/DEC20"
 
     #T1 = T0 + 10s
-    Then time is updated to "2020-10-16T00:10:10Z"
+    When time is updated to "2020-10-16T00:10:10Z"
 
-    When the traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    And the mark price should be "110000" for the market "ETH/DEC20"
-
-    #T1 + 04min00s (last second of the auction)
-    Then time is updated to "2020-10-16T00:11:10Z"
-
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    #T1 + 04min01s
-    Then time is updated to "2020-10-16T00:11:11Z"
-
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110000" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in a trade with indicative price outside the price monitoring bounds, hence auction get extended, no further orders placed, auction concludes.
@@ -317,54 +304,35 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
     And the mark price should be "110000" for the market "ETH/DEC20"
 
     #T1 = T0 + 10s
-    Then time is updated to "2020-10-16T00:02:10Z"
+    When time is updated to "2020-10-16T00:02:10Z"
 
-    When the traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_IOC | ref-2     |
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110000" for the market "ETH/DEC20"
 
     #T1 + 04min00s (last second of the auction)
-    Then time is updated to "2020-10-16T00:03:10Z"
+    When time is updated to "2020-10-16T00:03:10Z"
+    And the traders cancel the following orders:
+      | trader  | reference |
+      | trader1 | ref-1     |
 
-    When the traders place the following orders:
+    Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFA | ref-2     |
-
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    #T1 + 04min01s (auction extended due to 2nd trigger)
-    Then time is updated to "2020-10-16T00:04:10Z"
-
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    And the mark price should be "110000" for the market "ETH/DEC20"
-
-    #T1 + 10min00s (last second of the extended auction)
-    Then time is updated to "2020-10-16T00:05:11Z"
-
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
-    And the mark price should be "110000" for the market "ETH/DEC20"
-
-    #T1 + 10min01s (extended auction finished)
-    Then time is updated to "2020-10-16T00:09:11Z"
+      | trader1 | ETH/DEC20 | sell | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFN | ref-1     |
+      | trader2 | ETH/DEC20 | buy  | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFN | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
-    And the mark price should be "133000" for the market "ETH/DEC20"
+    And the mark price should be "110000" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order results in an auction (one trigger breached), orders placed during auction result in trade with indicative price outside the price monitoring bounds, hence auction get extended, additional orders resulting in more trades placed, auction concludes.
 
@@ -392,7 +360,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 110000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -404,7 +372,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 

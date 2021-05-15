@@ -19,6 +19,9 @@ var (
 	ErrNotEnoughOrders   = errors.New("insufficient orders")
 	ErrOrderDoesNotExist = errors.New("order does not exist")
 	ErrInvalidVolume     = errors.New("invalid volume")
+	ErrNoBestBid         = errors.New("no best bid")
+	ErrNoBestAsk         = errors.New("no best ask")
+	ErrNotCrossed        = errors.New("not crossed")
 )
 
 // OrderBook represents the book holding all orders in the system.
@@ -93,7 +96,6 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 // GetCloseoutPrice returns the exit price which would be achieved for a given
 // volume and give side of the book
 func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, error) {
-	var price uint64
 	if b.auction {
 		p := b.GetIndicativePrice()
 		return p, nil
@@ -102,31 +104,18 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 	if volume == 0 {
 		return 0, ErrInvalidVolume
 	}
-	vol := volume
+
+	var (
+		price  uint64
+		vol    = volume
+		levels []*PriceLevel
+	)
 	if side == types.Side_SIDE_SELL {
-		levels := b.sell.getLevels()
-		for i := len(levels) - 1; i >= 0; i-- {
-			lvl := levels[i]
-			if lvl.volume >= vol {
-				price += lvl.price * vol
-				return price / volume, nil
-			}
-			price += lvl.price * lvl.volume
-			vol -= lvl.volume
-		}
-		// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
-		// still return the price for the volume we could close out, so the caller can make a decision on what to do
-		if vol == volume {
-			return b.lastTradedPrice, ErrNotEnoughOrders
-		}
-		price = price / (volume - vol)
-		if vol != 0 {
-			return price, ErrNotEnoughOrders
-		}
-		return price, nil
+		levels = b.sell.getLevels()
+	} else {
+		levels = b.buy.getLevels()
 	}
-	// side == buy
-	levels := b.buy.getLevels()
+
 	for i := len(levels) - 1; i >= 0; i-- {
 		lvl := levels[i]
 		if lvl.volume >= vol {
@@ -136,7 +125,8 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (uint64, er
 		price += lvl.price * lvl.volume
 		vol -= lvl.volume
 	}
-	// if we reach this point, chances are vol != 0, in which case we should return an error along with the price
+	// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
+	// still return the price for the volume we could close out, so the caller can make a decision on what to do
 	if vol == volume {
 		return b.lastTradedPrice, ErrNotEnoughOrders
 	}
@@ -337,23 +327,14 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 
 // GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePriceAndVolume() (retprice uint64, retvol uint64, retside types.Side) {
-
-	bestBid, err := b.GetBestBidPrice()
-	if err != nil {
-		return 0, 0, types.Side_SIDE_UNSPECIFIED
-	}
-	bestAsk, err := b.GetBestAskPrice()
-	if err != nil {
-		return 0, 0, types.Side_SIDE_UNSPECIFIED
-	}
-
-	// Short circuit if the book is not crossed
-	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
-		return 0, 0, types.Side_SIDE_UNSPECIFIED
-	}
-
 	// Generate a set of price level pairs with their maximum tradable volumes
-	cumulativeVolumes, maxTradableAmount := b.buildCumulativePriceLevels(bestBid, bestAsk)
+	cumulativeVolumes, maxTradableAmount, err := b.buildCumulativePriceLevels()
+	if err != nil {
+		if b.log.GetLevel() <= logging.DebugLevel {
+			b.log.Debug("could not get cumulative price levels", logging.Error(err))
+		}
+		return 0, 0, types.Side_SIDE_UNSPECIFIED
+	}
 
 	// Pull out all prices that match that volume
 	prices := make([]uint64, 0, len(cumulativeVolumes))
@@ -389,22 +370,14 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice uint64, retvol uint6
 
 // GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
 func (b *OrderBook) GetIndicativePrice() (retprice uint64) {
-	bestBid, err := b.GetBestBidPrice()
-	if err != nil {
-		return 0
-	}
-	bestAsk, err := b.GetBestAskPrice()
-	if err != nil {
-		return 0
-	}
-
-	// Short circuit if the book is not crossed
-	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
-		return 0
-	}
-
 	// Generate a set of price level pairs with their maximum tradable volumes
-	cumulativeVolumes, maxTradableAmount := b.buildCumulativePriceLevels(bestBid, bestAsk)
+	cumulativeVolumes, maxTradableAmount, err := b.buildCumulativePriceLevels()
+	if err != nil {
+		if b.log.GetLevel() <= logging.DebugLevel {
+			b.log.Debug("could not get cumulative price levels", logging.Error(err))
+		}
+		return 0
+	}
 
 	// Pull out all prices that match that volume
 	prices := make([]uint64, 0, len(cumulativeVolumes))
@@ -423,8 +396,23 @@ func (b *OrderBook) GetIndicativePrice() (retprice uint64) {
 
 // buildCumulativePriceLevels this returns a slice of all the price levels with the
 // cumulative volume for each level. Also returns the max tradable size
-func (b *OrderBook) buildCumulativePriceLevels(maxPrice, minPrice uint64) ([]CumulativeVolumeLevel, uint64) {
-	return b.indicativePriceAndVolume.GetCumulativePriceLevels(maxPrice, minPrice)
+func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint64, error) {
+	bestBid, err := b.GetBestBidPrice()
+	if err != nil {
+		return nil, 0, ErrNoBestBid
+	}
+	bestAsk, err := b.GetBestAskPrice()
+	if err != nil {
+		return nil, 0, ErrNoBestAsk
+	}
+	// Short circuit if the book is not crossed
+	if bestBid < bestAsk || bestBid == 0 || bestAsk == 0 {
+		return nil, 0, ErrNotCrossed
+	}
+
+	volume, maxTradableAmount := b.indicativePriceAndVolume.
+		GetCumulativePriceLevels(bestBid, bestAsk)
+	return volume, maxTradableAmount, nil
 }
 
 // Uncrosses the book to generate the maximum volume set of trades
@@ -437,66 +425,63 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		return nil, nil
 	}
 
-	var uncrossedOrder *types.OrderConfirmation
-	var allOrders []*types.OrderConfirmation
+	var (
+		err            error
+		uncrossOrders  []*types.Order
+		uncrossingSide *OrderBookSide
+	)
+
+	if uncrossSide == types.Side_SIDE_BUY {
+		uncrossingSide = b.buy
+	} else {
+		uncrossingSide = b.sell
+	}
 
 	// Remove all the orders from that side of the book up to the given volume
-	if uncrossSide == types.Side_SIDE_BUY {
-		// Pull out the trades we want to process
-		uncrossOrders, err := b.buy.ExtractOrders(price, volume)
+	uncrossOrders, err = uncrossingSide.ExtractOrders(price, volume)
+	if err != nil {
+		b.log.Panic("Failed to extract side orders for uncrossing",
+			logging.String("side", uncrossSide.String()),
+			logging.Uint64("price", price),
+			logging.Uint64("volume", volume))
+	}
+
+	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price)
+}
+
+// Takes extracted order from a side of the book, and uncross them
+// with the opposite side.
+func (b *OrderBook) uncrossBookSide(
+	uncrossOrders []*types.Order,
+	opSide *OrderBookSide,
+	price uint64,
+) ([]*types.OrderConfirmation, error) {
+	var (
+		uncrossedOrder *types.OrderConfirmation
+		allOrders      []*types.OrderConfirmation
+	)
+	// Uncross each one
+	for _, order := range uncrossOrders {
+		trades, affectedOrders, _, err := opSide.uncross(order, false)
+
 		if err != nil {
 			return nil, err
 		}
-
-		// Uncross each one
-		for _, order := range uncrossOrders {
-			trades, affectedOrders, _, err := b.sell.uncross(order, false)
-
-			if err != nil {
-				return nil, err
-			}
-			// Update all the trades to have the correct uncrossing price
-			for index := 0; index < len(trades); index++ {
-				trades[index].Price = price
-			}
-			// If the affected order is fully filled set the status
-			for _, affectedOrder := range affectedOrders {
-				if affectedOrder.Remaining == 0 {
-					affectedOrder.Status = types.Order_STATUS_FILLED
-				}
-			}
-			uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
-			allOrders = append(allOrders, uncrossedOrder)
+		// Update all the trades to have the correct uncrossing price
+		for index := 0; index < len(trades); index++ {
+			trades[index].Price = price
 		}
-	} else {
-		// Pull out the trades we want to process
-		uncrossOrders, err := b.sell.ExtractOrders(price, volume)
-		if err != nil {
-			return nil, err
+		// If the affected order is fully filled set the status
+		for _, affectedOrder := range affectedOrders {
+			if affectedOrder.Remaining == 0 {
+				affectedOrder.Status = types.Order_STATUS_FILLED
+			}
 		}
-
-		// Uncross each one
-		for _, order := range uncrossOrders {
-			trades, affectedOrders, _, err := b.buy.uncross(order, false)
-
-			if err != nil {
-				return nil, err
-			}
-			// Update all the trades to have the correct uncrossing price
-			for index := 0; index < len(trades); index++ {
-				trades[index].Price = price
-			}
-			// If the affected order is fully filled set the status
-			for _, affectedOrder := range affectedOrders {
-				if affectedOrder.Remaining == 0 {
-					affectedOrder.Status = types.Order_STATUS_FILLED
-				}
-			}
-			uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
-			allOrders = append(allOrders, uncrossedOrder)
-		}
+		uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
+		allOrders = append(allOrders, uncrossedOrder)
 	}
 	return allOrders, nil
+
 }
 
 func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
@@ -613,29 +598,25 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		return err
 	}
 
-	var reduceBy uint64
+	var (
+		reduceBy uint64
+		side     *OrderBookSide = b.sell
+		err      error
+	)
 	if amendedOrder.Side == types.Side_SIDE_BUY {
-		var err error
-		if reduceBy, err = b.buy.amendOrder(amendedOrder); err != nil {
-			if b.log.GetLevel() == logging.DebugLevel {
-				b.log.Debug("Failed to amend (buy side)",
-					logging.Order(*amendedOrder),
-					logging.Error(err),
-					logging.String("order-book", b.marketID))
-			}
-			return err
+		side = b.buy
+	}
+
+	if reduceBy, err = side.amendOrder(amendedOrder); err != nil {
+		if b.log.GetLevel() == logging.DebugLevel {
+			b.log.Debug("Failed to amend",
+				logging.String("side", amendedOrder.Side.String()),
+				logging.Order(*amendedOrder),
+				logging.String("market", b.marketID),
+				logging.Error(err),
+			)
 		}
-	} else {
-		var err error
-		if reduceBy, err = b.sell.amendOrder(amendedOrder); err != nil {
-			if b.log.GetLevel() == logging.DebugLevel {
-				b.log.Debug("Failed to amend (sell side)",
-					logging.Order(*amendedOrder),
-					logging.Error(err),
-					logging.String("order-book", b.marketID))
-			}
-			return err
-		}
+		return err
 	}
 
 	if b.auction && reduceBy != 0 {
@@ -650,6 +631,11 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 // GetTrades returns the trades a given order generates if we were to submit it now
 // this is used to calculate fees, perform price monitoring, etc...
 func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
+	// this should always return straight away in an auction
+	if b.auction {
+		return nil, nil
+	}
+
 	if err := b.validateOrder(order); err != nil {
 		return nil, err
 	}
@@ -657,21 +643,15 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 		b.latestTimestamp = order.CreatedAt
 	}
 
-	if b.auction {
-		return nil, nil
-	}
-
-	_, trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
-
-	if err != nil {
-		if err == ErrWashTrade {
-			// we still want to submit this order, there might be trades coming out of it
-			return trades, nil
-		}
+	trades, err := b.getOppositeSide(order.Side).fakeUncross(order)
+	// it's fine for the error to be a wash trade here,
+	// it's just be stopped when really uncrossing.
+	if err != nil && err != ErrWashTrade {
 		// some random error happened, return both trades and error
 		// this is a case that isn't covered by the current SubmitOrder call
 		return trades, err
 	}
+
 	// no error uncrossing, in all other cases, return trades (could be empty) without an error
 	return trades, nil
 }

@@ -12,8 +12,8 @@ import (
 	"code.vegaprotocol.io/vega/oracles/mocks"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -289,19 +289,19 @@ func newBroker(ctx context.Context, t *testing.T) *testBroker {
 }
 
 func (b *testBroker) mockNewOracleSpecSubscription(currentTime time.Time, spec oraclespb.OracleSpec) {
-	spec.CreatedAt = currentTime.Unix()
+	spec.CreatedAt = currentTime.UnixNano()
 	spec.Status = oraclespb.OracleSpec_STATUS_ACTIVE
 	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, spec))
 }
 
 func (b *testBroker) mockOracleSpecSubscriptionDeactivation(currentTime time.Time, spec oraclespb.OracleSpec) {
-	spec.CreatedAt = currentTime.Unix()
+	spec.CreatedAt = currentTime.UnixNano()
 	spec.Status = oraclespb.OracleSpec_STATUS_DEACTIVATED
 	b.EXPECT().Send(events.NewOracleSpecEvent(b.ctx, spec))
 }
 
 func (b *testBroker) mockOracleDataBroadcast(currentTime time.Time, data oraclespb.OracleData, specIDs []string) {
 	data.MatchedSpecIds = specIDs
-	data.BroadcastAt = currentTime.Unix()
+	data.BroadcastAt = currentTime.UnixNano()
 	b.EXPECT().Send(events.NewOracleDataEvent(b.ctx, data))
 }

@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package vega;
-option go_package = "code.vegaprotocol.io/vega/proto";
+package vega.events.v1;
+option go_package = "code.vegaprotocol.io/vega/proto/events/v1";
 
 import "markets.proto";
 import "assets.proto";
@@ -9,6 +9,8 @@ import "governance.proto";
 import "vega.proto";
 import "oracles/v1/oracle_spec.proto";
 import "oracles/v1/oracle_data.proto";
+import "commands/v1/commands.proto";
+import "commands/v1/validator_commands.proto";
 
 // MarketEvent - the common denominator for all market events
 // interface has a method to return a string for logging
@@ -26,12 +28,13 @@ message TxErrorEvent {
   string err_msg = 2;
   // The transaction that failed
   oneof transaction {
-    OrderSubmission order_submission = 101;
-    OrderAmendment order_amendment = 102;
-    OrderCancellation order_cancellation = 103;
-    Proposal proposal = 104;
-    Vote vote = 105;
-    LiquidityProvisionSubmission liquidity_provision_submission = 106;
+    commands.v1.OrderSubmission order_submission = 101;
+    commands.v1.OrderAmendment order_amendment = 102;
+    commands.v1.OrderCancellation order_cancellation = 103;
+    commands.v1.ProposalSubmission proposal = 104;
+    commands.v1.VoteSubmission vote_submission = 105;
+    commands.v1.LiquidityProvisionSubmission liquidity_provision_submission = 106;
+    commands.v1.WithdrawSubmission withdraw_submission = 107;
   }
 }
 
@@ -236,7 +239,7 @@ message BusEvent {
     // Market data events
     MarketData market_data = 111;
     // Node signature events
-    NodeSignature node_signature = 112;
+    vega.commands.v1.NodeSignature node_signature = 112;
     // Loss socialization events - See [LossSocialization](#vega.LossSocialization)
     LossSocialization loss_socialization = 113;
     // Position settlement events - See [SettlePosition](#vega.SettlePosition)

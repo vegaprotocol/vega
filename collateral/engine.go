@@ -107,18 +107,23 @@ func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 }
 
 func (e *Engine) HasBalance(party string) bool {
-	accs, ok := e.partiesAccs[party]
-	if !ok {
-		return false
-	}
+	// FIXME(): we temporary just want to make
+	// accs, ok := e.partiesAccs[party]
+	// sure that the party ever deposited at least
+	// once
+	// if !ok {
+	// 	return false
+	// }
 
-	for _, acc := range accs {
-		if acc.Balance > 0 {
-			return true
-		}
-	}
+	// for _, acc := range accs {
+	// 	if acc.Balance > 0 {
+	// 		return true
+	// 	}
+	// }
 
-	return false
+	// return false
+	_, ok := e.partiesAccs[party]
+	return ok
 }
 
 func (e *Engine) addPartyAccount(party, accid string, acc *types.Account) {
@@ -139,9 +144,16 @@ func (e *Engine) rmPartyAccount(party, accid string) {
 	delete(accs, accid)
 	// delete if the number of accounts for the party
 	// is down to 0
-	if len(accs) <= 0 {
-		delete(e.partiesAccs, party)
-	}
+	// FIXME(): for now we do not delete the
+	// party, this means that the numbner of
+	// party will grow forever if they were to
+	// get distressed, or people would be adding
+	// funds the withdrawing them forever on load
+	// of party, but that is better than having
+	// transaction stay in the mempool forever.
+	// if len(accs) <= 0 {
+	// 	delete(e.partiesAccs, party)
+	// }
 }
 
 func (e *Engine) removeAccountFromHashableSlice(id string) {
@@ -1824,7 +1836,7 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 
 // CreateMarketAccounts will create all required accounts for a market once
 // a new market is accepted through the network
-func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string, insurance uint64) (insuranceID, settleID string, err error) {
+func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string) (insuranceID, settleID string, err error) {
 	if !e.AssetExists(asset) {
 		return "", "", ErrInvalidAssetID
 	}
@@ -1835,7 +1847,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Id:       insuranceID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  insurance,
+			Balance:  0,
 			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_INSURANCE,
 		}
@@ -2131,6 +2143,11 @@ func (e *Engine) accountID(marketID, partyID, asset string, ty types.AccountType
 func (e *Engine) GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error) {
 	liquidityAccID := e.accountID(market, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY)
 	return e.GetAccountByID(liquidityAccID)
+}
+
+func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Account, error) {
+	insuranceAccID := e.accountID(market, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_INSURANCE)
+	return e.GetAccountByID(insuranceAccID)
 }
 
 // TopUpInsurancePool - this is used only for test purposed for now

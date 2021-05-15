@@ -24,6 +24,7 @@ var (
 	ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero = OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO
 	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE
 	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO
+	ErrNonPersistentOrderOutOfBounds               = OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 )
 
 func IsOrderError(err error) (OrderError, bool) {
@@ -117,6 +118,8 @@ func (err OrderError) Error() string {
 		return "OrderError: sell cannot reference best bid price"
 	case OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO:
 		return "OrderError: offset must be greater than zero"
+	case OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS:
+		return "OrderError: non-persistent order trades out of price bounds"
 	default:
 		return "invalid OrderError"
 	}

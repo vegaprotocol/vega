@@ -85,7 +85,7 @@ Feature: Price monitoring test for issue 2681
     When the traders place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 6635393 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "6635392" for the market "ETH/DEC20"
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -41,6 +42,9 @@ func (t *Tx) Hash() []byte { return t.tx.InputData[:TxHashLen] }
 // PubKey returns the Tx's public key.
 func (t *Tx) PubKey() []byte { return t.tx.GetPubKey() }
 
+// Party returns the Tx's public key in a hex encoded format
+func (t *Tx) Party() string { return hex.EncodeToString(t.tx.GetPubKey()) }
+
 // BlockHeight returns the target block for which the Tx has been broadcasted.
 // The Tx might be included on a higher block height.
 // Depending on the tolerance of the chain the Tx might be included or rejected.
@@ -69,30 +73,33 @@ func (t *Tx) Unmarshal(i interface{}) error {
 func (t *Tx) toProto() (interface{}, error) {
 	var msg proto.Message
 	switch t.Command() {
+	// user commands
 	case txn.SubmitOrderCommand:
-		msg = &types.OrderSubmission{}
+		msg = &commandspb.OrderSubmission{}
 	case txn.CancelOrderCommand:
-		msg = &types.OrderCancellation{}
+		msg = &commandspb.OrderCancellation{}
 	case txn.AmendOrderCommand:
-		msg = &types.OrderAmendment{}
+		msg = &commandspb.OrderAmendment{}
 	case txn.ProposeCommand:
-		msg = &types.Proposal{}
+		msg = &commandspb.ProposalSubmission{}
 	case txn.VoteCommand:
-		msg = &types.Vote{}
-	case txn.NodeVoteCommand:
-		msg = &types.NodeVote{}
+		msg = &commandspb.VoteSubmission{}
 	case txn.WithdrawCommand:
-		msg = &types.WithdrawSubmission{}
-	case txn.RegisterNodeCommand:
-		msg = &types.NodeRegistration{}
-	case txn.NodeSignatureCommand:
-		msg = &types.NodeSignature{}
+		msg = &commandspb.WithdrawSubmission{}
 	case txn.LiquidityProvisionCommand:
-		msg = &types.LiquidityProvisionSubmission{}
+		msg = &commandspb.LiquidityProvisionSubmission{}
+	// Node commands
+	case txn.NodeVoteCommand:
+		msg = &commandspb.NodeVote{}
+	case txn.RegisterNodeCommand:
+		msg = &commandspb.NodeRegistration{}
+	case txn.NodeSignatureCommand:
+		msg = &commandspb.NodeSignature{}
 	case txn.ChainEventCommand:
-		msg = &types.ChainEvent{}
+		msg = &commandspb.ChainEvent{}
+	// oracles
 	case txn.SubmitOracleDataCommand:
-		msg = &types.OracleDataSubmission{}
+		msg = &commandspb.OracleDataSubmission{}
 	default:
 		return nil, fmt.Errorf("don't know how to unmarshal command '%s'", t.Command().String())
 	}
@@ -112,6 +119,7 @@ func (t *Tx) Validate() error {
 	}
 
 	pubkey := hex.EncodeToString(t.PubKey())
+	// TODO Remove this verification once all party ID are removed from commands
 	// Verify party ID on those types who have it.
 	if t, ok := cmd.(interface{ GetPartyId() string }); ok {
 		if t.GetPartyId() != pubkey {
@@ -120,7 +128,7 @@ func (t *Tx) Validate() error {
 	}
 
 	switch t := cmd.(type) {
-	case *types.NodeRegistration:
+	case *commandspb.NodeRegistration:
 		if hex.EncodeToString(t.PubKey) != pubkey {
 			return errors.New("pubkey mismatch")
 		}

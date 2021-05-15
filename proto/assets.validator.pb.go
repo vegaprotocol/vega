@@ -47,13 +47,3 @@ func (this *BuiltinAsset) Validate() error {
 func (this *ERC20) Validate() error {
 	return nil
 }
-func (this *DevAssets) Validate() error {
-	for _, item := range this.Sources {
-		if item != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(item); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Sources", err)
-			}
-		}
-	}
-	return nil
-}

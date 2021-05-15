@@ -161,34 +161,3 @@ func (this *ValidatorEvent) Validate() error {
 	}
 	return nil
 }
-func (this *ChainEvent) Validate() error {
-	if oneOfNester, ok := this.GetEvent().(*ChainEvent_Builtin); ok {
-		if oneOfNester.Builtin != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Builtin); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Builtin", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetEvent().(*ChainEvent_Erc20); ok {
-		if oneOfNester.Erc20 != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Erc20); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Erc20", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetEvent().(*ChainEvent_Btc); ok {
-		if oneOfNester.Btc != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Btc); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Btc", err)
-			}
-		}
-	}
-	if oneOfNester, ok := this.GetEvent().(*ChainEvent_Validator); ok {
-		if oneOfNester.Validator != nil {
-			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Validator); err != nil {
-				return github_com_mwitkow_go_proto_validators.FieldError("Validator", err)
-			}
-		}
-	}
-	return nil
-}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type NetworkParameter struct {
@@ -26,12 +27,12 @@ func (n NetworkParameter) Proto() types.NetworkParameter {
 	return n.np
 }
 
-func (n NetworkParameter) StreamMessage() *types.BusEvent {
-	return &types.BusEvent{
+func (n NetworkParameter) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{
 		Id:    n.eventID(),
 		Block: n.TraceID(),
 		Type:  n.et.ToProto(),
-		Event: &types.BusEvent_NetworkParameter{
+		Event: &eventspb.BusEvent_NetworkParameter{
 			NetworkParameter: &n.np,
 		},
 	}

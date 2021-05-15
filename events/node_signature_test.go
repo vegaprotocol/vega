@@ -5,16 +5,17 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNodeSignatureDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	ns := &proto.NodeSignature{
+	ns := &commandspb.NodeSignature{
 		Id:   "Id",
-		Kind: proto.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
+		Kind: commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 		Sig:  []byte{'A', 'B', 'C'},
 	}
 
@@ -23,7 +24,7 @@ func TestNodeSignatureDeepClone(t *testing.T) {
 
 	// Change the original values
 	ns.Id = "Changed"
-	ns.Kind = proto.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED
+	ns.Kind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED
 	ns.Sig[0] = 'X'
 	ns.Sig[1] = 'Y'
 	ns.Sig[2] = 'Z'

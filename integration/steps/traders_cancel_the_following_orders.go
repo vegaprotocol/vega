@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/cucumber/godog/gherkin"
 )
@@ -35,13 +36,12 @@ func TradersCancelTheFollowingOrders(
 		}
 
 		for _, o := range orders {
-			cancel := types.OrderCancellation{
+			cancel := commandspb.OrderCancellation{
 				OrderId:  o.Id,
-				PartyId:  o.PartyId,
 				MarketId: o.MarketId,
 			}
 			reference = o.Reference
-			cancelOrder(exec, errorHandler, cancel, reference)
+			cancelOrder(exec, errorHandler, cancel, trader, reference)
 		}
 
 	}
@@ -49,8 +49,8 @@ func TradersCancelTheFollowingOrders(
 	return nil
 }
 
-func cancelOrder(exec *execution.Engine, errHandler *helpers.ErrorHandler, cancel types.OrderCancellation, ref string) {
-	if _, err := exec.CancelOrder(context.Background(), &cancel); err != nil {
+func cancelOrder(exec *execution.Engine, errHandler *helpers.ErrorHandler, cancel commandspb.OrderCancellation, party string, ref string) {
+	if _, err := exec.CancelOrder(context.Background(), &cancel, party); err != nil {
 		errHandler.HandleError(CancelOrderError{
 			reference: ref,
 			request:   cancel,

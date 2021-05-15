@@ -9,7 +9,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	evts := broker.GetLPEvents()
 	evtByID := func(id string) *types.LiquidityProvision {
 		found := &types.LiquidityProvision{}
@@ -21,7 +21,7 @@ func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataT
 		return found
 	}
 
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseLiquidityProvisionStatesTable(table) {
 		id := row.MustStr("id")
 		party := row.MustStr("party")
 		market := row.MustStr("market")
@@ -38,6 +38,16 @@ func LiquidityProvisionEventsSent(broker *stubs.BrokerStub, table *gherkin.DataT
 		}
 	}
 	return nil
+}
+
+func parseLiquidityProvisionStatesTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse(
+		"id",
+		"party",
+		"market",
+		"commitment amount",
+		"status",
+	)
 }
 
 func errLiquidityProvisionEventNotFound() error {

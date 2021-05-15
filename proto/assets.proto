@@ -49,9 +49,3 @@ message ERC20 {
   // The address of the contract for the token, on the ethereum network
   string contract_address = 1;
 }
-
-// Dev assets are for use in development networks only
-message DevAssets {
-  // Asset sources for development networks
-  repeated AssetSource sources = 1;
-}

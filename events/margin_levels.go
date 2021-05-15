@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 // MarginLevels - the margin levels event
@@ -43,12 +44,12 @@ func (m MarginLevels) Proto() types.MarginLevels {
 	return m.l
 }
 
-func (m MarginLevels) StreamMessage() *types.BusEvent {
-	return &types.BusEvent{
+func (m MarginLevels) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{
 		Id:    m.eventID(),
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
-		Event: &types.BusEvent_MarginLevels{
+		Event: &eventspb.BusEvent_MarginLevels{
 			MarginLevels: &m.l,
 		},
 	}

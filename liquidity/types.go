@@ -6,6 +6,29 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
+type ToCancel struct {
+	Party    string
+	OrderIDs []string
+}
+
+func (c *ToCancel) Merge(oth *ToCancel) *ToCancel {
+	if c.Party != oth.Party {
+		panic("could not merge ToCancel from different parties")
+	}
+	return &ToCancel{
+		Party:    c.Party,
+		OrderIDs: append(c.OrderIDs, oth.OrderIDs...),
+	}
+}
+
+func (c *ToCancel) Add(id string) {
+	c.OrderIDs = append(c.OrderIDs, id)
+}
+
+func (c *ToCancel) Empty() bool {
+	return len(c.OrderIDs) <= 0
+}
+
 // LiquidityProvisions provides convenience functions to a slice of *vega/proto.LiquidityProvision.
 type LiquidityProvisions []*types.LiquidityProvision
 

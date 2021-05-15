@@ -5,30 +5,7 @@ package proto
 import (
 	"strconv"
 	"time"
-
-	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 )
-
-func (l *LiquidityProvision) IntoSubmission() *LiquidityProvisionSubmission {
-	sells := make([]*LiquidityOrder, 0, len(l.Sells))
-	for _, v := range l.Sells {
-		sells = append(sells, v.LiquidityOrder)
-	}
-
-	buys := make([]*LiquidityOrder, 0, len(l.Buys))
-	for _, v := range l.Buys {
-		buys = append(buys, v.LiquidityOrder)
-	}
-
-	return &LiquidityProvisionSubmission{
-		MarketId:         l.MarketId,
-		CommitmentAmount: l.CommitmentAmount,
-		Fee:              l.Fee,
-		Sells:            sells,
-		Buys:             buys,
-		Reference:        l.Reference,
-	}
-}
 
 // Float64Fee tries to parse the Fee (string) into a float64.
 // If parsing fails 0 is returned.
@@ -68,37 +45,6 @@ func (o *Order) IsPersistent() bool {
 		o.TimeInForce == Order_TIME_IN_FORCE_GFA) &&
 		o.Type == Order_TYPE_LIMIT &&
 		o.Remaining > 0
-}
-
-func (o *Order) AmendSize(newSize int64) *OrderAmendment {
-	a := &OrderAmendment{
-		OrderId:  o.Id,
-		MarketId: o.MarketId,
-		PartyId:  o.PartyId,
-
-		SizeDelta:   newSize - int64(o.Size),
-		TimeInForce: o.TimeInForce,
-	}
-	if e := o.ExpiresAt; e > 0 {
-		a.ExpiresAt = &Timestamp{
-			Value: e,
-		}
-	}
-
-	if p := o.PeggedOrder; p != nil {
-		a.PeggedReference = p.Reference
-		a.PeggedOffset = &wrapperspb.Int64Value{
-			Value: p.Offset,
-		}
-	} else {
-		if p := o.Price; p > 0 {
-			a.Price = &Price{
-				Value: p,
-			}
-		}
-	}
-
-	return a
 }
 
 func (o *Order) IsExpireable() bool {

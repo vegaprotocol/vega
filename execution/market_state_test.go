@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -61,19 +62,18 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.Nil(t, o3conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
-	amendment := &types.OrderAmendment{
+	amendment := &commandspb.OrderAmendment{
 		OrderId:   o1.Id,
-		PartyId:   "trader-A",
 		Price:     &types.Price{Value: 4000},
 		SizeDelta: +10,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "trader-A")
 	assert.Nil(t, amendConf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
 	// but can place liquidity submission
-	lpsub := &types.LiquidityProvisionSubmission{
+	lpsub := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1,
 		Fee:              "0.1",

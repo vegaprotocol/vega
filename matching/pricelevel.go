@@ -10,7 +10,8 @@ import (
 
 var (
 	// ErrWashTrade signals an attempt to a wash trade from a party
-	ErrWashTrade = errors.New("party attempted to submit wash trade")
+	ErrWashTrade    = errors.New("party attempted to submit wash trade")
+	ErrFOKNotFilled = errors.New("FOK order could not be fully filled")
 )
 
 // PriceLevel represents all the Orders placed at a given price.

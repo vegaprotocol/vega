@@ -170,22 +170,3 @@ message ValidatorEvent {
     RemoveValidator rm = 1002;
   }
 }
-
-// An event forwarded to the Vega network to provide information on events happening on other networks
-message ChainEvent {
-  // The identifier of the transaction in which the events happened, usually a hash
-  string tx_id = 1;
-  // Arbitrary one-time integer used to prevent replay attacks
-  uint64 nonce = 2;
-  // The event
-  oneof event {
-    // Built-in asset event
-    BuiltinAssetEvent builtin = 1001;
-    // Ethereum ERC20 event
-    ERC20Event erc20 = 1002;
-    // Bitcoin BTC event
-    BTCEvent btc = 1003;
-    // Validator event
-    ValidatorEvent validator = 1004;
-  }
-}

@@ -17,7 +17,6 @@ func TheFeesConfiguration(config *market.Config, name string, table *gherkin.Dat
 
 	return config.FeesConfig.Add(name, &types.Fees{
 		Factors: &types.FeeFactors{
-			LiquidityFee:      row.liquidityFee(),
 			InfrastructureFee: row.infrastructureFee(),
 			MakerFee:          row.makerFee(),
 		},
@@ -34,8 +33,4 @@ func (r feesConfigRow) makerFee() string {
 
 func (r feesConfigRow) infrastructureFee() string {
 	return r.row.MustStr("infrastructure fee")
-}
-
-func (r feesConfigRow) liquidityFee() string {
-	return r.row.MustStr("liquidity fee")
 }

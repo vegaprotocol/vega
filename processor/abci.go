@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -44,7 +45,7 @@ type App struct {
 	banking  Banking
 	broker   Broker
 	cmd      Commander
-	erc      ExtResChecker
+	witness  Witness
 	evtfwd   EvtForwarder
 	exec     ExecutionEngine
 	ghandler *genesis.Handler
@@ -64,7 +65,7 @@ func NewApp(
 	assets Assets,
 	banking Banking,
 	broker Broker,
-	erc ExtResChecker,
+	witness Witness,
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
 	cmd Commander,
@@ -95,7 +96,7 @@ func NewApp(
 		banking:  banking,
 		broker:   broker,
 		cmd:      cmd,
-		erc:      erc,
+		witness:  witness,
 		evtfwd:   evtfwd,
 		exec:     exec,
 		ghandler: ghandler,
@@ -261,7 +262,8 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	resp := tmtypes.ResponseCheckTx{}
 
 	// Check ratelimits
-	limit, isval := app.limitPubkey(tx.PubKey())
+	// FIXME(): temporary disable all rate limiting
+	_, isval := app.limitPubkey(tx.PubKey())
 	if isval {
 		return ctx, resp
 	}
@@ -269,11 +271,12 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// this is a party
 	// and if we may not want to rate limit it.
 	// in which case we may want to check if it has a balance
-	party := hex.EncodeToString(tx.PubKey())
-	if limit {
-		resp.Code = abci.AbciTxnValidationFailure
-		resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
-	} else if !app.banking.HasBalance(party) {
+	party := tx.Party()
+	// if limit {
+	// 	resp.Code = abci.AbciTxnValidationFailure
+	// 	resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
+	// } else if !app.banking.HasBalance(party) {
+	if !app.banking.HasBalance(party) {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
 		msgType := tx.Command().String()
@@ -317,36 +320,19 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
-	s := &types.OrderSubmission{}
+	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
-	}
-
-	order := &types.Order{
-		Id:          s.Id,
-		MarketId:    s.MarketId,
-		PartyId:     s.PartyId,
-		Price:       s.Price,
-		Size:        s.Size,
-		Side:        s.Side,
-		TimeInForce: s.TimeInForce,
-		Type:        s.Type,
-		ExpiresAt:   s.ExpiresAt,
-		Reference:   s.Reference,
-		Status:      types.Order_STATUS_ACTIVE,
-		CreatedAt:   app.currentTimestamp.UnixNano(),
-		Remaining:   s.Size,
-		PeggedOrder: s.PeggedOrder,
 	}
 
 	app.stats.IncTotalCreateOrder()
 
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, order)
+	conf, err := app.exec.SubmitOrder(ctx, s, tx.Party())
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
-				logging.Order(*order),
+				logging.OrderSubmission(s),
 				logging.OrderWithTag(*conf.Order, "aggressive-order"),
 				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
 				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
@@ -362,7 +348,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 	if err != nil && app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("error message on creating order",
-			logging.Order(*order),
+			logging.OrderSubmission(s),
 			logging.Error(err))
 	}
 
@@ -370,7 +356,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
-	order := &types.OrderCancellation{}
+	order := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
@@ -379,7 +365,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderId))
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.CancelOrder(ctx, order)
+	msg, err := app.exec.CancelOrder(ctx, order, tx.Party())
 	if err != nil {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -394,7 +380,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
-	order := &types.OrderAmendment{}
+	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
 	}
@@ -403,7 +389,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, order)
+	msg, err := app.exec.AmendOrder(ctx, order, tx.Party())
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -417,27 +403,31 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverWithdraw(
 	ctx context.Context, tx abci.Tx, id string) error {
-	w := &types.WithdrawSubmission{}
+	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
 	}
 
-	return app.processWithdraw(ctx, w, id)
+	return app.processWithdraw(ctx, w, id, tx.Party())
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
-	prop := &types.Proposal{}
+	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
 	}
 
-	app.log.Debug("submitting proposal",
-		logging.ProposalID(prop.Id),
-		logging.String("proposal-reference", prop.Reference),
-		logging.String("proposal-party", prop.PartyId),
-		logging.String("proposal-terms", prop.Terms.String()))
+	party := tx.Party()
 
-	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id)
+	if app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Debug("submitting proposal",
+			logging.ProposalID(id),
+			logging.String("proposal-reference", prop.Reference),
+			logging.String("proposal-party", party),
+			logging.String("proposal-terms", prop.Terms.String()))
+	}
+
+	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
 			logging.ProposalID(id),
@@ -452,7 +442,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		// the lp provision ID (well it's still deterministic...)
 		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().Id)))
 		err := app.exec.SubmitMarketWithLiquidityProvision(
-			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), prop.PartyId, lpid)
+			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid)
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().Id),
@@ -473,22 +463,22 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
-	vote := &types.Vote{}
+	vote := &commandspb.VoteSubmission{}
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
 
+	party := tx.Party()
 	app.log.Debug("Voting on proposal",
 		logging.String("proposal-id", vote.ProposalId),
-		logging.String("vote-party", vote.PartyId),
+		logging.String("vote-party", party),
 		logging.String("vote-value", vote.Value.String()))
 
-	vote.Timestamp = app.currentTimestamp.UnixNano()
-	return app.gov.AddVote(ctx, *vote)
+	return app.gov.AddVote(ctx, *vote, party)
 }
 
 func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
-	ns := &types.NodeSignature{}
+	ns := &commandspb.NodeSignature{}
 	if err := tx.Unmarshal(ns); err != nil {
 		return err
 	}
@@ -497,26 +487,26 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
-	sub := &types.LiquidityProvisionSubmission{}
+	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
 	}
 
-	partyID := hex.EncodeToString(tx.PubKey())
+	partyID := tx.Party()
 	return app.exec.SubmitLiquidityProvision(ctx, sub, partyID, id)
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
-	vote := &types.NodeVote{}
+	vote := &commandspb.NodeVote{}
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
 
-	return app.erc.AddNodeCheck(ctx, vote)
+	return app.witness.AddNodeCheck(ctx, vote)
 }
 
 func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) error {
-	ce := &types.ChainEvent{}
+	ce := &commandspb.ChainEvent{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
@@ -525,7 +515,7 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 }
 
 func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
-	data := &types.OracleDataSubmission{}
+	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
 	}
@@ -539,7 +529,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
-	data := &types.OracleDataSubmission{}
+	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
 	}
@@ -623,7 +613,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 
 	// then instruct the notary to start getting signature from validators
-	if err := app.notary.StartAggregate(prop.Id, types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
+	if err := app.notary.StartAggregate(prop.Id, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
 		prop.State = types.Proposal_STATE_FAILED
 		app.log.Error("unable to enact proposal",
 			logging.ProposalID(prop.Id),
@@ -650,10 +640,10 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		prop.State = types.Proposal_STATE_FAILED
 		return
 	}
-	payload := &types.NodeSignature{
+	payload := &commandspb.NodeSignature{
 		Id:   prop.Id,
 		Sig:  sig,
-		Kind: types.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
+		Kind: commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
 	if err := app.cmd.Command(ctx, txn.NodeSignatureCommand, payload); err != nil {
 		// do nothing for now, we'll need a retry mechanism for this and all command soon

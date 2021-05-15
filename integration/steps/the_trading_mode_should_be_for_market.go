@@ -16,7 +16,7 @@ func TheTradingModeShouldBeForMarket(
 
 	marketData, err := engine.GetMarketData(market)
 	if err != nil {
-		return errCannotGetMarketData(market, err)
+		return errMarketDataNotFound(market, err)
 	}
 
 	if marketData.MarketTradingMode != tradingMode {
@@ -35,8 +35,4 @@ func errMismatchedTradingMode(market string, expectedTradingMode, gotTradingMode
 			"trading mode": gotTradingMode.String(),
 		},
 	)
-}
-
-func errCannotGetMarketData(marketID string, err error) error {
-	return fmt.Errorf("couldn't get order for marked data for market(%v): %s", marketID, err.Error())
 }

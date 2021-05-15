@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"go.uber.org/zap"
 )
@@ -184,7 +185,8 @@ func LiquidityID(id string) zap.Field {
 	return zap.String("liquidity-id", id)
 }
 
-func LiquidityProvisionSubmission(lp types.LiquidityProvisionSubmission) zap.Field {
+func LiquidityProvisionSubmission(
+	lp commandspb.LiquidityProvisionSubmission) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
 }
 
@@ -207,11 +209,16 @@ func Account(a types.Account) zap.Field {
 }
 
 // OrderAmendment constructs a single string field to contain all the object information
-func OrderAmendment(oa *types.OrderAmendment) zap.Field {
+func OrderAmendment(oa *commandspb.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
-func OrderCancellation(oc *types.OrderCancellation) zap.Field {
+// OrderSubmission constructs a single string field to contain all the object information
+func OrderSubmission(os *commandspb.OrderSubmission) zap.Field {
+	return zap.String("order-submission", os.String())
+}
+
+func OrderCancellation(oc *commandspb.OrderCancellation) zap.Field {
 	return zap.String("order-cancellation", oc.String())
 }
 

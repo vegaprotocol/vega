@@ -65,12 +65,8 @@ func (s *OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
 	if len(s.levels) <= 0 {
 		return 0, 0, errors.New("no orders on the book")
 	}
-	for i := len(s.levels) - 1; i >= 0; i-- {
-		if lvl := s.levels[i]; lvl.price > 0 && lvl.volume > 0 {
-			return lvl.price, lvl.volume, nil
-		}
-	}
-	return 0, 0, errors.New("no orders on the book")
+	last := len(s.levels) - 1
+	return s.levels[last].price, s.levels[last].volume, nil
 }
 
 // BestStaticPrice returns the top of book price for non pegged orders
@@ -161,73 +157,64 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 // ExtractOrders removes the orders from the top of the book until the volume amount is hit
 func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, error) {
 	extractedOrders := []*types.Order{}
-	var totalVolume uint64
 
+	var (
+		totalVolume uint64
+		checkPrice  func(uint64) bool
+	)
 	if s.side == types.Side_SIDE_BUY {
-		for i := len(s.levels) - 1; i >= 0; i-- {
-			pricelevel := s.levels[i]
-			var toRemove int
-			for _, order := range pricelevel.orders {
-				// Check the price is good and the total volume will not be exceeded
-				if order.Price >= price && totalVolume+order.Remaining <= volume {
-					// Remove this order
-					extractedOrders = append(extractedOrders, order)
-					totalVolume += order.Remaining
-					// Remove the order from the price level
-					toRemove++
-
-				} else {
-					// We should never get to here unless the passed in price
-					// and volume are not correct
-					return nil, ErrInvalidVolume
-				}
-			}
-			for toRemove > 0 {
-				toRemove--
-				pricelevel.removeOrder(0)
-			}
-			// Erase this price level which will be at the end of the slice
-			s.levels[i] = nil
-			s.levels = s.levels[:len(s.levels)-1]
-
-			// Check if we have done enough
-			if totalVolume == volume {
-				break
-			}
-		}
+		checkPrice = func(orderPrice uint64) bool { return orderPrice >= price }
 	} else {
-		for i := len(s.levels) - 1; i >= 0; i-- {
-			pricelevel := s.levels[i]
-			var toRemove int
-			for _, order := range pricelevel.orders {
-				// Check the price is good and the total volume will not be exceeded
-				if order.Price <= price && totalVolume+order.Remaining <= volume {
-					// Remove this order
-					extractedOrders = append(extractedOrders, order)
-					totalVolume += order.Remaining
-					// Remove the order from the price level
-					toRemove++
-				} else {
-					// We should never get to here unless the passed in price
-					// and volume are not correct
-					return nil, ErrInvalidVolume
-				}
-			}
-			if toRemove > 0 {
-				toRemove--
-				pricelevel.removeOrder(0)
+		checkPrice = func(orderPrice uint64) bool { return orderPrice <= price }
+	}
+
+	for i := len(s.levels) - 1; i >= 0; i-- {
+		pricelevel := s.levels[i]
+		var toRemove int
+		for _, order := range pricelevel.orders {
+			// Check the price is good and the total volume will not be exceeded
+			if checkPrice(order.Price) && totalVolume+order.Remaining <= volume {
+				// Remove this order
+				extractedOrders = append(extractedOrders, order)
+				totalVolume += order.Remaining
+				// Remove the order from the price level
+				toRemove++
+
+			} else {
+				// We should never get to here unless the passed in price
+				// and volume are not correct
+				s.log.Panic("Failed to extract orders as not enough volume within price limits",
+					logging.Uint64("Price", price), logging.Uint64("volume", volume))
 			}
 
-			// Erase this price level which will be the end of the slice
-			s.levels[i] = nil
-			s.levels = s.levels[:len(s.levels)-1]
-
-			// Check if we have done enough
+			// If we have the right amount, stop processing
 			if totalVolume == volume {
 				break
 			}
+
+		}
+		for toRemove > 0 {
+			toRemove--
+			pricelevel.removeOrder(0)
+		}
+		// Erase this price level which will be at the end of the slice
+		if len(pricelevel.orders) == 0 {
+			s.levels[i] = nil
+			s.levels = s.levels[:len(s.levels)-1]
+		}
+
+		// Check if we have done enough
+		if totalVolume == volume {
+			break
 		}
 	}
+	// If we get here and don't have the full amount of volume
+	// something has gone wrong
+	if totalVolume != volume {
+		s.log.Panic("Failed to extract orders as not enough volume on the book",
+			logging.Uint64("Price", price), logging.Uint64("volume", volume))
+	}
+
 	return extractedOrders, nil
 }
 
@@ -328,55 +315,42 @@ func (s *OrderBookSide) GetVolume(price uint64) (uint64, error) {
 	return priceLevel.volume, nil
 }
 
-func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, error) {
+func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 	var (
 		trades            []*types.Trade
 		totalVolumeToFill uint64
 	)
 	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
-		if agg.Side == types.Side_SIDE_SELL {
-			for i := len(s.levels) - 1; i >= 0; i-- {
-				level := s.levels[i]
-				// we don't have to account for network orders, they don't apply in price monitoring
-				// nor do fees apply
-				if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET {
-					for _, order := range level.orders {
-						if agg.PartyId == order.PartyId {
-							return false, nil, ErrWashTrade
-						}
-						totalVolumeToFill += order.Remaining
-						if totalVolumeToFill >= agg.Remaining {
-							break
-						}
+		var checkPrice func(uint64) bool
+		if agg.Side == types.Side_SIDE_BUY {
+			checkPrice = func(levelPrice uint64) bool { return levelPrice <= agg.Price }
+		} else {
+			checkPrice = func(levelPrice uint64) bool { return levelPrice >= agg.Price }
+		}
+
+		for i := len(s.levels) - 1; i >= 0; i-- {
+			level := s.levels[i]
+			// we don't have to account for network orders, they don't apply in price monitoring
+			// nor do fees apply
+			if checkPrice(level.price) || agg.Type == types.Order_TYPE_MARKET {
+				for _, order := range level.orders {
+					if agg.PartyId == order.PartyId {
+						return nil, ErrWashTrade
 					}
-				}
-				if totalVolumeToFill >= agg.Remaining {
-					break
+					totalVolumeToFill += order.Remaining
+					if totalVolumeToFill >= agg.Remaining {
+						break
+					}
 				}
 			}
-		} else if agg.Side == types.Side_SIDE_BUY {
-			for i := len(s.levels) - 1; i >= 0; i-- {
-				level := s.levels[i]
-				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET {
-					for _, order := range level.orders {
-						if agg.PartyId == order.PartyId {
-							return false, nil, ErrWashTrade
-						}
-						totalVolumeToFill += order.Remaining
-						if totalVolumeToFill >= agg.Remaining {
-							break
-						}
-					}
-				}
-				if totalVolumeToFill >= agg.Remaining {
-					break
-				}
+			if totalVolumeToFill >= agg.Remaining {
+				break
 			}
 		}
 
 		// FOK order could not be filled
 		if totalVolumeToFill < agg.Remaining {
-			return false, nil, nil
+			return nil, nil
 		}
 	}
 
@@ -385,50 +359,37 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) (bool, []*types.Trade, err
 	fake := &cpy
 
 	var (
-		idx     = len(s.levels) - 1
-		ntrades []*types.Trade
-		err     error
+		idx        = len(s.levels) - 1
+		ntrades    []*types.Trade
+		err        error
+		checkPrice func(uint64) bool
 	)
 
-	if fake.Side == types.Side_SIDE_SELL {
-		// in here we iterate from the end, as it's easier to remove the
-		// price levels from the back of the slice instead of from the front
-		// also it will allow us to reduce allocations
-		for idx >= 0 && fake.Remaining > 0 {
-			// not a market order && buy side price is too low => break
-			if agg.Type != types.Order_TYPE_MARKET && s.levels[idx].price < agg.Price {
-				break
-			}
-			fake, ntrades, err = s.levels[idx].fakeUncross(fake)
-			trades = append(trades, ntrades...)
-			// break if a wash trade is detected
-			if err != nil && err == ErrWashTrade {
-				break
-			}
-			// the orders are still part of the levels, so we just have to move on anyway
-			idx--
-		}
-	} else if fake.Side == types.Side_SIDE_BUY { // this if is a bit superfluous, but better be safe than sorry
-		for fake.Remaining > 0 && idx >= 0 {
-			if fake.Type != types.Order_TYPE_MARKET && s.levels[idx].price > fake.Price {
-				break
-			}
-			fake, ntrades, err = s.levels[idx].fakeUncross(fake)
-			trades = append(trades, ntrades...)
-			// break if a wash trade is detected
-			if err != nil && err == ErrWashTrade {
-				break
-			}
-			// the orders are still part of the levels, so we just have to move on anyway
-			idx--
-		}
-	}
-	filled := false
-	if fake.Remaining == 0 {
-		filled = true
+	if fake.Side == types.Side_SIDE_BUY {
+		checkPrice = func(levelPrice uint64) bool { return levelPrice > agg.Price }
+	} else {
+		checkPrice = func(levelPrice uint64) bool { return levelPrice < agg.Price }
 	}
 
-	return filled, trades, nil
+	// in here we iterate from the end, as it's easier to remove the
+	// price levels from the back of the slice instead of from the front
+	// also it will allow us to reduce allocations
+	for idx >= 0 && fake.Remaining > 0 {
+		// not a market order && buy side price is too low => break
+		if agg.Type != types.Order_TYPE_MARKET && checkPrice(s.levels[idx].price) {
+			break
+		}
+		fake, ntrades, err = s.levels[idx].fakeUncross(fake)
+		trades = append(trades, ntrades...)
+		// break if a wash trade is detected
+		if err != nil && err == ErrWashTrade {
+			break
+		}
+		// the orders are still part of the levels, so we just have to move on anyway
+		idx--
+	}
+
+	return trades, nil
 }
 
 func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, uint64, error) {
@@ -439,60 +400,38 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		impactedOrders    []*types.Order
 		lastTradedPrice   uint64
 		totalVolumeToFill uint64
+		checkPrice        func(uint64) bool
 	)
 
-	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
-		if agg.Side == types.Side_SIDE_SELL {
-			// Process these backwards
-			for i := len(s.levels) - 1; i >= 0; i-- {
-				level := s.levels[i]
-				if level.price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-					// We have to process every order to check for wash trades
-					for _, order := range level.orders {
-						// Check for wash trading
-						if agg.PartyId == order.PartyId {
-							// Stop the order and return
-							agg.Status = types.Order_STATUS_STOPPED
-							return nil, nil, 0, ErrWashTrade
-						}
-						// in case of network trades, we want to calculate an accurate average price to return
-						totalVolumeToFill += order.Remaining
+	if agg.Side == types.Side_SIDE_SELL {
+		checkPrice = func(levelPrice uint64) bool { return levelPrice >= agg.Price }
+	} else {
+		checkPrice = func(levelPrice uint64) bool { return levelPrice <= agg.Price }
+	}
 
-						if totalVolumeToFill >= agg.Remaining {
-							break
-						}
+	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
+		// Process these backwards
+		for i := len(s.levels) - 1; i >= 0; i-- {
+			level := s.levels[i]
+			if checkPrice(level.price) || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
+				// We have to process every order to check for wash trades
+				for _, order := range level.orders {
+					// Check for wash trading
+					if agg.PartyId == order.PartyId {
+						// Stop the order and return
+						agg.Status = types.Order_STATUS_STOPPED
+						return nil, nil, 0, ErrWashTrade
 					}
-				}
-				if totalVolumeToFill >= agg.Remaining {
-					break
+					// in case of network trades, we want to calculate an accurate average price to return
+					totalVolumeToFill += order.Remaining
+
+					if totalVolumeToFill >= agg.Remaining {
+						break
+					}
 				}
 			}
-		}
-
-		if agg.Side == types.Side_SIDE_BUY {
-			for i := len(s.levels) - 1; i >= 0; i-- {
-				level := s.levels[i]
-				// in case of network trades, we want to calculate an accurate average price to return
-				if level.price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-					// We have to process every order to check for wash trades
-					for _, order := range level.orders {
-						// Check for wash trading
-						if agg.PartyId == order.PartyId {
-							// Stop the order and return
-							agg.Status = types.Order_STATUS_STOPPED
-							return nil, nil, 0, ErrWashTrade
-						}
-						totalVolumeToFill += level.volume
-
-						// No need to keep looking once we pass the required amount
-						if totalVolumeToFill >= agg.Remaining {
-							break
-						}
-					}
-				}
-				if totalVolumeToFill >= agg.Remaining {
-					break
-				}
+			if totalVolumeToFill >= agg.Remaining {
+				break
 			}
 		}
 
@@ -514,76 +453,38 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		err     error
 	)
 
-	if agg.Side == types.Side_SIDE_SELL {
-		// in here we iterate from the end, as it's easier to remove the
-		// price levels from the back of the slice instead of from the front
-		// also it will allow us to reduce allocations
-		for !filled && idx >= 0 {
-			if s.levels[idx].price >= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
-				trades = append(trades, ntrades...)
-				impactedOrders = append(impactedOrders, nimpact...)
-				// break if a wash trade is detected
-				if err != nil && err == ErrWashTrade {
-					break
-				}
-				if len(s.levels[idx].orders) <= 0 {
-					idx--
-				}
-			} else {
+	// in here we iterate from the end, as it's easier to remove the
+	// price levels from the back of the slice instead of from the front
+	// also it will allow us to reduce allocations
+	for !filled && idx >= 0 {
+		if checkPrice(s.levels[idx].price) || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
+			filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
+			trades = append(trades, ntrades...)
+			impactedOrders = append(impactedOrders, nimpact...)
+			// break if a wash trade is detected
+			if err != nil && err == ErrWashTrade {
 				break
 			}
-		}
-
-		// now we nil the price levels that have been completely emptied out
-		// then we resize the slice
-		if idx < 0 || len(s.levels[idx].orders) > 0 {
-			// do not remove this one as it's not emptied already
-			idx++
-		}
-		if idx < len(s.levels) {
-			// nil out the pricelevels so they get collected at some point
-			for i := idx; i < len(s.levels); i++ {
-				s.levels[i] = nil
+			if len(s.levels[idx].orders) <= 0 {
+				idx--
 			}
-			s.levels = s.levels[:idx]
+		} else {
+			break
 		}
 	}
 
-	if agg.Side == types.Side_SIDE_BUY {
-		// in here we iterate from the end, as it's easier to remove the
-		// price levels from the back of the slice instead of from the front
-		// also it will allow us to reduce allocations
-		for !filled && idx >= 0 {
-			if s.levels[idx].price <= agg.Price || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
-				filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
-				trades = append(trades, ntrades...)
-				impactedOrders = append(impactedOrders, nimpact...)
-				if err != nil && err == ErrWashTrade {
-					break
-				}
-				if len(s.levels[idx].orders) <= 0 {
-					idx--
-				}
-			} else {
-				break
-			}
+	// now we nil the price levels that have been completely emptied out
+	// then we resize the slice
+	if idx < 0 || len(s.levels[idx].orders) > 0 {
+		// do not remove this one as it's not emptied already
+		idx++
+	}
+	if idx < len(s.levels) {
+		// nil out the pricelevels so they get collected at some point
+		for i := idx; i < len(s.levels); i++ {
+			s.levels[i] = nil
 		}
-
-		// now we nil the price levels that have been completely emptied out
-		// then we resize the slice
-		// idx can be < to 0 if we went through all price levels
-		if idx < 0 || len(s.levels[idx].orders) > 0 {
-			// do not remove this one as it's not emptied already
-			idx++
-		}
-		if idx < len(s.levels) {
-			// nil out the pricelevels so they get collected at some point
-			for i := idx; i < len(s.levels); i++ {
-				s.levels[i] = nil
-			}
-			s.levels = s.levels[:idx]
-		}
+		s.levels = s.levels[:idx]
 	}
 
 	if agg.Type == types.Order_TYPE_NETWORK {

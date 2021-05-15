@@ -14,10 +14,11 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/products"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 var (
-	// ErrMarketAlreadyExist signals that a market already exist
+	// ErrMarketDoesNotExist is returned when the market does not exist
 	ErrMarketDoesNotExist = errors.New("market does not exist")
 
 	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
@@ -212,7 +213,7 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
 // the usual governance process
-func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
@@ -335,7 +336,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 
 	// we ignore the response, this cannot fail as the asset
 	// is already proven to exists a few line before
-	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset, e.Config.InsurancePoolInitialBalance)
+	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset)
 
 	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
 		return err
@@ -422,24 +423,22 @@ func (e *Engine) removeMarket(mktID string) {
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.OrderSubmission, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+	timer := metrics.NewTimeCounter(orderSubmission.MarketId, "execution", "SubmitOrder")
+
+	defer func() {
+		timer.EngineTimeCounterAdd()
+		e.notifyFailureOnError(ctx, returnedErr, orderSubmission, party)
+	}()
+
 	if e.log.IsDebug() {
-		e.log.Debug("submit order", logging.Order(*order))
+		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	timer := metrics.NewTimeCounter(order.MarketId, "execution", "SubmitOrder")
+	order := orderSubmission.IntoOrder(party)
 
-	mkt, ok := e.markets[order.MarketId]
+	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {
-		e.idgen.SetID(order)
-
-		// adding rejected order to the buf
-		order.Status = types.Order_STATUS_REJECTED
-		order.Reason = types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
-		evt := events.NewOrderEvent(ctx, order)
-		e.broker.Send(evt)
-
-		timer.EngineTimeCounterAdd()
 		return nil, types.ErrInvalidMarketID
 	}
 
@@ -449,7 +448,6 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 
 	conf, err := mkt.SubmitOrder(ctx, order)
 	if err != nil {
-		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 
@@ -457,15 +455,14 @@ func (e *Engine) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		metrics.OrderGaugeAdd(-1, order.MarketId)
 	}
 
-	timer.EngineTimeCounterAdd()
 	return conf, nil
 }
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment) (confirmation *types.OrderConfirmation, returnedErr error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
 	defer func() {
-		e.notifyFailureOnError(ctx, returnedErr, orderAmendment.PartyId, orderAmendment)
+		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, party)
 	}()
 
 	if e.log.IsDebug() {
@@ -479,7 +476,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(ctx, orderAmendment)
+	conf, err := mkt.AmendOrder(ctx, orderAmendment, party)
 	if err != nil {
 		return nil, err
 	}
@@ -491,7 +488,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.IsDebug() {
 		e.log.Debug("cancel order", logging.OrderCancellation(order))
 	}
@@ -501,17 +498,13 @@ func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation
 		return nil, ErrInvalidOrderCancellation
 	}
 
-	if len(order.PartyId) > 0 {
-		if len(order.MarketId) > 0 {
-			if len(order.OrderId) > 0 {
-				return e.cancelOrder(ctx, order.PartyId, order.MarketId, order.OrderId)
-			}
-			return e.cancelOrderByMarket(ctx, order.PartyId, order.MarketId)
+	if len(order.MarketId) > 0 {
+		if len(order.OrderId) > 0 {
+			return e.cancelOrder(ctx, party, order.MarketId, order.OrderId)
 		}
-		return e.cancelAllPartyOrders(ctx, order.PartyId)
+		return e.cancelOrderByMarket(ctx, party, order.MarketId)
 	}
-
-	return nil, ErrInvalidOrderCancellation
+	return e.cancelAllPartyOrders(ctx, party)
 }
 
 func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string) ([]*types.OrderCancellationConfirmation, error) {
@@ -646,7 +639,7 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit liquidity provision",
 			logging.LiquidityProvisionSubmission(*sub),
@@ -902,7 +895,7 @@ func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Contex
 	return nil
 }
 
-func (e *Engine) notifyFailureOnError(ctx context.Context, err error, partyID string, tx interface{}) {
+func (e *Engine) notifyFailureOnError(ctx context.Context, err error, tx interface{}, partyID string) {
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, partyID, tx))
 	}

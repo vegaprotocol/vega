@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/liquidity/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -104,13 +105,8 @@ func testSubmissionCRUD(t *testing.T) {
 		},
 	}
 
-	lps1 := &types.LiquidityProvisionSubmission{
+	lps1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
-		Buys: buyShape, Sells: sellShape,
-	}
-
-	lps3 := &types.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 000, Fee: "0.5",
 		Buys: buyShape, Sells: sellShape,
 	}
 
@@ -131,10 +127,9 @@ func testSubmissionCRUD(t *testing.T) {
 			{LiquidityOrder: sellShape[0], OrderId: "liquidity-order-2"},
 		},
 	}
-
 	// Create a submission should fire an event
 	tng.broker.EXPECT().Send(
-		eq(t, events.NewLiquidityProvisionEvent(ctx, expected)),
+		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps1, party, "some-id-1"),
@@ -142,17 +137,13 @@ func testSubmissionCRUD(t *testing.T) {
 	got := tng.engine.LiquidityProvisionByPartyID(party)
 	require.Equal(t, expected, got)
 
-	// Submit with 0 CommitmentAmount amount should remove the LP and CANCEL it
-	// via event
-	expected.CommitmentAmount = 0
 	expected.Status = types.LiquidityProvision_STATUS_CANCELLED
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps3, party, "some-id-3"),
-	)
+	_, err := tng.engine.CancelLiquidityProvision(ctx, party)
+	require.NoError(t, err)
 	require.Nil(t, tng.engine.LiquidityProvisionByPartyID(party),
 		"Party '%s' should not be a LiquidityProvider after Committing 0 amount", party)
 }
@@ -171,7 +162,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
@@ -218,35 +209,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	)
 	defer tng.ctrl.Finish()
 
-	lps := &types.LiquidityProvisionSubmission{
-		MarketId:         tng.marketID,
-		CommitmentAmount: 0,
-		Buys: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
-				Offset:     -1,
-				Proportion: 1,
-			},
-		},
-		Sells: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
-				Offset:     1,
-				Proportion: 1,
-			},
-		},
-	}
-	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		Id:        "some-id",
-		MarketId:  tng.marketID,
-		PartyId:   party,
-		CreatedAt: now.UnixNano(),
-		Status:    types.LiquidityProvision_STATUS_REJECTED,
-	})
-
-	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
-	err := tng.engine.SubmitLiquidityProvision(ctx,
-		lps, party, "some-id")
+	_, err := tng.engine.CancelLiquidityProvision(ctx, party)
 	require.Error(t, err)
 }
 
@@ -261,7 +224,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	defer tng.ctrl.Finish()
 
 	// Expectations
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
 		Fee:              "0.1",
@@ -300,7 +263,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
 
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
 		Fee:              "0.2",
@@ -339,7 +302,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
 
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.3",
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
@@ -379,7 +342,7 @@ func TestUpdate(t *testing.T) {
 	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
@@ -413,27 +376,23 @@ func TestUpdate(t *testing.T) {
 		{Id: "2", PartyId: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
-	creates, _, err := tng.engine.CreateInitialOrders(ctx, markPrice, markPrice, party, orders, fn)
+	creates, err := tng.engine.CreateInitialOrders(ctx, markPrice, markPrice, party, orders, fn)
 	require.NoError(t, err)
 	require.Len(t, creates, 3)
 
 	// Manual order satisfies the commitment, LiqOrders should be removed
 	orders[0].Remaining, orders[0].Size = 1000, 1000
 	orders[1].Remaining, orders[1].Size = 1000, 1000
-	newOrders, amendments, err := tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
+	newOrders, toCancels, err := tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
-	require.Len(t, amendments, 3)
-	for i, amend := range amendments {
-		assert.Zero(t, creates[i].Size+uint64(amend.SizeDelta),
-			"Size should be cancelled (== 0)  by the amendment",
-		)
-	}
+	require.Len(t, toCancels[0].OrderIDs, 3)
+	require.Equal(t, toCancels[0].Party, party)
 
-	newOrders, amendments, err = tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
+	newOrders, toCancels, err = tng.engine.Update(ctx, markPrice, markPrice, fn, orders)
 	require.NoError(t, err)
 	require.Len(t, newOrders, 0)
-	require.Len(t, amendments, 0)
+	require.Len(t, toCancels, 0)
 }
 func TestCalculateSuppliedStake(t *testing.T) {
 	var (
@@ -450,7 +409,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Send a submission to create the shape
-	lp1 := &types.LiquidityProvisionSubmission{
+	lp1 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 20, Offset: -1},
@@ -467,7 +426,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake := tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
 
-	lp2 := &types.LiquidityProvisionSubmission{
+	lp2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 500, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -3},
@@ -483,7 +442,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount, suppliedStake)
 
-	lp3 := &types.LiquidityProvisionSubmission{
+	lp3 := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: 962, Fee: "0.5",
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: -5},
@@ -500,12 +459,10 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
 
-	lp1.CommitmentAmount -= 100
-	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1"),
-	)
+	_, err := tng.engine.CancelLiquidityProvision(ctx, party1)
+	require.NoError(t, err)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
-	require.Equal(t, lp1.CommitmentAmount+lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
+	require.Equal(t, lp2.CommitmentAmount+lp3.CommitmentAmount, suppliedStake)
 }
 
 type idGenStub struct {

@@ -509,17 +509,6 @@ func (m Market) DeepClone() *Market {
 	return &m
 }
 
-func (n NodeSignature) DeepClone() *NodeSignature {
-	if len(n.Sig) > 0 {
-		sigBytes := n.Sig
-		n.Sig = make([]byte, len(sigBytes))
-		for i, b := range sigBytes {
-			n.Sig[i] = b
-		}
-	}
-	return &n
-}
-
 func (p PeggedOrder) DeepClone() *PeggedOrder {
 	return &p
 }

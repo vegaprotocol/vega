@@ -31,7 +31,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | pegged2 | ETH/DEC19 | sell | 500    | MID       | 15     |
       | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    |
       | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    |
-    Then I see the following order events:
+    Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset | price | status        |
       | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 0     | STATUS_PARKED |
       | pegged2 | ETH/DEC19 | sell | 500    | MID       | 15     | 0     | STATUS_PARKED |
@@ -46,10 +46,10 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | aux              | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1         |
       | aux2             | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1         |
-    Then I see the following order events:
-      | trader           | market id | side | volume | reference | offset | price | status        |
-      | sellSideProvider | ETH/DEC19 | sell | 1000   |           | 0      | 120   | STATUS_ACTIVE |
-      | buySideProvider  | ETH/DEC19 | buy  | 1000   |           | 0      | 80    | STATUS_ACTIVE |
+    Then the orders should have the following states:
+      | trader           | market id | side | volume | price | status        |
+      | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
+      | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
 # Checked out, remove the order events we've checked, now let's have a look at the pegged order events
     When clear order events by reference:
       | trader           | reference       |
@@ -58,7 +58,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 # Now check what happened to our pegged orders
-    Then I see the following order events:
+    Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset | price | status        |
       | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 130   | STATUS_ACTIVE |
       | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 130   | STATUS_ACTIVE |
@@ -73,7 +73,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | pegged3 | ETH/DEC19 |
       | pegged2 | ETH/DEC19 |
 
-    Then I see the following order events:
+    Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset | price | status           |
       | pegged3 | ETH/DEC19 | buy  | 500    | BID       | -10    | 70    | STATUS_CANCELLED |
       | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 130   | STATUS_CANCELLED |

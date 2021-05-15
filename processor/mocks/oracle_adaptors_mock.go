@@ -6,7 +6,7 @@ package mocks
 
 import (
 	oracles "code.vegaprotocol.io/vega/oracles"
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -35,7 +35,7 @@ func (m *MockOracleAdaptors) EXPECT() *MockOracleAdaptorsMockRecorder {
 }
 
 // Normalise mocks base method
-func (m *MockOracleAdaptors) Normalise(arg0 proto.OracleDataSubmission) (*oracles.OracleData, error) {
+func (m *MockOracleAdaptors) Normalise(arg0 v1.OracleDataSubmission) (*oracles.OracleData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Normalise", arg0)
 	ret0, _ := ret[0].(*oracles.OracleData)

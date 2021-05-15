@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,7 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 	}
 
 	// Submitting a zero or smaller fee should cause a reject
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "-0.50",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -51,7 +52,7 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
 	// Submitting a fee greater than 1.0 should cause a reject
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "1.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -88,7 +89,7 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 	}
 
 	// Submitting a shape with no buys should cause a reject
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -99,7 +100,7 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
 	// Submitting a shape with no sells should cause a reject
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -162,7 +163,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -174,7 +175,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	// Try to reduce our commitment to below the minimum level
-	lps = &types.LiquidityProvisionSubmission{
+	lps = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1,
@@ -216,7 +217,7 @@ func TestLiquidity_TooManyShapeLevels(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -269,7 +270,7 @@ func TestLiquidityProvisionFeeValidation(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 70000,
 		Fee:              "-0.1",
@@ -350,7 +351,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 2, Proportion: 50}}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -379,11 +380,10 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	assert.Equal(t, types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, err)
 
 	// Attempt to amend one of the pegged orders
-	amend := &types.OrderAmendment{OrderId: orders[0].Id,
-		PartyId:   orders[0].PartyId,
+	amend := &commandspb.OrderAmendment{OrderId: orders[0].Id,
 		MarketId:  orders[0].MarketId,
 		SizeDelta: +5}
-	amendConf, err := tm.market.AmendOrder(ctx, amend)
+	amendConf, err := tm.market.AmendOrder(ctx, amend, orders[0].PartyId)
 	require.Error(t, err)
 	require.Nil(t, amendConf)
 	assert.Equal(t, types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, err)
@@ -433,7 +433,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -508,7 +508,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -593,7 +593,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -663,7 +663,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -708,7 +708,7 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	sells := []*types.LiquidityOrder{{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50}}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -786,8 +786,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, tm.market.GetMarketData().Trigger)
 
 	// Move the price enough that we go into a price auction
-	// now = now.Add(time.Second * 61)
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-B", 3, 3000)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -806,7 +805,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -867,7 +866,7 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 6, Proportion: 50}}
 
 	// Submitting a correct entry
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -940,7 +939,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	buys := []*types.LiquidityOrder{{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50}}
 	sells := []*types.LiquidityOrder{{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50}}
 
-	lps := &types.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.01",
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 1000,
@@ -961,7 +960,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 
 	// Move the price enough that we go into a price auction
 	now = now.Add(time.Second * 20)
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, "Order05", types.Side_SIDE_BUY, "trader-B", 2, 0)
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-B", 3, 3000)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -1023,7 +1022,7 @@ func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 150000,
 		Fee:              "0.01",
@@ -1118,7 +1117,7 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 2000,
 		Fee:              "0.01",
@@ -1232,7 +1231,7 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 		assert.Equal(t, 90000000, int(acc.Balance))
 	})
 
-	lpSubmission2 := &types.LiquidityProvisionSubmission{
+	lpSubmission2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 200000,
 		Fee:              "0.01",
@@ -1319,7 +1318,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 70000,
 		Fee:              "0.5",
@@ -1359,7 +1358,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 	// now we submit a second LP, with a lower fee,
 	// but we still need the first LP to cover liquidity
 	// so its fee is selected
-	lpSubmission2 := &types.LiquidityProvisionSubmission{
+	lpSubmission2 := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 20000,
 		Fee:              "0.1",
@@ -1464,7 +1463,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000000,
 		Fee:              "0.5",
@@ -1648,7 +1647,7 @@ func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000000,
 		Fee:              "0.5",
@@ -1742,7 +1741,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000000,
 		Fee:              "0.5",
@@ -1931,7 +1930,7 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000000,
 		Fee:              "0.5",
@@ -2111,7 +2110,7 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000,
 		Fee:              "0.5",
@@ -2249,7 +2248,7 @@ func TestFeesNotPaidToUndeployedLPs(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: 10000,
 		Fee:              "0.5",
@@ -2341,5 +2340,151 @@ func TestFeesNotPaidToUndeployedLPs(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	ctx := context.Background()
+
+	auctionEnd := now.Add(10001 * time.Second)
+	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	mktCfg.Fees = &types.Fees{
+		Factors: &types.FeeFactors{
+			InfrastructureFee: "0.0005",
+			MakerFee:          "0.00025",
+		},
+	}
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &types.LogNormalRiskModel{
+			RiskAversionParameter: 0.001,
+			Tau:                   0.00011407711613050422,
+			Params: &types.LogNormalModelParams{
+				Mu:    0,
+				R:     0.016,
+				Sigma: 5,
+			},
+		},
+	}
+
+	lpparty := "lp-party-1"
+
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		WithAccountAndAmount(lpparty, 100000000000000)
+
+	tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	lpSubmission := &commandspb.LiquidityProvisionSubmission{
+		MarketId:         tm.market.GetID(),
+		CommitmentAmount: 10000,
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 100, Offset: -10},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 100, Offset: 10},
+		},
+	}
+
+	// submit our lp
+	tm.events = nil
+	require.NoError(t,
+		tm.market.SubmitLiquidityProvision(
+			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+	)
+
+	// we end the auction
+	// This will also generate trades which are included in the MVP.
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	t.Run("lp submission is active", func(t *testing.T) {
+		// First collect all the orders events
+		found := types.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				found = evt.LiquidityProvision()
+			}
+		}
+		// no update to the liquidity fee
+		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_ACTIVE.String())
+	})
+
+	// then we'll submit an order which would expire
+	// we submit the order at the price of the LP shape generated order
+	expiringOrder := getMarketOrder(tm, auctionEnd, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "GTT-1", types.Side_SIDE_BUY, lpparty, 500, 890)
+	expiringOrder.ExpiresAt = auctionEnd.Add(10 * time.Second).UnixNano()
+
+	tm.events = nil
+	_, err := tm.market.SubmitOrder(ctx, expiringOrder)
+	assert.NoError(t, err)
+
+	// now we ensure we have 2 order on the buy side.
+	// one lp of size 6, on normal limit of size 500
+	t.Run("lp order size decrease", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				found[evt.Order().Id] = evt.Order()
+			}
+		}
+
+		assert.Len(t, found, 2)
+
+		expected := map[string]uint64{
+			"V0000000000-0000000001": 6,
+			"V0000000000-0000000007": 500,
+		}
+
+		// no ensure that the orders in the map matches the size we have
+		for k, v := range found {
+			assert.Equal(t, expected[k], v.Size)
+		}
+	})
+
+	// now the limit order expires, and the LP order size should increase again
+	tm.events = nil
+	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(11*time.Second))              // this is 1 second after order expiry
+	tm.market.RemoveExpiredOrders(ctx, auctionEnd.Add(11*time.Second).UnixNano()) // this is 1 second after order expiry
+
+	// now we ensure we have 2 order on the buy side.
+	// one lp of size 6, on normal limit of size 500
+	t.Run("lp order size increase again after expiry", func(t *testing.T) {
+		// First collect all the orders events
+		found := map[string]*types.Order{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.Order:
+				found[evt.Order().Id] = evt.Order()
+			}
+		}
+
+		assert.Len(t, found, 1)
+
+		expected := map[string]struct {
+			size   uint64
+			status types.Order_Status
+		}{
+			"V0000000000-0000000001": {506, types.Order_STATUS_ACTIVE},
+			// no event sent for expired orders
+			// this is done by the excution engine, we may want to do
+			// that from the market someday
+			// "V0000000000-0000000007": {500, types.Order_STATUS_EXPIRED},
+		}
+
+		// no ensure that the orders in the map matches the size we have
+		for k, v := range found {
+			assert.Equal(t, expected[k].status, v.Status)
+			assert.Equal(t, expected[k].size, v.Size)
+		}
+	})
 
 }

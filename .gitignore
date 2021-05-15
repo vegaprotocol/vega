@@ -1,6 +1,7 @@
 # Vega specific entries
 cmd/*/*-dbg
 cmd/vega/vega*
+cmd/vegabenchmark/vegabenchmark*
 data/
 .DS_Store
 .envrc
@@ -17,3 +18,4 @@ vendor/
 .vscode/
 proto/**.orig
 *.pb.go-re
+gomock_reflect_*

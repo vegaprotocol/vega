@@ -263,12 +263,10 @@ run() {
 		return "$?"
 		;;
 	gqlgen) ## Run gqlgen
-		test -d vendor && mv vendor .vendor.tmp
 		pushd ./gateway/graphql/ 1>/dev/null || return 1
 		go run github.com/99designs/gqlgen --config gqlgen.yml
 		code="$?"
 		popd 1>/dev/null || return 1
-		test -d .vendor.tmp && mv .vendor.tmp vendor
 		return "$code"
 		;;
 	install) ## Build apps (in $GOPATH/bin)

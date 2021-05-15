@@ -5,37 +5,36 @@
 package mocks
 
 import (
-	reflect "reflect"
-	time "time"
-
 	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
+	time "time"
 )
 
-// MockAuctionState is a mock of AuctionState interface.
+// MockAuctionState is a mock of AuctionState interface
 type MockAuctionState struct {
 	ctrl     *gomock.Controller
 	recorder *MockAuctionStateMockRecorder
 }
 
-// MockAuctionStateMockRecorder is the mock recorder for MockAuctionState.
+// MockAuctionStateMockRecorder is the mock recorder for MockAuctionState
 type MockAuctionStateMockRecorder struct {
 	mock *MockAuctionState
 }
 
-// NewMockAuctionState creates a new mock instance.
+// NewMockAuctionState creates a new mock instance
 func NewMockAuctionState(ctrl *gomock.Controller) *MockAuctionState {
 	mock := &MockAuctionState{ctrl: ctrl}
 	mock.recorder = &MockAuctionStateMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockAuctionState) EXPECT() *MockAuctionStateMockRecorder {
 	return m.recorder
 }
 
-// AuctionEnd mocks base method.
+// AuctionEnd mocks base method
 func (m *MockAuctionState) AuctionEnd() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AuctionEnd")
@@ -43,13 +42,13 @@ func (m *MockAuctionState) AuctionEnd() bool {
 	return ret0
 }
 
-// AuctionEnd indicates an expected call of AuctionEnd.
+// AuctionEnd indicates an expected call of AuctionEnd
 func (mr *MockAuctionStateMockRecorder) AuctionEnd() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuctionEnd", reflect.TypeOf((*MockAuctionState)(nil).AuctionEnd))
 }
 
-// AuctionStart mocks base method.
+// AuctionStart mocks base method
 func (m *MockAuctionState) AuctionStart() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AuctionStart")
@@ -57,13 +56,13 @@ func (m *MockAuctionState) AuctionStart() bool {
 	return ret0
 }
 
-// AuctionStart indicates an expected call of AuctionStart.
+// AuctionStart indicates an expected call of AuctionStart
 func (mr *MockAuctionStateMockRecorder) AuctionStart() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuctionStart", reflect.TypeOf((*MockAuctionState)(nil).AuctionStart))
 }
 
-// Duration mocks base method.
+// Duration mocks base method
 func (m *MockAuctionState) Duration() proto.AuctionDuration {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Duration")
@@ -71,25 +70,25 @@ func (m *MockAuctionState) Duration() proto.AuctionDuration {
 	return ret0
 }
 
-// Duration indicates an expected call of Duration.
+// Duration indicates an expected call of Duration
 func (mr *MockAuctionStateMockRecorder) Duration() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Duration", reflect.TypeOf((*MockAuctionState)(nil).Duration))
 }
 
-// EndAuction mocks base method.
+// EndAuction mocks base method
 func (m *MockAuctionState) EndAuction() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "EndAuction")
 }
 
-// EndAuction indicates an expected call of EndAuction.
+// EndAuction indicates an expected call of EndAuction
 func (mr *MockAuctionStateMockRecorder) EndAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndAuction", reflect.TypeOf((*MockAuctionState)(nil).EndAuction))
 }
 
-// ExpiresAt mocks base method.
+// ExpiresAt mocks base method
 func (m *MockAuctionState) ExpiresAt() *time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExpiresAt")
@@ -97,25 +96,25 @@ func (m *MockAuctionState) ExpiresAt() *time.Time {
 	return ret0
 }
 
-// ExpiresAt indicates an expected call of ExpiresAt.
+// ExpiresAt indicates an expected call of ExpiresAt
 func (mr *MockAuctionStateMockRecorder) ExpiresAt() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpiresAt", reflect.TypeOf((*MockAuctionState)(nil).ExpiresAt))
 }
 
-// ExtendAuctionPrice mocks base method.
+// ExtendAuctionPrice mocks base method
 func (m *MockAuctionState) ExtendAuctionPrice(arg0 proto.AuctionDuration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ExtendAuctionPrice", arg0)
 }
 
-// ExtendAuctionPrice indicates an expected call of ExtendAuctionPrice.
+// ExtendAuctionPrice indicates an expected call of ExtendAuctionPrice
 func (mr *MockAuctionStateMockRecorder) ExtendAuctionPrice(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionPrice", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionPrice), arg0)
 }
 
-// InAuction mocks base method.
+// InAuction mocks base method
 func (m *MockAuctionState) InAuction() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InAuction")
@@ -123,13 +122,13 @@ func (m *MockAuctionState) InAuction() bool {
 	return ret0
 }
 
-// InAuction indicates an expected call of InAuction.
+// InAuction indicates an expected call of InAuction
 func (mr *MockAuctionStateMockRecorder) InAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InAuction", reflect.TypeOf((*MockAuctionState)(nil).InAuction))
 }
 
-// IsFBA mocks base method.
+// IsFBA mocks base method
 func (m *MockAuctionState) IsFBA() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsFBA")
@@ -137,13 +136,13 @@ func (m *MockAuctionState) IsFBA() bool {
 	return ret0
 }
 
-// IsFBA indicates an expected call of IsFBA.
+// IsFBA indicates an expected call of IsFBA
 func (mr *MockAuctionStateMockRecorder) IsFBA() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFBA", reflect.TypeOf((*MockAuctionState)(nil).IsFBA))
 }
 
-// IsLiquidityAuction mocks base method.
+// IsLiquidityAuction mocks base method
 func (m *MockAuctionState) IsLiquidityAuction() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsLiquidityAuction")
@@ -151,13 +150,13 @@ func (m *MockAuctionState) IsLiquidityAuction() bool {
 	return ret0
 }
 
-// IsLiquidityAuction indicates an expected call of IsLiquidityAuction.
+// IsLiquidityAuction indicates an expected call of IsLiquidityAuction
 func (mr *MockAuctionStateMockRecorder) IsLiquidityAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLiquidityAuction", reflect.TypeOf((*MockAuctionState)(nil).IsLiquidityAuction))
 }
 
-// IsOpeningAuction mocks base method.
+// IsOpeningAuction mocks base method
 func (m *MockAuctionState) IsOpeningAuction() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsOpeningAuction")
@@ -165,13 +164,13 @@ func (m *MockAuctionState) IsOpeningAuction() bool {
 	return ret0
 }
 
-// IsOpeningAuction indicates an expected call of IsOpeningAuction.
+// IsOpeningAuction indicates an expected call of IsOpeningAuction
 func (mr *MockAuctionStateMockRecorder) IsOpeningAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsOpeningAuction", reflect.TypeOf((*MockAuctionState)(nil).IsOpeningAuction))
 }
 
-// IsPriceAuction mocks base method.
+// IsPriceAuction mocks base method
 func (m *MockAuctionState) IsPriceAuction() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsPriceAuction")
@@ -179,13 +178,13 @@ func (m *MockAuctionState) IsPriceAuction() bool {
 	return ret0
 }
 
-// IsPriceAuction indicates an expected call of IsPriceAuction.
+// IsPriceAuction indicates an expected call of IsPriceAuction
 func (mr *MockAuctionStateMockRecorder) IsPriceAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPriceAuction", reflect.TypeOf((*MockAuctionState)(nil).IsPriceAuction))
 }
 
-// Mode mocks base method.
+// Mode mocks base method
 func (m *MockAuctionState) Mode() proto.Market_TradingMode {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Mode")
@@ -193,13 +192,13 @@ func (m *MockAuctionState) Mode() proto.Market_TradingMode {
 	return ret0
 }
 
-// Mode indicates an expected call of Mode.
+// Mode indicates an expected call of Mode
 func (mr *MockAuctionStateMockRecorder) Mode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mode", reflect.TypeOf((*MockAuctionState)(nil).Mode))
 }
 
-// Start mocks base method.
+// Start mocks base method
 func (m *MockAuctionState) Start() time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Start")
@@ -207,19 +206,19 @@ func (m *MockAuctionState) Start() time.Time {
 	return ret0
 }
 
-// Start indicates an expected call of Start.
+// Start indicates an expected call of Start
 func (mr *MockAuctionStateMockRecorder) Start() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockAuctionState)(nil).Start))
 }
 
-// StartPriceAuction mocks base method.
+// StartPriceAuction mocks base method
 func (m *MockAuctionState) StartPriceAuction(arg0 time.Time, arg1 *proto.AuctionDuration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "StartPriceAuction", arg0, arg1)
 }
 
-// StartPriceAuction indicates an expected call of StartPriceAuction.
+// StartPriceAuction indicates an expected call of StartPriceAuction
 func (mr *MockAuctionStateMockRecorder) StartPriceAuction(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartPriceAuction", reflect.TypeOf((*MockAuctionState)(nil).StartPriceAuction), arg0, arg1)

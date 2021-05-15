@@ -9,12 +9,11 @@ import (
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 var (
-	// ErrMissingPartyID signals that the payload is expected to contain a party id
-	ErrMissingPartyID = errors.New("missing party id")
-	// usually the party specified an amount of 0
+	// ErrInvalidWithdrawAmount usually the party specified an amount of 0
 	ErrInvalidWithdrawAmount = errors.New("invalid withdraw amount (must be > 0)")
 	// ErrMissingAsset signals that an asset was required but not specified
 	ErrMissingAsset = errors.New("missing asset")
@@ -63,10 +62,7 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-func (s *Svc) PrepareWithdraw(ctx context.Context, w *types.WithdrawSubmission) error {
-	if len(w.PartyId) <= 0 {
-		return ErrMissingPartyID
-	}
+func (s *Svc) PrepareWithdraw(ctx context.Context, w *commandspb.WithdrawSubmission) error {
 	if len(w.Asset) <= 0 {
 		return ErrMissingAsset
 	}

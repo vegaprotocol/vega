@@ -66,11 +66,11 @@ Feature: Distressed traders should not have general balance left
       | id  | party   | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
       | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | buy        | BID             | 10               | -10          |
       | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | sell       | ASK             | 10               | 10           |
-    Then I see the LP events:
+    Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
       | lp1 | trader3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |
 
-    Then I see the following order events:
+    Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset | price | status        |
       | trader3 | ETH/DEC20 | buy  | 989    | BID       | -10    | 100   | STATUS_ACTIVE |
       | trader3 | ETH/DEC20 | sell | 760    | ASK       | 10     | 130   | STATUS_ACTIVE |

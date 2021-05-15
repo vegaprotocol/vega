@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,7 +35,7 @@ func (m *MockTradeOrderService) EXPECT() *MockTradeOrderServiceMockRecorder {
 }
 
 // PrepareAmendOrder mocks base method
-func (m *MockTradeOrderService) PrepareAmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) error {
+func (m *MockTradeOrderService) PrepareAmendOrder(arg0 context.Context, arg1 *v1.OrderAmendment) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareAmendOrder", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -49,7 +49,7 @@ func (mr *MockTradeOrderServiceMockRecorder) PrepareAmendOrder(arg0, arg1 interf
 }
 
 // PrepareCancelOrder mocks base method
-func (m *MockTradeOrderService) PrepareCancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) error {
+func (m *MockTradeOrderService) PrepareCancelOrder(arg0 context.Context, arg1 *v1.OrderCancellation) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareCancelOrder", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -63,7 +63,7 @@ func (mr *MockTradeOrderServiceMockRecorder) PrepareCancelOrder(arg0, arg1 inter
 }
 
 // PrepareSubmitOrder mocks base method
-func (m *MockTradeOrderService) PrepareSubmitOrder(arg0 context.Context, arg1 *proto.OrderSubmission) error {
+func (m *MockTradeOrderService) PrepareSubmitOrder(arg0 context.Context, arg1 *v1.OrderSubmission) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareSubmitOrder", arg0, arg1)
 	ret0, _ := ret[0].(error)

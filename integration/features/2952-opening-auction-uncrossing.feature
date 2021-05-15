@@ -7,8 +7,8 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
       | long                   | short                  | max move up | min move down | probability of trading |
       | 0.08628781058136630000 | 0.09370922348428490000 | -1          | -1            | 0.1                    |
     And the fees configuration named "my-fees-config":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.004     | 0.001              | 0.3           |
+      | maker fee | infrastructure fee |
+      | 0.004     | 0.001              |
     And the markets:
       | id        | quote name | asset | risk model           | margin calculator         | auction duration | fees           | price monitoring | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | my-simple-risk-model | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future |

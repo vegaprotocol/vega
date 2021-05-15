@@ -15,18 +15,18 @@ import (
 
 type testNodeValidation struct {
 	*governance.NodeValidation
-	ctrl   *gomock.Controller
-	assets *mocks.MockAssets
-	erc    *mocks.MockExtResChecker
+	ctrl    *gomock.Controller
+	assets  *mocks.MockAssets
+	witness *mocks.MockWitness
 }
 
 func getTestNodeValidation(t *testing.T) *testNodeValidation {
 	ctrl := gomock.NewController(t)
 	assets := mocks.NewMockAssets(ctrl)
-	erc := mocks.NewMockExtResChecker(ctrl)
+	witness := mocks.NewMockWitness(ctrl)
 
 	nv, err := governance.NewNodeValidation(
-		logging.NewTestLogger(), assets, time.Now(), erc)
+		logging.NewTestLogger(), assets, time.Now(), witness)
 	assert.NotNil(t, nv)
 	assert.Nil(t, err)
 
@@ -34,7 +34,7 @@ func getTestNodeValidation(t *testing.T) *testNodeValidation {
 		NodeValidation: nv,
 		ctrl:           ctrl,
 		assets:         assets,
-		erc:            erc,
+		witness:        witness,
 	}
 }
 

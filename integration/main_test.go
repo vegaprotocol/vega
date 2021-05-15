@@ -114,7 +114,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TradersAmendTheFollowingOrders(execsetup.errorHandler, execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders place the following pegged orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlacePeggedOrders(execsetup.executionEngine, table)
+		return steps.TradersPlaceTheFollowingPeggedOrders(execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders deposit on asset's general account the following amount:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersDepositAssets(execsetup.collateralEngine, execsetup.broker, table)
@@ -154,6 +154,12 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the orders should have the following status:$`, func(table *gherkin.DataTable) error {
 		return steps.TheOrdersShouldHaveTheFollowingStatus(execsetup.broker, table)
 	})
+	s.Step(`^the orders should have the following states:$`, func(table *gherkin.DataTable) error {
+		return steps.TheOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
+	})
+	s.Step(`^the pegged orders should have the following states:$`, func(table *gherkin.DataTable) error {
+		return steps.ThePeggedOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
+	})
 	s.Step(`^the following orders should be rejected:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingOrdersShouldBeRejected(execsetup.broker, table)
 	})
@@ -190,11 +196,29 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the mark price should be "([^"]*)" for the market "([^"]*)"$`, func(rawMarkPrice, marketID string) error {
 		return steps.TheMarkPriceForTheMarketIs(execsetup.executionEngine, marketID, rawMarkPrice)
 	})
-	s.Step(`^I see the following order events:$`, func(table *gherkin.DataTable) error {
-		return steps.OrderEventsSent(execsetup.broker, table)
+	s.Step(`^the liquidity provisions should have the following states:$`, func(table *gherkin.DataTable) error {
+		return steps.TheLiquidityProvisionsShouldHaveTheFollowingStates(execsetup.broker, table)
 	})
-	s.Step(`^I see the LP events:$`, func(table *gherkin.DataTable) error {
-		return steps.LiquidityProvisionEventsSent(execsetup.broker, table)
+	s.Step(`^the target stake should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
+		return steps.TheTargetStakeShouldBeForMarket(execsetup.executionEngine, marketID, stake)
+	})
+	s.Step(`^the supplied stake should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
+		return steps.TheSuppliedStakeShouldBeForTheMarket(execsetup.executionEngine, marketID, stake)
+	})
+	s.Step(`^the open interest should be "([^"]*)" for the market "([^"]*)"$`, func(stake , marketID string) error {
+		return steps.TheOpenInterestShouldBeForTheMarket(execsetup.executionEngine, marketID, stake)
+	})
+	s.Step(`^the liquidity provider fee shares for the market "([^"]*)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
+		return steps.TheLiquidityProviderFeeSharesForTheMarketShouldBe(execsetup.executionEngine, marketID, table)
+	})
+	s.Step(`^the price monitoring bounds for the market "([^"]*)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
+		return steps.ThePriceMonitoringBoundsForTheMarketShouldBe(execsetup.executionEngine, marketID, table)
+	})
+	s.Step(`^the accumulated liquidity fees should be "([^"]*)" for the market "([^"]*)"$`, func(amount, marketID string) error {
+		return steps.TheAccumulatedLiquidityFeesShouldBeForTheMarket(execsetup.broker, amount, marketID)
+	})
+	s.Step(`^the liquidity fee factor should "([^"]*)" for the market "([^"]*)"$`, func(fee, marketID string) error {
+		return steps.TheLiquidityFeeFactorShouldForTheMarket(execsetup.broker, fee, marketID)
 	})
 
 	// Debug steps

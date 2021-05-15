@@ -568,6 +568,24 @@ type ProposalVote struct {
 	ProposalID string `json:"proposalId"`
 }
 
+type ProposalVoteSide struct {
+	// All votes casted for this side
+	Votes []*proto.Vote `json:"votes"`
+	// Total number of votes casted for this side
+	TotalNumber string `json:"totalNumber"`
+	// Total weight of governance token from the votes casted for this side
+	TotalWeight string `json:"totalWeight"`
+	// Total tokens of governance token from the votes casted for this side
+	TotalTokens string `json:"totalTokens"`
+}
+
+type ProposalVotes struct {
+	// Yes votes cast for this proposal
+	Yes *ProposalVoteSide `json:"yes"`
+	// No votes cast for this proposal
+	No *ProposalVoteSide `json:"no"`
+}
+
 type RiskParametersInput struct {
 	// Simple risk model parameters. Set only if risk model is Simple
 	Simple *SimpleRiskModelParamsInput `json:"simple"`
@@ -1134,25 +1152,25 @@ type MarketState string
 
 const (
 	// The Governance proposal valid and accepted
-	MarketStateProposed MarketState = "PROPOSED"
+	MarketStateProposed MarketState = "Proposed"
 	// Outcome of governance votes is to reject the market
-	MarketStateRejected MarketState = "REJECTED"
+	MarketStateRejected MarketState = "Rejected"
 	// Governance vote passes/wins
-	MarketStatePending MarketState = "PENDING"
+	MarketStatePending MarketState = "Pending"
 	// Market triggers cancellation condition or governance
 	// votes to close before market becomes Active
-	MarketStateCancelled MarketState = "CANCELLED"
+	MarketStateCancelled MarketState = "Cancelled"
 	// Enactment date reached and usual auction exit checks pass
-	MarketStateActive MarketState = "ACTIVE"
+	MarketStateActive MarketState = "Active"
 	// Price monitoring or liquidity monitoring trigger
-	MarketStateSuspended MarketState = "SUSPENDED"
+	MarketStateSuspended MarketState = "Suspended"
 	// Governance vote (to close)
-	MarketStateClosed MarketState = "CLOSED"
+	MarketStateClosed MarketState = "Closed"
 	// Defined by the product (i.e. from a product parameter,
 	// specified in market definition, giving close date/time)
-	MarketStateTradingTerminated MarketState = "TRADING_TERMINATED"
+	MarketStateTradingTerminated MarketState = "TradingTerminated"
 	// Settlement triggered and completed as defined by product
-	MarketStateSettled MarketState = "SETTLED"
+	MarketStateSettled MarketState = "Settled"
 )
 
 var AllMarketState = []MarketState{
@@ -1201,13 +1219,13 @@ type MarketTradingMode string
 
 const (
 	// Continuous trading where orders are processed and potentially matched on arrival
-	MarketTradingModeContinuous MarketTradingMode = "CONTINUOUS"
+	MarketTradingModeContinuous MarketTradingMode = "Continuous"
 	// Auction trading where orders are uncrossed at the end of the opening auction period
-	MarketTradingModeOpeningAuction MarketTradingMode = "OPENING_AUCTION"
+	MarketTradingModeOpeningAuction MarketTradingMode = "OpeningAuction"
 	// Auction as normal trading mode for the market, where orders are uncrossed periodically
-	MarketTradingModeBatchAuction MarketTradingMode = "BATCH_AUCTION"
+	MarketTradingModeBatchAuction MarketTradingMode = "BatchAuction"
 	// Auction triggered by price/liquidity monitoring
-	MarketTradingModeMonitoringAuction MarketTradingMode = "MONITORING_AUCTION"
+	MarketTradingModeMonitoringAuction MarketTradingMode = "MonitoringAuction"
 )
 
 var AllMarketTradingMode = []MarketTradingMode{
@@ -1294,9 +1312,9 @@ func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
 type OracleSpecStatus string
 
 const (
-	// STATUS_ACTIVE describes an active oracle spec.
+	// StatusActive describes an active oracle spec.
 	OracleSpecStatusStatusActive OracleSpecStatus = "StatusActive"
-	// STATUS_ACTIVE describes an oracle spec that is not listening to data
+	// StatusUnused describes an oracle spec that is not listening to data
 	// anymore.
 	OracleSpecStatusStatusUnused OracleSpecStatus = "StatusUnused"
 )
@@ -1431,6 +1449,8 @@ const (
 	OrderRejectionReasonUnableToRepricePeggedOrder OrderRejectionReason = "UnableToRepricePeggedOrder"
 	// Unable to amend pegged order price
 	OrderRejectionReasonUnableToAmendPeggedOrderPrice OrderRejectionReason = "UnableToAmendPeggedOrderPrice"
+	// Non-persistent order exceeds price bounds
+	OrderRejectionReasonNonPersistentOrderExceedsPriceBounds OrderRejectionReason = "NonPersistentOrderExceedsPriceBounds"
 )
 
 var AllOrderRejectionReason = []OrderRejectionReason{
@@ -1480,11 +1500,12 @@ var AllOrderRejectionReason = []OrderRejectionReason{
 	OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder,
 	OrderRejectionReasonUnableToRepricePeggedOrder,
 	OrderRejectionReasonUnableToAmendPeggedOrderPrice,
+	OrderRejectionReasonNonPersistentOrderExceedsPriceBounds,
 }
 
 func (e OrderRejectionReason) IsValid() bool {
 	switch e {
-	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFNOrderDuringAuction, OrderRejectionReasonGFAOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance, OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, OrderRejectionReasonUnableToRepricePeggedOrder, OrderRejectionReasonUnableToAmendPeggedOrderPrice:
+	case OrderRejectionReasonInvalidMarketID, OrderRejectionReasonInvalidOrderID, OrderRejectionReasonOrderOutOfSequence, OrderRejectionReasonInvalidRemainingSize, OrderRejectionReasonTimeFailure, OrderRejectionReasonOrderRemovalFailure, OrderRejectionReasonInvalidExpirationTime, OrderRejectionReasonInvalidOrderReference, OrderRejectionReasonEditNotAllowed, OrderRejectionReasonOrderAmendFailure, OrderRejectionReasonOrderNotFound, OrderRejectionReasonInvalidPartyID, OrderRejectionReasonMarketClosed, OrderRejectionReasonMarginCheckFailed, OrderRejectionReasonMissingGeneralAccount, OrderRejectionReasonInternalError, OrderRejectionReasonInvalidSize, OrderRejectionReasonInvalidPersistence, OrderRejectionReasonInvalidType, OrderRejectionReasonSelfTrading, OrderRejectionReasonInsufficientFundsToPayFees, OrderRejectionReasonInvalidTimeInForce, OrderRejectionReasonAmendToGTTWithoutExpiryAt, OrderRejectionReasonExpiryAtBeforeCreatedAt, OrderRejectionReasonGTCWithExpiryAtNotValid, OrderRejectionReasonCannotAmendToFOKOrIoc, OrderRejectionReasonCannotAmendToGFAOrGfn, OrderRejectionReasonCannotAmendFromGFAOrGfn, OrderRejectionReasonInvalidMarketType, OrderRejectionReasonGFNOrderDuringAuction, OrderRejectionReasonGFAOrderDuringContinuousTrading, OrderRejectionReasonIOCOrderDuringAuction, OrderRejectionReasonFOKOrderDuringAuction, OrderRejectionReasonPeggedOrderMustBeLimitOrder, OrderRejectionReasonPeggedOrderMustBeGTTOrGtc, OrderRejectionReasonPeggedOrderWithoutReferencePrice, OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, OrderRejectionReasonPeggedOrderSellCannotReferenceBestBidPrice, OrderRejectionReasonPeggedOrderOffsetMustBeGreaterThanZero, OrderRejectionReasonInsufficientAssetBalance, OrderRejectionReasonCannotAmendPeggedOrderDetailsOnNonPeggedOrder, OrderRejectionReasonUnableToRepricePeggedOrder, OrderRejectionReasonUnableToAmendPeggedOrderPrice, OrderRejectionReasonNonPersistentOrderExceedsPriceBounds:
 		return true
 	}
 	return false
@@ -1635,12 +1656,12 @@ type OrderType string
 
 const (
 	// the default order type
-	OrderTypeMarket OrderType = "MARKET"
+	OrderTypeMarket OrderType = "Market"
 	// mentioned in ticket, but as yet unused order type
-	OrderTypeLimit OrderType = "LIMIT"
+	OrderTypeLimit OrderType = "Limit"
 	// Used for distressed traders, an order placed by the network to close out distressed traders
-	// similar to MARKET order, only no party is attached to the order.
-	OrderTypeNetwork OrderType = "NETWORK"
+	// similar to Market order, only no party is attached to the order.
+	OrderTypeNetwork OrderType = "Network"
 )
 
 var AllOrderType = []OrderType{
@@ -2114,10 +2135,10 @@ func (e TradeType) MarshalGQL(w io.Writer) {
 type VoteValue string
 
 const (
-	// NO reject a proposal
-	VoteValueNo VoteValue = "NO"
-	// YES accept a proposal
-	VoteValueYes VoteValue = "YES"
+	// No reject a proposal
+	VoteValueNo VoteValue = "No"
+	// Yes accept a proposal
+	VoteValueYes VoteValue = "Yes"
 )
 
 var AllVoteValue = []VoteValue{

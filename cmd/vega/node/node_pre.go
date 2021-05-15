@@ -38,6 +38,7 @@ import (
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/proto"
+	oraclepb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
@@ -284,6 +285,13 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 	if len(l.mktscfg) > 0 {
 		for _, mkt := range l.mktscfg {
 			mkt := mkt
+
+			// hot fix: attribute an ID to oracle spec to avoid blank ID
+			spec := mkt.TradableInstrument.Instrument.GetFuture().OracleSpec
+			specWithID := oraclepb.NewOracleSpec(spec.PubKeys, spec.Filters)
+			mkt.TradableInstrument.Instrument.GetFuture().OracleSpec = specWithID
+			// end of hot fix
+
 			err = l.executionEngine.SubmitMarket(l.ctx, &mkt)
 			if err != nil {
 				l.Log.Panic("Unable to submit market",
@@ -494,7 +502,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
 
-	l.erc = validators.NewExtResChecker(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
+	l.erc = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 

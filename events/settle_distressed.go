@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type SettleDistressed struct {
@@ -50,8 +50,8 @@ func (s SettleDistressed) Timestamp() int64 {
 	return s.ts
 }
 
-func (s SettleDistressed) Proto() types.SettleDistressed {
-	return types.SettleDistressed{
+func (s SettleDistressed) Proto() eventspb.SettleDistressed {
+	return eventspb.SettleDistressed{
 		MarketId: s.marketID,
 		PartyId:  s.partyID,
 		Margin:   s.margin,
@@ -59,13 +59,13 @@ func (s SettleDistressed) Proto() types.SettleDistressed {
 	}
 }
 
-func (s SettleDistressed) StreamMessage() *types.BusEvent {
+func (s SettleDistressed) StreamMessage() *eventspb.BusEvent {
 	p := s.Proto()
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    s.eventID(),
 		Block: s.TraceID(),
 		Type:  s.et.ToProto(),
-		Event: &types.BusEvent_SettleDistressed{
+		Event: &eventspb.BusEvent_SettleDistressed{
 			SettleDistressed: &p,
 		},
 	}

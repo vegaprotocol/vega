@@ -15,8 +15,6 @@ type Mutation {
   prepareOrderSubmit(
     "ID of the market to place the order"
     marketId: ID!
-    "ID of the party placing the order"
-    partyId: ID!
     "Price of the asset"
     price: String
     "Size of the order"
@@ -25,7 +23,7 @@ type Mutation {
     side: Side!
     "TimeInForce of the order"
     timeInForce: OrderTimeInForce!
-    "exiration of the the order"
+    "expiration of the the order"
     expiration: String
     "type of the order"
     type: OrderType!
@@ -42,8 +40,6 @@ type Mutation {
   prepareOrderCancel(
     "ID of the order to cancel"
     id: ID
-    "ID of the party placing the order"
-    partyId: ID!
     "ID of the market where to find the order"
     marketId: ID
   ): PreparedCancelOrder!
@@ -55,8 +51,6 @@ type Mutation {
   prepareOrderAmend(
     "ID of the order to amend"
     id: ID!
-    "ID of the party which created the order"
-    partyId: ID!
     "New price for this order"
     price: String!
     "New size for this order"
@@ -104,8 +98,6 @@ type Mutation {
   Returns a pending withdrawSubmission with a transaction blob for signing.
   """
   prepareWithdrawal(
-    "The party which wants to withdraw funds"
-    partyId: ID!
     "The amount to be withdrawn"
     amount: String!
     "The asset from which we want to withdraw funds"
@@ -857,10 +849,10 @@ type OracleSpec {
 
 "Status describe the status of the oracle spec"
 enum OracleSpecStatus {
-  "STATUS_ACTIVE describes an active oracle spec."
+  "StatusActive describes an active oracle spec."
   StatusActive
   """
-  STATUS_ACTIVE describes an oracle spec that is not listening to data
+  StatusUnused describes an oracle spec that is not listening to data
   anymore.
   """
   StatusUnused
@@ -1896,63 +1888,66 @@ enum OrderRejectionReason {
 
   "Unable to amend pegged order price"
   UnableToAmendPeggedOrderPrice
+
+  "Non-persistent order exceeds price bounds"
+  NonPersistentOrderExceedsPriceBounds
 }
 
 enum OrderType {
   "the default order type"
-  MARKET
+  Market
 
   "mentioned in ticket, but as yet unused order type"
-  LIMIT
+  Limit
 
   """
   Used for distressed traders, an order placed by the network to close out distressed traders
-  similar to MARKET order, only no party is attached to the order.
+  similar to Market order, only no party is attached to the order.
   """
-  NETWORK
+  Network
 }
 
 "The current state of a market"
 enum MarketState {
   "The Governance proposal valid and accepted"
-  PROPOSED
+  Proposed
   "Outcome of governance votes is to reject the market"
-  REJECTED
+  Rejected
   "Governance vote passes/wins"
-  PENDING
+  Pending
   """
   Market triggers cancellation condition or governance
   votes to close before market becomes Active
   """
-  CANCELLED
+  Cancelled
   "Enactment date reached and usual auction exit checks pass"
-  ACTIVE
+  Active
   "Price monitoring or liquidity monitoring trigger"
-  SUSPENDED
+  Suspended
   "Governance vote (to close)"
-  CLOSED
+  Closed
   """
   Defined by the product (i.e. from a product parameter,
   specified in market definition, giving close date/time)
   """
-  TRADING_TERMINATED
+  TradingTerminated
   "Settlement triggered and completed as defined by product"
-  SETTLED
+  Settled
 }
 
 "What market trading mode are we in"
 enum MarketTradingMode {
   "Continuous trading where orders are processed and potentially matched on arrival"
-  CONTINUOUS
+  Continuous
 
   "Auction trading where orders are uncrossed at the end of the opening auction period"
-  OPENING_AUCTION
+  OpeningAuction
 
   "Auction as normal trading mode for the market, where orders are uncrossed periodically"
-  BATCH_AUCTION
+  BatchAuction
 
   "Auction triggered by price/liquidity monitoring"
-  MONITORING_AUCTION
+  MonitoringAuction
 }
 
 "Whether the placer of an order is aiming to buy or sell on the market"
@@ -2457,14 +2452,28 @@ type Proposal {
   datetime: String!
   "Terms of the proposal"
   terms: ProposalTerms!
-
-  "Yes votes cast for this proposal"
-  yesVotes: [Vote]
-  "No votes cast for this proposal"
-  noVotes: [Vote]
-
+  "Votes cast for this proposal"
+  votes: ProposalVotes!
   "Reason for the proposal to be rejected by the core"
   rejectionReason: ProposalRejectionReason
+}
+
+type ProposalVotes {
+  "Yes votes cast for this proposal"
+  yes: ProposalVoteSide!
+  "No votes cast for this proposal"
+  no: ProposalVoteSide!
+}
+
+type ProposalVoteSide {
+  "All votes casted for this side"
+  votes: [Vote!]
+  "Total number of votes casted for this side"
+  totalNumber: String!
+  "Total weight of governance token from the votes casted for this side"
+  totalWeight: String!
+  "Total tokens of governance token from the votes casted for this side"
+  totalTokens: String!
 }
 
 type PreparedProposal {
@@ -2475,10 +2484,10 @@ type PreparedProposal {
 }
 
 enum VoteValue {
-  "NO reject a proposal"
-  NO
-  "YES accept a proposal"
-  YES
+  "No reject a proposal"
+  No
+  "Yes accept a proposal"
+  Yes
 }
 
 type Vote {
@@ -2493,6 +2502,12 @@ type Vote {
 
   "The ID of the proposal this vote applies to"
   proposalId: ID!
+
+  "Total number of governance token for the party that casted the vote"
+  governanceTokenBalance: String!
+
+  "The weight of this vote based on the total of governance token"
+  governanceTokenWeight: String!
 }
 
 type ProposalVote {

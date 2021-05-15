@@ -2,15 +2,17 @@ package steps
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 func formatDiff(msg string, expected, got map[string]string) error {
 	var expectedStr strings.Builder
 	var gotStr strings.Builder
-	formatStr := "\n\t%s(%s)"
+	formatStr := "\n\t%s\t(%s)"
 	for name, value := range expected {
 		_, _ = fmt.Fprintf(&expectedStr, formatStr, name, value)
 		_, _ = fmt.Fprintf(&gotStr, formatStr, name, got[name])
@@ -23,13 +25,33 @@ func formatDiff(msg string, expected, got map[string]string) error {
 	)
 }
 
+func u64ToS(n uint64) string {
+	return strconv.FormatUint(n, 10)
+}
+
+func u64SToS(ns []uint64) string {
+	ss := []string{}
+	for _, n := range ns {
+		ss = append(ss, u64ToS(n))
+	}
+	return strings.Join(ss, " ")
+}
+
+func i64ToS(n int64) string {
+	return strconv.FormatInt(n, 10)
+}
+
 func errOrderNotFound(reference string, trader string, err error) error {
 	return fmt.Errorf("order not found for trader(%s) with reference(%s): %v", trader, reference, err)
 }
 
+func errMarketDataNotFound(marketID string, err error) error {
+	return fmt.Errorf("market data not found for market(%v): %s", marketID, err.Error())
+}
+
 type CancelOrderError struct {
 	reference string
-	request   types.OrderCancellation
+	request   commandspb.OrderCancellation
 	Err       error
 }
 
@@ -41,7 +63,7 @@ func (c *CancelOrderError) Unwrap() error { return c.Err }
 
 type SubmitOrderError struct {
 	reference string
-	request   types.Order
+	request   commandspb.OrderSubmission
 	Err       error
 }
 
@@ -50,3 +72,7 @@ func (s SubmitOrderError) Error() string {
 }
 
 func (s *SubmitOrderError) Unwrap() error { return s.Err }
+
+func errOrderEventsNotFound(trader, marketID string, side types.Side, size, price uint64) error {
+	return fmt.Errorf("no matching order event found %v, %v, %v, %v, %v", trader, marketID, side.String(), size, price)
+}

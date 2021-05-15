@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
@@ -99,7 +99,7 @@ func (r *res) voteCount() int {
 	return len(r.votes)
 }
 
-type ExtResChecker struct {
+type Witness struct {
 	log       *logging.Logger
 	cfg       Config
 	resources map[string]*res
@@ -108,16 +108,16 @@ type ExtResChecker struct {
 	cmd       Commander
 }
 
-func NewExtResChecker(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (e *ExtResChecker) {
+func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
 	defer func() {
-		tsvc.NotifyOnTick(e.OnTick)
+		tsvc.NotifyOnTick(w.OnTick)
 	}()
 
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	now, _ := tsvc.GetTimeNow()
-	return &ExtResChecker{
+	return &Witness{
 		log:       log,
 		cfg:       cfg,
 		now:       now,
@@ -128,37 +128,37 @@ func NewExtResChecker(log *logging.Logger, cfg Config, top ValidatorTopology, cm
 }
 
 // ReloadConf updates the internal configuration
-func (e *ExtResChecker) ReloadConf(cfg Config) {
-	e.log.Info("reloading configuration")
-	if e.log.GetLevel() != cfg.Level.Get() {
-		e.log.Info("updating log level",
-			logging.String("old", e.log.GetLevel().String()),
+func (w *Witness) ReloadConf(cfg Config) {
+	w.log.Info("reloading configuration")
+	if w.log.GetLevel() != cfg.Level.Get() {
+		w.log.Info("updating log level",
+			logging.String("old", w.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		e.log.SetLevel(cfg.Level.Get())
+		w.log.SetLevel(cfg.Level.Get())
 	}
 
-	e.cfg = cfg
+	w.cfg = cfg
 }
 
-func (e ExtResChecker) Stop() {
+func (w Witness) Stop() {
 	// cancelling all context of checks which might be running
-	for _, v := range e.resources {
+	for _, v := range w.resources {
 		v.cfunc()
 	}
 }
 
 // AddNodeCheck registers a vote from a validator node for a given resource
-func (e *ExtResChecker) AddNodeCheck(ctx context.Context, nv *types.NodeVote) error {
+func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error {
 	// get the node proposal first
-	r, ok := e.resources[nv.Reference]
+	r, ok := w.resources[nv.Reference]
 	if !ok {
 		return ErrInvalidResourceIDForNodeVote
 	}
 
 	// ensure the node is a validator
-	if !e.top.Exists(nv.PubKey) {
-		e.log.Error("non-validator node tried to register node vote",
+	if !w.top.Exists(nv.PubKey) {
+		w.log.Error("non-validator node tried to register node vote",
 			logging.String("pubkey", hex.EncodeToString(nv.PubKey)))
 		return ErrVoteFromNonValidator
 	}
@@ -166,17 +166,17 @@ func (e *ExtResChecker) AddNodeCheck(ctx context.Context, nv *types.NodeVote) er
 	return r.addVote(string(nv.PubKey))
 }
 
-func (e *ExtResChecker) StartCheck(
+func (w *Witness) StartCheck(
 	r Resource,
 	cb func(interface{}, bool),
 	checkUntil time.Time,
 ) error {
 	id := r.GetID()
-	if _, ok := e.resources[id]; ok {
+	if _, ok := w.resources[id]; ok {
 		return ErrResourceDuplicate
 	}
 
-	if err := e.validateCheckUntil(checkUntil); err != nil {
+	if err := w.validateCheckUntil(checkUntil); err != nil {
 		return err
 	}
 
@@ -190,12 +190,12 @@ func (e *ExtResChecker) StartCheck(
 		votes:      map[string]struct{}{},
 	}
 
-	e.resources[id] = rs
+	w.resources[id] = rs
 
-	// if we are a validator, we just start the routine.
+	// if we are a validator, we just start the routinw.
 	// so we can ensure the resources exists
-	if e.top.IsValidator() {
-		go e.start(ctx, rs)
+	if w.top.IsValidator() {
+		go w.start(ctx, rs)
 	} else {
 		// if not a validator, we just jump to the state voteSent
 		// and will wait for all validator to approve basically.
@@ -205,15 +205,14 @@ func (e *ExtResChecker) StartCheck(
 	return nil
 }
 
-func (e *ExtResChecker) validateCheckUntil(checkUntil time.Time) error {
+func (w *Witness) validateCheckUntil(checkUntil time.Time) error {
 	minValid, maxValid :=
-		e.now.Add(minValidationPeriod*time.Second),
-		e.now.Add(maxValidationPeriod*time.Second)
+		w.now.Add(minValidationPeriod*time.Second),
+		w.now.Add(maxValidationPeriod*time.Second)
 	if checkUntil.Unix() < minValid.Unix() || checkUntil.Unix() > maxValid.Unix() {
 		return ErrCheckUntilInvalid
 	}
 	return nil
-
 }
 
 func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackOff {
@@ -223,15 +222,15 @@ func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackO
 	return backoff.WithContext(bo, ctx)
 }
 
-func (e ExtResChecker) start(ctx context.Context, r *res) {
-	backff := newBackoff(ctx, r.checkUntil.Sub(e.now))
+func (w Witness) start(ctx context.Context, r *res) {
+	backff := newBackoff(ctx, r.checkUntil.Sub(w.now))
 	f := func() error {
-		e.log.Debug("Checking the resource",
+		w.log.Debug("Checking the resource",
 			logging.String("asset-source", r.res.GetID()),
 		)
 		err := r.res.Check()
 		if err != nil {
-			e.log.Debug("error checking resource", logging.Error(err))
+			w.log.Debug("error checking resource", logging.Error(err))
 			// dump error
 			return err
 		}
@@ -248,13 +247,13 @@ func (e ExtResChecker) start(ctx context.Context, r *res) {
 	atomic.StoreUint32(&r.state, validated)
 }
 
-func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
-	e.now = t
-	topLen := e.top.Len()
-	isValidator := e.top.IsValidator()
+func (w *Witness) OnTick(ctx context.Context, t time.Time) {
+	w.now = t
+	topLen := w.top.Len()
+	isValidator := w.top.IsValidator()
 
 	// check if any resources passed checks
-	for k, v := range e.resources {
+	for k, v := range w.resources {
 		state := atomic.LoadUint32(&v.state)
 		votesLen := v.voteCount()
 
@@ -273,7 +272,7 @@ func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 			// if we have all validators votes, lets proceed
 			checkPass := votesLen >= topLen
 			if !checkPass {
-				e.log.Warn("resource checking was not validated by all nodes",
+				w.log.Warn("resource checking was not validated by all nodes",
 					logging.String("resource-id", v.res.GetID()),
 					logging.Int("vote-count", votesLen),
 					logging.Int("node-count", topLen),
@@ -283,20 +282,20 @@ func (e *ExtResChecker) OnTick(ctx context.Context, t time.Time) {
 			// callback to the resource holder
 			v.cb(v.res, checkPass)
 			// we delete the resource from our map.
-			delete(e.resources, k)
+			delete(w.resources, k)
 			continue
 		}
 
 		// if we are a validator, and the resource was validated
 		// then we try to send our vote.
 		if isValidator && state == validated {
-			nv := &types.NodeVote{
-				PubKey:    e.top.SelfVegaPubKey(),
+			nv := &commandspb.NodeVote{
+				PubKey:    w.top.SelfVegaPubKey(),
 				Reference: v.res.GetID(),
 			}
-			err := e.cmd.Command(ctx, txn.NodeVoteCommand, nv)
+			err := w.cmd.Command(ctx, txn.NodeVoteCommand, nv)
 			if err != nil {
-				e.log.Error("unable to send command", logging.Error(err))
+				w.log.Error("unable to send command", logging.Error(err))
 				continue
 			}
 			// set new state so we do not try to validate again

@@ -59,7 +59,6 @@ Feature: Ensure network trader are generated
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    And debug trades
 # check the network trade happened
     Then the following network trades should be executed:
       | trader           | aggressor side | volume |

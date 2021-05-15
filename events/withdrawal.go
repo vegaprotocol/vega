@@ -4,6 +4,7 @@ import (
 	"context"
 
 	types "code.vegaprotocol.io/vega/proto"
+	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type Withdrawal struct {
@@ -32,13 +33,13 @@ func (w Withdrawal) Proto() types.Withdrawal {
 	return w.w
 }
 
-func (w Withdrawal) StreamMessage() *types.BusEvent {
+func (w Withdrawal) StreamMessage() *eventspb.BusEvent {
 	wit := w.w
-	return &types.BusEvent{
+	return &eventspb.BusEvent{
 		Id:    w.eventID(),
 		Block: w.TraceID(),
 		Type:  w.et.ToProto(),
-		Event: &types.BusEvent_Withdrawal{
+		Event: &eventspb.BusEvent_Withdrawal{
 			Withdrawal: &wit,
 		},
 	}

@@ -6,17 +6,6 @@ PROTOC_VER="3.7.1" # do not add "v" prefix
 PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VER}/protoc-${PROTOC_VER}-linux-x86_64.zip"
 PROTOBUF_VER="1.3.1" # do not add "v" prefix
 
-gettools_build() {
-	# These are the minimum tools required to build trading-core.
-
-	# tools = "golocation@version"
-	tools="github.com/vegaprotocol/modvendor@v0.0.2"
-	# Note: Make sure the above tools and versions match the ones in devops-infra/docker/cipipeline/Dockerfile
-	echo "$tools" | while read -r toolurl ; do
-		go get "$toolurl"
-	done
-}
-
 
 gettools_develop() {
 	# These are all the tools required to develop trading-core.
@@ -37,7 +26,7 @@ golang.org/x/tools/cmd/goimports@v0.0.0-20190329200012-0ec5c269d481
 honnef.co/go/tools/cmd/staticcheck@2019.2.3"
 	# Note: Make sure the above tools and versions match the ones in devops-infra/docker/cipipeline/Dockerfile
 	echo "$tools" | while read -r toolurl ; do
-		go get "$toolurl"
+		go install "$toolurl"
 	done
 }
 
@@ -62,16 +51,12 @@ check_protoc() {
 # # #
 
 case "$1" in
-build)
-	gettools_build
-	;;
 develop)
-	gettools_build  # Developers also need to build.
 	gettools_develop
 	check_protoc
 	;;
 *)
-	echo "Syntax: $0 {build|develop}"
+	echo "Syntax: $0 {develop}"
 	exit 1
 	;;
 esac

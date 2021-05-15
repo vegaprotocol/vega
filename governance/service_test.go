@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -77,8 +78,7 @@ func testPrepareNetworkParameterUpdateProposalSuccess(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, proposal)
@@ -102,8 +102,7 @@ func testPrepareNetworkParameterUpdateProposalFailureEmptyKey(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrEmptyNetParamKey.Error())
 	assert.Nil(t, proposal)
@@ -127,8 +126,7 @@ func testPrepareNetworkParameterUpdateProposalFailureEmptyValue(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrEmptyNetParamValue.Error())
 	assert.Nil(t, proposal)
@@ -143,8 +141,7 @@ func testPrepareProposalWithInvalidChanges(t *testing.T) {
 		Change:             nil,
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrUnsupportedProposalTerms.Error())
 	assert.Nil(t, proposal)
@@ -171,8 +168,7 @@ func testPrepareNetworkParameterUpdateProposalValidationFailure(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, "validation failure")
 	assert.Nil(t, proposal)
@@ -187,15 +183,13 @@ func TestPrepareVote(t *testing.T) {
 func testPrepareVoteSuccess(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
-	vote := types.Vote{
-		PartyId:    "party-1",
+	vote := commandspb.VoteSubmission{
 		ProposalId: "prop-1",
 		Value:      types.Vote_VALUE_YES,
 	}
 	v, err := svc.PrepareVote(&vote)
 	assert.NoError(t, err)
 	assert.Equal(t, vote.Value, v.Value)
-	assert.Equal(t, vote.PartyId, v.PartyId)
 	assert.Equal(t, vote.ProposalId, v.ProposalId)
 }
 
@@ -203,18 +197,12 @@ func testPrepareVoteFail(t *testing.T) {
 	svc := newTestService(t)
 	defer svc.ctrl.Finish()
 
-	data := map[string]types.Vote{
-		"Missing PartyID": {
-			ProposalId: "prop1",
-			Value:      types.Vote_VALUE_NO,
-		},
+	data := map[string]commandspb.VoteSubmission{
 		"Missing ProposalID": {
-			PartyId: "Party1",
-			Value:   types.Vote_VALUE_YES,
+			Value: types.Vote_VALUE_YES,
 		},
 		"Invalid vote value": {
 			ProposalId: "prop1",
-			PartyId:    "party1",
 			Value:      types.Vote_Value(213),
 		},
 	}
@@ -260,14 +248,11 @@ func testPrepareProposalNormal(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	proposal, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, proposal)
 	assert.NotEmpty(t, proposal.Reference, "reference expected to be auto-generated if empty")
-	assert.EqualValues(t, testAuthor, proposal.PartyId)
-	assert.EqualValues(t, types.Proposal_STATE_OPEN, proposal.State)
 	assert.EqualValues(t, terms, *proposal.Terms)
 }
 
@@ -284,7 +269,7 @@ func testPrepareProposalEmpty(t *testing.T) {
 		},
 	}
 
-	proposal, err := svc.PrepareProposal(svc.ctx, "", "", &terms)
+	proposal, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.Error(t, err)
 	assert.Nil(t, proposal)
@@ -309,8 +294,7 @@ func testPrepareProposalNewMarketMissingRisk(t *testing.T) {
 		Change:             newMarket,
 	}
 
-	testAuthor := "test-author"
-	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	_, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.EqualError(t, err, governance.ErrMissingRiskParameters.Error())
 }
@@ -337,8 +321,7 @@ func testPrepareProposalWithAllSameTimestamps(t *testing.T) {
 		},
 	}
 
-	testAuthor := "test-author"
-	_, err := svc.PrepareProposal(svc.ctx, testAuthor, "", &terms)
+	_, err := svc.PrepareProposal(svc.ctx, "", &terms)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "proposal closing time cannot be before validation time, expected >")
