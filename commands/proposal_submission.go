@@ -12,6 +12,10 @@ import (
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
+const (
+	MaxDuration30DaysNs = 2592000000000000
+)
+
 func CheckProposalSubmission(cmd *commandspb.ProposalSubmission) error {
 	return checkProposalSubmission(cmd).ErrorOrNil()
 }
@@ -156,8 +160,10 @@ func checkBuiltinAssetSource(s *types.AssetSource_BuiltinAsset) Errors {
 
 	maxFaucetAmount, err := strconv.ParseUint(asset.MaxFaucetAmountMint, 10, 64)
 	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.max_faucet_amount_mint", ErrIsNotValidNumber)
-	} else if maxFaucetAmount == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.max_faucet_amount_mint", ErrIsNotValidNumber)
+	}
+
+	if maxFaucetAmount == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.max_faucet_amount_mint", ErrMustBePositive)
 	}
 
@@ -186,25 +192,26 @@ func checkNewMarketChanges(change *types.ProposalTerms_NewMarket) Errors {
 	if change.NewMarket == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market", ErrIsRequired)
 	}
-	if change.NewMarket.Changes == nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes", ErrIsRequired)
-	} else {
-		changes := change.NewMarket.Changes
-
-		if changes.DecimalPlaces <= 0 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.decimal_places", ErrMustBePositive)
-		} else if changes.DecimalPlaces >= 150 {
-			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.decimal_places", ErrMustBeLessThan150)
-		}
-
-		errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters))
-		errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters))
-		errs.Merge(checkInstrument(changes.Instrument))
-		errs.Merge(checkTradingMode(changes))
-		errs.Merge(checkRiskParameters(changes))
-	}
 
 	errs.Merge(checkLiquidityCommitment(change.NewMarket.LiquidityCommitment))
+
+	if change.NewMarket.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes", ErrIsRequired)
+	}
+
+	changes := change.NewMarket.Changes
+
+	if changes.DecimalPlaces <= 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.decimal_places", ErrMustBePositive)
+	} else if changes.DecimalPlaces >= 150 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.decimal_places", ErrMustBeLessThan150)
+	}
+
+	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters))
+	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters))
+	errs.Merge(checkInstrument(changes.Instrument))
+	errs.Merge(checkTradingMode(changes))
+	errs.Merge(checkRiskParameters(changes))
 
 	return errs
 }
@@ -322,9 +329,7 @@ func checkFuture(future *types.FutureProduct) Errors {
 func checkOracleSpec(future *types.FutureProduct) Errors {
 	errs := NewErrors()
 
-	if future.OracleSpec == nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec", ErrIsRequired)
-	} else {
+	if future.OracleSpec != nil {
 		if len(future.OracleSpec.PubKeys) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec.pub_keys", ErrIsRequired)
 		}
@@ -360,14 +365,16 @@ func checkOracleSpec(future *types.FutureProduct) Errors {
 				}
 			}
 		}
+	} else {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec", ErrIsRequired)
 	}
 
-	if future.OracleSpecBinding == nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding", ErrIsRequired)
-	} else {
+	if future.OracleSpecBinding != nil {
 		if len(future.OracleSpecBinding.SettlementPriceProperty) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsRequired)
 		}
+	} else {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding", ErrIsRequired)
 	}
 
 	return errs
@@ -409,9 +416,9 @@ func checkDiscreteTradingMode(mode *types.NewMarketConfiguration_Discrete) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.trading_mode.discrete", ErrIsRequired)
 	}
 
-	if mode.Discrete.DurationNs <= 0 || mode.Discrete.DurationNs >= 2592000000000000 {
+	if mode.Discrete.DurationNs <= 0 || mode.Discrete.DurationNs >= MaxDuration30DaysNs {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.trading_mode.discrete.duration_ns",
-			fmt.Errorf("should be between 0 (excluded) and 2592000000000000 (excluded)"))
+			fmt.Errorf(fmt.Sprintf("should be between 0 (excluded) and %d (excluded)", MaxDuration30DaysNs)))
 	}
 
 	return errs
@@ -509,7 +516,7 @@ func checkShape(orders []*types.LiquidityOrder, side types.Side) Errors {
 	}
 
 	if len(orders) == 0 {
-		errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s", humanizedSide), ErrIsRequired)
+		return errs.FinalAddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s", humanizedSide), ErrIsRequired)
 	}
 
 	for i, order := range orders {
@@ -539,22 +546,24 @@ func checkShape(orders []*types.LiquidityOrder, side types.Side) Errors {
 					errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBeNegative)
 				}
 			}
-		} else {
-			switch order.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.reference.%d", humanizedSide, i),
-					errors.New("cannot have a reference of type BEST_BID when on SELL side"),
-				)
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				if order.Offset < 0 {
-					errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositiveOrZero)
-				}
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
-				if order.Offset <= 0 {
-					errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositive)
-				}
+			continue
+		}
+
+		switch order.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.reference.%d", humanizedSide, i),
+				errors.New("cannot have a reference of type BEST_BID when on SELL side"),
+			)
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			if order.Offset < 0 {
+				errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositiveOrZero)
+			}
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			if order.Offset <= 0 {
+				errs.AddForProperty(fmt.Sprintf("proposal_submission.terms.change.new_asset.liquidity_commitment.%s.offset.%d", humanizedSide, i), ErrMustBePositive)
 			}
 		}
+
 	}
 
 	return errs
