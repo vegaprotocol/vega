@@ -59,7 +59,7 @@ func TestCheckProposalSubmission(t *testing.T) {
 	t.Run("Submitting a market change with decimal places below 150 succeeds", testNewMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds)
 	t.Run("Submitting a new market without price monitoring succeeds", testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds)
 	t.Run("Submitting a new market with price monitoring succeeds", testNewMarketChangeSubmissionWithPriceMonitoringSucceeds)
-	t.Run("Submitting a price monitoring change without triggers fails", testPriceMonitoringChangeSubmissionWithoutTriggersFails)
+	t.Run("Submitting a price monitoring change without triggers succeeds", testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds)
 	t.Run("Submitting a price monitoring change with triggers succeeds", testPriceMonitoringChangeSubmissionWithTriggersSucceeds)
 	t.Run("Submitting a price monitoring change without trigger horizon fails", testPriceMonitoringChangeSubmissionWithoutTriggerHorizonFails)
 	t.Run("Submitting a price monitoring change with trigger horizon succeeds", testPriceMonitoringChangeSubmissionWithTriggerHorizonSucceeds)
@@ -1176,43 +1176,24 @@ func testLiquidityMonitoringChangeSubmissionWithPositiveScalingFactorSucceeds(t 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters.target_stake_parameters.scaling_factor"), commands.ErrMustBePositive)
 }
 
-func testPriceMonitoringChangeSubmissionWithoutTriggersFails(t *testing.T) {
-	testCases := []struct {
-		msg   string
-		value float64
-	}{
-		{
-			msg:   "with ratio of 0",
-			value: 0,
-		}, {
-			msg:   "with ratio of 0.5",
-			value: 0.5,
-		}, {
-			msg:   "with ratio of 1",
-			value: 1,
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.msg, func(t *testing.T) {
-			err := checkProposalSubmission(&commandspb.ProposalSubmission{
-				Terms: &types.ProposalTerms{
-					Change: &types.ProposalTerms_NewMarket{
-						NewMarket: &types.NewMarket{
-							Changes: &types.NewMarketConfiguration{
-								LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-									TriggeringRatio: tc.value,
-								},
-							},
+func testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewMarket{
+				NewMarket: &types.NewMarket{
+					Changes: &types.NewMarketConfiguration{
+						PriceMonitoringParameters: &types.PriceMonitoringParameters{
+							Triggers: []*types.PriceMonitoringTrigger{},
 						},
 					},
 				},
-			})
+			},
+		},
+	})
 
-			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters"),
-				errors.New("should be between 0 (inclusive) and 1 (inclusive)"))
-		})
-	}
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers"), commands.ErrIsRequired)
 }
+
 
 func testPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{

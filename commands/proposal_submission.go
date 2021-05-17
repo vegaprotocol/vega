@@ -219,12 +219,8 @@ func checkNewMarketChanges(change *types.ProposalTerms_NewMarket) Errors {
 func checkPriceMonitoring(parameters *types.PriceMonitoringParameters) Errors {
 	errs := NewErrors()
 
-	if parameters == nil {
+	if parameters == nil || len(parameters.Triggers) == 0 {
 		return errs
-	}
-
-	if len(parameters.Triggers) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers", ErrIsRequired)
 	}
 
 	for i, trigger := range parameters.Triggers {
