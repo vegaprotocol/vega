@@ -9,8 +9,8 @@ import (
 )
 
 func TestCheckNodeSignature(t *testing.T) {
-	t.Run("Submitting a node signature without id fails", testNodeSignatureWithoutIdFails)
-	t.Run("Submitting a node signature with id succeeds", testNodeSignatureWithIdSucceeds)
+	t.Run("Submitting a node signature without id fails", testNodeSignatureWithoutIDFails)
+	t.Run("Submitting a node signature with id succeeds", testNodeSignatureWithIDSucceeds)
 	t.Run("Submitting a node signature without sig fails", testNodeSignatureWithoutSigFails)
 	t.Run("Submitting a node signature with sig succeeds", testNodeSignatureWithSigSucceeds)
 	t.Run("Submitting a node signature without kind fails", testNodeSignatureWithoutKindFails)
@@ -18,12 +18,12 @@ func TestCheckNodeSignature(t *testing.T) {
 	t.Run("Submitting a node signature with kind succeeds", testNodeSignatureWithKindSucceeds)
 }
 
-func testNodeSignatureWithoutIdFails(t *testing.T) {
+func testNodeSignatureWithoutIDFails(t *testing.T) {
 	err := checkNodeSignature(&commandspb.NodeSignature{})
 	assert.Contains(t, err.Get("node_signature.id"), commands.ErrIsRequired)
 }
 
-func testNodeSignatureWithIdSucceeds(t *testing.T) {
+func testNodeSignatureWithIDSucceeds(t *testing.T) {
 	err := checkNodeSignature(&commandspb.NodeSignature{
 		Id: "My ID",
 	})
