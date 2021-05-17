@@ -248,7 +248,7 @@ func checkLiquidityMonitoring(parameters *types.LiquidityMonitoringParameters) E
 	errs := NewErrors()
 
 	if parameters == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.liquidity_monitoring_parameters", ErrIsRequired)
+		return errs
 	}
 
 	if parameters.TriggeringRatio < 0 || parameters.TriggeringRatio > 1 {
