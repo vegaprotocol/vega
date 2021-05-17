@@ -27,7 +27,7 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 1},
 				},
 			},
-			errString: "liquidity_provision_submission.fee(is not a valid value)",
+			errString: "liquidity_provision_submission.fee (is not a valid value)",
 		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
@@ -41,7 +41,7 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 1},
 				},
 			},
-			errString: "liquidity_provision_submission.fee(must be positive)",
+			errString: "liquidity_provision_submission.fee (must be positive)",
 		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
@@ -54,7 +54,7 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 1},
 				},
 			},
-			errString: "liquidity_provision_submission.market_id(is required)",
+			errString: "liquidity_provision_submission.market_id (is required)",
 		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
@@ -68,7 +68,7 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 1},
 				},
 			},
-			errString: "liquidity_provision_submission.sells.0.proportion(order in shape without a proportion)",
+			errString: "liquidity_provision_submission.sells.0.proportion (order in shape without a proportion)",
 		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
@@ -82,7 +82,7 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10},
 				},
 			},
-			errString: "liquidity_provision_submission.buys.0.proportion(order in shape without a proportion)",
+			errString: "liquidity_provision_submission.buys.0.proportion (order in shape without a proportion)",
 		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
@@ -107,7 +107,7 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 				},
 				Buys: []*types.LiquidityOrder{},
 			},
-			errString: "liquidity_provision_submission.buys(empty shape)",
+			errString: "liquidity_provision_submission.buys (empty shape)",
 		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
@@ -119,7 +119,7 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10, Proportion: 1},
 				},
 			},
-			errString: "liquidity_provision_submission.sells(empty shape)",
+			errString: "liquidity_provision_submission.sells (empty shape)",
 		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
@@ -133,7 +133,7 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: -10, Proportion: 1},
 				},
 			},
-			errString: "liquidity_provision_submission.buys.0.reference(order in buy side shape with best ask price reference), liquidity_provision_submission.sells.0.offset(order in sell side shape with best bid price reference)",
+			errString: "liquidity_provision_submission.buys.0.reference (order in buy side shape with best ask price reference), liquidity_provision_submission.sells.0.offset (order in sell side shape with best bid price reference)",
 		},
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
@@ -149,11 +149,11 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 					{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 0, Proportion: 1},
 				},
 			},
-			errString: "liquidity_provision_submission.buys.0.offset(order in buy side shape offset must be < 0), liquidity_provision_submission.sells.0.offset(order in sell shape offset must be > 0), liquidity_provision_submission.sells.1.offset(order in sell side shape with best bid price reference), liquidity_provision_submission.sells.2.offset(order in sell shape offset must be >= 0)",
+			errString: "liquidity_provision_submission.buys.0.offset (order in buy side shape offset must be < 0), liquidity_provision_submission.sells.0.offset (order in sell shape offset must be > 0), liquidity_provision_submission.sells.1.offset (order in sell side shape with best bid price reference), liquidity_provision_submission.sells.2.offset (order in sell shape offset must be >= 0)",
 		},
 		{
 			lp:        commandspb.LiquidityProvisionSubmission{},
-			errString: "liquidity_provision_submission.buys(empty shape), liquidity_provision_submission.fee(is required), liquidity_provision_submission.market_id(is required), liquidity_provision_submission.sells(empty shape)",
+			errString: "liquidity_provision_submission.buys (empty shape), liquidity_provision_submission.fee (is required), liquidity_provision_submission.market_id (is required), liquidity_provision_submission.sells (empty shape)",
 		},
 	}
 

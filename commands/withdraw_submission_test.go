@@ -38,23 +38,23 @@ func TestWithdrawSubmission(t *testing.T) {
 			withdraw: commandspb.WithdrawSubmission{
 				Asset: "OKASSETID",
 			},
-			errString: "withdraw_submission.amount(is required)",
+			errString: "withdraw_submission.amount (is required)",
 		},
 		{
 			withdraw: commandspb.WithdrawSubmission{
 				Amount: 100,
 			},
-			errString: "withdraw_submission.asset(is required)",
+			errString: "withdraw_submission.asset (is required)",
 		},
 		{
 			withdraw:  commandspb.WithdrawSubmission{},
-			errString: "withdraw_submission.amount(is required), withdraw_submission.asset(is required)",
+			errString: "withdraw_submission.amount (is required), withdraw_submission.asset (is required)",
 		},
 		{
 			withdraw: commandspb.WithdrawSubmission{
 				Ext: &types.WithdrawExt{},
 			},
-			errString: "withdraw_ext.ext(unsupported withdraw extended details), withdraw_submission.amount(is required), withdraw_submission.asset(is required)",
+			errString: "withdraw_ext.ext (unsupported withdraw extended details), withdraw_submission.amount (is required), withdraw_submission.asset (is required)",
 		},
 		{
 			withdraw: commandspb.WithdrawSubmission{
@@ -66,7 +66,7 @@ func TestWithdrawSubmission(t *testing.T) {
 					},
 				},
 			},
-			errString: "withdraw_ext.erc20.received_address(is required)",
+			errString: "withdraw_ext.erc20.received_address (is required)",
 		},
 		{
 			withdraw: commandspb.WithdrawSubmission{
@@ -76,7 +76,7 @@ func TestWithdrawSubmission(t *testing.T) {
 					},
 				},
 			},
-			errString: "withdraw_ext.erc20.received_address(is required), withdraw_submission.amount(is required), withdraw_submission.asset(is required)",
+			errString: "withdraw_ext.erc20.received_address (is required), withdraw_submission.amount (is required), withdraw_submission.asset (is required)",
 		},
 	}
 

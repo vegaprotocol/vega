@@ -43,8 +43,7 @@ func (e Errors) Error() string {
 		for _, err := range errs {
 			errMessages = append(errMessages, err.Error())
 		}
-		errMessagesFmt := strings.Join(errMessages, ", ")
-		propMessageFmt := fmt.Sprintf("%v(%v)", prop, errMessagesFmt)
+		propMessageFmt := fmt.Sprintf("%v (%v)", prop, strings.Join(errMessages, ", "))
 		propMessages = append(propMessages, propMessageFmt)
 	}
 
