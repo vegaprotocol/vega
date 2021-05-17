@@ -25,24 +25,24 @@ func TestVoteSubmission(t *testing.T) {
 			vote: commandspb.VoteSubmission{
 				ProposalId: "OKPROPOSALID",
 			},
-			errString: "vote_submission.value(is required)",
+			errString: "vote_submission.value (is required)",
 		},
 		{
 			vote: commandspb.VoteSubmission{
 				Value:      types.Vote_Value(-42),
 				ProposalId: "OKPROPOSALID",
 			},
-			errString: "vote_submission.value(is not a valid value)",
+			errString: "vote_submission.value (is not a valid value)",
 		},
 		{
 			vote: commandspb.VoteSubmission{
 				Value: types.Vote_VALUE_NO,
 			},
-			errString: "vote_submission.proposal_id(is required)",
+			errString: "vote_submission.proposal_id (is required)",
 		},
 		{
 			vote:      commandspb.VoteSubmission{},
-			errString: "vote_submission.proposal_id(is required), vote_submission.value(is required)",
+			errString: "vote_submission.proposal_id (is required), vote_submission.value (is required)",
 		},
 	}
 

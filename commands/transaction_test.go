@@ -15,5 +15,5 @@ func TestCheckTransaction(t *testing.T) {
 
 func testEmptyTransactionShouldFail(t *testing.T) {
 	err := commands.CheckTransaction(&commandspb.Transaction{})
-	assert.EqualError(t, err, "tx.from(is required), tx.input_data(is required), tx.signature(is required)")
+	assert.EqualError(t, err, "tx.from (is required), tx.input_data (is required), tx.signature (is required)")
 }
