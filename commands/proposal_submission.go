@@ -220,7 +220,7 @@ func checkPriceMonitoring(parameters *types.PriceMonitoringParameters) Errors {
 	errs := NewErrors()
 
 	if parameters == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters", ErrIsRequired)
+		return errs
 	}
 
 	if len(parameters.Triggers) == 0 {

@@ -57,7 +57,7 @@ func TestCheckProposalSubmission(t *testing.T) {
 	t.Run("Submitting a market change without decimal places fails", testNewMarketChangeSubmissionWithoutDecimalPlacesFails)
 	t.Run("Submitting a market change with decimal places above or equal to 150 fails", testNewMarketChangeSubmissionWithDecimalPlacesAboveOrEqualTo150Fails)
 	t.Run("Submitting a market change with decimal places below 150 succeeds", testNewMarketChangeSubmissionWithDecimalPlacesBelow150Succeeds)
-	t.Run("Submitting a new market without price monitoring fails", testNewMarketChangeSubmissionWithoutPriceMonitoringFails)
+	t.Run("Submitting a new market without price monitoring succeeds", testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds)
 	t.Run("Submitting a new market with price monitoring succeeds", testNewMarketChangeSubmissionWithPriceMonitoringSucceeds)
 	t.Run("Submitting a price monitoring change without triggers fails", testPriceMonitoringChangeSubmissionWithoutTriggersFails)
 	t.Run("Submitting a price monitoring change with triggers succeeds", testPriceMonitoringChangeSubmissionWithTriggersSucceeds)
@@ -1409,7 +1409,7 @@ func testPriceMonitoringChangeSubmissionWithTriggerAuctionExtensionSucceeds(t *t
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.1.auction_extension"), commands.ErrMustBePositive)
 }
 
-func testNewMarketChangeSubmissionWithoutPriceMonitoringFails(t *testing.T) {
+func testNewMarketChangeSubmissionWithoutPriceMonitoringSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewMarket{
@@ -1420,7 +1420,7 @@ func testNewMarketChangeSubmissionWithoutPriceMonitoringFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters"), commands.ErrIsRequired)
 }
 
 func testNewMarketChangeSubmissionWithPriceMonitoringSucceeds(t *testing.T) {
