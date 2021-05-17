@@ -102,7 +102,7 @@ func (e *Engine) GetPotentialShapeOrders(
 			order := &supplied.LiquidityOrder{
 				Proportion: uint64(lorder.Proportion),
 			}
-			price, err := repriceFn(pegged, side)
+			price, _, err := repriceFn(pegged, side)
 			if err != nil {
 				return nil, false
 			}

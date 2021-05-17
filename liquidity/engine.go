@@ -49,7 +49,9 @@ type IDGen interface {
 
 // RepricePeggedOrder reprices a pegged order.
 // This function should be injected by the market.
-type RepricePeggedOrder func(order *types.PeggedOrder, side types.Side) (uint64, error)
+type RepricePeggedOrder func(
+	order *types.PeggedOrder, side types.Side,
+) (uint64, *types.PeggedOrder, error)
 
 // Engine handles Liquidity provision
 type Engine struct {
@@ -533,11 +535,12 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    buy.OrderId,
 			Proportion: uint64(buy.LiquidityOrder.Proportion),
 		}
-		if price, err := repriceFn(pegged, types.Side_SIDE_BUY); err != nil {
+		if price, peggedO, err := repriceFn(pegged, types.Side_SIDE_BUY); err != nil {
 			e.log.Debug("Building Buy Shape", logging.Error(err))
 			repriceFailure = true
 		} else {
 			order.Price = price
+			order.Peg = peggedO
 		}
 		buysShape = append(buysShape, order)
 	}
@@ -551,11 +554,12 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    sell.OrderId,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
 		}
-		if price, err := repriceFn(pegged, types.Side_SIDE_SELL); err != nil {
+		if price, peggedO, err := repriceFn(pegged, types.Side_SIDE_SELL); err != nil {
 			e.log.Debug("Building Sell Shape", logging.Error(err))
 			repriceFailure = true
 		} else {
 			order.Price = price
+			order.Peg = peggedO
 		}
 		sellsShape = append(sellsShape, order)
 	}
@@ -732,11 +736,11 @@ func (e *Engine) createOrdersFromShape(
 		// At this point the order will either already exists
 		// or not, and we'll want to re-create
 		// then we create the new order
-		p := &types.PeggedOrder{
-			Reference: ref.LiquidityOrder.Reference,
-			Offset:    ref.LiquidityOrder.Offset,
-		}
-		order = e.buildOrder(side, p, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
+		// p := &types.PeggedOrder{
+		// 	Reference: ref.LiquidityOrder.Reference,
+		// 	Offset:    ref.LiquidityOrder.Offset,
+		// }
+		order = e.buildOrder(side, o.Peg, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
 		order.Id = ref.OrderId
 		newOrders = append(newOrders, order)
 		lm[order.Id] = order

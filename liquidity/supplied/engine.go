@@ -26,6 +26,7 @@ type LiquidityOrder struct {
 
 	Price      uint64
 	Proportion uint64
+	Peg        *types.PeggedOrder
 
 	LiquidityImpliedVolume uint64
 }
@@ -196,8 +197,11 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	// best_static_bid and best_static_ask
 	// has probability of trading = 1.
 	if orderPrice >= bestBidPrice && orderPrice <= bestAskPrice {
+		fmt.Printf("DEFAULT IN RANGE PROB\n")
 		return defaultInRangeProbabilityOfTrading
 	}
+	fmt.Printf("bestBidPrice: %d, bestAskprice: %d, orderPrice: %d, minPrice: %d, maxPrice: %d\n", bestBidPrice, bestAskPrice, orderPrice, uint64(minPrice), uint64(maxPrice))
+	fmt.Printf("DEFAULT IN RANGE PROB NOPE\n")
 
 	// Any part of shape that the peg puts at lower price
 	// than best bid will use probability of trading computed

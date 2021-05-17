@@ -2436,7 +2436,6 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	amendment := &commandspb.OrderAmendment{
 		OrderId: confirmationBuy.Order.Id,
 		// SizeDelta: 9,
-		PartyId:   confirmationBuy.Order.PartyId,
 		SizeDelta: 2,
 	}
 	_, err = tm.market.AmendOrder(ctx, amendment, confirmationBuy.Order.PartyId)
@@ -4456,7 +4455,7 @@ func TestLPOrdersRollback(t *testing.T) {
 	tm.StartOpeningAuction().
 		WithAccountAndAmount("trader-0", 1000000).
 		WithAccountAndAmount("trader-1", 1000000).
-		WithAccountAndAmount("trader-2", 1000000).
+		WithAccountAndAmount("trader-2", 2000000).
 		WithAccountAndAmount("trader-3", 1000000).
 		WithAccountAndAmount("trader-4", 1000000)
 
@@ -4581,7 +4580,6 @@ func TestLPOrdersRollback(t *testing.T) {
 		tm.PartyMarginAccount(t, "trader-2").Balance
 
 	err := tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp")
-	// require.Error(t, err)
 	assert.EqualError(t, err, "margin check failed")
 
 	t.Run("GeneralAccountBalance", func(t *testing.T) {

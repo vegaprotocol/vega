@@ -3,6 +3,7 @@ package execution
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 
 	"code.vegaprotocol.io/vega/events"
@@ -522,9 +523,9 @@ func (m *Market) rollBackMargin(
 
 // repriceFuncW is an adapter for getNewPeggedPrice.
 func (m *Market) repriceLiquidityOrder(
-	po *types.PeggedOrder, side types.Side) (uint64, error) {
+	po *types.PeggedOrder, side types.Side) (uint64, *types.PeggedOrder, error) {
 	if m.as.InAuction() {
-		return 0, ErrCannotRepriceDuringAuction
+		return 0, nil, ErrCannotRepriceDuringAuction
 	}
 
 	var (
@@ -541,7 +542,7 @@ func (m *Market) repriceLiquidityOrder(
 		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
-		return 0, ErrUnableToReprice
+		return 0, nil, ErrUnableToReprice
 	}
 
 	// now from here, we will be adjusting the offset
@@ -560,34 +561,65 @@ func (m *Market) repriceLiquidityOrder(
 		minPrice = 0
 	}
 
+	// ceil so we are sure that all offset caclulation
+	// get's us in the range
+	minPrice = math.Ceil(minPrice)
+	// floor so we are sure that all offset caclulation
+	// get's us in the range
+	maxPrice = math.Ceil(maxPrice)
+
+	fmt.Printf("MIN PRICE: %v\n", minPrice)
+	fmt.Printf("MAX PRICE: %v\n", maxPrice)
+
 	// this is handling bestAsk / mid for ASK.
 	if side == types.Side_SIDE_SELL {
-		// now we check that price calculated from the
-		// outside is not higher than the maxPrice
-		// NOTE(): casting in floats here because
-		// the price monitoring may return MaxFloat here,
-		// so we do not want to overflow
-		if float64(price+uint64(po.Offset)) > maxPrice &&
-			maxPrice > float64(price) {
-			// in this case our price is higher than maxPrice
-			// we reduce it to the boundaries.
-			po.Offset = int64(uint64(maxPrice) - price)
-		} else if maxPrice < float64(price) {
-			// it's possible that the price monitoring
-			// gives us a maxPrice < to the actual price,
-			// in what case we will set the price to
-			// calculated price, which also mean +0 offset
-			// in case of bestAsk and + 1 in case of mid
+		// that's our initial price with our offset
+		basePrice := price + uint64(po.Offset)
+		// now if this price+offset is < to maxPrice,
+		// nothing needs to be changed. we return
+		// both the current price, and the offset
+		if float64(basePrice) <= maxPrice {
+			// now we also need to make sure we are > minPrice
+			if float64(basePrice) >= minPrice {
+				return basePrice, po, nil
+			}
+
+			// now we are in the case where the price we did
+			// calculate was < minPrice, we now need
+			// to place an offset which gets us at least to
+			// bestAsk/Mid
 			switch po.Reference {
 			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
 				po.Offset = 0
 			case types.PeggedReference_PEGGED_REFERENCE_MID:
 				po.Offset = 1
 			}
+			return price + uint64(po.Offset), po, nil
 		}
 
-		return price + uint64(po.Offset), nil
+		// now our basePrice is outside range.
+		// we have two posibilitied now, maxPrice is
+		// bigger than the price we got, then we use it
+		// or we will use price if it's higher.
+		if float64(price) < maxPrice {
+			// this is the case where maxPrice is > to price,
+			// then we need to adapt the offset
+			po.Offset = int64(uint64(maxPrice) - price)
+			// and our price is the maxPrice
+			return uint64(maxPrice), po, nil
+		}
 
+		// then this is the last case, were maxPrice would be smaller
+		// than our price.
+		// then we're going to set our price to the calculated price,
+		// and the offset to 0 or 1 dependingof the reference.
+		switch po.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			po.Offset = 0
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			po.Offset = 1
+		}
+		return price + uint64(po.Offset), po, nil
 	}
 
 	// This is handling bestBid / mid for BID
@@ -595,35 +627,67 @@ func (m *Market) repriceLiquidityOrder(
 	// it's sign to cast it to an unsigned type
 	offset := uint64(-po.Offset)
 
-	// first our offset gives us a negative price
-	if price <= offset {
-		// if minPrice == 0,
-		// then let's just make the offset 0 and return
-		// the bestBid.
-		// also if our minPrice is > to price, then we
-		// set the offset to the bestBid
-		if minPrice == 0 || minPrice >= float64(price) {
+	// first the case where we are sure to be able to price
+	if price > offset {
+		basePrice := price - offset
+
+		// this is the case where our price is correct
+		// at this point our basePrice should not be 0
+		// and this would cover anycase where minPrice
+		// would be 0, it's safe to return this offset
+		// minPrice <= basePrice <= price
+		if float64(basePrice) >= minPrice {
+			if float64(basePrice) <= maxPrice {
+				return basePrice, po, nil
+			}
+
+			// now we are in the case where the price we did
+			// calculate was > maxPrice too, we now need
+			// to place an offset which gets us at max to
+			// at bestBid/Mid
 			switch po.Reference {
 			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
 				po.Offset = 0
 			case types.PeggedReference_PEGGED_REFERENCE_MID:
 				po.Offset = -1
 			}
-		} else {
-			// in this case, minPrice is positive +
-			// it's smaller than price, we can use this as an offset
-			po.Offset = -(int64(price) - int64(minPrice))
+			return price - uint64(-po.Offset), po, nil
 		}
-	} else {
-		// here we do not have a negative or == 0 offset
-		// but it's smaller than our minPrice, so we use
-		// minPrice to create the offset
-		if float64(price-offset) < minPrice {
-			po.Offset = -(int64(price) - int64(minPrice))
+
+		// now we are going to handle the case where
+		// basePrice < price > minPrice
+		// in that case we will just assign the offset
+		// to the price
+		// we also know the price here cannot be 0
+		// so it's safe to have a -1 offset
+		switch po.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			po.Offset = 0
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			po.Offset = -1
 		}
+		return price - uint64(-po.Offset), po, nil
 	}
 
-	return price - uint64(-po.Offset), nil
+	// now at this point we know that price - offset
+	// would be negative, so we need to handle 2 cases
+	// either minPrice is a non-0 price after offset
+	// and it's smaller that price, or we will use price
+	if minPrice == 0 || uint64(minPrice) > price {
+		// here we use the price as both case are invalid
+		// for using minPrice
+		switch po.Reference {
+		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			po.Offset = 0
+		case types.PeggedReference_PEGGED_REFERENCE_MID:
+			po.Offset = -1
+		}
+		return price - uint64(-po.Offset), po, nil
+	}
+
+	// this is the last case where we can use the minPrice
+	po.Offset = -int64(price - uint64(minPrice))
+	return price - uint64(-po.Offset), po, nil
 }
 
 func (m *Market) cancelLiquidityProvision(
@@ -826,19 +890,19 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	party string,
 	price uint64,
 ) error {
-	repriceFn := func(o *types.PeggedOrder, _ types.Side) (uint64, error) {
+	repriceFn := func(o *types.PeggedOrder, _ types.Side) (uint64, *types.PeggedOrder, error) {
 		if o.Offset >= 0 {
-			return price + uint64(o.Offset), nil
+			return price + uint64(o.Offset), o, nil
 		}
 
 		// At this stage offset is negative so we change it's sign to cast it to an
 		// unsigned type
 		offset := uint64(-o.Offset)
 		if price <= offset {
-			return 0, ErrUnableToReprice
+			return 0, nil, ErrUnableToReprice
 		}
 
-		return price - offset, nil
+		return price - offset, o, nil
 	}
 
 	// first lets get the protential shape for this submission

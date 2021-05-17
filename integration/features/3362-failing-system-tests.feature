@@ -30,13 +30,13 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | aux      | ETH   | 100000000 |
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | trader1 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT  | TIF_GFA | 
-      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT  | TIF_GFA | 
-      | trader1 | ETH/DEC20 | buy  | 5      | 95000  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader2 | ETH/DEC20 | sell | 5      | 107000 | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
+      | trader1 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT  | TIF_GFA |
+      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT  | TIF_GFA |
+      | trader1 | ETH/DEC20 | buy  | 5      | 95000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader2 | ETH/DEC20 | sell | 5      | 107000 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT  | TIF_GTC |
     And the traders submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
       | lp1 | trader1  | ETH/DEC20 | 16000000          | 0.3 | buy        | BID             | 2                | -10          |
@@ -50,29 +50,33 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
 
     ## price bounds are 99771 to 100290
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | trader1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT  | TIF_GTC | 
-      # | trader1 | ETH/DEC20 | buy  | 1      | 100448 | 0                | TYPE_LIMIT  | TIF_GTC | 
-      # | trader2 | ETH/DEC20 | sell | 1      | 100448 | 1                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
+      | trader1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT  | TIF_GTC |
+      # | trader1 | ETH/DEC20 | buy  | 1      | 100448 | 0                | TYPE_LIMIT  | TIF_GTC |
+      # | trader2 | ETH/DEC20 | sell | 1      | 100448 | 1                | TYPE_LIMIT  | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
 
+    And debug market data for "ETH/DEC20"
+
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | trader1 | ETH/DEC20 | buy  | 2      | 100213 | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader1 | ETH/DEC20 | buy  | 1      | 100050 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
+      | trader1 | ETH/DEC20 | buy  | 2      | 100213 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader1 | ETH/DEC20 | buy  | 1      | 100050 | 0                | TYPE_LIMIT  | TIF_GTC |
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     # Now place a FOK order that would trigger a price auction (trader 1 has a buy at 95,000 on the book
+
     And the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | trader2 | ETH/DEC20 | sell | 3      | 0      | 0                | TYPE_MARKET | TIF_FOK | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
+      | trader2 | ETH/DEC20 | sell | 3      | 0      | 0                | TYPE_MARKET | TIF_FOK |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
 
     ## Now place the order for the same volume again, but set price to 100,000 -> the buy at 95,000 doesn't uncross
     ## We'll see the mark price move as we've uncrossed with the orders at 100213 and 100050 we've just placed
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | trader2 | ETH/DEC20 | sell | 3      | 100000 | 2                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
+      | trader2 | ETH/DEC20 | sell | 3      | 100000 | 2                | TYPE_LIMIT  | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-    And the mark price should be "100050" for the market "ETH/DEC20"
+    And the mark price should be "100213" for the market "ETH/DEC20"

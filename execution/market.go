@@ -3188,7 +3188,7 @@ func (m *Market) liquidityUpdate(ctx context.Context, orders []*types.Order) err
 	}
 
 	for _, v := range newOrders {
-		fmt.Printf("%#v\n", v)
+		fmt.Printf("%#v\n", v.String())
 	}
 
 	timer.EngineTimeCounterAdd()
