@@ -87,11 +87,7 @@ func (s *Svc) PrepareSubmitOrder(_ context.Context, cmd *commandspb.OrderSubmiss
 		cmd.Reference = uuid.NewV4().String()
 	}
 
-	if err := commands.CheckOrderSubmission(cmd); err != nil {
-		return err
-	}
-
-	return nil
+	return commands.CheckOrderSubmission(cmd)
 }
 
 func (s *Svc) PrepareCancelOrder(_ context.Context, cmd *commandspb.OrderCancellation) error {
@@ -103,11 +99,7 @@ func (s *Svc) PrepareAmendOrder(_ context.Context, cmd *commandspb.OrderAmendmen
 		return ErrEmptyPrepareRequest
 	}
 
-	if err := commands.CheckOrderAmendment(cmd); err != nil {
-		return err
-	}
-
-	return nil
+	return commands.CheckOrderAmendment(cmd)
 }
 
 // GetByOrderID find an order using its orderID

@@ -74,11 +74,7 @@ func (s *Svc) PrepareLiquidityProvisionSubmission(_ context.Context, cmd *comman
 		cmd.Reference = uuid.NewV4().String()
 	}
 
-	if err := commands.CheckLiquidityProvisionSubmission(cmd); err != nil {
-		return err
-	}
-
-	return nil
+	return  commands.CheckLiquidityProvisionSubmission(cmd)
 }
 
 func (s *Svc) Push(evts ...events.Event) {
