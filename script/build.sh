@@ -297,7 +297,8 @@ run() {
 		return "$?"
 		;;
 	buflint) ## Run
-		buf check lint
+		buf lint && \
+		buf breaking --against .git#branch=develop
 		return "$?"
 		;;
 	misspell) ## Run misspell
