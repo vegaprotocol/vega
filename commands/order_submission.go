@@ -38,7 +38,7 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 	if cmd.TimeInForce == types.Order_TIME_IN_FORCE_UNSPECIFIED {
 		errs.AddForProperty("order_submission.time_in_force", ErrIsRequired)
 	}
-	if _, ok := types.Order_Type_name[int32(cmd.TimeInForce)]; !ok {
+	if _, ok := types.Order_TimeInForce_name[int32(cmd.TimeInForce)]; !ok {
 		errs.AddForProperty("order_submission.time_in_force", ErrIsNotValid)
 	}
 
