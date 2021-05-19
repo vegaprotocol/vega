@@ -164,11 +164,11 @@ func testCanRejectProposal(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	// now we try to reject to reject
-	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET)
+	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, errors.New("failure"))
 	assert.NoError(t, err)
 
 	// just one more to make sure it was rejected...
-	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET)
+	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, errors.New("failure"))
 	assert.EqualError(t, err, governance.ErrProposalDoesNotExists.Error())
 }
 

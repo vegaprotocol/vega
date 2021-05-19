@@ -5378,6 +5378,10 @@
         "reason": {
           "$ref": "#/definitions/vegaProposalError",
           "title": "A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses"
+        },
+        "error_details": {
+          "type": "string",
+          "description": "The detailed error associated to the reason."
         }
       },
       "title": "Governance proposal"

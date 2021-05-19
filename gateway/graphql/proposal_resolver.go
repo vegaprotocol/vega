@@ -122,3 +122,10 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 
 	return votes, nil
 }
+
+func (r *proposalResolver) ErrorDetails(_ context.Context, data *types.GovernanceData) (*string, error) {
+	if len(data.Proposal.ErrorDetails) == 0 {
+		return nil, nil
+	}
+	return &data.Proposal.ErrorDetails, nil
+}
