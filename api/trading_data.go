@@ -761,12 +761,20 @@ func (t *tradingDataService) MarginLevels(_ context.Context, req *protoapi.Margi
 }
 
 // MarketDataByID provides market data for the given ID.
-func (t *tradingDataService) MarketDataByID(_ context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
+func (t *tradingDataService) MarketDataByID(ctx context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketDataByID")()
 
 	err := req.Validate()
 	if err != nil {
 		return nil, err
+	}
+
+	// validate the market exist
+	if req.MarketId != "" {
+		_, err := t.MarketService.GetByID(ctx, req.MarketId)
+		if err != nil {
+			return nil, apiError(codes.InvalidArgument, ErrInvalidMarketID, err)
+		}
 	}
 
 	md, err := t.MarketService.GetMarketDataByID(req.MarketId)

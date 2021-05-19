@@ -5963,7 +5963,7 @@ type Market {
   ): [Candle]
 
   "marketData for the given market"
-  data: MarketData!
+  data: MarketData
 
   "The list of the liquidity provision commitment for this market"
   liquidityProvisions(
@@ -13988,14 +13988,11 @@ func (ec *executionContext) _Market_data(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*proto.MarketData)
 	fc.Result = res
-	return ec.marshalNMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketData(ctx, field.Selections, res)
+	return ec.marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *proto.Market) (ret graphql.Marshaler) {
@@ -28980,9 +28977,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Market_data(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "liquidityProvisions":
@@ -36155,6 +36149,17 @@ func (ec *executionContext) marshalOMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋ
 		return graphql.Null
 	}
 	return ec._Market(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMarketData2codeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketData(ctx context.Context, sel ast.SelectionSet, v proto.MarketData) graphql.Marshaler {
+	return ec._MarketData(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *proto.MarketData) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MarketData(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐNetworkParameterᚄ(ctx context.Context, sel ast.SelectionSet, v []*proto.NetworkParameter) graphql.Marshaler {
