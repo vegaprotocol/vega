@@ -1184,7 +1184,7 @@ type Market {
   ): [Candle]
 
   "marketData for the given market"
-  data: MarketData!
+  data: MarketData
 
   "The list of the liquidity provision commitment for this market"
   liquidityProvisions(
