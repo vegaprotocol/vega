@@ -14,7 +14,7 @@ The difference between a Definition of Done and Acceptance Criteria...
 
 ## What are the benefits of creating and using a good Definition of Done?
 
-**Transparency of responsibilities** - You know what you need to do and understand what you do not need to do. For example, you know it’s your job to implement correct behavior, but creating training videos is not. You’ll become more predictable in what you deliver.
+**Transparency of responsibilities** - You know what you need to do and understand what you do not need to do. For example, you know it’s your job to implement correct behaviour, but creating training videos is not. You’ll become more predictable in what you deliver.
 
 **Realistic Sprint Commitment** - With an itemized list of exactly what you need to do to get to done, you’re better able to assess how much you can realistically take on in a Sprint. You’ll become more reliable.
 
