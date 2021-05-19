@@ -24,6 +24,7 @@ type testService struct {
 	order       *mocks.MockOrderStore
 	market      *mocks.MockMarketStore
 	marketDepth *mocks.MockMarketDepth
+	marketData  *mocks.MockMarketDataStore
 }
 
 func getTestService(t *testing.T) *testService {
@@ -52,6 +53,7 @@ func getTestService(t *testing.T) *testService {
 		order:       order,
 		market:      market,
 		marketDepth: marketdepth,
+		marketData:  marketdata,
 	}
 }
 
@@ -183,8 +185,19 @@ func testMarketObserveDepthSuccess(t *testing.T) {
 	wg.Wait() // wait for unsubscribe call
 }
 
+func TestMarketService_GetMarketDataByID(t *testing.T) {
+	svc := getTestService(t)
+	defer svc.Finish()
+	svc.marketData.EXPECT().GetByID(gomock.Any()).DoAndReturn(func(marketID string) (types.MarketData, error) {
+		return types.MarketData{}, nil
+	})
+
+	_, err := svc.GetMarketDataByID("BTC/MAY21")
+	assert.NoError(t, err)
+}
+
 func (t *testService) Finish() {
 	t.cfunc()
-	t.log.Sync()
+	_ = t.log.Sync()
 	t.ctrl.Finish()
 }
