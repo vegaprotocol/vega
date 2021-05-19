@@ -2456,6 +2456,8 @@ type Proposal {
   votes: ProposalVotes!
   "Reason for the proposal to be rejected by the core"
   rejectionReason: ProposalRejectionReason
+  "Error details of the rejectionReason"
+  errorDetails: String
 }
 
 type ProposalVotes {

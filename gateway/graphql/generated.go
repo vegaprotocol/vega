@@ -612,6 +612,7 @@ type ComplexityRoot struct {
 
 	Proposal struct {
 		Datetime        func(childComplexity int) int
+		ErrorDetails    func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Party           func(childComplexity int) int
 		Reference       func(childComplexity int) int
@@ -1085,6 +1086,7 @@ type ProposalResolver interface {
 	Terms(ctx context.Context, obj *proto.GovernanceData) (*proto.ProposalTerms, error)
 	Votes(ctx context.Context, obj *proto.GovernanceData) (*ProposalVotes, error)
 	RejectionReason(ctx context.Context, obj *proto.GovernanceData) (*ProposalRejectionReason, error)
+	ErrorDetails(ctx context.Context, obj *proto.GovernanceData) (*string, error)
 }
 type ProposalTermsResolver interface {
 	ClosingDatetime(ctx context.Context, obj *proto.ProposalTerms) (string, error)
@@ -3466,6 +3468,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Proposal.Datetime(childComplexity), true
+
+	case "Proposal.errorDetails":
+		if e.complexity.Proposal.ErrorDetails == nil {
+			break
+		}
+
+		return e.complexity.Proposal.ErrorDetails(childComplexity), true
 
 	case "Proposal.id":
 		if e.complexity.Proposal.ID == nil {
@@ -7235,6 +7244,8 @@ type Proposal {
   votes: ProposalVotes!
   "Reason for the proposal to be rejected by the core"
   rejectionReason: ProposalRejectionReason
+  "Error details of the rejectionReason"
+  errorDetails: String
 }
 
 type ProposalVotes {
@@ -19539,6 +19550,37 @@ func (ec *executionContext) _Proposal_rejectionReason(ctx context.Context, field
 	return ec.marshalOProposalRejectionReason2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalRejectionReason(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Proposal_errorDetails(ctx context.Context, field graphql.CollectedField, obj *proto.GovernanceData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Proposal",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Proposal().ErrorDetails(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ProposalTerms_closingDatetime(ctx context.Context, field graphql.CollectedField, obj *proto.ProposalTerms) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31329,6 +31371,17 @@ func (ec *executionContext) _Proposal(ctx context.Context, sel ast.SelectionSet,
 					}
 				}()
 				res = ec._Proposal_rejectionReason(ctx, field, obj)
+				return res
+			})
+		case "errorDetails":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Proposal_errorDetails(ctx, field, obj)
 				return res
 			})
 		default:
