@@ -88,8 +88,7 @@ func (b *MockBroker) GetAllByType(t events.Type) []events.Event {
 
 // GetLastByType returns the most recent event for a given type. If SendBatch was called, this is the last event of the batch
 func (b *MockBroker) GetLastByType(t events.Type) events.Event {
-	e, _ := b.lastEvts[t]
-	return e
+	return b.lastEvts[t]
 }
 
 // GetLastByTypeAndID returns the last event of a given type, for a specific identified (party, market, order, etc...)
@@ -113,8 +112,7 @@ func (b *MockBroker) GetLastByTypeAndID(t events.Type, id string) events.Event {
 	if !ok {
 		return nil
 	}
-	e, _ := m[id]
-	return e
+	return m[id]
 }
 
 // @TODO loss socialization. Given that this is something that would impact several parties, there's most likely
