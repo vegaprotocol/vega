@@ -17,6 +17,12 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 	}{
 		{
 			lp: commandspb.LiquidityProvisionSubmission{
+				CommitmentAmount: 0,
+				MarketId:         "okmarketid",
+			},
+		},
+		{
+			lp: commandspb.LiquidityProvisionSubmission{
 				CommitmentAmount: 100,
 				Fee:              "abcd",
 				MarketId:         "okmarketid",
