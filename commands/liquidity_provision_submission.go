@@ -35,10 +35,11 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 	// a cancellation of the liquidity provision. As a result, the validation
 	// shouldn't be made on the rest of the field.
 	// However, since the user might by sending an blank command to probe the
-	// validation, we want to return as many error message as possible. That's
-	// why we accepts a cancellation (commitment amount == 0) only if there's
-	// no other error.
-	if cmd.CommitmentAmount == 0 && errs.Empty() {
+	// validation, we want to return as many error message as possible.
+	// A cancellation is only valid if a market is specified, and the commitment is
+	// 0. In any case the core will consider that as a cancellation, so we return
+	// the error that we go from the market id check.
+	if cmd.CommitmentAmount == 0 {
 		return errs
 	}
 
