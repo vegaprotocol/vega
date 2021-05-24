@@ -559,7 +559,7 @@ func (m *Market) repriceLiquidityOrder(
 	// ceil so we are sure that all offset calculation
 	// get's us in the range
 	minPrice = math.Ceil(minPrice)
-	// floor so we are sure that all offset caclulation
+	// floor so we are sure that all offset calculation
 	// get's us in the range
 	maxPrice = math.Floor(maxPrice)
 
