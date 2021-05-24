@@ -183,8 +183,8 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	)
 
 	// Now repriceFn works as expected, so initial orders should get created now
-	fn := func(order *types.PeggedOrder) (uint64, error) {
-		return markPrice + uint64(order.Offset), nil
+	fn := func(order *types.PeggedOrder, _ types.Side) (uint64, *types.PeggedOrder, error) {
+		return markPrice + uint64(order.Offset), order, nil
 	}
 
 	// Expectations
@@ -360,8 +360,8 @@ func TestUpdate(t *testing.T) {
 		markPrice = uint64(10)
 	)
 
-	fn := func(order *types.PeggedOrder) (uint64, error) {
-		return markPrice + uint64(order.Offset), nil
+	fn := func(order *types.PeggedOrder, _ types.Side) (uint64, *types.PeggedOrder, error) {
+		return markPrice + uint64(order.Offset), order, nil
 	}
 
 	// Expectations

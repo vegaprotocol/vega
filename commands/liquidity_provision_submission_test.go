@@ -16,6 +16,13 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 		errString string
 	}{
 		{
+			// this is a valid cancellation.
+			lp: commandspb.LiquidityProvisionSubmission{
+				CommitmentAmount: 0,
+				MarketId:         "okmarketid",
+			},
+		},
+		{
 			lp: commandspb.LiquidityProvisionSubmission{
 				CommitmentAmount: 100,
 				Fee:              "abcd",
@@ -152,8 +159,9 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 			errString: "liquidity_provision_submission.buys.0.offset (order in buy side shape offset must be < 0), liquidity_provision_submission.sells.0.offset (order in sell shape offset must be > 0), liquidity_provision_submission.sells.1.offset (order in sell side shape with best bid price reference), liquidity_provision_submission.sells.2.offset (order in sell shape offset must be >= 0)",
 		},
 		{
+			// this is considered as an invalid cancellation, as a market id is missing.
 			lp:        commandspb.LiquidityProvisionSubmission{},
-			errString: "liquidity_provision_submission.buys (empty shape), liquidity_provision_submission.fee (is required), liquidity_provision_submission.market_id (is required), liquidity_provision_submission.sells (empty shape)",
+			errString: "liquidity_provision_submission.market_id (is required)",
 		},
 	}
 

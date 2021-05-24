@@ -94,20 +94,25 @@ Feature: Test liquidity provider reward distribution
       | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
 
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    Then debug orders
+
+    # here we get only a trade for a volume of 15 as it's what was on the LP
+    # order, then the 25 remaining from trader1 are cancelled for self trade
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader1 | 951   | 40   | lp1 |
+      | trader1 | 951   | 15   | lp1     |
 
     # this is slightly different than expected, as the trades happen against the LP,
     # which is probably not what you expected initially
-    And the accumulated liquidity fees should be "39" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "15" for the market "ETH/DEC21"
 
     # opening auction + time window
     Then time is updated to "2019-11-30T00:30:05Z"
 
     Then the following transfers should happen:
       | from    | to  | from account                | to account           | market id | amount  | asset |
-      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 39      | ETH   |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 15      | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
@@ -172,11 +177,14 @@ Feature: Test liquidity provider reward distribution
       | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
+    Then debug trades
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader2 | 951   | 20   | lp1     |
+      | trader2 | 951   | 8    | lp1     |
+      | trader2 | 951   | 8    | lp2     |
+      | trader2 | 1000  | 4    | trader1 |
 
-    And the accumulated liquidity fees should be "39" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "40" for the market "ETH/DEC21"
 
     # opening auction + time window
     Then time is updated to "2019-11-30T00:10:05Z"
@@ -185,7 +193,7 @@ Feature: Test liquidity provider reward distribution
     Then the following transfers should happen:
       | from    | to  | from account                | to account           | market id | amount  | asset |
       | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 26      | ETH   |
-      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 13      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 14      | ETH   |
 
 
     Then the traders place the following orders:
@@ -195,10 +203,10 @@ Feature: Test liquidity provider reward distribution
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader1 | 951   | 4    | lp1     |
-      | trader1 | 951   | 36   | lp2     |
+      | trader1 | 951   | 8    | lp1     |
+      | trader1 | 951   | 8    | lp2     |
 
-    And the accumulated liquidity fees should be "77" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "32" for the market "ETH/DEC21"
 
     # opening auction + time window
     Then time is updated to "2019-11-30T00:20:08Z"
@@ -206,8 +214,8 @@ Feature: Test liquidity provider reward distribution
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from    | to  | from account                | to account           | market id | amount  | asset |
-      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 51      | ETH   |
-      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 26      | ETH   |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 21      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 11      | ETH   |
 
   Scenario: 2 LPs joining at start, unequal commitments
 
@@ -273,7 +281,9 @@ Feature: Test liquidity provider reward distribution
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader2 | 951   | 20   | lp1     |
+      | trader2 | 951   | 3    | lp2     |
+      | trader2 | 951   | 12   | lp1     |
+      | trader2 | 1000  | 5    | trader1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -294,13 +304,12 @@ Feature: Test liquidity provider reward distribution
       | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 40     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader1 | 951   | 25   | lp1     |
-      | trader1 | 951   | 15   | lp2     |
+      | trader1 | 951   | 12   | lp1     |
+      | trader1 | 951   | 3    | lp2     |
 
-    And the accumulated liquidity fees should be "39" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "15" for the market "ETH/DEC21"
 
     # opening auction + time window
     Then time is updated to "2019-11-30T00:20:06Z"
@@ -308,8 +317,8 @@ Feature: Test liquidity provider reward distribution
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from    | to  | from account                | to account           | market id | amount  | asset |
-      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 32      | ETH   |
-      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 7       | ETH   |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 12      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 3       | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
@@ -377,7 +386,9 @@ Feature: Test liquidity provider reward distribution
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader2 | 951   | 20   | lp1     |
+      | trader2 | 951   | 3    | lp2     |
+      | trader2 | 951   | 12   | lp1     |
+      | trader2 | 1000  | 5    | trader1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -401,9 +412,9 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   |             0.7765 |                    8000 |
-      | lp2   |             0.1553 |                   10000 |
-      | lp3   |             0.0681 |                  113930 |
+      | lp1   |             0.7772 |                    8000 |
+      | lp2   |             0.1554 |                   10000 |
+      | lp3   |             0.0673 |                  115397 |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -412,10 +423,11 @@ Feature: Test liquidity provider reward distribution
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader1 | 951   | 25   | lp1     |
-      | trader1 | 951   | 15   | lp2     |
+      | trader1 | 951   | 12   | lp1     |
+      | trader1 | 951   | 3    | lp2     |
+      | trader1 | 951   | 15   | lp3     |
 
-    And the accumulated liquidity fees should be "39" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "30" for the market "ETH/DEC21"
 
     # opening auction + time window
     Then time is updated to "2019-11-30T00:20:06Z"
@@ -423,8 +435,8 @@ Feature: Test liquidity provider reward distribution
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from    | to  | from account                | to account           | market id | amount  | asset |
-      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 30      | ETH   |
-      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 6       | ETH   |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 23      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 4       | ETH   |
       | market  | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 3       | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"

@@ -28,17 +28,23 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 	var errs = NewErrors()
 
 	if len(cmd.MarketId) <= 0 {
-		errs.AddForProperty(
-			"liquidity_provision_submission.market_id",
-			ErrIsRequired,
-		)
+		errs.AddForProperty("liquidity_provision_submission.market_id", ErrIsRequired)
+	}
+
+	// if the commitment amount is 0, then the command should be interpreted as
+	// a cancellation of the liquidity provision. As a result, the validation
+	// shouldn't be made on the rest of the field.
+	// However, since the user might by sending an blank command to probe the
+	// validation, we want to return as many error message as possible.
+	// A cancellation is only valid if a market is specified, and the commitment is
+	// 0. In any case the core will consider that as a cancellation, so we return
+	// the error that we go from the market id check.
+	if cmd.CommitmentAmount == 0 {
+		return errs
 	}
 
 	if len(cmd.Fee) <= 0 {
-		errs.AddForProperty(
-			"liquidity_provision_submission.fee",
-			ErrIsRequired,
-		)
+		errs.AddForProperty("liquidity_provision_submission.fee", ErrIsRequired)
 	} else {
 		if fee, err := strconv.ParseFloat(cmd.Fee, 64); err != nil {
 			errs.AddForProperty(
@@ -46,10 +52,7 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 				ErrIsNotValid,
 			)
 		} else if fee < 0 {
-			errs.AddForProperty(
-				"liquidity_provision_submission.fee",
-				ErrMustBePositive,
-			)
+			errs.AddForProperty("liquidity_provision_submission.fee", ErrMustBePositive)
 		}
 
 	}

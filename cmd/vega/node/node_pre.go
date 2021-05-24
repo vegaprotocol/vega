@@ -655,6 +655,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketProbabilityOfTradingTauScaling,
 			Watcher: l.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
+			Watcher: l.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
 	)
 }
 
