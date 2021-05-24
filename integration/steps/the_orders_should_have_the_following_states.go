@@ -1,8 +1,6 @@
 package steps
 
 import (
-	"fmt"
-
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"github.com/cucumber/godog/gherkin"
 )
@@ -21,9 +19,6 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *gher
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.PartyId == "trader1" {
-				fmt.Printf("%#v\n", o)
-			}
 			if o.PartyId != trader || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || o.Price != price {
 				continue
 			}

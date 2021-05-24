@@ -105,13 +105,11 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(
 		bestBidPrice, bestAskPrice, orders, minPrice, maxPrice)
 
-	fmt.Printf("buy obligation(%v), supplied(%v)\n", liquidityObligation, buySupplied)
 	buyRemaining := liquidityObligation - buySupplied
 	if err := e.updateSizes(buyRemaining, bestBidPrice, bestAskPrice, buyShapes, true, minPrice, maxPrice); err != nil {
 		return err
 	}
 
-	fmt.Printf("sell obligation(%v), supplied(%v)\n", liquidityObligation, sellSupplied)
 	sellRemaining := liquidityObligation - sellSupplied
 	if err := e.updateSizes(sellRemaining, bestBidPrice, bestAskPrice, sellShapes, false, minPrice, maxPrice); err != nil {
 		return err
@@ -197,11 +195,8 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	// best_static_bid and best_static_ask
 	// has probability of trading = 1.
 	if orderPrice >= bestBidPrice && orderPrice <= bestAskPrice {
-		fmt.Printf("DEFAULT IN RANGE PROB\n")
 		return defaultInRangeProbabilityOfTrading
 	}
-	fmt.Printf("bestBidPrice: %d, bestAskprice: %d, orderPrice: %d, minPrice: %d, maxPrice: %d\n", bestBidPrice, bestAskPrice, orderPrice, uint64(minPrice), uint64(maxPrice))
-	fmt.Printf("DEFAULT IN RANGE PROB NOPE\n")
 
 	// Any part of shape that the peg puts at lower price
 	// than best bid will use probability of trading computed
