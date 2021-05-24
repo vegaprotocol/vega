@@ -566,7 +566,7 @@ func (m *Market) repriceLiquidityOrder(
 	minPrice = math.Ceil(minPrice)
 	// floor so we are sure that all offset caclulation
 	// get's us in the range
-	maxPrice = math.Ceil(maxPrice)
+	maxPrice = math.Floor(maxPrice)
 
 	fmt.Printf("MIN PRICE: %v\n", minPrice)
 	fmt.Printf("MAX PRICE: %v\n", maxPrice)
