@@ -503,7 +503,7 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	err := engine.CalculateLiquidityImpliedVolumes(MarkPrice, MarkPrice, liquidityObligation, limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	// Same when there just aren't any buy/sell shapes
+	// We do expect an error when no orders specified though.
 	err = engine.CalculateLiquidityImpliedVolumes(MarkPrice, MarkPrice, liquidityObligation, limitOrders, []*supplied.LiquidityOrder{}, []*supplied.LiquidityOrder{})
 	require.Error(t, err)
 }
