@@ -2,7 +2,6 @@ package supplied
 
 import (
 	"errors"
-	"fmt"
 	"math"
 
 	types "code.vegaprotocol.io/vega/proto"
@@ -178,7 +177,6 @@ func (e *Engine) updateSizes(
 			scaling = fraction / prob
 		}
 		o.LiquidityImpliedVolume = uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price)))
-		fmt.Printf("orderPrice(%d), impliedVolume(%d), scaling(%f), liquidityObligation(%f)\n", o.Price, o.LiquidityImpliedVolume, scaling, liquidityObligation)
 	}
 	return nil
 }
