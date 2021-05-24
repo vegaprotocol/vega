@@ -222,6 +222,8 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 		return prob
 	}
 
+	// A failsafe to shift the probability of trading up to the minimum not to end up with unwieldy order sizes
+	// This execution path should never be reached, but it is still theoretically possible for it to be reached due to rounding errors.
 	return e.minProbabilityOfTrading
 }
 
