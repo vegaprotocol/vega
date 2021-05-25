@@ -277,7 +277,7 @@ func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
 }
 
 func (e *Engine) GetOpenInterest() uint64 {
-	var openInterest uint64
+	openInterest := uint64(0)
 	for _, pos := range e.positions {
 		if pos.size > 0 {
 			openInterest += uint64(pos.size)
