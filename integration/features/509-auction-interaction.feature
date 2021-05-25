@@ -214,7 +214,9 @@ Scenario: Once market is in continuous trading mode: post a GFN order that shoul
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -233,7 +235,7 @@ Scenario: Once market is in continuous trading mode: post a GFN order that shoul
       | trader1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
     And the market data for the market "ETH/DEC21" should be:
      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-     | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+     | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1020      | 1000         | 1000           | 10            |
 
 
 Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode
@@ -251,8 +253,10 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
@@ -260,6 +264,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
+    And debug orders
 
     # If the order traded there'd be insufficient liquidity for the market to operate, hence the order doesn't trade
     # and the market enters a liquidity monitoring auction
@@ -283,6 +288,8 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
       | trader1 | cancel-me-1 |
       | trader2 | cancel-me-2 |
 
+    When the network moves ahead "1" blocks
+    Then debug orders
     And debug market data for "ETH/DEC21"
 
     And the traders submit the following liquidity provision:
