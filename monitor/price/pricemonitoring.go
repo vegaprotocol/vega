@@ -288,7 +288,9 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 	as.ExtendAuctionPrice(types.AuctionDuration{
 		Duration: duration,
 	})
-	e.reset(last.Price, last.Volume, now)
+	if !as.IsPriceAuction() {
+		e.reset(last.Price, last.Volume, now)
+	}
 
 	return nil
 }
