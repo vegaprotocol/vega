@@ -53,11 +53,9 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
       | trader1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT  | TIF_GTC |
       | trader2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT  | TIF_GTC |
     ## price bounds are 99771 to 100290 (99845 and 100156)
-    And debug market data for "ETH/DEC20"
     And the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | expires in |
       | trader3 | ETH/DEC20 | sell | 1      | 99770  | 0                | TYPE_LIMIT  | TIF_GTT | 6          |
-    And debug market data for "ETH/DEC20"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
 
