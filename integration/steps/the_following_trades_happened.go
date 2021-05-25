@@ -36,7 +36,7 @@ func TheFollowingTradesShouldBeExecuted(
 	return err
 }
 
-// pass in time at which the trades should happen in case there are previous trades in the broker stub
+// TheAuctionTradedVolumeAndPriceShouldBe pass in time at which the trades should happen in case there are previous trades in the broker stub
 func TheAuctionTradedVolumeAndPriceShouldBe(broker *stubs.BrokerStub, volume, price string, now time.Time) error {
 	v, err := U64(volume)
 	if err != nil {
