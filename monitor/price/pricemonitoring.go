@@ -131,6 +131,12 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
 		bounds:          bounds,
 	}
+	// hack to work around the update frequency being 0 causing an infinite loop
+	// for now, this will do
+	// @TODO go through integration and system tests once we validate this properly
+	if settings.UpdateFrequency == 0 {
+		e.updateFrequency = time.Second
+	}
 	return e, nil
 }
 
@@ -199,6 +205,14 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 		e.initialised = true
 	}
 
+	last := currentPrice{
+		Price:  p,
+		Volume: v,
+	}
+	if len(e.pricesNow) > 0 {
+		last = e.pricesNow[len(e.pricesNow)-1]
+	}
+
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
 		if err := e.recordTimeChange(now); err != nil {
@@ -213,6 +227,8 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 			return nil
 		}
 		if !persistent {
+			// we're going to stay in continuous trading, make sure we still have bounds
+			e.reset(last.Price, last.Volume, now)
 			return types.ErrNonPersistentOrderOutOfBounds
 		}
 		duration := types.AuctionDuration{}

@@ -539,7 +539,10 @@ func (m *Market) repriceLiquidityOrder(
 	if err != nil {
 		return 0, nil, ErrUnableToReprice
 	}
+	return m.adjustPriceRange(po, side, price)
+}
 
+func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price uint64) (uint64, *types.PeggedOrder, error) {
 	// now from here, we will be adjusting the offset
 	// to ensure the price is always in the range [minPrice, maxPrice]
 	// from the price monitoring engine.
@@ -585,6 +588,9 @@ func (m *Market) repriceLiquidityOrder(
 				po.Offset = 0
 			case types.PeggedReference_PEGGED_REFERENCE_MID:
 				po.Offset = 1
+				if m.as.InAuction() {
+					po.Offset = 0
+				}
 			}
 			return price + uint64(po.Offset), po, nil
 		}
@@ -610,6 +616,9 @@ func (m *Market) repriceLiquidityOrder(
 			po.Offset = 0
 		case types.PeggedReference_PEGGED_REFERENCE_MID:
 			po.Offset = 1
+			if m.as.InAuction() {
+				po.Offset = 0
+			}
 		}
 		return price + uint64(po.Offset), po, nil
 	}
@@ -882,19 +891,8 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	party string,
 	price uint64,
 ) error {
-	repriceFn := func(o *types.PeggedOrder, _ types.Side) (uint64, *types.PeggedOrder, error) {
-		if o.Offset >= 0 {
-			return price + uint64(o.Offset), o, nil
-		}
-
-		// At this stage offset is negative so we change it's sign to cast it to an
-		// unsigned type
-		offset := uint64(-o.Offset)
-		if price <= offset {
-			return 0, nil, ErrUnableToReprice
-		}
-
-		return price - offset, o, nil
+	repriceFn := func(o *types.PeggedOrder, side types.Side) (uint64, *types.PeggedOrder, error) {
+		return m.adjustPriceRange(o, side, price)
 	}
 
 	// first lets get the protential shape for this submission

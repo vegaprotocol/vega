@@ -45,7 +45,6 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
-    Then debug market data for "ETH/DEC20"
     When the opening auction period ends for market "ETH/DEC20"
     Then the mark price should be "100000" for the market "ETH/DEC20"
 
