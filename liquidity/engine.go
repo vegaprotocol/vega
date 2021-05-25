@@ -79,9 +79,6 @@ type Engine struct {
 	// which still haven't been deployed even once.
 	pendings map[string]struct{}
 
-	// undeployedProvisions flags that there are provisions within the engine that are not deployed
-	undeployedProvisions bool
-
 	// the maximum number of liquidity orders to be created on
 	// each shape
 	maxShapesSize int64
@@ -335,7 +332,6 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *commandspb.L
 	lp.UpdatedAt = now
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvision_STATUS_PENDING
-	e.undeployedProvisions = true
 
 	e.buildLiquidityProvisionShapesReferences(lp, lps)
 
@@ -439,63 +435,30 @@ func (e *Engine) Update(
 	orders []*types.Order,
 ) ([]*types.Order, []*ToCancel, error) {
 	var (
-		newOrders        []*types.Order
-		toCancel         []*ToCancel
-		updatedLPParties []string
+		newOrders []*types.Order
+		toCancel  []*ToCancel
 	)
 
+	// first update internal state of LP orders
 	for _, po := range Orders(orders).ByParty() {
 		if !e.IsLiquidityProvider(po.Party) {
 			continue
 		}
 
-		updatedLPParties = append(updatedLPParties, po.Party)
 		// update our internal orders
 		e.updatePartyOrders(po.Party, po.Orders)
+	}
 
-		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, po.Party, repriceFn)
+	for _, lp := range e.provisions.slice() {
+		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.PartyId, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
-
 		newOrders = append(newOrders, creates...)
 		if !cancels.Empty() {
 			toCancel = append(toCancel, cancels)
 		}
 	}
-
-	if e.undeployedProvisions {
-		// There are some provisions that haven't been cancelled or rejected,
-		// but haven't yet been deployed, try an deploy now.
-		stillUndeployed := false
-		for _, lp := range e.provisions.slice() {
-			if lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED ||
-				lp.Status == types.LiquidityProvision_STATUS_PENDING {
-				creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.PartyId, repriceFn)
-				if err != nil {
-					return nil, nil, err
-				}
-				updatedLPParties = append(updatedLPParties, lp.PartyId)
-				newOrders = append(newOrders, creates...)
-				if !cancels.Empty() {
-					toCancel = append(toCancel, cancels)
-				}
-				stillUndeployed = stillUndeployed ||
-					(lp.Status == types.LiquidityProvision_STATUS_UNDEPLOYED ||
-						lp.Status == types.LiquidityProvision_STATUS_PENDING)
-			}
-		}
-		e.undeployedProvisions = stillUndeployed
-	}
-
-	// send a batch of updates
-	evts := make([]events.Event, 0, len(updatedLPParties))
-	for _, party := range updatedLPParties {
-		evts = append(evts, events.NewLiquidityProvisionEvent(
-			ctx, e.provisions[party]))
-	}
-	e.broker.SendBatch(evts)
-
 	return newOrders, toCancel, nil
 }
 
@@ -581,7 +544,6 @@ func (e *Engine) createOrUpdateForParty(
 			lp.Status != types.LiquidityProvision_STATUS_PENDING {
 			lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
 		}
-		e.undeployedProvisions = true
 	} else {
 		// Create a slice shaped copy of the orders
 		orders := make([]*types.Order, 0, len(e.orders[party]))

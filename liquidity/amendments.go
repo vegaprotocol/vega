@@ -70,7 +70,6 @@ func (e *Engine) AmendLiquidityProvision(
 	if lp.Status == types.LiquidityProvision_STATUS_ACTIVE {
 		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
 	}
-	e.undeployedProvisions = true
 
 	e.buildLiquidityProvisionShapesReferences(lp, lps)
 
