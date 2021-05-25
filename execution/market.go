@@ -572,7 +572,13 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			if evt := m.as.AuctionExtended(ctx); evt != nil {
 				m.broker.Send(evt)
 			}
-			m.checkLiquidity(ctx, nil)
+			ft := []*types.Trade{
+				{
+					Size:  v,
+					Price: p,
+				},
+			}
+			m.checkLiquidity(ctx, ft)
 			// price monitoring engine and liquidity monitoring engine both indicated auction can end
 			if m.as.AuctionEnd() {
 				if m.matching.BidAndAskPresentAfterAuction() {

@@ -651,6 +651,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 				po.Offset = 0
 			case types.PeggedReference_PEGGED_REFERENCE_MID:
 				po.Offset = -1
+				if m.as.InAuction() {
+					po.Offset = 0
+				}
 			}
 			return price - uint64(-po.Offset), po, nil
 		}
@@ -666,6 +669,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			po.Offset = 0
 		case types.PeggedReference_PEGGED_REFERENCE_MID:
 			po.Offset = -1
+			if m.as.InAuction() {
+				po.Offset = 0
+			}
 		}
 		return price - uint64(-po.Offset), po, nil
 	}
