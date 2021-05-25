@@ -572,7 +572,15 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			if evt := m.as.AuctionExtended(ctx); evt != nil {
 				m.broker.Send(evt)
 			}
-			m.checkLiquidity(ctx, nil)
+			// hacky way to ensure the liquidity monitoring will calculate the target stake based on the target stake
+			// SHOULD we leave the auction. Otherwise, we would leave a liquidity auction, and immediately enter a new one
+			ft := []*types.Trade{
+				{
+					Size:  v,
+					Price: p,
+				},
+			}
+			m.checkLiquidity(ctx, ft)
 			// price monitoring engine and liquidity monitoring engine both indicated auction can end
 			if m.as.AuctionEnd() {
 				if m.matching.BidAndAskPresentAfterAuction() {

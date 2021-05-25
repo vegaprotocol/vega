@@ -92,10 +92,6 @@ Scenario: When trying to exit opening auction liquidity monitoring is triggered 
   And the market data for the market "ETH/DEC21" should be:
     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
     | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
-  # how can we trade, and still be in auction?
-  # And the market data for the market "ETH/DEC21" should be:
-  #   | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-  #   | 1000       | TRADING_MODE_MONITORING_AUCTION | 1       | 990       | 1010      | 1000         | 10000          | 10            |
 
 
 Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake, hence the opening auction gets extended, the markets trading mode is TRADING_MODE_MONITORING_AUCTION and the trigger is AUCTION_TRIGGER_LIQUIDITY.
@@ -192,8 +188,6 @@ Scenario: Once market is in continuous trading mode: post a GFN order that shoul
       | trader1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       #And clear order events
-      #And debug market data for "ETH/DEC21"
-      #And debug orders
     And the market data for the market "ETH/DEC21" should be:
      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 1000           | 10            |
@@ -299,8 +293,8 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     When the network moves ahead "2" blocks
     # We should be able to leave liquidity auction now
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+      | trading mode                    | auction trigger           |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -311,7 +305,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     When the network moves ahead "301" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 4080         | 4080           | 40            |
+      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 3060         | 4080           | 30            |
 
 Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode
     Given the following network parameters are set:
@@ -383,27 +377,28 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
       | lp1 | trader0 | ETH/DEC21 | 5100              | 0.001 | sell       | MID             | 2                | 1            |
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+      | trading mode                    | auction trigger           |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
+    And the network moves ahead "10" blocks
 
-    # Now we place some orders that are outside the price range
+    # Now we place some orders that are outside the price range, auction is extended by price (300)
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger       |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
+      | trading mode                    | auction trigger           |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
     # jump ahead to the end of the auction
-    When the network moves ahead "301" blocks
+    When the network moves ahead "291" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 5100         | 5100           | 50            |
+      | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 4080         | 5100           | 40            |
 
 
       #Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode

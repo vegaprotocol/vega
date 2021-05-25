@@ -100,6 +100,7 @@ func (e *Engine) GetPotentialShapeOrders(
 			}
 			order := &supplied.LiquidityOrder{
 				Proportion: uint64(lorder.Proportion),
+				Peg:        pegged,
 			}
 			price, _, err := repriceFn(pegged, side)
 			if err != nil {
@@ -160,7 +161,7 @@ func (e *Engine) buildPotentialShapeOrders(party string, supplied []*supplied.Li
 		// no need to make it a proper pegged order, set an actual ID etc here
 		// as we actually just return this order as a template for margin
 		// calculation
-		order := e.buildOrder(side, nil, o.Price, party, e.marketID, o.LiquidityImpliedVolume, "", "")
+		order := e.buildOrder(side, o.Peg, o.Price, party, e.marketID, o.LiquidityImpliedVolume, "", "")
 		orders = append(orders, order)
 	}
 

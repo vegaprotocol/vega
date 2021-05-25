@@ -2193,12 +2193,12 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 	// 1 second so factor = t_market_value_window_length / active_window_length = 2.
 	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(1*time.Second))
 	md = tm.market.GetMarketData()
-	assert.Equal(t, "2221978", md.MarketValueProxy)
+	assert.Equal(t, "10000", md.MarketValueProxy)
 
 	// we increase the time for another second
 	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
 	md = tm.market.GetMarketData()
-	assert.Equal(t, "1110989", md.MarketValueProxy)
+	assert.Equal(t, "10000", md.MarketValueProxy)
 
 	// now we increase the time for another second, which makes us slide
 	// out of the window, and reset the tradeValue + window
