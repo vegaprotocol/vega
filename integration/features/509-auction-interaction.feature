@@ -311,7 +311,7 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
     When the network moves ahead "301" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 4080         | 4080           | 824635360400  |
+      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 4080         | 4080           | 40            |
 
 Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode
     Given the following network parameters are set:

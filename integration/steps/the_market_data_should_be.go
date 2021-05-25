@@ -53,14 +53,14 @@ func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.D
 	for _, u := range u64Set {
 		e, g := cmp.u64Map[u], parsed.u64Map[u] // get pointers to both fields
 		if *e != *g {
-			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead got '%d'", e, u, g))
+			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead got '%d'", *e, u, *g))
 		}
 	}
 	// compare int64
 	for _, i := range i64Set {
 		e, g := cmp.i64Map[i], parsed.i64Map[i]
 		if *e != *g {
-			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead fot '%d'", e, i, g))
+			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead fot '%d'", *e, i, *g))
 		}
 	}
 	// compare strings
