@@ -411,6 +411,20 @@ func (b *BrokerStub) GetTraderGeneralAccount(trader, asset string) (ga types.Acc
 	return
 }
 
+func (b *BrokerStub) GetTraderBondAccount(trader, asset string) (ba types.Account, err error) {
+	batch := b.GetAccounts()
+	err = errors.New("account does not exist")
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_BOND && v.Asset == asset {
+			// may not be the latest ballence, so keep iterating
+			ba = v
+			err = nil
+		}
+	}
+	return
+}
+
 func (b *BrokerStub) ClearOrderByReference(party, ref string) error {
 	b.mu.Lock()
 	data := b.data[events.OrderEvent]
