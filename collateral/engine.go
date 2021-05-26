@@ -1150,6 +1150,11 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_BOND_SLASHING:
 		treq.FromAccount = []*types.Account{bond}
+		// it's possible the bond account is insufficient, and falling back to margin balance
+		// won't cause a close-out
+		if marginAcc, err := e.GetAccountByID(e.accountID(market, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_MARGIN)); err == nil {
+			treq.FromAccount = append(treq.FromAccount, marginAcc)
+		}
 		treq.ToAccount = []*types.Account{insurancePool}
 		return treq, nil
 	default:

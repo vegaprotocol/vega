@@ -3,9 +3,11 @@ package execution
 import (
 	"context"
 	"errors"
+	"math/big"
 
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -103,17 +105,18 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*types.TransferResponse, error) {
 	mID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
+	factor := decimal.NewFromFloatWithExponent(m.bondPenaltyFactor, 0)
 	ret := make([]*types.TransferResponse, 0, len(closed))
 	for _, c := range closed {
-		penalty := uint64(m.bondPenaltyFactor * float64(c.MarginShortFall()))
+		shortfall := decimal.NewFromBigInt(new(big.Int).SetUint64(c.MarginShortFall()), 0)
+		penalty := shortfall.Mul(factor).Floor().BigInt().Uint64()
 		resp, err := m.collateral.BondUpdate(ctx, mID, c.Party(), &types.Transfer{
 			Owner: c.Party(),
 			Amount: &types.FinancialAmount{
 				Amount: penalty,
 				Asset:  asset,
 			},
-			Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
-			MinAmount: penalty,
+			Type: types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
 		})
 		if err != nil {
 			return nil, err
