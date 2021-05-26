@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
@@ -14,6 +15,7 @@ import (
 func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.DataTable) error {
 	lps := map[string]*commandspb.LiquidityProvisionSubmission{}
 	parties := map[string]string{}
+	keys := []string{}
 
 	for _, row := range TableWrapper(*table).Parse() {
 		id := row.MustStr("id")
@@ -43,6 +45,7 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 			}
 			parties[id] = party
 			lps[id] = lp
+			keys = append(keys, id)
 		}
 		lo := &types.LiquidityOrder{
 			Reference:  reference,
@@ -55,7 +58,10 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 			lp.Sells = append(lp.Sells, lo)
 		}
 	}
-	for id, sub := range lps {
+	// ensure we always submit in the same order
+	sort.Strings(keys)
+	for _, id := range keys {
+		sub := lps[id]
 		party, ok := parties[id]
 		if !ok {
 			return errors.New("party for LP not found")

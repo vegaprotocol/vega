@@ -167,7 +167,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
      | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 10000          | 23            |
     # getting closer to distressed LP, still in continuous trading
-    And debug transfers
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1764   | 0       | 0    |
