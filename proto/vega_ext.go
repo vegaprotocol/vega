@@ -3,6 +3,7 @@
 package proto
 
 import (
+	fmt "fmt"
 	"strconv"
 	"time"
 )
@@ -64,4 +65,16 @@ func (o *Order) IsFinished() bool {
 
 func (o *Order) HasTraded() bool {
 	return o.Size != o.Remaining
+}
+
+func (t *Trade) SetIDs(aggressive, passive *Order, idx int) {
+	t.Id = fmt.Sprintf("%s-%010d", aggressive.Id, idx)
+	if aggressive.Side == Side_SIDE_BUY {
+		t.BuyOrder = aggressive.Id
+		t.SellOrder = passive.Id
+		return
+	}
+	t.SellOrder = aggressive.Id
+	t.BuyOrder = passive.Id
+
 }
