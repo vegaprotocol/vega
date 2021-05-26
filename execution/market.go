@@ -1451,13 +1451,21 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 	return nil
 }
 
-func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) {
+func (m *Market) handleConfirmationPassiveOrders(
+	ctx context.Context,
+	conf *types.OrderConfirmation) {
+
 	if conf.PassiveOrdersAffected != nil {
+		var (
+			evts        = make([]events.Event, 0, len(conf.PassiveOrdersAffected))
+			currentTime = m.currentTime.UnixNano()
+		)
+
 		// Insert or update passive orders siting on the book
 		for _, order := range conf.PassiveOrdersAffected {
 			// set the `updatedAt` value as these orders have changed
-			order.UpdatedAt = m.currentTime.UnixNano()
-			m.broker.Send(events.NewOrderEvent(ctx, order))
+			order.UpdatedAt = currentTime
+			evts = append(evts, events.NewOrderEvent(ctx, order))
 
 			// If the order is a pegged order and is complete we must remove it from the pegged list
 			if order.PeggedOrder != nil {
@@ -1472,7 +1480,15 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 				m.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
 			}
 		}
+
+		m.broker.SendBatch(evts)
+
 	}
+}
+
+func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) {
+
+	m.handleConfirmationPassiveOrders(ctx, conf)
 	end := m.as.AuctionEnd()
 
 	if len(conf.Trades) > 0 {
@@ -1483,14 +1499,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(conf.Trades))
 		for idx, trade := range conf.Trades {
-			trade.Id = fmt.Sprintf("%s-%010d", conf.Order.Id, idx)
-			if conf.Order.Side == types.Side_SIDE_BUY {
-				trade.BuyOrder = conf.Order.Id
-				trade.SellOrder = conf.PassiveOrdersAffected[idx].Id
-			} else {
-				trade.SellOrder = conf.Order.Id
-				trade.BuyOrder = conf.PassiveOrdersAffected[idx].Id
-			}
+			trade.SetIDs(conf.Order, conf.PassiveOrdersAffected[idx], idx)
 
 			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
@@ -1589,7 +1598,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		// providers, and if yea cancel their commitments
 		for _, party := range distressedParties {
 			if m.liquidity.IsLiquidityProvider(party) {
-				if err := m.cancelLiquidityProvision(ctx, party, true, false); err != nil {
+				if err := m.cancelLiquidityProvision(ctx, party, true); err != nil {
 					m.log.Debug("could not cancel liquidity provision",
 						logging.MarketID(m.GetID()),
 						logging.PartyID(party),
@@ -1609,6 +1618,16 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 					logging.Error(err))
 			}
 		}
+
+		// TODO: Not so sure of this one,
+		// we may want to check that from the caller of the
+		// caller of the distressed flow
+		m.checkLiquidity(ctx, nil)
+		// start the liquidity monitoring auction if required
+		if !m.as.InAuction() && m.as.AuctionStart() {
+			m.EnterAuction(ctx)
+		}
+
 	}()
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
@@ -1659,14 +1678,13 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			evts = append(evts, events.NewOrderEvent(ctx, o))
 		}
 		if m.liquidity.IsLiquidityProvider(v.Party()) {
-			if err := m.cancelLiquidityProvisionAndConfiscateBondAccount(ctx, v.Party()); err != nil {
-				m.log.Error("unable to cancel liquidity provision for a distressed party",
+			if err := m.confiscateBondAccount(ctx, v.Party()); err != nil {
+				m.log.Error("unable to confiscate liquidity provision for a distressed party",
 					logging.String("party-id", o.PartyId),
 					logging.String("market-id", mktID),
+					logging.Error(err),
 				)
-				return err
 			}
-			m.equityShares.SetPartyStake(v.Party(), 0)
 		}
 
 		// add all pegged orders too to the orderUpdates
@@ -1714,27 +1732,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	if networkPos == 0 {
 		m.log.Warn("Network positions is 0 after closing out traders, nothing more to do",
 			logging.String("market-id", m.GetID()))
-
-		// remove accounts, positions and return
-		// from settlement engine first
-		m.settlement.RemoveDistressed(ctx, closed)
-		// then from positions
-		closedMPs = m.position.RemoveDistressed(closedMPs)
-		asset, _ := m.mkt.GetAsset()
-		// finally remove from collateral (moving funds where needed)
-		var movements *types.TransferResponse
-		movements, err = m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
-		if err != nil {
-			m.log.Error(
-				"Failed to remove distressed accounts cleanly",
-				logging.Error(err),
-			)
-			return err
-		}
-		if len(movements.Transfers) > 0 {
-			evt := events.NewTransferResponse(ctx, []*types.TransferResponse{movements})
-			m.broker.Send(evt)
-		}
+		m.finalizePartiesCloseOut(ctx, closed, closedMPs)
 		return nil
 	}
 	// network order
@@ -1761,16 +1759,14 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	// Send the aggressive order into matching engine
 	confirmation, err := m.matching.SubmitOrder(&no)
 	if err != nil {
-		if m.log.GetLevel() == logging.DebugLevel {
-			m.log.Debug("Failure after submitting order to matching engine",
-				logging.Order(no),
-				logging.Error(err))
-		}
-		return err
+		// we can safely panic here, only possibility of failure
+		// with the orderbook is in case of order validation, it should
+		// not be possible for us to submit an invalid order at this
+		// point, and an invalid order would be a code error then.
+		m.log.Panic("Failure after submitting order to matching engine",
+			logging.Order(no),
+			logging.Error(err))
 	}
-	// @NOTE: At this point, the network order was updated by the orderbook
-	// the price field now contains the average trade price at which the order was fulfilled
-	m.broker.Send(events.NewOrderEvent(ctx, &no))
 
 	// FIXME(j): this is a temporary measure for the case where we do not have enough orders
 	// in the book to 0 out the positions.
@@ -1782,29 +1778,15 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		return ErrNotEnoughVolumeToZeroOutNetworkOrder
 	}
 
-	if confirmation.PassiveOrdersAffected != nil {
-		// Insert or update passive orders siting on the book
-		for _, order := range confirmation.PassiveOrdersAffected {
-			order.UpdatedAt = m.currentTime.UnixNano()
-			m.broker.Send(events.NewOrderEvent(ctx, order))
+	// @NOTE: At this point, the network order was updated by the orderbook
+	// the price field now contains the average trade price at which the order was fulfilled
+	m.broker.Send(events.NewOrderEvent(ctx, &no))
 
-			// If the order is a pegged order and is complete we must remove it from the pegged list
-			if order.PeggedOrder != nil {
-				if order.Remaining == 0 || order.Status != types.Order_STATUS_ACTIVE {
-					m.removePeggedOrder(order)
-				}
-			}
+	m.handleConfirmationPassiveOrders(ctx, confirmation)
 
-			// remove expiring order
-			if order.IsExpireable() && order.IsFinished() {
-				m.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
-			}
-		}
-
-		// also add the passive orders from the book into the list
-		// of updated orders to send to liquidity engine
-		orderUpdates = append(orderUpdates, confirmation.PassiveOrdersAffected...)
-	}
+	// also add the passive orders from the book into the list
+	// of updated orders to send to liquidity engine
+	orderUpdates = append(orderUpdates, confirmation.PassiveOrdersAffected...)
 
 	asset, _ := m.mkt.GetAsset()
 
@@ -1831,14 +1813,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
 		for idx, trade := range confirmation.Trades {
-			trade.Id = fmt.Sprintf("%s-%010d", no.Id, idx)
-			if no.Side == types.Side_SIDE_BUY {
-				trade.BuyOrder = no.Id
-				trade.SellOrder = confirmation.PassiveOrdersAffected[idx].Id
-			} else {
-				trade.SellOrder = no.Id
-				trade.BuyOrder = confirmation.PassiveOrdersAffected[idx].Id
-			}
+			trade.SetIDs(&no, confirmation.PassiveOrdersAffected[idx], idx)
 
 			// setup the type of the trade to network
 			// this trade did happen with a GOOD trader to
@@ -1850,7 +1825,14 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
 			m.position.UpdateNetwork(trade)
+			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.currentTime); err != nil {
+				m.log.Debug("unable record open interest",
+					logging.String("market-id", m.GetID()),
+					logging.Error(err))
+			}
+
 			m.settlement.AddTrade(trade)
+			m.feeSplitter.AddTradeValue(trade.Size * trade.Price)
 		}
 		m.broker.SendBatch(tradeEvts)
 	}
@@ -1862,22 +1844,10 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		)
 		return err
 	}
-	// remove accounts, positions, any funds left on the distressed accounts will be moved to the
-	// insurance pool, which needs to happen before we settle the non-distressed traders
-	m.settlement.RemoveDistressed(ctx, closed)
-	closedMPs = m.position.RemoveDistressed(closedMPs)
-	movements, err := m.collateral.RemoveDistressed(ctx, closedMPs, m.GetID(), asset)
-	if err != nil {
-		m.log.Error(
-			"Failed to remove distressed accounts cleanly",
-			logging.Error(err),
-		)
-		return err
-	}
-	if len(movements.Transfers) > 0 {
-		evt := events.NewTransferResponse(ctx, []*types.TransferResponse{movements})
-		m.broker.Send(evt)
-	}
+
+	// swipe all accounts and stuff
+	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
+
 	// get the updated positions
 	evt := m.position.Positions()
 
@@ -1901,7 +1871,35 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	return err
 }
 
-func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Context, partyID string) error {
+func (m *Market) finalizePartiesCloseOut(
+	ctx context.Context,
+	closed []events.Margin,
+	closedMPs []events.MarketPosition,
+) {
+	// remove accounts, positions and return
+	// from settlement engine first
+	m.settlement.RemoveDistressed(ctx, closed)
+	// then from positions
+	closedMPs = m.position.RemoveDistressed(closedMPs)
+	asset, _ := m.mkt.GetAsset()
+	// finally remove from collateral (moving funds where needed)
+	movements, err := m.collateral.RemoveDistressed(
+		ctx, closedMPs, m.GetID(), asset)
+	if err != nil {
+		m.log.Panic(
+			"Failed to remove distressed accounts cleanly",
+			logging.Error(err))
+	}
+
+	if len(movements.Transfers) > 0 {
+		m.broker.Send(
+			events.NewTransferResponse(
+				ctx, []*types.TransferResponse{movements}),
+		)
+	}
+}
+
+func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) error {
 	asset, err := m.mkt.GetAsset()
 	if err != nil {
 		return err
@@ -1910,6 +1908,12 @@ func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Co
 	if err != nil {
 		return err
 	}
+
+	// we may alreadu have confiscated all funds
+	if bacc.Balance == 0 {
+		return nil
+	}
+
 	transfer := &types.Transfer{
 		Owner: partyID,
 		Amount: &types.FinancialAmount{
@@ -1925,11 +1929,6 @@ func (m *Market) cancelLiquidityProvisionAndConfiscateBondAccount(ctx context.Co
 	}
 	m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 
-	m.checkLiquidity(ctx, nil)
-	// start the liquidity monitoring auction if required
-	if !m.as.InAuction() && m.as.AuctionStart() {
-		m.EnterAuction(ctx)
-	}
 	return nil
 }
 
@@ -2460,11 +2459,9 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 
 		// Amend in place during an auction
 		if m.as.InAuction() {
-			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
-			if err == nil {
-				m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
-			}
-			return ret, err
+			ret := m.orderAmendWhenParked(existingOrder, amendedOrder)
+			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			return ret, nil
 		}
 		err := m.repricePeggedOrder(ctx, amendedOrder)
 		if err != nil {
@@ -2473,11 +2470,9 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 				// If we are live then park
 				m.parkOrderAndAdd(ctx, existingOrder)
 			}
-			ret, err := m.orderAmendWhenParked(existingOrder, amendedOrder)
-			if err == nil {
-				m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
-			}
-			return ret, err
+			ret := m.orderAmendWhenParked(existingOrder, amendedOrder)
+			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
+			return ret, nil
 		} else {
 			// We got a new valid price, if we are parked we need to unpark
 			if amendedOrder.Status == types.Order_STATUS_PARKED {
@@ -2785,14 +2780,14 @@ func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*typ
 	}, nil
 }
 
-func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *types.OrderConfirmation {
 	amendOrder.Status = types.Order_STATUS_PARKED
 	amendOrder.Price = 0
 	*originalOrder = *amendOrder
 
 	return &types.OrderConfirmation{
 		Order: amendOrder,
-	}, nil
+	}
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book

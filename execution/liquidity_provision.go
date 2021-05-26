@@ -40,7 +40,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.L
 	// if the party is amending an existing LP
 	// we go done the path of amending
 	if m.liquidity.IsLiquidityProvider(party) {
-		return m.amendOrCancelLiquidityProvision(ctx, sub, party, id)
+		return m.amendOrCancelLiquidityProvision(ctx, sub, party)
 	}
 
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
@@ -344,7 +344,7 @@ func (m *Market) cancelPendingLiquidityProvision(
 ) error {
 	// we will just cancel the party,
 	// no bond slashing applied
-	if err := m.cancelLiquidityProvision(ctx, party, false, false); err != nil {
+	if err := m.cancelLiquidityProvision(ctx, party, false); err != nil {
 		m.log.Debug("error cancelling liquidity provision commitment",
 			logging.PartyID(party),
 			logging.MarketID(m.GetID()),
@@ -698,7 +698,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 }
 
 func (m *Market) cancelLiquidityProvision(
-	ctx context.Context, party string, isDistressed, isReplace bool) error {
+	ctx context.Context, party string, isDistressed bool) error {
 
 	// cancel the liquidity provision
 	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
@@ -742,7 +742,7 @@ func (m *Market) cancelLiquidityProvision(
 
 	// now if our bondAccount is nil
 	// it just mean that the trader my have gone the distressed path
-	// also if the balance is already 0, let's not bother created a
+	// also if the balance is already 0, let's not bother create a
 	// transfer request
 	if err == nil && bondAcc.Balance > 0 {
 		transfer := &types.Transfer{
@@ -763,14 +763,12 @@ func (m *Market) cancelLiquidityProvision(
 		m.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{tresp}))
 	}
 
-	if !isReplace {
-		// now let's update the fee selection
-		m.updateLiquidityFee(ctx)
-		// and remove the party from the equity share like calculation
-		m.equityShares.SetPartyStake(party, 0)
-		// force update of shares so they are updated for all
-		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
-	}
+	// now let's update the fee selection
+	m.updateLiquidityFee(ctx)
+	// and remove the party from the equity share like calculation
+	m.equityShares.SetPartyStake(party, 0)
+	// force update of shares so they are updated for all
+	_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)
@@ -779,7 +777,7 @@ func (m *Market) cancelLiquidityProvision(
 }
 
 func (m *Market) amendOrCancelLiquidityProvision(
-	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, id string,
+	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
 ) error {
 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
 	if lp == nil {
@@ -808,7 +806,7 @@ func (m *Market) amendOrCancelLiquidityProvision(
 	// if this amendment is to reduce the stake to 0, then we'll want to
 	// cancel this lp submission
 	if sub.CommitmentAmount == 0 {
-		return m.cancelLiquidityProvision(ctx, party, false, false)
+		return m.cancelLiquidityProvision(ctx, party, false)
 	}
 
 	// if commitment != 0, then it's an amend

@@ -1733,7 +1733,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 		if err != nil {
 			return nil, err
 		}
-		acc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
+		marginAcc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_ACCOUNT_TYPE_MARGIN))
 		if err != nil {
 			return nil, err
 		}
@@ -1741,13 +1741,13 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 		if bondAcc.Balance > 0 {
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
 				FromAccount: bondAcc.Id,
-				ToAccount:   acc.Id,
+				ToAccount:   marginAcc.Id,
 				Amount:      bondAcc.Balance,
 				Reference:   types.TransferType_TRANSFER_TYPE_MARGIN_LOW.String(),
 				Type:        "position-resolution",
 				Timestamp:   e.currentTime,
 			})
-			if err := e.IncrementBalance(ctx, acc.Id, bondAcc.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, marginAcc.Id, bondAcc.Balance); err != nil {
 				return nil, err
 			}
 			if err := e.UpdateBalance(ctx, bondAcc.Id, 0); err != nil {
@@ -1759,13 +1759,13 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 		if genAcc.Balance > 0 {
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
 				FromAccount: genAcc.Id,
-				ToAccount:   acc.Id,
+				ToAccount:   marginAcc.Id,
 				Amount:      genAcc.Balance,
 				Reference:   types.TransferType_TRANSFER_TYPE_MARGIN_LOW.String(),
 				Type:        "position-resolution",
 				Timestamp:   e.currentTime,
 			})
-			if err := e.IncrementBalance(ctx, acc.Id, genAcc.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, marginAcc.Id, genAcc.Balance); err != nil {
 				return nil, err
 			}
 			if err := e.UpdateBalance(ctx, genAcc.Id, 0); err != nil {
@@ -1773,29 +1773,29 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 			}
 		}
 		// move monies from the margin account (balance is general, bond, and margin combined now)
-		if acc.Balance > 0 {
+		if marginAcc.Balance > 0 {
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
-				FromAccount: acc.Id,
+				FromAccount: marginAcc.Id,
 				ToAccount:   ins.Id,
-				Amount:      acc.Balance,
+				Amount:      marginAcc.Balance,
 				Reference:   types.TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED.String(),
 				Type:        "position-resolution",
 				Timestamp:   e.currentTime,
 			})
-			if err := e.IncrementBalance(ctx, ins.Id, acc.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, ins.Id, marginAcc.Balance); err != nil {
 				return nil, err
 			}
-			if err := e.UpdateBalance(ctx, acc.Id, 0); err != nil {
+			if err := e.UpdateBalance(ctx, marginAcc.Id, 0); err != nil {
 				return nil, err
 			}
 		}
 
 		// we remove the margin account
-		if err := e.removeAccount(acc.Id); err != nil {
+		if err := e.removeAccount(marginAcc.Id); err != nil {
 			return nil, err
 		}
 		// remove account from balances tracking
-		e.rmPartyAccount(trader.Party(), acc.Id)
+		e.rmPartyAccount(trader.Party(), marginAcc.Id)
 
 	}
 	return &resp, nil
