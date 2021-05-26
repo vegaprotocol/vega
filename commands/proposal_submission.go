@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	MaxDuration30DaysNs = 2592000000000000
+	MaxDuration30DaysNs int64 = 2592000000000000
 )
 
 func CheckProposalSubmission(cmd *commandspb.ProposalSubmission) error {
