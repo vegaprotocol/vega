@@ -817,8 +817,8 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		}
 
 		// calculate the marginShortFall in case of a liquidityProvider
-		if mevt.bond != nil && uint64(transfer.Amount.Amount) > mevt.general.Balance {
-			mevt.marginShortFall = uint64(transfer.Amount.Amount) - mevt.general.Balance
+		if mevt.bond != nil && transfer.Amount.Amount > mevt.general.Balance {
+			mevt.marginShortFall = transfer.Amount.Amount - mevt.general.Balance
 		}
 
 		res, err := e.getLedgerEntries(ctx, req)
@@ -966,14 +966,14 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 
 	// we do not have enough money to get to the minimum amount,
 	// we return an error.
-	if mevt.GeneralBalance()+mevt.MarginBalance() < uint64(transfer.MinAmount) {
+	if mevt.GeneralBalance()+mevt.MarginBalance() < transfer.MinAmount {
 		return nil, mevt, ErrMinAmountNotReached
 	}
 
-	if mevt.bond != nil && uint64(transfer.Amount.Amount) > mevt.general.Balance {
+	if mevt.bond != nil && transfer.Amount.Amount > mevt.general.Balance {
 		// this is a liquidity provider but it did not have enough funds to
 		// pay from the general account, we'll have to penalize later on
-		mevt.marginShortFall = uint64(transfer.Amount.Amount) - mevt.general.Balance
+		mevt.marginShortFall = transfer.Amount.Amount - mevt.general.Balance
 	}
 
 	// from here we know there's enough money,
@@ -1150,6 +1150,11 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 		return treq, nil
 	case types.TransferType_TRANSFER_TYPE_BOND_SLASHING:
 		treq.FromAccount = []*types.Account{bond}
+		// it's possible the bond account is insufficient, and falling back to margin balance
+		// won't cause a close-out
+		if marginAcc, err := e.GetAccountByID(e.accountID(market, t.Owner, t.Amount.Asset, types.AccountType_ACCOUNT_TYPE_MARGIN)); err == nil {
+			treq.FromAccount = append(treq.FromAccount, marginAcc)
+		}
 		treq.ToAccount = []*types.Account{insurancePool}
 		return treq, nil
 	default:

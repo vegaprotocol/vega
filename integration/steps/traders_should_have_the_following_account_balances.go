@@ -29,12 +29,20 @@ func TradersShouldHaveTheFollowingAccountBalances(
 		if err != nil {
 			return errCannotGetTraderMarginAccount(row.trader(), row.asset(), err)
 		}
+		// check bond
+		var bondAcc types.Account
+		if bbal, ok := row.bondAccountBalance(); ok {
+			bondAcc, err = broker.GetTraderBondAccount(row.trader(), row.asset())
+			if err == nil && bondAcc.Balance != bbal {
+				hasError = true
+			}
+		}
 		if marginAccount.GetBalance() != row.marginAccountBalance() {
 			hasError = true
 		}
 
 		if hasError {
-			return errMismatchedAccountBalances(row, marginAccount, generalAccount)
+			return errMismatchedAccountBalances(row, marginAccount, generalAccount, bondAcc)
 		}
 
 	}
@@ -53,7 +61,24 @@ func errCannotGetTraderMarginAccount(trader, asset string, err error) error {
 	)
 }
 
-func errMismatchedAccountBalances(row accountBalancesRow, marginAccount types.Account, generalAccount types.Account) error {
+func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, generalAccount, bondAcc types.Account) error {
+	// if bond account was given
+	if bondAcc.Type == types.AccountType_ACCOUNT_TYPE_BOND {
+		bbal, _ := row.bondAccountBalance()
+		return formatDiff(
+			fmt.Sprintf("account balances did not match for party(%s)", row.trader()),
+			map[string]string{
+				"margin account balance":  u64ToS(row.marginAccountBalance()),
+				"general account balance": u64ToS(row.generalAccountBalance()),
+				"bond account balance":    u64ToS(bbal),
+			},
+			map[string]string{
+				"margin account balance":  u64ToS(marginAccount.GetBalance()),
+				"general account balance": u64ToS(generalAccount.GetBalance()),
+				"bond account balance":    u64ToS(bondAcc.Balance),
+			},
+		)
+	}
 	return formatDiff(
 		fmt.Sprintf("account balances did not match for party(%s)", row.trader()),
 		map[string]string{
@@ -61,7 +86,7 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount types.Ac
 			"general account balance": u64ToS(row.generalAccountBalance()),
 		},
 		map[string]string{
-			"margin account balance": u64ToS(marginAccount.GetBalance()),
+			"margin account balance":  u64ToS(marginAccount.GetBalance()),
 			"general account balance": u64ToS(generalAccount.GetBalance()),
 		},
 	)
@@ -89,4 +114,8 @@ func (r accountBalancesRow) marginAccountBalance() uint64 {
 
 func (r accountBalancesRow) generalAccountBalance() uint64 {
 	return r.row.MustU64("general")
+}
+
+func (r accountBalancesRow) bondAccountBalance() (uint64, bool) {
+	return r.row.U64B("bond")
 }
