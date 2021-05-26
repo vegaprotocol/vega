@@ -30,13 +30,13 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
       | aux      | ETH   | 100000000 |
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | trader1 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT  | TIF_GFA | 
-      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT  | TIF_GFA | 
-      | trader1 | ETH/DEC20 | buy  | 5      | 95000  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader2 | ETH/DEC20 | sell | 5      | 107000 | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
+      | trader1 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT  | TIF_GFA |
+      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT  | TIF_GFA |
+      | trader1 | ETH/DEC20 | buy  | 5      | 95000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader2 | ETH/DEC20 | sell | 5      | 107000 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT  | TIF_GTC |
     And the traders submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
       | lp1 | trader1  | ETH/DEC20 | 16000000          | 0.3 | buy        | BID             | 2                | -10          |
@@ -49,9 +49,9 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | trader1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
+      | trader1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT  | TIF_GTC |
     ## price bounds are 99771 to 100290 (99845 and 100156)
     And the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     | expires in |
@@ -60,9 +60,9 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
     And the mark price should be "100150" for the market "ETH/DEC20"
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | trader2 | ETH/DEC20 | sell | 5      | 99000  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | trader1 | ETH/DEC20 | buy  | 1      | 99950  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
+      | trader2 | ETH/DEC20 | sell | 5      | 99000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader1 | ETH/DEC20 | buy  | 1      | 99950  | 0                | TYPE_LIMIT  | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
 

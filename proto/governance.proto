@@ -194,6 +194,8 @@ message Proposal {
   ProposalTerms terms = 6 [(validator.field) = {msg_exists: true}];
   // A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses
   ProposalError reason = 7;
+  // The detailed error associated to the reason.
+  string error_details = 8;
 }
 
 // A list of possible errors that can cause a proposal to be in state rejected or failed

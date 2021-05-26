@@ -53,14 +53,13 @@ func NewMarketData(log *logging.Logger, c Config) *MarketData {
 }
 
 func (m *MarketData) GetByID(marketID string) (proto.MarketData, error) {
-	var err error
 	m.mu.RLock()
 	md, ok := m.store[marketID]
 	m.mu.RUnlock()
 	if !ok {
-		err = ErrNoMarketDataForMarket
+		return proto.MarketData{}, nil
 	}
-	return md, err
+	return md, nil
 }
 
 func (m *MarketData) GetAll() []proto.MarketData {

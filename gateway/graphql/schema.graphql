@@ -1184,7 +1184,7 @@ type Market {
   ): [Candle]
 
   "marketData for the given market"
-  data: MarketData!
+  data: MarketData
 
   "The list of the liquidity provision commitment for this market"
   liquidityProvisions(
@@ -2456,6 +2456,8 @@ type Proposal {
   votes: ProposalVotes!
   "Reason for the proposal to be rejected by the core"
   rejectionReason: ProposalRejectionReason
+  "Error details of the rejectionReason"
+  errorDetails: String
 }
 
 type ProposalVotes {

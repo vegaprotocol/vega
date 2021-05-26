@@ -25,6 +25,7 @@ func defaultNetParams() map[string]value {
 		MarketLiquidityProvidersFeeDistribitionTimeStep: NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("0s"),
 		MarketLiquidityTargetStakeTriggeringRatio:       NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("0"),
 		MarketProbabilityOfTradingTauScaling:            NewFloat(FloatGTE(1.)).Mutable(true).MustUpdate("1"),
+		MarketMinProbabilityOfTradingForLPOrders:        NewFloat(FloatGTE(1e-15), FloatLTE(0.1)).Mutable(true).MustUpdate("1e-8"),
 		MarketTargetStakeTimeWindow:                     NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h0m0s"),
 		MarketTargetStakeScalingFactor:                  NewFloat(FloatGTE(0)).Mutable(true).MustUpdate("10"),
 		MarketValueWindowLength:                         NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate(week),

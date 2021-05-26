@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
@@ -39,6 +40,7 @@ func TestMain(m *testing.M) {
 }
 
 func FeatureContext(s *godog.Suite) {
+	var blockDuration int64
 	s.BeforeScenario(func(_ interface{}) {
 		execsetup = newExecutionTestSetup()
 	})
@@ -131,6 +133,46 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *gherkin.DataTable) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
 	})
+	s.Step(`^the average block duration is "([^"]+)"$`, func(blockTime string) error {
+		bt, err := steps.TheBlockTimeIs(blockTime)
+		if err != nil {
+			return err
+		}
+		blockDuration = bt
+		return nil
+	})
+
+	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
+		n, err := strconv.ParseInt(blocks, 10, 0)
+		if err != nil {
+			return err
+		}
+		t, _ := execsetup.timeService.GetTimeNow()
+		block := time.Duration(blockDuration) * time.Second
+		for i := int64(0); i < n; i++ {
+			t = t.Add(block)
+			execsetup.timeService.SetTime(t)
+		}
+		return nil
+	})
+
+	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
+		delta, err := time.ParseDuration(total)
+		if err != nil {
+			return err
+		}
+		inc, err := time.ParseDuration(block)
+		if err != nil {
+			return err
+		}
+		t, _ := execsetup.timeService.GetTimeNow()
+		end := t.Add(delta)
+		for t.Before(end) {
+			t = t.Add(inc)
+			execsetup.timeService.SetTime(t)
+		}
+		return nil
+	})
 
 	// Assertion steps
 	s.Step(`^the following amendments should be rejected:$`, func(table *gherkin.DataTable) error {
@@ -162,6 +204,9 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^the following orders should be rejected:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingOrdersShouldBeRejected(execsetup.broker, table)
+	})
+	s.Step(`^the following orders should be stopped:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingOrdersShouldBeStopped(execsetup.broker, table)
 	})
 	s.Step(`^"([^"]*)" should have general account balance of "([^"]*)" for asset "([^"]*)"$`, func(trader, balance, asset string) error {
 		return steps.TraderShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, trader, asset, balance)
@@ -205,7 +250,7 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the supplied stake should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
 		return steps.TheSuppliedStakeShouldBeForTheMarket(execsetup.executionEngine, marketID, stake)
 	})
-	s.Step(`^the open interest should be "([^"]*)" for the market "([^"]*)"$`, func(stake , marketID string) error {
+	s.Step(`^the open interest should be "([^"]*)" for the market "([^"]*)"$`, func(stake, marketID string) error {
 		return steps.TheOpenInterestShouldBeForTheMarket(execsetup.executionEngine, marketID, stake)
 	})
 	s.Step(`^the liquidity provider fee shares for the market "([^"]*)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
@@ -219,6 +264,13 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^the liquidity fee factor should "([^"]*)" for the market "([^"]*)"$`, func(fee, marketID string) error {
 		return steps.TheLiquidityFeeFactorShouldForTheMarket(execsetup.broker, fee, marketID)
+	})
+	s.Step(`^the market data for the market "([^"]+)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
+		return steps.TheMarketDataShouldBe(execsetup.executionEngine, marketID, table)
+	})
+	s.Step(`the auction ends with a traded volume of "([^"]+)" at a price of "([^"]+)"`, func(vol, price string) error {
+		now, _ := execsetup.timeService.GetTimeNow()
+		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
 	})
 
 	// Debug steps

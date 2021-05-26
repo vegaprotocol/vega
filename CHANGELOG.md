@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.37.0
+*2021-05-26*
+
+### Improvements
+- [#3479](https://github.com/vegaprotocol/vega/pull/3479) - Add test coverage for auction interactions
+- [#3494](https://github.com/vegaprotocol/vega/pull/3494) - Add `error_details` field to rejected proposals
+- [#3491](https://github.com/vegaprotocol/vega/pull/3491) - Market Data no longer returns an error when no market data exists, as this is a valid situation
+- [#3461](https://github.com/vegaprotocol/vega/pull/3461) - Optimise transaction format & improve validation
+- [#3489](https://github.com/vegaprotocol/vega/pull/3489) - Run `buf breaking` at build time
+- [#3487](https://github.com/vegaprotocol/vega/pull/3487) - Refactor `prepare*` command validation
+- [#3516](https://github.com/vegaprotocol/vega/pull/3516) - New tests for distressed LP + use margin for bond slashing as fallback
+
+### Fixes
+- [#3513](https://github.com/vegaprotocol/vega/pull/3513) - Fix reprice of pegged orders on every liquidity update
+- [#3457](https://github.com/vegaprotocol/vega/pull/3457) - Fix probability of trading calculation for liquidity orders
+- [#3515](https://github.com/vegaprotocol/vega/pull/3515) - Fixes for the resolve close out LP parties flow
+- [#3513](https://github.com/vegaprotocol/vega/pull/3513) - Fix redeployment of LP orders
+- [#3514](https://github.com/vegaprotocol/vega/pull/3513) - Fix price monitoring bounds
+
 ## 0.36.0
 *2021-05-13*
 

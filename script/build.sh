@@ -297,7 +297,7 @@ run() {
 		return "$?"
 		;;
 	buflint) ## Run
-		buf check lint
+	        buf lint
 		return "$?"
 		;;
 	misspell) ## Run misspell

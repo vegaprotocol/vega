@@ -21,7 +21,9 @@ import (
 )
 
 var (
-	ErrInvalidSignature = errors.New("invalid signature")
+	ErrInvalidSignature           = errors.New("invalid signature")
+	ErrSubmitTxCommitDisabled     = errors.New("broadcast_tx_commit is disabled")
+	ErrUnknownSubmitTxRequestType = errors.New("invalid broadcast_tx type")
 )
 
 // TradeOrderService ...
@@ -65,7 +67,8 @@ type Blockchain interface {
 }
 
 type tradingService struct {
-	log *logging.Logger
+	log  *logging.Logger
+	conf Config
 
 	blockchain        Blockchain
 	tradeOrderService TradeOrderService
@@ -76,6 +79,11 @@ type tradingService struct {
 	evtForwarder      EvtForwarder
 
 	statusChecker *monitoring.Status
+}
+
+// no need for a mutext - we only access the config through a value receiver
+func (s *tradingService) updateConfig(conf Config) {
+	s.conf = conf
 }
 
 func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.PrepareSubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
@@ -136,6 +144,28 @@ func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.Pr
 	}, nil
 }
 
+// value receiver is important, config can be updated, this avoids data race
+func (s tradingService) validateSubmitTx(ty protoapi.SubmitTransactionRequest_Type) (protoapi.SubmitTransactionRequest_Type, error) {
+	// ensure this is a known value for the type
+	if _, ok := protoapi.SubmitTransactionRequest_Type_name[int32(ty)]; !ok {
+		return protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED, ErrUnknownSubmitTxRequestType
+	}
+
+	switch ty {
+	// FIXME(jeremy): in order to keep compatibility with existing clients
+	// we allow no submiting the Type field, and default to old behaviour
+	case protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED:
+		ty = protoapi.SubmitTransactionRequest_TYPE_ASYNC
+	case protoapi.SubmitTransactionRequest_TYPE_COMMIT:
+		// commit is disabled?
+		if s.conf.DisableTxCommit {
+			return protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED, ErrSubmitTxCommitDisabled
+		}
+	}
+	// ty is a known type, and not disabled, all good
+	return ty, nil
+}
+
 func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
@@ -143,11 +173,9 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	var ty = req.Type
-	// FIXME(jeremy): in order to keep compatibility with existing clients
-	// we allow no submiting the Type field, and default to old behaviour
-	if ty == protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED {
-		ty = protoapi.SubmitTransactionRequest_TYPE_ASYNC
+	ty, err := s.validateSubmitTx(req.Type)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, err)
 	}
 
 	if err := s.blockchain.SubmitTransaction(ctx, req.Tx, ty); err != nil {

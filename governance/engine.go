@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -21,7 +22,6 @@ var (
 	ErrProposalNotFound        = errors.New("proposal not found")
 	ErrProposalIsDuplicate     = errors.New("proposal with given ID already exists")
 	ErrVoterInsufficientTokens = errors.New("vote requires more tokens than party has")
-	ErrProposalInvalidState    = errors.New("proposal state not valid, only open can be submitted")
 	ErrProposalPassed          = errors.New("proposal has passed and can no longer be voted on")
 	ErrUnsupportedProposalType = errors.New("unsupported proposal type")
 	ErrProposalDoesNotExists   = errors.New("proposal does not exists")
@@ -310,19 +310,20 @@ func (e *Engine) SubmitProposal(
 }
 
 func (e *Engine) RejectProposal(
-	ctx context.Context, p *types.Proposal, r types.ProposalError,
+	ctx context.Context, p *types.Proposal, r types.ProposalError, errorDetails error,
 ) error {
 	if _, ok := e.getProposal(p.Id); !ok {
 		return ErrProposalDoesNotExists
 	}
 
-	e.rejectProposal(p, r)
+	e.rejectProposal(p, r, errorDetails)
 	e.broker.Send(events.NewProposalEvent(ctx, *p))
 	return nil
 }
 
-func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError) {
+func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorDetails error) {
 	e.removeProposal(p.Id)
+	p.ErrorDetails = errorDetails.Error()
 	p.Reason = r
 	p.State = types.Proposal_STATE_REJECTED
 }
@@ -344,7 +345,7 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 
 		mkt, perr, err := createMarket(p.Id, change.NewMarket, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
 		if err != nil {
-			e.rejectProposal(p, perr)
+			e.rejectProposal(p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
 		tsb.m = &ToSubmitNewMarket{
@@ -509,18 +510,22 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
-func (e *Engine) AddVote(ctx context.Context, voteSub commandspb.VoteSubmission, party string) error {
-	proposal, err := e.validateVote(voteSub, party)
+func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, party string) error {
+	if err := commands.CheckVoteSubmission(&cmd); err != nil {
+		return err
+	}
+
+	proposal, err := e.validateVote(cmd, party)
 	if err != nil {
 		// vote was not created/accepted, send TxErrEvent
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, voteSub))
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cmd))
 		return err
 	}
 
 	vote := types.Vote{
 		PartyId:    party,
-		ProposalId: voteSub.ProposalId,
-		Value:      voteSub.Value,
+		ProposalId: cmd.ProposalId,
+		Value:      cmd.Value,
 		Timestamp:  e.currentTime.UnixNano(),
 	}
 

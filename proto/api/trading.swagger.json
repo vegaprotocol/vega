@@ -4630,7 +4630,7 @@
         },
         "market_timestamps": {
           "$ref": "#/definitions/vegaMarketTimestamps",
-          "title": "Timestamps for when the market staye changes"
+          "title": "Timestamps for when the market stay changes"
         }
       },
       "title": "Market definition"
@@ -5337,7 +5337,7 @@
         "probability": {
           "type": "number",
           "format": "double",
-          "title": "Price monitoirng probability level p"
+          "title": "Price monitoring probability level p"
         },
         "auction_extension": {
           "type": "string",
@@ -5378,6 +5378,10 @@
         "reason": {
           "$ref": "#/definitions/vegaProposalError",
           "title": "A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses"
+        },
+        "error_details": {
+          "type": "string",
+          "description": "The detailed error associated to the reason."
         }
       },
       "title": "Governance proposal"

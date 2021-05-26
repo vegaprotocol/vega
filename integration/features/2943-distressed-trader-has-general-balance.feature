@@ -25,11 +25,11 @@ Feature: Distressed traders should not have general balance left
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type        | tif     | 
-      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux2       | ETH/DEC20 | buy  | 1      | 100      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | auxiliary  | ETH/DEC20 | sell | 1      | 100      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader     | market id | side | volume | price    | resulting trades | type        | tif     |
+      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC |
+      | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC |
+      | aux2       | ETH/DEC20 | buy  | 1      | 100      | 0                | TYPE_LIMIT  | TIF_GTC |
+      | auxiliary  | ETH/DEC20 | sell | 1      | 100      | 0                | TYPE_LIMIT  | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -72,12 +72,12 @@ Feature: Distressed traders should not have general balance left
 
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset | price | status        |
-      | trader3 | ETH/DEC20 | buy  | 989    | BID       | -10    | 100   | STATUS_ACTIVE |
-      | trader3 | ETH/DEC20 | sell | 760    | ASK       | 10     | 130   | STATUS_ACTIVE |
+      | trader3 | ETH/DEC20 | buy  | 945    | BID       | -10    | 100   | STATUS_ACTIVE |
+      | trader3 | ETH/DEC20 | sell | 724    | ASK       | 10     | 130   | STATUS_ACTIVE |
     ## The sum of the margin + general account == 10000 - 10000 (commitment amount)
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC20 | 13186  | 814     |
+      | trader3 | ETH   | ETH/DEC20 | 12606  | 1394    |
 
     ## Now let's increase the mark price so trader3 gets distressed
     When the traders place the following orders:
@@ -87,7 +87,7 @@ Feature: Distressed traders should not have general balance left
 
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC20 | 13186  | 814     |
+      | trader3 | ETH   | ETH/DEC20 | 12606  | 1394    |
       # expected balances to be margin(15165) general(0), instead saw margin(13186), general(814), (trader: trader3)
 
     ## Now let's increase the mark price so trader3 gets distressed
@@ -98,4 +98,4 @@ Feature: Distressed traders should not have general balance left
 
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC20 | 17143  | 0       |
+      | trader3 | ETH   | ETH/DEC20 | 16388  | 0       |

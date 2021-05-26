@@ -353,3 +353,26 @@ func TestPrepareProposal(t *testing.T) {
 
 	g.Stop()
 }
+
+func TestMarketDataByID_marketDoesNotExist(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
+	defer cancel()
+
+	g, tidy, conn, err := getTestGRPCServer(t, ctx, 64201, true)
+	if err != nil {
+		t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+	}
+	defer tidy()
+
+	client := protoapi.NewTradingDataServiceClient(conn)
+	assert.NotNil(t, client)
+
+	md, err := client.MarketDataByID(ctx, &protoapi.MarketDataByIDRequest{
+		MarketId: "non-existent",
+	})
+
+	assert.Error(t, err, "market does not exist")
+	assert.Nil(t, md)
+
+	g.Stop()
+}

@@ -14,20 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// just all account types as vars, so we don't have to clutter
-// the tests with too many arguments when getting account return values
-var (
-	allTypes = []types.AccountType{
-		types.AccountType_ACCOUNT_TYPE_MARGIN,
-		types.AccountType_ACCOUNT_TYPE_GENERAL,
-
-		types.AccountType_ACCOUNT_TYPE_INSURANCE,
-		types.AccountType_ACCOUNT_TYPE_SETTLEMENT,
-	}
-
-	traderTypes = allTypes[:2]
-)
-
 type tstService struct {
 	*accounts.Svc
 	ctrl    *gomock.Controller
@@ -45,8 +31,14 @@ func testGetTraderAccountsSuccess(t *testing.T) {
 
 	owner, market1, market2 := "test", "BTC/DEC19", "ETH/DEC19"
 
-	firstMarket := getTestAccounts(owner, market1, traderTypes...)
-	secondMarket := getTestAccounts(owner, market2, traderTypes...)
+	firstMarket := getTestAccounts(owner, market1,
+		types.AccountType_ACCOUNT_TYPE_MARGIN,
+		types.AccountType_ACCOUNT_TYPE_GENERAL,
+	)
+	secondMarket := getTestAccounts(owner, market2,
+		types.AccountType_ACCOUNT_TYPE_MARGIN,
+		types.AccountType_ACCOUNT_TYPE_GENERAL,
+	)
 
 	all := append(firstMarket, secondMarket...)
 

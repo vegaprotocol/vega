@@ -68,5 +68,5 @@ type GovernanceEngine interface {
 	SubmitProposal(context.Context, commandspb.ProposalSubmission, string, string) (*governance.ToSubmit, error)
 	AddVote(context.Context, commandspb.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
-	RejectProposal(context.Context, *types.Proposal, types.ProposalError) error
+	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
 }

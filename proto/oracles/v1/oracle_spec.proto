@@ -54,7 +54,7 @@ message Filter {
   // key is the oracle data property key targeted by the filter.
   PropertyKey key = 1;
   // conditions are the conditions that should be matched by the data to be
-  //considered of interest.
+  // considered of interest.
   repeated Condition conditions = 2;
 }
 

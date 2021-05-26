@@ -1079,7 +1079,7 @@ func (m *Fees) GetFactors() *FeeFactors {
 type PriceMonitoringTrigger struct {
 	// Price monitoring projection horizon τ in seconds
 	Horizon int64 `protobuf:"varint,1,opt,name=horizon,proto3" json:"horizon,omitempty"`
-	// Price monitoirng probability level p
+	// Price monitoring probability level p
 	Probability float64 `protobuf:"fixed64,2,opt,name=probability,proto3" json:"probability,omitempty"`
 	// Price monitoring auction extension duration in seconds should the price
 	// breach it's theoretical level over the specified horizon at the specified
@@ -1364,7 +1364,7 @@ type Market struct {
 	TradingMode Market_TradingMode `protobuf:"varint,8,opt,name=trading_mode,json=tradingMode,proto3,enum=vega.Market_TradingMode" json:"trading_mode,omitempty"`
 	// Current state of the market
 	State Market_State `protobuf:"varint,9,opt,name=state,proto3,enum=vega.Market_State" json:"state,omitempty"`
-	// Timestamps for when the market staye changes
+	// Timestamps for when the market stay changes
 	MarketTimestamps     *MarketTimestamps `protobuf:"bytes,10,opt,name=market_timestamps,json=marketTimestamps,proto3" json:"market_timestamps,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`

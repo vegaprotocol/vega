@@ -70,7 +70,6 @@ func (e *Engine) AmendLiquidityProvision(
 	if lp.Status == types.LiquidityProvision_STATUS_ACTIVE {
 		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
 	}
-	e.undeployedProvisions = true
 
 	e.buildLiquidityProvisionShapesReferences(lp, lps)
 
@@ -78,13 +77,13 @@ func (e *Engine) AmendLiquidityProvision(
 	return cancels, nil
 }
 
-// GetPotentialShapeOrders is used to create ordes from
+// GetPotentialShapeOrders is used to create orders from
 // shape when amending a liquidity provision this allows us to
 // ensure enough funds can be taken from the margin account in orders
 // to submit orders lateer on.
 func (e *Engine) GetPotentialShapeOrders(
 	party string,
-	price uint64,
+	bestBidPrice, bestAskPrice uint64,
 	lps *commandspb.LiquidityProvisionSubmission,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
@@ -92,7 +91,7 @@ func (e *Engine) GetPotentialShapeOrders(
 		return nil, err
 	}
 
-	priceShape := func(loShape []*types.LiquidityOrder) ([]*supplied.LiquidityOrder, bool) {
+	priceShape := func(loShape []*types.LiquidityOrder, side types.Side) ([]*supplied.LiquidityOrder, bool) {
 		shape := make([]*supplied.LiquidityOrder, 0, len(loShape))
 		for _, lorder := range loShape {
 			pegged := &types.PeggedOrder{
@@ -101,8 +100,9 @@ func (e *Engine) GetPotentialShapeOrders(
 			}
 			order := &supplied.LiquidityOrder{
 				Proportion: uint64(lorder.Proportion),
+				Peg:        pegged,
 			}
-			price, err := repriceFn(pegged)
+			price, _, err := repriceFn(pegged, side)
 			if err != nil {
 				return nil, false
 			}
@@ -112,11 +112,11 @@ func (e *Engine) GetPotentialShapeOrders(
 		return shape, true
 	}
 
-	buyShape, ok := priceShape(lps.Buys)
+	buyShape, ok := priceShape(lps.Buys, types.Side_SIDE_BUY)
 	if !ok {
 		return nil, errors.New("unable to price buy shape")
 	}
-	sellShape, ok := priceShape(lps.Sells)
+	sellShape, ok := priceShape(lps.Sells, types.Side_SIDE_SELL)
 	if !ok {
 		return nil, errors.New("unable to price sell shape")
 	}
@@ -132,7 +132,7 @@ func (e *Engine) GetPotentialShapeOrders(
 	// now try to calculate the implied volume for our shape,
 	// any error would exit straight away
 	if err := e.suppliedEngine.CalculateLiquidityImpliedVolumes(
-		float64(price), float64(price),
+		bestBidPrice, bestAskPrice,
 		obligation,
 		orders,
 		buyShape, sellShape,
@@ -161,7 +161,7 @@ func (e *Engine) buildPotentialShapeOrders(party string, supplied []*supplied.Li
 		// no need to make it a proper pegged order, set an actual ID etc here
 		// as we actually just return this order as a template for margin
 		// calculation
-		order := e.buildOrder(side, nil, o.Price, party, e.marketID, o.LiquidityImpliedVolume, "", "")
+		order := e.buildOrder(side, o.Peg, o.Price, party, e.marketID, o.LiquidityImpliedVolume, "", "")
 		orders = append(orders, order)
 	}
 

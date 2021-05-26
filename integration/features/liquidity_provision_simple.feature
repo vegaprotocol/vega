@@ -43,12 +43,13 @@ Feature: Test LP orders
     And clear order events
     Then the traders submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
-      | lp1 | trader1 | ETH/DEC19 | 10000             | 0.1 | buy        | BID             | 500              | -10          |
-      | lp1 | trader1 | ETH/DEC19 | 10000             | 0.1 | sell       | ASK             | 500              | 10           |
+      | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | buy        | BID             | 500              | -10          |
+      | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | sell       | ASK             | 500              | 10           |
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
-      | lp1 | trader1 | ETH/DEC19 | 10000             | STATUS_ACTIVE |
+      | lp1 | trader1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |
+    Then debug orders
     Then the orders should have the following states:
       | trader  | market id | side | volume | price | status        |
-      | trader1 | ETH/DEC19 | buy  | 450    | 100   | STATUS_ACTIVE |
-      | trader1 | ETH/DEC19 | sell | 308    | 130   | STATUS_ACTIVE |
+      | trader1 | ETH/DEC19 | buy  | 2250   | 100   | STATUS_ACTIVE |
+      | trader1 | ETH/DEC19 | sell | 1539   | 130   | STATUS_ACTIVE |
