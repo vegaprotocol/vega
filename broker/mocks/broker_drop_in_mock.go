@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"sync"
+
 	"code.vegaprotocol.io/vega/events"
 	"github.com/golang/mock/gomock"
 )
@@ -11,6 +13,8 @@ type MockBroker struct {
 	// embed the broker mock here... this is how we can end up with a drop-in replacement
 	*MockBrokerI
 
+	// settlement has a TestConcurrent test, which causes data race on this wrapped mock
+	mu *sync.Mutex
 	// all events in a map per type
 	// the last of each event type
 	// and last events for each event type by ID (e.g. latest order event given the order ID)
@@ -23,6 +27,7 @@ func NewMockBroker(ctrl *gomock.Controller) *MockBroker {
 	mbi := NewMockBrokerI(ctrl)
 	return &MockBroker{
 		MockBrokerI: mbi,
+		mu:          &sync.Mutex{},
 		allEvts:     map[events.Type][]events.Event{},
 		lastEvts:    map[events.Type]events.Event{},
 		lastEvtsID:  map[events.Type]map[string]events.Event{},
@@ -33,6 +38,7 @@ func NewMockBroker(ctrl *gomock.Controller) *MockBroker {
 func (b *MockBroker) Send(event events.Event) {
 	// first call the regular mock
 	b.MockBrokerI.Send(event)
+	b.mu.Lock()
 	t := event.Type()
 	s, ok := b.allEvts[t]
 	if !ok {
@@ -49,6 +55,7 @@ func (b *MockBroker) Send(event events.Event) {
 		m[id] = event
 		b.lastEvtsID[t] = m
 	}
+	b.mu.Unlock()
 }
 
 // SendBatch - same as Send: call mock first, then add arguments to the maps
@@ -57,6 +64,7 @@ func (b *MockBroker) SendBatch(evts []events.Event) {
 	if len(evts) == 0 {
 		return
 	}
+	b.mu.Lock()
 	first := evts[0]
 	t := first.Type()
 	s, ok := b.allEvts[t]
@@ -76,11 +84,15 @@ func (b *MockBroker) SendBatch(evts []events.Event) {
 		m[id] = last
 		b.lastEvtsID[t] = m
 	}
+	b.mu.Unlock()
 }
 
 // GetAllByType returns all events of a given type the mock has received
 func (b *MockBroker) GetAllByType(t events.Type) []events.Event {
-	if s, ok := b.allEvts[t]; ok {
+	b.mu.Lock()
+	allEvts := b.allEvts
+	b.mu.Unlock()
+	if s, ok := allEvts[t]; ok {
 		return s
 	}
 	return nil
@@ -88,6 +100,8 @@ func (b *MockBroker) GetAllByType(t events.Type) []events.Event {
 
 // GetLastByType returns the most recent event for a given type. If SendBatch was called, this is the last event of the batch
 func (b *MockBroker) GetLastByType(t events.Type) events.Event {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	return b.lastEvts[t]
 }
 
@@ -108,7 +122,9 @@ func (b *MockBroker) GetLastByType(t events.Type) events.Event {
 //  * Vote (currently PartyID, might want to use proposalID, too?)
 //  * Withdrawal (PartyID)
 func (b *MockBroker) GetLastByTypeAndID(t events.Type, id string) events.Event {
+	b.mu.Lock()
 	m, ok := b.lastEvtsID[t]
+	b.mu.Unlock()
 	if !ok {
 		return nil
 	}
