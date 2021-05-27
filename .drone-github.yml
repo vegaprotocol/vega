@@ -150,11 +150,12 @@ steps:
         from_secret: JENKINS_SYSTEMTESTS_WEBHOOK_URL
     commands:
       - apk add curl
+      - export STATUSES_URL="https://api.github.com/repos/$${DRONE_REPO}/statuses/$${DRONE_COMMIT_SHA}"
       - |
         curl \\
           --request POST \\
           --header "Content-Type: application/json" \\
-          --data "{\"pull_request\":{\"head\":{\"ref\":\"$${DRONE_REPO_NAME}\"},\"statuses_url\":\"https://api.github.com/repos/$${DRONE_REPO}/statuses/$${DRONE_COMMIT_SHA}\"}}" \\
+          --data "{\"pull_request\":{\"head\":{\"ref\":\"$${DRONE_REPO_NAME}\"},\"statuses_url\":\"$${STATUSES_URL}\"}}" \\
           "$${JENKINS_SYSTEMTESTS_WEBHOOK_URL}"
     depends_on:
       - test-PR
