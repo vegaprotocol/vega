@@ -10,7 +10,7 @@ import (
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/oracles Broker
+// Broker no need to mock (use broker package mock)
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)

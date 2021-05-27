@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/governance/mocks"
@@ -36,7 +37,7 @@ type tstEngine struct {
 	*governance.Engine
 	ctrl            *gomock.Controller
 	accounts        *mocks.MockAccounts
-	broker          *mocks.MockBroker
+	broker          *bmock.MockBroker
 	witness         *mocks.MockWitness
 	assets          *mocks.MockAssets
 	netp            *netparams.Store
@@ -867,7 +868,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	cfg := governance.NewDefaultConfig()
 	accounts := mocks.NewMockAccounts(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
 
 	log := logging.NewTestLogger()

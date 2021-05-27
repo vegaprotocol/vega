@@ -16,7 +16,6 @@ var (
 )
 
 // Broker - event bus
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/netparams Broker
 type Broker interface {
 	Send(e events.Event)
 }

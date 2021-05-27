@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
@@ -73,7 +73,7 @@ type testMarket struct {
 	log              *logging.Logger
 	ctrl             *gomock.Controller
 	collateralEngine *collateral.Engine
-	broker           *mocks.MockBroker
+	broker           *bmock.MockBroker
 	now              time.Time
 	asset            string
 	mas              *monitor.AuctionState
@@ -97,7 +97,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 	}
 
 	// Setup Mocking Expectations
-	tm.broker = mocks.NewMockBroker(ctrl)
+	tm.broker = bmock.NewMockBroker(ctrl)
 
 	// eventFn records and count events and orderEvents
 	eventFn := func(evt events.Event) {
@@ -214,7 +214,7 @@ func getTestMarket2(
 	matchingConfig := matching.NewDefaultConfig()
 	feeConfig := fee.NewDefaultConfig()
 	liquidityConfig := liquidity.NewDefaultConfig()
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 
 	tm := &testMarket{
 		log:    log,

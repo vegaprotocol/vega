@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/notary/mocks"
@@ -23,7 +24,7 @@ type testNotary struct {
 func getTestNotary(t *testing.T) *testNotary {
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()

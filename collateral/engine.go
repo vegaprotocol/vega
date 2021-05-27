@@ -54,7 +54,7 @@ var (
 )
 
 // Broker send events
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/collateral Broker
+// we no longer need to generate this mock here, we can use the broker/mocks package instead
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)

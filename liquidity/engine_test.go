@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/liquidity/mocks"
@@ -36,7 +37,7 @@ func eq(t *testing.T, x interface{}) eqMatcher { return eqMatcher{t, x} }
 type testEngine struct {
 	ctrl     *gomock.Controller
 	marketID string
-	broker   *mocks.MockBroker
+	broker   *bmock.MockBroker
 	//idGen        *mocks.MockIDGen
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
@@ -47,7 +48,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	ctrl := gomock.NewController(t)
 
 	log := logging.NewTestLogger()
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	// idGen := mocks.NewMockIDGen(ctrl)
 	idGen := &idGenStub{}
 	risk := mocks.NewMockRiskModel(ctrl)
