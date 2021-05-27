@@ -33,7 +33,6 @@ type AuctionState interface {
 }
 
 // Broker the event bus broker
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
 type Broker interface {
 	Send(events.Event)
 	SendBatch([]events.Event)

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -28,7 +29,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	model     *mocks.MockModel
 	orderbook *mocks.MockOrderbook
-	broker    *mocks.MockBroker
+	broker    *bmock.MockBroker
 	as        *mocks.MockAuctionState
 }
 
@@ -327,7 +328,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -431,7 +432,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -495,7 +496,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
 	ob := mocks.NewMockOrderbook(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
 
 	engine := risk.NewEngine(

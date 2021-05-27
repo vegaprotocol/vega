@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
@@ -22,7 +23,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	prod      *mocks.MockProduct
 	positions []*mocks.MockMarketPosition
-	broker    *mocks.MockBroker
+	broker    *bmock.MockBroker
 	market    string
 }
 
@@ -574,7 +575,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	market := "BTC/DEC19"
 	prod.EXPECT().GetAsset().AnyTimes().Do(func() string { return "BTC" })

@@ -35,8 +35,7 @@ type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
-// Broker ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
+// Broker  (no longer need to mock this, use the broker/mocks wrapper)
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
