@@ -146,10 +146,15 @@ steps:
     image: alpine
     pull: always
     environment:
+      # Jenkins trigger url with token
       JENKINS_SYSTEMTESTS_WEBHOOK_URL:
         from_secret: JENKINS_SYSTEMTESTS_WEBHOOK_URL
     commands:
+      - if ! test -x cmd/vega/vega-linux-amd64 ; then
+          echo "No vega binary. Skipping system-tests." ; exit 0 ;
+        fi
       - apk add curl
+      # https://docs.github.com/en/rest/reference/repos#create-a-commit-status
       - export STATUSES_URL="https://api.github.com/repos/$${DRONE_REPO}/statuses/$${DRONE_COMMIT_SHA}"
       - |
         curl \\
