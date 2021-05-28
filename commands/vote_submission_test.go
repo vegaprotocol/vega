@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSubmittingNilVoteFails(t *testing.T) {
+	err := checkVoteSubmission(nil)
+
+	assert.Contains(t, err.Get("vote_submission"), commands.ErrIsRequired)
+}
+
 func TestVoteSubmission(t *testing.T) {
 	var cases = []struct {
 		vote      commandspb.VoteSubmission
@@ -55,4 +61,15 @@ func TestVoteSubmission(t *testing.T) {
 		assert.Error(t, err)
 		assert.EqualError(t, err, c.errString)
 	}
+}
+
+func checkVoteSubmission(cmd *commandspb.VoteSubmission) commands.Errors {
+	err := commands.CheckVoteSubmission(cmd)
+
+	e, ok := err.(commands.Errors)
+	if !ok {
+		return commands.NewErrors()
+	}
+
+	return e
 }

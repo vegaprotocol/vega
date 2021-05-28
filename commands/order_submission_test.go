@@ -11,6 +11,7 @@ import (
 )
 
 func TestCheckOrderSubmission(t *testing.T) {
+	t.Run("Submitting a nil command fails", testNilOrderSubmissionFails)
 	t.Run("Submitting an empty order fails", testEmptyOrderSubmissionFails)
 	t.Run("Submitting an order without market ID fails", testOrderSubmissionWithoutMarketIDFails)
 	t.Run("Submitting an order with unspecified side fails", testOrderSubmissionWithUnspecifiedSideFails)
@@ -49,7 +50,14 @@ func TestCheckOrderSubmission(t *testing.T) {
 
 func testEmptyOrderSubmissionFails(t *testing.T) {
 	err := checkOrderSubmission(&commandspb.OrderSubmission{})
+
 	assert.Error(t, err)
+}
+
+func testNilOrderSubmissionFails(t *testing.T) {
+	err := checkOrderSubmission(nil)
+
+	assert.Contains(t, err.Get("order_submission"), commands.ErrIsRequired)
 }
 
 func testOrderSubmissionWithoutMarketIDFails(t *testing.T) {

@@ -17,6 +17,11 @@ var (
 
 func CheckTransaction(tx *commandspb.Transaction) error {
 	errs := NewErrors()
+
+	if tx == nil {
+		return errs.FinalAddForProperty("tx", ErrIsRequired)
+	}
+
 	if len(tx.InputData) == 0 {
 		errs.AddForProperty("tx.input_data", ErrIsRequired)
 	}

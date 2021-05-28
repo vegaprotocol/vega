@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNilWithdrawSubmissionFails(t *testing.T) {
+	err := checkWithdrawSubmission(nil)
+
+	assert.Contains(t, err.Get("withdraw_submission"), commands.ErrIsRequired)
+}
+
 func TestWithdrawSubmission(t *testing.T) {
 	var cases = []struct {
 		withdraw  commandspb.WithdrawSubmission
@@ -89,4 +95,15 @@ func TestWithdrawSubmission(t *testing.T) {
 		assert.Error(t, err)
 		assert.EqualError(t, err, c.errString)
 	}
+}
+
+func checkWithdrawSubmission(cmd *commandspb.WithdrawSubmission) commands.Errors {
+	err := commands.CheckWithdrawSubmission(cmd)
+
+	e, ok := err.(commands.Errors)
+	if !ok {
+		return commands.NewErrors()
+	}
+
+	return e
 }

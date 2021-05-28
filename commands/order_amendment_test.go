@@ -13,6 +13,7 @@ import (
 )
 
 func TestCheckOrderAmendment(t *testing.T) {
+	t.Run("Submitting a nil command fails", testNilOrderAmendmentFails)
 	t.Run("amend order price - success", testAmendOrderJustPriceSuccess)
 	t.Run("amend order reduce - success", testAmendOrderJustReduceSuccess)
 	t.Run("amend order increase - success", testAmendOrderJustIncreaseSuccess)
@@ -26,95 +27,102 @@ func TestCheckOrderAmendment(t *testing.T) {
 	t.Run("amend order tif to GFN - fail", testAmendOrderToGFN)
 }
 
+func testNilOrderAmendmentFails(t *testing.T) {
+	err := checkOrderAmendment(nil)
+
+	assert.Contains(t, err.Get("order_amendment"), commands.ErrIsRequired)
+}
+
 func testAmendOrderJustPriceSuccess(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:  "orderid",
 		MarketId: "marketid",
 		Price:    &proto.Price{Value: 1000},
 	}
-	err := commands.CheckOrderAmendment(&arg)
-	assert.NoError(t, err)
+	err := checkOrderAmendment(arg)
+
+	assert.NoError(t, err.ErrorOrNil())
 }
 
 func testAmendOrderJustReduceSuccess(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:   "orderid",
 		MarketId:  "marketid",
 		SizeDelta: -10,
 	}
-	err := commands.CheckOrderAmendment(&arg)
-	assert.NoError(t, err)
+	err := checkOrderAmendment(arg)
+	assert.NoError(t, err.ErrorOrNil())
 }
 
 func testAmendOrderJustIncreaseSuccess(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:   "orderid",
 		MarketId:  "marketid",
 		SizeDelta: 10,
 	}
-	err := commands.CheckOrderAmendment(&arg)
-	assert.NoError(t, err)
+	err := checkOrderAmendment(arg)
+	assert.NoError(t, err.ErrorOrNil())
 }
 
 func testAmendOrderJustExpirySuccess(t *testing.T) {
 	now := vegatime.Now()
 	expires := now.Add(-2 * time.Hour)
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:   "orderid",
 		MarketId:  "marketid",
 		ExpiresAt: &proto.Timestamp{Value: expires.UnixNano()},
 	}
-	err := commands.CheckOrderAmendment(&arg)
-	assert.NoError(t, err)
+	err := checkOrderAmendment(arg)
+	assert.NoError(t, err.ErrorOrNil())
 }
 
 func testAmendOrderJustTIFSuccess(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		MarketId:    "marketid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
 	}
-	err := commands.CheckOrderAmendment(&arg)
-	assert.NoError(t, err)
+	err := checkOrderAmendment(arg)
+	assert.NoError(t, err.ErrorOrNil())
 }
 
 func testAmendOrderEmptyFail(t *testing.T) {
-	arg := commandspb.OrderAmendment{}
-	err := commands.CheckOrderAmendment(&arg)
+	arg := &commandspb.OrderAmendment{}
+	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
 
-	arg2 := commandspb.OrderAmendment{
+	arg2 := &commandspb.OrderAmendment{
 		OrderId:  "orderid",
 		MarketId: "marketid",
 	}
-	err = commands.CheckOrderAmendment(&arg2)
+	err = checkOrderAmendment(arg2)
 	assert.Error(t, err)
 }
 
 func testAmendEmptyFail(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:  "orderid",
 		MarketId: "marketid",
 	}
-	err := commands.CheckOrderAmendment(&arg)
+	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
 }
 
 func testAmendOrderInvalidExpiryFail(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTC,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
-	err := commands.CheckOrderAmendment(&arg)
+	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
 
 	arg.TimeInForce = proto.Order_TIME_IN_FORCE_FOK
-	err = commands.CheckOrderAmendment(&arg)
+	err = checkOrderAmendment(arg)
 	assert.Error(t, err)
 
 	arg.TimeInForce = proto.Order_TIME_IN_FORCE_IOC
-	err = commands.CheckOrderAmendment(&arg)
+	err = checkOrderAmendment(arg)
 	assert.Error(t, err)
 }
 
@@ -123,32 +131,43 @@ func testAmendOrderInvalidExpiryFail(t *testing.T) {
  * The validation should take place inside the core
  */
 func testAmendOrderPastExpiry(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		MarketId:    "marketid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GTT,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
-	err := commands.CheckOrderAmendment(&arg)
-	assert.NoError(t, err)
+	err := checkOrderAmendment(arg)
+	assert.NoError(t, err.ErrorOrNil())
 }
 
 func testAmendOrderToGFN(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFN,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
-	err := commands.CheckOrderAmendment(&arg)
+	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
 }
 
 func testAmendOrderToGFA(t *testing.T) {
-	arg := commandspb.OrderAmendment{
+	arg := &commandspb.OrderAmendment{
 		OrderId:     "orderid",
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFA,
 		ExpiresAt:   &proto.Timestamp{Value: 10},
 	}
-	err := commands.CheckOrderAmendment(&arg)
+	err := checkOrderAmendment(arg)
 	assert.Error(t, err)
+}
+
+func checkOrderAmendment(cmd *commandspb.OrderAmendment) commands.Errors {
+	err := commands.CheckOrderAmendment(cmd)
+
+	e, ok := err.(commands.Errors)
+	if !ok {
+		return commands.NewErrors()
+	}
+
+	return e
 }

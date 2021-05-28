@@ -9,6 +9,10 @@ func CheckNodeVote(cmd *commandspb.NodeVote) error {
 func checkNodeVote(cmd *commandspb.NodeVote) Errors {
 	errs := NewErrors()
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("node_vote", ErrIsRequired)
+	}
+
 	if len(cmd.PubKey) == 0 {
 		errs.AddForProperty("node_vote.pub_key", ErrIsRequired)
 	}

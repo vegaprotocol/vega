@@ -12,6 +12,10 @@ func CheckVoteSubmission(cmd *commandspb.VoteSubmission) error {
 func checkVoteSubmission(cmd *commandspb.VoteSubmission) Errors {
 	errs := NewErrors()
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("vote_submission", ErrIsRequired)
+	}
+
 	if len(cmd.ProposalId) <= 0 {
 		errs.AddForProperty("vote_submission.proposal_id", ErrIsRequired)
 	}

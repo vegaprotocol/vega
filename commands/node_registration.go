@@ -9,6 +9,10 @@ func CheckNodeRegistration(cmd *commandspb.NodeRegistration) error {
 func checkNodeRegistration(cmd *commandspb.NodeRegistration) Errors {
 	errs := NewErrors()
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("node_registration", ErrIsRequired)
+	}
+
 	if len(cmd.PubKey) == 0 {
 		errs.AddForProperty("node_registration.pub_key", ErrIsRequired)
 	}

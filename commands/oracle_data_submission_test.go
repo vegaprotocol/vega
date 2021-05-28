@@ -9,11 +9,18 @@ import (
 )
 
 func TestCheckOracleDataSubmission(t *testing.T) {
+	t.Run("Submitting a nil command fails", testNilOracleDataSubmissionFails)
 	t.Run("Submitting an oracle data without payload fails", testOracleDataSubmissionWithoutPayloadFails)
 	t.Run("Submitting an oracle data with payload succeeds", testOracleDataSubmissionWithPayloadSucceeds)
 	t.Run("Submitting an oracle data without source fails", testOracleDataSubmissionWithoutSourceFails)
 	t.Run("Submitting an oracle data with invalid source fails", testOracleDataSubmissionWithInvalidSourceFails)
 	t.Run("Submitting an oracle data with source succeeds", testOracleDataSubmissionWithSourceSucceeds)
+}
+
+func testNilOracleDataSubmissionFails(t *testing.T) {
+	err := checkOracleDataSubmission(nil)
+
+	assert.Contains(t, err.Get("oracle_data_submission"), commands.ErrIsRequired)
 }
 
 func testOracleDataSubmissionWithoutPayloadFails(t *testing.T) {

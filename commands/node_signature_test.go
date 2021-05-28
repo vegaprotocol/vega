@@ -9,6 +9,7 @@ import (
 )
 
 func TestCheckNodeSignature(t *testing.T) {
+	t.Run("Submitting a nil command fails", testNilNodeSignatureFails)
 	t.Run("Submitting a node signature without id fails", testNodeSignatureWithoutIDFails)
 	t.Run("Submitting a node signature with id succeeds", testNodeSignatureWithIDSucceeds)
 	t.Run("Submitting a node signature without sig fails", testNodeSignatureWithoutSigFails)
@@ -16,6 +17,12 @@ func TestCheckNodeSignature(t *testing.T) {
 	t.Run("Submitting a node signature without kind fails", testNodeSignatureWithoutKindFails)
 	t.Run("Submitting a node signature with invalid kind fails", testNodeSignatureWithInvalidKindFails)
 	t.Run("Submitting a node signature with kind succeeds", testNodeSignatureWithKindSucceeds)
+}
+
+func testNilNodeSignatureFails(t *testing.T) {
+	err := checkNodeSignature(nil)
+
+	assert.Error(t, err)
 }
 
 func testNodeSignatureWithoutIDFails(t *testing.T) {
