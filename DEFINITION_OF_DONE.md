@@ -46,7 +46,7 @@ All this helps raise the confidence a team feels in delivering valuable software
 - Dependencies minimized
 - Code refactored to meet SOLID and other code design principles
 
-**Staging**
+**Ready for release**
 
 - Integrated build error, warning, and hint free?
 - Smoke test passing?
