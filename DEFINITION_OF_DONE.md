@@ -49,7 +49,7 @@ All this helps raise the confidence a team feels in delivering valuable software
 **Ready for release**
 
 - Integrated build error, warning, and hint free?
-- Smoke test passing?
+- BVT tests passing?
 - Package creation error, warning, and hint free?
 - Package deployed to the test environment(s)?
 
