@@ -56,7 +56,7 @@ All this helps raise the confidence a team feels in delivering valuable software
 **Functional Regression Tests**
 
 - Every item in Acceptance Criteria covered by at least one acceptance test?
-- Unit tests passing?
+- Unit tests passing
 - Integration tests passing
 - Functional or system tests passing
 - Acceptance (feature) tests passing
