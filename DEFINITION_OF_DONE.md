@@ -48,7 +48,7 @@ All this helps raise the confidence a team feels in delivering valuable software
 
 **Ready for release**
 
-- Integrated build error, warning, and hint free?
+- No build errors, warnings, or linting changes
 - BVT tests passing?
 - Package creation error, warning, and hint free?
 - Deployed to the test environment
