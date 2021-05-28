@@ -51,7 +51,7 @@ All this helps raise the confidence a team feels in delivering valuable software
 - Integrated build error, warning, and hint free?
 - BVT tests passing?
 - Package creation error, warning, and hint free?
-- Package deployed to the test environment(s)?
+- Deployed to the test environment
 
 **Functional Regression Tests**
 
