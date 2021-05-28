@@ -275,6 +275,11 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 			as.EndAuction()
 			// reset the engine
 			e.reset(p, v, now)
+			return nil
+		}
+		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
+		if as.AuctionEnd() {
+			e.reset(p, v, now)
 		}
 		return nil
 	}
@@ -288,9 +293,6 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 	as.ExtendAuctionPrice(types.AuctionDuration{
 		Duration: duration,
 	})
-	if !as.IsPriceAuction() {
-		e.reset(last.Price, last.Volume, now)
-	}
 
 	return nil
 }

@@ -563,15 +563,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				m.feeSplitter.TimeWindowStart(t)
 			}
 		} else if m.as.IsPriceAuction() || m.as.IsLiquidityAuction() {
-			isPrice := m.as.IsPriceAuction()
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t, true); err != nil {
-				m.log.Panic("unable to run check price with price monitor",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-			if evt := m.as.AuctionExtended(ctx); evt != nil {
-				m.broker.Send(evt)
-			}
 			// hacky way to ensure the liquidity monitoring will calculate the target stake based on the target stake
 			// SHOULD we leave the auction. Otherwise, we would leave a liquidity auction, and immediately enter a new one
 			ft := []*types.Trade{
@@ -580,7 +571,23 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 					Price: p,
 				},
 			}
-			m.checkLiquidity(ctx, ft)
+			isPrice := m.as.IsPriceAuction()
+			if !isPrice {
+				m.checkLiquidity(ctx, ft)
+			}
+			if isPrice || m.as.AuctionEnd() {
+				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t, true); err != nil {
+					m.log.Panic("unable to run check price with price monitor",
+						logging.String("market-id", m.GetID()),
+						logging.Error(err))
+				}
+			}
+			if evt := m.as.AuctionExtended(ctx); evt != nil {
+				m.broker.Send(evt)
+			}
+			if isPrice {
+				m.checkLiquidity(ctx, ft)
+			}
 			// price monitoring engine and liquidity monitoring engine both indicated auction can end
 			if m.as.AuctionEnd() {
 				if m.matching.BidAndAskPresentAfterAuction() {
