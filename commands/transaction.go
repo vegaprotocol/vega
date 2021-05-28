@@ -17,7 +17,6 @@ var (
 
 func CheckTransaction(tx *commandspb.Transaction) error {
 	errs := NewErrors()
-	// first check that no fields are empty
 	if len(tx.InputData) == 0 {
 		errs.AddForProperty("tx.input_data", ErrIsRequired)
 	}
@@ -59,7 +58,12 @@ func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey
 		return errs.FinalAddForProperty("tx.signature.bytes", ErrCannotDecodeSignature)
 	}
 
-	ok, err := validator.Verify(pubKey, inputData, decodedSig)
+	decodePubKey, err := hex.DecodeString(pubKey)
+	if err != nil {
+		return errs.FinalAddForProperty("tx.from.pub_key", ErrCannotDecodeSignature)
+	}
+
+	ok, err := validator.Verify(decodePubKey, inputData, decodedSig)
 	if err != nil {
 		return errs.FinalAdd(err)
 	}
@@ -79,15 +83,17 @@ func checkInputData(inputData []byte) Errors {
 	}
 
 	if input.Nonce == 0 {
-		errs.AddForProperty("input_data.nonce", ErrMustBePositive)
+		errs.AddForProperty("tx.input_data.nonce", ErrMustBePositive)
 	}
 
 	if input.Command == nil {
-		errs.AddForProperty("input_data.command", ErrIsRequired)
+		errs.AddForProperty("tx.input_data.command", ErrIsRequired)
 	} else {
 		switch cmd := input.Command.(type) {
 		case *commandspb.InputData_OrderSubmission:
 			errs.Merge(checkOrderSubmission(cmd.OrderSubmission))
+		case *commandspb.InputData_OrderCancellation:
+			break // No verification to be made
 		case *commandspb.InputData_OrderAmendment:
 			errs.Merge(checkOrderAmendment(cmd.OrderAmendment))
 		case *commandspb.InputData_VoteSubmission:
@@ -109,7 +115,7 @@ func checkInputData(inputData []byte) Errors {
 		case *commandspb.InputData_OracleDataSubmission:
 			errs.Merge(checkOracleDataSubmission(cmd.OracleDataSubmission))
 		default:
-			errs.AddForProperty("input_data.command", ErrIsNotSupported)
+			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}
 	}
 
@@ -119,10 +125,10 @@ func checkInputData(inputData []byte) Errors {
 func checkSignature(signature *commandspb.Signature) Errors {
 	errs := NewErrors()
 	if len(signature.Bytes) == 0 {
-		errs.AddForProperty("signature.bytes", ErrIsRequired)
+		errs.AddForProperty("tx.signature.bytes", ErrIsRequired)
 	}
 	if len(signature.Algo) == 0 {
-		errs.AddForProperty("signature.algo", ErrIsRequired)
+		errs.AddForProperty("tx.signature.algo", ErrIsRequired)
 	}
 	return errs
 }
