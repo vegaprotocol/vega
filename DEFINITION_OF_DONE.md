@@ -59,7 +59,7 @@ All this helps raise the confidence a team feels in delivering valuable software
 - Unit tests passing?
 - Integration tests passing
 - Functional or system tests passing?
-- Acceptance (feature) tests passing?
+- Acceptance (feature) tests passing
 - Tests executed on all supported platforms?
 
 **For all automated tests:**
