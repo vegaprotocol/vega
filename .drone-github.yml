@@ -142,21 +142,26 @@ steps:
       event:
         - pull_request
 
-  - name: systemtests-PR
-    image: docker.pkg.github.com/vegaprotocol/system-tests/system-tests:develop
+  - name: Trigger systemtests for PR
+    image: alpine
     pull: always
     environment:
-      GITHUB_API_TOKEN:
-        from_secret: GITHUB_API_TOKEN
-      SLACK_HOOK_URL:
-        from_secret: SLACK_HOOK_URL
+      # Jenkins trigger url with token
+      JENKINS_SYSTEMTESTS_WEBHOOK_URL:
+        from_secret: JENKINS_SYSTEMTESTS_WEBHOOK_URL
     commands:
-      # https://github.com/vegaprotocol/system-tests/blob/master/ci.sh
-      - if test -x cmd/vega/vega-linux-amd64 ; then
-          /usr/local/bin/ci.sh ;
-        else
-          echo "No vega binary. Skipping system-tests." ;
+      - if ! test -x cmd/vega/vega-linux-amd64 ; then
+          echo "No vega binary. Skipping system-tests." ; exit 0 ;
         fi
+      - apk add curl
+      # https://docs.github.com/en/rest/reference/repos#create-a-commit-status
+      - export STATUSES_URL="https://api.github.com/repos/$${DRONE_REPO}/statuses/$${DRONE_COMMIT_SHA}"
+      - |
+        curl \\
+          --request POST \\
+          --header "Content-Type: application/json" \\
+          --data "{\"pull_request\":{\"head\":{\"ref\":\"$${DRONE_SOURCE_BRANCH}\"},\"statuses_url\":\"$${STATUSES_URL}\"}}" \\
+          "$${JENKINS_SYSTEMTESTS_WEBHOOK_URL}"
     depends_on:
       - test-PR
     when:
