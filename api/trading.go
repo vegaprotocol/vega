@@ -227,6 +227,9 @@ func (s *tradingService) PrepareProposalSubmission(
 	if err := req.Validate(); err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
+	if req.Submission == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing submission"))
+	}
 	proposal, err := s.governanceService.PrepareProposal(ctx, req.Submission.Reference, req.Submission.Terms)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
