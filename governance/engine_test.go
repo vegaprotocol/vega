@@ -672,7 +672,7 @@ func testSubmittingMajorityOfInsuccifientParticipationMakesProposalDeclined(t *t
 
 	// setup
 	eng.expectAnyAsset()
-	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).Return(uint64(80000000), nil)
+	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).Return(uint64(800), nil)
 	eng.expectSendOpenProposalEvent(t, proposer, proposal)
 
 	// when
@@ -948,7 +948,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	broker.EXPECT().Send(gomock.Any()).Times(2)
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
 	_ = netp.Update(context.Background(), netparams.GovernanceProposalMarketMinVoterBalance, "1")
-	require.NoError(t, netp.Update(context.Background(), netparams.GovernanceProposalUpdateMarketRequiredParticipation, "1.0"))
+	require.NoError(t, netp.Update(context.Background(), netparams.GovernanceProposalMarketRequiredParticipation, "0.5"))
 	now := time.Now()
 	now = now.Truncate(time.Second)
 	eng, err := governance.NewEngine(log, cfg, accounts, broker, assets, witness, netp, now) // started as a validator
