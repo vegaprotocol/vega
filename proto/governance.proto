@@ -263,6 +263,10 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SHAPE = 29;
   // Market proposal invalid risk parameter
   PROPOSAL_ERROR_INVALID_RISK_PARAMETER = 30;
+  // Proposal was declined because vote didn't reach the majority thershold required
+  PROPOSAL_ERROR_MAJORITY_THERSHOLD_NOT_REACHED = 31;
+  // Proposal declined because the participation threshold was not reached
+  PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED = 32;
 }
 
 // Governance vote
