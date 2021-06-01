@@ -5,10 +5,9 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockRiskModel is a mock of RiskModel interface

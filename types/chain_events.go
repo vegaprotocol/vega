@@ -2,7 +2,10 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+)
 
 type Deposit = proto.Deposit
 type Withdrawal = proto.Withdrawal
@@ -15,10 +18,10 @@ type ERC20Withdrawal = proto.ERC20Withdrawal
 type Erc20WithdrawExt = proto.Erc20WithdrawExt
 type BuiltinAsset = proto.BuiltinAsset
 type ERC20 = proto.ERC20
-type ChainEvent_Builtin = proto.ChainEvent_Builtin
-type ChainEvent_Erc20 = proto.ChainEvent_Erc20
-type ChainEvent_Btc = proto.ChainEvent_Btc
-type ChainEvent_Validator = proto.ChainEvent_Validator
+type ChainEvent_Builtin = commandspb.ChainEvent_Builtin
+type ChainEvent_Erc20 = commandspb.ChainEvent_Erc20
+type ChainEvent_Btc = commandspb.ChainEvent_Btc
+type ChainEvent_Validator = commandspb.ChainEvent_Validator
 type BuiltinAssetEvent_Deposit = proto.BuiltinAssetEvent_Deposit
 type BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
 type ERC20Event_AssetList = proto.ERC20Event_AssetList

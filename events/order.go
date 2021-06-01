@@ -14,7 +14,6 @@ type Order struct {
 }
 
 func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
-	cpy := o.DeepClone()
 	order := &Order{
 		Base: newBase(ctx, OrderEvent),
 		o:    o.IntoProto(),
@@ -43,13 +42,12 @@ func (o Order) Proto() ptypes.Order {
 }
 
 func (o Order) StreamMessage() *eventspb.BusEvent {
-	cpy := o.o
 	return &eventspb.BusEvent{
 		Id:    o.eventID(),
 		Block: o.TraceID(),
 		Type:  o.et.ToProto(),
 		Event: &eventspb.BusEvent_Order{
-			Order: &cpy,
+			Order: o.o,
 		},
 	}
 }

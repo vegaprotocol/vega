@@ -32,6 +32,7 @@ type SimpleRiskModel = proto.SimpleRiskModel
 type ContinuousTrading = proto.ContinuousTrading
 type SimpleModelParams = proto.SimpleModelParams
 type TargetStakeParameters = proto.TargetStakeParameters
+type MarketTimestamps = proto.MarketTimestamps
 
 type Market_TradingMode = proto.Market_TradingMode
 

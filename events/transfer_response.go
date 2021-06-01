@@ -15,14 +15,9 @@ type TransferResponse struct {
 
 // NewTransferResponse returns an event with transfer responses - this is the replacement of the transfer buffer
 func NewTransferResponse(ctx context.Context, responses []*types.TransferResponse) *TransferResponse {
-	trs := make([]*types.TransferResponse, len(responses))
-	for i, tr := range responses {
-		trs[i] = tr.DeepClone()
-	}
-
 	return &TransferResponse{
 		Base:      newBase(ctx, TransferResponses),
-		responses: types.TransferResponses(response).IntoProto(),
+		responses: types.TransferResponses(responses).IntoProto(),
 	}
 }
 

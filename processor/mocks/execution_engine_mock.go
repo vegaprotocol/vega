@@ -5,13 +5,12 @@
 package mocks
 
 import (
-	context "context"
-	reflect "reflect"
-
+	proto "code.vegaprotocol.io/vega/proto"
 	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	types "code.vegaprotocol.io/vega/types"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
-	"github.com/vegaprotocol/api/grpc/clients/go/generated/code.vegaprotocol.io/vega/proto"
+	reflect "reflect"
 )
 
 // MockExecutionEngine is a mock of ExecutionEngine interface
@@ -38,9 +37,9 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 }
 
 // AmendOrder mocks base method
-func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *proto.OrderAmendment) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *v1.OrderAmendment, arg2 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1)
+	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -53,9 +52,9 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2 interface
 }
 
 // CancelOrder mocks base method
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *proto.OrderCancellation) ([]*types.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *v1.OrderCancellation, arg2 string) ([]*types.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1)
+	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*types.OrderCancellationConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -152,9 +151,9 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarketWithLiquidityProvision(ar
 }
 
 // SubmitOrder mocks base method
-func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.Order) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *v1.OrderSubmission, arg2 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1)
+	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1

@@ -6,13 +6,14 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOrderDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	o := &proto.Order{
+	o := &types.Order{
 		Id:          "Id",
 		MarketId:    "MarketId",
 		PartyId:     "PartyId",
@@ -30,7 +31,7 @@ func TestOrderDeepClone(t *testing.T) {
 		UpdatedAt:   6000,
 		Version:     7000,
 		BatchId:     8000,
-		PeggedOrder: &proto.PeggedOrder{
+		PeggedOrder: &types.PeggedOrder{
 			Reference: proto.PeggedReference_PEGGED_REFERENCE_MID,
 			Offset:    9000,
 		},

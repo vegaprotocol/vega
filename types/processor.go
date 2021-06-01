@@ -2,17 +2,20 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+)
 
-type OrderSubmission = proto.OrderSubmission
-type OrderCancellation = proto.OrderCancellation
-type OrderAmendment = proto.OrderAmendment
-type WithdrawSubmission = proto.WithdrawSubmission
-type OracleDataSubmission = proto.OracleDataSubmission
-type NodeRegistration = proto.NodeRegistration
-type NodeVote = proto.NodeVote
+type OrderSubmission = commandspb.OrderSubmission
+type OrderCancellation = commandspb.OrderCancellation
+type OrderAmendment = commandspb.OrderAmendment
+type WithdrawSubmission = commandspb.WithdrawSubmission
+type OracleDataSubmission = commandspb.OracleDataSubmission
+type NodeRegistration = commandspb.NodeRegistration
+type NodeVote = commandspb.NodeVote
 type Transaction = proto.Transaction
-type ChainEvent = proto.ChainEvent
+type ChainEvent = commandspb.ChainEvent
 type SignedBundle = proto.SignedBundle
 type NetworkParameter = proto.NetworkParameter
 type Signature = proto.Signature

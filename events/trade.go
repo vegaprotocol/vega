@@ -14,7 +14,6 @@ type Trade struct {
 }
 
 func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
-	cpy := t.DeepClone()
 	return &Trade{
 		Base: newBase(ctx, TradeEvent),
 		t:    *(t.IntoProto()),

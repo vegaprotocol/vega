@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 
@@ -1558,7 +1559,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 
 	t.Run("verify LP orders sizes", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]*types.Order{}
+		found := map[string]*ptypes.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -1819,7 +1820,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 
 	t.Run("pegged order is PARKED", func(t *testing.T) {
 		// First collect all the orders events
-		found := &types.Order{}
+		found := &ptypes.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -1865,7 +1866,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 
 	t.Run("pegged order is REJECTED", func(t *testing.T) {
 		// First collect all the orders events
-		found := &types.Order{}
+		found := &ptypes.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -2406,7 +2407,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 	t.Run("lp submission is active", func(t *testing.T) {
 		// First collect all the orders events
 		found := types.LiquidityProvision{}
-		var ord *types.Order
+		var ord *ptypes.Order
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -2434,7 +2435,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 	// one lp of size 6, on normal limit of size 500
 	t.Run("lp order size decrease", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]*types.Order{}
+		found := map[string]*ptypes.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -2464,7 +2465,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 	// one lp of size 6, on normal limit of size 500
 	t.Run("lp order size increase again after expiry", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]*types.Order{}
+		found := map[string]*ptypes.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:

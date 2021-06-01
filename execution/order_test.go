@@ -142,20 +142,20 @@ func TestAmendCancelResubmit(t *testing.T) {
 
 	amend := &commandspb.OrderAmendment{
 		OrderId:  orderID,
-		MarketId: confirmation.GetOrder().GetMarketId(),
+		MarketId: confirmation.Order.MarketId,
 		Price:    &types.Price{Value: 101},
 	}
-	amended, err := tm.market.AmendOrder(context.TODO(), amend, confirmation.GetOrder().GetPartyId())
+	amended, err := tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.PartyId)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
 	amend = &commandspb.OrderAmendment{
 		OrderId:   orderID,
-		MarketId:  confirmation.GetOrder().GetMarketId(),
+		MarketId:  confirmation.Order.MarketId,
 		Price:     &types.Price{Value: 101},
 		SizeDelta: 1,
 	}
-	amended, err = tm.market.AmendOrder(context.TODO(), amend, confirmation.GetOrder().GetPartyId())
+	amended, err = tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.PartyId)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 }
@@ -191,8 +191,8 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 
 	// Now attempt to cancel it with the wrong partyID
 	cancelOrder := &commandspb.OrderCancellation{
-		OrderId:  confirmation.GetOrder().Id,
-		MarketId: confirmation.GetOrder().MarketId,
+		OrderId:  confirmation.Order.Id,
+		MarketId: confirmation.Order.MarketId,
 	}
 	cancelconf, err := tm.market.CancelOrder(context.TODO(), party2, cancelOrder.OrderId)
 	assert.Nil(t, cancelconf)
@@ -316,7 +316,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), time.Unix(10, 100))
 
 	amend := &commandspb.OrderAmendment{
-		OrderId:     buyConfirmation.GetOrder().GetId(),
+		OrderId:     buyConfirmation.Order.Id,
 		MarketId:    tm.market.GetID(),
 		ExpiresAt:   &types.Timestamp{Value: 10000000010},
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -412,7 +412,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NoError(t, err)
 
 	amend := &commandspb.OrderAmendment{
-		OrderId:  buyConfirmation.GetOrder().GetId(),
+		OrderId:  buyConfirmation.Order.Id,
 		MarketId: tm.market.GetID(),
 		Price:    &types.Price{Value: 20},
 	}
@@ -456,8 +456,8 @@ func TestAmendWrongPartyID(t *testing.T) {
 
 	// Send an amend but use the wrong partyID
 	amend := &commandspb.OrderAmendment{
-		OrderId:  confirmation.GetOrder().GetId(),
-		MarketId: confirmation.GetOrder().GetMarketId(),
+		OrderId:  confirmation.Order.Id,
+		MarketId: confirmation.Order.MarketId,
 		Price:    &types.Price{Value: 101},
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party2)

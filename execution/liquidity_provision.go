@@ -10,8 +10,8 @@ import (
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/positions"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.

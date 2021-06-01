@@ -747,7 +747,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 
 	partyA := "party-A"
 	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).AnyTimes().Return(uint64(300), nil)
-	accountA := types.Account{
+	accountA := dtypes.Account{
 		Id:      partyA + "-account",
 		Owner:   partyA,
 		Balance: 200,
@@ -960,7 +960,7 @@ func newMarketLiquidityCommitment() *types.NewMarketCommitment {
 }
 
 func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, times int) *types.Party {
-	account := types.Account{
+	account := dtypes.Account{
 		Id:      partyID + "-account",
 		Owner:   partyID,
 		Balance: balance,

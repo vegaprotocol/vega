@@ -439,7 +439,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	order := orderSubmission.IntoOrder(party)
+	order := types.OrderFromProto(orderSubmission.IntoOrder(party))
 
 	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {

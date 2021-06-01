@@ -2,11 +2,13 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+)
 
-type NodeSignature = proto.NodeSignature
+type NodeSignature = commandspb.NodeSignature
 
-type NodeSignatureKind = proto.NodeSignatureKind
+type NodeSignatureKind = commandspb.NodeSignatureKind
 
 const (
 	// Represents an unspecified or missing value from the input

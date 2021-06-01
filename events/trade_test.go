@@ -6,13 +6,14 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTradeDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	trade := &proto.Trade{
+	trade := &types.Trade{
 		Id:        "Id",
 		MarketId:  "MarketId",
 		Price:     1000,
@@ -24,12 +25,12 @@ func TestTradeDeepClone(t *testing.T) {
 		SellOrder: "SellOrder",
 		Timestamp: 3000,
 		Type:      proto.Trade_TYPE_DEFAULT,
-		BuyerFee: &proto.Fee{
+		BuyerFee: &types.Fee{
 			MakerFee:          4000,
 			InfrastructureFee: 5000,
 			LiquidityFee:      6000,
 		},
-		SellerFee: &proto.Fee{
+		SellerFee: &types.Fee{
 			MakerFee:          7000,
 			InfrastructureFee: 8000,
 			LiquidityFee:      9000,

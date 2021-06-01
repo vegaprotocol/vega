@@ -3,6 +3,7 @@
 package types
 
 import (
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
@@ -10,24 +11,25 @@ import (
 )
 
 type Order struct {
-	Id          string
-	MarketId    string
-	PartyId     string
-	Side        Side
-	Price       uint64
-	Size        uint64
-	Remaining   uint64
-	TimeInForce Order_TimeInForce
-	Type        Order_Type
-	CreatedAt   int64
-	Status      Order_Status
-	ExpiresAt   int64
-	Reference   string
-	Reason      OrderError
-	UpdatedAt   int64
-	Version     uint64
-	BatchId     uint64
-	PeggedOrder *PeggedOrder
+	Id                   string
+	MarketId             string
+	PartyId              string
+	Side                 Side
+	Price                uint64
+	Size                 uint64
+	Remaining            uint64
+	TimeInForce          Order_TimeInForce
+	Type                 Order_Type
+	CreatedAt            int64
+	Status               Order_Status
+	ExpiresAt            int64
+	Reference            string
+	Reason               OrderError
+	UpdatedAt            int64
+	Version              uint64
+	BatchId              uint64
+	PeggedOrder          *PeggedOrder
+	LiquidityProvisionId string
 }
 
 func (o Order) String() string {
@@ -44,56 +46,63 @@ func (o Orders) IntoProto() []*proto.Order {
 	return out
 }
 
+func (o *Order) IsLiquidityOrder() bool {
+	return len(o.LiquidityProvisionId) > 0
+}
+
 func (o *Order) IntoProto() *proto.Order {
 	var pegged *proto.PeggedOrder
 	if o.PeggedOrder != nil {
 		pegged = o.PeggedOrder.IntoProto()
 	}
 	return &proto.Order{
-		Id:          o.Id,
-		MarketId:    o.MarketId,
-		PartyId:     o.PartyId,
-		Side:        o.Side,
-		Price:       o.Price,
-		Size:        o.Size,
-		Remaining:   o.Remaining,
-		TimeInForce: o.TimeInForce,
-		Type:        o.Type,
-		CreatedAt:   o.CreatedAt,
-		Status:      o.Status,
-		ExpiresAt:   o.ExpiresAt,
-		Reference:   o.Reference,
-		Reason:      o.Reason,
-		UpdatedAt:   o.UpdatedAt,
-		Version:     o.Version,
-		BatchId:     o.BatchId,
-		PeggedOrder: pegged,
+		Id:                   o.Id,
+		MarketId:             o.MarketId,
+		PartyId:              o.PartyId,
+		Side:                 o.Side,
+		Price:                o.Price,
+		Size:                 o.Size,
+		Remaining:            o.Remaining,
+		TimeInForce:          o.TimeInForce,
+		Type:                 o.Type,
+		CreatedAt:            o.CreatedAt,
+		Status:               o.Status,
+		ExpiresAt:            o.ExpiresAt,
+		Reference:            o.Reference,
+		Reason:               o.Reason,
+		UpdatedAt:            o.UpdatedAt,
+		Version:              o.Version,
+		BatchId:              o.BatchId,
+		PeggedOrder:          pegged,
+		LiquidityProvisionId: o.LiquidityProvisionId,
 	}
 }
+
 func OrderFromProto(o *proto.Order) *Order {
 	var pegged *PeggedOrder
 	if o.PeggedOrder != nil {
 		pegged = PeggedOrderFromProto(o.PeggedOrder)
 	}
 	return &Order{
-		Id:          o.Id,
-		MarketId:    o.MarketId,
-		PartyId:     o.PartyId,
-		Side:        o.Side,
-		Price:       o.Price,
-		Size:        o.Size,
-		Remaining:   o.Remaining,
-		TimeInForce: o.TimeInForce,
-		Type:        o.Type,
-		CreatedAt:   o.CreatedAt,
-		Status:      o.Status,
-		ExpiresAt:   o.ExpiresAt,
-		Reference:   o.Reference,
-		Reason:      o.Reason,
-		UpdatedAt:   o.UpdatedAt,
-		Version:     o.Version,
-		BatchId:     o.BatchId,
-		PeggedOrder: pegged,
+		Id:                   o.Id,
+		MarketId:             o.MarketId,
+		PartyId:              o.PartyId,
+		Side:                 o.Side,
+		Price:                o.Price,
+		Size:                 o.Size,
+		Remaining:            o.Remaining,
+		TimeInForce:          o.TimeInForce,
+		Type:                 o.Type,
+		CreatedAt:            o.CreatedAt,
+		Status:               o.Status,
+		ExpiresAt:            o.ExpiresAt,
+		Reference:            o.Reference,
+		Reason:               o.Reason,
+		UpdatedAt:            o.UpdatedAt,
+		Version:              o.Version,
+		BatchId:              o.BatchId,
+		PeggedOrder:          pegged,
+		LiquidityProvisionId: o.LiquidityProvisionId,
 	}
 }
 
@@ -127,7 +136,6 @@ func (o *Order) AmendSize(newSize int64) *OrderAmendment {
 	a := &OrderAmendment{
 		OrderId:  o.Id,
 		MarketId: o.MarketId,
-		PartyId:  o.PartyId,
 
 		SizeDelta:   newSize - int64(o.Size),
 		TimeInForce: o.TimeInForce,
@@ -235,6 +243,18 @@ type Trade struct {
 	SellerFee          *Fee
 	BuyerAuctionBatch  uint64
 	SellerAuctionBatch uint64
+}
+
+func (t *Trade) SetIDs(aggressive, passive *Order, idx int) {
+	t.Id = fmt.Sprintf("%s-%010d", aggressive.Id, idx)
+	if aggressive.Side == Side_SIDE_BUY {
+		t.BuyOrder = aggressive.Id
+		t.SellOrder = passive.Id
+		return
+	}
+	t.SellOrder = aggressive.Id
+	t.BuyOrder = passive.Id
+
 }
 
 func (t *Trade) IntoProto() *proto.Trade {
@@ -486,6 +506,8 @@ const (
 	OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER OrderError = 45
 	// It is not possible to amend the price of an existing pegged order
 	OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER OrderError = 46
+	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds
+	OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS OrderError = 47
 )
 
 var (

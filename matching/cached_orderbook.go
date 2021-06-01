@@ -5,7 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type CachedOrderBook struct {

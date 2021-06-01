@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type IndicativePriceAndVolume struct {
