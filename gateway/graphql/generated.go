@@ -6535,6 +6535,10 @@ enum ProposalRejectionReason {
   InvalidShape
   "Market proposal use an invalid risk parameter"
   InvalidRiskParameter
+  "Proposal declined because the majority threshold was not reached"
+  MajorityThresholdNotReached
+  "Proposal declined because the participation threshold was not reached"
+  ParticipationThresholdNotReached
 }
 
 "Reason for the order being rejected by the core node"
