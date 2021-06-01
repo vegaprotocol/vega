@@ -28,6 +28,7 @@ require (
 	github.com/jinzhu/copier v0.2.8
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/mwitkow/go-proto-validators v0.2.0
+	github.com/oasisprotocol/curve25519-voi v0.0.0-20210528083545-b12728c4e0d8 // indirect
 	github.com/oasisprotocol/ed25519 v0.0.0-20210201150809-58be049e4f78
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.6.0
@@ -44,7 +45,7 @@ require (
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.uber.org/zap v1.13.0
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/exp v0.0.0-20191030013958-a1ab85dbe136 // indirect
 	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a // indirect
 	google.golang.org/grpc v1.29.1
