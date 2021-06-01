@@ -6,18 +6,18 @@ import (
 	"math/big"
 )
 
-func NewTransactionV1(pubKey, data []byte, signature *Signature) *Transaction {
+func NewTransaction(pubKey, data []byte, signature *Signature) *Transaction {
 	return &Transaction{
 		InputData: data,
 		Signature: signature,
-		From:      NewTransactionAddress(pubKey),
+		From:      NewTransactionPubKey(pubKey),
 		Version:   1,
 	}
 }
 
-func NewTransactionAddress(pubKey []byte) *Transaction_Address {
-	return &Transaction_Address{
-		Address: hex.EncodeToString(pubKey),
+func NewTransactionPubKey(pubKey []byte) *Transaction_PubKey {
+	return &Transaction_PubKey{
+		PubKey: hex.EncodeToString(pubKey),
 	}
 }
 

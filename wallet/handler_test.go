@@ -1038,7 +1038,7 @@ func testHandlerSigningTxV2Succeeds(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.Equal(t, uint64(1), tx.Version)
+	assert.Equal(t, uint32(1), tx.Version)
 	assert.NotEmpty(t, tx.From)
 	assert.NotEmpty(t, tx.InputData)
 	assert.NotNil(t, tx.Signature)

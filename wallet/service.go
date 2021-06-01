@@ -167,13 +167,13 @@ func NewServiceWith(log *logging.Logger, cfg *Config, h WalletHandler, n NodeFor
 	s.GET("/api/v1/keys/:keyid", ExtractToken(s.GetPublicKey))
 	s.PUT("/api/v1/keys/:keyid/taint", ExtractToken(s.TaintKey))
 	s.PUT("/api/v1/keys/:keyid/metadata", ExtractToken(s.UpdateMeta))
+	s.POST("/api/v1/sign", ExtractToken(s.SignAny))
 	s.POST("/api/v1/command", ExtractToken(s.SignTxV2))
 	s.POST("/api/v1/command/sync", ExtractToken(s.SignTxSyncV2))
 	s.POST("/api/v1/command/commit", ExtractToken(s.SignTxCommitV2))
 	s.GET("/api/v1/wallets", ExtractToken(s.DownloadWallet))
 
 	// DEPRECATED Use
-	s.POST("/api/v1/sign", ExtractToken(s.SignAny))
 	s.POST("/api/v1/messages", ExtractToken(s.SignTx))
 	s.POST("/api/v1/messages/sync", ExtractToken(s.SignTxSync))
 	s.POST("/api/v1/messages/commit", ExtractToken(s.SignTxCommit))

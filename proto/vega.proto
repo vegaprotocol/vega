@@ -1018,7 +1018,7 @@ message Signature {
   // The algorithm used to create the signature
   string algo = 2;
   // The version of the signature used to create the signature
-  uint64 version = 3;
+  uint32 version = 3;
 }
 
 // A bundle of a transaction and it's signature

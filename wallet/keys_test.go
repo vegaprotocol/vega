@@ -122,7 +122,7 @@ func testKeypairGeneratingNewKeyPairSucceeds(t *testing.T) {
 	assert.NotEmpty(t, kp.Priv)
 	assert.False(t, kp.Tainted)
 	assert.Equal(t, "vega/ed25519", kp.Algorithm.Name())
-	assert.Equal(t, uint64(1), kp.Algorithm.Version())
+	assert.Equal(t, uint32(1), kp.Algorithm.Version())
 	assert.Empty(t, kp.Meta)
 }
 

@@ -83,7 +83,7 @@ func (s stubWallet) Algo() string {
 	return "vega/ed25519"
 }
 
-func (s stubWallet) Version() uint64 {
+func (s stubWallet) Version() uint32 {
 	return 1
 }
 

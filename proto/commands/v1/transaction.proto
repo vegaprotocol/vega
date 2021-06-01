@@ -55,7 +55,7 @@ message Transaction {
 
   // A version of the transaction, to be used in the future in case we want to
   // implement changes to the Transaction format.
-  uint64 version = 2000;
+  uint32 version = 2000;
 }
 
 // A signature to be authenticate a transaction and to be verified by the vega
@@ -66,5 +66,5 @@ message Signature {
   // The algorithm used to create the signature.
   string algo = 2;
   // The version of the signature used to create the signature.
-  uint64 version = 3;
+  uint32 version = 3;
 }

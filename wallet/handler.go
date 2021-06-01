@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"sync"
@@ -154,6 +155,27 @@ func (h *Handler) ListPublicKeys(token string) ([]Keypair, error) {
 	return w.Keypairs.GetPubKeys(), nil
 }
 
+func (h *Handler) SignAny(token, inputData, pubKey string) ([]byte, error) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	rawInputData, err := base64.StdEncoding.DecodeString(inputData)
+	if err != nil {
+		return nil, err
+	}
+
+	kp, err := h.getKeyPair(token, pubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if kp.Tainted {
+		return nil, ErrPubKeyIsTainted
+	}
+
+	return kp.Algorithm.Sign(kp.privBytes, rawInputData)
+}
+
 func (h *Handler) SignTxV2(token string, req walletpb.SubmitTransactionRequest) (*commandspb.Transaction, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -178,7 +200,7 @@ func (h *Handler) SignTxV2(token string, req walletpb.SubmitTransactionRequest) 
 		return nil, err
 	}
 
-	return commandspb.NewTransactionV1(keyPair.pubBytes, marshalledData, signature), nil
+	return commandspb.NewTransaction(keyPair.pubBytes, marshalledData, signature), nil
 }
 
 func (h *Handler) TaintKey(token, pubKey, passphrase string) error {

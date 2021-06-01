@@ -1678,8 +1678,8 @@
           "description": "The algorithm used to create the signature."
         },
         "version": {
-          "type": "string",
-          "format": "uint64",
+          "type": "integer",
+          "format": "int64",
           "description": "The version of the signature used to create the signature."
         }
       },
@@ -1706,8 +1706,8 @@
           "description": "The public key of the sender (hex-encoded)."
         },
         "version": {
-          "type": "string",
-          "format": "uint64",
+          "type": "integer",
+          "format": "int64",
           "description": "A version of the transaction, to be used in the future in case we want to\nimplement changes to the Transaction format."
         }
       },
@@ -5629,8 +5629,8 @@
           "title": "The algorithm used to create the signature"
         },
         "version": {
-          "type": "string",
-          "format": "uint64",
+          "type": "integer",
+          "format": "int64",
           "title": "The version of the signature used to create the signature"
         }
       },
