@@ -784,7 +784,7 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
 		assert.Equal(t, proposal.Id, p.Id)
-		assert.Equal(t, types.ProposalError_PROPOSAL_ERROR_MAJORITY_THERSHOLD_NOT_REACHED, p.Reason)
+		assert.Equal(t, types.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED, p.Reason)
 
 		v, ok := evts[1].(*events.Vote)
 		assert.True(t, ok)

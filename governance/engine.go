@@ -659,7 +659,7 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 	if float64(yes) > majorityThreshold && totalVotes >= participationThreshold {
 		p.State = types.Proposal_STATE_PASSED
 	} else {
-		p.Reason = types.ProposalError_PROPOSAL_ERROR_MAJORITY_THERSHOLD_NOT_REACHED
+		p.Reason = types.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
 		if totalVotes < participationThreshold {
 			p.Reason = types.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
 		}

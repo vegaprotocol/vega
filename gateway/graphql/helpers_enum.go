@@ -460,7 +460,7 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonInvalidShape, nil
 	case types.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER:
 		return ProposalRejectionReasonInvalidRiskParameter, nil
-	case types.ProposalError_PROPOSAL_ERROR_MAJORITY_THERSHOLD_NOT_REACHED:
+	case types.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED:
 		return ProposalRejectionReasonMajorityThresholdNotReached, nil
 	case types.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED:
 		return ProposalRejectionReasonParticipationThresholdNotReached, nil
