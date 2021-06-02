@@ -153,7 +153,9 @@ Feature: Test pegged orders
       | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
     # | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 110          | 110            | 1             |
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE     | 110          | 110            | 1             |
-    And the auction extension trigger should be "AUCTION_TRIGGER_LIQUIDITY" for market "ETH/DEC21"
+    # The auction isn't extended, we only check liquidity at the end of the price auction, at which point
+    # There's no reason to extend
+    # And the auction extension trigger should be "AUCTION_TRIGGER_LIQUIDITY" for market "ETH/DEC21"
 
     Then the traders submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
