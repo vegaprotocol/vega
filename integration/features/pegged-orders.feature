@@ -41,13 +41,18 @@ Feature: Test pegged orders
       | aux     | ETH/DEC21 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-buy   |
       | aux     | ETH/DEC21 | sell | 1      | 190   | 0                | TYPE_LIMIT | TIF_GTC | aux-sell  |
       
-      # These pegged orders get placed, but instead are just parked
-      #Then the traders place the following pegged orders:
-      #  | trader  | market id | side | volume | reference | offset |
-      #  | trader1 | ETH/DEC21 | sell | 10     | MID       |      1 |
-      #  | trader2 | ETH/DEC21 | buy  | 5      | BID       |      0 |
+    # These pegged orders get placed and parked since market is in auction
+    Then the traders place the following pegged orders:
+      | trader  | market id | side | volume | reference | offset |
+      | trader1 | ETH/DEC21 | sell | 10     | MID       |     13 |
+      | trader2 | ETH/DEC21 | buy  | 5      | BID       |      0 |
 
-     # Trigger an auction end set the mark price
+    Then the pegged orders should have the following states:
+      | trader  | market id | side | volume | reference | offset  | price | status        |
+      | trader2 | ETH/DEC21 | sell | 10     | MID       | 13      | 0     | STATUS_PARKED |
+      | trader1 | ETH/DEC21 | buy  | 5      | BID       | 0       | 0     | STATUS_PARKED |
+
+    # Trigger an auction end set the mark price
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC21 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-1 |
@@ -72,6 +77,8 @@ Feature: Test pegged orders
     # Check pegged orders behave as expected (can have 0 offset with bid/ask, orders with resulting price that's invalid get parked)
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
+      | trader2 | ETH/DEC21 | sell | 10     | MID       | 13      | 113     | STATUS_ACTIVE |
+      | trader1 | ETH/DEC21 | buy  | 5      | BID       | 0       | 10      | STATUS_ACTIVE |
       | trader2 | ETH/DEC21 | sell | 10     | MID       | 12      | 112     | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 5      | MID       | -15     | 85      | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 3      | BID       | -2      | 8       | STATUS_ACTIVE |
@@ -105,9 +112,13 @@ Feature: Test pegged orders
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC21 | buy  | 2      | 111   | 0                | TYPE_LIMIT | TIF_GTC | trader1-2 |
 
-    #TODO: One MID is fractional, eg. 150.5 and MID ref is used it gets rounded UP for buy and DOWN for sell - verify that it's captured in the spec
+    Then debug orders
+
+    #TODO: If MID is fractional, eg. 150.5 and MID ref is used it gets rounded UP for buy and DOWN for sell - verify that it's captured in the spec
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
+      | trader2 | ETH/DEC21 | sell | 10     | MID       | 13      | 163     | STATUS_ACTIVE |
+      | trader1 | ETH/DEC21 | buy  | 5      | BID       | 0       | 111     | STATUS_ACTIVE |
       | trader2 | ETH/DEC21 | sell | 10     | MID       | 12      | 162     | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 5      | MID       | -15     | 136     | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 3      | BID       | -2      | 109     | STATUS_ACTIVE |
@@ -129,11 +140,15 @@ Feature: Test pegged orders
       | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 110          | 110            | 1             |
 
+
+
     #TODO: I think we need something like this to make sure that all orders have been specified in the next step
     #Then there should be 9 pegged orders
 
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
+      | trader2 | ETH/DEC21 | sell | 10     | MID       | 13      | 0       | STATUS_PARKED |
+      | trader1 | ETH/DEC21 | buy  | 5      | BID       | 0       | 0       | STATUS_PARKED |
       | trader2 | ETH/DEC21 | sell | 10     | MID       | 12      | 0       | STATUS_PARKED |
       | trader1 | ETH/DEC21 | buy  | 5      | MID       | -15     | 0       | STATUS_PARKED |
       | trader1 | ETH/DEC21 | buy  | 3      | BID       | -2      | 0       | STATUS_PARKED |
@@ -157,6 +172,14 @@ Feature: Test pegged orders
     # There's no reason to extend
     # And the auction extension trigger should be "AUCTION_TRIGGER_LIQUIDITY" for market "ETH/DEC21"
 
+    Then the traders place the following pegged orders:
+      | trader  | market id | side | volume | reference | offset |
+      | trader1 | ETH/DEC21 | sell | 17     | MID       |     14 |
+
+    And the pegged orders should have the following states:
+      | trader  | market id | side | volume | reference | offset  | price   | status        |
+      | trader1 | ETH/DEC21 | sell | 17     | MID       |     14  | 0       | STATUS_PARKED |
+
     Then the traders submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
       | lp1 | aux   | ETH/DEC21 | 500               | 0.001 | buy        | BID             | 500              | -10          |
@@ -174,6 +197,8 @@ Feature: Test pegged orders
 
     And the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
+      | trader2 | ETH/DEC21 | sell | 10     | MID       | 13      | 113     | STATUS_ACTIVE |
+      | trader1 | ETH/DEC21 | buy  | 5      | BID       | 0       | 10      | STATUS_ACTIVE |
       | trader2 | ETH/DEC21 | sell | 10     | MID       | 12      | 112     | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 5      | MID       | -15     | 85      | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 3      | BID       | -2      | 8       | STATUS_ACTIVE |
@@ -204,6 +229,8 @@ Feature: Test pegged orders
 
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
+      | trader2 | ETH/DEC21 | sell | 10     | MID       | 13      | 108     | STATUS_ACTIVE |
+      | trader1 | ETH/DEC21 | buy  | 5      | BID       | 0       | 5       | STATUS_ACTIVE |
       | trader2 | ETH/DEC21 | sell | 10     | MID       | 12      | 107     | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 5      | MID       | -15     | 80      | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 3      | BID       | -2      | 3       | STATUS_ACTIVE |
@@ -217,6 +244,8 @@ Feature: Test pegged orders
     #TODO: Both of these groups cannot result in passes, expecting the prices defined above, the ones below are old and hence should now result in a fail
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
+      | trader2 | ETH/DEC21 | sell | 10     | MID       | 13      | 113     | STATUS_ACTIVE |
+      | trader1 | ETH/DEC21 | buy  | 5      | BID       | 0       | 10      | STATUS_ACTIVE |
       | trader2 | ETH/DEC21 | sell | 10     | MID       | 12      | 112     | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 5      | MID       | -15     | 85      | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 3      | BID       | -2      | 8       | STATUS_ACTIVE |
