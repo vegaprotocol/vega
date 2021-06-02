@@ -535,78 +535,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	closed = t.After(m.closingAt)
 	m.closed = closed
 
-	// check price auction end
-	if m.as.InAuction() {
-		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		if m.as.IsOpeningAuction() {
-			// if the opening auction period has expired and the book can be uncrossed safely
-			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) && m.matching.CanUncross() {
-				// mark opening auction as ending
-				// Prime price monitoring engine with the uncrossing price of the opening auction
-				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t, true); err != nil {
-					m.log.Panic("unable to run check price with price monitor",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
-				if evt := m.as.AuctionExtended(ctx); evt != nil {
-					// this should never, ever happen
-					m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
-				}
-				m.as.EndAuction()
-				m.LeaveAuction(ctx, t)
-
-				// the market is now in a ACTIVE state
-				m.mkt.State = types.Market_STATE_ACTIVE
-				m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-				m.equityShares.OpeningAuctionEnded()
-
-				// start the market fee window
-				m.feeSplitter.TimeWindowStart(t)
-			}
-		} else if m.as.IsPriceAuction() || m.as.IsLiquidityAuction() {
-			// hacky way to ensure the liquidity monitoring will calculate the target stake based on the target stake
-			// SHOULD we leave the auction. Otherwise, we would leave a liquidity auction, and immediately enter a new one
-			ft := []*types.Trade{
-				{
-					Size:  v,
-					Price: p,
-				},
-			}
-			isPrice := m.as.IsPriceAuction()
-			if !isPrice {
-				m.checkLiquidity(ctx, ft)
-			}
-			if isPrice || m.as.AuctionEnd() {
-				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t, true); err != nil {
-					m.log.Panic("unable to run check price with price monitor",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
-			}
-			if evt := m.as.AuctionExtended(ctx); evt != nil {
-				m.broker.Send(evt)
-			}
-			if isPrice {
-				m.checkLiquidity(ctx, ft)
-			}
-			// price monitoring engine and liquidity monitoring engine both indicated auction can end
-			if m.as.AuctionEnd() {
-				if m.matching.BidAndAskPresentAfterAuction() {
-					m.LeaveAuction(ctx, t)
-				} else {
-					if isPrice {
-						// TODO: ExtendPriceAuction when implemented
-						m.as.ExtendAuction(types.AuctionDuration{Duration: 1})
-					} else {
-						// TODO: ExtendLiquidityAuction when implemented
-						m.as.ExtendAuction(types.AuctionDuration{Duration: 1})
-					}
-				}
-			}
-		}
-		// This is where ending liquidity auctions and FBA's will be handled
-	}
+	// check auction, if any
+	m.checkAuction(ctx, t)
 
 	// TODO(): handle market start time
 

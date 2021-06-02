@@ -226,6 +226,17 @@ func (b OrderBook) InAuction() bool {
 	return b.auction
 }
 
+// CanLeaveAuction calls canUncross with required trades and, if that returns false
+// without required trades (which still permits leaving liquidity auction
+// if canUncross with required trades returs true, both returns are true
+func (b *OrderBook) CanLeaveAuction() (bool, bool) {
+	t := b.canUncross(true)
+	if t {
+		return t, t
+	}
+	return t, b.canUncross(false)
+}
+
 // CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders
 // on the book after we uncross the book (at the end of an auction). If this returns false, the opening auction should be extended
 func (b *OrderBook) CanUncross() bool {
