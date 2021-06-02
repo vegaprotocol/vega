@@ -559,6 +559,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 				m.mkt.State = types.Market_STATE_ACTIVE
 				m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
+				m.equityShares.OpeningAuctionEnded()
+
 				// start the market fee window
 				m.feeSplitter.TimeWindowStart(t)
 			}

@@ -160,8 +160,8 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   |              0.666 |                    5000 |
-      | lp2   |              0.333 |                   10000 |
+      | lp1   |                0.5 |                   10000 |
+      | lp2   |                0.5 |                   10000 |
 
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
@@ -192,8 +192,8 @@ Feature: Test liquidity provider reward distribution
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from    | to  | from account                | to account           | market id | amount  | asset |
-      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 26      | ETH   |
-      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 14      | ETH   |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 20      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 20      | ETH   |
 
 
     Then the traders place the following orders:
@@ -214,8 +214,8 @@ Feature: Test liquidity provider reward distribution
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from    | to  | from account                | to account           | market id | amount  | asset |
-      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 21      | ETH   |
-      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 11      | ETH   |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 16      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 16      | ETH   |
 
   Scenario: 2 LPs joining at start, unequal commitments
 
@@ -260,8 +260,8 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   |              0.833 |                    8000 |
-      | lp2   |              0.166 |                   10000 |
+      | lp1   |                0.8 |                   10000 |
+      | lp2   |                0.2 |                   10000 |
 
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
@@ -366,8 +366,8 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   |              0.833 |                    8000 |
-      | lp2   |              0.166 |                   10000 |
+      | lp1   |                0.8 |                   10000 |
+      | lp2   |                0.2 |                   10000 |
 
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
@@ -412,9 +412,9 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share  | average entry valuation |
-      | lp1   |             0.7772 |                    8000 |
-      | lp2   |             0.1554 |                   10000 |
-      | lp3   |             0.0673 |                  115397 |
+      | lp1   |             0.7362 |                   10000 |
+      | lp2   |             0.1840 |                   10000 |
+      | lp3   |             0.0797 |                  115397 |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -435,8 +435,8 @@ Feature: Test liquidity provider reward distribution
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
       | from    | to  | from account                | to account           | market id | amount  | asset |
-      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 23      | ETH   |
-      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 4       | ETH   |
+      | market  | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 22      | ETH   |
+      | market  | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 5       | ETH   |
       | market  | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN  | ETH/DEC21 | 3       | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"

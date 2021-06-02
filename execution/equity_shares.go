@@ -22,12 +22,34 @@ type EquityShares struct {
 
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
+
+	openingAuctionEnded bool
 }
 
 func NewEquityShares(mvp decimal.Decimal) *EquityShares {
 	return &EquityShares{
 		mvp: mvp,
 		lps: map[string]*lp{},
+	}
+}
+
+// OpeningAuctionEnded signal to the EquityShare that the
+// opening auction has ended.
+func (es *EquityShares) OpeningAuctionEnded() {
+	// we should never call this twice
+	if es.openingAuctionEnded {
+		panic("market already left opening auction")
+	}
+	es.openingAuctionEnded = true
+	es.setOpeningAuctionAVG()
+}
+
+// we just the average entry valuation to the same value
+// for every LP during opening auction.
+func (es *EquityShares) setOpeningAuctionAVG() {
+	// now set average entry valuation for all of them.
+	for _, v := range es.lps {
+		v.avg = es.mvp
 	}
 }
 
@@ -38,17 +60,20 @@ func (es *EquityShares) WithMVP(mvp decimal.Decimal) *EquityShares {
 
 // SetPartyStake sets LP values for a given party.
 func (es *EquityShares) SetPartyStake(id string, newStakeU64 uint64) {
+	if !es.openingAuctionEnded {
+		defer es.setOpeningAuctionAVG()
+	}
+
 	newStake := decimal.NewFromBigInt(new(big.Int).SetUint64(newStakeU64), 0)
 	v, found := es.lps[id]
 	// first time we set the newStake and mvp as avg.
 	if !found {
 		if newStake.GreaterThan(decimal.Zero) {
-			// if marketValueProxy == 0
-			// we assume mvp will be our stake?
-			if es.mvp.Equal(decimal.Zero) {
-				es.mvp = newStake
+			avg := decimal.Zero
+			if es.openingAuctionEnded {
+				avg = es.mvp
 			}
-			es.lps[id] = &lp{stake: newStake, avg: es.mvp}
+			es.lps[id] = &lp{stake: newStake, avg: avg}
 			return
 		}
 		// If we didn't previously have stake and are trying to set it to zero, just return
@@ -70,7 +95,9 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU64 uint64) {
 	delta := newStake.Sub(v.stake)
 	eq := es.mustEquity(id)
 	// v.avg = ((eq * v.avg) + (delta * es.mvp)) / (eq + v.stake)
-	v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
+	if es.openingAuctionEnded {
+		v.avg = (eq.Mul(v.avg).Add(delta.Mul(es.mvp))).Div(eq.Add(v.stake))
+	}
 	v.stake = newStake
 }
 
