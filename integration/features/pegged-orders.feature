@@ -10,6 +10,7 @@ Feature: Test pegged orders
     Given the following network parameters are set: 
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 1     |
+    And the average block duration is "1"
 
     # TODO: Changing the year to 2020 or beyond results in invalid market ID errors (perhaps there's some default settlement date?) 
     Given time is updated to "2019-05-20T00:00:00Z"
@@ -144,7 +145,8 @@ Feature: Test pegged orders
       | trader1 | ETH/DEC21 | buy  | 16     | BID       | -10     | 0       | STATUS_PARKED |
 
     #Extend with liquidity auction and check that orders get unparked
-    When time is updated to "2019-05-20T01:01:01Z"
+    #When time is updated to "2019-05-20T01:01:01Z"
+    When the network moves ahead "60" blocks
 
     #TODO: Trigger should change IMO, but this will be decided in the auction-interaction-spec, remove TODO once decided.
     Then the market data for the market "ETH/DEC21" should be:
@@ -158,7 +160,7 @@ Feature: Test pegged orders
       | lp1 | aux   | ETH/DEC21 | 500               | 0.001 | buy        | BID             | 500              | -10          |
       | lp1 | aux   | ETH/DEC21 | 500               | 0.001 | sell       | ASK             | 500              | 10           |
     
-    When the network moves ahead "1" blocks
+    When the network moves ahead "2" blocks
     
     #TODO: Perhaps we need a "clear trades" statement or somehow autoclear it when time advances? I can see the trade in "debug trades" output, but there's also the previous 1@100 one there
     #Then debug trades
