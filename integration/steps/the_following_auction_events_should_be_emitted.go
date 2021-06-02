@@ -30,7 +30,7 @@ func TheFollowingAuctionEventsShouldBeEmitted(broker *stubs.BrokerStub, table *g
 		market := row.MustStr("market id")
 		e := broker.GetLastAuctionEvent(market)
 		if e == nil {
-			return fmt.Errorf("No auction event for market %s", market)
+			return fmt.Errorf("no auction event for market %s", market)
 		}
 		return checkEvent(row, *e)
 	}
@@ -81,14 +81,14 @@ func checkEvent(row RowWrapper, e events.Auction) error {
 		extension = row.MustAuctionTrigger("extension trigger")
 	}
 	if extension != proto.ExtensionTrigger {
-		return fmt.Errorf("Expected extension trigger %s instead got %s", extension, proto.ExtensionTrigger)
+		return fmt.Errorf("expected extension trigger %s instead got %s", extension, proto.ExtensionTrigger)
 	}
 	opening := proto.OpeningAuction
 	if row.Has("is opening") {
 		opening = row.MustBool("is opening")
 	}
 	if opening != proto.OpeningAuction {
-		return fmt.Errorf("Expected opening auction to be %v istead got %v", opening, proto.OpeningAuction)
+		return fmt.Errorf("expected opening auction to be %v istead got %v", opening, proto.OpeningAuction)
 	}
 	return nil
 }

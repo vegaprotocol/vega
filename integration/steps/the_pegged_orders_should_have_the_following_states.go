@@ -5,7 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/proto"
-	types "code.vegaprotocol.io/vega/proto"
+
 	"github.com/cucumber/godog/gherkin"
 )
 
@@ -23,7 +23,7 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 		price := row.price()
 		status := row.status()
 
-		var ord types.Order
+		var ord proto.Order
 		match := false
 		for _, e := range data {
 			o := e.Order()
