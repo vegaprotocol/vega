@@ -400,7 +400,7 @@ func testAssetChangeSubmissionWithoutSourceFails(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{},
+					Changes: &types.AssetDetails{},
 				},
 			},
 		},
@@ -414,8 +414,8 @@ func testBuiltInAssetChangeSubmissionWithoutBuiltInAssetFails(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{},
+					Changes: &types.AssetDetails{
+						Source: &types.AssetDetails_BuiltinAsset{},
 					},
 				},
 			},
@@ -430,11 +430,10 @@ func testBuiltInAssetChangeSubmissionWithoutNameFails(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
-							BuiltinAsset: &types.BuiltinAsset{
-								Name: "",
-							},
+					Changes: &types.AssetDetails{
+						Name: "",
+						Source: &types.AssetDetails_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
 				},
@@ -442,7 +441,7 @@ func testBuiltInAssetChangeSubmissionWithoutNameFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.name"), commands.ErrIsRequired)
 }
 
 func testBuiltInAssetChangeSubmissionWithNameSucceeds(t *testing.T) {
@@ -450,11 +449,10 @@ func testBuiltInAssetChangeSubmissionWithNameSucceeds(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
-							BuiltinAsset: &types.BuiltinAsset{
-								Name: "My built-in asset",
-							},
+					Changes: &types.AssetDetails{
+						Name: "My built-in asset",
+						Source: &types.AssetDetails_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
 				},
@@ -470,11 +468,10 @@ func testBuiltInAssetChangeSubmissionWithoutSymbolFails(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
-							BuiltinAsset: &types.BuiltinAsset{
-								Symbol: "",
-							},
+					Changes: &types.AssetDetails{
+						Symbol: "",
+						Source: &types.AssetDetails_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
 				},
@@ -482,7 +479,7 @@ func testBuiltInAssetChangeSubmissionWithoutSymbolFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.symbol"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.symbol"), commands.ErrIsRequired)
 }
 
 func testBuiltInAssetChangeSubmissionWithSymbolSucceeds(t *testing.T) {
@@ -490,11 +487,10 @@ func testBuiltInAssetChangeSubmissionWithSymbolSucceeds(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
-							BuiltinAsset: &types.BuiltinAsset{
-								Symbol: "My symbol",
-							},
+					Changes: &types.AssetDetails{
+						Symbol: "My symbol",
+						Source: &types.AssetDetails_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
 				},
@@ -510,11 +506,10 @@ func testBuiltInAssetChangeSubmissionWithoutDecimalsFails(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
-							BuiltinAsset: &types.BuiltinAsset{
-								Decimals: 0,
-							},
+					Changes: &types.AssetDetails{
+						Decimals: 0,
+						Source: &types.AssetDetails_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
 				},
@@ -522,7 +517,7 @@ func testBuiltInAssetChangeSubmissionWithoutDecimalsFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.decimals"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.decimals"), commands.ErrIsRequired)
 }
 
 func testBuiltInAssetChangeSubmissionWithDecimalsSucceeds(t *testing.T) {
@@ -530,11 +525,10 @@ func testBuiltInAssetChangeSubmissionWithDecimalsSucceeds(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
-							BuiltinAsset: &types.BuiltinAsset{
-								Decimals: RandomPositiveU64(),
-							},
+					Changes: &types.AssetDetails{
+						Decimals: RandomPositiveU64(),
+						Source: &types.AssetDetails_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
 				},
@@ -550,11 +544,10 @@ func testBuiltInAssetChangeSubmissionWithoutTotalSupplyFails(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
-							BuiltinAsset: &types.BuiltinAsset{
-								TotalSupply: "",
-							},
+					Changes: &types.AssetDetails{
+						TotalSupply: "",
+						Source: &types.AssetDetails_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
 				},
@@ -562,7 +555,7 @@ func testBuiltInAssetChangeSubmissionWithoutTotalSupplyFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.total_supply"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.total_supply"), commands.ErrIsRequired)
 }
 
 func testBuiltInAssetChangeSubmissionWithTotalSupplySucceeds(t *testing.T) {
@@ -570,11 +563,10 @@ func testBuiltInAssetChangeSubmissionWithTotalSupplySucceeds(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
-							BuiltinAsset: &types.BuiltinAsset{
-								TotalSupply: "10000",
-							},
+					Changes: &types.AssetDetails{
+						TotalSupply: "10000",
+						Source: &types.AssetDetails_BuiltinAsset{
+							BuiltinAsset: &types.BuiltinAsset{},
 						},
 					},
 				},
@@ -609,11 +601,10 @@ func testBuiltInAssetChangeSubmissionWithNaNTotalSupplyFails(t *testing.T) {
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_NewAsset{
 						NewAsset: &types.NewAsset{
-							Changes: &types.AssetSource{
-								Source: &types.AssetSource_BuiltinAsset{
-									BuiltinAsset: &types.BuiltinAsset{
-										TotalSupply: tc.value,
-									},
+							Changes: &types.AssetDetails{
+								TotalSupply: tc.value,
+								Source: &types.AssetDetails_BuiltinAsset{
+									BuiltinAsset: &types.BuiltinAsset{},
 								},
 							},
 						},
@@ -621,7 +612,7 @@ func testBuiltInAssetChangeSubmissionWithNaNTotalSupplyFails(t *testing.T) {
 				},
 			})
 
-			assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.total_supply"), tc.error)
+			assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.total_supply"), tc.error)
 		})
 	}
 }
@@ -631,8 +622,8 @@ func testBuiltInAssetChangeSubmissionWithoutMaxFaucetAmountMintFails(t *testing.
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
+					Changes: &types.AssetDetails{
+						Source: &types.AssetDetails_BuiltinAsset{
 							BuiltinAsset: &types.BuiltinAsset{
 								MaxFaucetAmountMint: "",
 							},
@@ -651,8 +642,8 @@ func testBuiltInAssetChangeSubmissionWithMaxFaucetAmountMintSucceeds(t *testing.
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_BuiltinAsset{
+					Changes: &types.AssetDetails{
+						Source: &types.AssetDetails_BuiltinAsset{
 							BuiltinAsset: &types.BuiltinAsset{
 								MaxFaucetAmountMint: "10000",
 							},
@@ -690,8 +681,8 @@ func testBuiltInAssetChangeSubmissionWithNaNMaxFaucetAmountMintFails(t *testing.
 				Terms: &types.ProposalTerms{
 					Change: &types.ProposalTerms_NewAsset{
 						NewAsset: &types.NewAsset{
-							Changes: &types.AssetSource{
-								Source: &types.AssetSource_BuiltinAsset{
+							Changes: &types.AssetDetails{
+								Source: &types.AssetDetails_BuiltinAsset{
 									BuiltinAsset: &types.BuiltinAsset{
 										MaxFaucetAmountMint: tc.value,
 									},
@@ -712,8 +703,8 @@ func testERC20AssetChangeSubmissionWithoutErc20AssetFails(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_Erc20{},
+					Changes: &types.AssetDetails{
+						Source: &types.AssetDetails_Erc20{},
 					},
 				},
 			},
@@ -728,8 +719,8 @@ func testErc20AssetChangeSubmissionWithoutContractAddressFails(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_Erc20{
+					Changes: &types.AssetDetails{
+						Source: &types.AssetDetails_Erc20{
 							Erc20: &types.ERC20{
 								ContractAddress: "",
 							},
@@ -748,8 +739,8 @@ func testErc20AssetChangeSubmissionWithContractAddressSucceeds(t *testing.T) {
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewAsset{
 				NewAsset: &types.NewAsset{
-					Changes: &types.AssetSource{
-						Source: &types.AssetSource_Erc20{
+					Changes: &types.AssetDetails{
+						Source: &types.AssetDetails_Erc20{
 							Erc20: &types.ERC20{
 								ContractAddress: "My address",
 							},
@@ -1200,7 +1191,6 @@ func testPriceMonitoringChangeSubmissionWithoutTriggersSucceeds(t *testing.T) {
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers"), commands.ErrIsRequired)
 }
-
 
 func testPriceMonitoringChangeSubmissionWithTriggersSucceeds(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
@@ -1969,11 +1959,9 @@ func testNewFutureMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) 
 									OracleSpec: &oraclespb.OracleSpecConfiguration{
 										Filters: []*oraclespb.Filter{
 											{
-												Key: &oraclespb.PropertyKey{
-												},
+												Key: &oraclespb.PropertyKey{},
 											}, {
-												Key: &oraclespb.PropertyKey{
-												},
+												Key: &oraclespb.PropertyKey{},
 											},
 										},
 									},
@@ -2076,8 +2064,7 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing
 													Type: oraclespb.PropertyKey_TYPE_UNSPECIFIED,
 												},
 											}, {
-												Key: &oraclespb.PropertyKey{
-												},
+												Key: &oraclespb.PropertyKey{},
 											},
 										},
 									},
@@ -2201,9 +2188,7 @@ func testNewFutureMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(
 													{
 														Operator: oraclespb.Condition_OPERATOR_UNSPECIFIED,
 													},
-													{
-
-													},
+													{},
 												},
 											},
 										},
@@ -2450,8 +2435,7 @@ func testNewContinuousTradingMarketChangeSubmissionWithoutContinuousTradingModeF
 			Change: &types.ProposalTerms_NewMarket{
 				NewMarket: &types.NewMarket{
 					Changes: &types.NewMarketConfiguration{
-						TradingMode: &types.NewMarketConfiguration_Continuous{
-						},
+						TradingMode: &types.NewMarketConfiguration_Continuous{},
 					},
 				},
 			},
@@ -2485,8 +2469,7 @@ func testNewDiscreteTradingMarketChangeSubmissionWithoutDiscreteTradingModeFails
 			Change: &types.ProposalTerms_NewMarket{
 				NewMarket: &types.NewMarket{
 					Changes: &types.NewMarketConfiguration{
-						TradingMode: &types.NewMarketConfiguration_Discrete{
-						},
+						TradingMode: &types.NewMarketConfiguration_Discrete{},
 					},
 				},
 			},
@@ -2584,8 +2567,7 @@ func testNewSimpleRiskParametersChangeSubmissionWithoutSimpleRiskParametersFails
 			Change: &types.ProposalTerms_NewMarket{
 				NewMarket: &types.NewMarket{
 					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_Simple{
-						},
+						RiskParameters: &types.NewMarketConfiguration_Simple{},
 					},
 				},
 			},
@@ -2808,8 +2790,7 @@ func testNewLogNormalRiskParametersChangeSubmissionWithoutLogNormalRiskParameter
 			Change: &types.ProposalTerms_NewMarket{
 				NewMarket: &types.NewMarket{
 					Changes: &types.NewMarketConfiguration{
-						RiskParameters: &types.NewMarketConfiguration_LogNormal{
-						},
+						RiskParameters: &types.NewMarketConfiguration_LogNormal{},
 					},
 				},
 			},
