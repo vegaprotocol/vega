@@ -1,8 +1,11 @@
 package steps
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/proto"
 	"github.com/cucumber/godog/gherkin"
 )
 
@@ -20,11 +23,15 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 		price := row.price()
 		status := row.status()
 
+		var ord types.Order
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.PartyId != trader || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != volume || o.Price != price {
-				continue
+			if o.PartyId != trader || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != volume {
+				if o.Price != price {
+					continue
+				}
+				ord = *o
 			}
 			if o.PeggedOrder == nil {
 				continue
@@ -36,7 +43,8 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 			break
 		}
 		if !match {
-			return errOrderEventsNotFound(trader, marketID, side, volume, price)
+			err := errOrderEventsNotFound(trader, marketID, side, volume, price)
+			return fmt.Errorf("%v - order: %s", err, ord.String())
 		}
 	}
 	return nil

@@ -304,6 +304,22 @@ func (b *BrokerStub) GetAccounts() []events.Acc {
 	return s
 }
 
+func (b *BrokerStub) GetLastAuctionEvent(marketID string) *events.Auction {
+	evts := b.GetAuctionEvents()
+	if len(evts) == 0 {
+		return nil
+	}
+	// this ought to be the last event published
+	var last *events.Auction
+	for _, e := range evts {
+		if e.MarketID() == marketID {
+			cpy := e
+			last = &cpy
+		}
+	}
+	return last
+}
+
 func (b *BrokerStub) GetAuctionEvents() []events.Auction {
 	batch := b.GetBatch(events.AuctionEvent)
 

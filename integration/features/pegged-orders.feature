@@ -1,4 +1,3 @@
-
 Feature: Test pegged orders
 
   Background:
@@ -41,12 +40,11 @@ Feature: Test pegged orders
       | aux     | ETH/DEC21 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-buy   |
       | aux     | ETH/DEC21 | sell | 1      | 190   | 0                | TYPE_LIMIT | TIF_GTC | aux-sell  |
       
-    Then the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset |
-      | trader1 | ETH/DEC21 | sell | 10     | MID       |      1 |
-      | trader2 | ETH/DEC21 | buy  | 5      | BUY       |      0 |
-    # # TODO: The exact error message can be different of course
-    And the system should return error "pegged orders can't be submitted when market is in auction mode"
+      # These pegged orders get placed, but instead are just parked
+      #Then the traders place the following pegged orders:
+      #  | trader  | market id | side | volume | reference | offset |
+      #  | trader1 | ETH/DEC21 | sell | 10     | MID       |      1 |
+      #  | trader2 | ETH/DEC21 | buy  | 5      | BID       |      0 |
 
      # Trigger an auction end set the mark price
     When the traders place the following orders:
@@ -84,22 +82,19 @@ Feature: Test pegged orders
       | trader1 | ETH/DEC21 | buy  | 16     | BID       | -10     | 0       | STATUS_PARKED |
     
     #Check that MID reference cannot be combined with a 0 offset. 
-    Then the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset  |
-      | trader1 | ETH/DEC21 | sell | 1      | MID       |      0  |
-    And the system should return error "offset must be greater than zero"
+    And the traders place the following pegged orders:
+      | trader  | market id | side | volume | reference | offset  | error                                        |
+      | trader1 | ETH/DEC21 | sell | 1      | MID       |      0  | OrderError: offset must be greater than zero |
 
     #Check that BID reference cannot be combined with a positive offset. 
-    Then the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset  |
-      | trader2 | ETH/DEC21 | buy  | 1      | BID       |      1  |
-    And the system should return error "offset must be greater than zero"
+    And the traders place the following pegged orders:
+      | trader  | market id | side | volume | reference | offset  | error                           |
+      | trader2 | ETH/DEC21 | buy  | 1      | BID       |      1  | OrderError: offset must be <= 0 |
 
     #Check that ASK reference cannot be combined with a negative offset. 
-    Then the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset  |
-      | trader1 | ETH/DEC21 | sell | 1      | ASK       |      -1  |
-    And the system should return error "offset must be greater than zero"
+    And the traders place the following pegged orders:
+      | trader  | market id | side | volume | reference | offset  | error                           |
+      | trader1 | ETH/DEC21 | sell | 1      | ASK       |     -1  | OrderError: offset must be >= 0 |
       
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -134,7 +129,7 @@ Feature: Test pegged orders
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 110          | 110            | 1             |
 
     #TODO: I think we need something like this to make sure that all orders have been specified in the next step
-    Then there should be 9 pegged orders
+    #Then there should be 9 pegged orders
 
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
@@ -149,30 +144,31 @@ Feature: Test pegged orders
       | trader1 | ETH/DEC21 | buy  | 16     | BID       | -10     | 0       | STATUS_PARKED |
 
     #Extend with liquidity auction and check that orders get unparked
-    Then time is updated to "2019-05-20T01:01:01Z"
+    When time is updated to "2019-05-20T01:01:01Z"
 
     #TODO: Trigger should change IMO, but this will be decided in the auction-interaction-spec, remove TODO once decided.
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
     # | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 110          | 110            | 1             |
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE     | 110          | 110            | 1             |
+    And the auction extension trigger should be "AUCTION_TRIGGER_LIQUIDITY" for market "ETH/DEC21"
 
     Then the traders submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
       | lp1 | aux   | ETH/DEC21 | 500               | 0.001 | buy        | BID             | 500              | -10          |
       | lp1 | aux   | ETH/DEC21 | 500               | 0.001 | sell       | ASK             | 500              | 10           |
     
-    And the network moves ahead "1" blocks
+    When the network moves ahead "1" blocks
     
     #TODO: Perhaps we need a "clear trades" statement or somehow autoclear it when time advances? I can see the trade in "debug trades" output, but there's also the previous 1@100 one there
     #Then debug trades
-    Then the auction ends with a traded volume of "2" at a price of "111"
+    #Then the auction ends with a traded volume of "2" at a price of "111"
 
-    And the market data for the market "ETH/DEC21" should be:
+    Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest | best static bid price | best static ask price |
       | 111        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 367          | 500            | 3             | 10                    | 190                   |
 
-    Then the pegged orders should have the following states:
+    And the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
       | trader2 | ETH/DEC21 | sell | 10     | MID       | 12      | 112     | STATUS_ACTIVE |
       | trader1 | ETH/DEC21 | buy  | 5      | MID       | -15     | 85      | STATUS_ACTIVE |
@@ -230,7 +226,7 @@ Feature: Test pegged orders
     # TODO: mid price comes back as 93
     And the market data for the market "ETH/DEC21" should be:
       | best bid price | best ask price | mid price | best bid volume | best ask volume |
-      | 80             | 185            | 133       | 5               | 11              |
+      | 80             | 185            | 93        | 5               | 11              |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |

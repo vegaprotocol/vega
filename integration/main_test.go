@@ -268,7 +268,13 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the market data for the market "([^"]+)" should be:$`, func(marketID string, table *gherkin.DataTable) error {
 		return steps.TheMarketDataShouldBe(execsetup.executionEngine, marketID, table)
 	})
-	s.Step(`the auction ends with a traded volume of "([^"]+)" at a price of "([^"]+)"`, func(vol, price string) error {
+	s.Step(`^the following auction events should be emitted:$`, func(table *gherkin.DataTable) error {
+		return steps.TheFollowingAuctionEventsShouldBeEmitted(execsetup.broker, table)
+	})
+	s.Step(`^the auction extension trigger should be "([^"]+)" for market "([^"]+)"$`, func(extension, market string) error {
+		return steps.TheAuctionExtensionTriggerShouldBe(execsetup.broker, market, extension)
+	})
+	s.Step(`^the auction ends with a traded volume of "([^"]+)" at a price of "([^"]+)"`, func(vol, price string) error {
 		now, _ := execsetup.timeService.GetTimeNow()
 		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
 	})

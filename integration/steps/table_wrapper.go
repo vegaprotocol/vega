@@ -98,6 +98,12 @@ func (r RowWrapper) mustColumn(name string) string {
 	return s
 }
 
+// Has returns whether or not a given column was specified
+func (r RowWrapper) Has(col string) bool {
+	_, ok := r.values[col]
+	return ok
+}
+
 func (r RowWrapper) MustStr(name string) string {
 	return r.mustColumn(name)
 }

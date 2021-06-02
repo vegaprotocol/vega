@@ -33,6 +33,12 @@ func TradersPlaceTheFollowingPeggedOrders(exec *execution.Engine, orders *gherki
 		}
 		_, err := exec.SubmitOrder(context.Background(), orderSubmission, trader)
 		if err != nil {
+			if row.Has("error") {
+				if err.Error() == row.MustStr("error") {
+					continue
+				}
+				return fmt.Errorf("expected error '%s', instead got '%s'", row.MustStr("error"), err.Error())
+			}
 			return errSubmitOrder(err, orderSubmission)
 		}
 	}
