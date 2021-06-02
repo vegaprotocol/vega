@@ -63,10 +63,13 @@ func testSignedCommandSuccess(t *testing.T) {
 	defer commander.Finish()
 
 	cmd := txn.NodeVoteCommand
-	payload := &commandspb.NodeVote{}
+	payload := &commandspb.NodeVote{
+		PubKey:    []byte("my-pub-key"),
+		Reference: "test",
+	}
 	ctx := context.Background()
 
-	commander.chain.EXPECT().SubmitTransaction(ctx, gomock.Any(), gomock.Any()).Times(1)
+	commander.chain.EXPECT().SubmitTransactionV2(ctx, gomock.Any(), gomock.Any()).Times(1)
 	assert.NoError(t, commander.Command(ctx, cmd, payload))
 }
 
