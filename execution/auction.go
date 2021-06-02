@@ -6,7 +6,6 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -92,18 +91,18 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 func (m *Market) extendAuctionIncompleteBook() {
 	if m.as.IsOpeningAuction() {
 		// extend 1 second
-		m.as.ExtendAuction(proto.AuctionDuration{
+		m.as.ExtendAuction(types.AuctionDuration{
 			Duration: 1,
 		})
 		return
 	}
 	if m.as.IsPriceAuction() {
-		m.as.ExtendAuctionPrice(proto.AuctionDuration{
+		m.as.ExtendAuctionPrice(types.AuctionDuration{
 			Duration: 1,
 		})
 		return
 	}
-	m.as.ExtendAuctionLiquidity(proto.AuctionDuration{
+	m.as.ExtendAuctionLiquidity(types.AuctionDuration{
 		Duration: 1,
 	})
 }
