@@ -229,12 +229,14 @@ func (b OrderBook) InAuction() bool {
 // CanLeaveAuction calls canUncross with required trades and, if that returns false
 // without required trades (which still permits leaving liquidity auction
 // if canUncross with required trades returs true, both returns are true
-func (b *OrderBook) CanLeaveAuction() (bool, bool) {
-	t := b.canUncross(true)
-	if t {
-		return t, t
+func (b *OrderBook) CanLeaveAuction() (withTrades, withoutTrades bool) {
+	withTrades = b.canUncross(true)
+	withoutTrades = withTrades
+	if withTrades {
+		return
 	}
-	return t, b.canUncross(false)
+	withoutTrades = b.canUncross(false)
+	return
 }
 
 // CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders
