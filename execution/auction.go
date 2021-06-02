@@ -68,14 +68,16 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 					logging.Error(err))
 			}
 		}
-		if isPrice {
+		end := m.as.AuctionEnd()
+		if isPrice && end {
 			m.checkLiquidity(ctx, ft)
 		}
 		if evt := m.as.AuctionExtended(ctx); evt != nil {
 			m.broker.Send(evt)
+			end = false
 		}
 		// price monitoring engine and liquidity monitoring engine both indicated auction can end
-		if m.as.AuctionEnd() {
+		if end {
 			// can we leave based on the book state?
 			if !nt {
 				m.extendAuctionIncompleteBook()
