@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/proto/api"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -54,79 +53,29 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 		return err
 	}
 
-	signature := c.sign(marshalledData)
+	signature, err := c.sign(marshalledData)
+	if err != nil {
+		return err
+	}
 
 	tx := commandspb.NewTransaction(c.wal.PubKeyOrAddress(), marshalledData, signature)
 
 	return c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
 }
 
-func (c *Commander) sign(data []byte) *commandspb.Signature {
-	return &commandspb.Signature{
-		Bytes:   string(data),
-		Algo:    c.wal.Algo(),
-		Version: c.wal.Version(),
+func (c *Commander) sign(marshalledData []byte) (*commandspb.Signature, error) {
+	sig, err := c.wal.Sign(marshalledData)
+	if err != nil {
+		return nil, err
 	}
+
+	return commandspb.NewSignature(sig, c.wal.Algo(), c.wal.Version()), nil
 }
 
 func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, payload proto.Message) {
 	switch cmd {
-	case txn.SubmitOrderCommand:
-		if underlyingCmd, ok := payload.(*commandspb.OrderSubmission); ok {
-			data.Command = &commandspb.InputData_OrderSubmission{
-				OrderSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap to OrderSubmission")
-		}
-	case txn.CancelOrderCommand:
-		if underlyingCmd, ok := payload.(*commandspb.OrderCancellation); ok {
-			data.Command = &commandspb.InputData_OrderCancellation{
-				OrderCancellation: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap to OrderCancellation")
-		}
-	case txn.AmendOrderCommand:
-		if underlyingCmd, ok := payload.(*commandspb.OrderAmendment); ok {
-			data.Command = &commandspb.InputData_OrderAmendment{
-				OrderAmendment: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap to OrderAmendment")
-		}
-	case txn.VoteCommand:
-		if underlyingCmd, ok := payload.(*commandspb.VoteSubmission); ok {
-			data.Command = &commandspb.InputData_VoteSubmission{
-				VoteSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap to VoteSubmission")
-		}
-	case txn.WithdrawCommand:
-		if underlyingCmd, ok := payload.(*commandspb.WithdrawSubmission); ok {
-			data.Command = &commandspb.InputData_WithdrawSubmission{
-				WithdrawSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap to WithdrawSubmission")
-		}
-	case txn.LiquidityProvisionCommand:
-		if underlyingCmd, ok := payload.(*commandspb.LiquidityProvisionSubmission); ok {
-			data.Command = &commandspb.InputData_LiquidityProvisionSubmission{
-				LiquidityProvisionSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap to LiquidityProvisionSubmission")
-		}
-	case txn.ProposeCommand:
-		if underlyingCmd, ok := payload.(*commandspb.ProposalSubmission); ok {
-			data.Command = &commandspb.InputData_ProposalSubmission{
-				ProposalSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap to ProposalSubmission")
-		}
+	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.SubmitOracleDataCommand:
+		panic("command is not supported to be sent by a node.")
 	case txn.RegisterNodeCommand:
 		if underlyingCmd, ok := payload.(*commandspb.NodeRegistration); ok {
 			data.Command = &commandspb.InputData_NodeRegistration{
@@ -158,14 +107,6 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 			}
 		} else {
 			panic("failed to wrap to ChainEvent")
-		}
-	case txn.SubmitOracleDataCommand:
-		if underlyingCmd, ok := payload.(*commandspb.OracleDataSubmission); ok {
-			data.Command = &commandspb.InputData_OracleDataSubmission{
-				OracleDataSubmission: underlyingCmd,
-			}
-		} else {
-			panic("failed to wrap to OracleDataSubmission")
 		}
 	default:
 		panic(fmt.Errorf("command %v is not supported", cmd))

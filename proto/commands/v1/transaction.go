@@ -28,6 +28,14 @@ func NewInputData() *InputData {
 	}
 }
 
+func NewSignature(sig []byte, algo string, version uint32) *Signature {
+	return &Signature{
+		Bytes:   hex.EncodeToString(sig),
+		Algo:    algo,
+		Version: version,
+	}
+}
+
 func makeNonce() uint64 {
 	max := &big.Int{}
 	// set it to the max value of the uint64
