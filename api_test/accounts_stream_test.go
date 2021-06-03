@@ -13,7 +13,8 @@ import (
 )
 
 func TestStreamAccountEventsForUser(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*defaultTimout)
 	defer cancel()
 
 	conn, broker := NewTestServer(t, ctx, true)
@@ -51,7 +52,8 @@ func TestStreamAccountEventsForUser(t *testing.T) {
 		Type: []eventspb.BusEventType{
 			eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT,
 		},
-		PartyId: partyID,
+		PartyId:   partyID,
+		BatchSize: 1,
 	}
 	// keep flushing stream
 	go func() {
@@ -87,7 +89,8 @@ func TestStreamAccountEventsForUser(t *testing.T) {
 }
 
 func TestStreamAccountEvents(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*defaultTimout)
 	defer cancel()
 
 	conn, broker := NewTestServer(t, ctx, true)
