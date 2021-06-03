@@ -18,7 +18,8 @@ import (
 const defaultTimout = 2 * time.Second
 
 func TestGetPartyAccounts(t *testing.T) {
-	t.Parallel()
+	// setting up badger for parallel use seems to be causing problems
+	// t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
