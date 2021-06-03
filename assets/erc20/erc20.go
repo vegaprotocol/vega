@@ -83,28 +83,54 @@ func (b *ERC20) Validate() error {
 		return err
 	}
 
-	name, err := t.Name(&bind.CallOpts{})
-	if err != nil || name != b.asset.Details.Name {
-		return err
+	var carryErr error
+
+	if name, err := t.Name(&bind.CallOpts{}); err != nil {
+		carryErr = fmt.Errorf("couldn't get name %v: %w", err, carryErr)
+	} else if name != b.asset.Details.Name {
+		carryErr = maybeError(err, "invalid name, expected(%s), got(%s)", b.asset.Details.Name, name)
 	}
 
-	symbol, err := t.Symbol(&bind.CallOpts{})
-	if err != nil || symbol != b.asset.Details.Symbol {
-		return err
+	if symbol, err := t.Symbol(&bind.CallOpts{}); err != nil {
+		carryErr = fmt.Errorf("couldn't get symbol %v: %w", err, carryErr)
+	} else if symbol != b.asset.Details.Symbol {
+		carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", b.asset.Details.Symbol, symbol)
 	}
 
-	decimals, err := t.Decimals(&bind.CallOpts{})
-	if err != nil || uint64(decimals) != b.asset.Details.Decimals {
-		return err
+	if decimals, err := t.Decimals(&bind.CallOpts{}); err != nil {
+		carryErr = fmt.Errorf("couldn't get decimals %v: %w", err, carryErr)
+	} else if uint64(decimals) != b.asset.Details.Decimals {
+		carryErr = maybeError(carryErr, "invalid decimals, expected(%d), got(%d)", b.asset.Details.Decimals, decimals)
 	}
 
-	totalSupply, err := t.TotalSupply(&bind.CallOpts{})
-	if err != nil || totalSupply.String() != b.asset.Details.TotalSupply {
-		return err
+	// FIXME: We do not check the total supply for now.
+	// It's for normal asset never really used, and will also vary
+	// if new coins are minted...
+	// if totalSupply, err := t.TotalSupply(&bind.CallOpts{}); err != nil {
+	// 	carryErr = fmt.Errorf("couldn't get totalSupply %v: %w", err, carryErr)
+	// } else if totalSupply.String() != b.asset.Details.TotalSupply {
+	// 	carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", b.asset.Details.TotalSupply, totalSupply)
+	// }
+
+	if carryErr != nil {
+		return carryErr
 	}
 
 	b.ok = true
 	return nil
+}
+
+func maybeError(err error, format string, a ...interface{}) error {
+	if err != nil {
+		format = format + ": %w"
+		args := []interface{}{}
+		for _, v := range a {
+			args = append(args, v)
+		}
+		args = append(args, err)
+		return fmt.Errorf(format, args...)
+	}
+	return fmt.Errorf(format, a...)
 }
 
 // SignBridgeListing create and sign the message to
