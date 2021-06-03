@@ -101,7 +101,7 @@ func (t *TimeSub) Halt() {
 	t.mu.Unlock()
 }
 
-func (_ *TimeSub) Types() []events.Type {
+func (*TimeSub) Types() []events.Type {
 	return []events.Type{
 		events.TimeUpdate,
 	}
