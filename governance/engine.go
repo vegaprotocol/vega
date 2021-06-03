@@ -526,6 +526,8 @@ func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, par
 		ProposalId: cmd.ProposalId,
 		Value:      cmd.Value,
 		Timestamp:  e.currentTime.UnixNano(),
+		// set the weight at 0 initially
+		TotalGovernanceTokenWeight: "0",
 	}
 
 	// we only want to count the last vote, so add to yes/no map, delete from the other
@@ -591,11 +593,12 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 		e.log.Debug("Proposal declined", logging.ProposalID(proposal.Id))
 	}
 
+	e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 	e.broker.SendBatch(newUpdatedProposalEvents(ctx, proposal))
 }
 
 func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.Event {
-	evts := []events.Event{events.NewProposalEvent(ctx, *proposal.Proposal)}
+	evts := []events.Event{}
 
 	for _, y := range proposal.yes {
 		evts = append(evts, events.NewVoteEvent(ctx, *y))
