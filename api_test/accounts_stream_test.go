@@ -12,86 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStreamAccountEventsForUser(t *testing.T) {
-	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), 2*defaultTimout)
-	defer cancel()
-
-	conn, broker := NewTestServer(t, ctx, true)
-
-	client := apipb.NewTradingDataServiceClient(conn)
-	require.NotNil(t, client)
-
-	ebc, err := client.ObserveEventBus(ctx)
-	require.NoError(t, err)
-
-	done := make(chan struct{})
-	// all events will be aggregated here
-	evts := []*eventspb.BusEvent{}
-	go func() {
-		for {
-			resp, err := ebc.Recv()
-			if err == io.EOF {
-				close(done)
-				return
-			}
-			if err != nil {
-				t.Errorf("Failed to read from stream: %v\n", err)
-				return
-			}
-			evts = append(evts, resp.Events...)
-			if len(evts) > 0 {
-				close(done)
-				return
-			}
-		}
-	}()
-
-	partyID := "6fb72005cde8e239f8d3b08c5fbcec06f93bfb45e9013208f662954923343fba"
-	msg := &apipb.ObserveEventBusRequest{
-		Type: []eventspb.BusEventType{
-			eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT,
-		},
-		PartyId:   partyID,
-		BatchSize: 1,
-	}
-	// keep flushing stream
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-done:
-				ebc.CloseSend()
-				return
-			default:
-				require.NoError(t, ebc.Send(msg))
-			}
-		}
-	}()
-	// send the events
-	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
-		acc := be.GetAccount()
-		e := events.NewAccountEvent(ctx, pb.Account{
-			Id:       acc.Id,
-			Owner:    acc.Owner,
-			Balance:  acc.Balance,
-			Asset:    acc.Asset,
-			MarketId: acc.MarketId,
-			Type:     acc.Type,
-		})
-		return e, nil
-	})
-	<-done
-	require.NotEmpty(t, evts)
-	// only 1 event for this user (general account)
-	require.Equal(t, 1, len(evts))
-}
-
 func TestStreamAccountEvents(t *testing.T) {
-	t.Parallel()
-	ctx, cancel := context.WithTimeout(context.Background(), 2*defaultTimout)
-	defer cancel()
+	ctx, cfunc := context.WithTimeout(context.Background(), 2*defaultTimout)
+	defer cfunc()
 
 	conn, broker := NewTestServer(t, ctx, true)
 
@@ -139,7 +62,11 @@ func TestStreamAccountEvents(t *testing.T) {
 				ebc.CloseSend()
 				return
 			default:
-				require.NoError(t, ebc.Send(msg))
+				err := ebc.Send(msg)
+				if err == io.EOF {
+					return
+				}
+				require.NoError(t, err)
 			}
 		}
 	}()
