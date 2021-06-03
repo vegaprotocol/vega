@@ -299,8 +299,8 @@ func PublishEvents(t *testing.T, ctx context.Context, b *broker.Broker, convertE
 	cfunc()
 	// unsubscribe the ad-hoc subscriber
 	b.Unsubscribe(id)
-	// we've received the tim event, but that could've been received before the account event. Now send out a second time event to ensure
-	// the account events get flushed/persisted
+	// we've received the time event, but that could've been received before the other events.
+	// Now send out a second time event to ensure the other events get flushed/persisted
 	b.Send(events.NewTime(ctx, now.Add(time.Second)))
 }
 
