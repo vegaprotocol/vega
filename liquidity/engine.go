@@ -449,7 +449,7 @@ func (e *Engine) Update(
 		e.updatePartyOrders(po.Party, po.Orders)
 	}
 
-	for _, lp := range e.provisions.slice() {
+	for _, lp := range e.provisions.Slice() {
 		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.PartyId, repriceFn)
 		if err != nil {
 			return nil, nil, err

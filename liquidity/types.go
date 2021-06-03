@@ -71,8 +71,8 @@ func (l LiquidityProvisions) sortByFee() LiquidityProvisions {
 // Provisions is a map of parties to *types.LiquidityProvision
 type ProvisionsPerParty map[string]*types.LiquidityProvision
 
-// slice returns the parties as a slice.
-func (l ProvisionsPerParty) slice() LiquidityProvisions {
+// Slice returns the parties as a slice.
+func (l ProvisionsPerParty) Slice() LiquidityProvisions {
 	slice := make(LiquidityProvisions, 0, len(l))
 	for _, p := range l {
 		slice = append(slice, p)
@@ -83,7 +83,7 @@ func (l ProvisionsPerParty) slice() LiquidityProvisions {
 }
 
 func (l ProvisionsPerParty) FeeForTarget(v uint64) string {
-	return l.slice().sortByFee().feeForTarget(v)
+	return l.Slice().sortByFee().feeForTarget(v)
 }
 
 // TotalStake returns the sum of all CommitmentAmount, which corresponds to the
