@@ -35,7 +35,7 @@ func TestStreamAccountEvents(t *testing.T) {
 				return
 			}
 			if err != nil {
-				t.Fatalf("Failed to read from stream: %v\n", err)
+				t.Errorf("Failed to read from stream: %v\n", err)
 				return
 			}
 			evts = append(evts, resp.Events...)
