@@ -58,6 +58,7 @@ type executionTestSetup struct {
 	markets []types.Market
 
 	errorHandler *helpers.ErrorHandler
+	block        *helpers.Block
 
 	netParams *netparams.Store
 }
@@ -95,6 +96,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.broker.Subscribe(execsetup.positionPlugin)
 
 	execsetup.errorHandler = helpers.NewErrorHandler()
+	execsetup.block = helpers.NewBlock()
 
 	execsetup.netParams = netparams.New(execsetup.log, netparams.NewDefaultConfig(), execsetup.broker)
 	if err := execsetup.registerNetParamsCallbacks(); err != nil {
