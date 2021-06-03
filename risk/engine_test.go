@@ -256,7 +256,7 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 	// we're still in auction...
 	eng.as.EXPECT().InAuction().Times(1).Return(true)
 	// but the auction is ending
-	eng.as.EXPECT().AuctionEnd().Times(1).Return(true)
+	eng.as.EXPECT().CanLeave().Times(1).Return(true)
 	// eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {

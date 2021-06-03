@@ -29,7 +29,7 @@ type Orderbook interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/risk AuctionState
 type AuctionState interface {
 	InAuction() bool
-	AuctionEnd() bool
+	CanLeave() bool
 }
 
 // Broker the event bus broker
@@ -234,7 +234,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	var margins *types.MarginLevels
-	if !e.as.InAuction() || e.as.AuctionEnd() {
+	if !e.as.InAuction() || e.as.CanLeave() {
 		margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true, false)
 	} else {
 		margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -315,7 +315,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	for _, evt := range evts {
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
-		if !e.as.InAuction() || e.as.AuctionEnd() {
+		if !e.as.InAuction() || e.as.CanLeave() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], true, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])
@@ -404,7 +404,7 @@ func (e *Engine) ExpectMargins(
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
 	for _, evt := range evts {
 		var margins *types.MarginLevels
-		if !e.as.InAuction() || e.as.AuctionEnd() {
+		if !e.as.InAuction() || e.as.CanLeave() {
 			margins = e.calculateMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()], false, false)
 		} else {
 			margins = e.calculateAuctionMargins(evt, int64(markPrice), *e.factors.RiskFactors[evt.Asset()])

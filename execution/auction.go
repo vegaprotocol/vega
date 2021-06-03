@@ -35,7 +35,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 				// this should never, ever happen
 				m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
 			}
-			m.as.EndAuction()
+			m.as.SetReadyToLeave()
 			m.LeaveAuction(ctx, now)
 			// the market is now in a ACTIVE state
 			m.mkt.State = types.Market_STATE_ACTIVE
@@ -60,14 +60,14 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if !isPrice {
 			m.checkLiquidity(ctx, ft)
 		}
-		if isPrice || m.as.AuctionEnd() {
+		if isPrice || m.as.CanLeave() {
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, now, true); err != nil {
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
 			}
 		}
-		end := m.as.AuctionEnd()
+		end := m.as.CanLeave()
 		if isPrice && end {
 			m.checkLiquidity(ctx, ft)
 		}

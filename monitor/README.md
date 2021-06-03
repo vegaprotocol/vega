@@ -10,7 +10,7 @@ At its core, the `AuctionState` is little more than a DTO. It keeps track of wha
 
 The market will then check if its auction-state has been updated (`AuctionState.AuctionStart()`), and if it has, the market calls `EnterAuction()`. This function will do whatever a market has to do to enter an auction (update the orderbook, for example), and finally acknowledge the auction was started by calling `AuctionState.AuctionStarted()`. This function returns an auction event that the market will send to the broker.
 
-Every `market.OnChainTimeUpdate()`, the market checks whether it is currently trading in an auction. If it's an opening auction, we're dealing with a simple time-limited auction, and the market will check to see whether or not the auction period has expired. If it has, the market calls `AuctionState.EndAuction()`, performs everything it has to do to terminate the auction (updating the orderbook, uncrossing auction orders, ...), and then finally `AuctionState.AuctionEnded()` is called. Like the `AuctionStarted()` call, this returns an event to push to the broker.
+Every `market.OnChainTimeUpdate()`, the market checks whether it is currently trading in an auction. If it's an opening auction, we're dealing with a simple time-limited auction, and the market will check to see whether or not the auction period has expired. If it has, the market calls `AuctionState.SetReadyToLeave()`, performs everything it has to do to terminate the auction (updating the orderbook, uncrossing auction orders, ...), and then finally `AuctionState.Left()` is called. Like the `AuctionStarted()` call, this returns an event to push to the broker.
 
 ## For the monitor sub-packages
 
@@ -28,7 +28,7 @@ func (m *Market) inMarket() {
         // any other monitoring engines we decide to add
         m.parties.CheckAuction(m.as)
         // monitoring engines have determined we can/should leave the auction
-        if m.as.AuctionEnd() {
+        if m.as.CanLeave() {
             m.LeaveAuction()
         }
     }
@@ -39,11 +39,11 @@ func (p *Price) CheckAuction(as AuctionState) {
     if !as.IsPriceAuction() {
         return
     }
-    if as.AuctionStart().Before(as.AuctionEnd()) {
+    if as.AuctionStart().Before(as.CanLeave()) {
         // auction has expired - mark auction as over
         // this can be determined in different ways, that's up to the engine itself
         // for example: auctions bound by traded volume
-        as.EndAuction()
+        as.SetReadyToLeave()
     }
     // auction carries on as per usual
 }
@@ -57,12 +57,12 @@ func (l *Liquidity) CheckAuction(as AuctionSate) {
         // auction was started by this engine
         // check if auction expired according to internal logic
         if l.checkSaysStop {
-            as.EndAuction()
+            as.SetReadyToLeave()
         }
         return // we've checked auction we started
     }
     // not a liquidity or opening auction, but it's the end of this auction
-    if as.AuctionEnd() {
+    if as.CanLeave() {
         // check internal logic, see if this auction can safely terminate
         if l.auctionNeeded() {
             as.ExtendAuction(params) // extend auction by some parameters based on internal logic

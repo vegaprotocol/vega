@@ -108,8 +108,8 @@ func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.stop = false // the auction was supposed to stop, but we've extended it
 }
 
-// EndAuction is called by monitoring engines to mark if an auction period has expired
-func (a *AuctionState) EndAuction() {
+// SetReadyToLeave is called by monitoring engines to mark if an auction period has expired
+func (a *AuctionState) SetReadyToLeave() {
 	a.stop = true
 }
 
@@ -180,9 +180,9 @@ func (a AuctionState) IsMonitorAuction() bool {
 	return a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_PRICE || a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
 }
 
-// AuctionEnd bool indicating whether auction should be closed or not, if true, we can still extend the auction
+// CanLeave bool indicating whether auction should be closed or not, if true, we can still extend the auction
 // but when the market takes over (after monitoring engines), the auction will be closed
-func (a AuctionState) AuctionEnd() bool {
+func (a AuctionState) CanLeave() bool {
 	return a.stop
 }
 
@@ -228,8 +228,8 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 	return events.NewAuctionEvent(ctx, a.m.Id, false, a.begin.UnixNano(), end, a.trigger)
 }
 
-// AuctionEnded is called by execution to update internal state indicating this auction was closed
-func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.Auction {
+// Left is called by execution to update internal state indicating this auction was closed
+func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction {
 	a.timer.EngineTimeCounterAdd()
 
 	// the end-of-auction event

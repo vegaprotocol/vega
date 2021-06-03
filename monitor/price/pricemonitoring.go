@@ -34,12 +34,12 @@ type AuctionState interface {
 	IsPriceAuction() bool
 	IsFBA() bool
 	// is it the start/end of the auction
-	AuctionEnd() bool
+	CanLeave() bool
 	AuctionStart() bool
 	// start a price-related auction, extend a current auction, or end it
 	StartPriceAuction(t time.Time, d *types.AuctionDuration)
 	ExtendAuctionPrice(delta types.AuctionDuration)
-	EndAuction()
+	SetReadyToLeave()
 	// get parameters for current auction
 	Start() time.Time
 	Duration() types.AuctionDuration // currently not used - might be useful when extending an auction
@@ -236,7 +236,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 			duration.Duration += b.AuctionExtension
 		}
 		// we're dealing with a batch auction that's about to end -> extend it?
-		if fba && as.AuctionEnd() {
+		if fba && as.CanLeave() {
 			// bounds were violated, based on the values in the bounds slice, we can calculate how long the auction should last
 			as.ExtendAuctionPrice(duration)
 			return nil
@@ -272,13 +272,13 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p, v uint64, n
 				return nil
 			}
 			// auction can be terminated
-			as.EndAuction()
+			as.SetReadyToLeave()
 			// reset the engine
 			e.reset(p, v, now)
 			return nil
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
-		if as.AuctionEnd() {
+		if as.CanLeave() {
 			e.reset(p, v, now)
 		}
 		return nil
