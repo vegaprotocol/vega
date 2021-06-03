@@ -255,6 +255,7 @@ func PublishEvents(t *testing.T, ctx context.Context, b *broker.Broker, convertE
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
+	evts := map[events.Type][]events.Event{}
 	for scanner.Scan() {
 		jsonBytes := scanner.Bytes()
 		var be eventspb.BusEvent
@@ -267,11 +268,55 @@ func PublishEvents(t *testing.T, ctx context.Context, b *broker.Broker, convertE
 		if err != nil {
 			t.Fatalf("failed to convert BusEvent to Event: %v", err)
 		}
-		b.Send(e)
+		s, ok := evts[e.Type()]
+		if !ok {
+			s = []events.Event{}
+		}
+		s = append(s, e)
+		evts[e.Type()] = s
+	}
+	// we've grouped events per type, now send them all in batches
+	for _, e := range evts {
+		b.SendBatch(e)
 	}
 
+	// add time event subscriber so we can verify the time event was received at the end
+	sCtx, cfunc := context.WithCancel(ctx)
+	tmConf := NewTimeSub(sCtx)
+	id := b.Subscribe(tmConf)
+
+	// whatever time it is now + 1 second
+	now := time.Now()
 	// the broker reacts to Time events to trigger writes the data stores
-	b.Send(events.NewTime(ctx, time.Now()))
+	b.Send(events.NewTime(ctx, now))
+	// await confirmation that we've actually received the time update event
+	if !waitForTime(tmConf, now) {
+		t.Fatal("Did not receive the expected time event within reasonable time")
+	}
+	// halt the subscriber
+	tmConf.Halt()
+	// cancel the subscriber ctx
+	cfunc()
+	// unsubscribe the ad-hoc subscriber
+	b.Unsubscribe(id)
+	// we've received the time event, but that could've been received before the other events.
+	// Now send out a second time event to ensure the other events get flushed/persisted
+	b.Send(events.NewTime(ctx, now.Add(time.Second)))
+}
+
+func waitForTime(tmConf *TimeSub, now time.Time) bool {
+	for {
+		times := tmConf.GetReveivedTimes()
+		if times == nil {
+			// the subscriber context was cancelled, no need to wait for this anylonger
+			return false
+		}
+		for _, tm := range times {
+			if tm.Equal(now) {
+				return true
+			}
+		}
+	}
 }
 
 func randomPort() int {
