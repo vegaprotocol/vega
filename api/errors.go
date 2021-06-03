@@ -47,7 +47,6 @@ var (
 	ErrMissingPartyID = errors.New("missing party id")
 	// ErrMalformedRequest signals that the request was malformed
 	ErrMalformedRequest = errors.New("malformed request")
-	// ErrInvalidWithdrawAmount signals that the amount of money to withdraw is invalid
 	// ErrMissingAsset signals that an asset was required but not specified
 	ErrMissingAsset = errors.New("missing asset")
 	// ErrSubmitOrder is returned when submitting an order fails for some reason.
@@ -110,64 +109,64 @@ var (
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
-var errorMap = map[error]int32{
+var errorMap = map[string]int32{
 	// General
-	ErrNotMapped:                  10000,
-	ErrChainNotConnected:          10001,
-	ErrChannelClosed:              10002,
-	ErrEmptyMissingMarketID:       10003,
-	ErrEmptyMissingOrderID:        10004,
-	ErrEmptyMissingOrderReference: 10005,
-	ErrEmptyMissingPartyID:        10006,
-	ErrEmptyMissingSinceTimestamp: 10007,
-	ErrStreamClosed:               10008,
-	ErrServerShutdown:             10009,
-	ErrStreamInternal:             10010,
-	ErrInvalidMarketID:            10011,
-	ErrMissingOrder:               10012,
-	ErrMissingPartyID:             10014,
-	ErrMalformedRequest:           10015,
-	ErrMissingAsset:               10017,
-	ErrSubmitOrder:                10018,
-	ErrAmendOrder:                 10019,
-	ErrCancelOrder:                10020,
+	ErrNotMapped.Error():                  10000,
+	ErrChainNotConnected.Error():          10001,
+	ErrChannelClosed.Error():              10002,
+	ErrEmptyMissingMarketID.Error():       10003,
+	ErrEmptyMissingOrderID.Error():        10004,
+	ErrEmptyMissingOrderReference.Error(): 10005,
+	ErrEmptyMissingPartyID.Error():        10006,
+	ErrEmptyMissingSinceTimestamp.Error(): 10007,
+	ErrStreamClosed.Error():               10008,
+	ErrServerShutdown.Error():             10009,
+	ErrStreamInternal.Error():             10010,
+	ErrInvalidMarketID.Error():            10011,
+	ErrMissingOrder.Error():               10012,
+	ErrMissingPartyID.Error():             10014,
+	ErrMalformedRequest.Error():           10015,
+	ErrMissingAsset.Error():               10017,
+	ErrSubmitOrder.Error():                10018,
+	ErrAmendOrder.Error():                 10019,
+	ErrCancelOrder.Error():                10020,
 	// Orders
-	ErrOrderServiceGetByMarket:      20001,
-	ErrOrderServiceGetByMarketAndID: 20002,
-	ErrOrderServiceGetByParty:       20003,
-	ErrOrderServiceGetByReference:   20004,
+	ErrOrderServiceGetByMarket.Error():      20001,
+	ErrOrderServiceGetByMarketAndID.Error(): 20002,
+	ErrOrderServiceGetByParty.Error():       20003,
+	ErrOrderServiceGetByReference.Error():   20004,
 	// Markets
-	ErrMarketServiceGetMarkets:    30001,
-	ErrMarketServiceGetByID:       30002,
-	ErrMarketServiceGetDepth:      30003,
-	ErrMarketServiceGetMarketData: 30004,
+	ErrMarketServiceGetMarkets.Error():    30001,
+	ErrMarketServiceGetByID.Error():       30002,
+	ErrMarketServiceGetDepth.Error():      30003,
+	ErrMarketServiceGetMarketData.Error(): 30004,
 	// Trades
-	ErrTradeServiceGetByMarket:         40001,
-	ErrTradeServiceGetByParty:          40002,
-	ErrTradeServiceGetPositionsByParty: 40003,
-	ErrTradeServiceGetByOrderID:        40004,
+	ErrTradeServiceGetByMarket.Error():         40001,
+	ErrTradeServiceGetByParty.Error():          40002,
+	ErrTradeServiceGetPositionsByParty.Error(): 40003,
+	ErrTradeServiceGetByOrderID.Error():        40004,
 	// Parties
-	ErrPartyServiceGetAll:  50001,
-	ErrPartyServiceGetByID: 50002,
+	ErrPartyServiceGetAll.Error():  50001,
+	ErrPartyServiceGetByID.Error(): 50002,
 	// Candles
-	ErrCandleServiceGetCandles: 60001,
+	ErrCandleServiceGetCandles.Error(): 60001,
 	// Risk
-	ErrRiskServiceGetMarginLevelsByID: 70001,
+	ErrRiskServiceGetMarginLevelsByID.Error(): 70001,
 	// Accounts
-	ErrAccountServiceGetMarketAccounts: 80001,
-	ErrAccountServiceGetPartyAccounts:  80002,
-	ErrMissingWithdrawalID:             80003,
-	ErrMissingDepositID:                80004,
+	ErrAccountServiceGetMarketAccounts.Error(): 80001,
+	ErrAccountServiceGetPartyAccounts.Error():  80002,
+	ErrMissingWithdrawalID.Error():             80003,
+	ErrMissingDepositID.Error():                80004,
 	// Blockchain client
-	ErrBlockchainBacklogLength: 90001,
-	ErrBlockchainNetworkInfo:   90002,
-	ErrBlockchainGenesisTime:   90003,
+	ErrBlockchainBacklogLength.Error(): 90001,
+	ErrBlockchainNetworkInfo.Error():   90002,
+	ErrBlockchainGenesisTime.Error():   90003,
 	// End of mapping
 }
 
 // ErrorMap returns a map of error to code, which is a mapping between
 // API errors and Vega API specific numeric codes.
-func ErrorMap() map[error]int32 {
+func ErrorMap() map[string]int32 {
 	return errorMap
 }
 
@@ -184,11 +183,11 @@ func apiError(grpcCode codes.Code, apiError error, innerErrors ...error) error {
 	// Lookup the API specific error in the table, return not found/not mapped
 	// if a code has not yet been added to the map, can happen if developer misses
 	// a step, periodic checking/ownership of API package can keep this up to date.
-	vegaCode, found := errorMap[apiError]
+	vegaCode, found := errorMap[apiError.Error()]
 	if found {
 		detail.Code = vegaCode
 	} else {
-		detail.Code = errorMap[ErrNotMapped]
+		detail.Code = errorMap[ErrNotMapped.Error()]
 	}
 	// If there is an inner error (and possibly in the future, a config to turn this
 	// level of detail on/off) then process and append to inner.
