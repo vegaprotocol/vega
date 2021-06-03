@@ -317,7 +317,6 @@ func waitForTime(tmConf *TimeSub, now time.Time) bool {
 			}
 		}
 	}
-	return false
 }
 
 func randomPort() int {
