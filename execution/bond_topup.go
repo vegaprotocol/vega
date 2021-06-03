@@ -2,7 +2,6 @@ package execution
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -40,7 +39,6 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 			},
 			MinAmount: amt,
 		}
-		fmt.Printf("top-up for party %s: short %d, transfer for %d\n", party, bondShort, amt)
 		resp, err := m.collateral.BondUpdate(ctx, mID, party, t)
 		if err != nil {
 			m.log.Panic("Failed to top up bond balance",
