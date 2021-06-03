@@ -605,14 +605,16 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 
 	// setup
-	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-		pe, ok := evts[0].(*events.Proposal)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_PASSED, p.State)
 		assert.Equal(t, proposal.Id, p.Id)
+	})
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
 
-		v, ok := evts[1].(*events.Vote)
+		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
 		assert.Equal(t, uint64(7), v.TotalGovernanceTokenBalance())
@@ -696,15 +698,17 @@ func testSubmittingMajorityOfInsuccifientParticipationMakesProposalDeclined(t *t
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 
 	// setup
-	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-		pe, ok := evts[0].(*events.Proposal)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State, p.State.String())
 		assert.Equal(t, proposal.Id, p.Id)
 		assert.Equal(t, types.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED, p.Reason)
+	})
 
-		v, ok := evts[1].(*events.Vote)
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
 		assert.Equal(t, uint64(100), v.TotalGovernanceTokenBalance())
@@ -778,15 +782,16 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
 
 	// setup
-	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-		pe, ok := evts[0].(*events.Proposal)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
 		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
 		assert.Equal(t, proposal.Id, p.Id)
 		assert.Equal(t, types.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED, p.Reason)
-
-		v, ok := evts[1].(*events.Vote)
+	})
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
 		assert.Equal(t, uint64(100), v.TotalGovernanceTokenBalance())
@@ -908,8 +913,8 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	}
 
 	var howManyPassed, howManyDeclined int
-	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(howMany * 2).Do(func(evts []events.Event) {
-		pe, ok := evts[0].(*events.Proposal)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(howMany * 2).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
 		if p.State == types.Proposal_STATE_PASSED {
@@ -924,6 +929,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			assert.FailNow(t, "unexpected proposal state")
 		}
 	})
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(howMany * 2)
 	eng.OnChainTimeUpdate(context.Background(), afterClosing)
 	assert.Equal(t, howMany, howManyPassed)
 	assert.Equal(t, howMany, howManyDeclined)
