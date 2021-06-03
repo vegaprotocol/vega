@@ -114,7 +114,7 @@ func testSubmittingTransactionWithInvalidEncodingOfBytesFails(t *testing.T) {
 
 	err := checkTransaction(tx)
 
-	assert.Contains(t, err.Get("tx.signature.bytes"), commands.ErrCannotDecodeSignature)
+	assert.Contains(t, err.Get("tx.signature.bytes"), commands.ErrShouldBeHexEncoded)
 }
 
 func testSubmittingTransactionWithInvalidEncodingOfPubKeyFails(t *testing.T) {
@@ -125,7 +125,7 @@ func testSubmittingTransactionWithInvalidEncodingOfPubKeyFails(t *testing.T) {
 
 	err := checkTransaction(tx)
 
-	assert.Contains(t, err.Get("tx.from.pub_key"), commands.ErrCannotDecodeSignature)
+	assert.Contains(t, err.Get("tx.from.pub_key"), commands.ErrShouldBeHexEncoded)
 }
 
 func testSubmittingTransactionWithInvalidSignatureFails(t *testing.T) {
