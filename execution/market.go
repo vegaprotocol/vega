@@ -3070,6 +3070,9 @@ func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 }
 
 func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
+	// before we check liquidity, ensure we've moved all funds that can go towards
+	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
+	m.checkBondBalance(ctx)
 	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
 	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
 
