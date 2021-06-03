@@ -32,18 +32,18 @@ func (m *MockAuctionState) EXPECT() *MockAuctionStateMockRecorder {
 	return m.recorder
 }
 
-// AuctionEnd mocks base method
-func (m *MockAuctionState) AuctionEnd() bool {
+// CanLeave mocks base method
+func (m *MockAuctionState) CanLeave() bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AuctionEnd")
+	ret := m.ctrl.Call(m, "CanLeave")
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// AuctionEnd indicates an expected call of AuctionEnd
-func (mr *MockAuctionStateMockRecorder) AuctionEnd() *gomock.Call {
+// CanLeave indicates an expected call of CanLeave
+func (mr *MockAuctionStateMockRecorder) CanLeave() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuctionEnd", reflect.TypeOf((*MockAuctionState)(nil).AuctionEnd))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanLeave", reflect.TypeOf((*MockAuctionState)(nil).CanLeave))
 }
 
 // InAuction mocks base method

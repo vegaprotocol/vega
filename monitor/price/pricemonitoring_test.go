@@ -481,7 +481,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	// auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
-	auctionStateMock.EXPECT().EndAuction().Times(1)
+	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 	riskModelMock.EXPECT().PriceRange(float64(t1ViolatingPrice), horizonToYearFraction(t1.Horizon), t1.Probability).Return(float64(t1ViolatingPrice-maxMoveDownt1), float64(t1ViolatingPrice+maxMoveUpt1)).Times(1)
 	riskModelMock.EXPECT().PriceRange(float64(t1ViolatingPrice), horizonToYearFraction(t2.Horizon), t2.Probability).Return(float64(t1ViolatingPrice-(t2Multiplier*maxMoveDownt1)), float64(t1ViolatingPrice+(t2Multiplier*maxMoveUpt1))).Times(1)
 
@@ -541,7 +541,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
-	auctionStateMock.EXPECT().EndAuction().Times(1)
+	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 	riskModelMock.EXPECT().PriceRange(float64(t2ViolatingPrice), horizonToYearFraction(t1.Horizon), t1.Probability).Return(float64(t2ViolatingPrice-maxMoveDownt1), float64(t2ViolatingPrice+maxMoveUpt1)).Times(1)
 	riskModelMock.EXPECT().PriceRange(float64(t2ViolatingPrice), horizonToYearFraction(t2.Horizon), t2.Probability).Return(float64(t2ViolatingPrice-(t2Multiplier*maxMoveDownt1)), float64(t2ViolatingPrice+(t2Multiplier*maxMoveUpt1))).Times(1)
 
@@ -647,7 +647,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
-	auctionStateMock.EXPECT().EndAuction().Times(1)
+	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 	riskModelMock.EXPECT().PriceRange(float64(t2ViolatingPrice), horizonToYearFraction(t1.Horizon), t1.Probability).Return(float64(t1lb2), float64(t1ub2)).Times(1)
 	riskModelMock.EXPECT().PriceRange(float64(t2ViolatingPrice), horizonToYearFraction(t2.Horizon), t2.Probability).Return(float64(t2lb2), float64(t2ub2)).Times(1)
 
@@ -719,7 +719,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(5)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(5)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
-	auctionStateMock.EXPECT().AuctionEnd().Return(false).AnyTimes()
+	auctionStateMock.EXPECT().CanLeave().Return(false).AnyTimes()
 
 	pm, err := price.NewMonitor(riskModelMock, settings)
 	require.NoError(t, err)
@@ -918,7 +918,7 @@ func TestPricesValidAfterAuctionEnds(t *testing.T) {
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(false).Times(1)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().ExpiresAt().Return(&initialAuctionEnd).Times(1)
-	auctionStateMock.EXPECT().EndAuction().Times(1)
+	auctionStateMock.EXPECT().SetReadyToLeave().Times(1)
 	riskModelMock.EXPECT().PriceRange(float64(t1ViolatingPrice), horizonToYearFraction(t1.Horizon), t1.Probability).Return(float64(t1ViolatingPrice-maxMoveDownt1), float64(t1ViolatingPrice+maxMoveUpt1)).Times(1)
 
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)

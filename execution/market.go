@@ -139,13 +139,13 @@ type AuctionState interface {
 	IsMonitorAuction() bool
 	// is it the start/end of an auction
 	AuctionStart() bool
-	AuctionEnd() bool
+	CanLeave() bool
 	// when does the auction start/end
 	ExpiresAt() *time.Time
 	Start() time.Time
 	// signal we've started/ended the auction
 	AuctionStarted(ctx context.Context) *events.Auction
-	AuctionEnded(ctx context.Context, now time.Time) *events.Auction
+	Left(ctx context.Context, now time.Time) *events.Auction
 	// get some data
 	Mode() types.Market_TradingMode
 	Trigger() types.AuctionTrigger
@@ -857,7 +857,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// keep var to see if we're leaving opening auction
 	isOpening := m.as.IsOpeningAuction()
 	// update auction state, so we know what the new tradeMode ought to be
-	endEvt := m.as.AuctionEnded(ctx, now)
+	endEvt := m.as.Left(ctx, now)
 
 	updatedOrders := []*types.Order{}
 
@@ -1428,7 +1428,7 @@ func (m *Market) handleConfirmationPassiveOrders(
 func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) {
 
 	m.handleConfirmationPassiveOrders(ctx, conf)
-	end := m.as.AuctionEnd()
+	end := m.as.CanLeave()
 
 	if len(conf.Trades) > 0 {
 
@@ -3102,7 +3102,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		m.EnterAuction(ctx)
 	}
 	// end the liquidity monitoring auction if possible
-	if m.as.InAuction() && m.as.AuctionEnd() && !m.as.IsOpeningAuction() {
+	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime, true); err != nil {
 			m.log.Panic("unable to run check price with price monitor",

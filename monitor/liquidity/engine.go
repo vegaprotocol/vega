@@ -12,7 +12,7 @@ import (
 type AuctionState interface {
 	IsLiquidityAuction() bool
 	StartLiquidityAuction(t time.Time, d *types.AuctionDuration)
-	EndAuction()
+	SetReadyToLeave()
 	InAuction() bool
 	ExtendAuctionLiquidity(delta types.AuctionDuration)
 	ExpiresAt() *time.Time
@@ -80,7 +80,7 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake float
 	// @TODO we don't have the ability to support volume limited auctions yet
 	if exp != nil && as.IsLiquidityAuction() {
 		if currentStake >= targetStake && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
-			as.EndAuction()
+			as.SetReadyToLeave()
 			return // all done
 		}
 		// we're still in trouble, extend the auction
