@@ -15,7 +15,9 @@ import (
 	"code.vegaprotocol.io/vega/proto/api"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/proto/wallet/v1"
+
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"google.golang.org/grpc/status"
@@ -478,11 +480,11 @@ func (s *Service) signTxV2(token string, w http.ResponseWriter, r *http.Request,
 		}
 	}
 
-	writeSuccess(w, tx, http.StatusOK)
+	writeSuccessProto(w, tx, http.StatusOK)
 }
 
 type ErrorResponse struct {
-	Errors commands.Errors
+	Errors commands.Errors `json:"errors"`
 }
 
 func (s *Service) writeBadRequest(w http.ResponseWriter, errs commands.Errors) {
@@ -526,6 +528,13 @@ func writeSuccess(w http.ResponseWriter, data interface{}, status int) {
 	w.WriteHeader(status)
 	buf, _ := json.Marshal(data)
 	w.Write(buf)
+}
+
+func writeSuccessProto(w http.ResponseWriter, data proto.Message, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	marshaler := jsonpb.Marshaler{}
+	marshaler.Marshal(w, data)
 }
 
 var (
