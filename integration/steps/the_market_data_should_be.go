@@ -19,6 +19,7 @@ type MappedMD struct {
 	i64Map map[string]*int64
 	tm     *types.Market_TradingMode
 	tr     *types.AuctionTrigger
+	et     *types.AuctionTrigger
 }
 
 type ErrStack []error
@@ -51,6 +52,9 @@ func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.D
 	}
 	if expect.tr != nil && *expect.tr != expect.md.Trigger {
 		errs = append(errs, fmt.Errorf("expected '%s' auction trigger, instead got '%s'", *expect.tr, expect.md.Trigger))
+	}
+	if expect.et != nil && *expect.et != expect.md.ExtensionTrigger {
+		errs = append(errs, fmt.Errorf("expected '%s' extension trigger, instead got '%s'", *expect.et, expect.md.ExtensionTrigger))
 	}
 	// compare uint64
 	for _, u := range u64Set {
@@ -195,8 +199,9 @@ func getLPFeeShare(data *gherkin.DataTable) (ret []*types.LiquidityProviderFeeSh
 
 func (m *MappedMD) parseSpecial(data *gherkin.DataTable) {
 	todo := map[string]struct{}{
-		"trading mode":    {},
-		"auction trigger": {},
+		"trading mode":      {},
+		"auction trigger":   {},
+		"extension trigger": {},
 	}
 	for _, r := range TableWrapper(*data).Parse() {
 		for k := range todo {
@@ -208,6 +213,9 @@ func (m *MappedMD) parseSpecial(data *gherkin.DataTable) {
 				case "auction trigger":
 					at := r.MustAuctionTrigger(k)
 					m.tr = &at
+				case "extension trigger":
+					et := r.MustAuctionTrigger(k)
+					m.et = &et
 				}
 				delete(todo, k)
 			}
