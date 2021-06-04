@@ -4735,6 +4735,10 @@
           "$ref": "#/definitions/vegaAuctionTrigger",
           "title": "When a market is in an auction trading mode, this field indicates what triggered the auction"
         },
+        "extension_trigger": {
+          "$ref": "#/definitions/vegaAuctionTrigger",
+          "title": "When a market auction is extended, this field indicates what caused the extension"
+        },
         "target_stake": {
           "type": "string",
           "title": "Targeted stake for the given market"

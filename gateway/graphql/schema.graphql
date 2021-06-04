@@ -348,6 +348,8 @@ type MarketData {
   marketTradingMode: MarketTradingMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
+  "what extended the ongoing auction (if an auction was extended)"
+  extensionTrigger: AuctionTrigger!
   "the amount of stake targeted for this market"
   targetStake: String
   "the supplied stake for the market"

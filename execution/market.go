@@ -149,6 +149,7 @@ type AuctionState interface {
 	// get some data
 	Mode() types.Market_TradingMode
 	Trigger() types.AuctionTrigger
+	ExtensionTrigger() types.AuctionTrigger
 	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
 	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
 }
@@ -435,6 +436,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:                auctionEnd,
 		MarketTradingMode:         m.as.Mode(),
 		Trigger:                   m.as.Trigger(),
+		ExtensionTrigger:          m.as.ExtensionTrigger(),
 		TargetStake:               strconv.FormatUint(uint64(math.Ceil(m.getTargetStake())), 10),
 		SuppliedStake:             strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),

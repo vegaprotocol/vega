@@ -356,6 +356,7 @@ type ComplexityRoot struct {
 		BestStaticOfferPrice      func(childComplexity int) int
 		BestStaticOfferVolume     func(childComplexity int) int
 		Commitments               func(childComplexity int) int
+		ExtensionTrigger          func(childComplexity int) int
 		IndicativePrice           func(childComplexity int) int
 		IndicativeVolume          func(childComplexity int) int
 		LiquidityProviderFeeShare func(childComplexity int) int
@@ -965,6 +966,7 @@ type MarketDataResolver interface {
 	IndicativeVolume(ctx context.Context, obj *proto.MarketData) (string, error)
 	MarketTradingMode(ctx context.Context, obj *proto.MarketData) (MarketTradingMode, error)
 	Trigger(ctx context.Context, obj *proto.MarketData) (AuctionTrigger, error)
+	ExtensionTrigger(ctx context.Context, obj *proto.MarketData) (AuctionTrigger, error)
 
 	Commitments(ctx context.Context, obj *proto.MarketData) (*MarketDataCommitments, error)
 	PriceMonitoringBounds(ctx context.Context, obj *proto.MarketData) ([]*PriceMonitoringBounds, error)
@@ -2383,6 +2385,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.Commitments(childComplexity), true
+
+	case "MarketData.extensionTrigger":
+		if e.complexity.MarketData.ExtensionTrigger == nil {
+			break
+		}
+
+		return e.complexity.MarketData.ExtensionTrigger(childComplexity), true
 
 	case "MarketData.indicativePrice":
 		if e.complexity.MarketData.IndicativePrice == nil {
@@ -5136,6 +5145,8 @@ type MarketData {
   marketTradingMode: MarketTradingMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
+  "what extended the ongoing auction (if an auction was extended)"
+  extensionTrigger: AuctionTrigger!
   "the amount of stake targeted for this market"
   targetStake: String
   "the supplied stake for the market"
@@ -14740,6 +14751,40 @@ func (ec *executionContext) _MarketData_trigger(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.MarketData().Trigger(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AuctionTrigger)
+	fc.Result = res
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketData_extensionTrigger(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().ExtensionTrigger(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29332,6 +29377,20 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 					}
 				}()
 				res = ec._MarketData_trigger(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "extensionTrigger":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_extensionTrigger(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
