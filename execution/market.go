@@ -1020,7 +1020,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// Send an event bus update
 	m.broker.Send(endEvt)
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
-	m.checkLiquidity(ctx, nil)
+	m.checkLiquidity(ctx, nil) // TODO (WG): Is this really needed?
 	m.commandLiquidityAuction(ctx)
 	m.updateLiquidityFee(ctx)
 	m.OnAuctionEnded()
@@ -1434,11 +1434,11 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 				logging.Error(merr))
 		}
 	}
+	m.checkLiquidity(ctx, trades)
 
 	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 		m.broker.Send(evt)
 	}
-	m.checkLiquidity(ctx, trades)
 
 	// start the  monitoring auction if required?
 	if m.as.AuctionStart() {
@@ -3075,6 +3075,12 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
 	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
 
+	// TODO: Tidy up, this hack relies on knowledge of internal mechanism of liquidity monitor.
+	if m.as.InAuction() && !m.matching.BidAndAskPresentAfterAuction() {
+		vBid = 0
+		vAsk = 0
+	}
+
 	rf, err := m.getRiskFactors()
 	if err != nil {
 		m.log.Panic("unable to get risk factors, can't check liquidity",
@@ -3082,16 +3088,20 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 			logging.Error(err))
 	}
 
+	var refPrice = num.Zero()
+	if m.as.InAuction() {
+		refPrice = m.matching.GetIndicativePrice()
+	} else {
+		refPrice = m.getCurrentMarkPrice()
+	}
+
 	m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
 		m.getSuppliedStake(),
 		trades,
 		*rf,
-		m.getCurrentMarkPrice(),
+		refPrice,
 		vBid, vAsk)
-	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
-		m.broker.Send(evt)
-	}
 }
 
 // command liquidity auction checks if liquidity auction should be entered and if it can end.
