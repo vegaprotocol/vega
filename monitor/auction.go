@@ -101,8 +101,10 @@ func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
 }
 
 // ExtendAuction extends the current auction, leaving trigger etc... in tact
-// @TODO private this function once we´ve ensured it´s no longer used elsewhere
+// this assumes whatever extended the auction is the same thing that triggered the auction
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
+	t := a.trigger
+	a.extension = &t
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume
 	a.stop = false // the auction was supposed to stop, but we've extended it
@@ -151,6 +153,14 @@ func (a AuctionState) Mode() types.Market_TradingMode {
 // Trigger returns what triggered an auction
 func (a AuctionState) Trigger() types.AuctionTrigger {
 	return a.trigger
+}
+
+// ExtensionTrigger returns what extended an auction
+func (a AuctionState) ExtensionTrigger() types.AuctionTrigger {
+	if a.extension == nil {
+		return types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+	}
+	return *a.extension
 }
 
 // InAuction returns bool if the market is in auction for any reason
@@ -241,6 +251,7 @@ func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction 
 	a.start, a.stop = false, false
 	a.begin, a.end = nil, nil
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+	a.extension = nil
 	a.mode = a.defMode
 	// default mode is auction, this is an FBA market
 	if a.mode == types.Market_TRADING_MODE_BATCH_AUCTION {

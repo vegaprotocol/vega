@@ -1178,6 +1178,11 @@ func (r *myMarketDataResolver) Trigger(_ context.Context, m *types.MarketData) (
 	return convertAuctionTriggerFromProto(m.Trigger)
 }
 
+// ExtensionTrigger same as Trigger
+func (r *myMarketDataResolver) ExtensionTrigger(_ context.Context, m *types.MarketData) (AuctionTrigger, error) {
+	return convertAuctionTriggerFromProto(m.ExtensionTrigger)
+}
+
 func (r *myMarketDataResolver) MarketValueProxy(_ context.Context, m *types.MarketData) (string, error) {
 	return m.MarketValueProxy, nil
 }
