@@ -3,7 +3,6 @@ package api_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,8 +15,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-const defaultTimout = 2 * time.Second
-
 func TestGetPartyAccounts(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
@@ -27,7 +24,8 @@ func TestGetPartyAccounts(t *testing.T) {
 
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		acc := be.GetAccount()
-		e := events.NewAccountEvent(ctx, types.Account{
+		require.NotNil(t, acc)
+		e := events.NewAccountEvent(ctx, pb.Account{
 			Id:       acc.Id,
 			Owner:    acc.Owner,
 			Balance:  num.NewUint(acc.Balance),
@@ -36,7 +34,7 @@ func TestGetPartyAccounts(t *testing.T) {
 			Type:     acc.Type,
 		})
 		return e, nil
-	})
+	}, "account-events.golden")
 
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)

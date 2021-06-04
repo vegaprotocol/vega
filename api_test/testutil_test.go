@@ -55,6 +55,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const defaultTimout = 5 * time.Second
+
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
 // Any error will fail and terminate the test.
 func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc.ClientConn, eventBroker *broker.Broker) {
@@ -114,6 +116,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create order service: %v", err)
 	}
+	orderSub := subscribers.NewOrderEvent(ctx, conf.Subscribers, logger, orderStore, true)
 
 	marketStore, err := storage.NewMarkets(logger, conf.Storage, cancel)
 	if err != nil {
@@ -131,6 +134,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatalf("failed to create market service: %v", err)
 		return
 	}
+	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, true)
 
 	partyStore, err := storage.NewParties(conf.Storage)
 	if err != nil {
@@ -141,6 +145,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create party service: %v", err)
 	}
+	partySub := subscribers.NewPartySub(ctx, partyStore, true)
 
 	riskStore := storage.NewRisks(logger, conf.Storage)
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
@@ -149,11 +154,11 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create risk store: %v", err)
 	}
-
 	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore)
 	if err != nil {
 		t.Fatalf("failed to create trade service: %v", err)
 	}
+	transferSub := subscribers.NewTransferResponse(ctx, transferResponseStore, true)
 
 	tradeStore, err := storage.NewTrades(logger, conf.Storage, cancel)
 	if err != nil {
@@ -164,11 +169,9 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create trade service: %v", err)
 	}
+	tradeSub := subscribers.NewTradeSub(ctx, tradeStore, true)
 
 	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
-
-	eventBroker = broker.New(ctx)
-	eventBroker.SubscribeBatch(accountSub)
 
 	gov, vote := govStub{}, voteStub{}
 
@@ -187,6 +190,22 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	deposit := plugins.NewDeposit(ctx)
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
+
+	depositPlugin := plugins.NewDeposit(ctx)
+	withdrawalPlugin := plugins.NewWithdrawal(ctx)
+
+	eventBroker = broker.New(ctx)
+	eventBroker.SubscribeBatch(
+		accountSub,
+		transferSub,
+		orderSub,
+		tradeSub,
+		partySub,
+		newMarketSub,
+		oracleService,
+		liquidityService,
+		depositPlugin,
+		withdrawalPlugin)
 
 	srv := api.NewGRPCServer(
 		logger,
@@ -243,11 +262,17 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	return
 }
 
-// PublishEvents reads JSON encoded BusEvents from golden file testdata/events.golden and publishes the
+// PublishEvents reads JSON encoded BusEvents from golden file testdata/<type>-events.golden and publishes the
 // corresponding core Event to the broker. It uses the given converter func to perform the conversion.
-func PublishEvents(t *testing.T, ctx context.Context, b *broker.Broker, convertEvt func(be *eventspb.BusEvent) (events.Event, error)) {
+func PublishEvents(
+	t *testing.T,
+	ctx context.Context,
+	b *broker.Broker,
+	convertEvt func(be *eventspb.BusEvent) (events.Event, error),
+	goldenFile string) {
+
 	t.Helper()
-	path := filepath.Join("testdata", "events.golden")
+	path := filepath.Join("testdata", goldenFile)
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("failed to open golden file %s: %v", path, err)
