@@ -12,8 +12,6 @@ Feature: Test pegged orders
       | market.liquidity.targetstake.triggering.ratio | 1     |
     And the average block duration is "1"
 
-    # TODO: Changing the year to 2020 or beyond results in invalid market ID errors (perhaps there's some default settlement date?) 
-    Given time is updated to "2019-05-20T00:00:00Z"
     Given the price monitoring updated every "60" seconds named "my-price-monitoring":
       | horizon | probability | auction extension |
       | 60      | 0.95        | 60                |
@@ -112,8 +110,6 @@ Feature: Test pegged orders
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC21 | buy  | 2      | 111   | 0                | TYPE_LIMIT | TIF_GTC | trader1-2 |
 
-    Then debug orders
-
     #TODO: If MID is fractional, eg. 150.5 and MID ref is used it gets rounded UP for buy and DOWN for sell - verify that it's captured in the spec
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
@@ -140,10 +136,8 @@ Feature: Test pegged orders
       | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 110          | 110            | 1             |
 
-
-
     #TODO: I think we need something like this to make sure that all orders have been specified in the next step
-    #Then there should be 9 pegged orders
+    Then there should be 9 pegged orders
 
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset  | price   | status        |
@@ -160,17 +154,15 @@ Feature: Test pegged orders
       | trader1 | ETH/DEC21 | buy  | 16     | BID       | -10     | 0       | STATUS_PARKED |
 
     #Extend with liquidity auction and check that orders get unparked
-    #When time is updated to "2019-05-20T01:01:01Z"
-    When the network moves ahead "60" blocks
-
-    #TODO: Trigger should change IMO, but this will be decided in the auction-interaction-spec, remove TODO once decided.
+    When the network moves ahead "61" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-    # | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 110          | 110            | 1             |
-      | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE     | 110          | 110            | 1             |
+      | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 110          | 110            | 1             |
+   
+    # TODO (WG): Am I missing something here? If at the end of price auction we don't have sufficient liquidity to uncross we should never leave auction, just extend it with liquidity
     # The auction isn't extended, we only check liquidity at the end of the price auction, at which point
     # There's no reason to extend
-    # And the auction extension trigger should be "AUCTION_TRIGGER_LIQUIDITY" for market "ETH/DEC21"
+    And the auction extension trigger should be "AUCTION_TRIGGER_LIQUIDITY" for market "ETH/DEC21"
 
     Then the traders place the following pegged orders:
       | trader  | market id | side | volume | reference | offset |
@@ -185,11 +177,11 @@ Feature: Test pegged orders
       | lp1 | aux   | ETH/DEC21 | 500               | 0.001 | buy        | BID             | 500              | -10          |
       | lp1 | aux   | ETH/DEC21 | 500               | 0.001 | sell       | ASK             | 500              | 10           |
     
-    When the network moves ahead "2" blocks
+    When the network moves ahead "1" blocks
     
     #TODO: Perhaps we need a "clear trades" statement or somehow autoclear it when time advances? I can see the trade in "debug trades" output, but there's also the previous 1@100 one there
     #Then debug trades
-    #Then the auction ends with a traded volume of "2" at a price of "111"
+    Then the auction ends with a traded volume of "2" at a price of "111"
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest | best static bid price | best static ask price |
@@ -259,7 +251,7 @@ Feature: Test pegged orders
     # TODO: mid price comes back as 93
     And the market data for the market "ETH/DEC21" should be:
       | best bid price | best ask price | mid price | best bid volume | best ask volume |
-      | 80             | 185            | 93        | 5               | 11              |
+      | 80             | 185            | 193        | 5               | 11              |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
