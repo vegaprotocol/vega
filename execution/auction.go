@@ -14,14 +14,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	if !m.as.InAuction() {
 		return
 	}
-	wt, nt := m.matching.CanLeaveAuction()
-	if !wt && m.as.IsOpeningAuction() {
-		// we won't be able to leave opening auction anyway
-		// in case the opening auction has expired, we might want to extend by 1s
-		// but current behaviour is to leave the auction ASAP
-		// m.extendAuctionIncompleteBook()
-		return
-	}
+	_, nt := m.matching.CanLeaveAuction()
 	// at this point, it doesn't matter what auction type we're in
 	p, v, _ := m.matching.GetIndicativePriceAndVolume()
 	// opening auction
@@ -29,12 +22,21 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
 			return
 		}
+		m.as.SetReadyToLeave()
+		trades, err := m.matching.GetIndicativeTrades()
+		if err != nil {
+			m.log.Panic("Can't get indicative trades")
+		}
+		m.checkLiquidity(ctx, trades)
+		if !m.as.CanLeave() {
+			return
+		}
 		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
 			m.log.Panic("unable to run check price with price monitor",
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
 		}
-		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
+		if m.as.ExtensionTrigger() == types.AuctionTriggerPrice {
 			// this should never, ever happen
 			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
 		}
@@ -63,16 +65,12 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 	}
 	// price and liquidity auctions
 	if isPrice := m.as.IsPriceAuction(); isPrice || m.as.IsLiquidityAuction() {
-		// hacky way to ensure the liquidity monitoring will calculate the target stake based on the target stake
-		// SHOULD we leave the auction. Otherwise, we would leave a liquidity auction, and immediately enter a new one
-		ft := []*types.Trade{
-			{
-				Size:  v,
-				Price: p.Clone(),
-			},
+		trades, err := m.matching.GetIndicativeTrades()
+		if err != nil {
+			m.log.Panic("Can't get indicative trades")
 		}
 		if !isPrice {
-			m.checkLiquidity(ctx, ft)
+			m.checkLiquidity(ctx, trades)
 		}
 		if isPrice || m.as.CanLeave() {
 			if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, true); err != nil {
@@ -83,7 +81,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		}
 		end := m.as.CanLeave()
 		if isPrice && end {
-			m.checkLiquidity(ctx, ft)
+			m.checkLiquidity(ctx, trades)
 		}
 		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 			m.broker.Send(evt)
