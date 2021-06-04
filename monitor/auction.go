@@ -251,6 +251,7 @@ func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction 
 	a.start, a.stop = false, false
 	a.begin, a.end = nil, nil
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+	a.extension = nil
 	a.mode = a.defMode
 	// default mode is auction, this is an FBA market
 	if a.mode == types.Market_TRADING_MODE_BATCH_AUCTION {
