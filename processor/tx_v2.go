@@ -158,7 +158,11 @@ func (t TxV2) Unmarshal(i interface{}) error {
 }
 
 func (t TxV2) PubKey() []byte {
-	return []byte(t.tx.GetPubKey())
+	decodedPubKey, err := hex.DecodeString(t.tx.GetPubKey())
+	if err != nil {
+		panic("pub key should be hex encoded")
+	}
+	return decodedPubKey
 }
 
 func (t TxV2) Party() string {
@@ -170,7 +174,11 @@ func (t TxV2) Hash() []byte {
 }
 
 func (t TxV2) Signature() []byte {
-	return []byte(t.tx.Signature.Bytes)
+	decodedSig, err := hex.DecodeString(t.tx.Signature.Bytes)
+	if err != nil {
+		panic("signature should be hex encoded")
+	}
+	return decodedSig
 }
 
 func (t TxV2) Validate() error {
