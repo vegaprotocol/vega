@@ -157,7 +157,7 @@ func (t TxV2) PubKey() []byte {
 }
 
 func (t TxV2) Party() string {
-	return hex.EncodeToString([]byte(t.tx.GetPubKey()))
+	return t.tx.GetPubKey()
 }
 
 func (t TxV2) Hash() []byte {
