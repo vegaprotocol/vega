@@ -2,6 +2,7 @@ package supplied
 
 import (
 	"errors"
+	"fmt"
 	"math"
 
 	"code.vegaprotocol.io/vega/types"
@@ -188,6 +189,10 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 		e.sCache = make(map[uint64]float64, len(e.sCache))
 		e.cachedMin, e.cachedMax = minPrice, maxPrice
 	}
+
+	defer func() {
+		fmt.Printf("isBid(%v) price(%d) prob(%f) bestBid(%d) bestAsk(%d) min(%f) max(%f) \n", isBid, orderPrice, f, bestBidPrice, bestAskPrice, minPrice, maxPrice)
+	}()
 
 	// Any part of shape that's pegged between or equal to
 	// best_static_bid and best_static_ask
