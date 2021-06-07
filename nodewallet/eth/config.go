@@ -15,6 +15,6 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level:   encoding.LogLevel{Level: logging.InfoLevel},
-		Address: "https://ropsten.infura.io/v3/2d4acb74430e4792b8d783fdfaa3ae82",
+		Address: "https://ropsten.infura.io/v3/YOUR_TOKEN_HERE",
 	}
 }
