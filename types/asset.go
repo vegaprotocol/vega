@@ -5,6 +5,6 @@ package types
 import "code.vegaprotocol.io/vega/proto"
 
 type Asset = proto.Asset
-type AssetSource = proto.AssetSource
-type AssetSource_BuiltinAsset = proto.AssetSource_BuiltinAsset
-type AssetSource_Erc20 = proto.AssetSource_Erc20
+type AssetDetails = proto.AssetDetails
+type AssetDetails_BuiltinAsset = proto.AssetDetails_BuiltinAsset
+type AssetDetails_Erc20 = proto.AssetDetails_Erc20
