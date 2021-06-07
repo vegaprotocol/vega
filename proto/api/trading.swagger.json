@@ -1669,7 +1669,7 @@
     "commandsv1Signature": {
       "type": "object",
       "properties": {
-        "bytes": {
+        "value": {
           "type": "string",
           "description": "The bytes of the signature (hex-encoded)."
         },

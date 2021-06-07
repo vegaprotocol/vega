@@ -58,9 +58,9 @@ func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey
 		return errs.FinalAddForProperty("tx.signature.algo", err)
 	}
 
-	decodedSig, err := hex.DecodeString(signature.Bytes)
+	decodedSig, err := hex.DecodeString(signature.Value)
 	if err != nil {
-		return errs.FinalAddForProperty("tx.signature.bytes", ErrShouldBeHexEncoded)
+		return errs.FinalAddForProperty("tx.signature.value", ErrShouldBeHexEncoded)
 	}
 
 	decodePubKey, err := hex.DecodeString(pubKey)
@@ -129,8 +129,8 @@ func checkInputData(inputData []byte) Errors {
 
 func checkSignature(signature *commandspb.Signature) Errors {
 	errs := NewErrors()
-	if len(signature.Bytes) == 0 {
-		errs.AddForProperty("tx.signature.bytes", ErrIsRequired)
+	if len(signature.Value) == 0 {
+		errs.AddForProperty("tx.signature.value", ErrIsRequired)
 	}
 	if len(signature.Algo) == 0 {
 		errs.AddForProperty("tx.signature.algo", ErrIsRequired)

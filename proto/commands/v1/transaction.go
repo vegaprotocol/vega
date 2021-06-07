@@ -30,7 +30,7 @@ func NewInputData() *InputData {
 
 func NewSignature(sig []byte, algo string, version uint32) *Signature {
 	return &Signature{
-		Bytes:   hex.EncodeToString(sig),
+		Value:   hex.EncodeToString(sig),
 		Algo:    algo,
 		Version: version,
 	}

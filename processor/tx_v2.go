@@ -174,7 +174,7 @@ func (t TxV2) Hash() []byte {
 }
 
 func (t TxV2) Signature() []byte {
-	decodedSig, err := hex.DecodeString(t.tx.Signature.Bytes)
+	decodedSig, err := hex.DecodeString(t.tx.Signature.Value)
 	if err != nil {
 		panic("signature should be hex encoded")
 	}

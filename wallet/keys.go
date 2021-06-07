@@ -123,7 +123,7 @@ func (k *Keypair) Sign(marshalledData []byte) (*commandspb.Signature, error) {
 	}
 
 	return &commandspb.Signature{
-		Bytes:   hex.EncodeToString(sig),
+		Value:   hex.EncodeToString(sig),
 		Algo:    k.Algorithm.Name(),
 		Version: k.Algorithm.Version(),
 	}, nil

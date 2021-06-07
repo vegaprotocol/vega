@@ -15,12 +15,12 @@ func TestCheckTransaction(t *testing.T) {
 	t.Run("Submitting nil transaction fails", testSubmittingNilTransactionFails)
 	t.Run("Submitting transaction without input data fails", testSubmittingTransactionWithoutInputDataFails)
 	t.Run("Submitting transaction without signature fails", testSubmittingTransactionWithoutSignatureFails)
-	t.Run("Submitting transaction without signature bytes fails", testSubmittingTransactionWithoutSignatureBytesFails)
+	t.Run("Submitting transaction without signature value fails", testSubmittingTransactionWithoutSignatureValueFails)
 	t.Run("Submitting transaction without signature algo fails", testSubmittingTransactionWithoutSignatureAlgoFails)
 	t.Run("Submitting transaction without from fails", testSubmittingTransactionWithoutFromFails)
 	t.Run("Submitting transaction without public key fails", testSubmittingTransactionWithoutPubKeyFromFails)
 	t.Run("Submitting transaction with unsupported algo fails", testSubmittingTransactionWithUnsupportedAlgoFails)
-	t.Run("Submitting transaction with invalid encoding of bytes fails", testSubmittingTransactionWithInvalidEncodingOfBytesFails)
+	t.Run("Submitting transaction with invalid encoding of bytes fails", testSubmittingTransactionWithInvalidEncodingOfValueFails)
 	t.Run("Submitting transaction with invalid encoding of bytes fails", testSubmittingTransactionWithInvalidEncodingOfPubKeyFails)
 	t.Run("Submitting transaction with invalid signature fails", testSubmittingTransactionWithInvalidSignatureFails)
 }
@@ -61,13 +61,13 @@ func testSubmittingTransactionWithoutSignatureFails(t *testing.T) {
 	assert.Contains(t, err.Get("tx.signature"), commands.ErrIsRequired)
 }
 
-func testSubmittingTransactionWithoutSignatureBytesFails(t *testing.T) {
+func testSubmittingTransactionWithoutSignatureValueFails(t *testing.T) {
 	tx := newValidTransaction()
-	tx.Signature.Bytes = ""
+	tx.Signature.Value = ""
 
 	err := checkTransaction(tx)
 
-	assert.Contains(t, err.Get("tx.signature.bytes"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("tx.signature.value"), commands.ErrIsRequired)
 }
 
 func testSubmittingTransactionWithoutSignatureAlgoFails(t *testing.T) {
@@ -108,13 +108,13 @@ func testSubmittingTransactionWithUnsupportedAlgoFails(t *testing.T) {
 	assert.Contains(t, err.Get("tx.signature.algo"), crypto.ErrUnsupportedSignatureAlgorithm)
 }
 
-func testSubmittingTransactionWithInvalidEncodingOfBytesFails(t *testing.T) {
+func testSubmittingTransactionWithInvalidEncodingOfValueFails(t *testing.T) {
 	tx := newValidTransaction()
-	tx.Signature.Bytes = "invalid-hex-encoding"
+	tx.Signature.Value = "invalid-hex-encoding"
 
 	err := checkTransaction(tx)
 
-	assert.Contains(t, err.Get("tx.signature.bytes"), commands.ErrShouldBeHexEncoded)
+	assert.Contains(t, err.Get("tx.signature.value"), commands.ErrShouldBeHexEncoded)
 }
 
 func testSubmittingTransactionWithInvalidEncodingOfPubKeyFails(t *testing.T) {
@@ -130,7 +130,7 @@ func testSubmittingTransactionWithInvalidEncodingOfPubKeyFails(t *testing.T) {
 
 func testSubmittingTransactionWithInvalidSignatureFails(t *testing.T) {
 	tx := newValidTransaction()
-	tx.Signature.Bytes = "8ea1c9baab2919a73b6acd3dae15f515c9d9b191ac2a2cd9e7d7a2f9750da0793a88c8ee96a640e0de64c91d81770299769d4d4d93f81208e17573c836e3a810"
+	tx.Signature.Value = "8ea1c9baab2919a73b6acd3dae15f515c9d9b191ac2a2cd9e7d7a2f9750da0793a88c8ee96a640e0de64c91d81770299769d4d4d93f81208e17573c836e3a810"
 
 	err := checkTransaction(tx)
 
@@ -153,7 +153,7 @@ func newValidTransaction() *commandspb.Transaction {
 		InputData: []byte{8, 178, 211, 130, 220, 159, 158, 160, 128, 80, 210, 62, 0},
 		Signature: &commandspb.Signature{
 			Algo: "vega/ed25519",
-			Bytes: "8ea1c9baab2919a73b6acd3dae15f515c9d9b191ac2a2cd9e7d7a2f9750da0793a88c8ee96a640e0de64c91d81770299769d4d4d93f81208e17573c836e3a80d",
+			Value: "8ea1c9baab2919a73b6acd3dae15f515c9d9b191ac2a2cd9e7d7a2f9750da0793a88c8ee96a640e0de64c91d81770299769d4d4d93f81208e17573c836e3a80d",
 			Version: 1,
 		},
 		From: &commandspb.Transaction_PubKey{

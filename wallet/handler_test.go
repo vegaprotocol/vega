@@ -1045,7 +1045,7 @@ func testHandlerSigningTxV2Succeeds(t *testing.T) {
 	key := h.store.GetKey(name, pubKey)
 	assert.Equal(t, key.Algorithm.Version(), tx.Signature.Version)
 	assert.Equal(t, key.Algorithm.Name(), tx.Signature.Algo)
-	assert.NotEmpty(t, tx.Signature.Bytes)
+	assert.NotEmpty(t, tx.Signature.Value)
 }
 
 func testHandlerSigningTxV2WithTaintedKeyFails(t *testing.T) {
