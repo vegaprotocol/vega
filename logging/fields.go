@@ -8,6 +8,7 @@ import (
 	ptypes "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"go.uber.org/zap"
 )
@@ -94,6 +95,11 @@ func Int8(key string, val int8) zap.Field {
 // String constructs a field with the given key and value.
 func String(key string, val string) zap.Field {
 	return zap.String(key, val)
+}
+
+// Uint constructs a field with the given key and value.
+func BigUint(key string, val *num.Uint) zap.Field {
+	return String(key, val.String())
 }
 
 // Uint constructs a field with the given key and value.
