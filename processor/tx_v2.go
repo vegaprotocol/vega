@@ -2,6 +2,7 @@ package processor
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -70,92 +71,81 @@ func (t TxV2) Command() txn.Command {
 func (t TxV2) Unmarshal(i interface{}) error {
 	switch cmd := t.inputData.Command.(type) {
 	case *commandspb.InputData_OrderSubmission:
-		if underlyingCmd, ok := i.(*commandspb.OrderSubmission); ok {
-			*underlyingCmd = *cmd.OrderSubmission
-			return nil
-		} else {
-			panic("failed to unmarshall to OrderSubmission")
+		underlyingCmd, ok := i.(*commandspb.OrderSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to OrderSubmission")
 		}
+		*underlyingCmd = *cmd.OrderSubmission
 	case *commandspb.InputData_OrderCancellation:
-		if underlyingCmd, ok := i.(*commandspb.OrderCancellation); ok {
-			*underlyingCmd = *cmd.OrderCancellation
-			return nil
-		} else {
-			panic("failed to unmarshall to OrderCancellation")
+		underlyingCmd, ok := i.(*commandspb.OrderCancellation)
+		if !ok {
+			return errors.New("failed to unmarshall to OrderCancellation")
 		}
+		*underlyingCmd = *cmd.OrderCancellation
 	case *commandspb.InputData_OrderAmendment:
-		if underlyingCmd, ok := i.(*commandspb.OrderAmendment); ok {
-			*underlyingCmd = *cmd.OrderAmendment
-			return nil
-		} else {
-			panic("failed to unmarshall to OrderAmendment")
+		underlyingCmd, ok := i.(*commandspb.OrderAmendment)
+		if !ok {
+			return errors.New("failed to unmarshall to OrderAmendment")
 		}
+		*underlyingCmd = *cmd.OrderAmendment
 	case *commandspb.InputData_VoteSubmission:
-		if underlyingCmd, ok := i.(*commandspb.VoteSubmission); ok {
-			*underlyingCmd = *cmd.VoteSubmission
-			return nil
-		} else {
-			panic("failed to unmarshall to VoteSubmission")
+		underlyingCmd, ok := i.(*commandspb.VoteSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to VoteSubmission")
 		}
+		*underlyingCmd = *cmd.VoteSubmission
 	case *commandspb.InputData_WithdrawSubmission:
-		if underlyingCmd, ok := i.(*commandspb.WithdrawSubmission); ok {
-			*underlyingCmd = *cmd.WithdrawSubmission
-			return nil
-		} else {
-			panic("failed to unmarshall to WithdrawSubmission")
+		underlyingCmd, ok := i.(*commandspb.WithdrawSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to WithdrawSubmission")
 		}
+		*underlyingCmd = *cmd.WithdrawSubmission
 	case *commandspb.InputData_LiquidityProvisionSubmission:
-		if underlyingCmd, ok := i.(*commandspb.LiquidityProvisionSubmission); ok {
-			*underlyingCmd = *cmd.LiquidityProvisionSubmission
-			return nil
-		} else {
-			panic("failed to unmarshall to LiquidityProvisionSubmission")
+		underlyingCmd, ok := i.(*commandspb.LiquidityProvisionSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to LiquidityProvisionSubmission")
 		}
+		*underlyingCmd = *cmd.LiquidityProvisionSubmission
 	case *commandspb.InputData_ProposalSubmission:
-		if underlyingCmd, ok := i.(*commandspb.ProposalSubmission); ok {
-			*underlyingCmd = *cmd.ProposalSubmission
-			return nil
-		} else {
-			panic("failed to unmarshall to ProposalSubmission")
+		underlyingCmd, ok := i.(*commandspb.ProposalSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to ProposalSubmission")
 		}
+		*underlyingCmd = *cmd.ProposalSubmission
 	case *commandspb.InputData_NodeRegistration:
-		if underlyingCmd, ok := i.(*commandspb.NodeRegistration); ok {
-			*underlyingCmd = *cmd.NodeRegistration
-			return nil
-		} else {
-			panic("failed to unmarshall to NodeRegistration")
+		underlyingCmd, ok := i.(*commandspb.NodeRegistration)
+		if !ok {
+			return errors.New("failed to unmarshall to NodeRegistration")
 		}
+		*underlyingCmd = *cmd.NodeRegistration
 	case *commandspb.InputData_NodeVote:
-		if underlyingCmd, ok := i.(*commandspb.NodeVote); ok {
-			*underlyingCmd = *cmd.NodeVote
-			return nil
-		} else {
-			panic("failed to unmarshall to NodeVote")
+		underlyingCmd, ok := i.(*commandspb.NodeVote)
+		if !ok {
+			return errors.New("failed to unmarshall to NodeVote")
 		}
+		*underlyingCmd = *cmd.NodeVote
 	case *commandspb.InputData_NodeSignature:
-		if underlyingCmd, ok := i.(*commandspb.NodeSignature); ok {
-			*underlyingCmd = *cmd.NodeSignature
-			return nil
-		} else {
-			panic("failed to unmarshall to NodeSignature")
+		underlyingCmd, ok := i.(*commandspb.NodeSignature)
+		if !ok {
+			return errors.New("failed to unmarshall to NodeSignature")
 		}
+		*underlyingCmd = *cmd.NodeSignature
 	case *commandspb.InputData_ChainEvent:
-		if underlyingCmd, ok := i.(*commandspb.ChainEvent); ok {
-			*underlyingCmd = *cmd.ChainEvent
-			return nil
-		} else {
-			panic("failed to unmarshall to ChainEvent")
+		underlyingCmd, ok := i.(*commandspb.ChainEvent)
+		if !ok {
+			return errors.New("failed to unmarshall to ChainEvent")
 		}
+		*underlyingCmd = *cmd.ChainEvent
 	case *commandspb.InputData_OracleDataSubmission:
-		if underlyingCmd, ok := i.(*commandspb.OracleDataSubmission); ok {
-			*underlyingCmd = *cmd.OracleDataSubmission
-			return nil
-		} else {
-			panic("failed to unmarshall to OracleDataSubmission")
+		underlyingCmd, ok := i.(*commandspb.OracleDataSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to OracleDataSubmission")
 		}
+		*underlyingCmd = *cmd.OracleDataSubmission
 	default:
-		panic("unsupported command")
+		return errors.New("unsupported command")
 	}
+	return nil
 }
 
 func (t TxV2) PubKey() []byte {
