@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -122,7 +122,7 @@ func TestMargins(t *testing.T) {
 		t.Fatal("SubmitOrder confirmation was nil, but no error.")
 	}
 
-	orderID := confirmation.GetOrder().Id
+	orderID := confirmation.Order.Id
 
 	// Amend size up
 	amend := &commandspb.OrderAmendment{

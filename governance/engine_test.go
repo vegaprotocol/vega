@@ -17,6 +17,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	dtypes "code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -824,7 +825,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 
 	partyA := "party-A"
 	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).AnyTimes().Return(uint64(300), nil)
-	accountA := types.Account{
+	accountA := dtypes.Account{
 		Id:      partyA + "-account",
 		Owner:   partyA,
 		Balance: 200,
@@ -832,7 +833,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	}
 	eng.accounts.EXPECT().GetPartyGeneralAccount(accountA.Owner, "VOTE").AnyTimes().Return(&accountA, nil)
 	partyB := "party-B"
-	accountB := types.Account{
+	accountB := dtypes.Account{
 		Id:      partyB + "-account",
 		Owner:   partyB,
 		Balance: 100,
@@ -1039,7 +1040,7 @@ func newMarketLiquidityCommitment() *types.NewMarketCommitment {
 }
 
 func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, times int) *types.Party {
-	account := types.Account{
+	account := dtypes.Account{
 		Id:      partyID + "-account",
 		Owner:   partyID,
 		Balance: balance,

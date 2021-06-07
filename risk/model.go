@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/risk/models"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (

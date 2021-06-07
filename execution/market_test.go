@@ -20,11 +20,12 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
@@ -4617,7 +4618,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -4996,7 +4997,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5054,7 +5055,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5101,7 +5102,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
 
 	t.Run("Fee are distribute to trader-2 only", func(t *testing.T) {
-		var found []*types.TransferResponse
+		var found []*ptypes.TransferResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:
@@ -5491,7 +5492,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5537,7 +5538,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
 
 	t.Run("Fee are distributed", func(t *testing.T) {
-		var found []*types.TransferResponse
+		var found []*ptypes.TransferResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:

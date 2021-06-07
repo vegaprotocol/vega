@@ -3,19 +3,20 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Acc struct {
 	*Base
-	a types.Account
+	a ptypes.Account
 }
 
 func NewAccountEvent(ctx context.Context, a types.Account) *Acc {
 	return &Acc{
 		Base: newBase(ctx, AccountEvent),
-		a:    a,
+		a:    *(a.IntoProto()),
 	}
 }
 
@@ -31,11 +32,11 @@ func (a Acc) MarketID() string {
 	return a.a.MarketId
 }
 
-func (a *Acc) Account() types.Account {
+func (a *Acc) Account() ptypes.Account {
 	return a.a
 }
 
-func (a Acc) Proto() types.Account {
+func (a Acc) Proto() ptypes.Account {
 	return a.a
 }
 

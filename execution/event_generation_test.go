@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +59,7 @@ func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.Mar
 	needToQuit := false
 	orders := mdb.GetAllOrders(tm.market.GetID())
 	for _, order := range orders {
-		if !tm.market.ValidateOrder(order) {
+		if !tm.market.ValidateOrder(types.OrderFromProto(order)) {
 			needToQuit = true
 		}
 	}

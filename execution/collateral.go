@@ -6,7 +6,8 @@ import (
 	"math/big"
 
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+
 	"github.com/shopspring/decimal"
 )
 

@@ -13,8 +13,8 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/products"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (
@@ -439,7 +439,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	order := orderSubmission.IntoOrder(party)
+	order := types.OrderFromProto(orderSubmission.IntoOrder(party))
 
 	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {

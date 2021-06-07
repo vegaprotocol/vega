@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
+
 	"github.com/cucumber/godog/gherkin"
 )
 
@@ -26,7 +28,7 @@ func TradersPlaceTheFollowingPeggedOrders(exec *execution.Engine, orders *gherki
 			MarketId:    marketID,
 			Size:        volume,
 			Reference:   fmt.Sprintf("%s-pegged-order-%d", trader, i),
-			PeggedOrder: &types.PeggedOrder{
+			PeggedOrder: &ptypes.PeggedOrder{
 				Reference: reference,
 				Offset:    offset,
 			},

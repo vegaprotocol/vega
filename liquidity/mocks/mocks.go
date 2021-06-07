@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -123,7 +123,7 @@ func (m *MockIDGen) EXPECT() *MockIDGenMockRecorder {
 }
 
 // SetID mocks base method
-func (m *MockIDGen) SetID(arg0 *proto.Order) {
+func (m *MockIDGen) SetID(arg0 *types.Order) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetID", arg0)
 }

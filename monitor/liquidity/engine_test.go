@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/monitor/liquidity"
 	"code.vegaprotocol.io/vega/monitor/liquidity/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 )
 

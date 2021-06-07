@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -140,7 +140,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -231,7 +231,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -324,7 +324,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -613,7 +613,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -644,7 +644,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -753,7 +753,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -797,5 +797,4 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 			ctx, lpSubmissionUpdate, lpparty, "liquidity-submission-2"),
 		"margin would be below maintenance: insufficient margin",
 	)
-
 }

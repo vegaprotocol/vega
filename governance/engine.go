@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	dtypes "code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/pkg/errors"
@@ -36,7 +37,7 @@ type Broker interface {
 // Accounts ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
-	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetPartyGeneralAccount(party, asset string) (*dtypes.Account, error)
 	GetAssetTotalSupply(asset string) (uint64, error)
 }
 
