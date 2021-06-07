@@ -626,7 +626,7 @@ type SignatureInput struct {
 	// The algorithm used to produice the signature
 	Algo string `json:"algo"`
 	// The version of the signature
-	Version int `json:"version"`
+	Version uint32 `json:"version"`
 }
 
 type SimpleRiskModelParamsInput struct {

@@ -1651,7 +1651,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 			Tx: decodedData,
 			Sig: &types.Signature{
 				Sig:     decodedSig,
-				Version: uint32(sig.Version),
+				Version: sig.Version,
 				Algo:    sig.Algo,
 			},
 		},
