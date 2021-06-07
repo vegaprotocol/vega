@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type IndicativePriceAndVolume struct {
@@ -16,7 +17,7 @@ type IndicativePriceAndVolume struct {
 }
 
 type ipvPriceLevel struct {
-	price  uint64
+	price  *num.Uint
 	buypl  *ipvVolume
 	sellpl *ipvVolume
 }
@@ -41,22 +42,22 @@ func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) 
 // this will be user to build the initial set of price levels, when the auction is being started.
 func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *OrderBookSide) {
 	// we'll keep track of all the pl we encounter
-	mplm := map[uint64]ipvPriceLevel{}
+	mplm := map[num.Uint]ipvPriceLevel{}
 
 	for i := len(buy.levels) - 1; i >= 0; i-- {
-		mplm[buy.levels[i].price] = ipvPriceLevel{price: buy.levels[i].price, buypl: &ipvVolume{buy.levels[i].volume}}
+		mplm[*buy.levels[i].price] = ipvPriceLevel{price: buy.levels[i].price.Clone(), buypl: &ipvVolume{buy.levels[i].volume}}
 	}
 
 	// now we add all the sells
 	// to our list of pricelevel
 	// making sure we have no duplicates
 	for i := len(sell.levels) - 1; i >= 0; i-- {
-		var price = sell.levels[i].price
-		if mpl, ok := mplm[price]; ok {
+		var price = sell.levels[i].price.Clone()
+		if mpl, ok := mplm[*price]; ok {
 			mpl.sellpl = &ipvVolume{sell.levels[i].volume}
-			mplm[price] = mpl
+			mplm[*price] = mpl
 		} else {
-			mplm[price] = ipvPriceLevel{price: price, sellpl: &ipvVolume{sell.levels[i].volume}}
+			mplm[*price] = ipvPriceLevel{price: price, sellpl: &ipvVolume{sell.levels[i].volume}}
 		}
 	}
 
@@ -68,7 +69,7 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 	}
 
 	// sort the slice so we can go through each levels nicely
-	sort.Slice(ipv.levels, func(i, j int) bool { return ipv.levels[i].price > ipv.levels[j].price })
+	sort.Slice(ipv.levels, func(i, j int) bool { return ipv.levels[i].price.GT(ipv.levels[j].price) })
 }
 
 func (ipv *IndicativePriceAndVolume) incrementLevelVolume(idx int, volume uint64, side types.Side) {
@@ -86,17 +87,17 @@ func (ipv *IndicativePriceAndVolume) incrementLevelVolume(idx int, volume uint64
 	}
 }
 
-func (ipv *IndicativePriceAndVolume) AddVolumeAtPrice(price, volume uint64, side types.Side) {
+func (ipv *IndicativePriceAndVolume) AddVolumeAtPrice(price *num.Uint, volume uint64, side types.Side) {
 	i := sort.Search(len(ipv.levels), func(i int) bool {
-		return ipv.levels[i].price <= price
+		return ipv.levels[i].price.LTE(price)
 	})
-	if i < len(ipv.levels) && ipv.levels[i].price == price {
+	if i < len(ipv.levels) && ipv.levels[i].price.EQ(price) {
 		// we found the price level, let's add the volume there, and we are done
 		ipv.incrementLevelVolume(i, volume, side)
 	} else {
 		ipv.levels = append(ipv.levels, ipvPriceLevel{})
 		copy(ipv.levels[i+1:], ipv.levels[i:])
-		ipv.levels[i] = ipvPriceLevel{price: price}
+		ipv.levels[i] = ipvPriceLevel{price: price.Clone()}
 		ipv.incrementLevelVolume(i, volume, side)
 	}
 }
@@ -107,7 +108,7 @@ func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64
 		if ipv.levels[idx].buypl == nil {
 			ipv.log.Panic("cannot decrement volume from a non-existing level",
 				logging.String("side", side.String()),
-				logging.Uint64("price", ipv.levels[idx].price),
+				logging.BigUint("price", ipv.levels[idx].price),
 				logging.Uint64("volume", volume))
 		}
 		ipv.levels[idx].buypl.volume -= volume
@@ -115,16 +116,16 @@ func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64
 		if ipv.levels[idx].sellpl == nil {
 			ipv.log.Panic("cannot decrement volume from a non-existing level",
 				logging.String("side", side.String()),
-				logging.Uint64("price", ipv.levels[idx].price),
+				logging.BigUint("price", ipv.levels[idx].price),
 				logging.Uint64("volume", volume))
 		}
 		ipv.levels[idx].sellpl.volume -= volume
 	}
 }
 
-func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price, volume uint64, side types.Side) {
+func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price *num.Uint, volume uint64, side types.Side) {
 	i := sort.Search(len(ipv.levels), func(i int) bool {
-		return ipv.levels[i].price <= price
+		return ipv.levels[i].price.LTE(price)
 	})
 	if i < len(ipv.levels) && ipv.levels[i].price == price {
 		// we found the price level, let's add the volume there, and we are done
@@ -132,35 +133,35 @@ func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price, volume uint64, s
 	} else {
 		ipv.log.Panic("cannot remove volume from a non-existing level",
 			logging.String("side", side.String()),
-			logging.Uint64("price", price),
+			logging.BigUint("price", price),
 			logging.Uint64("volume", volume))
 	}
 }
 
-func (ipv *IndicativePriceAndVolume) getLevelsWithinRange(maxPrice, minPrice uint64) []ipvPriceLevel {
+func (ipv *IndicativePriceAndVolume) getLevelsWithinRange(maxPrice, minPrice *num.Uint) []ipvPriceLevel {
 	// these are ordered descending, se we gonna find first the maxPrice then
 	// the minPrice, and using that we can then subslice like a boss
 	maxPricePos := sort.Search(len(ipv.levels), func(i int) bool {
-		return ipv.levels[i].price <= maxPrice
+		return ipv.levels[i].price.LTE(maxPrice)
 	})
-	if maxPricePos >= len(ipv.levels) || ipv.levels[maxPricePos].price != maxPrice {
+	if maxPricePos >= len(ipv.levels) || ipv.levels[maxPricePos].price.NEQ(maxPrice) {
 		// price level not present, that should not be possible?
 		ipv.log.Panic("missing max price in levels",
-			logging.Uint64("max-price", maxPrice))
+			logging.BigUint("max-price", maxPrice))
 	}
 	minPricePos := sort.Search(len(ipv.levels), func(i int) bool {
-		return ipv.levels[i].price <= minPrice
+		return ipv.levels[i].price.LTE(minPrice)
 	})
-	if minPricePos >= len(ipv.levels) || ipv.levels[minPricePos].price != minPrice {
+	if minPricePos >= len(ipv.levels) || ipv.levels[minPricePos].price.NEQ(minPrice) {
 		// price level not present, that should not be possible?
 		ipv.log.Panic("missing min price in levels",
-			logging.Uint64("min-price", minPrice))
+			logging.BigUint("min-price", minPrice))
 	}
 
 	return ipv.levels[maxPricePos : minPricePos+1]
 }
 
-func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice uint64) ([]CumulativeVolumeLevel, uint64) {
+func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice *num.Uint) ([]CumulativeVolumeLevel, uint64) {
 	rangedLevels := ipv.getLevelsWithinRange(maxPrice, minPrice)
 	// now re-allocate the slice only if needed
 	if ipv.buf == nil || cap(ipv.buf) < len(rangedLevels) {
@@ -189,7 +190,7 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		}
 
 		// always set the price
-		cumulativeVolumes[i].price = rangedLevels[i].price
+		cumulativeVolumes[i].price = rangedLevels[i].price.Clone()
 
 		// if we had a price level in the bug side, use it
 		if rangedLevels[j].buypl != nil {

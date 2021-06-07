@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 )
@@ -30,7 +31,8 @@ func (s *OrderBookSide) Hash() []byte {
 	output := make([]byte, len(s.levels)*16)
 	var i int
 	for _, l := range s.levels {
-		binary.BigEndian.PutUint64(output[i:], l.price)
+		// FIXME(): change that to use the full price
+		binary.BigEndian.PutUint64(output[i:], l.price.Uint64())
 		i += 8
 		binary.BigEndian.PutUint64(output[i:], l.volume)
 		i += 8
@@ -61,42 +63,44 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 
 // BestPriceAndVolume returns the top of book price and volume
 // returns an error if the book is empty
-func (s *OrderBookSide) BestPriceAndVolume() (uint64, uint64, error) {
+func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {
 	if len(s.levels) <= 0 {
-		return 0, 0, errors.New("no orders on the book")
+		return num.NewUint(0), 0, errors.New("no orders on the book")
 	}
 	last := len(s.levels) - 1
-	return s.levels[last].price, s.levels[last].volume, nil
+	return s.levels[last].price.Clone(), s.levels[last].volume, nil
 }
 
 // BestStaticPrice returns the top of book price for non pegged orders
 // We do not keep count of the volume which makes this slightly quicker
 // returns an error if the book is empty
-func (s *OrderBookSide) BestStaticPrice() (uint64, error) {
+func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 	if len(s.levels) <= 0 {
-		return 0, errors.New("no orders on the book")
+		return num.NewUint(0), errors.New("no orders on the book")
 	}
 
 	for i := len(s.levels) - 1; i >= 0; i-- {
 		pricelevel := s.levels[i]
 		for _, order := range pricelevel.orders {
 			if order.PeggedOrder == nil {
-				return pricelevel.price, nil
+				return pricelevel.price.Clone(), nil
 			}
 		}
 	}
-	return 0, errors.New("no non pegged orders found on the book")
+	return num.NewUint(0), errors.New("no non pegged orders found on the book")
 }
 
 // BestStaticPriceAndVolume returns the top of book price for non pegged orders
 // returns an error if the book is empty
-func (s *OrderBookSide) BestStaticPriceAndVolume() (uint64, uint64, error) {
+func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	if len(s.levels) <= 0 {
-		return 0, 0, errors.New("no orders on the book")
+		return num.NewUint(0), 0, errors.New("no orders on the book")
 	}
 
-	var bestPrice uint64
-	var bestVolume uint64
+	var (
+		bestPrice  = num.NewUint(0)
+		bestVolume uint64
+	)
 	for i := len(s.levels) - 1; i >= 0; i-- {
 		pricelevel := s.levels[i]
 		for _, order := range pricelevel.orders {
@@ -106,11 +110,11 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (uint64, uint64, error) {
 			}
 		}
 		// If we found a price, return it
-		if bestPrice > 0 {
-			return bestPrice, bestVolume, nil
+		if bestPrice.GT(num.NewUint(0)) {
+			return bestPrice.Clone(), bestVolume, nil
 		}
 	}
-	return 0, 0, errors.New("no non pegged orders found on the book")
+	return num.NewUint(0), 0, errors.New("no non pegged orders found on the book")
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
@@ -155,17 +159,17 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 }
 
 // ExtractOrders removes the orders from the top of the book until the volume amount is hit
-func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, error) {
+func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) ([]*types.Order, error) {
 	extractedOrders := []*types.Order{}
 
 	var (
 		totalVolume uint64
-		checkPrice  func(uint64) bool
+		checkPrice  func(*num.Uint) bool
 	)
 	if s.side == types.Side_SIDE_BUY {
-		checkPrice = func(orderPrice uint64) bool { return orderPrice >= price }
+		checkPrice = func(orderPrice *num.Uint) bool { return orderPrice.GTE(price) }
 	} else {
-		checkPrice = func(orderPrice uint64) bool { return orderPrice <= price }
+		checkPrice = func(orderPrice *num.Uint) bool { return orderPrice.LTE(price) }
 	}
 
 	for i := len(s.levels) - 1; i >= 0; i-- {
@@ -184,7 +188,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 				// We should never get to here unless the passed in price
 				// and volume are not correct
 				s.log.Panic("Failed to extract orders as not enough volume within price limits",
-					logging.Uint64("Price", price), logging.Uint64("volume", volume))
+					logging.BigUint("Price", price), logging.Uint64("volume", volume))
 			}
 
 			// If we have the right amount, stop processing
@@ -212,7 +216,7 @@ func (s *OrderBookSide) ExtractOrders(price, volume uint64) ([]*types.Order, err
 	// something has gone wrong
 	if totalVolume != volume {
 		s.log.Panic("Failed to extract orders as not enough volume on the book",
-			logging.Uint64("Price", price), logging.Uint64("volume", volume))
+			logging.BigUint("Price", price), logging.Uint64("volume", volume))
 	}
 
 	return extractedOrders, nil
@@ -223,10 +227,10 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	// first  we try to find the pricelevel of the order
 	var i int
 	if o.Side == types.Side_SIDE_BUY {
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= o.Price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.GTE(o.Price) })
 	} else {
 		// sell side levels should be ordered in ascending
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= o.Price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.LTE(o.Price) })
 	}
 	// we did not found the level
 	// then the order do not exists in the price level
@@ -261,35 +265,35 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	return order, nil
 }
 
-func (s *OrderBookSide) getPriceLevelIfExists(price uint64) *PriceLevel {
+func (s *OrderBookSide) getPriceLevelIfExists(price *num.Uint) *PriceLevel {
 	var i int
 	if s.side == types.Side_SIDE_BUY {
 		// buy side levels should be ordered in ascending
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.GTE(price) })
 	} else {
 		// sell side levels should be ordered in descending
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.LTE(price) })
 	}
 
 	// we found the level just return it.
-	if i < len(s.levels) && s.levels[i].price == price {
+	if i < len(s.levels) && s.levels[i].price.EQ(price) {
 		return s.levels[i]
 	}
 	return nil
 }
 
-func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
+func (s *OrderBookSide) getPriceLevel(price *num.Uint) *PriceLevel {
 	var i int
 	if s.side == types.Side_SIDE_BUY {
 		// buy side levels should be ordered in descending
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price >= price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.GTE(price) })
 	} else {
 		// sell side levels should be ordered in ascending
-		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price <= price })
+		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.LTE(price) })
 	}
 
 	// we found the level just return it.
-	if i < len(s.levels) && s.levels[i].price == price {
+	if i < len(s.levels) && s.levels[i].price.EQ(price) {
 		return s.levels[i]
 	}
 
@@ -297,7 +301,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
 	// this would reallocate sufficiently then
 	// no risk of this being a empty order, as it's overwritten just next with
 	// the slice insert
-	level := NewPriceLevel(price)
+	level := NewPriceLevel(price.Clone())
 	s.levels = append(s.levels, nil)
 	copy(s.levels[i+1:], s.levels[i:])
 	s.levels[i] = level
@@ -305,7 +309,7 @@ func (s *OrderBookSide) getPriceLevel(price uint64) *PriceLevel {
 }
 
 // GetVolume returns the volume at the given pricelevel
-func (s *OrderBookSide) GetVolume(price uint64) (uint64, error) {
+func (s *OrderBookSide) GetVolume(price *num.Uint) (uint64, error) {
 	priceLevel := s.getPriceLevelIfExists(price)
 
 	if priceLevel == nil {
@@ -321,11 +325,11 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 		totalVolumeToFill uint64
 	)
 	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
-		var checkPrice func(uint64) bool
+		var checkPrice func(*num.Uint) bool
 		if agg.Side == types.Side_SIDE_BUY {
-			checkPrice = func(levelPrice uint64) bool { return levelPrice <= agg.Price }
+			checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LTE(agg.Price) }
 		} else {
-			checkPrice = func(levelPrice uint64) bool { return levelPrice >= agg.Price }
+			checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.GTE(agg.Price) }
 		}
 
 		for i := len(s.levels) - 1; i >= 0; i-- {
@@ -362,13 +366,13 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 		idx        = len(s.levels) - 1
 		ntrades    []*types.Trade
 		err        error
-		checkPrice func(uint64) bool
+		checkPrice func(*num.Uint) bool
 	)
 
 	if fake.Side == types.Side_SIDE_BUY {
-		checkPrice = func(levelPrice uint64) bool { return levelPrice > agg.Price }
+		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.GT(agg.Price) }
 	} else {
-		checkPrice = func(levelPrice uint64) bool { return levelPrice < agg.Price }
+		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LT(agg.Price) }
 	}
 
 	// in here we iterate from the end, as it's easier to remove the
@@ -392,21 +396,21 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 	return trades, nil
 }
 
-func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, uint64, error) {
+func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, *num.Uint, error) {
 	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
 
 	var (
 		trades            []*types.Trade
 		impactedOrders    []*types.Order
-		lastTradedPrice   uint64
+		lastTradedPrice   = num.NewUint(0)
 		totalVolumeToFill uint64
-		checkPrice        func(uint64) bool
+		checkPrice        func(*num.Uint) bool
 	)
 
 	if agg.Side == types.Side_SIDE_SELL {
-		checkPrice = func(levelPrice uint64) bool { return levelPrice >= agg.Price }
+		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.GTE(agg.Price) }
 	} else {
-		checkPrice = func(levelPrice uint64) bool { return levelPrice <= agg.Price }
+		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LTE(agg.Price) }
 	}
 
 	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
@@ -420,7 +424,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 					if agg.PartyId == order.PartyId {
 						// Stop the order and return
 						agg.Status = types.Order_STATUS_STOPPED
-						return nil, nil, 0, ErrWashTrade
+						return nil, nil, lastTradedPrice, ErrWashTrade
 					}
 					// in case of network trades, we want to calculate an accurate average price to return
 					totalVolumeToFill += order.Remaining
@@ -441,7 +445,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 
 		if totalVolumeToFill < agg.Remaining {
 			timer.EngineTimeCounterAdd()
-			return trades, impactedOrders, 0, nil
+			return trades, impactedOrders, lastTradedPrice, nil
 		}
 	}
 
@@ -488,18 +492,24 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	}
 
 	if agg.Type == types.Order_TYPE_NETWORK {
-		var totalPrice uint64
+		var totalPrice = num.NewUint(0)
 		for _, t := range trades {
-			totalPrice += t.Price * t.Size
+			// totalPrice += t.Price * t.Size
+			totalPrice.Add(
+				totalPrice,
+				num.NewUint(0).Mul(t.Price, num.NewUint(t.Size)),
+			)
+
 		}
 		// now we are done with uncrossing,
 		// we can set back the price of the netorder to the average
 		// price over the whole volume
-		agg.Price = totalPrice / agg.Size
+		// agg.Price = totalPrice / agg.Size
+		agg.Price.Div(totalPrice, num.NewUint(agg.Size))
 	}
 
 	if len(trades) > 0 {
-		lastTradedPrice = trades[len(trades)-1].Price
+		lastTradedPrice = trades[len(trades)-1].Price.Clone()
 	}
 	timer.EngineTimeCounterAdd()
 	return trades, impactedOrders, lastTradedPrice, err
