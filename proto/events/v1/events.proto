@@ -7,8 +7,8 @@ import "markets.proto";
 import "assets.proto";
 import "governance.proto";
 import "vega.proto";
-import "oracles/v1/oracle_spec.proto";
-import "oracles/v1/oracle_data.proto";
+import "oracles/v1/spec.proto";
+import "oracles/v1/data.proto";
 import "commands/v1/commands.proto";
 import "commands/v1/validator_commands.proto";
 

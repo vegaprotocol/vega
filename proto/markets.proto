@@ -5,7 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/proto";
 
 import "github.com/mwitkow/go-proto-validators/validator.proto";
 
-import "oracles/v1/oracle_spec.proto";
+import "oracles/v1/spec.proto";
 
 // An auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
