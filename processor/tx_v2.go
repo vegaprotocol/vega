@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
+
 	"github.com/golang/protobuf/proto"
 )
 
@@ -25,7 +26,7 @@ func DecodeTxV2(payload []byte) (*TxV2, error) {
 
 	inputData := &commandspb.InputData{}
 	if err := proto.Unmarshal(tx.InputData, inputData); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal transaction from signed bundle: %w", err)
+		return nil, fmt.Errorf("unable to unmarshal input data: %w", err)
 	}
 
 	return &TxV2{

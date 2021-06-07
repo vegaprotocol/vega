@@ -19,6 +19,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/crypto"
+
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"

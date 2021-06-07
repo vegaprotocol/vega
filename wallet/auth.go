@@ -12,6 +12,7 @@ import (
 
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/julienschmidt/httprouter"
 )

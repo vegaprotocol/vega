@@ -63,12 +63,12 @@ func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey
 		return errs.FinalAddForProperty("tx.signature.value", ErrShouldBeHexEncoded)
 	}
 
-	decodePubKey, err := hex.DecodeString(pubKey)
+	decodedPubKey, err := hex.DecodeString(pubKey)
 	if err != nil {
 		return errs.FinalAddForProperty("tx.from.pub_key", ErrShouldBeHexEncoded)
 	}
 
-	ok, err := validator.Verify(decodePubKey, inputData, decodedSig)
+	ok, err := validator.Verify(decodedPubKey, inputData, decodedSig)
 	if err != nil {
 		return errs.FinalAdd(err)
 	}
