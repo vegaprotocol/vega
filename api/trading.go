@@ -189,7 +189,7 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 			s.log.Debug("unable to submit transaction", logging.Error(err))
 			return nil, apiError(codes.InvalidArgument, err)
 		}
-		s.log.Error("unable to submit transaction", logging.Error(err))
+		s.log.Debug("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
 
@@ -216,7 +216,7 @@ func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 			s.log.Debug("unable to submit transaction", logging.Error(err))
 			return nil, apiError(codes.InvalidArgument, err)
 		}
-		s.log.Error("unable to submit transaction", logging.Error(err))
+		s.log.Debug("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
 
