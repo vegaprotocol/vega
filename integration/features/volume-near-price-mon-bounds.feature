@@ -162,6 +162,11 @@ Feature: Test margin for lp near price monitoring boundaries
        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
        | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
     
+    And the order book should have the following volumes for market "ETH2/MAR22":
+      | side | price    | volume |
+      | sell | 1109     | 90173  |
+      | buy  | 901      | 0      |
+      | buy  | 900      | 111113 |
 
 
     # at this point what's left on the book is the buy @ 900 and sell @ 1109
@@ -183,6 +188,13 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
     
+    And the order book should have the following volumes for market "ETH2/MAR22":
+      | side | price    | volume |
+      | sell | 1109     | 90173  |
+      | buy  | 901      | 0      |
+      | buy  | 900      | 111114 |
+
+
     And the traders should have the following margin levels:
       | trader    | market id  | maintenance | search   | initial  | release  |
       | lp1       | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
@@ -190,27 +202,28 @@ Feature: Test margin for lp near price monitoring boundaries
     # now we place an order which makes the best bid 901. 
     Then the traders place the following orders:
        | trader  | market id  | side  | volume | price | resulting trades   | type       | tif     | reference  |
-       | trader1 | ETH2/MAR22 | buy   | 1      | 950   | 0                 | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
+       | trader1 | ETH2/MAR22 | buy   | 1      | 901   | 0                 | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
     
+    And the market data for the market "ETH2/MAR22" should be:
+       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
+       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 0       | 10            |
+    
+
     # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
     # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
     # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
-    
+
+    Then the order book should have the following volumes for market "ETH2/MAR22":
+      | side | price    | volume |
+      | sell | 1109     | 1      |
+      | buy  | 901      | 1      |
+      | buy  | 900      | 2      |
+      | buy  | 899      | 0      |
+
+
     And the traders should have the following margin levels:
       | trader    | market id  | maintenance | search   | initial  | release  |
       | lp1       | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
 
-
-    Then the traders place the following orders:
-       | trader  | market id  | side  | volume | price | resulting trades   | type       | tif     | reference  |
-       | trader2 | ETH2/MAR22 | sell   | 1      | 960   | 0                 | TYPE_LIMIT | TIF_GTC | sell-ref-4  |
-    
-    # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
-    # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
-    # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
-    
-    And the traders should have the following margin levels:
-      | trader    | market id  | maintenance | search   | initial  | release  |
-      | lp1       | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
 
     
