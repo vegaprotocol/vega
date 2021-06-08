@@ -123,7 +123,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	var oldOrder *types.Order
 
 	for idx, priceLevel := range s.levels {
-		if priceLevel.price == orderAmend.Price {
+		if priceLevel.price.EQ(orderAmend.Price) {
 			priceLevelIndex = idx
 			for j, order := range priceLevel.orders {
 				if order.Id == orderAmend.Id {
