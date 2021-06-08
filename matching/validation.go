@@ -4,6 +4,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 const minOrderIDLen = 22
@@ -11,6 +12,9 @@ const maxOrderIDLen = 22
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "validateOrder")
+	if orderMessage.Price == nil {
+		orderMessage.Price = num.NewUint(0)
+	}
 	if orderMessage.MarketId != b.marketID {
 		b.log.Error("Market ID mismatch",
 			logging.String("market", orderMessage.MarketId),
