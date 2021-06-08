@@ -659,8 +659,8 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 type MarketPos struct {
 	size, buy, sell int64
 	party           string
-	price           uint64
-	vwBuy, vwSell   uint64
+	price           *num.Uint
+	vwBuy, vwSell   *num.Uint
 }
 
 func (m MarketPos) Party() string {
@@ -679,16 +679,25 @@ func (m MarketPos) Sell() int64 {
 	return m.sell
 }
 
-func (m MarketPos) Price() uint64 {
-	return m.price
+func (m MarketPos) Price() *num.Uint {
+	if m.price != nil {
+		return m.price
+	}
+	return num.NewUint(0)
 }
 
-func (m MarketPos) VWBuy() uint64 {
-	return m.vwBuy
+func (m MarketPos) VWBuy() *num.Uint {
+	if m.vwBuy != nil {
+		return m.vwBuy
+	}
+	return num.NewUint(0)
 }
 
-func (m MarketPos) VWSell() uint64 {
-	return m.vwSell
+func (m MarketPos) VWSell() *num.Uint {
+	if m.vwSell != nil {
+		return m.vwSell
+	}
+	return num.NewUint(0)
 }
 
 func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
