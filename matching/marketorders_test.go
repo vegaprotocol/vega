@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -58,7 +59,7 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        6,
 		Remaining:   6,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -99,7 +100,7 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        6,
 		Remaining:   6,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
