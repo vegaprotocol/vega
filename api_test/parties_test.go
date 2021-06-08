@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -38,8 +39,14 @@ func TestParties(t *testing.T) {
 	partyID := "c1f55d6be5dddbbff20312e1103a6f4b86ff4a798b74d7e9c980f98fb6747c11"
 
 	resp, err := client.Parties(ctx, &apipb.PartiesRequest{})
+	require.NotNil(t, resp)
+	require.NoError(t, err)
 
-	assert.NoError(t, err)
-	assert.Equal(t, "network", resp.Parties[0].Id)
-	assert.Equal(t, partyID, resp.Parties[1].Id)
+	sortedParties := resp.Parties
+	sort.Slice(sortedParties, func(i, j int) bool {
+		return sortedParties[i].Id > sortedParties[j].Id
+	})
+
+	assert.Equal(t, "network", sortedParties[0].Id)
+	assert.Equal(t, partyID, sortedParties[1].Id)
 }
