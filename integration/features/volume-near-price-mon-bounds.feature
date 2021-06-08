@@ -201,4 +201,16 @@ Feature: Test margin for lp near price monitoring boundaries
       | lp1       | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
 
 
+    Then the traders place the following orders:
+       | trader  | market id  | side  | volume | price | resulting trades   | type       | tif     | reference  |
+       | trader2 | ETH2/MAR22 | sell   | 1      | 960   | 0                 | TYPE_LIMIT | TIF_GTC | sell-ref-4  |
+    
+    # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
+    # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
+    # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
+    
+    And the traders should have the following margin levels:
+      | trader    | market id  | maintenance | search   | initial  | release  |
+      | lp1       | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
+
     
