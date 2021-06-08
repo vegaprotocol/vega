@@ -124,9 +124,7 @@ func maybeError(err error, format string, a ...interface{}) error {
 	if err != nil {
 		format = format + ": %w"
 		args := []interface{}{}
-		for _, v := range a {
-			args = append(args, v)
-		}
+		args = append(args, a...)
 		args = append(args, err)
 		return fmt.Errorf(format, args...)
 	}
