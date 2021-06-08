@@ -28,12 +28,16 @@ type OrderBookSide struct {
 }
 
 func (s *OrderBookSide) Hash() []byte {
-	output := make([]byte, len(s.levels)*16)
+	// 32 num.Uint.Bytes() for price + 8 for volume
+	output := make([]byte, len(s.levels)*40)
 	var i int
 	for _, l := range s.levels {
 		// FIXME(): change that to use the full price
-		binary.BigEndian.PutUint64(output[i:], l.price.Uint64())
-		i += 8
+		// Data is already coming as big endian out of
+		// Uint.Bytes()
+		price := l.price.Bytes()
+		copy(output[i:], price[:])
+		i += 32
 		binary.BigEndian.PutUint64(output[i:], l.volume)
 		i += 8
 	}

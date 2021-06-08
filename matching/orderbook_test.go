@@ -124,7 +124,7 @@ func TestHash(t *testing.T) {
 
 	hash := book.ob.Hash()
 	require.Equal(t,
-		"ff7190c637406cf6907a73f8eab20c0465e3ee0f471ca95f739aa5f4e4192a8e",
+		"fc0073b33273253dd021d4fdd330e00c32c8b484c8bb484abac92acfb9d575bf",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)

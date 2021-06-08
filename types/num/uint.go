@@ -256,3 +256,10 @@ func (u Uint) String() string {
 func (u Uint) Format(s fmt.State, ch rune) {
 	u.u.Format(s, ch)
 }
+
+// Bytes return the internal representation
+// of the Uint as [32]bytes, BigEndian encoded
+// array
+func (u Uint) Bytes() [32]byte {
+	return u.u.Bytes32()
+}
