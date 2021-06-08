@@ -25,6 +25,7 @@ type MarketPosition struct {
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(order *types.Order) {
+
 	if order.Side == types.Side_SIDE_BUY {
 		// calculate vwBuyPrice: total worth of orders divided by total size
 		if buyVol := uint64(p.buy) + order.Remaining; buyVol != 0 {
@@ -33,6 +34,9 @@ func (p *MarketPosition) RegisterOrder(order *types.Order) {
 				b num.Uint
 				c num.Uint
 			)
+			if p.vwBuyPrice == nil {
+				p.vwBuyPrice = num.NewUint(0)
+			}
 			// (p.vwBuyPrice*uint64(p.buy) + order.Price*order.Remaining) / buyVol
 			a.Mul(p.vwBuyPrice, num.NewUint(uint64(p.buy)))
 			b.Mul(order.Price, num.NewUint(order.Remaining))
@@ -51,6 +55,9 @@ func (p *MarketPosition) RegisterOrder(order *types.Order) {
 			b num.Uint
 			c num.Uint
 		)
+		if p.vwSellPrice == nil {
+			p.vwSellPrice = num.NewUint(0)
+		}
 		// (p.vwSellPrice*uint64(p.sell) + order.Price*order.Remaining) / sellVol
 		a.Mul(p.vwSellPrice, num.NewUint(uint64(p.sell)))
 		b.Mul(order.Price, num.NewUint(order.Remaining))
@@ -196,15 +203,24 @@ func (p MarketPosition) Party() string {
 
 // Price returns the current price for this position
 func (p MarketPosition) Price() *num.Uint {
-	return p.price.Clone()
+	if p.price != nil {
+		return p.price.Clone()
+	}
+	return num.NewUint(0)
 }
 
 // VWBuy - get volume weighted buy price for unmatched buy orders
 func (p MarketPosition) VWBuy() *num.Uint {
-	return p.vwBuyPrice.Clone()
+	if p.vwBuyPrice != nil {
+		return p.vwBuyPrice.Clone()
+	}
+	return num.NewUint(0)
 }
 
 // VWSell - get volume weighted sell price for unmatched sell orders
 func (p MarketPosition) VWSell() *num.Uint {
-	return p.vwSellPrice.Clone()
+	if p.vwSellPrice != nil {
+		return p.vwSellPrice.Clone()
+	}
+	return num.NewUint(0)
 }
