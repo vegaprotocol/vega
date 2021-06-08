@@ -2,6 +2,7 @@ package events
 
 import (
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // MarketPosition is an event with a change to a position.
@@ -10,9 +11,9 @@ type MarketPosition interface {
 	Size() int64
 	Buy() int64
 	Sell() int64
-	Price() uint64
-	VWBuy() uint64
-	VWSell() uint64
+	Price() *num.Uint
+	VWBuy() *num.Uint
+	VWSell() *num.Uint
 }
 
 // TradeSettlement Part of the SettlePosition interface -> traces trades as they happened
