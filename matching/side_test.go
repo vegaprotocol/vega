@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +25,7 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 		MarketId:    "testmarket",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -38,7 +39,7 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 		MarketId:    "testmarket",
 		PartyId:     "C",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -58,60 +59,60 @@ func TestMemoryAllocationGetPriceLevelReturnAPriceLevelIfItAlreadyExists(t *test
 	// test for a sell side
 	side := getTestSide(types.Side_SIDE_SELL)
 	assert.Len(t, side.levels, 0)
-	pl := side.getPriceLevel(100)
+	pl := side.getPriceLevel(num.NewUint(100))
 	assert.Len(t, side.levels, 1)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(101)
+	pl = side.getPriceLevel(num.NewUint(101))
 	assert.Len(t, side.levels, 2)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(102)
+	pl = side.getPriceLevel(num.NewUint(102))
 	assert.Len(t, side.levels, 3)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(103)
+	pl = side.getPriceLevel(num.NewUint(103))
 	assert.Len(t, side.levels, 4)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(104)
+	pl = side.getPriceLevel(num.NewUint(104))
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
 
 	// get existing one in bounds now
-	pl = side.getPriceLevel(102)
+	pl = side.getPriceLevel(num.NewUint(102))
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(100)
+	pl = side.getPriceLevel(num.NewUint(100))
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(104)
+	pl = side.getPriceLevel(num.NewUint(104))
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
 
 	// test for a buy side
 	side = getTestSide(types.Side_SIDE_BUY)
 	assert.Len(t, side.levels, 0)
-	pl = side.getPriceLevel(100)
+	pl = side.getPriceLevel(num.NewUint(100))
 	assert.Len(t, side.levels, 1)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(101)
+	pl = side.getPriceLevel(num.NewUint(101))
 	assert.Len(t, side.levels, 2)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(102)
+	pl = side.getPriceLevel(num.NewUint(102))
 	assert.Len(t, side.levels, 3)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(103)
+	pl = side.getPriceLevel(num.NewUint(103))
 	assert.Len(t, side.levels, 4)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(104)
+	pl = side.getPriceLevel(num.NewUint(104))
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
 
 	// get existing one in bounds now
-	pl = side.getPriceLevel(102)
+	pl = side.getPriceLevel(num.NewUint(102))
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(100)
+	pl = side.getPriceLevel(num.NewUint(100))
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
-	pl = side.getPriceLevel(104)
+	pl = side.getPriceLevel(num.NewUint(104))
 	assert.Len(t, side.levels, 5)
 	assert.NotNil(t, pl)
 }
@@ -123,7 +124,7 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		MarketId:    "testmarket",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -137,7 +138,7 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		MarketId:    "testmarket",
 		PartyId:     "C",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -152,7 +153,7 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 		MarketId:    "testmarket",
 		PartyId:     "X",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -185,7 +186,7 @@ func getPopulatedTestSide(side types.Side) *OrderBookSide {
 			MarketId:    "testmarket",
 			PartyId:     "A",
 			Side:        side,
-			Price:       order.Price,
+			Price:       num.NewUint(order.Price),
 			Size:        order.Size,
 			Remaining:   order.Size,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -221,7 +222,7 @@ func getPopulatedTestSideWithPegs(side types.Side) *OrderBookSide {
 			MarketId:    "testmarket",
 			PartyId:     "A",
 			Side:        side,
-			Price:       order.Price,
+			Price:       num.NewUint(order.Price),
 			Size:        order.Size,
 			Remaining:   order.Size,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -261,7 +262,7 @@ func getPopulatedTestSideWithOnlyPegs(side types.Side) *OrderBookSide {
 			MarketId:    "testmarket",
 			PartyId:     "A",
 			Side:        side,
-			Price:       order.Price,
+			Price:       num.NewUint(order.Price),
 			Size:        order.Size,
 			Remaining:   order.Size,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -286,7 +287,7 @@ func TestExtractOrdersFullLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders, err := side.ExtractOrders(100, 3)
+	orders, err := side.ExtractOrders(num.NewUint(100), 3)
 	assert.NoError(t, err)
 	assert.Len(t, side.levels, 1)
 	assert.Len(t, orders, 3)
@@ -298,7 +299,7 @@ func TestExtractOrdersPartialLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders, err := side.ExtractOrders(100, 2)
+	orders, err := side.ExtractOrders(num.NewUint(100), 2)
 	assert.NoError(t, err)
 	assert.Len(t, side.levels, 2)
 	assert.Len(t, orders, 2)
@@ -310,7 +311,7 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders, err := side.ExtractOrders(101, 5)
+	orders, err := side.ExtractOrders(num.NewUint(101), 5)
 	assert.NoError(t, err)
 	assert.Len(t, side.levels, 1)
 	assert.Len(t, orders, 5)
@@ -320,11 +321,11 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 func TestExtractOrdersWrongVolume(t *testing.T) {
 	// Attempt to extract more volume than we have on the book
 	side := getPopulatedTestSide(types.Side_SIDE_SELL)
-	assert.Panics(t, func() { side.ExtractOrders(101, 30) })
+	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(101), 30) })
 
 	// Attempt to extract more than we have at this price level
 	side = getPopulatedTestSide(types.Side_SIDE_SELL)
-	assert.Panics(t, func() { side.ExtractOrders(100, 4) })
+	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(100), 4) })
 }
 
 func TestBestStatic(t *testing.T) {
@@ -362,15 +363,15 @@ func TestGetPriceLevelIfExists(t *testing.T) {
 	sellSide := getPopulatedTestSideWithPegs(types.Side_SIDE_SELL)
 
 	// Check we can get valid price levels
-	bpl := buySide.getPriceLevelIfExists(100)
+	bpl := buySide.getPriceLevelIfExists(num.NewUint(100))
 	assert.NotNil(t, bpl)
-	spl := sellSide.getPriceLevelIfExists(100)
+	spl := sellSide.getPriceLevelIfExists(num.NewUint(100))
 	assert.NotNil(t, spl)
 
 	// Now try to get a level that does not exist
-	bpl = buySide.getPriceLevelIfExists(200)
+	bpl = buySide.getPriceLevelIfExists(num.NewUint(200))
 	assert.Nil(t, bpl)
-	spl = sellSide.getPriceLevelIfExists(200)
+	spl = sellSide.getPriceLevelIfExists(num.NewUint(200))
 	assert.Nil(t, spl)
 }
 
@@ -379,20 +380,20 @@ func TestGetVolume(t *testing.T) {
 	sellSide := getPopulatedTestSideWithPegs(types.Side_SIDE_SELL)
 
 	// Actual levels
-	volume, err := buySide.GetVolume(101)
+	volume, err := buySide.GetVolume(num.NewUint(101))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, volume)
 
-	volume, err = sellSide.GetVolume(101)
+	volume, err = sellSide.GetVolume(num.NewUint(101))
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, volume)
 
 	// Invalid levels
-	volume, err = buySide.GetVolume(200)
+	volume, err = buySide.GetVolume(num.NewUint(200))
 	assert.Error(t, err)
 	assert.EqualValues(t, 0, volume)
 
-	volume, err = sellSide.GetVolume(200)
+	volume, err = sellSide.GetVolume(num.NewUint(200))
 	assert.Error(t, err)
 	assert.EqualValues(t, 0, volume)
 

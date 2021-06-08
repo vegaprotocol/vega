@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +18,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        5,
 			Remaining:   5,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -28,7 +29,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_SELL,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        5,
 			Remaining:   5,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -39,7 +40,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "C",
 			Side:        types.Side_SIDE_BUY,
-			Price:       150,
+			Price:       num.NewUint(150),
 			Size:        2,
 			Remaining:   2,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -50,7 +51,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "D",
 			Side:        types.Side_SIDE_BUY,
-			Price:       150,
+			Price:       num.NewUint(150),
 			Size:        2,
 			Remaining:   2,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -61,7 +62,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "E",
 			Side:        types.Side_SIDE_SELL,
-			Price:       150,
+			Price:       num.NewUint(150),
 			Size:        2,
 			Remaining:   2,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -72,7 +73,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "F",
 			Side:        types.Side_SIDE_BUY,
-			Price:       150,
+			Price:       num.NewUint(150),
 			Size:        2,
 			Remaining:   2,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -83,7 +84,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "G",
 			Side:        types.Side_SIDE_SELL,
-			Price:       150,
+			Price:       num.NewUint(150),
 			Size:        2,
 			Remaining:   2,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -94,7 +95,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       120,
+			Price:       num.NewUint(120),
 			Size:        33,
 			Remaining:   33,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,

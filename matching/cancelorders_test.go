@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +17,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -31,7 +32,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -52,7 +53,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -67,7 +68,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 		MarketId:    "incorrectMarket", // Invalid, must match original
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -88,7 +89,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -103,7 +104,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL, // Invalid, must match original
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -124,7 +125,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -139,7 +140,7 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       101, // Invalid, must match original
+		Price:       num.NewUint(101), // Invalid, must match original
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -160,7 +161,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -175,7 +176,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		MarketId:    market,                        // Must match
 		PartyId:     "B",                           // Does not matter
 		Side:        types.Side_SIDE_BUY,           // Must match
-		Price:       100,                           // Must match
+		Price:       num.NewUint(100),              // Must match
 		Size:        10,                            // Does not matter
 		Remaining:   10,                            // Does not matter
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC, // Does not matter
