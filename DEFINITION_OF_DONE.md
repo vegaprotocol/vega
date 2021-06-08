@@ -31,12 +31,12 @@ All this helps raise the confidence a team feels in delivering valuable software
 
 **The Very Basic Basics**
 
-- Implementation peer reviewed or pair-programmed
+- Implementation peer reviewed
 - All Acceptance Criteria confirmed to be met by Product Owner
 - Unit tests written, running and passing
-- No known defects
+- No known or undocumented defects
 - Code integrated (merged)
-- User Guide (customer documentation) updated or input provided to others?
+- API changes documented
 
 **Code Quality**
 
@@ -55,12 +55,12 @@ All this helps raise the confidence a team feels in delivering valuable software
 
 **Functional Regression Tests**
 
-- Every item in Acceptance Criteria covered by at least one acceptance test?
-- Unit tests passing
-- Integration tests passing
-- Functional or system tests passing
-- Acceptance (feature) tests passing
-- Tests executed on all supported platforms?
+- Every item in Acceptance Criteria covered by at least one acceptance test
+- Unit tests passing (*_test.go files within the package)
+- Integration tests passing (feature tests in the core repo)
+- System tests passing (API tests covering mostly what we do with integration tests + API)
+- Acceptance (feature) tests passing (e2e/black-box testing)
+- Tests executed on all supported platforms
 
 **For all automated tests:**
 
