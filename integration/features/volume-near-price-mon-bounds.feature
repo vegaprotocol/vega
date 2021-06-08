@@ -125,7 +125,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | 0.004     | 0.001              | 0.3           |
     And the price monitoring updated every "1" seconds named "price-monitoring-2":
       | horizon | probability  | auction extension |
-      | 43200   | 0.99      | 300               |
+      | 43200   | 0.982      | 300                 |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 2022-03-31T23:59:59Z |
@@ -147,7 +147,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | trader1 | ETH2/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
-      | trader2 | ETH2/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
+      | trader2 | ETH2/MAR22 | sell | 1      | 1109  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | trader2 | ETH2/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
       
     When the opening auction period ends for market "ETH2/MAR22"
@@ -160,7 +160,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
-       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 900       | 1100      | 51009        | 10             | 10            |
+       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 51009        | 10             | 10            |
 
 
     # at this point what's left on the book is the buy @ 900 and sell @ 1100
