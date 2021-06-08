@@ -12,6 +12,7 @@ import (
 	pb "code.vegaprotocol.io/vega/proto"
 	apipb "code.vegaprotocol.io/vega/proto/api"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TestObserveTransferResponses(t *testing.T) {
@@ -38,7 +39,7 @@ func TestObserveTransferResponses(t *testing.T) {
 				Balances:  resp.Balances,
 			})
 		}
-		e := events.NewTransferResponse(ctx, responses)
+		e := events.NewTransferResponse(ctx, types.TransferResponsesFromProto(responses))
 		return e, nil
 	}, "transfer-responses-events.golden")
 

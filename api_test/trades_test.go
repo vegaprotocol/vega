@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/events"
-	pb "code.vegaprotocol.io/vega/proto"
 	apipb "code.vegaprotocol.io/vega/proto/api"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TestGetByMarket(t *testing.T) {
@@ -23,23 +23,7 @@ func TestGetByMarket(t *testing.T) {
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		trade := be.GetTrade()
 		require.NotNil(t, trade)
-		e := events.NewTradeEvent(ctx, pb.Trade{
-			Id:                 trade.Id,
-			MarketId:           trade.MarketId,
-			Price:              trade.Price,
-			Size:               trade.Size,
-			Buyer:              trade.Buyer,
-			Seller:             trade.Seller,
-			Aggressor:          trade.Aggressor,
-			BuyOrder:           trade.BuyOrder,
-			SellOrder:          trade.SellOrder,
-			Timestamp:          trade.Timestamp,
-			Type:               trade.Type,
-			BuyerFee:           trade.BuyerFee,
-			SellerFee:          trade.SellerFee,
-			BuyerAuctionBatch:  trade.BuyerAuctionBatch,
-			SellerAuctionBatch: trade.SellerAuctionBatch,
-		})
+		e := events.NewTradeEvent(ctx, *types.TradeFromProto(trade))
 		return e, nil
 	}, "trades-events.golden")
 

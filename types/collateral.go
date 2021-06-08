@@ -45,6 +45,17 @@ func (a Accounts) IntoProto() []*proto.Account {
 	return out
 }
 
+func AccountFromProto(a *proto.Account) *Account {
+	return &Account{
+		Id:       a.Id,
+		Owner:    a.Owner,
+		Balance:  a.Balance,
+		Asset:    a.Asset,
+		MarketId: a.MarketId,
+		Type:     a.Type,
+	}
+}
+
 type TransferRequest struct {
 	FromAccount []*Account
 	ToAccount   []*Account
@@ -75,6 +86,21 @@ func (t *TransferResponse) IntoProto() *proto.TransferResponse {
 		Transfers: LedgerEntries(t.Transfers).IntoProto(),
 		Balances:  TransferBalances(t.Balances).IntoProto(),
 	}
+}
+
+func TransferResponseFromProto(t *proto.TransferResponse) *TransferResponse {
+	return &TransferResponse{
+		Transfers: LedgerEntriesFromProto(t.Transfers),
+		Balances:  TransferBalancesFromProto(t.Balances),
+	}
+}
+
+func TransferResponsesFromProto(ts []*proto.TransferResponse) []*TransferResponse {
+	out := make([]*TransferResponse, 0, len(ts))
+	for _, v := range ts {
+		out = append(out, TransferResponseFromProto(v))
+	}
+	return out
 }
 
 type TransferResponses []*TransferResponse
@@ -113,6 +139,25 @@ func (a TransferBalances) IntoProto() []*proto.TransferBalance {
 	return out
 }
 
+func TransferBalanceFromProto(t *proto.TransferBalance) *TransferBalance {
+	var acc *Account
+	if t.Account != nil {
+		acc = AccountFromProto(t.Account)
+	}
+	return &TransferBalance{
+		Account: acc,
+		Balance: t.Balance,
+	}
+}
+
+func TransferBalancesFromProto(ts []*proto.TransferBalance) []*TransferBalance {
+	out := make([]*TransferBalance, 0, len(ts))
+	for _, v := range ts {
+		out = append(out, TransferBalanceFromProto(v))
+	}
+	return out
+}
+
 type LedgerEntry struct {
 	FromAccount string
 	ToAccount   string
@@ -139,6 +184,25 @@ func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
 	out := make([]*proto.LedgerEntry, 0, len(a))
 	for _, v := range a {
 		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
+func LedgerEntryFromProto(l *proto.LedgerEntry) *LedgerEntry {
+	return &LedgerEntry{
+		FromAccount: l.FromAccount,
+		ToAccount:   l.ToAccount,
+		Amount:      l.Amount,
+		Reference:   l.Reference,
+		Type:        l.Type,
+		Timestamp:   l.Timestamp,
+	}
+}
+
+func LedgerEntriesFromProto(ls []*proto.LedgerEntry) []*LedgerEntry {
+	out := make([]*LedgerEntry, 0, len(ls))
+	for _, v := range ls {
+		out = append(out, LedgerEntryFromProto(v))
 	}
 	return out
 }
