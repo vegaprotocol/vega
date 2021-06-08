@@ -4,7 +4,7 @@ func (b BuiltinAsset) DeepClone() *BuiltinAsset {
 	return &b
 }
 
-func (a AssetSource_BuiltinAsset) DeepClone() *AssetSource_BuiltinAsset {
+func (a AssetDetails_BuiltinAsset) DeepClone() *AssetDetails_BuiltinAsset {
 	if a.BuiltinAsset != nil {
 		a.BuiltinAsset = a.BuiltinAsset.DeepClone()
 	}
@@ -15,26 +15,26 @@ func (e ERC20) DeepClone() *ERC20 {
 	return &e
 }
 
-func (a AssetSource_Erc20) DeepClone() *AssetSource_Erc20 {
+func (a AssetDetails_Erc20) DeepClone() *AssetDetails_Erc20 {
 	if a.Erc20 != nil {
 		a.Erc20 = a.Erc20.DeepClone()
 	}
 	return &a
 }
 
-func (a AssetSource) DeepClone() *AssetSource {
+func (a AssetDetails) DeepClone() *AssetDetails {
 	switch src := a.Source.(type) {
-	case *AssetSource_BuiltinAsset:
+	case *AssetDetails_BuiltinAsset:
 		a.Source = src.DeepClone()
-	case *AssetSource_Erc20:
+	case *AssetDetails_Erc20:
 		a.Source = src.DeepClone()
 	}
 	return &a
 }
 
 func (a Asset) DeepClone() *Asset {
-	if a.Source != nil {
-		a.Source = a.Source.DeepClone()
+	if a.Details != nil {
+		a.Details = a.Details.DeepClone()
 	}
 	return &a
 }

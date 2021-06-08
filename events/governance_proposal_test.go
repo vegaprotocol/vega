@@ -24,8 +24,8 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 			ValidationTimestamp: 4000000,
 			Change: &proto.ProposalTerms_NewAsset{
 				NewAsset: &proto.NewAsset{
-					Changes: &proto.AssetSource{
-						Source: &proto.AssetSource_Erc20{
+					Changes: &proto.AssetDetails{
+						Source: &proto.AssetDetails_Erc20{
 							Erc20: &proto.ERC20{
 								ContractAddress: "Address",
 							},
@@ -50,7 +50,7 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	p.Terms.ValidationTimestamp = 777
 
 	na := p.Terms.Change.(*proto.ProposalTerms_NewAsset)
-	erc := na.NewAsset.Changes.Source.(*proto.AssetSource_Erc20)
+	erc := na.NewAsset.Changes.Source.(*proto.AssetDetails_Erc20)
 	erc.Erc20.ContractAddress = "Changed"
 
 	assert.NotEqual(t, p.Id, p2.Id)
@@ -66,6 +66,6 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	assert.NotEqual(t, term.ValidationTimestamp, term2.ValidationTimestamp)
 
 	na2 := p2.Terms.Change.(*proto.ProposalTerms_NewAsset)
-	erc2 := na2.NewAsset.Changes.Source.(*proto.AssetSource_Erc20)
+	erc2 := na2.NewAsset.Changes.Source.(*proto.AssetDetails_Erc20)
 	assert.NotEqual(t, erc.Erc20.ContractAddress, erc2.Erc20.ContractAddress)
 }

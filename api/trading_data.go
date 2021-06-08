@@ -340,8 +340,8 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 	var address string
 	for _, v := range assets.Assets {
 		if v.Id == withdrawal.Asset {
-			switch src := v.Source.Source.(type) {
-			case *types.AssetSource_Erc20:
+			switch src := v.Details.Source.(type) {
+			case *types.AssetDetails_Erc20:
 				address = src.Erc20.ContractAddress
 			default:
 				return nil, fmt.Errorf("invalid asset source")

@@ -29,22 +29,38 @@ func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *typ
 	return acc, nil
 }
 
+func (r myAssetResolver) Name(ctx context.Context, obj *types.Asset) (string, error) {
+	return obj.Details.Name, nil
+}
+
+func (r myAssetResolver) Symbol(ctx context.Context, obj *types.Asset) (string, error) {
+	return obj.Details.Symbol, nil
+}
+
+func (r myAssetResolver) TotalSupply(ctx context.Context, obj *types.Asset) (string, error) {
+	return obj.Details.TotalSupply, nil
+}
+
 func (r *myAssetResolver) Decimals(ctx context.Context, obj *types.Asset) (int, error) {
-	return int(obj.Decimals), nil
+	return int(obj.Details.Decimals), nil
+}
+
+func (r *myAssetResolver) MinLpStake(ctx context.Context, obj *types.Asset) (string, error) {
+	return obj.Details.MinLpStake, nil
 }
 
 func (r *myAssetResolver) Source(ctx context.Context, obj *types.Asset) (AssetSource, error) {
-	return AssetSourceFromProto(obj.Source)
+	return AssetSourceFromProto(obj.Details)
 }
 
-func AssetSourceFromProto(psource *types.AssetSource) (AssetSource, error) {
-	if psource == nil {
+func AssetSourceFromProto(pdetails *types.AssetDetails) (AssetSource, error) {
+	if pdetails == nil {
 		return nil, ErrNilAssetSource
 	}
-	switch asimpl := psource.Source.(type) {
-	case *types.AssetSource_BuiltinAsset:
+	switch asimpl := pdetails.Source.(type) {
+	case *types.AssetDetails_BuiltinAsset:
 		return BuiltinAssetFromProto(asimpl.BuiltinAsset), nil
-	case *types.AssetSource_Erc20:
+	case *types.AssetDetails_Erc20:
 		return ERC20FromProto(asimpl.Erc20), nil
 	default:
 		return nil, ErrUnimplementedAssetSource
@@ -53,10 +69,6 @@ func AssetSourceFromProto(psource *types.AssetSource) (AssetSource, error) {
 
 func BuiltinAssetFromProto(ba *types.BuiltinAsset) *BuiltinAsset {
 	return &BuiltinAsset{
-		Name:                ba.Name,
-		Symbol:              ba.Symbol,
-		TotalSupply:         ba.TotalSupply,
-		Decimals:            int(ba.Decimals),
 		MaxFaucetAmountMint: ba.MaxFaucetAmountMint,
 	}
 }

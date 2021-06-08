@@ -66,8 +66,24 @@ func verifyAssetTerms(r *reporter, prop *types.Proposal) {
 		return
 	}
 
+	if len(newAsset.Changes.Name) <= 0 {
+		r.Err("prop.terms.newAsset.changes.name is missing or empty")
+	}
+	if len(newAsset.Changes.Symbol) <= 0 {
+		r.Err("prop.terms.newAsset.changes.symbol is missing or empty")
+	}
+	if len(newAsset.Changes.TotalSupply) <= 0 {
+		r.Err("prop.terms.newAsset.changes.totalSupply is missing or empty")
+	}
+	if newAsset.Changes.Decimals == 0 {
+		r.Err("prop.terms.newAsset.changes.decimals is missing or empty")
+	}
+	if len(newAsset.Changes.MinLpStake) <= 0 {
+		r.Err("prop.terms.newAsset.changes.minLpStake is missing or empty")
+	}
+
 	switch source := newAsset.Changes.Source.(type) {
-	case *types.AssetSource_Erc20:
+	case *types.AssetDetails_Erc20:
 		contractAddress := source.Erc20.GetContractAddress()
 		if len(contractAddress) <= 0 {
 			r.Err("prop.terms.newAsset.changes.erc20.contractAddress is missing")

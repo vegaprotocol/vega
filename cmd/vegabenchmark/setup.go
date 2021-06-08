@@ -203,20 +203,9 @@ func uponGenesis(
 		return nil
 	}
 
-	assetSrcs := map[string]types.AssetSource{}
-	for k, v := range state.Builtins {
-		v := v
-		assetSrc := types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &v,
-			},
-		}
-		assetSrcs[k] = assetSrc
-	}
-
-	for k, v := range assetSrcs {
+	for k, v := range state {
 		err := loadAsset(
-			k, &v,
+			k, v,
 			assetSvc, collateral,
 		)
 		if err != nil {
@@ -253,7 +242,7 @@ func uponGenesis(
 
 func loadAsset(
 	id string,
-	v *types.AssetSource,
+	v *types.AssetDetails,
 	assets *assets.Service,
 	collateral *collateral.Engine,
 ) error {

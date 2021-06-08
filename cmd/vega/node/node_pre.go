@@ -254,28 +254,8 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 		return nil
 	}
 
-	assetSrcs := map[string]proto.AssetSource{}
-	for k, v := range state.Builtins {
-		v := v
-		assetSrc := proto.AssetSource{
-			Source: &proto.AssetSource_BuiltinAsset{
-				BuiltinAsset: &v,
-			},
-		}
-		assetSrcs[k] = assetSrc
-	}
-	for k, v := range state.ERC20 {
-		v := v
-		assetSrc := proto.AssetSource{
-			Source: &proto.AssetSource_Erc20{
-				Erc20: &v,
-			},
-		}
-		assetSrcs[k] = assetSrc
-	}
-
-	for k, v := range assetSrcs {
-		err := l.loadAsset(k, &v)
+	for k, v := range state {
+		err := l.loadAsset(k, v)
 		if err != nil {
 			return err
 		}
@@ -303,7 +283,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 	return nil
 }
 
-func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
+func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	aid, err := l.assets.NewAsset(id, v)
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
@@ -329,6 +309,9 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 		return fmt.Errorf("unable to instantiate new asset err=%v, asset-source=%s", err, v.String())
 	}
 	if err := l.assets.Enable(aid); err != nil {
+		l.Log.Error("invalid genesis asset",
+			logging.String("asset-details", v.String()),
+			logging.Error(err))
 		return fmt.Errorf("unable to enable asset: %v", err)
 	}
 
@@ -344,7 +327,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetSource) error {
 	// here we replace the mkts assets symbols with ids
 	for _, v := range l.mktscfg {
 		sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
-		if sym == assetD.Symbol {
+		if sym == assetD.Details.Symbol {
 			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.Id
 		}
 	}

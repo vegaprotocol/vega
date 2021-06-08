@@ -106,20 +106,20 @@ func (s *Service) IsEnabled(assetID string) bool {
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
-func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
+func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (string, error) {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
-	switch assetSrcImpl := assetSrc.Source.(type) {
-	case *types.AssetSource_BuiltinAsset:
+	switch assetDetails.Source.(type) {
+	case *types.AssetDetails_BuiltinAsset:
 		s.pendingAssets[assetID] = &Asset{
-			builtin.New(assetID, assetSrcImpl.BuiltinAsset),
+			builtin.New(assetID, assetDetails),
 		}
-	case *types.AssetSource_Erc20:
+	case *types.AssetDetails_Erc20:
 		wal, ok := s.nw.Get(nodewallet.Ethereum)
 		if !ok {
 			return "", errors.New("missing wallet for ETH")
 		}
-		asset, err := erc20.New(assetID, assetSrcImpl.Erc20, wal)
+		asset, err := erc20.New(assetID, assetDetails, wal)
 		if err != nil {
 			return "", err
 		}

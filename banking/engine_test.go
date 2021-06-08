@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	testAsset = assets.NewAsset(builtin.New("VGT", &types.BuiltinAsset{
+	testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
 		Name:   "VEGA TOKEN",
 		Symbol: "VGT",
 	}))

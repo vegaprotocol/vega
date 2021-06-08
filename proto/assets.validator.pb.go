@@ -17,22 +17,22 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 func (this *Asset) Validate() error {
-	if this.Source != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Source); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Source", err)
+	if this.Details != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Details); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("Details", err)
 		}
 	}
 	return nil
 }
-func (this *AssetSource) Validate() error {
-	if oneOfNester, ok := this.GetSource().(*AssetSource_BuiltinAsset); ok {
+func (this *AssetDetails) Validate() error {
+	if oneOfNester, ok := this.GetSource().(*AssetDetails_BuiltinAsset); ok {
 		if oneOfNester.BuiltinAsset != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.BuiltinAsset); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("BuiltinAsset", err)
 			}
 		}
 	}
-	if oneOfNester, ok := this.GetSource().(*AssetSource_Erc20); ok {
+	if oneOfNester, ok := this.GetSource().(*AssetDetails_Erc20); ok {
 		if oneOfNester.Erc20 != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.Erc20); err != nil {
 				return github_com_mwitkow_go_proto_validators.FieldError("Erc20", err)

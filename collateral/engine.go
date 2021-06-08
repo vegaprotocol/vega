@@ -2111,7 +2111,7 @@ func (e *Engine) GetAssetTotalSupply(asset string) (uint64, error) {
 	// not checking for error, if we
 	// have this asset enabled already, total sypply field
 	// have been checked already
-	ttsuply, _ := strconv.ParseUint(asst.TotalSupply, 10, 64)
+	ttsuply, _ := strconv.ParseUint(asst.Details.TotalSupply, 10, 64)
 
 	return ttsuply, nil
 }

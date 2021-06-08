@@ -38,23 +38,20 @@ const MINMOVEDOWN = -500
 
 var defaultCollateralAssets = []types.Asset{
 	{
-		Id:     "ETH",
-		Symbol: "ETH",
+		Id: "ETH",
+		Details: &types.AssetDetails{
+			Symbol: "ETH",
+		},
 	},
 	{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
+		Id: "VOTE",
+		Details: &types.AssetDetails{
+			Name:        "VOTE",
+			Symbol:      "VOTE",
+			Decimals:    5,
+			TotalSupply: "1000",
+			Source: &types.AssetDetails_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},
 	},
@@ -248,27 +245,24 @@ func getTestMarket2(
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.Nil(t, err)
 	collateralEngine.EnableAsset(context.Background(), types.Asset{
-		Symbol: "ETH",
-		Id:     "ETH",
+		Id: "ETH",
+		Details: &types.AssetDetails{
+			Symbol: "ETH",
+		},
 	})
 
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker)
 
 	// add the token asset
 	tokAsset := types.Asset{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
+		Id: "VOTE",
+		Details: &types.AssetDetails{
+			Name:        "VOTE",
+			Symbol:      "VOTE",
+			Decimals:    5,
+			TotalSupply: "1000",
+			Source: &types.AssetDetails_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},
 	}

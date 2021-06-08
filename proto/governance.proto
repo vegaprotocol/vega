@@ -103,7 +103,7 @@ message UpdateNetworkParameter {
 // New asset on Vega
 message NewAsset {
   // The configuration of the new asset
-  AssetSource changes = 1 [(validator.field) = {msg_exists: true}];
+  AssetDetails changes = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Terms for a governance proposal on Vega
@@ -267,6 +267,8 @@ enum ProposalError {
   PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED = 31;
   // Proposal declined because the participation threshold was not reached
   PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED = 32;
+  // Asset proposal invalid asset details
+  PROPOSAL_ERROR_INVALID_ASSET_DETAILS = 33;
 }
 
 // Governance vote
