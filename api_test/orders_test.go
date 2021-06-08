@@ -3,6 +3,7 @@ package api_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,6 +27,8 @@ func TestGetByOrderID(t *testing.T) {
 		e := events.NewOrderEvent(ctx, types.OrderFromProto(order))
 		return e, nil
 	}, "orders-events.golden")
+
+	<-time.After(200 * time.Millisecond)
 
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)

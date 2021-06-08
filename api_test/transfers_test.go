@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,6 +43,8 @@ func TestObserveTransferResponses(t *testing.T) {
 		e := events.NewTransferResponse(ctx, types.TransferResponsesFromProto(responses))
 		return e, nil
 	}, "transfer-responses-events.golden")
+
+	<-time.After(200 * time.Millisecond)
 
 	// we only receive one response from the stream and assert it
 	var resp *apipb.TransferResponsesSubscribeResponse

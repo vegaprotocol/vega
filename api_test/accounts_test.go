@@ -3,6 +3,7 @@ package api_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,6 +36,8 @@ func TestGetPartyAccounts(t *testing.T) {
 		})
 		return e, nil
 	}, "account-events.golden")
+
+	<-time.After(200 * time.Millisecond)
 
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
