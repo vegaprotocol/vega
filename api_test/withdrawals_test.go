@@ -41,10 +41,14 @@ func TestWithdrawals(t *testing.T) {
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
-	withdrawalID := "6f9b102855efc7b2421df3de4007bd3c6b9fd237e0f9b9b18326800fd822184f"
+	withdrawalID := "af6e66ee1e1a643338f55b8dfe00129b09b926a997edddf1f10e76b31c65cdad"
+	withdrawalPartyID := "c5fdc709b3464ca10292437ce493dc0e497b2c3ea22a5fde714c4e487b93011d"
 
-	resp, err := client.Withdrawals(ctx, &apipb.WithdrawalsRequest{})
+	resp, err := client.Withdrawals(ctx, &apipb.WithdrawalsRequest{
+		PartyId: withdrawalPartyID,
+	})
 
 	assert.NoError(t, err)
 	assert.Equal(t, withdrawalID, resp.Withdrawals[0].Id)
+	assert.Equal(t, withdrawalPartyID, resp.Withdrawals[0].PartyId)
 }

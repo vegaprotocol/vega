@@ -191,9 +191,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
 
-	depositPlugin := plugins.NewDeposit(ctx)
-	withdrawalPlugin := plugins.NewWithdrawal(ctx)
-
 	eventBroker = broker.New(ctx)
 	eventBroker.SubscribeBatch(
 		accountSub,
@@ -204,8 +201,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		newMarketSub,
 		oracleService,
 		liquidityService,
-		depositPlugin,
-		withdrawalPlugin)
+		deposit,
+		withdrawal)
 
 	srv := api.NewGRPCServer(
 		logger,

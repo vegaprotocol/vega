@@ -34,15 +34,19 @@ func TestDeposits(t *testing.T) {
 			CreatedTimestamp:  deposit.CreatedTimestamp,
 		})
 		return e, nil
-	}, "oracle-spec-events.golden")
+	}, "deposit-events.golden")
 
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
-	depositID := "6f9b102855efc7b2421df3de4007bd3c6b9fd237e0f9b9b18326800fd822184f"
+	depositID := "af6e66ee1e1a643338f55b8dfe00129b09b926a997edddf1f10e76b31c65cdad"
+	depositPartyID := "c5fdc709b3464ca10292437ce493dc0e497b2c3ea22a5fde714c4e487b93011d"
 
-	resp, err := client.Deposits(ctx, &apipb.DepositsRequest{})
+	resp, err := client.Deposits(ctx, &apipb.DepositsRequest{
+		PartyId: depositPartyID,
+	})
 
 	assert.NoError(t, err)
 	assert.Equal(t, depositID, resp.Deposits[0].Id)
+	assert.Equal(t, depositPartyID, resp.Deposits[0].PartyId)
 }
