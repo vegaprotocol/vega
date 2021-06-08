@@ -342,11 +342,11 @@ func TestBestStatic(t *testing.T) {
 
 	price, err := side.BestStaticPrice()
 	assert.NoError(t, err)
-	assert.EqualValues(t, 101, price)
+	assert.EqualValues(t, 101, int(price.Uint64()))
 
 	price, volume, err := side.BestStaticPriceAndVolume()
 	assert.NoError(t, err)
-	assert.EqualValues(t, 101, price)
+	assert.EqualValues(t, 101, int(price.Uint64()))
 	assert.EqualValues(t, 1, volume)
 
 	// Book with only pegs
@@ -410,6 +410,7 @@ func TestFakeUncrossNormal(t *testing.T) {
 
 	order := types.Order{
 		Id:          "Id",
+		Price:       num.NewUint(0),
 		Side:        types.Side_SIDE_SELL,
 		Size:        5,
 		Remaining:   5,
@@ -428,6 +429,7 @@ func TestFakeUncrossSelfTrade(t *testing.T) {
 	order := types.Order{
 		Id:          "Id",
 		PartyId:     "A",
+		Price:       num.NewUint(0),
 		Side:        types.Side_SIDE_SELL,
 		Size:        5,
 		Remaining:   5,
@@ -445,6 +447,7 @@ func TestFakeUncrossNotEnoughVolume(t *testing.T) {
 
 	order := types.Order{
 		Id:          "Id",
+		Price:       num.NewUint(0),
 		Side:        types.Side_SIDE_SELL,
 		Size:        7,
 		Remaining:   7,

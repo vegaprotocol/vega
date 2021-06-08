@@ -19,6 +19,7 @@ func NewCachedOrderBook(
 ) *CachedOrderBook {
 	return &CachedOrderBook{
 		OrderBook: NewOrderBook(log, config, market, auction),
+		cache:     NewBookCache(),
 	}
 }
 

@@ -11,6 +11,14 @@ type BookCache struct {
 	indicativeUncrossingSide cachedSide
 }
 
+func NewBookCache() BookCache {
+	return BookCache{
+		indicativePrice: cachedUint{
+			value: num.NewUint(0),
+		},
+	}
+}
+
 type cachedUint struct {
 	valid bool
 	value *num.Uint

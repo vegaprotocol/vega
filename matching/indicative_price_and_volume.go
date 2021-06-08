@@ -127,7 +127,7 @@ func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price *num.Uint, volume
 	i := sort.Search(len(ipv.levels), func(i int) bool {
 		return ipv.levels[i].price.LTE(price)
 	})
-	if i < len(ipv.levels) && ipv.levels[i].price == price {
+	if i < len(ipv.levels) && ipv.levels[i].price.EQ(price) {
 		// we found the price level, let's add the volume there, and we are done
 		ipv.decrementLevelVolume(i, volume, side)
 	} else {

@@ -5,11 +5,12 @@ import (
 
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCachingValues(t *testing.T) {
-	cache := matching.BookCache{}
+	cache := matching.NewBookCache()
 
 	// by default all cache are invalid
 	_, priceOK := cache.GetIndicativePrice()
@@ -30,11 +31,11 @@ func TestCachingValues(t *testing.T) {
 	assert.False(t, sideOK)
 
 	// setting all of them make them all valid
-	cache.SetIndicativePrice(84)
+	cache.SetIndicativePrice(num.NewUint(84))
 	cache.SetIndicativeUncrossingSide(types.Side_SIDE_BUY)
 	price, priceOK := cache.GetIndicativePrice()
 	assert.True(t, priceOK)
-	assert.Equal(t, price, uint64(84))
+	assert.Equal(t, price.Uint64(), uint64(84))
 	vol, volOK = cache.GetIndicativeVolume()
 	assert.True(t, volOK)
 	assert.Equal(t, vol, uint64(42))
