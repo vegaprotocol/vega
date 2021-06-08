@@ -102,21 +102,21 @@ func (z *Uint) SubOverflow(x, y *Uint) (*Uint, bool) {
 	return z, ok
 }
 
-// Mul will substract y to x then store the result
-// into u
+// Mul will multiply x and y then store the result
+// into z
 // this is equivalent to:
 // `z = x * y`
-// u is returned for convenience, no
+// z is returned for convenience, no
 // new variable is created.
 func (z *Uint) Mul(x, y *Uint) *Uint {
 	z.u.Mul(&x.u, &y.u)
 	return z
 }
 
-// Div will substract y to x then store the result
+// Div will divide x by y then store the result
 // into u
 // this is equivalent to:
-// `z = x / y`
+// `u = x / y`
 // u is returned for convenience, no
 // new variable is created.
 func (u *Uint) Div(x, y *Uint) *Uint {
