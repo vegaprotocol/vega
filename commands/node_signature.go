@@ -11,6 +11,10 @@ func CheckNodeSignature(cmd *commandspb.NodeSignature) error {
 func checkNodeSignature(cmd *commandspb.NodeSignature) Errors {
 	errs := NewErrors()
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("node_signature", ErrIsRequired)
+	}
+
 	if len(cmd.Id) == 0 {
 		errs.AddForProperty("node_signature.id", ErrIsRequired)
 	}

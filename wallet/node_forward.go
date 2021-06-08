@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto/api"
-
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/cenkalti/backoff/v4"
 	"google.golang.org/grpc"
 )
@@ -51,6 +51,24 @@ func (n *nodeForward) Send(ctx context.Context, tx *SignedBundle, ty api.SubmitT
 				return err
 			}
 			n.log.Debug("response from SubmitTransaction", logging.Bool("success", resp.Success))
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfg.Retries),
+	)
+}
+
+func (n *nodeForward) SendTxV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error {
+	req := api.SubmitTransactionV2Request{
+		Tx:   tx,
+		Type: ty,
+	}
+	return backoff.Retry(
+		func() error {
+			resp, err := n.clt.SubmitTransactionV2(ctx, &req)
+			if err != nil {
+				return err
+			}
+			n.log.Debug("response from SubmitTransactionV2", logging.Bool("success", resp.Success))
 			return nil
 		},
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfg.Retries),

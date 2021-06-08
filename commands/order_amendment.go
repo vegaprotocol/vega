@@ -17,6 +17,10 @@ func checkOrderAmendment(cmd *commandspb.OrderAmendment) Errors {
 		isAmending bool
 	)
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("order_amendment", ErrIsRequired)
+	}
+
 	if len(cmd.OrderId) <= 0 {
 		errs.AddForProperty("order_amendment.order_id", ErrIsRequired)
 	}

@@ -83,7 +83,7 @@ func (w *Wallet) Algo() string {
 	return w.kp.Algorithm.Name()
 }
 
-func (w *Wallet) Version() uint64 {
+func (w *Wallet) Version() uint32 {
 	return w.kp.Algorithm.Version()
 }
 

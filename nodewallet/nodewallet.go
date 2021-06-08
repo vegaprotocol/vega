@@ -27,7 +27,7 @@ type Wallet interface {
 	Chain() string
 	Sign([]byte) ([]byte, error)
 	Algo() string
-	Version() uint64
+	Version() uint32
 	PubKeyOrAddress() []byte
 }
 

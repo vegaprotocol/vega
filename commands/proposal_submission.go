@@ -23,6 +23,10 @@ func CheckProposalSubmission(cmd *commandspb.ProposalSubmission) error {
 func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 	errs := NewErrors()
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("proposal_submission", ErrIsRequired)
+	}
+
 	if cmd.Terms == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms", ErrIsRequired)
 	}

@@ -27,6 +27,10 @@ func CheckLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmission) Errors {
 	var errs = NewErrors()
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("liquidity_provision_submission", ErrIsRequired)
+	}
+
 	if len(cmd.MarketId) <= 0 {
 		errs.AddForProperty("liquidity_provision_submission.market_id", ErrIsRequired)
 	}

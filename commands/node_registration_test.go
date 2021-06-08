@@ -9,10 +9,17 @@ import (
 )
 
 func TestCheckNodeRegistration(t *testing.T) {
+	t.Run("Submitting a nil command fails", testNilNodeRegistrationFails)
 	t.Run("Submitting a node registration without pub key fails", testNodeRegistrationWithoutPubKeyFails)
 	t.Run("Submitting a node registration with pub key succeeds", testNodeRegistrationWithPubKeySucceeds)
 	t.Run("Submitting a node registration without chain pub key fails", testNodeRegistrationWithoutChainPubKeyFails)
 	t.Run("Submitting a node registration with chain pub key succeeds", testNodeRegistrationWithChainPubKeySucceeds)
+}
+
+func testNilNodeRegistrationFails(t *testing.T) {
+	err := checkNodeRegistration(nil)
+
+	assert.Error(t, err)
 }
 
 func testNodeRegistrationWithoutPubKeyFails(t *testing.T) {

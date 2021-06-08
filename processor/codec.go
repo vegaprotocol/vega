@@ -17,6 +17,14 @@ type codec struct {
 // Decode takes a raw input from a Tendermint Tx and decodes into a vega Tx,
 // the decoding process involves a signature verification.
 func (c *codec) Decode(payload []byte) (abci.Tx, error) {
+	tx, err := DecodeTxV2(payload)
+	if err != nil {
+		return c.decodeV1(payload)
+	}
+	return tx, nil
+}
+
+func (c *codec) decodeV1(payload []byte) (abci.Tx, error) {
 	bundle := &types.SignedBundle{}
 	if err := proto.Unmarshal(payload, bundle); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal signed bundle: %w", err)

@@ -9,6 +9,10 @@ func CheckOracleDataSubmission(cmd *commandspb.OracleDataSubmission) error {
 func checkOracleDataSubmission(cmd *commandspb.OracleDataSubmission) Errors {
 	errs := NewErrors()
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("oracle_data_submission", ErrIsRequired)
+	}
+
 	if len(cmd.Payload) == 0 {
 		errs.AddForProperty("oracle_data_submission.payload", ErrIsRequired)
 	}
