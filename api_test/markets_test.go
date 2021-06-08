@@ -40,14 +40,28 @@ func TestMarkets_GetAll(t *testing.T) {
 		return e, nil
 	}, "markets-events.golden")
 
-	<-time.After(200 * time.Millisecond)
-
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
 	marketID := "a6f2c001f855f926b49bd43add22bc8bf619d569c3ef6fe442a3c31ffdc54fa5"
 
-	resp, err := client.Markets(ctx, &apipb.MarketsRequest{})
+	var resp *apipb.MarketsResponse
+	var err error
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(1 * time.Millisecond):
+			resp, err = client.Markets(ctx, &apipb.MarketsRequest{})
+			require.NotNil(t, resp)
+			require.NoError(t, err)
+			if len(resp.Markets) > 0 {
+				break loop
+			}
+		}
+	}
 
 	assert.NoError(t, err)
 	assert.Len(t, resp.Markets, 1)

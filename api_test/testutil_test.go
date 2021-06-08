@@ -55,7 +55,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const defaultTimout = 5 * time.Second
+const defaultTimout = 2 * time.Second
 
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
 // Any error will fail and terminate the test.

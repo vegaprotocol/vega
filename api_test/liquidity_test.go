@@ -41,18 +41,32 @@ func TestLiquidity_Get(t *testing.T) {
 		return e, nil
 	}, "liquidity-events.golden")
 
-	<-time.After(200 * time.Millisecond)
-
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
 	lpMmarketID := "076BB86A5AA41E3E"
 	lpPartyID := "0f3d86044f8e7efff27131227235fb6db82574e24f788c30723d67f888b51d61"
 
-	resp, err := client.LiquidityProvisions(ctx, &apipb.LiquidityProvisionsRequest{
-		Market: lpMmarketID,
-		Party:  lpPartyID,
-	})
+	var resp *apipb.LiquidityProvisionsResponse
+	var err error
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(1 * time.Millisecond):
+			resp, err = client.LiquidityProvisions(ctx, &apipb.LiquidityProvisionsRequest{
+				Market: lpMmarketID,
+				Party:  lpPartyID,
+			})
+			require.NotNil(t, resp)
+			require.NoError(t, err)
+			if len(resp.LiquidityProvisions) > 0 {
+				break loop
+			}
+		}
+	}
 
 	assert.NoError(t, err)
 	assert.Equal(t, lpMmarketID, resp.LiquidityProvisions[0].MarketId)

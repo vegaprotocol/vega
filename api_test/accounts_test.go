@@ -37,17 +37,31 @@ func TestGetPartyAccounts(t *testing.T) {
 		return e, nil
 	}, "account-events.golden")
 
-	<-time.After(200 * time.Millisecond)
-
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
 	partyID := "6fb72005cde8e239f8d3b08c5fbcec06f93bfb45e9013208f662954923343fba"
 
-	resp, err := client.PartyAccounts(ctx, &apipb.PartyAccountsRequest{
-		PartyId: partyID,
-		Type:    pb.AccountType_ACCOUNT_TYPE_GENERAL,
-	})
+	var resp *apipb.PartyAccountsResponse
+	var err error
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(1 * time.Millisecond):
+			resp, err = client.PartyAccounts(ctx, &apipb.PartyAccountsRequest{
+				PartyId: partyID,
+				Type:    pb.AccountType_ACCOUNT_TYPE_GENERAL,
+			})
+			require.NotNil(t, resp)
+			require.NoError(t, err)
+			if len(resp.Accounts) > 0 {
+				break loop
+			}
+		}
+	}
 
 	assert.NoError(t, err)
 	assert.Len(t, resp.Accounts, 1)

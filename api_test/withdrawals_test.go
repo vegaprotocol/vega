@@ -39,17 +39,31 @@ func TestWithdrawals(t *testing.T) {
 		return e, nil
 	}, "withdrawals-events.golden")
 
-	<-time.After(200 * time.Millisecond)
-
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
 	withdrawalID := "af6e66ee1e1a643338f55b8dfe00129b09b926a997edddf1f10e76b31c65cdad"
 	withdrawalPartyID := "c5fdc709b3464ca10292437ce493dc0e497b2c3ea22a5fde714c4e487b93011d"
 
-	resp, err := client.Withdrawals(ctx, &apipb.WithdrawalsRequest{
-		PartyId: withdrawalPartyID,
-	})
+	var resp *apipb.WithdrawalsResponse
+	var err error
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(1 * time.Millisecond):
+			resp, err = client.Withdrawals(ctx, &apipb.WithdrawalsRequest{
+				PartyId: withdrawalPartyID,
+			})
+			require.NotNil(t, resp)
+			require.NoError(t, err)
+			if len(resp.Withdrawals) > 0 {
+				break loop
+			}
+		}
+	}
 
 	assert.NoError(t, err)
 	assert.Equal(t, withdrawalID, resp.Withdrawals[0].Id)

@@ -28,18 +28,32 @@ func TestGetByMarket(t *testing.T) {
 		return e, nil
 	}, "trades-events.golden")
 
-	<-time.After(200 * time.Millisecond)
-
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
 	tradeID := "V0000030271-0001798304-0000000000"
 	tradeMarketID := "2839D9B2329C9E70"
 
-	resp, err := client.TradesByMarket(ctx, &apipb.TradesByMarketRequest{
-		MarketId:   tradeMarketID,
-		Pagination: nil,
-	})
+	var resp *apipb.TradesByMarketResponse
+	var err error
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(1 * time.Millisecond):
+			resp, err = client.TradesByMarket(ctx, &apipb.TradesByMarketRequest{
+				MarketId:   tradeMarketID,
+				Pagination: nil,
+			})
+			require.NotNil(t, resp)
+			require.NoError(t, err)
+			if len(resp.Trades) > 0 {
+				break loop
+			}
+		}
+	}
 
 	assert.NoError(t, err)
 	assert.Equal(t, tradeID, resp.Trades[0].Id)

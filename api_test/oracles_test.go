@@ -35,14 +35,28 @@ func TestGetSpecs(t *testing.T) {
 		return e, nil
 	}, "oracle-spec-events.golden")
 
-	<-time.After(200 * time.Millisecond)
-
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
 	oracleSpecID := "6f9b102855efc7b2421df3de4007bd3c6b9fd237e0f9b9b18326800fd822184f"
 
-	resp, err := client.OracleSpecs(ctx, &apipb.OracleSpecsRequest{})
+	var resp *apipb.OracleSpecsResponse
+	var err error
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(1 * time.Millisecond):
+			resp, err = client.OracleSpecs(ctx, &apipb.OracleSpecsRequest{})
+			require.NotNil(t, resp)
+			require.NoError(t, err)
+			if len(resp.OracleSpecs) > 0 {
+				break loop
+			}
+		}
+	}
 
 	assert.NoError(t, err)
 	assert.Equal(t, oracleSpecID, resp.OracleSpecs[0].Id)

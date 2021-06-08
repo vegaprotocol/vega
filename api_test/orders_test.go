@@ -28,17 +28,30 @@ func TestGetByOrderID(t *testing.T) {
 		return e, nil
 	}, "orders-events.golden")
 
-	<-time.After(200 * time.Millisecond)
-
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
 	orderID := "V0000000567-0000005166"
 
-	resp, err := client.OrderByID(ctx, &apipb.OrderByIDRequest{
-		OrderId: orderID,
-		Version: 1,
-	})
+	var resp *apipb.OrderByIDResponse
+	var err error
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("test timeout")
+		case <-time.Tick(1 * time.Millisecond):
+			resp, err = client.OrderByID(ctx, &apipb.OrderByIDRequest{
+				OrderId: orderID,
+				Version: 1,
+			})
+			require.NoError(t, err)
+			if resp.Order != nil {
+				break loop
+			}
+		}
+	}
 
 	assert.NoError(t, err)
 	assert.Equal(t, orderID, resp.Order.Id)
