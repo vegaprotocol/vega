@@ -17,7 +17,6 @@ import (
 )
 
 func TestGetPartyAccounts(t *testing.T) {
-	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
@@ -55,9 +54,7 @@ loop:
 				PartyId: partyID,
 				Type:    pb.AccountType_ACCOUNT_TYPE_GENERAL,
 			})
-			require.NotNil(t, resp)
-			require.NoError(t, err)
-			if len(resp.Accounts) > 0 {
+			if err == nil && len(resp.Accounts) > 0 {
 				break loop
 			}
 		}

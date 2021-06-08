@@ -15,7 +15,6 @@ import (
 )
 
 func TestGetByOrderID(t *testing.T) {
-	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
@@ -46,8 +45,7 @@ loop:
 				OrderId: orderID,
 				Version: 1,
 			})
-			require.NoError(t, err)
-			if resp.Order != nil {
+			if err == nil && resp.Order != nil {
 				break loop
 			}
 		}

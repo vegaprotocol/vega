@@ -15,7 +15,6 @@ import (
 )
 
 func TestGetByMarket(t *testing.T) {
-	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
@@ -47,9 +46,7 @@ loop:
 				MarketId:   tradeMarketID,
 				Pagination: nil,
 			})
-			require.NotNil(t, resp)
-			require.NoError(t, err)
-			if len(resp.Trades) > 0 {
+			if err == nil && len(resp.Trades) > 0 {
 				break loop
 			}
 		}

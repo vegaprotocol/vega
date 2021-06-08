@@ -16,7 +16,6 @@ import (
 )
 
 func TestParties(t *testing.T) {
-	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
@@ -30,8 +29,6 @@ func TestParties(t *testing.T) {
 		})
 		return e, nil
 	}, "parties-events.golden")
-
-	<-time.After(200 * time.Millisecond)
 
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
@@ -48,10 +45,8 @@ loop:
 			t.Fatalf("test timeout")
 		case <-time.Tick(1 * time.Millisecond):
 			resp, err = client.Parties(ctx, &apipb.PartiesRequest{})
-			require.NotNil(t, resp)
-			require.NoError(t, err)
 			// excluding network party
-			if len(resp.Parties) > 1 {
+			if err == nil && len(resp.Parties) > 1 {
 				break loop
 			}
 		}

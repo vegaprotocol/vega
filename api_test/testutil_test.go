@@ -49,13 +49,16 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
+
 	"github.com/golang/mock/gomock"
 	tmp2p "github.com/tendermint/tendermint/p2p"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
 )
 
-const defaultTimout = 5 * time.Second
+var logger = logging.NewTestLogger()
+
+const defaultTimout = 30 * time.Second
 
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
 // Any error will fail and terminate the test.
@@ -72,8 +75,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	conf := config.NewDefaultConfig(tmpDir)
 	conf.API.IP = "127.0.0.1"
 	conf.API.Port = port
-
-	logger := logging.NewTestLogger()
 
 	mockCtrl := gomock.NewController(t)
 	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
