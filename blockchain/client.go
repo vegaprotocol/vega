@@ -83,7 +83,7 @@ func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBund
 }
 
 func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error {
-	err := commands.CheckTransaction(tx)
+	_, err := commands.CheckTransaction(tx)
 	if err != nil {
 		return err
 	}

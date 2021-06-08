@@ -15,11 +15,11 @@ var (
 	ErrShouldBeHexEncoded = errors.New("should be hex encoded")
 )
 
-func CheckTransaction(tx *commandspb.Transaction) error {
+func CheckTransaction(tx *commandspb.Transaction) (*commandspb.InputData, error) {
 	errs := NewErrors()
 
 	if tx == nil {
-		return errs.FinalAddForProperty("tx", ErrIsRequired)
+		return nil, errs.FinalAddForProperty("tx", ErrIsRequired)
 	}
 
 	if len(tx.InputData) == 0 {
@@ -37,17 +37,19 @@ func CheckTransaction(tx *commandspb.Transaction) error {
 	}
 
 	if !errs.Empty() {
-		return errs.ErrorOrNil()
+		return nil, errs.ErrorOrNil()
 	}
 
 	errs.Merge(validateSignature(tx.InputData, tx.Signature, tx.GetPubKey()))
 	if !errs.Empty() {
-		return errs.ErrorOrNil()
+		return nil, errs.ErrorOrNil()
 	}
 
-	errs.Merge(checkInputData(tx.InputData))
-
-	return errs.ErrorOrNil()
+	inputData, errs := checkInputData(tx.InputData)
+	if !errs.Empty() {
+		return nil, errs.ErrorOrNil()
+	}
+	return inputData, nil
 }
 
 func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey string) Errors {
@@ -78,13 +80,13 @@ func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey
 	return errs
 }
 
-func checkInputData(inputData []byte) Errors {
+func checkInputData(inputData []byte) (*commandspb.InputData, Errors) {
 	errs := NewErrors()
 
 	input := commandspb.InputData{}
 	err := proto.Unmarshal(inputData, &input)
 	if err != nil {
-		return errs.FinalAdd(err)
+		return nil, errs.FinalAdd(err)
 	}
 
 	if input.Nonce == 0 {
@@ -124,7 +126,7 @@ func checkInputData(inputData []byte) Errors {
 		}
 	}
 
-	return errs
+	return &input, errs
 }
 
 func checkSignature(signature *commandspb.Signature) Errors {

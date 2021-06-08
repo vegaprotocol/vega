@@ -17,6 +17,7 @@ type TxV2 struct {
 	originalTx []byte
 	tx         *commandspb.Transaction
 	inputData  *commandspb.InputData
+	err        error
 }
 
 func DecodeTxV2(payload []byte) (*TxV2, error) {
@@ -25,15 +26,13 @@ func DecodeTxV2(payload []byte) (*TxV2, error) {
 		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
 	}
 
-	inputData := &commandspb.InputData{}
-	if err := proto.Unmarshal(tx.InputData, inputData); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal input data: %w", err)
-	}
+	inputData, err := commands.CheckTransaction(tx)
 
 	return &TxV2{
 		originalTx: payload,
 		tx:         tx,
 		inputData:  inputData,
+		err:        err,
 	}, nil
 }
 
@@ -173,7 +172,7 @@ func (t TxV2) Signature() []byte {
 }
 
 func (t TxV2) Validate() error {
-	return commands.CheckTransaction(t.tx)
+	return t.err
 }
 
 func (t TxV2) BlockHeight() uint64 {

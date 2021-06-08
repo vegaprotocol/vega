@@ -138,7 +138,7 @@ func testSubmittingTransactionWithInvalidSignatureFails(t *testing.T) {
 }
 
 func checkTransaction(cmd *commandspb.Transaction) commands.Errors {
-	err := commands.CheckTransaction(cmd)
+	_, err := commands.CheckTransaction(cmd)
 
 	e, ok := err.(commands.Errors)
 	if !ok {
@@ -152,8 +152,8 @@ func newValidTransaction() *commandspb.Transaction {
 	return &commandspb.Transaction{
 		InputData: []byte{8, 178, 211, 130, 220, 159, 158, 160, 128, 80, 210, 62, 0},
 		Signature: &commandspb.Signature{
-			Algo: "vega/ed25519",
-			Value: "8ea1c9baab2919a73b6acd3dae15f515c9d9b191ac2a2cd9e7d7a2f9750da0793a88c8ee96a640e0de64c91d81770299769d4d4d93f81208e17573c836e3a80d",
+			Algo:    "vega/ed25519",
+			Value:   "8ea1c9baab2919a73b6acd3dae15f515c9d9b191ac2a2cd9e7d7a2f9750da0793a88c8ee96a640e0de64c91d81770299769d4d4d93f81208e17573c836e3a80d",
 			Version: 1,
 		},
 		From: &commandspb.Transaction_PubKey{
