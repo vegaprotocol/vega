@@ -56,10 +56,10 @@ All this helps raise the confidence a team feels in delivering valuable software
 **Functional Regression Tests**
 
 - Every item in Acceptance Criteria covered by at least one acceptance test
-- Unit tests passing (*_test.go files within the package)
+- Unit tests passing (test Golang files within the package)
 - Integration tests passing (feature tests in the core repo)
 - System tests passing (API tests covering mostly what we do with integration tests + API)
-- Acceptance (feature) tests passing (e2e/black-box testing)
+- Acceptance (feature) tests passing (end to end / black-box testing)
 - Tests executed on all supported platforms
 
 **For all automated tests:**
