@@ -152,6 +152,13 @@ func (u *Uint) Div(x, y *Uint) *Uint {
 	return u
 }
 
+// Mod sets u to the modulus x%y for y != 0 and returns u.
+// If y == 0, u is set to 0
+func (u *Uint) Mod(x, y *Uint) *Uint {
+	u.u.Mod(&x.u, &y.u)
+	return u
+}
+
 // LT with check if the value stored in u is
 // lesser than oth
 // this is equivalent to:
