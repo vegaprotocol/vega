@@ -4,6 +4,7 @@ import (
 	"context"
 
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type SettleDistressed struct {
@@ -15,13 +16,13 @@ type SettleDistressed struct {
 	ts       int64
 }
 
-func NewSettleDistressed(ctx context.Context, partyID, marketID string, price, margin uint64, ts int64) *SettleDistressed {
+func NewSettleDistressed(ctx context.Context, partyID, marketID string, price *num.Uint, margin uint64, ts int64) *SettleDistressed {
 	return &SettleDistressed{
 		Base:     newBase(ctx, SettleDistressedEvent),
 		partyID:  partyID,
 		marketID: marketID,
 		margin:   margin,
-		price:    price,
+		price:    price.Uint64(),
 		ts:       ts,
 	}
 }

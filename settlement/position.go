@@ -29,13 +29,11 @@ type mtmTransfer struct {
 }
 
 func newPos(evt events.MarketPosition) *pos {
-	// this'll be removed once Pete's changes land
-	price := num.NewUint(evt.Price())
 	return &pos{
 		MarketPosition: evt,
 		party:          evt.Party(),
 		size:           evt.Size(),
-		price:          price,
+		price:          evt.Price().Clone(),
 	}
 }
 
@@ -48,9 +46,7 @@ func (p *pos) update(evt events.MarketPosition) error {
 	// embed updated event
 	p.MarketPosition = evt
 	p.size = evt.Size()
-	// again: will be removed once Pete's changes land
-	price := num.NewUint(evt.Price)
-	p.price = price
+	p.price = evt.Price().Clone()
 	return nil
 }
 

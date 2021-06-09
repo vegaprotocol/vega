@@ -4,23 +4,24 @@ import (
 	"context"
 
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type SettlePos struct {
 	*Base
 	partyID  string
 	marketID string
-	price    uint64
+	price    *num.Uint
 	trades   []TradeSettlement
 	ts       int64
 }
 
-func NewSettlePositionEvent(ctx context.Context, partyID, marketID string, price uint64, trades []TradeSettlement, ts int64) *SettlePos {
+func NewSettlePositionEvent(ctx context.Context, partyID, marketID string, price *num.Uint, trades []TradeSettlement, ts int64) *SettlePos {
 	return &SettlePos{
 		Base:     newBase(ctx, SettlePositionEvent),
 		partyID:  partyID,
 		marketID: marketID,
-		price:    price,
+		price:    price.Clone(),
 		trades:   trades,
 		ts:       ts,
 	}
@@ -39,7 +40,7 @@ func (s SettlePos) PartyID() string {
 }
 
 func (s SettlePos) Price() uint64 {
-	return s.price
+	return s.price.Uint64()
 }
 
 func (s SettlePos) Trades() []TradeSettlement {
@@ -55,13 +56,13 @@ func (s SettlePos) Proto() eventspb.SettlePosition {
 	for _, t := range s.trades {
 		ts = append(ts, &eventspb.TradeSettlement{
 			Size:  t.Size(),
-			Price: t.Price(),
+			Price: t.Price().Uint64(),
 		})
 	}
 	return eventspb.SettlePosition{
 		MarketId:         s.marketID,
 		PartyId:          s.partyID,
-		Price:            s.price,
+		Price:            s.price.Uint64(),
 		TradeSettlements: ts,
 	}
 }
