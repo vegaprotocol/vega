@@ -6,7 +6,8 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -26,7 +27,7 @@ type OracleEngine interface {
 
 // Product is the interface provided by all product in vega
 type Product interface {
-	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
+	Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error)
 	Value(markPrice uint64) (uint64, error)
 	GetAsset() string
 }
