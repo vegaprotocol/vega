@@ -5,7 +5,8 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
+	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -48,10 +49,10 @@ func (mr *MockProductMockRecorder) GetAsset() *gomock.Call {
 }
 
 // Settle mocks base method
-func (m *MockProduct) Settle(arg0 uint64, arg1 int64) (*proto.FinancialAmount, error) {
+func (m *MockProduct) Settle(arg0 *num.Uint, arg1 int64) (*types.FinancialAmount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Settle", arg0, arg1)
-	ret0, _ := ret[0].(*proto.FinancialAmount)
+	ret0, _ := ret[0].(*types.FinancialAmount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

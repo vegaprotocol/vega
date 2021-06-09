@@ -29,7 +29,7 @@ type MarketPosition interface {
 // Product ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/settlement Product
 type Product interface {
-	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
+	Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error)
 	GetAsset() string
 }
 
@@ -196,9 +196,9 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// the trades slice contains all trade positions (position changes for the trader)
 		// at their exact trade price, so we can MTM that volume correctly, too
 		mtmShare := calcMTM(markPrice, current.price, current.size, traded)
-		mtmAmount := uint64(mtmShare)
+		mtmAmount := num.NewUint(uint64(mtmShare))
 		if mtmShare < 0 {
-			mtmAmount = uint64(-mtmShare)
+			mtmAmount = mtmAmount.SetUint64(uint64(-mtmShare))
 		}
 		// we've marked this trader to market, their position can now reflect this
 		current.update(evt)
@@ -299,7 +299,7 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 		e.log.Debug("Settling position for trader", logging.String("trader-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
-		amt, err := settleProd.Settle(pos.price.Uint64(), pos.size)
+		amt, err := settleProd.Settle(pos.price, pos.size)
 		// for now, product.Settle returns the total value, we need to only settle the delta between a traders current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
@@ -318,7 +318,7 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 		e.log.Debug(
 			"Settled position for trader",
 			logging.String("trader-id", party),
-			logging.Uint64("amount", amt.Amount),
+			logging.String("amount", amt.Amount.String()),
 		)
 		// size was negative, this is a loss transfer
 		if pos.size < 0 {
@@ -392,14 +392,15 @@ type lastMarkPriceSettlement struct {
 	asset     string
 }
 
-func (l *lastMarkPriceSettlement) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
+func (l *lastMarkPriceSettlement) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error) {
 	if netPosition < 0 {
 		netPosition *= -1
 	}
-	mp := l.markPrice.Uint64()
+	amt := num.NewUint(0).Sub(l.markPrice, entryPrice)
+	amt = amt.Mul(amt, num.NewUint(uint64(netPosition)))
 	return &types.FinancialAmount{
 		Asset:  l.asset,
-		Amount: (mp - entryPrice) * uint64(netPosition),
+		Amount: amt,
 	}, nil
 }
 

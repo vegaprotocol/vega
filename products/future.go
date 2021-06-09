@@ -7,7 +7,8 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 )
@@ -51,7 +52,7 @@ type oracleBinding struct {
 }
 
 // Settle a position against the future
-func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
+func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error) {
 	settlementPrice, err := f.oracle.data.SettlementPrice()
 	if err != nil {
 		return nil, err
@@ -59,16 +60,11 @@ func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialA
 
 	// Make sure net position is positive
 	if netPosition < 0 {
-		netPosition = 0 - netPosition
+		netPosition = -netPosition
 	}
 
-	sPrice := uint64(settlementPrice)
-	var amount uint64
-	if sPrice > entryPrice {
-		amount = (sPrice - entryPrice) * uint64(netPosition)
-	} else {
-		amount = (entryPrice - sPrice) * uint64(netPosition)
-	}
+	amount, _ := num.NewUint(0).Delta(num.NewUint(uint64(settlementPrice)), entryPrice)
+	amount = amount.Mul(amount, num.NewUint(uint64(netPosition)))
 
 	return &types.FinancialAmount{
 		Asset:  f.SettlementAsset,
