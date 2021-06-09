@@ -2,7 +2,8 @@ package settlement
 
 import (
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
@@ -66,6 +67,9 @@ func (p pos) Price() *num.Uint {
 }
 
 // Transfer - part of the Transfer interface
-func (m mtmTransfer) Transfer() *types.Transfer {
-	return m.transfer
+func (m mtmTransfer) Transfer() *proto.Transfer {
+	if m.transfer == nil {
+		return nil
+	}
+	return m.transfer.IntoProto()
 }

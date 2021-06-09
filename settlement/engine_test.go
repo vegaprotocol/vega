@@ -68,51 +68,54 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 		{
 			trader: "trader2",
-			price:  pr.Clone(),
+			price:  pr,
 			size:   -5,
 		},
 		{
 			trader: "trader3",
-			price:  pr.Clone(),
+			price:  pr,
 			size:   -5,
 		},
 	}
+	half := num.NewUint(500)
 	expect := []*types.Transfer{
 		{
 			Owner: data[1].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 500,
+				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 500,
+				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[0].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 1000,
+				Amount: pr,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	} // }}}
-	oraclePrice := uint64(1100)
-	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
+	oraclePrice := num.NewUint(1100)
+	settleF := func(price *num.Uint, size int64) (*types.FinancialAmount, error) {
 		if size < 0 {
 			size *= -1
 		}
+		amt := num.NewUint(0).Sub(oraclePrice, price)
+		amt = amt.Mul(amt, num.NewUint(uint64(size)))
 		return &types.FinancialAmount{
-			Amount: (oraclePrice - price) * uint64(size),
+			Amount: amt,
 		}, nil
 	}
 	positions := engine.getExpiryPositions(data...)
 	for _, d := range data {
 		// we expect settle calls for each position
-		engine.prod.EXPECT().Settle(d.price.Uint64(), d.size).Times(1).DoAndReturn(settleF)
+		engine.prod.EXPECT().Settle(d.price, d.size).Times(1).DoAndReturn(settleF)
 	}
 	// ensure positions are set
 	engine.Update(positions)
@@ -140,34 +143,35 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 		},
 		{
 			trader: "trader2",
-			price:  pr.Clone(),
+			price:  pr,
 			size:   -5,
 		},
 		{
 			trader: "trader3",
-			price:  pr.Clone(),
+			price:  pr,
 			size:   -5,
 		},
 	}
+	half := num.NewUint(500)
 	expect := []*types.Transfer{
 		{
 			Owner: data[1].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 500,
+				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 500,
+				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[0].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 1000,
+				Amount: pr,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
@@ -218,7 +222,7 @@ func testSettleExpiryFail(t *testing.T) {
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(data[0].price.Uint64(), data[0].size).Times(1).Return(nil, errExp)
+	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, errExp)
 	engine.Update(positions)
 	empty, err := engine.Settle(time.Now(), num.NewUint(0))
 	assert.Empty(t, empty)
@@ -475,8 +479,8 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price uint64, size int64) (*types.FinancialAmount, error) {
-		return &types.FinancialAmount{Amount: 0}, nil
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size int64) (*types.FinancialAmount, error) {
+		return &types.FinancialAmount{Amount: num.NewUint(0)}, nil
 	})
 
 	cfg := engine.Config
@@ -563,6 +567,9 @@ func (t testPos) Sell() int64 {
 }
 
 func (t testPos) Price() *num.Uint {
+	if t.price == nil {
+		return num.NewUint(0)
+	}
 	return t.price
 }
 
