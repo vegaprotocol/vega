@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/positions"
@@ -25,11 +26,11 @@ func TestGetOpenInterest(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
 	var (
-		buyer         = "buyer_id"
-		buyer2        = "buyer_id2"
-		seller        = "seller_id"
-		size   uint64 = 10
-		price  uint64 = 10000
+		buyer            = "buyer_id"
+		buyer2           = "buyer_id2"
+		seller           = "seller_id"
+		size   uint64    = 10
+		price  *num.Uint = num.NewUint(10000)
 	)
 	engine.RegisterOrder(&types.Order{
 		PartyId:   buyer,
@@ -54,7 +55,7 @@ func TestGetOpenInterest(t *testing.T) {
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketId:  "market_id",
-		Price:     10000,
+		Price:     num.NewUint(10000),
 		Size:      uint64(size),
 		Buyer:     buyer,
 		Seller:    seller,
@@ -67,7 +68,7 @@ func TestGetOpenInterest(t *testing.T) {
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketId:  "market_id",
-		Price:     10000,
+		Price:     num.NewUint(10000),
 		Size:      uint64(size),
 		Buyer:     buyer2,
 		Seller:    seller,
@@ -88,10 +89,10 @@ func testUpdatePositionRegular(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
 	var (
-		buyer         = "buyer_id"
-		seller        = "seller_id"
-		size   uint64 = 10
-		price  uint64 = 10000
+		buyer            = "buyer_id"
+		seller           = "seller_id"
+		size   uint64    = 10
+		price  *num.Uint = num.NewUint(10000)
 	)
 	engine.RegisterOrder(&types.Order{
 		PartyId:   buyer,
@@ -141,7 +142,7 @@ func testUpdatePositionNetworkBuy(t *testing.T) {
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketId:  "market_id",
-		Price:     10000,
+		Price:     num.NewUint(10000),
 		Size:      uint64(size),
 		Buyer:     buyer,
 		Seller:    seller,
@@ -149,7 +150,7 @@ func testUpdatePositionNetworkBuy(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	registerOrder(engine, types.Side_SIDE_SELL, seller, 10000, uint64(size))
+	registerOrder(engine, types.Side_SIDE_SELL, seller, num.NewUint(10000), uint64(size))
 	positions := engine.UpdateNetwork(&trade)
 	pos := engine.Positions()
 	assert.Equal(t, 1, len(pos))
@@ -168,7 +169,7 @@ func testUpdatePositionNetworkSell(t *testing.T) {
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketId:  "market_id",
-		Price:     10000,
+		Price:     num.NewUint(10000),
 		Size:      uint64(size),
 		Buyer:     buyer,
 		Seller:    seller,
@@ -176,7 +177,7 @@ func testUpdatePositionNetworkSell(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	registerOrder(engine, types.Side_SIDE_BUY, buyer, 10000, uint64(size))
+	registerOrder(engine, types.Side_SIDE_BUY, buyer, num.NewUint(10000), uint64(size))
 	positions := engine.UpdateNetwork(&trade)
 	pos := engine.Positions()
 	assert.Equal(t, 1, len(pos))
@@ -190,7 +191,7 @@ func TestRemoveDistressedEmpty(t *testing.T) {
 		mp{
 			party: "test",
 			size:  1,
-			price: 1000,
+			price: num.NewUint(1000),
 		},
 	}
 	e := getTestEngine(t)
@@ -215,11 +216,12 @@ func testRegisterOrderSuccessful(t *testing.T) {
 		Side:      types.Side_SIDE_BUY,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
+		Price:     num.NewUint(0),
 	}
 	pos := e.RegisterOrder(&orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
 	assert.Zero(t, pos.Sell())
-	assert.Zero(t, pos.Price())
+	assert.True(t, pos.Price().IsZero())
 	assert.Zero(t, pos.Size())
 	positions := e.Positions()
 	assert.Equal(t, 1, len(positions))
@@ -230,11 +232,12 @@ func testRegisterOrderSuccessful(t *testing.T) {
 		Side:      types.Side_SIDE_SELL,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
+		Price:     num.NewUint(0),
 	}
 	pos = e.RegisterOrder(&orderSell)
 	assert.Equal(t, buysize, pos.Buy())
 	assert.Equal(t, sellsize, pos.Sell())
-	assert.Zero(t, pos.Price())
+	assert.True(t, pos.Price().IsZero())
 	assert.Zero(t, pos.Size())
 	positions = e.Positions()
 	assert.Equal(t, 1, len(positions))
@@ -253,6 +256,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 		Side:      types.Side_SIDE_BUY,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
+		Price:     num.NewUint(0),
 	}
 	pos := e.RegisterOrder(&orderBuy)
 	assert.Equal(t, buysize, pos.Buy())
@@ -265,6 +269,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 		Side:      types.Side_SIDE_SELL,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
+		Price:     num.NewUint(0),
 	}
 	pos = e.RegisterOrder(&orderSell)
 	assert.Zero(t, pos.Buy())
@@ -282,6 +287,7 @@ func testUnregisterOrderUnsuccessful(t *testing.T) {
 		Side:      types.Side_SIDE_BUY,
 		Size:      uint64(999),
 		Remaining: uint64(999),
+		Price:     num.NewUint(0),
 	}
 	require.Panics(t, func() {
 		_ = e.UnregisterOrder(&orderBuy)
@@ -306,25 +312,25 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		//Both parties already have positions
 		{ //A: + 100, B: -100 => OI: 100
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 100,
 		},
 		{ //A: + 100 - 10, B: -100 + 10=> OI: 90
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 10},
+				{Seller: "A", Buyer: "B", Size: 10, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 90,
 		},
 		{ //A: + 100 + 10, B: -100 - 10 => OI: 110
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 10},
+				{Seller: "B", Buyer: "A", Size: 10, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 110,
 		},
@@ -332,19 +338,19 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		// There at least 1 new party
 		{ //A: + 100 + 10, B: -100, C: -10 => OI: 110
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 10},
+				{Seller: "C", Buyer: "A", Size: 10, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 110,
 		},
 		{ //A: + 100 - 10, B: -100, C: +10 => OI: 100
 			ExistingPositions: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 100},
+				{Seller: "B", Buyer: "A", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "C", Size: 10},
+				{Seller: "A", Buyer: "C", Size: 10, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 100,
 		},
@@ -352,97 +358,97 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		//None of the parties have positions yet
 		{ //C: +10, D:-10 => OI: 10
 			Trades: []*types.Trade{
-				{Seller: "D", Buyer: "C", Size: 10},
+				{Seller: "D", Buyer: "C", Size: 10, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 10,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 5},
+				{Seller: "B", Buyer: "A", Size: 5, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 200,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 5},
+				{Seller: "A", Buyer: "B", Size: 5, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 200,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "C", Buyer: "B", Size: 5},
+				{Seller: "C", Buyer: "B", Size: 5, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 205,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "C", Size: 5},
+				{Seller: "B", Buyer: "C", Size: 5, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 195,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "D", Buyer: "C", Size: 500},
+				{Seller: "D", Buyer: "C", Size: 500, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 500,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 100},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 100, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "D", Buyer: "C", Size: 5},
+				{Seller: "D", Buyer: "C", Size: 5, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 200,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 10},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 10, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 5},
+				{Seller: "A", Buyer: "B", Size: 5, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 110,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 10},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 10, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "B", Buyer: "A", Size: 5},
+				{Seller: "B", Buyer: "A", Size: 5, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 110,
 		},
 		{
 			ExistingPositions: []*types.Trade{
-				{Seller: "C", Buyer: "A", Size: 10},
-				{Seller: "C", Buyer: "B", Size: 100},
+				{Seller: "C", Buyer: "A", Size: 10, Price: num.NewUint(0)},
+				{Seller: "C", Buyer: "B", Size: 100, Price: num.NewUint(0)},
 			},
 			Trades: []*types.Trade{
-				{Seller: "A", Buyer: "B", Size: 200},
+				{Seller: "A", Buyer: "B", Size: 200, Price: num.NewUint(0)},
 			},
 			ExpectedOI: 300,
 		},
@@ -477,7 +483,7 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 type mp struct {
 	size, buy, sell int64
 	party           string
-	price           uint64
+	price           *num.Uint
 }
 
 func (m mp) Party() string {
@@ -496,18 +502,18 @@ func (m mp) Sell() int64 {
 	return m.sell
 }
 
-func (m mp) Price() uint64 {
+func (m mp) Price() *num.Uint {
 	return m.price
 }
 
 func (m mp) ClearPotentials() {}
 
-func (m mp) VWBuy() uint64 {
-	return 0
+func (m mp) VWBuy() *num.Uint {
+	return num.NewUint(0)
 }
 
-func (m mp) VWSell() uint64 {
-	return 0
+func (m mp) VWSell() *num.Uint {
+	return num.NewUint(0)
 }
 
 func TestHash(t *testing.T) {
@@ -518,24 +524,28 @@ func TestHash(t *testing.T) {
 			Side:      types.Side_SIDE_BUY,
 			Size:      uint64(100),
 			Remaining: uint64(100),
+			Price:     num.NewUint(0),
 		},
 		{
 			PartyId:   "test_trader_2",
 			Side:      types.Side_SIDE_BUY,
 			Size:      uint64(200),
 			Remaining: uint64(200),
+			Price:     num.NewUint(0),
 		},
 		{
 			PartyId:   "test_trader_3",
 			Side:      types.Side_SIDE_BUY,
 			Size:      uint64(300),
 			Remaining: uint64(300),
+			Price:     num.NewUint(0),
 		},
 		{
 			PartyId:   "test_trader_1",
 			Side:      types.Side_SIDE_SELL,
 			Size:      uint64(1000),
 			Remaining: uint64(1000),
+			Price:     num.NewUint(0),
 		},
 	}
 
@@ -547,7 +557,7 @@ func TestHash(t *testing.T) {
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade_id",
 		MarketId:  "market_id",
-		Price:     10000,
+		Price:     num.NewUint(10000),
 		Size:      uint64(15),
 		Buyer:     "test_trader_3",
 		Seller:    "test_trader_1",
@@ -559,7 +569,7 @@ func TestHash(t *testing.T) {
 
 	hash := e.Hash()
 	require.Equal(t,
-		"7cbb54f5ecf8be4378b6380361d3f8f425c6c0ec2c36728eda03a162a3d0d676",
+		"9d22a4052353969fe753a81c6a064fb6b032f48b36736d4c54cc8dd2376ebaa4",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)
@@ -571,7 +581,7 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func registerOrder(e *positions.Engine, side types.Side, party string, price, size uint64) {
+func registerOrder(e *positions.Engine, side types.Side, party string, price *num.Uint, size uint64) {
 	e.RegisterOrder(&types.Order{
 		PartyId:   party,
 		Side:      side,
