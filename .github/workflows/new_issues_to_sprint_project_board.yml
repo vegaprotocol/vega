@@ -14,4 +14,3 @@ jobs:
           project: Current Sprints
           column: Incoming to triage
           repo-token: ${{ secrets.GH_NEW_CARD_TO_PROJECT }}
-
