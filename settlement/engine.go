@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // MarketPosition ...
@@ -105,7 +106,7 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions
-func (e *Engine) Settle(t time.Time, lastMarkPrice uint64) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time, lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
 	positions, err := e.settleAll(lastMarkPrice)
 	if err != nil {
@@ -148,13 +149,14 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	size := int64(trade.Size)
 	// the traders both need to get a MTM settlement on the traded volume
 	// and this MTM part has to be based on the _actual_ trade value
+	price := num.NewUint(trade.Price)
 	e.trades[trade.Buyer] = append(e.trades[trade.Buyer], &pos{
-		price:   trade.Price,
+		price:   price,
 		size:    size,
 		newSize: buyerSize + size,
 	})
 	e.trades[trade.Seller] = append(e.trades[trade.Seller], &pos{
-		price:   trade.Price,
+		price:   price.Clone(),
 		size:    -size,
 		newSize: sellerSize - size,
 	})
@@ -366,17 +368,21 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
-func calcMTM(markPrice uint64, size int64, price uint64, trades []*pos) (mtmShare int64) {
-	mtmShare = int64(markPrice-price) * size
+func calcMTM(markPrice *num.Uint, size int64, price *num.Uint, trades []*pos) (mtmShare *num.Uint) {
+	mp := markPrice.Clone()
+	mp = mp.Sub(mp, price)
+	mtmShare = mp.Mul(mp, num.NewUint(size))
 	for _, c := range trades {
 		// add MTM compared to trade price for the positions changes for trades
-		mtmShare += int64(markPrice-c.price) * c.size
+		mp = markPrice.Clone()
+		mp = mp.Sub(mp, c.price)
+		mtmShare = mtmShare.Add(mp.Mul(mp), num.NewUint(c.size))
 	}
 	return
 }
 
 type lastMarkPriceSettlement struct {
-	markPrice uint64
+	markPrice *num.Uint
 	asset     string
 }
 
@@ -384,9 +390,10 @@ func (l *lastMarkPriceSettlement) Settle(entryPrice uint64, netPosition int64) (
 	if netPosition < 0 {
 		netPosition *= -1
 	}
+	mp := l.markPrice.Uint64()
 	return &types.FinancialAmount{
 		Asset:  l.asset,
-		Amount: (l.markPrice - entryPrice) * uint64(netPosition),
+		Amount: (mp - entryPrice) * uint64(netPosition),
 	}, nil
 }
 

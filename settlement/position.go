@@ -3,6 +3,7 @@ package settlement
 import (
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 )
@@ -18,7 +19,7 @@ type pos struct {
 	events.MarketPosition
 	party   string
 	size    int64
-	price   uint64
+	price   *num.Uint
 	newSize int64 // track this so we can determine when a trader switches between long <> short
 }
 
@@ -28,11 +29,13 @@ type mtmTransfer struct {
 }
 
 func newPos(evt events.MarketPosition) *pos {
+	// this'll be removed once Pete's changes land
+	price := num.NewUint(evt.Price())
 	return &pos{
 		MarketPosition: evt,
 		party:          evt.Party(),
 		size:           evt.Size(),
-		price:          evt.Price(),
+		price:          price,
 	}
 }
 
@@ -45,7 +48,9 @@ func (p *pos) update(evt events.MarketPosition) error {
 	// embed updated event
 	p.MarketPosition = evt
 	p.size = evt.Size()
-	p.price = evt.Price()
+	// again: will be removed once Pete's changes land
+	price := num.NewUint(evt.Price)
+	p.price = price
 	return nil
 }
 
@@ -60,8 +65,8 @@ func (p pos) Size() int64 {
 }
 
 // Price - part of the MarketPosition interface, used to update position after SettlePreTrade
-func (p pos) Price() uint64 {
-	return p.price
+func (p pos) Price() *num.Uint {
+	return p.price.Clone()
 }
 
 // Transfer - part of the Transfer interface
