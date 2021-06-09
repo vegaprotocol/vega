@@ -2,12 +2,15 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types/num"
+)
 
 type Account struct {
 	Id       string
 	Owner    string
-	Balance  uint64
+	Balance  *num.Uint
 	Asset    string
 	MarketId string
 	Type     AccountType
@@ -21,7 +24,7 @@ func (a *Account) IntoProto() *proto.Account {
 	return &proto.Account{
 		Id:       a.Id,
 		Owner:    a.Owner,
-		Balance:  a.Balance,
+		Balance:  a.Balance.Uint64(),
 		Asset:    a.Asset,
 		MarketId: a.MarketId,
 		Type:     a.Type,
@@ -41,8 +44,8 @@ func (a Accounts) IntoProto() []*proto.Account {
 type TransferRequest struct {
 	FromAccount []*Account
 	ToAccount   []*Account
-	Amount      uint64
-	MinAmount   uint64
+	Amount      *num.Uint
+	MinAmount   *num.Uint
 	Asset       string
 	Reference   string
 }
@@ -51,8 +54,8 @@ func (t *TransferRequest) IntoProto() *proto.TransferRequest {
 	return &proto.TransferRequest{
 		FromAccount: Accounts(t.FromAccount).IntoProto(),
 		ToAccount:   Accounts(t.ToAccount).IntoProto(),
-		Amount:      t.Amount,
-		MinAmount:   t.MinAmount,
+		Amount:      t.Amount.Uint64(),
+		MinAmount:   t.MinAmount.Uint64(),
 		Asset:       t.Asset,
 		Reference:   t.Reference,
 	}
@@ -82,7 +85,7 @@ func (a TransferResponses) IntoProto() []*proto.TransferResponse {
 
 type TransferBalance struct {
 	Account *Account
-	Balance uint64
+	Balance *num.Uint
 }
 
 func (t *TransferBalance) IntoProto() *proto.TransferBalance {
@@ -92,7 +95,7 @@ func (t *TransferBalance) IntoProto() *proto.TransferBalance {
 	}
 	return &proto.TransferBalance{
 		Account: acc,
-		Balance: t.Balance,
+		Balance: t.Balance.Uint64(),
 	}
 }
 
@@ -109,7 +112,7 @@ func (a TransferBalances) IntoProto() []*proto.TransferBalance {
 type LedgerEntry struct {
 	FromAccount string
 	ToAccount   string
-	Amount      uint64
+	Amount      *num.Uint
 	Reference   string
 	Type        string
 	Timestamp   int64
@@ -119,7 +122,7 @@ func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
 	return &proto.LedgerEntry{
 		FromAccount: l.FromAccount,
 		ToAccount:   l.ToAccount,
-		Amount:      l.Amount,
+		Amount:      l.Amount.Uint64(),
 		Reference:   l.Reference,
 		Type:        l.Type,
 		Timestamp:   l.Timestamp,
@@ -137,6 +140,26 @@ func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
 }
 
 type Party = proto.Party
+
+// Transfer represents a financial transfer within Vega
+type Transfer struct {
+	// Party identifier for the owner of the transfer
+	Owner string
+	// A financial amount (of an asset) to transfer
+	Amount *FinancialAmount
+	// The type of transfer, gives the reason for the transfer
+	Type TransferType
+	// A minimum amount
+	MinAmount *num.Uint
+}
+
+// FinancialAmount is the asset value information used within a transfer
+type FinancialAmount struct {
+	// A signed integer amount of asset
+	Amount *num.Uint
+	// Asset identifier
+	Asset string
+}
 
 type AccountType = proto.AccountType
 

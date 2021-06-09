@@ -3,7 +3,7 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
@@ -34,7 +34,7 @@ func (a Asset) StreamMessage() *eventspb.BusEvent {
 		Block: a.TraceID(),
 		Type:  a.et.ToProto(),
 		Event: &eventspb.BusEvent_Asset{
-			Asset: &a.a,
+			Asset: a.a.ToProto(),
 		},
 	}
 }
