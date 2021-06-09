@@ -46,6 +46,7 @@ func (n *nodeClient) LastBlockHeight(ctx context.Context) (uint64, error) {
 	resp, err := n.clt.LastBlockHeight(ctx, &api.LastBlockHeightRequest{})
 	if err != nil {
 		n.log.Debug("could not get last block", logging.Error(err))
+		return 0, err
 	}
 
 	return resp.Height, nil

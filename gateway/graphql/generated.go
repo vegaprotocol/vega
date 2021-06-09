@@ -653,6 +653,7 @@ type ComplexityRoot struct {
 		Deposit                    func(childComplexity int, id string) int
 		Erc20WithdrawalApproval    func(childComplexity int, withdrawalID string) int
 		EstimateOrder              func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		LastBlockHeight            func(childComplexity int) int
 		Market                     func(childComplexity int, id string) int
 		Markets                    func(childComplexity int, id *string) int
 		NetworkParameters          func(childComplexity int) int
@@ -1111,6 +1112,7 @@ type QueryResolver interface {
 	Parties(ctx context.Context, id *string) ([]*proto.Party, error)
 	Party(ctx context.Context, id string) (*proto.Party, error)
 	Statistics(ctx context.Context) (*proto.Statistics, error)
+	LastBlockHeight(ctx context.Context) (string, error)
 	OracleSpecs(ctx context.Context) ([]*v11.OracleSpec, error)
 	OracleSpec(ctx context.Context, oracleSpecID string) (*v11.OracleSpec, error)
 	OracleDataBySpec(ctx context.Context, oracleSpecID string) ([]*v11.OracleData, error)
@@ -3683,6 +3685,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.EstimateOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
 
+	case "Query.lastBlockHeight":
+		if e.complexity.Query.LastBlockHeight == nil {
+			break
+		}
+
+		return e.complexity.Query.LastBlockHeight(childComplexity), true
+
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
 			break
@@ -5249,6 +5258,9 @@ type Query {
 
   "a bunch of statistics about the node"
   statistics: Statistics!
+
+  "The last block process by the blockchain"
+  lastBlockHeight: String!
 
   "All registered oracle specs"
   oracleSpecs: [OracleSpec!]
@@ -20243,6 +20255,40 @@ func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql
 	return ec.marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐStatistics(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_lastBlockHeight(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().LastBlockHeight(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_oracleSpecs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -31838,6 +31884,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_statistics(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "lastBlockHeight":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_lastBlockHeight(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

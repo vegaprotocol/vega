@@ -110,7 +110,7 @@ type WalletHandler interface {
 	GetWalletName(token string) (string, error)
 	ListPublicKeys(token string) ([]Keypair, error)
 	SignTx(token, tx, pubKey string, height uint64) (SignedBundle, error)
-	SignTxV2(token string, req walletpb.SubmitTransactionRequest) (*commandspb.Transaction, error)
+	SignTxV2(token string, req walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error)
 	SignAny(token, inputData, pubKey string) ([]byte, error)
 	TaintKey(token, pubKey, passphrase string) error
 	UpdateMeta(token, pubKey, passphrase string, meta []Meta) error
@@ -469,7 +469,13 @@ func (s *Service) signTxV2(token string, w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	tx, err := s.handler.SignTxV2(token, req)
+	height, err := s.nodeClient.LastBlockHeight(r.Context())
+	if err != nil {
+		writeError(w, newError("could not get last block height"), http.StatusInternalServerError)
+		return
+	}
+
+	tx, err := s.handler.SignTxV2(token, req, height)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return

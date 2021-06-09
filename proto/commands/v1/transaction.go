@@ -21,10 +21,10 @@ func NewTransactionPubKey(pubKey []byte) *Transaction_PubKey {
 	}
 }
 
-func NewInputData() *InputData {
+func NewInputData(height uint64) *InputData {
 	return &InputData{
 		Nonce:       makeNonce(),
-		BlockHeight: 0,
+		BlockHeight: height,
 	}
 }
 

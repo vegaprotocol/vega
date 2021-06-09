@@ -436,6 +436,9 @@ type Query {
   "a bunch of statistics about the node"
   statistics: Statistics!
 
+  "The last block process by the blockchain"
+  lastBlockHeight: String!
+
   "All registered oracle specs"
   oracleSpecs: [OracleSpec!]
 

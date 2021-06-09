@@ -34,7 +34,11 @@ func NewTx(payload []byte, tx *types.Transaction, signature []byte) (*Tx, error)
 		return nil, ErrInvalidTxPayloadLen
 	}
 
-	return &Tx{payload, tx, signature}, nil
+	return &Tx{
+		rawPayload: payload,
+		tx:         tx,
+		signature:  signature,
+	}, nil
 }
 
 // Hash returns hash of the given Tx. Hashes are unique to every vega tx.

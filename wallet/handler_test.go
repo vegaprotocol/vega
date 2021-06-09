@@ -1034,7 +1034,7 @@ func testHandlerSigningTxV2Succeeds(t *testing.T) {
 		Return(name, nil)
 
 	// when
-	tx, err := h.SignTxV2(returnedToken, req)
+	tx, err := h.SignTxV2(returnedToken, req, 42)
 
 	// then
 	require.NoError(t, err)
@@ -1103,7 +1103,7 @@ func testHandlerSigningTxV2WithTaintedKeyFails(t *testing.T) {
 		Return(name, nil)
 
 	// when
-	tx, err := h.SignTxV2(returnedToken, req)
+	tx, err := h.SignTxV2(returnedToken, req, 42)
 
 	// then
 	assert.Error(t, err)
