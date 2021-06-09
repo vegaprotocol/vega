@@ -17,13 +17,14 @@ func TestDeprecatedService(t *testing.T) {
 	t.Run("sign fail invalid request", testServiceSignFailInvalidRequest)
 }
 
-
 func testServiceSignOK(t *testing.T) {
 	s := getTestService(t)
 	defer s.ctrl.Finish()
 
-	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any()).
+	s.handler.EXPECT().SignTx(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).Return(wallet.SignedBundle{}, nil)
+	s.nodeClient.EXPECT().LastBlockHeight(gomock.Any()).
+		Times(1).Return(uint64(42), nil)
 	payload := `{"tx": "some data", "pubKey": "asdasasdasd"}`
 	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
 	r.Header.Set("Authorization", "Bearer eyXXzA")

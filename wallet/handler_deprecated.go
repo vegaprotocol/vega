@@ -9,7 +9,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func (h *Handler) SignTx(token, tx, pubKey string) (SignedBundle, error) {
+func (h *Handler) SignTx(token, tx, pubKey string, blockHeight uint64) (SignedBundle, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -29,8 +29,9 @@ func (h *Handler) SignTx(token, tx, pubKey string) (SignedBundle, error) {
 	}
 
 	txTy := &types.Transaction{
-		InputData: rawTx,
-		Nonce:     makeNonce(),
+		InputData:   rawTx,
+		Nonce:       makeNonce(),
+		BlockHeight: blockHeight,
 		From: &types.Transaction_PubKey{
 			PubKey: kp.pubBytes,
 		},

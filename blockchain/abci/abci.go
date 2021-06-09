@@ -59,6 +59,10 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		return NewResponseCheckTx(code, err.Error())
 	}
 
+	if err := app.replayProtector.CheckTx(tx); err != nil {
+		return NewResponseCheckTx(AbciTxnValidationFailure, err.Error())
+	}
+
 	ctx := app.ctx
 	if fn := app.OnCheckTx; fn != nil {
 		ctx, resp = fn(ctx, req, tx)

@@ -45,7 +45,7 @@ func testSignTxSuccess(t *testing.T) {
 
 	keyBytes, _ := hex.DecodeString(key)
 
-	signedBundle, err := h.SignTx(tok, base64.StdEncoding.EncodeToString([]byte(message)), key)
+	signedBundle, err := h.SignTx(tok, base64.StdEncoding.EncodeToString([]byte(message)), key, 42)
 	require.NoError(t, err)
 
 	// verify signature then
@@ -125,6 +125,6 @@ func testSignTxFailure(t *testing.T) {
 	require.NoError(t, err)
 
 	message := "hello world."
-	_, err = h.SignTx(tok, base64.StdEncoding.EncodeToString([]byte(message)), key)
+	_, err = h.SignTx(tok, base64.StdEncoding.EncodeToString([]byte(message)), key, 42)
 	assert.EqualError(t, err, wallet.ErrPubKeyIsTainted.Error())
 }

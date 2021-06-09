@@ -33,23 +33,26 @@ type testService struct {
 	ctrl        *gomock.Controller
 	handler     *mocks.MockWalletHandler
 	nodeForward *mocks.MockNodeForward
+	nodeClient  *mocks.MockNodeClient
 }
 
 func getTestService(t *testing.T) *testService {
 	ctrl := gomock.NewController(t)
 	handler := mocks.NewMockWalletHandler(ctrl)
 	nodeForward := mocks.NewMockNodeForward(ctrl)
+	nodeClient := mocks.NewMockNodeClient(ctrl)
 	cfg := &wallet.Config{
 		RateLimit: vhttp.RateLimitConfig{
 			CoolDown: encoding.Duration{Duration: 1 * time.Minute},
 		},
 	}
-	s, _ := wallet.NewServiceWith(logging.NewTestLogger(), cfg, handler, nodeForward)
+	s, _ := wallet.NewServiceWith(logging.NewTestLogger(), cfg, handler, nodeForward, nodeClient)
 	return &testService{
 		Service:     s,
 		ctrl:        ctrl,
 		handler:     handler,
 		nodeForward: nodeForward,
+		nodeClient:  nodeClient,
 	}
 }
 

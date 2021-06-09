@@ -321,6 +321,8 @@ service TradingDataService {
   // Get Statistics on Vega
   rpc Statistics(StatisticsRequest) returns (StatisticsResponse);
 
+  rpc LastBlockHeight(LastBlockHeightRequest) returns (LastBlockHeightResponse);
+
   // Get Time
   rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
 
@@ -1280,4 +1282,14 @@ message OracleDataBySpecRequest {
 message OracleDataBySpecResponse {
   // The list of oracle data broadcast to a given spec
   repeated oracles.v1.OracleData oracle_data = 1;
+}
+
+// A request to get the height of the very last block processed
+// by tendermint
+message LastBlockHeightRequest {}
+
+// A response with the height of the last block processed by
+// tendermint
+message LastBlockHeightResponse {
+  uint64 height = 1;
 }
