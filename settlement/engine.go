@@ -195,7 +195,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// and the old mark price at which the trader held the position
 		// the trades slice contains all trade positions (position changes for the trader)
 		// at their exact trade price, so we can MTM that volume correctly, too
-		mtmShare := calcMTM(markPrice.Uint64(), current.price.Uint64(), current.size, traded)
+		mtmShare := calcMTM(markPrice, current.price, current.size, traded)
 		mtmAmount := uint64(mtmShare)
 		if mtmShare < 0 {
 			mtmAmount = uint64(-mtmShare)
@@ -368,13 +368,23 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
-func calcMTM(markPrice, price uint64, size int64, trades []*pos) (mtmShare int64) {
-	mtmShare = int64(markPrice-price) * size
-	for _, c := range trades {
-		// add MTM compared to trade price for the positions changes for trades
-		mtmShare += int64(markPrice-c.price.Uint64()) * c.size
+func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) int64 {
+	delta, neg := num.NewUint(0).Delta(markPrice, price)
+	// the delta will fit (99.9999% certain, unless a price can change by more than max int64)
+	mtmShare := int64(delta.Uint64()) * size
+	if neg {
+		// make negative
+		mtmShare *= -1
 	}
-	return
+	for _, c := range trades {
+		delta, neg = delta.Delta(markPrice, c.price)
+		add := int64(delta.Uint64()) * c.size
+		if neg {
+			add *= -1
+		}
+		mtmShare += add
+	}
+	return mtmShare
 }
 
 type lastMarkPriceSettlement struct {
