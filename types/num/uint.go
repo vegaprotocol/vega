@@ -102,6 +102,19 @@ func (z *Uint) SubOverflow(x, y *Uint) (*Uint, bool) {
 	return z, ok
 }
 
+// Delta will subtract y from x and store the result
+// unless x-y overflowed, in which case the neg field will be set
+// and the result of y - x is set instead
+func (z *Uint) Delta(x, y *Uint) (*Uint, bool) {
+	// y is the bigger value - swap the two
+	if y.GT(x) {
+		_ = z.Sub(y, x)
+		return z, true
+	}
+	_ = z.Sub(x, y)
+	return z, false
+}
+
 // Mul will multiply x and y then store the result
 // into z
 // this is equivalent to:
