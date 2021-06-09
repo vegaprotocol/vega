@@ -15,7 +15,6 @@ import (
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
@@ -351,7 +350,7 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 type myQueryResolver VegaResolverRoot
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
-	resp, err := r.tradingDataClient.LastBlockHeight(ctx, &api.LastBlockHeightRequest{})
+	resp, err := r.tradingDataClient.LastBlockHeight(ctx, &protoapi.LastBlockHeightRequest{})
 	if err != nil {
 		return "0", err
 	}
