@@ -40,8 +40,9 @@ func NewCommander(bc Chain, wal Wallet, bstats BlockchainStats) (*Commander, err
 		return nil, ErrVegaWalletRequired
 	}
 	return &Commander{
-		bc:  bc,
-		wal: wal,
+		bc:     bc,
+		wal:    wal,
+		bstats: bstats,
 	}, nil
 }
 
