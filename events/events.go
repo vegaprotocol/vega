@@ -19,7 +19,7 @@ type MarketPosition interface {
 // TradeSettlement Part of the SettlePosition interface -> traces trades as they happened
 type TradeSettlement interface {
 	Size() int64
-	Price() uint64
+	Price() *num.Uint
 }
 
 // LossSocialization ...
