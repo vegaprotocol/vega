@@ -79,10 +79,10 @@ func (z *Uint) AddOverflow(x, y *Uint) (*Uint, bool) {
 	return z, ok
 }
 
-// Sub will substract y to x then store the result
+// Sub will substract y from x then store the result
 // into u
 // this is equivalent to:
-// `z = x - y`
+// `u = x - y`
 // u is returned for convenience, no
 // new variable is created.
 func (u *Uint) Sub(x, y *Uint) *Uint {

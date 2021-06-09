@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -51,7 +52,7 @@ type IDGen interface {
 // This function should be injected by the market.
 type RepricePeggedOrder func(
 	order *types.PeggedOrder, side types.Side,
-) (uint64, *types.PeggedOrder, error)
+) (*num.Uint, *types.PeggedOrder, error)
 
 // Engine handles Liquidity provision
 type Engine struct {
@@ -412,7 +413,7 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 // created and the other for orders to be updated.
 func (e *Engine) CreateInitialOrders(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice uint64,
+	bestBidPrice, bestAskPrice *num.Uint,
 	party string,
 	orders []*types.Order,
 	repriceFn RepricePeggedOrder,
@@ -430,7 +431,7 @@ func (e *Engine) CreateInitialOrders(
 // It keeps track of all LP orders.
 func (e *Engine) Update(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice uint64,
+	bestBidPrice, bestAskPrice *num.Uint,
 	repriceFn RepricePeggedOrder,
 	orders []*types.Order,
 ) ([]*types.Order, []*ToCancel, error) {
@@ -473,7 +474,7 @@ func (e *Engine) CalculateSuppliedStake() uint64 {
 
 func (e *Engine) createOrUpdateForParty(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice uint64,
+	bestBidPrice, bestAskPrice *num.Uint,
 	party string,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, *ToCancel, error) {
@@ -575,7 +576,7 @@ func (e *Engine) createOrUpdateForParty(
 		nil
 }
 
-func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
+func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	order := &types.Order{
 		MarketId:             marketID,
 		Side:                 side,
@@ -691,7 +692,7 @@ func (e *Engine) createOrdersFromShape(
 			// we check o.Price == 0 just to make sure we are able to price
 			// the order, in which case the size will have been calculated
 			// properly by the engine.
-			o.Price == 0 {
+			o.Price == num.NewUint(0) {
 			continue
 		}
 
