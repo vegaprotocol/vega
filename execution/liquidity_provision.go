@@ -658,6 +658,13 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			return price - uint64(-po.Offset), po, nil
 		}
 
+		// now this is the case where basePrice is < minPrice
+		// and minPrice is non-negative + inferior to bestBid
+		if minPrice < float64(price) && minPrice > 0 {
+			po.Offset = -int64(price - uint64(minPrice))
+			return price - uint64(-po.Offset), po, nil
+		}
+
 		// now we are going to handle the case where
 		// basePrice < price > minPrice
 		// in that case we will just assign the offset

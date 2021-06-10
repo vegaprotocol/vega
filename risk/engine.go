@@ -187,6 +187,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		if levels == nil {
 			continue
 		}
+
 		levels.PartyId = evt.Party()
 		levels.Asset = asset // This is assuming there's a single asset at play here
 		levels.Timestamp = e.currTime
