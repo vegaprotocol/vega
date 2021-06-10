@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/holiman/uint256"
+	"github.com/shopspring/decimal"
 )
 
 // Uint A wrapper for a big unsigned int
@@ -64,6 +65,12 @@ func (u Uint) Uint64() uint64 {
 
 func (z Uint) BigInt() *big.Int {
 	return z.u.ToBig()
+}
+
+func (z Uint) Float64() float64 {
+	d := decimal.NewFromBigInt(z.BigInt(), 0)
+	retVal, _ := d.Float64()
+	return retVal
 }
 
 // Add will add x and y then store the result

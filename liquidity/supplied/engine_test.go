@@ -7,14 +7,18 @@ import (
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	"code.vegaprotocol.io/vega/liquidity/supplied/mocks"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	MarkPrice = 123
-	Horizon   = 0.001
+	Horizon = 0.001
+)
+
+var (
+	MarkPrice = num.NewUint(123)
 )
 
 func TestCalculateSuppliedLiquidity(t *testing.T) {
@@ -38,7 +42,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 
 	// 1 buy, no sells
 	buyOrder1 := &types.Order{
-		Price:     102,
+		Price:     num.NewUint(102),
 		Size:      30,
 		Remaining: 25,
 		Side:      types.Side_SIDE_BUY,
@@ -46,20 +50,20 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 
 	buyOrder1Prob := 0.256
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(buyOrder1.Price), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, buyOrder1.Price.Float64(), true, true, minPrice, maxPrice).Return(buyOrder1Prob).Times(1)
 
 	liquidity = engine.CalculateSuppliedLiquidity(MarkPrice, MarkPrice, []*types.Order{buyOrder1})
 	require.Equal(t, 0.0, liquidity)
 
 	// 1 buy, 2 sells
 	sellOrder1 := &types.Order{
-		Price:     99,
+		Price:     num.NewUint(99),
 		Size:      15,
 		Remaining: 11,
 		Side:      types.Side_SIDE_SELL,
 	}
 	sellOrder2 := &types.Order{
-		Price:     97,
+		Price:     num.NewUint(97),
 		Size:      60,
 		Remaining: 60,
 		Side:      types.Side_SIDE_SELL,
@@ -67,32 +71,32 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 
 	sellOrder1Prob := 0.33
 	sellOrder2Prob := 0.17
-	buyLiquidity := float64(buyOrder1.Price) * float64(buyOrder1.Remaining) * buyOrder1Prob
-	sellLiquidity := float64(sellOrder1.Price)*float64(sellOrder1.Remaining)*sellOrder1Prob + float64(sellOrder2.Price)*float64(sellOrder2.Remaining)*sellOrder2Prob
+	buyLiquidity := buyOrder1.Price.Float64() * float64(buyOrder1.Remaining) * buyOrder1Prob
+	sellLiquidity := sellOrder1.Price.Float64()*float64(sellOrder1.Remaining)*sellOrder1Prob + sellOrder2.Price.Float64()*float64(sellOrder2.Remaining)*sellOrder2Prob
 	expectedLiquidity := math.Min(buyLiquidity, sellLiquidity)
 
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(sellOrder1.Price), false, true, minPrice, maxPrice).Return(sellOrder1Prob).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(sellOrder2.Price), false, true, minPrice, maxPrice).Return(sellOrder2Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, sellOrder1.Price.Float64(), false, true, minPrice, maxPrice).Return(sellOrder1Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, sellOrder2.Price.Float64(), false, true, minPrice, maxPrice).Return(sellOrder2Prob).Times(1)
 
 	liquidity = engine.CalculateSuppliedLiquidity(MarkPrice, MarkPrice, []*types.Order{buyOrder1, sellOrder1, sellOrder2})
-	require.Equal(t, expectedLiquidity, liquidity)
+	require.InDelta(t, expectedLiquidity, liquidity, 0.01)
 
 	// 2 buys, 2 sells
 	buyOrder2 := &types.Order{
-		Price:     102,
+		Price:     num.NewUint(102),
 		Size:      600,
 		Remaining: 599,
 		Side:      types.Side_SIDE_BUY,
 	}
 
-	buyLiquidity += float64(buyOrder2.Price) * float64(buyOrder2.Remaining) * buyOrder1Prob
+	buyLiquidity += buyOrder2.Price.Float64() * float64(buyOrder2.Remaining) * buyOrder1Prob
 	expectedLiquidity = math.Min(buyLiquidity, sellLiquidity)
 
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice)
 
 	liquidity = engine.CalculateSuppliedLiquidity(MarkPrice, MarkPrice, []*types.Order{buyOrder1, sellOrder1, sellOrder2, buyOrder2})
-	require.Equal(t, expectedLiquidity, liquidity)
+	require.InDelta(t, expectedLiquidity, liquidity, 0.01)
 }
 
 func Test_InteralConsistency(t *testing.T) {
@@ -111,7 +115,7 @@ func Test_InteralConsistency(t *testing.T) {
 	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	buy := &supplied.LiquidityOrder{
-		Price:      minPriceInt,
+		Price:      num.NewUint(minPriceInt),
 		Proportion: 1,
 	}
 	buyShapes := []*supplied.LiquidityOrder{
@@ -119,7 +123,7 @@ func Test_InteralConsistency(t *testing.T) {
 	}
 
 	sell := &supplied.LiquidityOrder{
-		Price:      maxPriceInt,
+		Price:      num.NewUint(maxPriceInt),
 		Proportion: 1,
 	}
 
@@ -128,8 +132,8 @@ func Test_InteralConsistency(t *testing.T) {
 	}
 	validBuy1Prob := 0.1
 	validSell1Prob := 0.22
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(buy.Price), true, true, minPrice, maxPrice).Return(validBuy1Prob).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(sell.Price), false, true, minPrice, maxPrice).Return(validSell1Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, buy.Price.Float64(), true, true, minPrice, maxPrice).Return(validBuy1Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, sell.Price.Float64(), false, true, minPrice, maxPrice).Return(validSell1Prob).Times(1)
 
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
@@ -157,7 +161,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
-	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(6)
+	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(5)
 
 	limitOrders := []*types.Order{}
 
@@ -165,11 +169,11 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	validBuy1 := &supplied.LiquidityOrder{
-		Price:      minPriceInt,
+		Price:      num.NewUint(minPriceInt),
 		Proportion: 20,
 	}
 	validBuy2 := &supplied.LiquidityOrder{
-		Price:      minPriceInt + 1,
+		Price:      num.NewUint(minPriceInt + 1),
 		Proportion: 30,
 	}
 	buyShapes := []*supplied.LiquidityOrder{
@@ -177,11 +181,11 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 		validBuy2,
 	}
 	validSell1 := &supplied.LiquidityOrder{
-		Price:      maxPriceInt - 1,
+		Price:      num.NewUint(maxPriceInt - 1),
 		Proportion: 11,
 	}
 	validSell2 := &supplied.LiquidityOrder{
-		Price:      maxPriceInt,
+		Price:      num.NewUint(maxPriceInt),
 		Proportion: 22,
 	}
 	sellShapes := []*supplied.LiquidityOrder{
@@ -192,10 +196,10 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	validBuy2Prob := 0.2
 	validSell1Prob := 0.22
 	validSell2Prob := 0.11
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(validBuy1.Price), true, true, minPrice, maxPrice).Return(validBuy1Prob).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(validBuy2.Price), true, true, minPrice, maxPrice).Return(validBuy2Prob).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(validSell1.Price), false, true, minPrice, maxPrice).Return(validSell1Prob).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(validSell2.Price), false, true, minPrice, maxPrice).Return(validSell2Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, validBuy1.Price.Float64(), true, true, minPrice, maxPrice).Return(validBuy1Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, validBuy2.Price.Float64(), true, true, minPrice, maxPrice).Return(validBuy2Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, validSell1.Price.Float64(), false, true, minPrice, maxPrice).Return(validSell1Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, validSell2.Price.Float64(), false, true, minPrice, maxPrice).Return(validSell2Prob).Times(1)
 
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
@@ -236,11 +240,11 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	err = engine.CalculateLiquidityImpliedVolumes(MarkPrice, MarkPrice, liquidityObligation, limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	expectedVolumeValidBuy1 := uint64(math.Ceil(liquidityObligation * float64(validBuy1.Proportion) / float64(validBuy1.Proportion+validBuy2.Proportion) / validBuy1Prob / float64(validBuy1.Price)))
-	expectedVolumeValidBuy2 := uint64(math.Ceil(liquidityObligation * float64(validBuy2.Proportion) / float64(validBuy1.Proportion+validBuy2.Proportion) / validBuy2Prob / float64(validBuy2.Price)))
+	expectedVolumeValidBuy1 := uint64(math.Ceil(liquidityObligation * float64(validBuy1.Proportion) / float64(validBuy1.Proportion+validBuy2.Proportion) / validBuy1Prob / validBuy1.Price.Float64()))
+	expectedVolumeValidBuy2 := uint64(math.Ceil(liquidityObligation * float64(validBuy2.Proportion) / float64(validBuy1.Proportion+validBuy2.Proportion) / validBuy2Prob / validBuy2.Price.Float64()))
 
-	expectedVolumeValidSell1 := uint64(math.Ceil(liquidityObligation * float64(validSell1.Proportion) / float64(validSell1.Proportion+validSell2.Proportion) / validSell1Prob / float64(validSell1.Price)))
-	expectedVolumeValidSell2 := uint64(math.Ceil(liquidityObligation * float64(validSell2.Proportion) / float64(validSell1.Proportion+validSell2.Proportion) / validSell2Prob / float64(validSell2.Price)))
+	expectedVolumeValidSell1 := uint64(math.Ceil(liquidityObligation * float64(validSell1.Proportion) / float64(validSell1.Proportion+validSell2.Proportion) / validSell1Prob / validSell1.Price.Float64()))
+	expectedVolumeValidSell2 := uint64(math.Ceil(liquidityObligation * float64(validSell2.Proportion) / float64(validSell1.Proportion+validSell2.Proportion) / validSell2Prob / validSell2.Price.Float64()))
 
 	require.Equal(t, expectedVolumeValidBuy1, validBuy1.LiquidityImpliedVolume)
 	require.Equal(t, expectedVolumeValidBuy2, validBuy2.LiquidityImpliedVolume)
@@ -269,11 +273,11 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	validBuy1 := &supplied.LiquidityOrder{
-		Price:      minPriceInt,
+		Price:      num.NewUint(minPriceInt),
 		Proportion: 20,
 	}
 	validBuy2 := &supplied.LiquidityOrder{
-		Price:      minPriceInt + 1,
+		Price:      num.NewUint(minPriceInt + 1),
 		Proportion: 30,
 	}
 	buyShapes := []*supplied.LiquidityOrder{
@@ -281,11 +285,11 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		validBuy2,
 	}
 	validSell1 := &supplied.LiquidityOrder{
-		Price:      maxPriceInt - 1,
+		Price:      num.NewUint(maxPriceInt - 1),
 		Proportion: 11,
 	}
 	validSell2 := &supplied.LiquidityOrder{
-		Price:      maxPriceInt,
+		Price:      num.NewUint(maxPriceInt),
 		Proportion: 22,
 	}
 	sellShapes := []*supplied.LiquidityOrder{
@@ -293,10 +297,10 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		validSell2,
 	}
 
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(validBuy1.Price), true, true, minPrice, maxPrice).Return(0.1).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(validBuy2.Price), true, true, minPrice, maxPrice).Return(0.2).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(validSell1.Price), false, true, minPrice, maxPrice).Return(0.22).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(validSell2.Price), false, true, minPrice, maxPrice).Return(0.11).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, validBuy1.Price.Float64(), true, true, minPrice, maxPrice).Return(0.1).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, validBuy2.Price.Float64(), true, true, minPrice, maxPrice).Return(0.2).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, validSell1.Price.Float64(), false, true, minPrice, maxPrice).Return(0.22).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, validSell2.Price.Float64(), false, true, minPrice, maxPrice).Return(0.11).Times(1)
 
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
@@ -305,28 +309,28 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	// Limit orders don't provide enough liquidity
 	limitOrders := []*types.Order{
 		{
-			Price:     95,
+			Price:     num.NewUint(95),
 			Size:      500,
 			Remaining: 1,
 			Side:      types.Side_SIDE_BUY,
 		},
 		{
-			Price:     97,
+			Price:     num.NewUint(97),
 			Size:      1000,
 			Remaining: 1,
 			Side:      types.Side_SIDE_BUY,
 		},
 		{
-			Price:     104,
+			Price:     num.NewUint(104),
 			Size:      500,
 			Remaining: 1,
 			Side:      types.Side_SIDE_SELL,
 		},
 	}
 
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(limitOrders[0].Price), true, true, minPrice, maxPrice).Return(0.175).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(limitOrders[1].Price), true, true, minPrice, maxPrice).Return(0.312).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(limitOrders[2].Price), false, true, minPrice, maxPrice).Return(0.5).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, limitOrders[0].Price.Float64(), true, true, minPrice, maxPrice).Return(0.175).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, limitOrders[1].Price.Float64(), true, true, minPrice, maxPrice).Return(0.312).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, limitOrders[2].Price.Float64(), false, true, minPrice, maxPrice).Return(0.5).Times(1)
 
 	limitOrdersSuppliedLiquidity := engine.CalculateSuppliedLiquidity(MarkPrice, MarkPrice, collateOrders(limitOrders, nil, nil))
 	require.True(t, limitOrdersSuppliedLiquidity < liquidityObligation)
@@ -349,19 +353,19 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	// Limit buy orders provide enoguh liquidity
 	limitOrders = []*types.Order{
 		{
-			Price:     95,
+			Price:     num.NewUint(95),
 			Size:      500,
 			Remaining: 100,
 			Side:      types.Side_SIDE_BUY,
 		},
 		{
-			Price:     97,
+			Price:     num.NewUint(97),
 			Size:      1000,
 			Remaining: 100,
 			Side:      types.Side_SIDE_BUY,
 		},
 		{
-			Price:     104,
+			Price:     num.NewUint(104),
 			Size:      500,
 			Remaining: 1,
 			Side:      types.Side_SIDE_SELL,
@@ -388,19 +392,19 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	//Limit sell orders provide enoguh liquidity
 	limitOrders = []*types.Order{
 		{
-			Price:     95,
+			Price:     num.NewUint(95),
 			Size:      500,
 			Remaining: 1,
 			Side:      types.Side_SIDE_BUY,
 		},
 		{
-			Price:     97,
+			Price:     num.NewUint(97),
 			Size:      1000,
 			Remaining: 1,
 			Side:      types.Side_SIDE_BUY,
 		},
 		{
-			Price:     104,
+			Price:     num.NewUint(104),
 			Size:      500,
 			Remaining: 100,
 			Side:      types.Side_SIDE_SELL,
@@ -427,19 +431,19 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	// Limit buy & sell orders provide enoguh liquidity
 	limitOrders = []*types.Order{
 		{
-			Price:     95,
+			Price:     num.NewUint(95),
 			Size:      500,
 			Remaining: 100,
 			Side:      types.Side_SIDE_BUY,
 		},
 		{
-			Price:     97,
+			Price:     num.NewUint(97),
 			Size:      1000,
 			Remaining: 100,
 			Side:      types.Side_SIDE_BUY,
 		},
 		{
-			Price:     104,
+			Price:     num.NewUint(104),
 			Size:      500,
 			Remaining: 100,
 			Side:      types.Side_SIDE_SELL,
@@ -479,21 +483,21 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	invalidBuy := &supplied.LiquidityOrder{
-		Price:      minPriceInt - 1,
+		Price:      num.NewUint(minPriceInt - 1),
 		Proportion: 10,
 	}
 	buyShapes := []*supplied.LiquidityOrder{
 		invalidBuy,
 	}
 	invalidSell := &supplied.LiquidityOrder{
-		Price:      maxPriceInt + 1,
+		Price:      num.NewUint(maxPriceInt + 1),
 		Proportion: 33,
 	}
 	sellShapes := []*supplied.LiquidityOrder{
 		invalidSell,
 	}
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(invalidBuy.Price), true, true, minPrice, maxPrice).Return(0.0).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(invalidSell.Price), false, true, minPrice, maxPrice).Return(0.0).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, invalidBuy.Price.Float64(), true, true, minPrice, maxPrice).Return(0.0).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, invalidSell.Price.Float64(), false, true, minPrice, maxPrice).Return(0.0).Times(1)
 
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
@@ -521,13 +525,13 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	var maxPriceInt = uint64(math.Floor(maxPrice))
 
 	order1 := &types.Order{
-		Price:     minPriceInt,
+		Price:     num.NewUint(minPriceInt),
 		Size:      15,
 		Remaining: 11,
 		Side:      types.Side_SIDE_BUY,
 	}
 	order2 := &types.Order{
-		Price:     maxPriceInt,
+		Price:     num.NewUint(maxPriceInt),
 		Size:      60,
 		Remaining: 60,
 		Side:      types.Side_SIDE_SELL,
@@ -539,8 +543,8 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	}
 
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(order1.Price), true, true, minPrice, maxPrice).Return(0.123).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(order2.Price), false, true, minPrice, maxPrice).Return(0.234).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, order1.Price.Float64(), true, true, minPrice, maxPrice).Return(0.123).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, order2.Price.Float64(), false, true, minPrice, maxPrice).Return(0.234).Times(1)
 
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
@@ -552,8 +556,8 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	minPrice -= 10
 	maxPrice += 10
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(order1.Price), true, true, minPrice, maxPrice).Return(0.123).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(float64(MarkPrice), Horizon, float64(order2.Price), false, true, minPrice, maxPrice).Return(0.234).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, order1.Price.Float64(), true, true, minPrice, maxPrice).Return(0.123).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice.Float64(), Horizon, order2.Price.Float64(), false, true, minPrice, maxPrice).Return(0.234).Times(1)
 
 	liquidity2 := engine.CalculateSuppliedLiquidity(MarkPrice, MarkPrice, orders)
 	require.Less(t, 0.0, liquidity2)
