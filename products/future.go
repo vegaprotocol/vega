@@ -37,14 +37,14 @@ type oracle struct {
 
 type oracleData struct {
 	updated         bool
-	settlementPrice int64
+	settlementPrice *num.Uint
 }
 
-func (d *oracleData) SettlementPrice() (int64, error) {
+func (d *oracleData) SettlementPrice() (*num.Uint, error) {
 	if !d.updated {
-		return 0, errors.New("settlement price is not set")
+		return nil, errors.New("settlement price is not set")
 	}
-	return d.settlementPrice, nil
+	return d.settlementPrice.Clone(), nil
 }
 
 type oracleBinding struct {
@@ -63,7 +63,7 @@ func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (*types.Financi
 		netPosition = -netPosition
 	}
 
-	amount, _ := num.NewUint(0).Delta(num.NewUint(uint64(settlementPrice)), entryPrice)
+	amount, _ := num.NewUint(0).Delta(settlementPrice, entryPrice)
 	amount = amount.Mul(amount, num.NewUint(uint64(netPosition)))
 
 	return &types.FinancialAmount{
@@ -73,8 +73,8 @@ func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (*types.Financi
 }
 
 // Value - returns the nominal value of a unit given a current mark price
-func (f *Future) Value(markPrice uint64) (uint64, error) {
-	return markPrice, nil
+func (f *Future) Value(markPrice *num.Uint) (*num.Uint, error) {
+	return markPrice.Clone(), nil
 }
 
 // GetAsset return the asset used by the future
@@ -87,7 +87,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
 
-	settlementPrice, err := data.GetInteger(f.oracle.binding.settlementPriceProperty)
+	settlementPrice, err := data.GetUint(f.oracle.binding.settlementPriceProperty)
 	if err != nil {
 		f.log.Error(
 			"could not parse the property acting as settlement price",
@@ -102,7 +102,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug(
 			"future settlement price updated",
-			logging.Int64("settlementPrice", settlementPrice),
+			logging.String("settlementPrice", settlementPrice.String()),
 		)
 	}
 
