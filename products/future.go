@@ -63,7 +63,7 @@ func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (*types.Financi
 		netPosition = -netPosition
 	}
 
-	amount, _ := num.NewUint(0).Delta(settlementPrice, entryPrice)
+	amount, _ := settlementPrice.Delta(settlementPrice, entryPrice)
 	amount = amount.Mul(amount, num.NewUint(uint64(netPosition)))
 
 	return &types.FinancialAmount{
@@ -102,7 +102,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug(
 			"future settlement price updated",
-			logging.String("settlementPrice", settlementPrice.String()),
+			logging.BigUint("settlementPrice", settlementPrice),
 		)
 	}
 
