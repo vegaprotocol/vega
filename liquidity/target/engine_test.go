@@ -49,7 +49,7 @@ func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 
 	targetStake := engine.GetTargetStake(rf, now, num.NewUint(123))
 
-	require.Equal(t, 0.0, targetStake)
+	require.Equal(t, decimal.NewFromFloat(0.0), targetStake)
 }
 
 func TestGetTargetStake_VerifyFormula(t *testing.T) {
@@ -60,12 +60,11 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	rfShort := 0.1
 	var oi uint64 = 23
 	var markPrice *num.Uint = num.NewUint(123)
-	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
-	mp := decimal.NewFromBigInt(markPrice.BigInt(), 0)
-	mp = mp.Mul(decimal.NewFromInt(int64(oi)))
-	mp = mp.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
 
-	expectedTargetStake, _ := mp.Float64()
+	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
+	expectedTargetStake := decimal.NewFromBigInt(markPrice.BigInt(), 0)
+	expectedTargetStake = expectedTargetStake.Mul(decimal.NewFromInt(int64(oi)))
+	expectedTargetStake = expectedTargetStake.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
 
 	engine := target.NewEngine(params, nil)
 	rf := types.RiskFactor{
@@ -93,14 +92,12 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	rfLong := 0.3
 	rfShort := 0.1
 	var markPrice *num.Uint = num.NewUint(123)
-	expectedTargetStake := func(oi uint64) float64 {
+	expectedTargetStake := func(oi uint64) decimal.Decimal {
 		// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
 		mp := decimal.NewFromBigInt(markPrice.BigInt(), 0)
 		mp = mp.Mul(decimal.NewFromInt(int64(oi)))
 		mp = mp.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
-
-		retVal, _ := mp.Float64()
-		return retVal
+		return mp
 	}
 
 	engine := target.NewEngine(params, nil)
@@ -161,11 +158,9 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	var markPrice *num.Uint = num.NewUint(123)
 
 	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
-	mp := decimal.NewFromBigInt(markPrice.BigInt(), 0)
-	mp = mp.Mul(decimal.NewFromInt(int64(oi)))
-	mp = mp.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
-
-	expectedTargetStake, _ := mp.Float64()
+	expectedTargetStake := decimal.NewFromBigInt(markPrice.BigInt(), 0)
+	expectedTargetStake = expectedTargetStake.Mul(decimal.NewFromInt(int64(oi)))
+	expectedTargetStake = expectedTargetStake.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
 
 	ctrl := gomock.NewController(t)
 	oiCalc := mocks.NewMockOpenInterestCalculator(ctrl)
@@ -202,13 +197,11 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	theoreticalOI = oi + 2
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
 
-	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
-	mp = decimal.NewFromBigInt(markPrice.BigInt(), 0)
-	mp = mp.Mul(decimal.NewFromInt(int64(oi)))
-	mp = mp.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
-	expectedTargetStake, _ = mp.Float64()
+	// float64(markPrice.Uint64()*theoreticalOI) * math.Max(rfLong, rfShort) * scalingFactor
+	expectedTheoreticalTargetStake = decimal.NewFromBigInt(markPrice.BigInt(), 0)
+	expectedTheoreticalTargetStake = expectedTheoreticalTargetStake.Mul(decimal.NewFromInt(int64(theoreticalOI)))
+	expectedTheoreticalTargetStake = expectedTheoreticalTargetStake.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
 
-	expectedTheoreticalTargetStake = float64(markPrice.Uint64()*theoreticalOI) * math.Max(rfLong, rfShort) * scalingFactor
 	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
