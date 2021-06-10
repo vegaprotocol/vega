@@ -43,9 +43,9 @@ func UintFromString(str string, base int) (*Uint, bool) {
 }
 
 // Sum just removes the need to write num.NewUint(0).Sum(x, y, z)
-// so you can write num.Sum(x, y, z) instead
+// so you can write num.Sum(x, y, z) instead, equivalent to x + y + z
 func Sum(vals ...*Uint) *Uint {
-	return NewUint(0).Sum(vals...)
+	return NewUint(0).AddSum(vals...)
 }
 
 func (z *Uint) Set(oth *Uint) *Uint {
@@ -73,8 +73,9 @@ func (z *Uint) Add(x, y *Uint) *Uint {
 	return z
 }
 
-// Sum adds multiple values at the same time
-func (z *Uint) Sum(vals ...*Uint) *Uint {
+// AddSum adds multiple values at the same time to a given uint
+// so x.AddSum(y, z) is equivalent to x + y + z
+func (z *Uint) AddSum(vals ...*Uint) *Uint {
 	for _, x := range vals {
 		z.u.Add(&z.u, &x.u)
 	}
