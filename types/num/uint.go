@@ -56,6 +56,10 @@ func (z Uint) Uint64() uint64 {
 	return z.u.Uint64()
 }
 
+func (z Uint) BigInt() *big.Int {
+	return z.u.ToBig()
+}
+
 // Add will add x and y then store the result
 // into u
 // this is equivalent to:
@@ -73,7 +77,7 @@ func (z *Uint) Add(x, y *Uint) *Uint {
 // `z = x - y`
 // u is returned for convenience, no
 // new variable is created.
-// False is returned if an overflow occured
+// False is returned if an overflow occurred
 func (z *Uint) AddOverflow(x, y *Uint) (*Uint, bool) {
 	_, ok := z.u.AddOverflow(&x.u, &y.u)
 	return z, ok
