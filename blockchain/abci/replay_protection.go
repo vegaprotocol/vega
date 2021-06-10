@@ -102,7 +102,7 @@ func (rp *ReplayProtector) CheckTx(tx Tx) error {
 	// We perform 2 verifications:
 	// First we make sure that the Tx is not on the ring buffer.
 	key := string(tx.Hash())
-	if !rp.Has(key) {
+	if rp.Has(key) {
 		return ErrTxAlreadyInCache
 	}
 
