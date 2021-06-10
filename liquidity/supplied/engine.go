@@ -57,9 +57,9 @@ type Engine struct {
 	cachedMin float64
 	cachedMax float64
 	// Buy side cache
-	bCache map[*num.Uint]float64
+	bCache map[num.Uint]float64
 	// Sell side cache
-	sCache map[*num.Uint]float64
+	sCache map[num.Uint]float64
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
@@ -71,8 +71,8 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		horizon:                        riskModel.GetProjectionHorizon(),
 		probabilityOfTradingTauScaling: 1, // this is the same as the default in the netparams
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
-		bCache:                         map[*num.Uint]float64{},
-		sCache:                         map[*num.Uint]float64{},
+		bCache:                         map[num.Uint]float64{},
+		sCache:                         map[num.Uint]float64{},
 	}
 }
 
@@ -136,7 +136,8 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 			d := decimal.NewFromFloat(prob)
 			d = d.Mul(decimal.NewFromInt(int64(o.Remaining)))
 			d = d.Mul(decimal.NewFromBigInt(o.Price.BigInt(), 0))
-			bLiq, _ = d.Float64()
+			liq, _ := d.Float64()
+			bLiq += liq
 		}
 		if o.Side == types.Side_SIDE_SELL {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
@@ -144,7 +145,8 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 			d := decimal.NewFromFloat(prob)
 			d = d.Mul(decimal.NewFromInt(int64(o.Remaining)))
 			d = d.Mul(decimal.NewFromBigInt(o.Price.BigInt(), 0))
-			sLiq, _ = d.Float64()
+			liq, _ := d.Float64()
+			sLiq += liq
 		}
 	}
 	return bLiq, sLiq
@@ -201,8 +203,8 @@ func (e *Engine) updateSizes(
 func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice float64, maxPrice float64) (f float64) {
 	// if min, max changed since caches were created then reset
 	if e.cachedMin != minPrice || e.cachedMax != maxPrice {
-		e.bCache = make(map[*num.Uint]float64, len(e.bCache))
-		e.sCache = make(map[*num.Uint]float64, len(e.sCache))
+		e.bCache = make(map[num.Uint]float64, len(e.bCache))
+		e.sCache = make(map[num.Uint]float64, len(e.sCache))
 		e.cachedMin, e.cachedMax = minPrice, maxPrice
 	}
 
@@ -243,14 +245,14 @@ func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice *num.Uint, is
 		cache = e.bCache
 	}
 
-	prob, ok := cache[orderPrice]
+	prob, ok := cache[*orderPrice]
 	if !ok {
 		tauScaled := e.horizon * e.probabilityOfTradingTauScaling
 		// e.rm.ProbabilityOfTrading(float64(currentPrice.Uint64()), tauScaled, float64(orderPrice.Uint64()), isBid, true, minPrice, maxPrice)
 		cp, _ := decimal.NewFromBigInt(currentPrice.BigInt(), 0).Float64()
 		op, _ := decimal.NewFromBigInt(orderPrice.BigInt(), 0).Float64()
 		prob = e.rm.ProbabilityOfTrading(cp, tauScaled, op, isBid, true, minPrice, maxPrice)
-		cache[orderPrice] = prob
+		cache[*orderPrice] = prob
 	}
 	return prob
 }
