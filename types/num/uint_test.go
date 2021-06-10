@@ -138,7 +138,7 @@ func TestSum(t *testing.T) {
 		zero := num.NewUint(0)
 		fSum := num.Sum(x, y, z)
 		assert.Equal(t, exp.String(), fSum.String())
-		ptr := zero.Sum(x, y, z)
+		ptr := zero.AddSum(x, y, z)
 		assert.Equal(t, exp.String(), zero.String())
 		assert.Equal(t, zero, ptr)
 		// compare to manual:
