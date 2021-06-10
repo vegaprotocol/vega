@@ -17,9 +17,15 @@ type Chain interface {
 	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet BlockchainStats
+type BlockchainStats interface {
+	Height() uint64
+}
+
 type Commander struct {
-	bc  Chain
-	wal Wallet
+	bc     Chain
+	wal    Wallet
+	bstats BlockchainStats
 }
 
 var (
@@ -29,13 +35,14 @@ var (
 // NewCommander - used to sign and send transaction from core
 // e.g. NodeRegistration, NodeVote
 // chain argument can't be passed in in cmd package, but is used for tests
-func NewCommander(bc Chain, wal Wallet) (*Commander, error) {
+func NewCommander(bc Chain, wal Wallet, bstats BlockchainStats) (*Commander, error) {
 	if Blockchain(wal.Chain()) != Vega {
 		return nil, ErrVegaWalletRequired
 	}
 	return &Commander{
-		bc:  bc,
-		wal: wal,
+		bc:     bc,
+		wal:    wal,
+		bstats: bstats,
 	}, nil
 }
 
@@ -46,7 +53,7 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 
 // Command - send command to chain
 func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message) error {
-	inputData := commandspb.NewInputData()
+	inputData := commandspb.NewInputData(c.bstats.Height())
 	wrapPayloadIntoInputData(inputData, cmd, payload)
 	marshalledData, err := proto.Marshal(inputData)
 	if err != nil {

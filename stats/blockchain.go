@@ -67,7 +67,7 @@ func (b Blockchain) CurrentTradesInBatch() uint64 {
 }
 
 // Height returns the current heights of the chain
-func (b *Blockchain) Height() uint64 {
+func (b Blockchain) Height() uint64 {
 	return b.height
 }
 

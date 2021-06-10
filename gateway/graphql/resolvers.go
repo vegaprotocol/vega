@@ -349,6 +349,15 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
+	resp, err := r.tradingDataClient.LastBlockHeight(ctx, &protoapi.LastBlockHeightRequest{})
+	if err != nil {
+		return "0", err
+	}
+
+	return strconv.FormatUint(resp.Height, 10), nil
+}
+
 func (r *myQueryResolver) OracleSpecs(ctx context.Context) ([]*oraclespb.OracleSpec, error) {
 	res, err := r.tradingDataClient.OracleSpecs(
 		ctx, &protoapi.OracleSpecsRequest{},

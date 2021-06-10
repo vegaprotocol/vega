@@ -176,7 +176,7 @@ func (h *Handler) SignAny(token, inputData, pubKey string) ([]byte, error) {
 	return kp.Algorithm.Sign(kp.privBytes, rawInputData)
 }
 
-func (h *Handler) SignTxV2(token string, req walletpb.SubmitTransactionRequest) (*commandspb.Transaction, error) {
+func (h *Handler) SignTxV2(token string, req walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -188,7 +188,7 @@ func (h *Handler) SignTxV2(token string, req walletpb.SubmitTransactionRequest) 
 		return nil, ErrPubKeyIsTainted
 	}
 
-	data := commandspb.NewInputData()
+	data := commandspb.NewInputData(height)
 	wrapRequestCommandIntoInputData(data, req)
 	marshalledData, err := proto.Marshal(data)
 	if err != nil {

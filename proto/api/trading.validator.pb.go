@@ -1100,3 +1100,9 @@ func (this *OracleDataBySpecResponse) Validate() error {
 	}
 	return nil
 }
+func (this *LastBlockHeightRequest) Validate() error {
+	return nil
+}
+func (this *LastBlockHeightResponse) Validate() error {
+	return nil
+}

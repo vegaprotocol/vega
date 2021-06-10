@@ -69,3 +69,7 @@ func (s *Stats) GetVersionHash() string {
 func (s *Stats) GetUptime() time.Time {
 	return s.uptime
 }
+
+func (s Stats) Height() uint64 {
+	return s.Blockchain.Height()
+}

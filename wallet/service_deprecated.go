@@ -68,7 +68,13 @@ func (s *Service) signTx(t string, w http.ResponseWriter, r *http.Request, _ htt
 		return
 	}
 
-	sb, err := s.handler.SignTx(t, req.Tx, req.PubKey)
+	height, err := s.nodeClient.LastBlockHeight(r.Context())
+	if err != nil {
+		writeError(w, newError("could not get last block height"), http.StatusInternalServerError)
+		return
+	}
+
+	sb, err := s.handler.SignTx(t, req.Tx, req.PubKey, height)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
@@ -107,4 +113,3 @@ func (s *Service) signTx(t string, w http.ResponseWriter, r *http.Request, _ htt
 
 	writeSuccess(w, res, http.StatusOK)
 }
-

@@ -33,6 +33,7 @@ type Service struct {
 	nodeForward NodeForward
 	rl          *vhttp.RateLimit
 	cfunc       context.CancelFunc
+	nodeClient  NodeClient
 }
 
 // CreateLoginWalletRequest describes the request for CreateWallet, LoginWallet.
@@ -108,8 +109,8 @@ type WalletHandler interface {
 	GetPublicKey(token, pubKey string) (*Keypair, error)
 	GetWalletName(token string) (string, error)
 	ListPublicKeys(token string) ([]Keypair, error)
-	SignTx(token, tx, pubKey string) (SignedBundle, error)
-	SignTxV2(token string, req walletpb.SubmitTransactionRequest) (*commandspb.Transaction, error)
+	SignTx(token, tx, pubKey string, height uint64) (SignedBundle, error)
+	SignTxV2(token string, req walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error)
 	SignAny(token, inputData, pubKey string) ([]byte, error)
 	TaintKey(token, pubKey, passphrase string) error
 	UpdateMeta(token, pubKey, passphrase string, meta []Meta) error
@@ -121,6 +122,12 @@ type WalletHandler interface {
 type NodeForward interface {
 	Send(context.Context, *SignedBundle, api.SubmitTransactionRequest_Type) error
 	SendTxV2(context.Context, *commandspb.Transaction, api.SubmitTransactionV2Request_Type) error
+}
+
+// NodeClient ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_client_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeClient
+type NodeClient interface {
+	LastBlockHeight(context.Context) (uint64, error)
 }
 
 func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, error) {
@@ -138,11 +145,15 @@ func NewService(log *logging.Logger, cfg *Config, rootPath string) (*Service, er
 	if err != nil {
 		return nil, err
 	}
+	nodeClient, err := NewNodeClient(log, cfg.Node)
+	if err != nil {
+		return nil, err
+	}
 	handler := NewHandler(auth, fileStore)
-	return NewServiceWith(log, cfg, handler, nodeForward)
+	return NewServiceWith(log, cfg, handler, nodeForward, nodeClient)
 }
 
-func NewServiceWith(log *logging.Logger, cfg *Config, h WalletHandler, n NodeForward) (*Service, error) {
+func NewServiceWith(log *logging.Logger, cfg *Config, h WalletHandler, n NodeForward, nc NodeClient) (*Service, error) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	rl, err := vhttp.NewRateLimit(ctx, cfg.RateLimit)
 	if err != nil {
@@ -155,6 +166,7 @@ func NewServiceWith(log *logging.Logger, cfg *Config, h WalletHandler, n NodeFor
 		cfg:         cfg,
 		handler:     h,
 		nodeForward: n,
+		nodeClient:  nc,
 		cfunc:       cfunc,
 		rl:          rl,
 	}
@@ -377,7 +389,6 @@ func (s *Service) ListPublicKeys(t string, w http.ResponseWriter, r *http.Reques
 	writeSuccess(w, KeysResponse{Keys: keys}, http.StatusOK)
 }
 
-
 func (s *Service) TaintKey(t string, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	req := PassphraseRequest{}
 	if err := unmarshalBody(r, &req); err != nil {
@@ -458,7 +469,13 @@ func (s *Service) signTxV2(token string, w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	tx, err := s.handler.SignTxV2(token, req)
+	height, err := s.nodeClient.LastBlockHeight(r.Context())
+	if err != nil {
+		writeError(w, newError("could not get last block height"), http.StatusInternalServerError)
+		return
+	}
+
+	tx, err := s.handler.SignTxV2(token, req, height)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return

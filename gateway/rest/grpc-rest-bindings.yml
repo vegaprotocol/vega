@@ -154,6 +154,8 @@ http:
     # Miscellaneous
     - selector: api.v1.TradingDataService.Statistics
       get: '/statistics'
+    - selector: api.v1.TradingDataService.LastBlockHeight
+      get: '/blockchain/height'
     - selector: api.v1.TradingDataService.GetVegaTime
       get: '/time'
 
