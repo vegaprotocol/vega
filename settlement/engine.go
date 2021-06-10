@@ -195,11 +195,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// and the old mark price at which the trader held the position
 		// the trades slice contains all trade positions (position changes for the trader)
 		// at their exact trade price, so we can MTM that volume correctly, too
-		mtmShare := calcMTM(markPrice, current.price, current.size, traded)
-		mtmAmount := num.NewUint(uint64(mtmShare))
-		if mtmShare < 0 {
-			mtmAmount = mtmAmount.SetUint64(uint64(-mtmShare))
-		}
+		mtmShare, neg := calcMTM(markPrice, current.price, current.size, traded)
 		// we've marked this trader to market, their position can now reflect this
 		current.update(evt)
 		current.price = markPrice
@@ -210,7 +206,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			e.rmPosition(party)
 		}
 		// we don't need to create a transfer if there's no changes to the balance...
-		if mtmShare == 0 {
+		if mtmShare.IsZero() {
 			wins = append(wins, &mtmTransfer{
 				MarketPosition: current,
 				transfer:       nil,
@@ -221,12 +217,12 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		settle := &types.Transfer{
 			Owner: party,
 			Amount: &types.FinancialAmount{
-				Amount: mtmAmount, // current delta -> mark price minus current position average
+				Amount: mtmShare, // current delta -> mark price minus current position average
 				Asset:  e.product.GetAsset(),
 			},
 		}
 
-		if mtmShare > 0 {
+		if !neg {
 			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
 			wins = append(wins, &mtmTransfer{
 				MarketPosition: current,
@@ -368,23 +364,40 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
-func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) int64 {
-	delta, neg := num.NewUint(0).Delta(markPrice, price)
-	// the delta will fit (99.9999% certain, unless a price can change by more than max int64)
-	mtmShare := int64(delta.Uint64()) * size
-	if neg {
-		// make negative
-		mtmShare *= -1
+func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, bool) {
+	delta, sign := num.NewUint(0).Delta(markPrice, price)
+	// this shouldn't be possible I don't think, but just in case
+	if size < 0 {
+		size = -size
+		// swap sign
+		sign = !sign
 	}
+	mtmShare := delta.Mul(delta, num.NewUint(uint64(size)))
 	for _, c := range trades {
-		delta, neg = delta.Delta(markPrice, c.price)
-		add := int64(delta.Uint64()) * c.size
-		if neg {
-			add *= -1
+		delta, neg := num.NewUint(0).Delta(markPrice, c.price)
+		size := num.NewUint(uint64(c.size))
+		if c.size < 0 {
+			size = size.SetUint64(uint64(-c.size))
+			neg = !neg
 		}
-		mtmShare += add
+		add := delta.Mul(delta, size)
+		if mtmShare.IsZero() {
+			mtmShare = mtmShare.Set(add)
+			sign = neg
+		} else if neg == sign {
+			// both mtmShare and add are the same sign
+			mtmShare = mtmShare.Add(mtmShare, add)
+		} else if mtmShare.GTE(add) {
+			// regardless of sign, we just have to subtract
+			mtmShare = mtmShare.Sub(mtmShare, add)
+		} else {
+			// add > mtmShare, we don't care about signs here
+			// just subtract mtmShare and switch signs
+			mtmShare = add.Sub(add, mtmShare)
+			sign = neg
+		}
 	}
-	return mtmShare
+	return mtmShare, sign
 }
 
 type lastMarkPriceSettlement struct {
