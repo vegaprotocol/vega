@@ -76,9 +76,10 @@ func TestFuture(t *testing.T) {
 	assert.Equal(t, SettlementAssetStr, prod.GetAsset())
 
 	// Future values are the same as the mark price
-	value, err := prod.Value(1000)
+	given := num.NewUint(1000)
+	value, err := prod.Value(given)
 	assert.NoError(t, err)
-	assert.EqualValues(t, 1000, value)
+	assert.EqualValues(t, given.String(), value.String())
 
 	var params = []struct {
 		entryPrice      uint64

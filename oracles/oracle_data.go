@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"go.uber.org/zap"
 )
@@ -12,6 +13,18 @@ import (
 type OracleData struct {
 	PubKeys []string
 	Data    map[string]string
+}
+
+func (d OracleData) GetUint(name string) (*num.Uint, error) {
+	value, ok := d.Data[name]
+	if !ok {
+		return nil, errPropertyNotFound(name)
+	}
+	val, fail := num.UintFromString(value, 10)
+	if fail {
+		return nil, errInvalidString(name, value)
+	}
+	return val, nil
 }
 
 // GetInteger converts the value associated to propertyName into an integer.
@@ -77,4 +90,8 @@ func (d OracleData) Debug() []zap.Field {
 // errPropertyNotFound is returned when the property is not present in the Data
 func errPropertyNotFound(propertyName string) error {
 	return fmt.Errorf("property \"%s\" not found", propertyName)
+}
+
+func errInvalidString(name, val string) error {
+	return fmt.Errorf("could not parse value '%s' for property '%s'", val, name)
 }
