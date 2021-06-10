@@ -161,7 +161,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
 	minPrice := 89.2
 	maxPrice := 111.1
-	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(5)
+	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(6)
 
 	limitOrders := []*types.Order{}
 

@@ -193,8 +193,8 @@ func (e *Engine) updateSizes(
 			scaling = fraction / prob
 		}
 		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
-		d := decimal.NewFromFloat(math.Ceil(liquidityObligation * scaling))
-		d = d.Div(decimal.NewFromBigInt(o.Price.BigInt(), 0))
+		d := decimal.NewFromFloat(liquidityObligation * scaling)
+		d = d.Div(decimal.NewFromBigInt(o.Price.BigInt(), 0)).Ceil()
 		o.LiquidityImpliedVolume = uint64(d.BigInt().Int64())
 	}
 	return nil
