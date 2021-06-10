@@ -3,7 +3,6 @@ package risk
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -189,8 +188,6 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 			continue
 		}
 
-		fmt.Printf("AUCTION party: %s, %#v\n", evt.Party(), levels.String())
-
 		levels.PartyId = evt.Party()
 		levels.Asset = asset // This is assuming there's a single asset at play here
 		levels.Timestamp = e.currTime
@@ -247,9 +244,6 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	if margins == nil {
 		return nil, nil, nil
 	}
-
-	fmt.Printf("%d %d %d\n", evt.Buy(), evt.Sell(), evt.Size())
-	fmt.Printf("NEW ORDER party: %s, %#v\n", evt.Party(), margins.String())
 
 	// update other fields for the margins
 	margins.PartyId = evt.Party()
@@ -331,8 +325,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		if margins == nil {
 			continue
 		}
-
-		fmt.Printf("SETTLE party: %s, %#v\n", evt.Party(), margins.String())
 
 		// update other fields for the margins
 		margins.Timestamp = e.currTime
