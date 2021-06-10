@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TestOracleData(t *testing.T) {
@@ -24,6 +25,67 @@ func TestOracleData(t *testing.T) {
 	t.Run("Getting boolean succeeds", testOracleDataGetBooleanSucceeds)
 	t.Run("Getting timestamp succeeds", testOracleDataGetTimestampSucceeds)
 	t.Run("Getting string succeeds", testOracleDataGetStringSucceeds)
+	t.Run("Getting uint when not present fails", testOracleDataGetMissingUintFails)
+	t.Run("Getting uint when not a uint fails", testOracleDataGetUintFails)
+	t.Run("Getting uint succeeds", testOracleDataGetUintSucceeds)
+}
+
+func testOracleDataGetMissingUintFails(t *testing.T) {
+	// given
+	data := oracles.OracleData{
+		PubKeys: []string{
+			"0xDEADBEEF",
+		},
+		Data: map[string]string{
+			"my_key": "42",
+		},
+	}
+
+	// when
+	_, err := data.GetUint("my_other_key")
+
+	// then
+	require.Error(t, err)
+	assert.Equal(t, "property \"my_other_key\" not found", err.Error())
+}
+
+func testOracleDataGetUintFails(t *testing.T) {
+	// given
+	data := oracles.OracleData{
+		PubKeys: []string{
+			"0xDEADBEEF",
+		},
+		Data: map[string]string{
+			"my_key": "not an integer",
+		},
+	}
+
+	// when
+	_, err := data.GetUint("my_key")
+
+	// then
+	require.Error(t, err)
+	assert.Equal(t, "could not parse value 'not an integer' for property 'my_key'", err.Error())
+}
+
+func testOracleDataGetUintSucceeds(t *testing.T) {
+	expect := num.NewUint(123)
+	// given
+	data := oracles.OracleData{
+		PubKeys: []string{
+			"0xDEADBEEF",
+		},
+		Data: map[string]string{
+			"my_key": expect.String(),
+		},
+	}
+
+	// when
+	value, err := data.GetUint("my_key")
+
+	// then
+	require.NoError(t, err)
+	require.True(t, expect.EQ(value))
 }
 
 func testOracleDataGetMissingIntegerFails(t *testing.T) {
@@ -230,7 +292,6 @@ func testOracleDataGetDecimalSucceeds(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1.2, value)
 }
-
 
 func testOracleDataGetBooleanSucceeds(t *testing.T) {
 	// given
