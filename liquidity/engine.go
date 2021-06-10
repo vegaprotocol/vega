@@ -710,7 +710,7 @@ func (e *Engine) createOrdersFromShape(
 			// we check o.Price == 0 just to make sure we are able to price
 			// the order, in which case the size will have been calculated
 			// properly by the engine.
-			o.Price == num.NewUint(0) {
+			o.Price.IsZero() {
 			continue
 		}
 
