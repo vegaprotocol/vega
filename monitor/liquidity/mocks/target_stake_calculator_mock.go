@@ -37,10 +37,10 @@ func (m *MockTargetStakeCalculator) EXPECT() *MockTargetStakeCalculatorMockRecor
 }
 
 // GetTheoreticalTargetStake mocks base method
-func (m *MockTargetStakeCalculator) GetTheoreticalTargetStake(arg0 proto.RiskFactor, arg1 time.Time, arg2 *num.Uint, arg3 []*types.Trade) float64 {
+func (m *MockTargetStakeCalculator) GetTheoreticalTargetStake(arg0 proto.RiskFactor, arg1 time.Time, arg2 *num.Uint, arg3 []*types.Trade) *num.Uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTheoreticalTargetStake", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(*num.Uint)
 	return ret0
 }
 
