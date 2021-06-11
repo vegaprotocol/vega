@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/quant v0.2.3
+	code.vegaprotocol.io/quant v0.2.4
 	github.com/99designs/gqlgen v0.11.3
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
