@@ -7,6 +7,8 @@ import (
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+
+	"github.com/shopspring/decimal"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/liquidity AuctionState
@@ -22,7 +24,7 @@ type AuctionState interface {
 // TargetStakeCalculator interface
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/target_stake_calculator_mock.go -package mocks code.vegaprotocol.io/vega/monitor/liquidity TargetStakeCalculator
 type TargetStakeCalculator interface {
-	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) float64
+	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint
 }
 
 type Engine struct {
@@ -63,7 +65,7 @@ func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio float6
 
 // CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes along with best static bid and ask volumes.
 // The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`.
-func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake float64, trades []*types.Trade,
+func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade,
 	rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64) {
 	exp := as.ExpiresAt()
 	if exp != nil && exp.After(t) {
@@ -74,14 +76,14 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake float
 	c1 := e.params.TriggeringRatio
 	md := int64(e.minDuration / time.Second)
 	e.mu.Unlock()
-	targetStake := e.tsCalc.GetTheoreticalTargetStake(rf, t, markPrice, trades)
+	targetStake := e.tsCalc.GetTheoreticalTargetStake(rf, t, markPrice.Clone(), trades)
 	ext := types.AuctionDuration{
 		Duration: e.params.AuctionExtension,
 	}
 	// if we're in liquidity auction already, the auction has expired, and we can end/extend the auction
 	// @TODO we don't have the ability to support volume limited auctions yet
 	if exp != nil && as.IsLiquidityAuction() {
-		if currentStake >= targetStake && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
+		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
 			as.SetReadyToLeave()
 			return // all done
 		}
@@ -89,7 +91,10 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake float
 		as.ExtendAuctionLiquidity(ext)
 		return
 	}
-	if currentStake < (targetStake*c1) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
+	scaledTargetStakeDec := targetStake.ToDecimal()
+	scaledTargetStakeDec.Mul(decimal.NewFromFloat(c1))
+	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
+	if currentStake.LT(scaledTargetStake) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
 		if exp != nil {
 			as.ExtendAuctionLiquidity(ext)
 			return
