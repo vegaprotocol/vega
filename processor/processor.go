@@ -9,9 +9,9 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -99,7 +99,7 @@ type Wallet interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
 type Assets interface {
-	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
+	NewAsset(ref string, assetSrc *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }
@@ -120,7 +120,6 @@ type ValidatorTopology interface {
 }
 
 // Broker - the event bus
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/processor Broker
 type Broker interface {
 	Send(e events.Event)
 }

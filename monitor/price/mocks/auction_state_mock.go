@@ -34,20 +34,6 @@ func (m *MockAuctionState) EXPECT() *MockAuctionStateMockRecorder {
 	return m.recorder
 }
 
-// AuctionEnd mocks base method
-func (m *MockAuctionState) AuctionEnd() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AuctionEnd")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// AuctionEnd indicates an expected call of AuctionEnd
-func (mr *MockAuctionStateMockRecorder) AuctionEnd() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuctionEnd", reflect.TypeOf((*MockAuctionState)(nil).AuctionEnd))
-}
-
 // AuctionStart mocks base method
 func (m *MockAuctionState) AuctionStart() bool {
 	m.ctrl.T.Helper()
@@ -62,6 +48,20 @@ func (mr *MockAuctionStateMockRecorder) AuctionStart() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuctionStart", reflect.TypeOf((*MockAuctionState)(nil).AuctionStart))
 }
 
+// CanLeave mocks base method
+func (m *MockAuctionState) CanLeave() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanLeave")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanLeave indicates an expected call of CanLeave
+func (mr *MockAuctionStateMockRecorder) CanLeave() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanLeave", reflect.TypeOf((*MockAuctionState)(nil).CanLeave))
+}
+
 // Duration mocks base method
 func (m *MockAuctionState) Duration() proto.AuctionDuration {
 	m.ctrl.T.Helper()
@@ -74,18 +74,6 @@ func (m *MockAuctionState) Duration() proto.AuctionDuration {
 func (mr *MockAuctionStateMockRecorder) Duration() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Duration", reflect.TypeOf((*MockAuctionState)(nil).Duration))
-}
-
-// EndAuction mocks base method
-func (m *MockAuctionState) EndAuction() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EndAuction")
-}
-
-// EndAuction indicates an expected call of EndAuction
-func (mr *MockAuctionStateMockRecorder) EndAuction() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndAuction", reflect.TypeOf((*MockAuctionState)(nil).EndAuction))
 }
 
 // ExpiresAt mocks base method
@@ -196,6 +184,18 @@ func (m *MockAuctionState) Mode() proto.Market_TradingMode {
 func (mr *MockAuctionStateMockRecorder) Mode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mode", reflect.TypeOf((*MockAuctionState)(nil).Mode))
+}
+
+// SetReadyToLeave mocks base method
+func (m *MockAuctionState) SetReadyToLeave() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetReadyToLeave")
+}
+
+// SetReadyToLeave indicates an expected call of SetReadyToLeave
+func (mr *MockAuctionStateMockRecorder) SetReadyToLeave() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReadyToLeave", reflect.TypeOf((*MockAuctionState)(nil).SetReadyToLeave))
 }
 
 // Start mocks base method

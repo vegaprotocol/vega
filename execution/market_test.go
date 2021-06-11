@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
@@ -20,11 +20,12 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
@@ -37,23 +38,20 @@ const MINMOVEDOWN = -500
 
 var defaultCollateralAssets = []types.Asset{
 	{
-		Id:     "ETH",
-		Symbol: "ETH",
+		Id: "ETH",
+		Details: &types.AssetDetails{
+			Symbol: "ETH",
+		},
 	},
 	{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
+		Id: "VOTE",
+		Details: &types.AssetDetails{
+			Name:        "VOTE",
+			Symbol:      "VOTE",
+			Decimals:    5,
+			TotalSupply: "1000",
+			Source: &types.AssetDetails_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},
 	},
@@ -73,7 +71,7 @@ type testMarket struct {
 	log              *logging.Logger
 	ctrl             *gomock.Controller
 	collateralEngine *collateral.Engine
-	broker           *mocks.MockBroker
+	broker           *bmock.MockBroker
 	now              time.Time
 	asset            string
 	mas              *monitor.AuctionState
@@ -97,7 +95,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 	}
 
 	// Setup Mocking Expectations
-	tm.broker = mocks.NewMockBroker(ctrl)
+	tm.broker = bmock.NewMockBroker(ctrl)
 
 	// eventFn records and count events and orderEvents
 	eventFn := func(evt events.Event) {
@@ -214,7 +212,7 @@ func getTestMarket2(
 	matchingConfig := matching.NewDefaultConfig()
 	feeConfig := fee.NewDefaultConfig()
 	liquidityConfig := liquidity.NewDefaultConfig()
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 
 	tm := &testMarket{
 		log:    log,
@@ -247,27 +245,24 @@ func getTestMarket2(
 	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	assert.Nil(t, err)
 	collateralEngine.EnableAsset(context.Background(), types.Asset{
-		Symbol: "ETH",
-		Id:     "ETH",
+		Id: "ETH",
+		Details: &types.AssetDetails{
+			Symbol: "ETH",
+		},
 	})
 
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker)
 
 	// add the token asset
 	tokAsset := types.Asset{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
+		Id: "VOTE",
+		Details: &types.AssetDetails{
+			Name:        "VOTE",
+			Symbol:      "VOTE",
+			Decimals:    5,
+			TotalSupply: "1000",
+			Source: &types.AssetDetails_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},
 	}
@@ -4617,7 +4612,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -4996,7 +4991,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5054,7 +5049,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5101,7 +5096,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
 
 	t.Run("Fee are distribute to trader-2 only", func(t *testing.T) {
-		var found []*types.TransferResponse
+		var found []*ptypes.TransferResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:
@@ -5491,7 +5486,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, evt.Order())
+				found = append(found, types.OrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5537,7 +5532,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
 
 	t.Run("Fee are distributed", func(t *testing.T) {
-		var found []*types.TransferResponse
+		var found []*ptypes.TransferResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:

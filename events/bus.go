@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/pkg/errors"
 )

@@ -5,8 +5,9 @@ import (
 )
 
 var (
-	ErrTxAlreadyInCache = errors.New("reply protection: already in the cache")
-	ErrTxStaled         = errors.New("reply protection: staled")
+	ErrTxAlreadyInCache   = errors.New("reply protection: tx already in the cache")
+	ErrTxStaled           = errors.New("reply protection: staled")
+	ErrTxReferFutureBlock = errors.New("reply protection: tx refer future block")
 )
 
 // ReplayProtector implement a block distance and ring buffer cache
@@ -64,11 +65,6 @@ func (rp *ReplayProtector) Add(key string) bool {
 
 // DeliverTx excercises both strategies (cache and tolerance) to determine if a Tx should be allowed or not.
 func (rp *ReplayProtector) DeliverTx(tx Tx) error {
-	// skip replay protection if the Tx didn't specify the block height.
-	if tx.BlockHeight() == 0 {
-		return nil
-	}
-
 	// We perform 2 verifications:
 	// First we make sure that the Tx is not on the ring buffer.
 	key := string(tx.Hash())
@@ -80,7 +76,32 @@ func (rp *ReplayProtector) DeliverTx(tx Tx) error {
 
 	// If the tx is on a future block, we accept.
 	if tx.BlockHeight() > rp.height {
-		return nil
+		return ErrTxReferFutureBlock
+	}
+
+	// Calculate the distance
+	tolerance := len(rp.txs)
+	if rp.height-tx.BlockHeight() >= uint64(tolerance) {
+		return ErrTxStaled
+	}
+
+	return nil
+}
+
+// CheckTx excercises the strategies  tolerance to determine if a Tx should be allowed or not.
+func (rp *ReplayProtector) CheckTx(tx Tx) error {
+	// We perform 2 verifications:
+	// First we make sure that the Tx is not on the ring buffer.
+	key := string(tx.Hash())
+	if rp.Has(key) {
+		return ErrTxAlreadyInCache
+	}
+
+	// Then we verify the block distance:
+
+	// If the tx is on a future block, we accept.
+	if tx.BlockHeight() > rp.height {
+		return ErrTxReferFutureBlock
 	}
 
 	// Calculate the distance
@@ -96,3 +117,4 @@ type replayProtectorNoop struct{}
 
 func (*replayProtectorNoop) SetHeight(uint64)   {}
 func (*replayProtectorNoop) DeliverTx(Tx) error { return nil }
+func (*replayProtectorNoop) CheckTx(Tx) error   { return nil }

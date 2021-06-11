@@ -62,7 +62,6 @@ func getTestProcessor(t *testing.T) *procTest {
 		Adaptors: mocks.NewMockOracleAdaptors(ctrl),
 	}
 
-	//top.EXPECT().Ready().AnyTimes().Return(true)
 	var cb func(context.Context, time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(context.Context, time.Time)) {
 		cb = c
@@ -106,7 +105,7 @@ func (s stubWallet) Algo() string {
 	return "vega/ed25519"
 }
 
-func (s stubWallet) Version() uint64 {
+func (s stubWallet) Version() uint32 {
 	return 1
 }
 

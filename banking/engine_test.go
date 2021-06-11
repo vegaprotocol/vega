@@ -10,8 +10,9 @@ import (
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/banking/mocks"
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/golang/mock/gomock"
@@ -19,7 +20,7 @@ import (
 )
 
 var (
-	testAsset = assets.NewAsset(builtin.New("VGT", &types.BuiltinAsset{
+	testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
 		Name:   "VEGA TOKEN",
 		Symbol: "VGT",
 	}))
@@ -32,7 +33,7 @@ type testEngine struct {
 	col    *mocks.MockCollateral
 	assets *mocks.MockAssets
 	tsvc   *mocks.MockTimeService
-	broker *mocks.MockBroker
+	broker *bmock.MockBroker
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -42,7 +43,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	assets := mocks.NewMockAssets(ctrl)
 	tsvc := mocks.NewMockTimeService(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker)

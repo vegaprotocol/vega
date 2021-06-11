@@ -1,6 +1,6 @@
 package matching
 
-import types "code.vegaprotocol.io/vega/proto"
+import "code.vegaprotocol.io/vega/types"
 
 type BookCache struct {
 	indicativePrice          cachedUint

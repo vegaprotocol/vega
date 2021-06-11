@@ -943,16 +943,18 @@ message MarketData {
   Market.TradingMode market_trading_mode = 19;
   // When a market is in an auction trading mode, this field indicates what triggered the auction
   AuctionTrigger trigger = 20;
+  // When a market auction is extended, this field indicates what caused the extension
+  AuctionTrigger extension_trigger = 21;
   // Targeted stake for the given market
-  string target_stake = 21;
+  string target_stake = 22;
   // Available stake for the given market
-  string supplied_stake = 22;
+  string supplied_stake = 23;
   // One or more price monitoring bounds for the current timestamp
-  repeated PriceMonitoringBounds price_monitoring_bounds = 23;
+  repeated PriceMonitoringBounds price_monitoring_bounds = 24;
   // the market value proxy
-  string market_value_proxy = 24;
+  string market_value_proxy = 25;
   // the equity like share of liquidity fee for each liquidity provider
-  repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 25;
+  repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
 }
 
 // The equity like share of liquidity fee for each liquidity provider
@@ -1016,7 +1018,7 @@ message Signature {
   // The algorithm used to create the signature
   string algo = 2;
   // The version of the signature used to create the signature
-  uint64 version = 3;
+  uint32 version = 3;
 }
 
 // A bundle of a transaction and it's signature

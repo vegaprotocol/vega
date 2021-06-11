@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/processor"
-	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
@@ -41,6 +41,7 @@ type TxTestSuite struct {
 func (s *TxTestSuite) testValidateSignedInvalidPayload(t *testing.T) {
 	t.Run("TooShort", func(t *testing.T) {
 		_, err := processor.NewTx(
+			[]byte("abcd"),
 			&types.Transaction{
 				InputData: []byte("shorter-than-37-bytes"),
 			},
@@ -52,6 +53,7 @@ func (s *TxTestSuite) testValidateSignedInvalidPayload(t *testing.T) {
 	t.Run("RandomCrap", func(t *testing.T) {
 		var hash [processor.TxHashLen]byte
 		tx, err := processor.NewTx(
+			[]byte("abcs"),
 			&types.Transaction{
 				InputData: concatBytes(
 					hash[:],

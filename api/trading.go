@@ -64,6 +64,7 @@ type EvtForwarder interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/api  Blockchain
 type Blockchain interface {
 	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle, ty protoapi.SubmitTransactionRequest_Type) error
+	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty protoapi.SubmitTransactionV2Request_Type) error
 }
 
 type tradingService struct {
@@ -188,11 +189,38 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 			s.log.Debug("unable to submit transaction", logging.Error(err))
 			return nil, apiError(codes.InvalidArgument, err)
 		}
-		s.log.Error("unable to submit transaction", logging.Error(err))
+		s.log.Debug("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
 
 	return &protoapi.SubmitTransactionResponse{
+		Success: true,
+	}, nil
+}
+
+func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.SubmitTransactionV2Request) (*protoapi.SubmitTransactionV2Response, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("SubmitTransactionV2", startTime)
+
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	if err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, req.Type); err != nil {
+		// This is Tendermint's specific error signature
+		if _, ok := err.(interface {
+			Code() uint32
+			Details() string
+			Error() string
+		}); ok {
+			s.log.Debug("unable to submit transaction", logging.Error(err))
+			return nil, apiError(codes.InvalidArgument, err)
+		}
+		s.log.Debug("unable to submit transaction", logging.Error(err))
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.SubmitTransactionV2Response{
 		Success: true,
 	}, nil
 }
@@ -226,6 +254,9 @@ func (s *tradingService) PrepareProposalSubmission(
 
 	if err := req.Validate(); err != nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+	if req.Submission == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing submission"))
 	}
 	proposal, err := s.governanceService.PrepareProposal(ctx, req.Submission.Reference, req.Submission.Terms)
 	if err != nil {

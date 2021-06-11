@@ -118,8 +118,13 @@ func (s *Svc) getCompleteGovernanceData(data []types.GovernanceData) []types.Gov
 		} else if len(gd.No) > 0 {
 			id = gd.No[0].ProposalId
 		}
-		p, _ := s.GetProposalByID(id)
-		gds = append(gds, *p)
+		if p, err := s.GetProposalByID(id); err != nil && p != nil {
+			gds = append(gds, *p)
+		} else {
+			s.log.Debug("invalid proposal id",
+				logging.String("proposal-id", id),
+				logging.Error(err))
+		}
 	}
 
 	return gds

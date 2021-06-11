@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,7 +34,7 @@ func (m *MockOpenInterestCalculator) EXPECT() *MockOpenInterestCalculatorMockRec
 }
 
 // GetOpenInterestGivenTrades mocks base method
-func (m *MockOpenInterestCalculator) GetOpenInterestGivenTrades(arg0 []*proto.Trade) uint64 {
+func (m *MockOpenInterestCalculator) GetOpenInterestGivenTrades(arg0 []*types.Trade) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOpenInterestGivenTrades", arg0)
 	ret0, _ := ret[0].(uint64)

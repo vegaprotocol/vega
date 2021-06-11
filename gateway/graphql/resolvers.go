@@ -349,6 +349,15 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
+	resp, err := r.tradingDataClient.LastBlockHeight(ctx, &protoapi.LastBlockHeightRequest{})
+	if err != nil {
+		return "0", err
+	}
+
+	return strconv.FormatUint(resp.Height, 10), nil
+}
+
 func (r *myQueryResolver) OracleSpecs(ctx context.Context) ([]*oraclespb.OracleSpec, error) {
 	res, err := r.tradingDataClient.OracleSpecs(
 		ctx, &protoapi.OracleSpecsRequest{},
@@ -1178,6 +1187,11 @@ func (r *myMarketDataResolver) Trigger(_ context.Context, m *types.MarketData) (
 	return convertAuctionTriggerFromProto(m.Trigger)
 }
 
+// ExtensionTrigger same as Trigger
+func (r *myMarketDataResolver) ExtensionTrigger(_ context.Context, m *types.MarketData) (AuctionTrigger, error) {
+	return convertAuctionTriggerFromProto(m.ExtensionTrigger)
+}
+
 func (r *myMarketDataResolver) MarketValueProxy(_ context.Context, m *types.MarketData) (string, error) {
 	return m.MarketValueProxy, nil
 }
@@ -1646,7 +1660,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 			Tx: decodedData,
 			Sig: &types.Signature{
 				Sig:     decodedSig,
-				Version: uint64(sig.Version),
+				Version: uint32(sig.Version),
 				Algo:    sig.Algo,
 			},
 		},

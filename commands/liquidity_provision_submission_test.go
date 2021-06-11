@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNilLiquidityProvisionSubmissionFails(t *testing.T) {
+	err := commands.CheckLiquidityProvisionSubmission(nil)
+
+	assert.Error(t, err)
+}
+
 func TestLiquidityProvisionSubmission(t *testing.T) {
 	var cases = []struct {
 		lp        commandspb.LiquidityProvisionSubmission

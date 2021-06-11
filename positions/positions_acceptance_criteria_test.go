@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 )
 

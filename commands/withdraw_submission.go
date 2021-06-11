@@ -14,6 +14,10 @@ func CheckWithdrawSubmission(cmd *commandspb.WithdrawSubmission) error {
 func checkWithdrawSubmission(cmd *commandspb.WithdrawSubmission) Errors {
 	var errs = NewErrors()
 
+	if cmd == nil {
+		return errs.FinalAddForProperty("withdraw_submission", ErrIsRequired)
+	}
+
 	if cmd.Amount <= 0 {
 		errs.AddForProperty("withdraw_submission.amount", ErrIsRequired)
 	}

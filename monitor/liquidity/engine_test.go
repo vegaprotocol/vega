@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/monitor/liquidity"
 	"code.vegaprotocol.io/vega/monitor/liquidity/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 )
 
@@ -58,7 +58,7 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionShouldEnd {
-				h.AuctionState.EXPECT().EndAuction().Times(1)
+				h.AuctionState.EXPECT().SetReadyToLeave().Times(1)
 				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&exp)
 			} else {
 				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&keep)

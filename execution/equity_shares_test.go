@@ -11,7 +11,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TestEquityShares(t *testing.T) {
@@ -27,6 +27,7 @@ func testAverageEntryValuation(t *testing.T) {
 
 	es.SetPartyStake("LP1", uint64(100))
 	require.EqualValues(t, decimal.NewFromFloat(100.), es.AvgEntryValuation("LP1"))
+	es.OpeningAuctionEnded()
 
 	es.SetPartyStake("LP1", uint64(200))
 	require.True(t, decimal.NewFromFloat(100.).Equal(es.AvgEntryValuation("LP1")))
@@ -276,14 +277,14 @@ func testWithinMarket(t *testing.T) {
 		"LiquidityFeeAccount should be empty after a fee distribution")
 
 	assert.EqualValues(t,
-		int(float64(originalBalance)*(2.25/3)),
+		int(float64(originalBalance)*(2./3)),
 		int(esm.PartyMarginAccount("party1").Balance-party1Balance),
-		"party1 should get 2.25/3 of the fees",
+		"party1 should get 2/3 of the fees",
 	)
 
 	assert.EqualValues(t,
-		int(float64(originalBalance)*(0.75/3)),
+		int(float64(originalBalance)*(1./3)),
 		int(esm.PartyMarginAccount("party2").Balance-party2Balance),
-		"party2 should get 0.75/3 of the fees",
+		"party2 should get 2/3 of the fees",
 	)
 }

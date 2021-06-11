@@ -3,7 +3,7 @@ package matching
 import (
 	"testing"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -81,7 +81,7 @@ func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0), confirm.GetOrder().GetPrice())
+	assert.Equal(t, uint64(0), confirm.Order.Price)
 }
 
 func TestOrderBookInvalid_RemainingTooBig(t *testing.T) {

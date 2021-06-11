@@ -8,17 +8,17 @@ import "commands/v1/validator_commands.proto";
 import "commands/v1/oracles.proto";
 
 message InputData {
-  // A random number used to provided uniqueness and prevents
-  // against replay attack.
+  // A random number used to provided uniqueness and prevents against replay
+  // attack.
   uint64 nonce = 1;
 
   // The block height associated to the transaction.
-  // This should always be current height of the node at the time of sending the Tx.
-  // BlockHeight is used as a mechanism for replay protection.
+  // This should always be current height of the node at the time of sending the
+  // Tx. BlockHeight is used as a mechanism for replay protection.
   uint64 block_height = 2;
 
   oneof command {
-    // user commands
+    // User commands
     OrderSubmission order_submission = 1001;
     OrderCancellation order_cancellation = 1002;
     OrderAmendment order_amendment = 1003;
@@ -26,7 +26,7 @@ message InputData {
     ProposalSubmission proposal_submission = 1005;
     VoteSubmission vote_submission = 1006;
     LiquidityProvisionSubmission liquidity_provision_submission = 1007;
-    // validator commands
+    // Validator commands
     NodeRegistration node_registration = 2001;
     NodeVote node_vote = 2002;
     NodeSignature node_signature = 2003;
@@ -41,31 +41,30 @@ message Transaction {
   // One of the set of Vega commands (proto marshalled).
   bytes input_data = 1;
 
-  // The signature of the inputData
+  // The signature of the inputData.
   Signature signature = 2;
 
   // The sender of the transaction.
   // Any of the following would be valid:
   oneof from {
-    // The address of the sender.
-    bytes address = 1001;
-    // The public key of the sender.
-    bytes pub_key = 1002;
+    // The address of the sender (hex-encoded). Not supported yet.
+    string address = 1001;
+    // The public key of the sender (hex-encoded).
+    string pub_key = 1002;
   }
 
-  // A version of the transaction, to be used
-  // in the future in case we want to implement
-  // changes to the Transaction format
+  // A version of the transaction, to be used in the future in case we want to
+  // implement changes to the Transaction format.
   uint32 version = 2000;
 }
 
-// A signature to be authenticate a transaction
-// and to be verified by the vega network
+// A signature to be authenticate a transaction and to be verified by the vega
+// network.
 message Signature {
-  // The bytes of the signature
-  bytes bytes = 1;
-  // The algorithm used to create the signature
+  // The bytes of the signature (hex-encoded).
+  string value = 1;
+  // The algorithm used to create the signature.
   string algo = 2;
-  // The version of the signature used to create the signature
+  // The version of the signature used to create the signature.
   uint32 version = 3;
 }

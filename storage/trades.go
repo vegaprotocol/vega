@@ -216,7 +216,7 @@ func (ts *Trade) GetByParty(ctx context.Context, party string, skip, limit uint6
 				return nil, err
 			}
 			// we are filtering by market, but the market key doesn't match, stop here, don't waste time reading and unmarshalling the full trade item
-			if tmkLen != 0 && string(marketKey[:tmkLen]) != string(tmk) {
+			if tmkLen != 0 && len(marketKey) >= tmkLen && string(marketKey[:tmkLen]) != string(tmk) {
 				continue
 			}
 			tradeItem, err := txn.Get(marketKey)

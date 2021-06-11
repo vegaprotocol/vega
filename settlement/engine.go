@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 // MarketPosition ...
@@ -33,7 +33,6 @@ type Product interface {
 }
 
 // Broker - the event bus broker, send events here
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/settlement Broker
 type Broker interface {
 	SendBatch(events []events.Event)
 }

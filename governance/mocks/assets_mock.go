@@ -64,7 +64,7 @@ func (mr *MockAssetsMockRecorder) IsEnabled(arg0 interface{}) *gomock.Call {
 }
 
 // NewAsset mocks base method
-func (m *MockAssets) NewAsset(arg0 string, arg1 *proto.AssetSource) (string, error) {
+func (m *MockAssets) NewAsset(arg0 string, arg1 *proto.AssetDetails) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewAsset", arg0, arg1)
 	ret0, _ := ret[0].(string)

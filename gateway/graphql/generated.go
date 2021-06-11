@@ -99,6 +99,7 @@ type ComplexityRoot struct {
 		Decimals                 func(childComplexity int) int
 		Id                       func(childComplexity int) int
 		InfrastructureFeeAccount func(childComplexity int) int
+		MinLpStake               func(childComplexity int) int
 		Name                     func(childComplexity int) int
 		Source                   func(childComplexity int) int
 		Symbol                   func(childComplexity int) int
@@ -121,12 +122,7 @@ type ComplexityRoot struct {
 	}
 
 	BuiltinAsset struct {
-		Decimals            func(childComplexity int) int
-		ID                  func(childComplexity int) int
 		MaxFaucetAmountMint func(childComplexity int) int
-		Name                func(childComplexity int) int
-		Symbol              func(childComplexity int) int
-		TotalSupply         func(childComplexity int) int
 	}
 
 	BusEvent struct {
@@ -356,6 +352,7 @@ type ComplexityRoot struct {
 		BestStaticOfferPrice      func(childComplexity int) int
 		BestStaticOfferVolume     func(childComplexity int) int
 		Commitments               func(childComplexity int) int
+		ExtensionTrigger          func(childComplexity int) int
 		IndicativePrice           func(childComplexity int) int
 		IndicativeVolume          func(childComplexity int) int
 		LiquidityProviderFeeShare func(childComplexity int) int
@@ -427,7 +424,12 @@ type ComplexityRoot struct {
 	}
 
 	NewAsset struct {
-		Source func(childComplexity int) int
+		Decimals    func(childComplexity int) int
+		MinLpStake  func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Source      func(childComplexity int) int
+		Symbol      func(childComplexity int) int
+		TotalSupply func(childComplexity int) int
 	}
 
 	NewMarket struct {
@@ -651,6 +653,7 @@ type ComplexityRoot struct {
 		Deposit                    func(childComplexity int, id string) int
 		Erc20WithdrawalApproval    func(childComplexity int, withdrawalID string) int
 		EstimateOrder              func(childComplexity int, marketID string, partyID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType) int
+		LastBlockHeight            func(childComplexity int) int
 		Market                     func(childComplexity int, id string) int
 		Markets                    func(childComplexity int, id *string) int
 		NetworkParameters          func(childComplexity int) int
@@ -856,7 +859,11 @@ type AccountResolver interface {
 	Market(ctx context.Context, obj *proto.Account) (*proto.Market, error)
 }
 type AssetResolver interface {
+	Name(ctx context.Context, obj *proto.Asset) (string, error)
+	Symbol(ctx context.Context, obj *proto.Asset) (string, error)
+	TotalSupply(ctx context.Context, obj *proto.Asset) (string, error)
 	Decimals(ctx context.Context, obj *proto.Asset) (int, error)
+	MinLpStake(ctx context.Context, obj *proto.Asset) (string, error)
 	Source(ctx context.Context, obj *proto.Asset) (AssetSource, error)
 	InfrastructureFeeAccount(ctx context.Context, obj *proto.Asset) (*proto.Account, error)
 }
@@ -965,6 +972,7 @@ type MarketDataResolver interface {
 	IndicativeVolume(ctx context.Context, obj *proto.MarketData) (string, error)
 	MarketTradingMode(ctx context.Context, obj *proto.MarketData) (MarketTradingMode, error)
 	Trigger(ctx context.Context, obj *proto.MarketData) (AuctionTrigger, error)
+	ExtensionTrigger(ctx context.Context, obj *proto.MarketData) (AuctionTrigger, error)
 
 	Commitments(ctx context.Context, obj *proto.MarketData) (*MarketDataCommitments, error)
 	PriceMonitoringBounds(ctx context.Context, obj *proto.MarketData) ([]*PriceMonitoringBounds, error)
@@ -999,6 +1007,11 @@ type MutationResolver interface {
 	PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, reference *string) (*PreparedLiquidityProvision, error)
 }
 type NewAssetResolver interface {
+	Name(ctx context.Context, obj *proto.NewAsset) (string, error)
+	Symbol(ctx context.Context, obj *proto.NewAsset) (string, error)
+	TotalSupply(ctx context.Context, obj *proto.NewAsset) (string, error)
+	Decimals(ctx context.Context, obj *proto.NewAsset) (int, error)
+	MinLpStake(ctx context.Context, obj *proto.NewAsset) (string, error)
 	Source(ctx context.Context, obj *proto.NewAsset) (AssetSource, error)
 }
 type NewMarketResolver interface {
@@ -1099,6 +1112,7 @@ type QueryResolver interface {
 	Parties(ctx context.Context, id *string) ([]*proto.Party, error)
 	Party(ctx context.Context, id string) (*proto.Party, error)
 	Statistics(ctx context.Context) (*proto.Statistics, error)
+	LastBlockHeight(ctx context.Context) (string, error)
 	OracleSpecs(ctx context.Context) ([]*v11.OracleSpec, error)
 	OracleSpec(ctx context.Context, oracleSpecID string) (*v11.OracleSpec, error)
 	OracleDataBySpec(ctx context.Context, oracleSpecID string) ([]*v11.OracleData, error)
@@ -1269,6 +1283,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Asset.InfrastructureFeeAccount(childComplexity), true
 
+	case "Asset.minLpStake":
+		if e.complexity.Asset.MinLpStake == nil {
+			break
+		}
+
+		return e.complexity.Asset.MinLpStake(childComplexity), true
+
 	case "Asset.name":
 		if e.complexity.Asset.Name == nil {
 			break
@@ -1360,47 +1381,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AuctionEvent.Trigger(childComplexity), true
 
-	case "BuiltinAsset.decimals":
-		if e.complexity.BuiltinAsset.Decimals == nil {
-			break
-		}
-
-		return e.complexity.BuiltinAsset.Decimals(childComplexity), true
-
-	case "BuiltinAsset.id":
-		if e.complexity.BuiltinAsset.ID == nil {
-			break
-		}
-
-		return e.complexity.BuiltinAsset.ID(childComplexity), true
-
 	case "BuiltinAsset.maxFaucetAmountMint":
 		if e.complexity.BuiltinAsset.MaxFaucetAmountMint == nil {
 			break
 		}
 
 		return e.complexity.BuiltinAsset.MaxFaucetAmountMint(childComplexity), true
-
-	case "BuiltinAsset.name":
-		if e.complexity.BuiltinAsset.Name == nil {
-			break
-		}
-
-		return e.complexity.BuiltinAsset.Name(childComplexity), true
-
-	case "BuiltinAsset.symbol":
-		if e.complexity.BuiltinAsset.Symbol == nil {
-			break
-		}
-
-		return e.complexity.BuiltinAsset.Symbol(childComplexity), true
-
-	case "BuiltinAsset.totalSupply":
-		if e.complexity.BuiltinAsset.TotalSupply == nil {
-			break
-		}
-
-		return e.complexity.BuiltinAsset.TotalSupply(childComplexity), true
 
 	case "BusEvent.block":
 		if e.complexity.BusEvent.Block == nil {
@@ -2384,6 +2370,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketData.Commitments(childComplexity), true
 
+	case "MarketData.extensionTrigger":
+		if e.complexity.MarketData.ExtensionTrigger == nil {
+			break
+		}
+
+		return e.complexity.MarketData.ExtensionTrigger(childComplexity), true
+
 	case "MarketData.indicativePrice":
 		if e.complexity.MarketData.IndicativePrice == nil {
 			break
@@ -2732,12 +2725,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NetworkParameter.Value(childComplexity), true
 
+	case "NewAsset.decimals":
+		if e.complexity.NewAsset.Decimals == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.Decimals(childComplexity), true
+
+	case "NewAsset.minLpStake":
+		if e.complexity.NewAsset.MinLpStake == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.MinLpStake(childComplexity), true
+
+	case "NewAsset.name":
+		if e.complexity.NewAsset.Name == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.Name(childComplexity), true
+
 	case "NewAsset.source":
 		if e.complexity.NewAsset.Source == nil {
 			break
 		}
 
 		return e.complexity.NewAsset.Source(childComplexity), true
+
+	case "NewAsset.symbol":
+		if e.complexity.NewAsset.Symbol == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.Symbol(childComplexity), true
+
+	case "NewAsset.totalSupply":
+		if e.complexity.NewAsset.TotalSupply == nil {
+			break
+		}
+
+		return e.complexity.NewAsset.TotalSupply(childComplexity), true
 
 	case "NewMarket.commitment":
 		if e.complexity.NewMarket.Commitment == nil {
@@ -3656,6 +3684,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.EstimateOrder(childComplexity, args["marketId"].(string), args["partyId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType)), true
+
+	case "Query.lastBlockHeight":
+		if e.complexity.Query.LastBlockHeight == nil {
+			break
+		}
+
+		return e.complexity.Query.LastBlockHeight(childComplexity), true
 
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
@@ -5136,6 +5171,8 @@ type MarketData {
   marketTradingMode: MarketTradingMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
+  "what extended the ongoing auction (if an auction was extended)"
+  extensionTrigger: AuctionTrigger!
   "the amount of stake targeted for this market"
   targetStake: String
   "the supplied stake for the market"
@@ -5221,6 +5258,9 @@ type Query {
 
   "a bunch of statistics about the node"
   statistics: Statistics!
+
+  "The last block process by the blockchain"
+  lastBlockHeight: String!
 
   "All registered oracle specs"
   oracleSpecs: [OracleSpec!]
@@ -5364,6 +5404,9 @@ type Asset {
   "The precision of the asset"
   decimals: Int!
 
+  "The min stake to become an lp for any market using this asset for settlement"
+  minLpStake: String!
+
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
 
@@ -5382,21 +5425,6 @@ type ERC20 {
 
 "A vega builtin asset, mostly for testing purpose"
 type BuiltinAsset {
-  "The id of the asset"
-  id: ID!
-
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
-  "The total supply of the market"
-  totalSupply: String!
-
-  "The precision of the asset"
-  decimals: Int!
-
   "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
   maxFaucetAmountMint: String!
 }
@@ -6535,6 +6563,12 @@ enum ProposalRejectionReason {
   InvalidShape
   "Market proposal use an invalid risk parameter"
   InvalidRiskParameter
+  "Proposal declined because the majority threshold was not reached"
+  MajorityThresholdNotReached
+  "Proposal declined because the participation threshold was not reached"
+  ParticipationThresholdNotReached
+  "Asset details are invalid"
+  InvalidAssetDetails
 }
 
 "Reason for the order being rejected by the core node"
@@ -7079,6 +7113,21 @@ input UpdateMarketInput {
 
 "A new asset proposal change"
 type NewAsset {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
+
+  "The min stake to become an lp for any market using this asset for settlement"
+  minLpStake: String!
+
   "the source of the new Asset"
   source: AssetSource!
 }
@@ -7172,6 +7221,21 @@ input ProposalTermsInput {
 
 "A new asset to be added into vega"
 input NewAssetInput {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
+
+  "The min stake to become an lp for any market using this asset for settlement"
+  minLpStake: String!
+
   "A new builtin assed to be created"
   builtinAsset: BuiltinAssetInput
 
@@ -7187,18 +7251,6 @@ input ERC20Input {
 
 "A vega builtin asset, mostly for testing purpose"
 input BuiltinAssetInput {
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
-  "The total supply of the market"
-  totalSupply: String!
-
-  "The precision of the asset"
-  decimals: Int!
-
   "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
   maxFaucetAmountMint: String!
 }
@@ -9137,13 +9189,13 @@ func (ec *executionContext) _Asset_name(ctx context.Context, field graphql.Colle
 		Object:   "Asset",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
+		return ec.resolvers.Asset().Name(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9171,13 +9223,13 @@ func (ec *executionContext) _Asset_symbol(ctx context.Context, field graphql.Col
 		Object:   "Asset",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Symbol, nil
+		return ec.resolvers.Asset().Symbol(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9205,13 +9257,13 @@ func (ec *executionContext) _Asset_totalSupply(ctx context.Context, field graphq
 		Object:   "Asset",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalSupply, nil
+		return ec.resolvers.Asset().TotalSupply(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9260,6 +9312,40 @@ func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.C
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Asset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Asset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().MinLpStake(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Asset_source(ctx context.Context, field graphql.CollectedField, obj *proto.Asset) (ret graphql.Marshaler) {
@@ -9631,176 +9717,6 @@ func (ec *executionContext) _AuctionEvent_extensionTrigger(ctx context.Context, 
 	res := resTmp.(*AuctionTrigger)
 	fc.Result = res
 	return ec.marshalOAuctionTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BuiltinAsset_id(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "BuiltinAsset",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BuiltinAsset_name(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "BuiltinAsset",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BuiltinAsset_symbol(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "BuiltinAsset",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Symbol, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BuiltinAsset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "BuiltinAsset",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalSupply, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _BuiltinAsset_decimals(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "BuiltinAsset",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Decimals, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _BuiltinAsset_maxFaucetAmountMint(ctx context.Context, field graphql.CollectedField, obj *BuiltinAsset) (ret graphql.Marshaler) {
@@ -14752,6 +14668,40 @@ func (ec *executionContext) _MarketData_trigger(ctx context.Context, field graph
 	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _MarketData_extensionTrigger(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MarketData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MarketData().ExtensionTrigger(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AuctionTrigger)
+	fc.Result = res
+	return ec.marshalNAuctionTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐAuctionTrigger(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _MarketData_targetStake(ctx context.Context, field graphql.CollectedField, obj *proto.MarketData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -15937,6 +15887,176 @@ func (ec *executionContext) _NetworkParameter_value(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewAsset_name(ctx context.Context, field graphql.CollectedField, obj *proto.NewAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewAsset().Name(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewAsset_symbol(ctx context.Context, field graphql.CollectedField, obj *proto.NewAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewAsset().Symbol(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewAsset_totalSupply(ctx context.Context, field graphql.CollectedField, obj *proto.NewAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewAsset().TotalSupply(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewAsset_decimals(ctx context.Context, field graphql.CollectedField, obj *proto.NewAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewAsset().Decimals(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewAsset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *proto.NewAsset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "NewAsset",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewAsset().MinLpStake(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20133,6 +20253,40 @@ func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql
 	res := resTmp.(*proto.Statistics)
 	fc.Result = res
 	return ec.marshalNStatistics2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐStatistics(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_lastBlockHeight(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().LastBlockHeight(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_oracleSpecs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -25887,30 +26041,6 @@ func (ec *executionContext) unmarshalInputBuiltinAssetInput(ctx context.Context,
 
 	for k, v := range asMap {
 		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "symbol":
-			var err error
-			it.Symbol, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "totalSupply":
-			var err error
-			it.TotalSupply, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "decimals":
-			var err error
-			it.Decimals, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "maxFaucetAmountMint":
 			var err error
 			it.MaxFaucetAmountMint, err = ec.unmarshalNString2string(ctx, v)
@@ -26241,6 +26371,36 @@ func (ec *executionContext) unmarshalInputNewAssetInput(ctx context.Context, obj
 
 	for k, v := range asMap {
 		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "symbol":
+			var err error
+			it.Symbol, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "totalSupply":
+			var err error
+			it.TotalSupply, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "decimals":
+			var err error
+			it.Decimals, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "minLpStake":
+			var err error
+			it.MinLpStake, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "builtinAsset":
 			var err error
 			it.BuiltinAsset, err = ec.unmarshalOBuiltinAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx, v)
@@ -27123,20 +27283,47 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
-			out.Values[i] = ec._Asset_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_name(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "symbol":
-			out.Values[i] = ec._Asset_symbol(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_symbol(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "totalSupply":
-			out.Values[i] = ec._Asset_totalSupply(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_totalSupply(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "decimals":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -27146,6 +27333,20 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Asset_decimals(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "minLpStake":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_minLpStake(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -27323,31 +27524,6 @@ func (ec *executionContext) _BuiltinAsset(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("BuiltinAsset")
-		case "id":
-			out.Values[i] = ec._BuiltinAsset_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "name":
-			out.Values[i] = ec._BuiltinAsset_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "symbol":
-			out.Values[i] = ec._BuiltinAsset_symbol(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "totalSupply":
-			out.Values[i] = ec._BuiltinAsset_totalSupply(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "decimals":
-			out.Values[i] = ec._BuiltinAsset_decimals(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "maxFaucetAmountMint":
 			out.Values[i] = ec._BuiltinAsset_maxFaucetAmountMint(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -29333,6 +29509,20 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				}
 				return res
 			})
+		case "extensionTrigger":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MarketData_extensionTrigger(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "targetStake":
 			out.Values[i] = ec._MarketData_targetStake(ctx, field, obj)
 		case "suppliedStake":
@@ -29773,6 +29963,76 @@ func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("NewAsset")
+		case "name":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewAsset_name(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "symbol":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewAsset_symbol(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "totalSupply":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewAsset_totalSupply(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "decimals":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewAsset_decimals(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "minLpStake":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewAsset_minLpStake(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "source":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -31624,6 +31884,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_statistics(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "lastBlockHeight":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_lastBlockHeight(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

@@ -1,5 +1,29 @@
 # Changelog
 
+*2021-06-11*
+
+### Improvements
+- [#3546](https://github.com/vegaprotocol/vega/pull/3546) - Add Auction Extension trigger field to market data
+- [#3538](https://github.com/vegaprotocol/vega/pull/3538) - Testing: Add block time handling & block time variance
+- [#3596](https://github.com/vegaprotocol/vega/pull/3596) - Enable replay protection
+- [#3497](https://github.com/vegaprotocol/vega/pull/3497) - Implement new transaction format
+- [#3461](https://github.com/vegaprotocol/vega/pull/3461) - Implement new commands validation
+
+### Fixes
+- [#3528](https://github.com/vegaprotocol/vega/pull/3528) - Stop liquidity auctions from extending infinitely
+- [#3567](https://github.com/vegaprotocol/vega/pull/3567) - Fix handling of Liquidity Commitments at price bounds
+- [#3568](https://github.com/vegaprotocol/vega/pull/3568) - Fix potential nil pointer when fetching proposals
+- [#3554](https://github.com/vegaprotocol/vega/pull/3554) - Fix package import for domain types
+- [#3549](https://github.com/vegaprotocol/vega/pull/3549) - Remove Oracle prefix from files in the Oracle package
+- [#3541](https://github.com/vegaprotocol/vega/pull/3541) - Ensure all votes have weight initialised to 0
+- [#3539](https://github.com/vegaprotocol/vega/pull/3541) - Address flaky tests
+- [#3540](https://github.com/vegaprotocol/vega/pull/3540) - Rename auction state methods
+- [#3533](https://github.com/vegaprotocol/vega/pull/3533) - Refactor auction end logic to its own file
+- [#3532](https://github.com/vegaprotocol/vega/pull/3532) - Fix Average Entry valuation during opening auctions
+- [#3523](https://github.com/vegaprotocol/vega/pull/3523) - Improve nil pointer checks on proposal submissions
+- [#3591](https://github.com/vegaprotocol/vega/pull/3591) - Avoid slice out of access bond in trades store
+
+
 ## 0.37.0
 *2021-05-26*
 

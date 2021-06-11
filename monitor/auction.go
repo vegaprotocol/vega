@@ -101,15 +101,17 @@ func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
 }
 
 // ExtendAuction extends the current auction, leaving trigger etc... in tact
-// @TODO private this function once we´ve ensured it´s no longer used elsewhere
+// this assumes whatever extended the auction is the same thing that triggered the auction
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
+	t := a.trigger
+	a.extension = &t
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume
 	a.stop = false // the auction was supposed to stop, but we've extended it
 }
 
-// EndAuction is called by monitoring engines to mark if an auction period has expired
-func (a *AuctionState) EndAuction() {
+// SetReadyToLeave is called by monitoring engines to mark if an auction period has expired
+func (a *AuctionState) SetReadyToLeave() {
 	a.stop = true
 }
 
@@ -153,6 +155,14 @@ func (a AuctionState) Trigger() types.AuctionTrigger {
 	return a.trigger
 }
 
+// ExtensionTrigger returns what extended an auction
+func (a AuctionState) ExtensionTrigger() types.AuctionTrigger {
+	if a.extension == nil {
+		return types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+	}
+	return *a.extension
+}
+
 // InAuction returns bool if the market is in auction for any reason
 // Returns false if auction is triggered, but not yet started by market (execution)
 func (a AuctionState) InAuction() bool {
@@ -180,9 +190,9 @@ func (a AuctionState) IsMonitorAuction() bool {
 	return a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_PRICE || a.trigger == types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
 }
 
-// AuctionEnd bool indicating whether auction should be closed or not, if true, we can still extend the auction
+// CanLeave bool indicating whether auction should be closed or not, if true, we can still extend the auction
 // but when the market takes over (after monitoring engines), the auction will be closed
-func (a AuctionState) AuctionEnd() bool {
+func (a AuctionState) CanLeave() bool {
 	return a.stop
 }
 
@@ -228,8 +238,8 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 	return events.NewAuctionEvent(ctx, a.m.Id, false, a.begin.UnixNano(), end, a.trigger)
 }
 
-// AuctionEnded is called by execution to update internal state indicating this auction was closed
-func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.Auction {
+// Left is called by execution to update internal state indicating this auction was closed
+func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction {
 	a.timer.EngineTimeCounterAdd()
 
 	// the end-of-auction event
@@ -241,6 +251,7 @@ func (a *AuctionState) AuctionEnded(ctx context.Context, now time.Time) *events.
 	a.start, a.stop = false, false
 	a.begin, a.end = nil, nil
 	a.trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+	a.extension = nil
 	a.mode = a.defMode
 	// default mode is auction, this is an FBA market
 	if a.mode == types.Market_TRADING_MODE_BATCH_AUCTION {

@@ -84,6 +84,22 @@
         ]
       }
     },
+    "/blockchain/height": {
+      "get": {
+        "operationId": "LastBlockHeight",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LastBlockHeightResponse"
+            }
+          }
+        },
+        "tags": [
+          "TradingDataService"
+        ]
+      }
+    },
     "/deposits/{id}": {
       "get": {
         "summary": "Get a deposit by its identifier",
@@ -1666,6 +1682,53 @@
       "description": "- VALUE_UNSPECIFIED: Default value, always invalid\n - VALUE_NO: A vote against the proposal\n - VALUE_YES: A vote in favour of the proposal",
       "title": "Vote value"
     },
+    "commandsv1Signature": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "The bytes of the signature (hex-encoded)."
+        },
+        "algo": {
+          "type": "string",
+          "description": "The algorithm used to create the signature."
+        },
+        "version": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The version of the signature used to create the signature."
+        }
+      },
+      "description": "A signature to be authenticate a transaction and to be verified by the vega\nnetwork."
+    },
+    "commandsv1Transaction": {
+      "type": "object",
+      "properties": {
+        "input_data": {
+          "type": "string",
+          "format": "byte",
+          "description": "One of the set of Vega commands (proto marshalled)."
+        },
+        "signature": {
+          "$ref": "#/definitions/commandsv1Signature",
+          "description": "The signature of the inputData."
+        },
+        "address": {
+          "type": "string",
+          "description": "The address of the sender (hex-encoded). Not supported yet."
+        },
+        "pub_key": {
+          "type": "string",
+          "description": "The public key of the sender (hex-encoded)."
+        },
+        "version": {
+          "type": "integer",
+          "format": "int64",
+          "description": "A version of the transaction, to be used in the future in case we want to\nimplement changes to the Transaction format."
+        }
+      },
+      "description": "Represents a transaction to be sent to Vega."
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -2265,6 +2328,16 @@
         }
       },
       "title": "Response for a list of votes for a party"
+    },
+    "v1LastBlockHeightResponse": {
+      "type": "object",
+      "properties": {
+        "height": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "A response with the height of the last block processed by\ntendermint"
     },
     "v1LastTradeResponse": {
       "type": "object",
@@ -3347,6 +3420,29 @@
       },
       "title": "Response for submitting a transaction on Vega"
     },
+    "v1SubmitTransactionV2RequestType": {
+      "type": "string",
+      "enum": [
+        "TYPE_UNSPECIFIED",
+        "TYPE_ASYNC",
+        "TYPE_SYNC",
+        "TYPE_COMMIT"
+      ],
+      "default": "TYPE_UNSPECIFIED",
+      "description": "- TYPE_ASYNC: The transaction will be submitted without waiting for response\n - TYPE_SYNC: The transaction will be submitted, and blocking until the\ntendermint mempool return a response\n - TYPE_COMMIT: The transaction will submitted, and blocking until the tendermint\nnetwork will have committed it into a block",
+      "title": "Blockchain transaction type"
+    },
+    "v1SubmitTransactionV2Response": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean",
+          "format": "boolean",
+          "title": "Success will be true if the transaction was accepted by the node,\n**Important** - success does not mean that the event is confirmed by consensus"
+        }
+      },
+      "title": "Response for submitting a transaction v2 on Vega"
+    },
     "v1TimeUpdate": {
       "type": "object",
       "properties": {
@@ -3604,6 +3700,16 @@
           "type": "string",
           "title": "Internal identifier of the asset"
         },
+        "details": {
+          "$ref": "#/definitions/vegaAssetDetails",
+          "title": "The definition of the external source for this asset"
+        }
+      },
+      "title": "The Vega representation of an external asset"
+    },
+    "vegaAssetDetails": {
+      "type": "object",
+      "properties": {
         "name": {
           "type": "string",
           "title": "Name of the asset (e.g: Great British Pound)"
@@ -3619,18 +3725,12 @@
         "decimals": {
           "type": "string",
           "format": "uint64",
-          "title": "Number of decimals / precision handled by this asset"
+          "title": "Number of decimal / precision handled by this asset"
         },
-        "source": {
-          "$ref": "#/definitions/vegaAssetSource",
-          "title": "The definition of the external source for this asset"
-        }
-      },
-      "title": "The Vega representation of an external asset"
-    },
-    "vegaAssetSource": {
-      "type": "object",
-      "properties": {
+        "min_lp_stake": {
+          "type": "string",
+          "title": "Min stake required for this asset from liquidity providers"
+        },
         "builtin_asset": {
           "$ref": "#/definitions/vegaBuiltinAsset",
           "title": "A built-in asset"
@@ -3640,7 +3740,7 @@
           "title": "An Ethereum ERC20 asset"
         }
       },
-      "title": "Asset source definition"
+      "title": "The Vega representation of an external asset"
     },
     "vegaAuctionDuration": {
       "type": "object",
@@ -3748,23 +3848,6 @@
     "vegaBuiltinAsset": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string",
-          "title": "Name of the asset (e.g: Great British Pound)"
-        },
-        "symbol": {
-          "type": "string",
-          "title": "Symbol of the asset (e.g: GBP)"
-        },
-        "total_supply": {
-          "type": "string",
-          "title": "Total circulating supply for the asset"
-        },
-        "decimals": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Number of decimal / precision handled by this asset"
-        },
         "max_faucet_amount_mint": {
           "type": "string",
           "title": "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
@@ -4735,6 +4818,10 @@
           "$ref": "#/definitions/vegaAuctionTrigger",
           "title": "When a market is in an auction trading mode, this field indicates what triggered the auction"
         },
+        "extension_trigger": {
+          "$ref": "#/definitions/vegaAuctionTrigger",
+          "title": "When a market auction is extended, this field indicates what caused the extension"
+        },
         "target_stake": {
           "type": "string",
           "title": "Targeted stake for the given market"
@@ -4884,7 +4971,7 @@
       "type": "object",
       "properties": {
         "changes": {
-          "$ref": "#/definitions/vegaAssetSource",
+          "$ref": "#/definitions/vegaAssetDetails",
           "title": "The configuration of the new asset"
         }
       },
@@ -5419,10 +5506,13 @@
         "PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT",
         "PROPOSAL_ERROR_INVALID_FEE_AMOUNT",
         "PROPOSAL_ERROR_INVALID_SHAPE",
-        "PROPOSAL_ERROR_INVALID_RISK_PARAMETER"
+        "PROPOSAL_ERROR_INVALID_RISK_PARAMETER",
+        "PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED",
+        "PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED",
+        "PROPOSAL_ERROR_INVALID_ASSET_DETAILS"
       ],
       "default": "PROPOSAL_ERROR_UNSPECIFIED",
-      "description": "- PROPOSAL_ERROR_UNSPECIFIED: Default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source\n - PROPOSAL_ERROR_INVALID_ASSET: The asset identifier is invalid or does not exist on the Vega network\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment)\n - PROPOSAL_ERROR_NO_RISK_PARAMETERS: No risk parameters were specified\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY: Invalid key in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE: Invalid valid in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED: Validation failed for network parameter proposal\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL: Opening auction duration is less than the network minimum opening auction time\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE: Opening auction duration is more than the network minimum opening auction time\n - PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT: Market proposal is missing a liquidity commitment\n - PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET: Market proposal market could not be instantiate in execution\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT: Market proposal market contained invalid product definition\n - PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT: Market proposal is missing commitment amount\n - PROPOSAL_ERROR_INVALID_FEE_AMOUNT: Market proposal have invalid fee\n - PROPOSAL_ERROR_INVALID_SHAPE: Market proposal have invalid shape\n - PROPOSAL_ERROR_INVALID_RISK_PARAMETER: Market proposal invalid risk parameter",
+      "description": "- PROPOSAL_ERROR_UNSPECIFIED: Default value\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON: The specified close time is too early base on network parameters\n - PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE: The specified close time is too late based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_SOON: The specified enact time is too early based on network parameters\n - PROPOSAL_ERROR_ENACT_TIME_TOO_LATE: The specified enact time is too late based on network parameters\n - PROPOSAL_ERROR_INSUFFICIENT_TOKENS: The proposer for this proposal as insufficient tokens\n - PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY: The instrument quote name and base name were the same\n - PROPOSAL_ERROR_NO_PRODUCT: The proposal has no product\n - PROPOSAL_ERROR_UNSUPPORTED_PRODUCT: The specified product is not supported\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP: Invalid future maturity timestamp (expect RFC3339)\n - PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED: The product maturity is past\n - PROPOSAL_ERROR_NO_TRADING_MODE: The proposal has no trading mode\n - PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE: The proposal has an unsupported trading mode\n - PROPOSAL_ERROR_NODE_VALIDATION_FAILED: The proposal failed node validation\n - PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD: A field is missing in a builtin asset source\n - PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS: The contract address is missing in the ERC20 asset source\n - PROPOSAL_ERROR_INVALID_ASSET: The asset identifier is invalid or does not exist on the Vega network\n - PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS: Proposal terms timestamps are not compatible (Validation \u003c Closing \u003c Enactment)\n - PROPOSAL_ERROR_NO_RISK_PARAMETERS: No risk parameters were specified\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY: Invalid key in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE: Invalid valid in update network parameter proposal\n - PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED: Validation failed for network parameter proposal\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL: Opening auction duration is less than the network minimum opening auction time\n - PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE: Opening auction duration is more than the network minimum opening auction time\n - PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT: Market proposal is missing a liquidity commitment\n - PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET: Market proposal market could not be instantiate in execution\n - PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT: Market proposal market contained invalid product definition\n - PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT: Market proposal is missing commitment amount\n - PROPOSAL_ERROR_INVALID_FEE_AMOUNT: Market proposal have invalid fee\n - PROPOSAL_ERROR_INVALID_SHAPE: Market proposal have invalid shape\n - PROPOSAL_ERROR_INVALID_RISK_PARAMETER: Market proposal invalid risk parameter\n - PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED: Proposal was declined because vote didn't reach the majority thershold required\n - PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED: Proposal declined because the participation threshold was not reached\n - PROPOSAL_ERROR_INVALID_ASSET_DETAILS: Asset proposal invalid asset details",
       "title": "A list of possible errors that can cause a proposal to be in state rejected or failed"
     },
     "vegaProposalState": {
@@ -5553,8 +5643,8 @@
           "title": "The algorithm used to create the signature"
         },
         "version": {
-          "type": "string",
-          "format": "uint64",
+          "type": "integer",
+          "format": "int64",
           "title": "The version of the signature used to create the signature"
         }
       },

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/hex"
 	"errors"
 
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
@@ -10,12 +11,17 @@ import (
 )
 
 var (
-	ErrInvalidSignature = errors.New("invalid signature")
+	ErrInvalidSignature   = errors.New("invalid signature")
+	ErrShouldBeHexEncoded = errors.New("should be hex encoded")
 )
 
-func CheckTransaction(tx *commandspb.Transaction) error {
+func CheckTransaction(tx *commandspb.Transaction) (*commandspb.InputData, error) {
 	errs := NewErrors()
-	// first check that no fields are empty
+
+	if tx == nil {
+		return nil, errs.FinalAddForProperty("tx", ErrIsRequired)
+	}
+
 	if len(tx.InputData) == 0 {
 		errs.AddForProperty("tx.input_data", ErrIsRequired)
 	}
@@ -30,60 +36,71 @@ func CheckTransaction(tx *commandspb.Transaction) error {
 		errs.AddForProperty("tx.from.pub_key", ErrIsRequired)
 	}
 
-	// at this point if we have any error we can leave stop processing already
 	if !errs.Empty() {
-		return errs.ErrorOrNil()
+		return nil, errs.ErrorOrNil()
 	}
 
-	// now we should be able to do signature validation
 	errs.Merge(validateSignature(tx.InputData, tx.Signature, tx.GetPubKey()))
 	if !errs.Empty() {
-		return errs.ErrorOrNil()
+		return nil, errs.ErrorOrNil()
 	}
 
-	// now we can unmarshal the transaction, and apply validation
-	// on the inputData
-	errs.Merge(checkInputData(tx.InputData))
-
-	return errs.ErrorOrNil()
+	inputData, errs := checkInputData(tx.InputData)
+	if !errs.Empty() {
+		return nil, errs.ErrorOrNil()
+	}
+	return inputData, nil
 }
 
-func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey []byte) Errors {
+func validateSignature(inputData []byte, signature *commandspb.Signature, pubKey string) Errors {
 	errs := NewErrors()
-	// build new signature algorithm using the algo from the sig
+
 	validator, err := crypto.NewSignatureAlgorithm(signature.Algo)
 	if err != nil {
-		return errs.FinalAdd(err)
+		return errs.FinalAddForProperty("tx.signature.algo", err)
 	}
-	ok, err := validator.Verify(pubKey, inputData, signature.Bytes)
+
+	decodedSig, err := hex.DecodeString(signature.Value)
+	if err != nil {
+		return errs.FinalAddForProperty("tx.signature.value", ErrShouldBeHexEncoded)
+	}
+
+	decodedPubKey, err := hex.DecodeString(pubKey)
+	if err != nil {
+		return errs.FinalAddForProperty("tx.from.pub_key", ErrShouldBeHexEncoded)
+	}
+
+	ok, err := validator.Verify(decodedPubKey, inputData, decodedSig)
 	if err != nil {
 		return errs.FinalAdd(err)
 	}
 	if !ok {
-		return errs.FinalAdd(ErrInvalidSignature)
+		return errs.FinalAddForProperty("tx.signature", ErrInvalidSignature)
 	}
 	return errs
 }
 
-func checkInputData(inputData []byte) Errors {
+func checkInputData(inputData []byte) (*commandspb.InputData, Errors) {
 	errs := NewErrors()
 
 	input := commandspb.InputData{}
 	err := proto.Unmarshal(inputData, &input)
 	if err != nil {
-		return errs.FinalAdd(err)
+		return nil, errs.FinalAdd(err)
 	}
 
 	if input.Nonce == 0 {
-		errs.AddForProperty("input_data.nonce", ErrMustBePositive)
+		errs.AddForProperty("tx.input_data.nonce", ErrMustBePositive)
 	}
 
 	if input.Command == nil {
-		errs.AddForProperty("input_data.command", ErrIsRequired)
+		errs.AddForProperty("tx.input_data.command", ErrIsRequired)
 	} else {
 		switch cmd := input.Command.(type) {
 		case *commandspb.InputData_OrderSubmission:
 			errs.Merge(checkOrderSubmission(cmd.OrderSubmission))
+		case *commandspb.InputData_OrderCancellation:
+			break // No verification to be made
 		case *commandspb.InputData_OrderAmendment:
 			errs.Merge(checkOrderAmendment(cmd.OrderAmendment))
 		case *commandspb.InputData_VoteSubmission:
@@ -91,25 +108,34 @@ func checkInputData(inputData []byte) Errors {
 		case *commandspb.InputData_WithdrawSubmission:
 			errs.Merge(checkWithdrawSubmission(cmd.WithdrawSubmission))
 		case *commandspb.InputData_LiquidityProvisionSubmission:
-			errs.Merge(checkLiquidityProvisionSubmission(
-				cmd.LiquidityProvisionSubmission))
+			errs.Merge(checkLiquidityProvisionSubmission(cmd.LiquidityProvisionSubmission))
 		case *commandspb.InputData_ProposalSubmission:
 			errs.Merge(checkProposalSubmission(cmd.ProposalSubmission))
+		case *commandspb.InputData_NodeRegistration:
+			errs.Merge(checkNodeRegistration(cmd.NodeRegistration))
+		case *commandspb.InputData_NodeVote:
+			errs.Merge(checkNodeVote(cmd.NodeVote))
+		case *commandspb.InputData_NodeSignature:
+			errs.Merge(checkNodeSignature(cmd.NodeSignature))
+		case *commandspb.InputData_ChainEvent:
+			errs.Merge(checkChainEvent(cmd.ChainEvent))
+		case *commandspb.InputData_OracleDataSubmission:
+			errs.Merge(checkOracleDataSubmission(cmd.OracleDataSubmission))
 		default:
-			errs.AddForProperty("input_data.command", ErrIsNotSupported)
+			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}
 	}
 
-	return errs
+	return &input, errs
 }
 
 func checkSignature(signature *commandspb.Signature) Errors {
 	errs := NewErrors()
-	if len(signature.Bytes) == 0 {
-		errs.AddForProperty("signature.bytes", ErrIsRequired)
+	if len(signature.Value) == 0 {
+		errs.AddForProperty("tx.signature.value", ErrIsRequired)
 	}
 	if len(signature.Algo) == 0 {
-		errs.AddForProperty("signature.algo", ErrIsRequired)
+		errs.AddForProperty("tx.signature.algo", ErrIsRequired)
 	}
 	return errs
 }

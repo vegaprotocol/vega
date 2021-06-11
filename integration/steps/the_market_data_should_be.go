@@ -3,6 +3,7 @@ package steps
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
@@ -14,9 +15,11 @@ type MappedMD struct {
 	md     types.MarketData
 	u64Map map[string]*uint64
 	strMap map[string]*string
+	tMap   map[string]*int64
 	i64Map map[string]*int64
 	tm     *types.Market_TradingMode
 	tr     *types.AuctionTrigger
+	et     *types.AuctionTrigger
 }
 
 type ErrStack []error
@@ -31,6 +34,7 @@ func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.D
 	// special fields first, these need to be compared manually
 	u64Set := expect.parseU64(data)
 	i64Set := expect.parseI64(data)
+	tSet := expect.parseTimes(data)
 	strSet := expect.parseStr(data)
 	expect.parseSpecial(data)
 	if pm := getPriceBounds(data); len(pm) > 0 {
@@ -49,6 +53,9 @@ func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.D
 	if expect.tr != nil && *expect.tr != expect.md.Trigger {
 		errs = append(errs, fmt.Errorf("expected '%s' auction trigger, instead got '%s'", *expect.tr, expect.md.Trigger))
 	}
+	if expect.et != nil && *expect.et != expect.md.ExtensionTrigger {
+		errs = append(errs, fmt.Errorf("expected '%s' extension trigger, instead got '%s'", *expect.et, expect.md.ExtensionTrigger))
+	}
 	// compare uint64
 	for _, u := range u64Set {
 		e, g := cmp.u64Map[u], parsed.u64Map[u] // get pointers to both fields
@@ -59,6 +66,13 @@ func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.D
 	// compare int64
 	for _, i := range i64Set {
 		e, g := cmp.i64Map[i], parsed.i64Map[i]
+		if *e != *g {
+			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead fot '%d'", *e, i, *g))
+		}
+	}
+	// compare times, which is basically identical to comparing i64
+	for _, i := range tSet {
+		e, g := cmp.tMap[i], parsed.tMap[i]
 		if *e != *g {
 			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead fot '%d'", *e, i, *g))
 		}
@@ -185,8 +199,9 @@ func getLPFeeShare(data *gherkin.DataTable) (ret []*types.LiquidityProviderFeeSh
 
 func (m *MappedMD) parseSpecial(data *gherkin.DataTable) {
 	todo := map[string]struct{}{
-		"trading mode":    {},
-		"auction trigger": {},
+		"trading mode":      {},
+		"auction trigger":   {},
+		"extension trigger": {},
 	}
 	for _, r := range TableWrapper(*data).Parse() {
 		for k := range todo {
@@ -198,6 +213,9 @@ func (m *MappedMD) parseSpecial(data *gherkin.DataTable) {
 				case "auction trigger":
 					at := r.MustAuctionTrigger(k)
 					m.tr = &at
+				case "extension trigger":
+					et := r.MustAuctionTrigger(k)
+					m.et = &et
 				}
 				delete(todo, k)
 			}
@@ -218,6 +236,30 @@ func (m *MappedMD) parseU64(data *gherkin.DataTable) []string {
 				set = append(set, k)
 				// avoid reassignments in following iterations
 				delete(m.u64Map, k)
+			}
+		}
+	}
+	return set
+}
+
+func (m *MappedMD) parseTimes(data *gherkin.DataTable) []string {
+	// already set start based off of the value in the map
+	// does some trickery WRT auction end time, so we can check if the auction duration is N seconds
+	end, start := int64(0), *m.tMap["auction start"]
+	set := make([]string, 0, len(m.tMap))
+	for _, r := range TableWrapper(*data).Parse() {
+		for k, ptr := range m.tMap {
+			if i, ok := r.I64B(k); ok {
+				if k == "auction end" {
+					end = i
+					if end < start {
+						i = start + int64(time.Duration(end)*time.Second)
+					}
+				}
+				*ptr = i
+				set = append(set, k)
+				// again: avoid reassignments when parsing the next row
+				delete(m.i64Map, k)
 			}
 		}
 	}
@@ -280,7 +322,7 @@ func mappedMD(md types.MarketData) *MappedMD {
 		"market value proxy": &r.md.MarketValueProxy,
 		"market":             &r.md.Market, // this is a bit pointless, but might as well add it
 	}
-	r.i64Map = map[string]*int64{
+	r.tMap = map[string]*int64{
 		"timestamp":     &r.md.Timestamp,
 		"auction end":   &r.md.AuctionEnd,
 		"auction start": &r.md.AuctionStart,

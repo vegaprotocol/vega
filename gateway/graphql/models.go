@@ -60,16 +60,6 @@ type AuctionDuration struct {
 
 // A vega builtin asset, mostly for testing purpose
 type BuiltinAsset struct {
-	// The id of the asset
-	ID string `json:"id"`
-	// The full name of the asset (e.g: Great British Pound)
-	Name string `json:"name"`
-	// The symbol of the asset (e.g: GBP)
-	Symbol string `json:"symbol"`
-	// The total supply of the market
-	TotalSupply string `json:"totalSupply"`
-	// The precision of the asset
-	Decimals int `json:"decimals"`
 	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
 	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
 }
@@ -78,14 +68,6 @@ func (BuiltinAsset) IsAssetSource() {}
 
 // A vega builtin asset, mostly for testing purpose
 type BuiltinAssetInput struct {
-	// The full name of the asset (e.g: Great British Pound)
-	Name string `json:"name"`
-	// The symbol of the asset (e.g: GBP)
-	Symbol string `json:"symbol"`
-	// The total supply of the market
-	TotalSupply string `json:"totalSupply"`
-	// The precision of the asset
-	Decimals int `json:"decimals"`
 	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
 	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
 }
@@ -335,6 +317,16 @@ type NetworkParameterInput struct {
 
 // A new asset to be added into vega
 type NewAssetInput struct {
+	// The full name of the asset (e.g: Great British Pound)
+	Name string `json:"name"`
+	// The symbol of the asset (e.g: GBP)
+	Symbol string `json:"symbol"`
+	// The total supply of the market
+	TotalSupply string `json:"totalSupply"`
+	// The precision of the asset
+	Decimals int `json:"decimals"`
+	// The min stake to become an lp for any market using this asset for settlement
+	MinLpStake string `json:"minLpStake"`
 	// A new builtin assed to be created
 	BuiltinAsset *BuiltinAssetInput `json:"builtinAsset"`
 	// A new ERC20 asset to be created
@@ -1867,6 +1859,12 @@ const (
 	ProposalRejectionReasonInvalidShape ProposalRejectionReason = "InvalidShape"
 	// Market proposal use an invalid risk parameter
 	ProposalRejectionReasonInvalidRiskParameter ProposalRejectionReason = "InvalidRiskParameter"
+	// Proposal declined because the majority threshold was not reached
+	ProposalRejectionReasonMajorityThresholdNotReached ProposalRejectionReason = "MajorityThresholdNotReached"
+	// Proposal declined because the participation threshold was not reached
+	ProposalRejectionReasonParticipationThresholdNotReached ProposalRejectionReason = "ParticipationThresholdNotReached"
+	// Asset details are invalid
+	ProposalRejectionReasonInvalidAssetDetails ProposalRejectionReason = "InvalidAssetDetails"
 )
 
 var AllProposalRejectionReason = []ProposalRejectionReason{
@@ -1900,11 +1898,14 @@ var AllProposalRejectionReason = []ProposalRejectionReason{
 	ProposalRejectionReasonInvalidFeeAmount,
 	ProposalRejectionReasonInvalidShape,
 	ProposalRejectionReasonInvalidRiskParameter,
+	ProposalRejectionReasonMajorityThresholdNotReached,
+	ProposalRejectionReasonParticipationThresholdNotReached,
+	ProposalRejectionReasonInvalidAssetDetails,
 }
 
 func (e ProposalRejectionReason) IsValid() bool {
 	switch e {
-	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket, ProposalRejectionReasonInvalidFutureProduct, ProposalRejectionReasonMissingCommitmentAmount, ProposalRejectionReasonInvalidFeeAmount, ProposalRejectionReasonInvalidShape, ProposalRejectionReasonInvalidRiskParameter:
+	case ProposalRejectionReasonCloseTimeTooSoon, ProposalRejectionReasonCloseTimeTooLate, ProposalRejectionReasonEnactTimeTooSoon, ProposalRejectionReasonEnactTimeTooLate, ProposalRejectionReasonInsufficientTokens, ProposalRejectionReasonInvalidInstrumentSecurity, ProposalRejectionReasonNoProduct, ProposalRejectionReasonUnsupportedProduct, ProposalRejectionReasonInvalidFutureMaturityTimestamp, ProposalRejectionReasonProductMaturityIsPassed, ProposalRejectionReasonNoTradingMode, ProposalRejectionReasonUnsupportedTradingMode, ProposalRejectionReasonNodeValidationFailed, ProposalRejectionReasonMissingBuiltinAssetField, ProposalRejectionReasonMissingERC20ContractAddress, ProposalRejectionReasonInvalidAsset, ProposalRejectionReasonIncompatibleTimestamps, ProposalRejectionReasonNoRiskParameters, ProposalRejectionReasonNetworkParameterInvalidKey, ProposalRejectionReasonNetworkParameterInvalidValue, ProposalRejectionReasonNetworkParameterValidationFailed, ProposalRejectionReasonOpeningAuctionDurationTooSmall, ProposalRejectionReasonOpeningAuctionDurationTooLarge, ProposalRejectionReasonMarketMissingLiquidityCommitment, ProposalRejectionReasonCouldNotInstantiateMarket, ProposalRejectionReasonInvalidFutureProduct, ProposalRejectionReasonMissingCommitmentAmount, ProposalRejectionReasonInvalidFeeAmount, ProposalRejectionReasonInvalidShape, ProposalRejectionReasonInvalidRiskParameter, ProposalRejectionReasonMajorityThresholdNotReached, ProposalRejectionReasonParticipationThresholdNotReached, ProposalRejectionReasonInvalidAssetDetails:
 		return true
 	}
 	return false

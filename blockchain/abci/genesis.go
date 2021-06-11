@@ -16,12 +16,12 @@ type GenesisState struct {
 	// distance) are rejected with a AbciTxnRejected.  It also keeps a ring-buffer
 	// to cache seen Tx. The Ring buffer size defines the number of block to cache,
 	// each block can hold an unlimited number of Txs.
-	ReplayAttackThreshold uint
+	ReplayAttackThreshold uint `json:"replay_attack_threshold"`
 }
 
 func DefaultGenesis() GenesisState {
 	return GenesisState{
-		ReplayAttackThreshold: 30,
+		ReplayAttackThreshold: 150,
 	}
 }
 

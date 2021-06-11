@@ -57,8 +57,10 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 	}
 	for assetToEnable := range assetsToEnable {
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
-			Id:     assetToEnable,
-			Symbol: assetToEnable,
+			Id: assetToEnable,
+			Details: &types.AssetDetails{
+				Symbol: assetToEnable,
+			},
 		})
 		if err != nil {
 			return fmt.Errorf("couldn't enable asset(%s): %v", assetToEnable, err)
@@ -69,18 +71,15 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 
 func enableVoteAsset(collateralEngine *collateral.Engine) error {
 	voteAsset := types.Asset{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
+		Id: "VOTE",
+		Details: &types.AssetDetails{
+			Name:        "VOTE",
+			Symbol:      "VOTE",
+			Decimals:    5,
+			TotalSupply: "1000",
+			Source: &types.AssetDetails_BuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
+					MaxFaucetAmountMint: "10",
 				},
 			},
 		},

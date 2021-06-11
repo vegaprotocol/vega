@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/pkg/errors"
 )
@@ -224,6 +224,19 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 
 func (b OrderBook) InAuction() bool {
 	return b.auction
+}
+
+// CanLeaveAuction calls canUncross with required trades and, if that returns false
+// without required trades (which still permits leaving liquidity auction
+// if canUncross with required trades returs true, both returns are true
+func (b *OrderBook) CanLeaveAuction() (withTrades, withoutTrades bool) {
+	withTrades = b.canUncross(true)
+	withoutTrades = withTrades
+	if withTrades {
+		return
+	}
+	withoutTrades = b.canUncross(false)
+	return
 }
 
 // CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders

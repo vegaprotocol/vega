@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/collateral/mocks"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,8 @@ type testEngine struct {
 }
 
 type accEvt interface {
-	Account() types.Account
+	events.Event
+	Account() ptypes.Account
 }
 
 func TestCollateralTransfer(t *testing.T) {
@@ -114,15 +116,23 @@ func testPartyWithAccountHasABalance(t *testing.T) {
 	defer eng.Finish()
 
 	party := "myparty"
+	bal := uint64(500)
 	// create trader
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.NoError(t, err)
 
 	// then add some money
-	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
+	err = eng.Engine.UpdateBalance(context.Background(), acc, bal)
 	assert.Nil(t, err)
 
+	evt := eng.broker.GetLastByTypeAndID(events.AccountEvent, acc)
+	require.NotNil(t, evt)
+	ae, ok := evt.(accEvt)
+	require.True(t, ok)
+	account := ae.Account()
+	// balance of the account after all of the events should be 500
+	require.Equal(t, bal, account.Balance)
 	assert.True(t, eng.HasBalance(party))
 }
 
@@ -131,20 +141,35 @@ func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
 	defer eng.Finish()
 
 	party := "myparty"
+	bal := uint64(500)
 	// create trader
 	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
-	acc, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
+	acc, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.NoError(t, err)
 
 	// then add some money
-	err = eng.Engine.UpdateBalance(context.Background(), acc, 500)
+	err = eng.UpdateBalance(context.Background(), acc, bal)
 	assert.Nil(t, err)
+	evt := eng.broker.GetLastByTypeAndID(events.AccountEvent, acc)
+	require.NotNil(t, evt)
+	ae, ok := evt.(accEvt)
+	require.True(t, ok)
+	account := ae.Account()
+	// balance of the account after all of the events should be 500
+	require.Equal(t, bal, account.Balance)
 
 	// then add some money
-	err = eng.Engine.DecrementBalance(context.Background(), acc, 500)
+	err = eng.DecrementBalance(context.Background(), acc, bal)
 	assert.Nil(t, err)
+	// get the last event after decrementing it
+	// we don't have to perform a nil-check here because we know there is an event for this ID anyway
+	evt = eng.broker.GetLastByTypeAndID(events.AccountEvent, acc)
+	// this type assertion is guaranteed to work here anyway
+	ae = evt.(accEvt)
+	// balance should be zero
+	require.Zero(t, ae.Account().Balance)
 
-	// assert.False(t, eng.HasBalance(party))
+	// HasBalance returns true, seeing as zero is technically a balance...
 	assert.True(t, eng.HasBalance(party))
 }
 
@@ -154,7 +179,7 @@ func testCreateBondAccountFailureNoGeneral(t *testing.T) {
 
 	trader := "mytrader"
 	// create trader
-	_, err := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	_, err := eng.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
 	assert.EqualError(t, err, "party general account missing when trying to create a bond account")
 }
 
@@ -163,20 +188,29 @@ func testCreateBondAccountSuccess(t *testing.T) {
 	defer eng.Finish()
 
 	trader := "mytrader"
+	bal := uint64(500)
 	// create trader
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
-	_, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
-	assert.NoError(t, err)
-	bnd, err := eng.Engine.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
-	assert.Nil(t, err)
+	_, err := eng.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
+	require.NoError(t, err)
+	bnd, err := eng.CreatePartyBondAccount(context.Background(), trader, testMarketID, testMarketAsset)
+	require.NoError(t, err)
 
 	// add funds
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.UpdateBalance(context.Background(), bnd, 500)
+	err = eng.UpdateBalance(context.Background(), bnd, bal)
 	assert.Nil(t, err)
 
+	evt := eng.broker.GetLastByTypeAndID(events.AccountEvent, bnd)
+	require.NotNil(t, evt)
+	ae, ok := evt.(accEvt)
+	require.True(t, ok)
+	account := ae.Account()
+	require.Equal(t, bal, account.Balance)
+	// these two checks are a bit redundant at this point
+	// but at least we're verifying that the GetAccountByID and the latest event return the same state
 	bndacc, _ := eng.GetAccountByID(bnd)
-	assert.Equal(t, 500, int(bndacc.Balance))
+	assert.Equal(t, account.Balance, bndacc.Balance)
 }
 
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
@@ -531,8 +565,10 @@ func testEnableAssetSuccess(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 	asset := types.Asset{
-		Id:     "MYASSET",
-		Symbol: "MYASSET",
+		Id: "MYASSET",
+		Details: &types.AssetDetails{
+			Symbol: "MYASSET",
+		},
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
@@ -543,8 +579,10 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 	asset := types.Asset{
-		Id:     "MYASSET",
-		Symbol: "MYASSET",
+		Id: "MYASSET",
+		Details: &types.AssetDetails{
+			Symbol: "MYASSET",
+		},
 	}
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
@@ -2292,19 +2330,14 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 
 	// add the token asset
 	tokAsset := types.Asset{
-		Id:          "VOTE",
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		Decimals:    5,
-		TotalSupply: "1000",
-		Source: &types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					Name:        "VOTE",
-					Symbol:      "VOTE",
-					Decimals:    5,
-					TotalSupply: "1000",
-				},
+		Id: "VOTE",
+		Details: &types.AssetDetails{
+			Name:        "VOTE",
+			Symbol:      "VOTE",
+			Decimals:    5,
+			TotalSupply: "1000",
+			Source: &types.AssetDetails_BuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},
 	}
@@ -2313,15 +2346,19 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 
 	// enable the assert for the tests
 	asset := types.Asset{
-		Id:     testMarketAsset,
-		Symbol: testMarketAsset,
+		Id: testMarketAsset,
+		Details: &types.AssetDetails{
+			Symbol: testMarketAsset,
+		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 	// ETH is added hardcoded in some places
 	asset = types.Asset{
-		Id:     "ETH",
-		Symbol: "ETH",
+		Id: "ETH",
+		Details: &types.AssetDetails{
+			Symbol: "ETH",
+		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)

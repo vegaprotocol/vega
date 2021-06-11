@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/netparams/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

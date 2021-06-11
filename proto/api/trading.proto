@@ -7,9 +7,10 @@ import "markets.proto";
 import "governance.proto";
 import "assets.proto";
 import "events/v1/events.proto";
-import "oracles/v1/oracle_spec.proto";
-import "oracles/v1/oracle_data.proto";
+import "oracles/v1/spec.proto";
+import "oracles/v1/data.proto";
 import "commands/v1/commands.proto";
+import "commands/v1/transaction.proto";
 import "commands/v1/validator_commands.proto";
 
 package api.v1;
@@ -32,6 +33,9 @@ service TradingService {
 
   // Submit a signed transaction
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+
+  // Submit a signed transaction (v2)
+  rpc SubmitTransactionV2(SubmitTransactionV2Request) returns (SubmitTransactionV2Response);
 
   // Prepare a governance proposal
   rpc PrepareProposalSubmission(PrepareProposalSubmissionRequest) returns (PrepareProposalSubmissionResponse);
@@ -96,6 +100,34 @@ message SubmitTransactionRequest {
 
 // Response for submitting a transaction on Vega
 message SubmitTransactionResponse {
+  // Success will be true if the transaction was accepted by the node,
+  // **Important** - success does not mean that the event is confirmed by consensus
+  bool success = 1;
+}
+
+// Request for submitting a transaction v2 on Vega
+message SubmitTransactionV2Request {
+  // Blockchain transaction type
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    // The transaction will be submitted without waiting for response
+    TYPE_ASYNC = 1;
+    // The transaction will be submitted, and blocking until the
+    // tendermint mempool return a response
+    TYPE_SYNC = 2;
+    // The transaction will submitted, and blocking until the tendermint
+    // network will have committed it into a block
+    TYPE_COMMIT = 3;
+  }
+
+  // A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain
+  vega.commands.v1.Transaction tx = 1;
+  // Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response
+  Type type = 2;
+}
+
+// Response for submitting a transaction v2 on Vega
+message SubmitTransactionV2Response {
   // Success will be true if the transaction was accepted by the node,
   // **Important** - success does not mean that the event is confirmed by consensus
   bool success = 1;
@@ -288,6 +320,8 @@ service TradingDataService {
 
   // Get Statistics on Vega
   rpc Statistics(StatisticsRequest) returns (StatisticsResponse);
+
+  rpc LastBlockHeight(LastBlockHeightRequest) returns (LastBlockHeightResponse);
 
   // Get Time
   rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
@@ -1248,4 +1282,14 @@ message OracleDataBySpecRequest {
 message OracleDataBySpecResponse {
   // The list of oracle data broadcast to a given spec
   repeated oracles.v1.OracleData oracle_data = 1;
+}
+
+// A request to get the height of the very last block processed
+// by tendermint
+message LastBlockHeightRequest {}
+
+// A response with the height of the last block processed by
+// tendermint
+message LastBlockHeightResponse {
+  uint64 height = 1;
 }

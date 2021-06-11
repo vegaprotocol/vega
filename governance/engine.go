@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	dtypes "code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/pkg/errors"
@@ -28,7 +29,6 @@ var (
 )
 
 // Broker - event bus
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/governance Broker
 type Broker interface {
 	Send(e events.Event)
 	SendBatch(es []events.Event)
@@ -37,13 +37,13 @@ type Broker interface {
 // Accounts ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
-	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetPartyGeneralAccount(party, asset string) (*dtypes.Account, error)
 	GetAssetTotalSupply(asset string) (uint64, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
 type Assets interface {
-	NewAsset(ref string, assetSrc *types.AssetSource) (string, error)
+	NewAsset(ref string, assetSrc *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }
@@ -527,6 +527,8 @@ func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, par
 		ProposalId: cmd.ProposalId,
 		Value:      cmd.Value,
 		Timestamp:  e.currentTime.UnixNano(),
+		// set the weight at 0 initially
+		TotalGovernanceTokenWeight: "0",
 	}
 
 	// we only want to count the last vote, so add to yes/no map, delete from the other
@@ -592,11 +594,12 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 		e.log.Debug("Proposal declined", logging.ProposalID(proposal.Id))
 	}
 
+	e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 	e.broker.SendBatch(newUpdatedProposalEvents(ctx, proposal))
 }
 
 func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.Event {
-	evts := []events.Event{events.NewProposalEvent(ctx, *proposal.Proposal)}
+	evts := []events.Event{}
 
 	for _, y := range proposal.yes {
 		evts = append(evts, events.NewVoteEvent(ctx, *y))
@@ -660,6 +663,10 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 	if float64(yes) > majorityThreshold && totalVotes >= participationThreshold {
 		p.State = types.Proposal_STATE_PASSED
 	} else {
+		p.Reason = types.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
+		if totalVotes < participationThreshold {
+			p.Reason = types.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
+		}
 		p.State = types.Proposal_STATE_DECLINED
 	}
 

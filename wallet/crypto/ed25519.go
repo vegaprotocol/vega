@@ -6,7 +6,7 @@ import (
 
 	vcrypto "code.vegaprotocol.io/vega/crypto"
 
-	"github.com/oasisprotocol/ed25519"
+	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
 )
 
 var (
@@ -54,6 +54,6 @@ func (e *ed25519Sig) Name() string {
 	return "vega/ed25519"
 }
 
-func (e *ed25519Sig) Version() uint64 {
+func (e *ed25519Sig) Version() uint32 {
 	return 1
 }

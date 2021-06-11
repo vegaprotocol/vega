@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	MaxDuration30DaysNs = 2592000000000000
+	MaxDuration30DaysNs int64 = 2592000000000000
 )
 
 func CheckProposalSubmission(cmd *commandspb.ProposalSubmission) error {
@@ -22,6 +22,10 @@ func CheckProposalSubmission(cmd *commandspb.ProposalSubmission) error {
 
 func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 	errs := NewErrors()
+
+	if cmd == nil {
+		return errs.FinalAddForProperty("proposal_submission", ErrIsRequired)
+	}
 
 	if cmd.Terms == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms", ErrIsRequired)
@@ -114,10 +118,30 @@ func checkNewAssetChanges(change *types.ProposalTerms_NewAsset) Errors {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsRequired)
 	}
 
+	if len(change.NewAsset.Changes.Name) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.name", ErrIsRequired)
+	}
+	if len(change.NewAsset.Changes.Symbol) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.symbol", ErrIsRequired)
+	}
+	if change.NewAsset.Changes.Decimals == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.decimals", ErrIsRequired)
+	}
+	if len(change.NewAsset.Changes.TotalSupply) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.total_supply", ErrIsRequired)
+	}
+
+	totalSupply, err := strconv.ParseUint(change.NewAsset.Changes.TotalSupply, 10, 64)
+	if err != nil {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.total_supply", ErrIsNotValidNumber)
+	} else if totalSupply == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.total_supply", ErrMustBePositive)
+	}
+
 	switch s := change.NewAsset.Changes.Source.(type) {
-	case *types.AssetSource_BuiltinAsset:
+	case *types.AssetDetails_BuiltinAsset:
 		errs.Merge(checkBuiltinAssetSource(s))
-	case *types.AssetSource_Erc20:
+	case *types.AssetDetails_Erc20:
 		errs.Merge(checkERC20AssetSource(s))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsNotValid)
@@ -126,7 +150,7 @@ func checkNewAssetChanges(change *types.ProposalTerms_NewAsset) Errors {
 	return errs
 }
 
-func checkBuiltinAssetSource(s *types.AssetSource_BuiltinAsset) Errors {
+func checkBuiltinAssetSource(s *types.AssetDetails_BuiltinAsset) Errors {
 	errs := NewErrors()
 
 	if s.BuiltinAsset == nil {
@@ -135,27 +159,8 @@ func checkBuiltinAssetSource(s *types.AssetSource_BuiltinAsset) Errors {
 
 	asset := s.BuiltinAsset
 
-	if len(asset.Name) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.name", ErrIsRequired)
-	}
-	if len(asset.Symbol) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.symbol", ErrIsRequired)
-	}
-	if asset.Decimals == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.decimals", ErrIsRequired)
-	}
-	if len(asset.TotalSupply) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.total_supply", ErrIsRequired)
-	}
 	if len(asset.MaxFaucetAmountMint) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.max_faucet_amount_mint", ErrIsRequired)
-	}
-
-	totalSupply, err := strconv.ParseUint(asset.TotalSupply, 10, 64)
-	if err != nil {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.total_supply", ErrIsNotValidNumber)
-	} else if totalSupply == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.source.builtin_asset.total_supply", ErrMustBePositive)
 	}
 
 	maxFaucetAmount, err := strconv.ParseUint(asset.MaxFaucetAmountMint, 10, 64)
@@ -170,7 +175,7 @@ func checkBuiltinAssetSource(s *types.AssetSource_BuiltinAsset) Errors {
 	return errs
 }
 
-func checkERC20AssetSource(s *types.AssetSource_Erc20) Errors {
+func checkERC20AssetSource(s *types.AssetDetails_Erc20) Errors {
 	errs := NewErrors()
 
 	if s.Erc20 == nil {

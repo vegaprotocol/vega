@@ -348,6 +348,8 @@ type MarketData {
   marketTradingMode: MarketTradingMode!
   "what triggered an auction (if an auction was started)"
   trigger: AuctionTrigger!
+  "what extended the ongoing auction (if an auction was extended)"
+  extensionTrigger: AuctionTrigger!
   "the amount of stake targeted for this market"
   targetStake: String
   "the supplied stake for the market"
@@ -433,6 +435,9 @@ type Query {
 
   "a bunch of statistics about the node"
   statistics: Statistics!
+
+  "The last block process by the blockchain"
+  lastBlockHeight: String!
 
   "All registered oracle specs"
   oracleSpecs: [OracleSpec!]
@@ -576,6 +581,9 @@ type Asset {
   "The precision of the asset"
   decimals: Int!
 
+  "The min stake to become an lp for any market using this asset for settlement"
+  minLpStake: String!
+
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
 
@@ -594,21 +602,6 @@ type ERC20 {
 
 "A vega builtin asset, mostly for testing purpose"
 type BuiltinAsset {
-  "The id of the asset"
-  id: ID!
-
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
-  "The total supply of the market"
-  totalSupply: String!
-
-  "The precision of the asset"
-  decimals: Int!
-
   "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
   maxFaucetAmountMint: String!
 }
@@ -1747,6 +1740,12 @@ enum ProposalRejectionReason {
   InvalidShape
   "Market proposal use an invalid risk parameter"
   InvalidRiskParameter
+  "Proposal declined because the majority threshold was not reached"
+  MajorityThresholdNotReached
+  "Proposal declined because the participation threshold was not reached"
+  ParticipationThresholdNotReached
+  "Asset details are invalid"
+  InvalidAssetDetails
 }
 
 "Reason for the order being rejected by the core node"
@@ -2291,6 +2290,21 @@ input UpdateMarketInput {
 
 "A new asset proposal change"
 type NewAsset {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
+
+  "The min stake to become an lp for any market using this asset for settlement"
+  minLpStake: String!
+
   "the source of the new Asset"
   source: AssetSource!
 }
@@ -2384,6 +2398,21 @@ input ProposalTermsInput {
 
 "A new asset to be added into vega"
 input NewAssetInput {
+  "The full name of the asset (e.g: Great British Pound)"
+  name: String!
+
+  "The symbol of the asset (e.g: GBP)"
+  symbol: String!
+
+  "The total supply of the market"
+  totalSupply: String!
+
+  "The precision of the asset"
+  decimals: Int!
+
+  "The min stake to become an lp for any market using this asset for settlement"
+  minLpStake: String!
+
   "A new builtin assed to be created"
   builtinAsset: BuiltinAssetInput
 
@@ -2399,18 +2428,6 @@ input ERC20Input {
 
 "A vega builtin asset, mostly for testing purpose"
 input BuiltinAssetInput {
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
-  "The total supply of the market"
-  totalSupply: String!
-
-  "The precision of the asset"
-  decimals: Int!
-
   "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
   maxFaucetAmountMint: String!
 }

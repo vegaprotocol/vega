@@ -13,8 +13,8 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/products"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (
@@ -35,8 +35,7 @@ type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
-// Broker ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/execution Broker
+// Broker  (no longer need to mock this, use the broker/mocks wrapper)
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
@@ -440,7 +439,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	order := orderSubmission.IntoOrder(party)
+	order := types.OrderFromProto(orderSubmission.IntoOrder(party))
 
 	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {

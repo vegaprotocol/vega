@@ -3,20 +3,20 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Trade struct {
 	*Base
-	t types.Trade
+	t ptypes.Trade
 }
 
 func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
-	cpy := t.DeepClone()
 	return &Trade{
 		Base: newBase(ctx, TradeEvent),
-		t:    *cpy,
+		t:    *(t.IntoProto()),
 	}
 }
 
@@ -28,11 +28,11 @@ func (t Trade) IsParty(id string) bool {
 	return t.t.Buyer == id || t.t.Seller == id
 }
 
-func (t *Trade) Trade() types.Trade {
+func (t *Trade) Trade() ptypes.Trade {
 	return t.t
 }
 
-func (t Trade) Proto() types.Trade {
+func (t Trade) Proto() ptypes.Trade {
 	return t.t
 }
 

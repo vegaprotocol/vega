@@ -13,9 +13,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types"
 	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/mock/gomock"
@@ -80,8 +80,7 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &commandspb.OrderSubmission{
-		},
+		txn.SubmitOrderCommand: &commandspb.OrderSubmission{},
 		txn.ProposeCommand: &types.Proposal{
 			PartyId: party,
 			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset

@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (

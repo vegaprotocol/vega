@@ -3,7 +3,7 @@ package matching_test
 import (
 	"testing"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 )
 

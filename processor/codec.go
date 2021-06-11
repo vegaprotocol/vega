@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
@@ -17,6 +17,14 @@ type codec struct {
 // Decode takes a raw input from a Tendermint Tx and decodes into a vega Tx,
 // the decoding process involves a signature verification.
 func (c *codec) Decode(payload []byte) (abci.Tx, error) {
+	tx, err := DecodeTxV2(payload)
+	if err != nil {
+		return c.decodeV1(payload)
+	}
+	return tx, nil
+}
+
+func (c *codec) decodeV1(payload []byte) (abci.Tx, error) {
 	bundle := &types.SignedBundle{}
 	if err := proto.Unmarshal(payload, bundle); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal signed bundle: %w", err)
@@ -27,7 +35,7 @@ func (c *codec) Decode(payload []byte) (abci.Tx, error) {
 		return nil, fmt.Errorf("unable to unmarshal transaction from signed bundle: %w", err)
 	}
 
-	tx, err := NewTx(protoTx, bundle.Sig.Sig)
+	tx, err := NewTx(payload, protoTx, bundle.Sig.Sig)
 	if err != nil {
 		return nil, err
 	}

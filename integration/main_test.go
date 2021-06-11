@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
@@ -40,7 +39,6 @@ func TestMain(m *testing.M) {
 }
 
 func FeatureContext(s *godog.Suite) {
-	var blockDuration int64
 	s.BeforeScenario(func(_ interface{}) {
 		execsetup = newExecutionTestSetup()
 	})
@@ -133,45 +131,20 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the oracles broadcast data signed with "([^"]*)":$`, func(pubKeys string, properties *gherkin.DataTable) error {
 		return steps.OraclesBroadcastDataSignedWithKeys(execsetup.oracleEngine, pubKeys, properties)
 	})
+
+	// block time stuff
+	s.Step(`^the average block duration is "([^"]+)" with variance "([^"]+)"$`, func(block, variance string) error {
+		return steps.TheAverageBlockDurationWithVariance(execsetup.block, block, variance)
+	})
 	s.Step(`^the average block duration is "([^"]+)"$`, func(blockTime string) error {
-		bt, err := steps.TheBlockTimeIs(blockTime)
-		if err != nil {
-			return err
-		}
-		blockDuration = bt
-		return nil
+		return steps.TheAverageBlockDurationIs(execsetup.block, blockTime)
 	})
 
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
-		n, err := strconv.ParseInt(blocks, 10, 0)
-		if err != nil {
-			return err
-		}
-		t, _ := execsetup.timeService.GetTimeNow()
-		block := time.Duration(blockDuration) * time.Second
-		for i := int64(0); i < n; i++ {
-			t = t.Add(block)
-			execsetup.timeService.SetTime(t)
-		}
-		return nil
+		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks)
 	})
-
 	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
-		delta, err := time.ParseDuration(total)
-		if err != nil {
-			return err
-		}
-		inc, err := time.ParseDuration(block)
-		if err != nil {
-			return err
-		}
-		t, _ := execsetup.timeService.GetTimeNow()
-		end := t.Add(delta)
-		for t.Before(end) {
-			t = t.Add(inc)
-			execsetup.timeService.SetTime(t)
-		}
-		return nil
+		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.block, execsetup.timeService, total, block)
 	})
 
 	// Assertion steps

@@ -15,6 +15,7 @@ cyclomatic
 datestamps
 datetime
 denylist
+DoD
 Ed25519
 enum
 enums

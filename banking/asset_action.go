@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	uuid "github.com/satori/go.uuid"
 )
 

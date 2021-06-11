@@ -9,7 +9,6 @@ import (
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/subscribers Broker
 type Broker interface {
 	Subscribe(s broker.Subscriber) int
 	Unsubscribe(id int)

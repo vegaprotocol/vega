@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/risk/mocks"
 
@@ -28,7 +29,7 @@ type testEngine struct {
 	ctrl      *gomock.Controller
 	model     *mocks.MockModel
 	orderbook *mocks.MockOrderbook
-	broker    *mocks.MockBroker
+	broker    *bmock.MockBroker
 	as        *mocks.MockAuctionState
 }
 
@@ -255,7 +256,7 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 	// we're still in auction...
 	eng.as.EXPECT().InAuction().Times(1).Return(true)
 	// but the auction is ending
-	eng.as.EXPECT().AuctionEnd().Times(1).Return(true)
+	eng.as.EXPECT().CanLeave().Times(1).Return(true)
 	// eng.as.EXPECT().InAuction().AnyTimes().Return(false)
 	eng.orderbook.EXPECT().GetCloseoutPrice(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(volume uint64, side types.Side) (uint64, error) {
@@ -327,7 +328,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -431,7 +432,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -495,7 +496,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	model := mocks.NewMockModel(ctrl)
 	conf := risk.NewDefaultConfig()
 	ob := mocks.NewMockOrderbook(ctrl)
-	broker := mocks.NewMockBroker(ctrl)
+	broker := bmock.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
 
 	engine := risk.NewEngine(

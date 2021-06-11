@@ -21,7 +21,7 @@ func verifyGenesis(r *reporter, bs []byte) string {
 	var g = &struct {
 		AppState *struct {
 			Network *struct {
-				ReplayAttackThreshold *int `json:"ReplayAttackThreshold"`
+				ReplayAttackThreshold *int `json:"replay_attack_threshold"`
 			} `json:"network"`
 			NetworkParameters map[string]string `json:"network_parameters"`
 			Validators        map[string]string `json:"validators"`

@@ -3,7 +3,7 @@ package collateral
 import (
 	"code.vegaprotocol.io/vega/events"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type marginUpdate struct {

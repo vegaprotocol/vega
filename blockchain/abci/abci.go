@@ -1,6 +1,8 @@
 package abci
 
 import (
+	"errors"
+
 	"github.com/tendermint/tendermint/abci/types"
 )
 
@@ -56,7 +58,11 @@ func (app *App) Commit() (resp types.ResponseCommit) {
 func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
-		return NewResponseCheckTx(code, err.Error())
+		return NewResponseCheckTxError(code, err)
+	}
+
+	if err := app.replayProtector.CheckTx(tx); err != nil {
+		return NewResponseCheckTxError(AbciTxnValidationFailure, err)
 	}
 
 	ctx := app.ctx
@@ -85,12 +91,12 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDeliverTx) {
 	tx, code, err := app.getTx(req.GetTx())
 	if err != nil {
-		return NewResponseDeliverTx(code, err.Error())
+		return NewResponseDeliverTxError(code, err)
 	}
 	app.removeTxFromCache(req.GetTx())
 
 	if err := app.replayProtector.DeliverTx(tx); err != nil {
-		return NewResponseDeliverTx(AbciTxnValidationFailure, err.Error())
+		return NewResponseDeliverTxError(AbciTxnValidationFailure, err)
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here
@@ -105,11 +111,11 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	// Lookup for deliver tx, fail if not found
 	fn := app.deliverTxs[tx.Command()]
 	if fn == nil {
-		return NewResponseDeliverTx(AbciUnknownCommandError, "")
+		return NewResponseDeliverTxError(AbciUnknownCommandError, errors.New("invalid vega command"))
 	}
 
 	if err := fn(ctx, tx); err != nil {
-		return NewResponseDeliverTx(AbciTxnInternalError, err.Error())
+		return NewResponseDeliverTxError(AbciTxnInternalError, err)
 	}
 
 	return NewResponseDeliverTx(types.CodeTypeOK, "")

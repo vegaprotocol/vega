@@ -99,6 +99,7 @@ type PartyService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/api BlockchainClient
 type BlockchainClient interface {
 	SubmitTransaction(ctx context.Context, tx *types.SignedBundle, ty protoapi.SubmitTransactionRequest_Type) error
+	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty protoapi.SubmitTransactionV2Request_Type) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
@@ -260,6 +261,16 @@ func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *proto
 	}, nil
 }
 
+func (t *tradingDataService) LastBlockHeight(
+	ctx context.Context,
+	req *protoapi.LastBlockHeightRequest,
+) (*protoapi.LastBlockHeightResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
+	return &protoapi.LastBlockHeightResponse{
+		Height: t.Stats.Blockchain.Height(),
+	}, nil
+}
+
 func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParameters")()
 	nps := t.NetParamsService.GetAll()
@@ -339,8 +350,8 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 	var address string
 	for _, v := range assets.Assets {
 		if v.Id == withdrawal.Asset {
-			switch src := v.Source.Source.(type) {
-			case *types.AssetSource_Erc20:
+			switch src := v.Details.Source.(type) {
+			case *types.AssetDetails_Erc20:
 				address = src.Erc20.ContractAddress
 			default:
 				return nil, fmt.Errorf("invalid asset source")

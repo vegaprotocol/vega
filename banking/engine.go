@@ -16,8 +16,8 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 )
 
@@ -68,7 +68,6 @@ type TimeService interface {
 }
 
 // Broker - the event bus
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/vega/banking Broker
 type Broker interface {
 	Send(e events.Event)
 }

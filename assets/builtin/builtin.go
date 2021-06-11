@@ -11,19 +11,11 @@ type Builtin struct {
 	asset *types.Asset
 }
 
-func New(id string, asset *types.BuiltinAsset) *Builtin {
+func New(id string, asset *types.AssetDetails) *Builtin {
 	return &Builtin{
 		asset: &types.Asset{
-			Id:          id,
-			Name:        asset.Name,
-			Symbol:      asset.Symbol,
-			TotalSupply: asset.TotalSupply,
-			Decimals:    asset.Decimals,
-			Source: &types.AssetSource{
-				Source: &types.AssetSource_BuiltinAsset{
-					BuiltinAsset: asset,
-				},
-			},
+			Id:      id,
+			Details: asset,
 		},
 	}
 }
@@ -62,6 +54,6 @@ func (b *Builtin) ValidateDeposit() error {
 
 func (b *Builtin) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		b.asset.Id, b.asset.Name, b.asset.Symbol, b.asset.TotalSupply,
-		b.asset.Decimals)
+		b.asset.Id, b.asset.Details.Name, b.asset.Details.Symbol, b.asset.Details.TotalSupply,
+		b.asset.Details.Decimals)
 }

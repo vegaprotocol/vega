@@ -1,7 +1,7 @@
 package execution_test
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/imdario/mergo"
 )
 

@@ -26,7 +26,7 @@ type ValidatorTopology interface {
 	Len() int
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_broker_mock.go -package mocks code.vegaprotocol.io/vega/notary Broker
+// Broker needs no mocks
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)

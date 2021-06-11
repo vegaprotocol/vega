@@ -83,17 +83,21 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     When the network moves ahead "2" blocks
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3 | ETH/DEC21 | buy  | 10     | 1022  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 15     | 1030  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader3 | ETH/DEC21 | buy  | 10     | 1022  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC21 | buy  | 3      | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 5      | 1030  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the traders should have the following account balances:
+      | trader  | asset | market id | margin | general | bond |
+      | trader0 | ETH   | ETH/DEC21 | 1789   | 0       | 0    |
+    And the insurance pool balance should be "4646" for the market "ETH/DEC21"
     Then the market data for the market "ETH/DEC21" should be:
      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
      | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 5000           | 23            |
     # getting closer to distressed LP, still in continuous trading
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
-      | trader0 | ETH   | ETH/DEC21 | 1810   | 0       | 0    |
+      | trader0 | ETH   | ETH/DEC21 | 1789   | 0       | 0    |
 
     When the network moves ahead "2" blocks
     And the traders place the following orders:
@@ -105,9 +109,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
      | 1012       | TRADING_MODE_MONITORING_AUCTION | 1       | 1000      | 1020      | 2834         | 0              | 28            |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
-      | trader0 | ETH   | ETH/DEC21 | 1808   | 0       | 0    |
+      | trader0 | ETH   | ETH/DEC21 | 1787   | 0       | 0    |
     # make sure bond slashing moved money to insurance pool
-    And the insurance pool balance should be "4625" for the market "ETH/DEC21"
+    And the insurance pool balance should be "4646" for the market "ETH/DEC21"
 
 
   Scenario: LP gets distressed after auction
@@ -169,8 +173,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # getting closer to distressed LP, still in continuous trading
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
-      | trader0 | ETH   | ETH/DEC21 | 1764   | 0       | 0    |
-    And the insurance pool balance should be "4648" for the market "ETH/DEC21"
+      | trader0 | ETH   | ETH/DEC21 | 1762   | 0       | 0    |
+    And the insurance pool balance should be "4649" for the market "ETH/DEC21"
 
     # Move price out of bounds
     When the network moves ahead "2" blocks
@@ -182,7 +186,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 2323         | 10000          | 23            |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
-      | trader0 | ETH   | ETH/DEC21 | 1772   | 0       | 0    |
+      | trader0 | ETH   | ETH/DEC21 | 1768   | 0       | 0    |
 
     # end price auction
     When the network moves ahead "301" blocks
@@ -191,7 +195,5 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
      | 1055       | TRADING_MODE_CONTINUOUS | 1       | 1045      | 1065      | 3482         | 5000           | 33            |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
-      | trader0 | ETH   | ETH/DEC21 | 1266   | 416     | 0    |
-    And the insurance pool balance should be "4648" for the market "ETH/DEC21"
-
-
+      | trader0 | ETH   | ETH/DEC21 | 1266   | 0       | 0    |
+    And the insurance pool balance should be "5061" for the market "ETH/DEC21"

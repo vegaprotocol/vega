@@ -8,7 +8,7 @@ import "github.com/mwitkow/go-proto-validators/validator.proto";
 import "markets.proto";
 import "vega.proto";
 import "assets.proto";
-import "oracles/v1/oracle_spec.proto";
+import "oracles/v1/spec.proto";
 
 // Future product configuration
 message FutureProduct {
@@ -103,7 +103,7 @@ message UpdateNetworkParameter {
 // New asset on Vega
 message NewAsset {
   // The configuration of the new asset
-  AssetSource changes = 1 [(validator.field) = {msg_exists: true}];
+  AssetDetails changes = 1 [(validator.field) = {msg_exists: true}];
 }
 
 // Terms for a governance proposal on Vega
@@ -263,6 +263,12 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SHAPE = 29;
   // Market proposal invalid risk parameter
   PROPOSAL_ERROR_INVALID_RISK_PARAMETER = 30;
+  // Proposal was declined because vote didn't reach the majority thershold required
+  PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED = 31;
+  // Proposal declined because the participation threshold was not reached
+  PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED = 32;
+  // Asset proposal invalid asset details
+  PROPOSAL_ERROR_INVALID_ASSET_DETAILS = 33;
 }
 
 // Governance vote

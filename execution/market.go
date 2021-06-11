@@ -28,10 +28,10 @@ import (
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/products"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/shopspring/decimal"
@@ -139,16 +139,17 @@ type AuctionState interface {
 	IsMonitorAuction() bool
 	// is it the start/end of an auction
 	AuctionStart() bool
-	AuctionEnd() bool
+	CanLeave() bool
 	// when does the auction start/end
 	ExpiresAt() *time.Time
 	Start() time.Time
 	// signal we've started/ended the auction
 	AuctionStarted(ctx context.Context) *events.Auction
-	AuctionEnded(ctx context.Context, now time.Time) *events.Auction
+	Left(ctx context.Context, now time.Time) *events.Auction
 	// get some data
 	Mode() types.Market_TradingMode
 	Trigger() types.AuctionTrigger
+	ExtensionTrigger() types.AuctionTrigger
 	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
 	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
 }
@@ -435,6 +436,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		AuctionEnd:                auctionEnd,
 		MarketTradingMode:         m.as.Mode(),
 		Trigger:                   m.as.Trigger(),
+		ExtensionTrigger:          m.as.ExtensionTrigger(),
 		TargetStake:               strconv.FormatUint(uint64(math.Ceil(m.getTargetStake())), 10),
 		SuppliedStake:             strconv.FormatUint(m.getSuppliedStake(), 10),
 		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
@@ -535,69 +537,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	closed = t.After(m.closingAt)
 	m.closed = closed
 
-	// check price auction end
-	if m.as.InAuction() {
-		p, v, _ := m.matching.GetIndicativePriceAndVolume()
-		if m.as.IsOpeningAuction() {
-			// if the opening auction period has expired and the book can be uncrossed safely
-			if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(t) && m.matching.CanUncross() {
-				// mark opening auction as ending
-				// Prime price monitoring engine with the uncrossing price of the opening auction
-				if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t, true); err != nil {
-					m.log.Panic("unable to run check price with price monitor",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
-				if evt := m.as.AuctionExtended(ctx); evt != nil {
-					// this should never, ever happen
-					m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
-				}
-				m.as.EndAuction()
-				m.LeaveAuction(ctx, t)
-
-				// the market is now in a ACTIVE state
-				m.mkt.State = types.Market_STATE_ACTIVE
-				m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-				// start the market fee window
-				m.feeSplitter.TimeWindowStart(t)
-			}
-		} else if m.as.IsPriceAuction() || m.as.IsLiquidityAuction() {
-			isPrice := m.as.IsPriceAuction()
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, t, true); err != nil {
-				m.log.Panic("unable to run check price with price monitor",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-			if evt := m.as.AuctionExtended(ctx); evt != nil {
-				m.broker.Send(evt)
-			}
-			// hacky way to ensure the liquidity monitoring will calculate the target stake based on the target stake
-			// SHOULD we leave the auction. Otherwise, we would leave a liquidity auction, and immediately enter a new one
-			ft := []*types.Trade{
-				{
-					Size:  v,
-					Price: p,
-				},
-			}
-			m.checkLiquidity(ctx, ft)
-			// price monitoring engine and liquidity monitoring engine both indicated auction can end
-			if m.as.AuctionEnd() {
-				if m.matching.BidAndAskPresentAfterAuction() {
-					m.LeaveAuction(ctx, t)
-				} else {
-					if isPrice {
-						// TODO: ExtendPriceAuction when implemented
-						m.as.ExtendAuction(types.AuctionDuration{Duration: 1})
-					} else {
-						// TODO: ExtendLiquidityAuction when implemented
-						m.as.ExtendAuction(types.AuctionDuration{Duration: 1})
-					}
-				}
-			}
-		}
-		// This is where ending liquidity auctions and FBA's will be handled
-	}
+	// check auction, if any
+	m.checkAuction(ctx, t)
 
 	// TODO(): handle market start time
 
@@ -918,7 +859,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// keep var to see if we're leaving opening auction
 	isOpening := m.as.IsOpeningAuction()
 	// update auction state, so we know what the new tradeMode ought to be
-	endEvt := m.as.AuctionEnded(ctx, now)
+	endEvt := m.as.Left(ctx, now)
 
 	updatedOrders := []*types.Order{}
 
@@ -1489,7 +1430,7 @@ func (m *Market) handleConfirmationPassiveOrders(
 func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) {
 
 	m.handleConfirmationPassiveOrders(ctx, conf)
-	end := m.as.AuctionEnd()
+	end := m.as.CanLeave()
 
 	if len(conf.Trades) > 0 {
 
@@ -3131,6 +3072,9 @@ func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 }
 
 func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
+	// before we check liquidity, ensure we've moved all funds that can go towards
+	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
+	m.checkBondBalance(ctx)
 	_, vBid, _ := m.getBestStaticBidPriceAndVolume()
 	_, vAsk, _ := m.getBestStaticAskPriceAndVolume()
 
@@ -3160,7 +3104,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		m.EnterAuction(ctx)
 	}
 	// end the liquidity monitoring auction if possible
-	if m.as.InAuction() && m.as.AuctionEnd() && !m.as.IsOpeningAuction() {
+	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {
 		p, v, _ := m.matching.GetIndicativePriceAndVolume()
 		if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, m.currentTime, true); err != nil {
 			m.log.Panic("unable to run check price with price monitor",

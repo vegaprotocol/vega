@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/crypto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -23,21 +24,26 @@ var (
 )
 
 type Tx struct {
-	tx        *types.Transaction
-	signature []byte
+	rawPayload []byte
+	tx         *types.Transaction
+	signature  []byte
 }
 
-func NewTx(tx *types.Transaction, signature []byte) (*Tx, error) {
+func NewTx(payload []byte, tx *types.Transaction, signature []byte) (*Tx, error) {
 	if len(tx.InputData) < TxHeaderLen {
 		return nil, ErrInvalidTxPayloadLen
 	}
 
-	return &Tx{tx, signature}, nil
+	return &Tx{
+		rawPayload: payload,
+		tx:         tx,
+		signature:  signature,
+	}, nil
 }
 
 // Hash returns hash of the given Tx. Hashes are unique to every vega tx.
 // The hash is the first TxHeaderLen bytes.
-func (t *Tx) Hash() []byte { return t.tx.InputData[:TxHashLen] }
+func (t *Tx) Hash() []byte { return crypto.Hash(t.rawPayload) }
 
 // PubKey returns the Tx's public key.
 func (t *Tx) PubKey() []byte { return t.tx.GetPubKey() }

@@ -16,11 +16,12 @@ import (
 
 type testCommander struct {
 	*nodewallet.Commander
-	ctx   context.Context
-	cfunc context.CancelFunc
-	ctrl  *gomock.Controller
-	chain *mocks.MockChain
-	wal   nodewallet.Wallet
+	ctx    context.Context
+	cfunc  context.CancelFunc
+	ctrl   *gomock.Controller
+	chain  *mocks.MockChain
+	bstats *mocks.MockBlockchainStats
+	wal    nodewallet.Wallet
 }
 
 type stubWallet struct {
@@ -34,8 +35,9 @@ func getTestCommander(t *testing.T) *testCommander {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)
+	bstats := mocks.NewMockBlockchainStats(ctrl)
 	wal := &stubWallet{chain: string(nodewallet.Vega)}
-	cmd, err := nodewallet.NewCommander(chain, wal)
+	cmd, err := nodewallet.NewCommander(chain, wal, bstats)
 	assert.NoError(t, err)
 	return &testCommander{
 		Commander: cmd,
@@ -43,6 +45,7 @@ func getTestCommander(t *testing.T) *testCommander {
 		cfunc:     cfunc,
 		ctrl:      ctrl,
 		chain:     chain,
+		bstats:    bstats,
 		wal:       wal,
 	}
 }
@@ -63,10 +66,16 @@ func testSignedCommandSuccess(t *testing.T) {
 	defer commander.Finish()
 
 	cmd := txn.NodeVoteCommand
-	payload := &commandspb.NodeVote{}
+	payload := &commandspb.NodeVote{
+		PubKey:    []byte("my-pub-key"),
+		Reference: "test",
+	}
 	ctx := context.Background()
 
-	commander.chain.EXPECT().SubmitTransaction(ctx, gomock.Any(), gomock.Any()).Times(1)
+	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
+	commander.chain.EXPECT().SubmitTransactionV2(
+		ctx, gomock.Any(), gomock.Any()).Times(1)
+
 	assert.NoError(t, commander.Command(ctx, cmd, payload))
 }
 
@@ -83,7 +92,7 @@ func (s stubWallet) Algo() string {
 	return "vega/ed25519"
 }
 
-func (s stubWallet) Version() uint64 {
+func (s stubWallet) Version() uint32 {
 	return 1
 }
 

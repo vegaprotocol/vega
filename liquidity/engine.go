@@ -11,8 +11,8 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (
@@ -22,9 +22,9 @@ var (
 	ErrEmptyShape                      = errors.New("liquidity provision contains an empty shape")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity Broker,RiskModel,PriceMonitor,IDGen
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity RiskModel,PriceMonitor,IDGen
 
-// Broker - event bus
+// Broker - event bus (no mocks needed)
 type Broker interface {
 	Send(e events.Event)
 	SendBatch(evts []events.Event)
@@ -449,7 +449,7 @@ func (e *Engine) Update(
 		e.updatePartyOrders(po.Party, po.Orders)
 	}
 
-	for _, lp := range e.provisions.slice() {
+	for _, lp := range e.provisions.Slice() {
 		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.PartyId, repriceFn)
 		if err != nil {
 			return nil, nil, err

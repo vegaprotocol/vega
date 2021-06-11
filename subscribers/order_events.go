@@ -78,7 +78,6 @@ func (o *OrderEvent) write(e OE) {
 		o.log.Debug("ORDER EVENT",
 			logging.String("trace-id", e.TraceID()),
 			logging.String("type", e.Type().String()),
-			logging.Order(*e.Order()),
 		)
 	}
 }
