@@ -83,7 +83,7 @@ func (f *LogNormal) ProbabilityOfTrading(currentPrice, yearFraction, orderPrice 
 	dist := f.getDistribution(currentPrice, yearFraction)
 	//Floor min price at zero since lognormal distribution has support [0, inf)
 	minPrice = math.Max(minPrice, 0)
-	return pd.ProbabilityOfTrading(dist, orderPrice, isBid, applyMinMax, minPrice, maxPrice)
+	return pd.ProbabilityOfTrading(dist, currentPrice, orderPrice, isBid, applyMinMax, minPrice, maxPrice)
 }
 
 func (f *LogNormal) getDistribution(currentPrice, yearFraction float64) interfaces.AnalyticalDistribution {
