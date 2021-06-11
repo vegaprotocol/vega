@@ -5,8 +5,9 @@ import (
 )
 
 var (
-	ErrTxAlreadyInCache = errors.New("reply protection: already in the cache")
-	ErrTxStaled         = errors.New("reply protection: staled")
+	ErrTxAlreadyInCache   = errors.New("reply protection: already in the cache")
+	ErrTxStaled           = errors.New("reply protection: staled")
+	ErrTxReferFutureBlock = errors.New("reply protection: tx refer future block")
 )
 
 // ReplayProtector implement a block distance and ring buffer cache
@@ -75,7 +76,7 @@ func (rp *ReplayProtector) DeliverTx(tx Tx) error {
 
 	// If the tx is on a future block, we accept.
 	if tx.BlockHeight() > rp.height {
-		return nil
+		return ErrTxReferFutureBlock
 	}
 
 	// Calculate the distance
@@ -100,7 +101,7 @@ func (rp *ReplayProtector) CheckTx(tx Tx) error {
 
 	// If the tx is on a future block, we accept.
 	if tx.BlockHeight() > rp.height {
-		return nil
+		return ErrTxReferFutureBlock
 	}
 
 	// Calculate the distance
