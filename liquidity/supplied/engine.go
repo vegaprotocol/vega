@@ -116,13 +116,13 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 
 	buyRemaining := liquidityObligation.Clone()
 	buyRemaining.Sub(buyRemaining, buySupplied)
-	if err := e.updateSizes(buyRemaining, bestBidPrice, bestAskPrice, buyShapes, true, minPrice, maxPrice); err != nil {
+	if err := e.updateSizes(buyRemaining, bestBidPrice.Clone(), bestAskPrice.Clone(), buyShapes, true, minPrice.Clone(), maxPrice.Clone()); err != nil {
 		return err
 	}
 
 	sellRemaining := liquidityObligation.Clone()
 	sellRemaining.Sub(sellRemaining, sellSupplied)
-	if err := e.updateSizes(sellRemaining, bestBidPrice, bestAskPrice, sellShapes, false, minPrice, maxPrice); err != nil {
+	if err := e.updateSizes(sellRemaining, bestBidPrice.Clone(), bestAskPrice.Clone(), sellShapes, false, minPrice.Clone(), maxPrice.Clone()); err != nil {
 		return err
 	}
 
@@ -140,7 +140,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	for _, o := range orders {
 		if o.Side == types.Side_SIDE_BUY {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := e.getProbabilityOfTrading(bestBidPrice, bestAskPrice, o.Price, true, minPrice, maxPrice)
+			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), true, minPrice.Clone(), maxPrice.Clone())
 			d := decimal.NewFromFloat(prob)
 			d = d.Mul(decimal.NewFromInt(int64(o.Remaining)))
 			d = d.Mul(decimal.NewFromBigInt(o.Price.BigInt(), 0))
@@ -148,7 +148,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 		}
 		if o.Side == types.Side_SIDE_SELL {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := e.getProbabilityOfTrading(bestBidPrice, bestAskPrice, o.Price, false, minPrice, maxPrice)
+			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), false, minPrice.Clone(), maxPrice.Clone())
 			d := decimal.NewFromFloat(prob)
 			d = d.Mul(decimal.NewFromInt(int64(o.Remaining)))
 			d = d.Mul(decimal.NewFromBigInt(o.Price.BigInt(), 0))
@@ -178,7 +178,7 @@ func (e *Engine) updateSizes(
 	for _, o := range orders {
 		proportion := o.Proportion
 
-		prob := e.getProbabilityOfTrading(bestBidPrice, bestAskprice, o.Price, isBid, minPrice, maxPrice)
+		prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskprice.Clone(), o.Price.Clone(), isBid, minPrice.Clone(), maxPrice.Clone())
 		if prob <= 0 {
 			proportion = 0
 		}
@@ -201,7 +201,7 @@ func (e *Engine) updateSizes(
 			scaling = fraction / prob
 		}
 		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
-		d := decimal.NewFromFloat(scaling)
+		d := decimal.NewFromBigInt(liquidityObligation.BigInt(), 0)
 		d = d.Mul(decimal.NewFromFloat(scaling))
 		d = d.Div(decimal.NewFromBigInt(o.Price.BigInt(), 0)).Ceil()
 		o.LiquidityImpliedVolume = uint64(d.BigInt().Int64())
@@ -260,7 +260,7 @@ func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice *num.Uint, is
 		// e.rm.ProbabilityOfTrading(float64(currentPrice.Uint64()), tauScaled, float64(orderPrice.Uint64()), isBid, true, minPrice, maxPrice)
 		cp, _ := decimal.NewFromBigInt(currentPrice.BigInt(), 0).Float64()
 		op, _ := decimal.NewFromBigInt(orderPrice.BigInt(), 0).Float64()
-		// Update this when we have migrated risk PETE TODO
+		// Update this when we have migrated risk TODO UINT
 		prob = e.rm.ProbabilityOfTrading(cp, tauScaled, op, isBid, true, minPrice.Float64(), maxPrice.Float64())
 		cache[*orderPrice] = prob
 	}
