@@ -52,12 +52,8 @@ func (f *Simple) CalculateRiskFactors(current *types.RiskResult) (bool, *types.R
 }
 
 // PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price
-func (f *Simple) PriceRange(currentP *num.Uint, _, _ num.Decimal) (*num.Uint, *num.Uint) {
-	pDec := currentP.ToDecimal()
-	minD, maxD := pDec.Sub(f.minMoveDown), pDec.Add(f.maxMoveUp)
-	min, _ := num.UintFromDecimal(minD)
-	max, _ := num.UintFromDecimal(maxD)
-	return min, max
+func (f *Simple) PriceRange(currentP, _, _ num.Decimal) (num.Decimal, num.Decimal) {
+	return currentP.Sub(f.minMoveDown), currentP.Add(f.maxMoveUp)
 }
 
 // ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
