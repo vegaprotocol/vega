@@ -23,7 +23,7 @@ var (
 type Model interface {
 	CalculationInterval() time.Duration
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
-	PriceRange(price *num.Uint, yearFraction, probability num.Decimal) (minPrice, maxPrice *num.Uint)
+	PriceRange(price, yearFraction, probability num.Decimal) (minPrice, maxPrice num.Decimal)
 	ProbabilityOfTrading(currentP, orderP, minP, maxP *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
 	GetProjectionHorizon() num.Decimal
 }

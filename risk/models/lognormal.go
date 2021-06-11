@@ -75,14 +75,13 @@ func (f *LogNormal) CalculateRiskFactors(
 }
 
 // PriceRange returns the minimum and maximum price as implied by the model's probability distribution with horizon given by yearFraction (e.g. 0.5 for half a year) and probability level (e.g. 0.95 for 95%).
-func (f *LogNormal) PriceRange(currentP *num.Uint, yFrac, probabilityLevel num.Decimal) (*num.Uint, *num.Uint) {
-	dist := f.getDistribution(currentP, yFrac)
+func (f *LogNormal) PriceRange(currentP, yFrac, probabilityLevel num.Decimal) (num.Decimal, num.Decimal) {
+	uPrice := num.UintFromDecimal(currentP)
+	dist := f.getDistribution(uPrice, yFrac)
 	// damn you quant!
 	pl, _ := probabilityLevel.Float64()
-	minF, maxF := pd.PriceRange(dist, pl)
-	min, _ := num.UintFromDecimal(num.DecimalFromFloat(minF))
-	max, _ := num.UintFromDecimal(num.DecimalFromFloat(maxF))
-	return min, max
+	min, max := pd.PriceRange(dist, pl)
+	return num.DecimalFromFloat(min), num.DecimalFromFloat(max)
 }
 
 // ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
