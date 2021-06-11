@@ -7,8 +7,6 @@ import (
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
-	"github.com/shopspring/decimal"
 )
 
 var (
@@ -92,18 +90,17 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 
 // GetTargetStake returns target stake based current time, risk factors
 // and the open interest time series constructed by calls to RecordOpenInterest
-func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) decimal.Decimal {
+func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) num.Decimal {
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
 		e.computeMaxOI(now, minTime)
 	}
 
 	// float64(markPrice.Uint64()*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
-	mp := decimal.NewFromBigInt(markPrice.BigInt(), 0)
-	mp = mp.Mul(decimal.NewFromInt(int64(e.max.OI)))
-	mp = mp.Mul(decimal.NewFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor))
-
-	return mp
+	mp := num.DecimalFromUint(markPrice)
+	return mp.Mul(num.NewUint(e.max.OI).ToDecimal()).Mul(
+		num.DecimalFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor),
+	)
 }
 
 //GetTheoreticalTargetStake returns target stake based current time, risk factors
@@ -120,11 +117,13 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	}
 
 	// float64(markPrice.Uint64()*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
-	mp := decimal.NewFromBigInt(markPrice.BigInt(), 0)
-	mp = mp.Mul(decimal.NewFromInt(int64(maxOI)))
-	mp = mp.Mul(decimal.NewFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor))
-
-	return mp
+	mp := num.DecimalFromUint(markPrice).Mul(
+		num.NewUint(maxOI).ToDecimal(),
+	).Mul(
+		num.DecimalFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor),
+	)
+	// return the decimal as uint
+	return num.UintFromDecimal(mp)
 }
 
 func (e *Engine) getMaxFromCurrent() uint64 {
