@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	ErrTxAlreadyInCache   = errors.New("reply protection: already in the cache")
+	ErrTxAlreadyInCache   = errors.New("reply protection: tx already in the cache")
 	ErrTxStaled           = errors.New("reply protection: staled")
 	ErrTxReferFutureBlock = errors.New("reply protection: tx refer future block")
 )
