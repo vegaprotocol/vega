@@ -67,6 +67,12 @@ func UintFromString(str string, base int) (*Uint, bool) {
 	return UintFromBig(b)
 }
 
+// Sum just removes the need to write num.NewUint(0).Sum(x, y, z)
+// so you can write num.Sum(x, y, z) instead, equivalent to x + y + z
+func Sum(vals ...*Uint) *Uint {
+	return NewUint(0).AddSum(vals...)
+}
+
 func (z *Uint) Set(oth *Uint) *Uint {
 	z.u.Set(&oth.u)
 	return z
@@ -99,6 +105,15 @@ func (z Uint) Float64() float64 {
 // new variable is created.
 func (z *Uint) Add(x, y *Uint) *Uint {
 	z.u.Add(&x.u, &y.u)
+	return z
+}
+
+// AddSum adds multiple values at the same time to a given uint
+// so x.AddSum(y, z) is equivalent to x + y + z
+func (z *Uint) AddSum(vals ...*Uint) *Uint {
+	for _, x := range vals {
+		z.u.Add(&z.u, &x.u)
+	}
 	return z
 }
 
@@ -135,6 +150,19 @@ func (u *Uint) Sub(x, y *Uint) *Uint {
 func (z *Uint) SubOverflow(x, y *Uint) (*Uint, bool) {
 	_, ok := z.u.SubOverflow(&x.u, &y.u)
 	return z, ok
+}
+
+// Delta will subtract y from x and store the result
+// unless x-y overflowed, in which case the neg field will be set
+// and the result of y - x is set instead
+func (z *Uint) Delta(x, y *Uint) (*Uint, bool) {
+	// y is the bigger value - swap the two
+	if y.GT(x) {
+		_ = z.Sub(y, x)
+		return z, true
+	}
+	_ = z.Sub(x, y)
+	return z, false
 }
 
 // Mul will multiply x and y then store the result

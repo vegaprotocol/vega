@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // MarketPosition ...
@@ -19,16 +20,16 @@ type MarketPosition interface {
 	Size() int64
 	Buy() int64
 	Sell() int64
-	Price() uint64
-	VWBuy() uint64
-	VWSell() uint64
+	Price() *num.Uint
+	VWBuy() *num.Uint
+	VWSell() *num.Uint
 	ClearPotentials()
 }
 
 // Product ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/settlement Product
 type Product interface {
-	Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error)
+	Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error)
 	GetAsset() string
 }
 
@@ -105,7 +106,7 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions
-func (e *Engine) Settle(t time.Time, lastMarkPrice uint64) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time, lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
 	positions, err := e.settleAll(lastMarkPrice)
 	if err != nil {
@@ -148,20 +149,21 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	size := int64(trade.Size)
 	// the traders both need to get a MTM settlement on the traded volume
 	// and this MTM part has to be based on the _actual_ trade value
+	price := trade.Price.Clone()
 	e.trades[trade.Buyer] = append(e.trades[trade.Buyer], &pos{
-		price:   trade.Price,
+		price:   price,
 		size:    size,
 		newSize: buyerSize + size,
 	})
 	e.trades[trade.Seller] = append(e.trades[trade.Seller], &pos{
-		price:   trade.Price,
+		price:   price.Clone(),
 		size:    -size,
 		newSize: sellerSize - size,
 	})
 	e.mu.Unlock()
 }
 
-func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []events.MarketPosition) []events.Transfer {
+func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions []events.MarketPosition) []events.Transfer {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
 	e.mu.Lock()
 	tCap := e.transferCap(positions)
@@ -184,7 +186,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []ev
 		// create (and add position to buffer)
 		evts = append(evts, events.NewSettlePositionEvent(ctx, party, e.market, evt.Price(), tradeset, e.currentTime.UnixNano()))
 		// no changes in position, and the MTM price hasn't changed, we don't need to do anything
-		if !hasTraded && current.price == markPrice {
+		if !hasTraded && current.price.EQ(markPrice) {
 			// no changes in position and markPrice hasn't changed -> nothing needs to be marked
 			continue
 		}
@@ -193,11 +195,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []ev
 		// and the old mark price at which the trader held the position
 		// the trades slice contains all trade positions (position changes for the trader)
 		// at their exact trade price, so we can MTM that volume correctly, too
-		mtmShare := calcMTM(markPrice, current.size, current.price, traded)
-		mtmAmount := uint64(mtmShare)
-		if mtmShare < 0 {
-			mtmAmount = uint64(-mtmShare)
-		}
+		mtmShare, neg := calcMTM(markPrice, current.price, current.size, traded)
 		// we've marked this trader to market, their position can now reflect this
 		current.update(evt)
 		current.price = markPrice
@@ -208,7 +206,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []ev
 			e.rmPosition(party)
 		}
 		// we don't need to create a transfer if there's no changes to the balance...
-		if mtmShare == 0 {
+		if mtmShare.IsZero() {
 			wins = append(wins, &mtmTransfer{
 				MarketPosition: current,
 				transfer:       nil,
@@ -219,12 +217,12 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice uint64, positions []ev
 		settle := &types.Transfer{
 			Owner: party,
 			Amount: &types.FinancialAmount{
-				Amount: mtmAmount, // current delta -> mark price minus current position average
+				Amount: mtmShare, // current delta -> mark price minus current position average
 				Asset:  e.product.GetAsset(),
 			},
 		}
 
-		if mtmShare > 0 {
+		if !neg {
 			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
 			wins = append(wins, &mtmTransfer{
 				MarketPosition: current,
@@ -263,7 +261,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	e.broker.SendBatch(devts)
 }
 
-func (e *Engine) getSettlementProduct(lastMarkPrice uint64) (Product, error) {
+func (e *Engine) getSettlementProduct(lastMarkPrice *num.Uint) (Product, error) {
 	switch e.Config.FinalSettlement.Get() {
 	case FinalSettlementOracle:
 		return e.product, nil
@@ -276,7 +274,7 @@ func (e *Engine) getSettlementProduct(lastMarkPrice uint64) (Product, error) {
 }
 
 // simplified settle call
-func (e *Engine) settleAll(lastMarkPrice uint64) ([]*types.Transfer, error) {
+func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 	e.mu.Lock()
 
 	settleProd, err := e.getSettlementProduct(lastMarkPrice)
@@ -316,7 +314,7 @@ func (e *Engine) settleAll(lastMarkPrice uint64) ([]*types.Transfer, error) {
 		e.log.Debug(
 			"Settled position for trader",
 			logging.String("trader-id", party),
-			logging.Uint64("amount", amt.Amount),
+			logging.String("amount", amt.Amount.String()),
 		)
 		// size was negative, this is a loss transfer
 		if pos.size < 0 {
@@ -366,27 +364,56 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // amount =  prev_vol * (current_price - prev_mark_price) + SUM(new_trade := range trades)( new_trade(i).volume(party)*(current_price - new_trade(i).price )
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
-func calcMTM(markPrice uint64, size int64, price uint64, trades []*pos) (mtmShare int64) {
-	mtmShare = int64(markPrice-price) * size
-	for _, c := range trades {
-		// add MTM compared to trade price for the positions changes for trades
-		mtmShare += int64(markPrice-c.price) * c.size
+func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, bool) {
+	delta, sign := num.NewUint(0).Delta(markPrice, price)
+	// this shouldn't be possible I don't think, but just in case
+	if size < 0 {
+		size = -size
+		// swap sign
+		sign = !sign
 	}
-	return
+	mtmShare := delta.Mul(delta, num.NewUint(uint64(size)))
+	for _, c := range trades {
+		delta, neg := num.NewUint(0).Delta(markPrice, c.price)
+		size := num.NewUint(uint64(c.size))
+		if c.size < 0 {
+			size = size.SetUint64(uint64(-c.size))
+			neg = !neg
+		}
+		add := delta.Mul(delta, size)
+		if mtmShare.IsZero() {
+			mtmShare = mtmShare.Set(add)
+			sign = neg
+		} else if neg == sign {
+			// both mtmShare and add are the same sign
+			mtmShare = mtmShare.Add(mtmShare, add)
+		} else if mtmShare.GTE(add) {
+			// regardless of sign, we just have to subtract
+			mtmShare = mtmShare.Sub(mtmShare, add)
+		} else {
+			// add > mtmShare, we don't care about signs here
+			// just subtract mtmShare and switch signs
+			mtmShare = add.Sub(add, mtmShare)
+			sign = neg
+		}
+	}
+	return mtmShare, sign
 }
 
 type lastMarkPriceSettlement struct {
-	markPrice uint64
+	markPrice *num.Uint
 	asset     string
 }
 
-func (l *lastMarkPriceSettlement) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
+func (l *lastMarkPriceSettlement) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error) {
 	if netPosition < 0 {
 		netPosition *= -1
 	}
+	amt := num.NewUint(0).Sub(l.markPrice, entryPrice)
+	amt = amt.Mul(amt, num.NewUint(uint64(netPosition)))
 	return &types.FinancialAmount{
 		Asset:  l.asset,
-		Amount: (l.markPrice - entryPrice) * uint64(netPosition),
+		Amount: amt,
 	}, nil
 }
 
