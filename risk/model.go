@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/risk/models"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -22,9 +23,9 @@ var (
 type Model interface {
 	CalculationInterval() time.Duration
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
-	PriceRange(price float64, yearFraction float64, probability float64) (minPrice float64, maxPrice float64)
-	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
-	GetProjectionHorizon() float64
+	PriceRange(price *num.Uint, yearFraction, probability num.Decimal) (minPrice, maxPrice *num.Uint)
+	ProbabilityOfTrading(currentP, orderP, minP, maxP *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
+	GetProjectionHorizon() num.Decimal
 }
 
 // NewModel instantiate a new risk model from a market framework configuration
