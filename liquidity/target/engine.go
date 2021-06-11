@@ -108,7 +108,7 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 
 //GetTheoreticalTargetStake returns target stake based current time, risk factors
 //and the supplied trades without modifying the internal state
-func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) decimal.Decimal {
+func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
