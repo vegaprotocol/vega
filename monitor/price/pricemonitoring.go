@@ -3,7 +3,6 @@ package price
 import (
 	"context"
 	"errors"
-	"math"
 	"sort"
 	"time"
 
@@ -176,12 +175,12 @@ func (e *Engine) GetHorizonYearFractions() []num.Decimal {
 // GetValidPriceRange returns the range of prices that won't trigger the price monitoring auction
 func (e *Engine) GetValidPriceRange() (*num.Uint, *num.Uint) {
 	min := num.NewUint(0)
-	max, _ := num.UintFromDecimal(num.DecimalFromFloat(math.MaxFloat64))
+	max := num.MaxUint()
 	for _, pr := range e.getCurrentPriceRanges() {
-		if pr.MinPrice.LT(min) {
+		if pr.MinPrice.GT(min) {
 			min = pr.MinPrice.Clone()
 		}
-		if pr.MaxPrice.GT(max) {
+		if !pr.MaxPrice.IsZero() && pr.MaxPrice.LT(max) {
 			max = pr.MaxPrice.Clone()
 		}
 	}
@@ -413,8 +412,8 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 				continue
 			}
 			ref := e.getRefPrice(b.Trigger.Horizon)
-			min, _ := num.UintFromDecimal(ref.Mul(b.DownFactor))
-			max, _ := num.UintFromDecimal(ref.Mul(b.UpFactor))
+			min, _ := num.UintFromDecimal(ref.Mul(b.DownFactor).Floor())
+			max, _ := num.UintFromDecimal(ref.Mul(b.UpFactor).Round(0))
 			e.priceRangesCache[b] = priceRange{
 				MinPrice:       min,
 				MaxPrice:       max,
@@ -452,6 +451,9 @@ func (e *Engine) updateBounds() {
 		minRequiredHorizon = e.now.Add(time.Duration(-maxTau) * time.Second)
 	}
 
+	if len(e.pricesPast) == 0 {
+		return
+	}
 	// Make sure at least one entry is left hence the "len(..) - 1"
 	for i := 0; i < len(e.pricesPast)-1; i++ {
 		if !e.pricesPast[i].Time.Before(minRequiredHorizon) {

@@ -7,6 +7,10 @@ import (
 	"github.com/holiman/uint256"
 )
 
+var (
+	maxUint = mustUintFromString("340282366920938463463374607431768211455", 10)
+)
+
 // Uint A wrapper for a big unsigned int
 type Uint struct {
 	u uint256.Int
@@ -16,6 +20,11 @@ type Uint struct {
 // uint64 passed as a parameter.
 func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
+}
+
+// MaxUint returns max value for uint246 (well for now uint228)
+func MaxUint() *Uint {
+	return maxUint.Clone()
 }
 
 // Min returns the smallest of the 2 numbers
@@ -64,6 +73,15 @@ func UintFromString(str string, base int) (*Uint, bool) {
 		return NewUint(0), true
 	}
 	return UintFromBig(b)
+}
+
+// only use internally for "constants" like UintMax
+func mustUintFromString(str string, base int) *Uint {
+	v, fail := UintFromString(str, base)
+	if fail {
+		panic("could not convert string to uint" + str)
+	}
+	return v
 }
 
 // Sum just removes the need to write num.NewUint(0).Sum(x, y, z)
