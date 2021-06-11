@@ -12,6 +12,7 @@ func NewResponseCheckTx(code uint32, info string) types.ResponseCheckTx {
 func NewResponseCheckTxError(code uint32, err error) types.ResponseCheckTx {
 	return types.ResponseCheckTx{
 		Code: code,
+		Info: err.Error(),
 		Data: []byte(err.Error()),
 	}
 }
@@ -26,6 +27,7 @@ func NewResponseDeliverTx(code uint32, info string) types.ResponseDeliverTx {
 func NewResponseDeliverTxError(code uint32, err error) types.ResponseDeliverTx {
 	return types.ResponseDeliverTx{
 		Code: code,
+		Info: err.Error(),
 		Data: []byte(err.Error()),
 	}
 }
