@@ -113,13 +113,13 @@ Feature: Test margin for lp near price monitoring boundaries
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
       | sell | 110965   | 56     |
-      | buy  | 89943    | 68     |
-      | buy  | 89942    | 2      |
+      | buy  | 89943    | 1      |
+      | buy  | 89942    | 136    |
 
 
-    # And the traders should have the following margin levels:
-    #   | trader    | market id  | maintenance | search   | initial  | release  |
-    #   | lp1       | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
+    And the traders should have the following margin levels:
+      | trader    | market id  | maintenance | search   | initial  | release |
+      | lp1       | ETH2/MAR22 | 3592950     | 3952245  | 4311540  | 5030130 |
 
 
     
