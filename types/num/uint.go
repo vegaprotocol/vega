@@ -19,6 +19,22 @@ func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
 }
 
+// Min returns the smallest of the 2 numbers
+func Min(a, b *Uint) *Uint {
+	if a.LT(b) {
+		return a
+	}
+	return b
+}
+
+// Max returns the largest of the 2 numbers
+func Max(a, b *Uint) *Uint {
+	if a.GT(b) {
+		return a
+	}
+	return b
+}
+
 // FromBig construct a new Uint with a big.Int
 // returns true if overflow happened
 func UintFromBig(b *big.Int) (*Uint, bool) {

@@ -14,6 +14,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -33,6 +34,7 @@ type Broker interface {
 
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
+	// Convert float to Uint when we update the risk module TODO UINT
 	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
 	GetProjectionHorizon() float64
 }
@@ -484,7 +486,9 @@ func (e *Engine) createOrUpdateForParty(
 	}
 
 	var (
-		obligation     = float64(lp.CommitmentAmount) * e.stakeToObligationFactor
+		// Fix this after we update the commentamount to use Uint TODO UINT
+		ob             = float64(lp.CommitmentAmount) * e.stakeToObligationFactor
+		obligation, _  = num.UintFromDecimal(decimal.NewFromFloat(ob))
 		buysShape      = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
 		sellsShape     = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
 		repriceFailure bool
