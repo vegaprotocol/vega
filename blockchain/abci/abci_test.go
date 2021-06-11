@@ -175,7 +175,7 @@ func TestReplayProtectionByDistance(t *testing.T) {
 		height      int
 		expectError bool
 	}{
-		{"within distance: low", 91, false},
+		{"within distance: low", 91, true},
 		{"within distance: high", 109, false},
 
 		{"same heights", 100, false},
@@ -231,7 +231,7 @@ func TestReplayProtectionByCache(t *testing.T) {
 	})
 
 	// forward to a given block
-	beginBlockN(app, 0)
+	beginBlockN(app, 2)
 	req := types.RequestDeliverTx{Tx: tx}
 	resp1 := app.DeliverTx(req)
 	resp2 := app.DeliverTx(req)
