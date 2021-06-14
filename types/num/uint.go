@@ -282,9 +282,14 @@ func (u Uint) GTEUint64(oth uint64) bool {
 	return u.u.GtUint64(oth) || u.EQUint64(oth)
 }
 
-// IsZero return wether u == 0 or not
+// IsZero return whether u == 0 or not
 func (u Uint) IsZero() bool {
 	return u.u.IsZero()
+}
+
+// IsNegative returns whether the value is < 0
+func (u Uint) IsNegative() bool {
+	return u.u.Sign() == -1
 }
 
 // Copy create a copy of the uint
