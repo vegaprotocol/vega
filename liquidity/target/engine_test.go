@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,7 +48,7 @@ func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 
 	targetStake := engine.GetTargetStake(rf, now, num.NewUint(123))
 
-	require.Equal(t, decimal.NewFromFloat(0.0), targetStake)
+	require.Equal(t, num.DecimalFromFloat(0.0), targetStake)
 }
 
 func TestGetTargetStake_VerifyFormula(t *testing.T) {
@@ -62,9 +61,9 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	var markPrice *num.Uint = num.NewUint(123)
 
 	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
-	expectedTargetStake := decimal.NewFromBigInt(markPrice.BigInt(), 0)
-	expectedTargetStake = expectedTargetStake.Mul(decimal.NewFromInt(int64(oi)))
-	expectedTargetStake = expectedTargetStake.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
+	expectedTargetStake := num.DecimalFromUint(markPrice)
+	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromUint(num.NewUint(oi)))
+	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
 
 	engine := target.NewEngine(params, nil)
 	rf := types.RiskFactor{
@@ -92,11 +91,11 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	rfLong := 0.3
 	rfShort := 0.1
 	var markPrice *num.Uint = num.NewUint(123)
-	expectedTargetStake := func(oi uint64) decimal.Decimal {
+	expectedTargetStake := func(oi uint64) num.Decimal {
 		// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
-		mp := decimal.NewFromBigInt(markPrice.BigInt(), 0)
-		mp = mp.Mul(decimal.NewFromInt(int64(oi)))
-		mp = mp.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
+		mp := num.DecimalFromUint(markPrice)
+		mp = mp.Mul(num.DecimalFromUint(num.NewUint(oi)))
+		mp = mp.Mul(num.DecimalFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
 		return mp
 	}
 
@@ -158,9 +157,9 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	var markPrice *num.Uint = num.NewUint(123)
 
 	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
-	expectedTargetStake := decimal.NewFromBigInt(markPrice.BigInt(), 0)
-	expectedTargetStake = expectedTargetStake.Mul(decimal.NewFromInt(int64(oi)))
-	expectedTargetStake = expectedTargetStake.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
+	expectedTargetStake := num.DecimalFromUint(markPrice)
+	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromUint(num.NewUint(oi)))
+	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
 
 	ctrl := gomock.NewController(t)
 	oiCalc := mocks.NewMockOpenInterestCalculator(ctrl)
@@ -198,9 +197,9 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
 
 	// float64(markPrice.Uint64()*theoreticalOI) * math.Max(rfLong, rfShort) * scalingFactor
-	expectedTheoreticalTargetStake = decimal.NewFromBigInt(markPrice.BigInt(), 0)
-	expectedTheoreticalTargetStake = expectedTheoreticalTargetStake.Mul(decimal.NewFromInt(int64(theoreticalOI)))
-	expectedTheoreticalTargetStake = expectedTheoreticalTargetStake.Mul(decimal.NewFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
+	expectedTheoreticalTargetStake = num.DecimalFromUint(markPrice)
+	expectedTheoreticalTargetStake = expectedTheoreticalTargetStake.Mul(num.DecimalFromUint(num.NewUint(theoreticalOI)))
+	expectedTheoreticalTargetStake = expectedTheoreticalTargetStake.Mul(num.DecimalFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
 
 	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
