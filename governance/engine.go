@@ -652,14 +652,14 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 	}
 
 	yes := p.countVotes(p.yes, accounts, asset)
-	yesDec := yes.ToDecimal()
+	yesDec := num.DecimalFromUint(yes)
 	no := p.countVotes(p.no, accounts, asset)
 	totalVotes := num.Sum(yes, no)
-	totalVotesDec := totalVotes.ToDecimal()
+	totalVotesDec := num.DecimalFromUint(totalVotes)
 	p.weightVotes(p.yes, totalVotesDec)
 	p.weightVotes(p.no, totalVotesDec)
 	majorityThreshold := totalVotesDec.Mul(params.RequiredMajority)
-	totalStakeDec := totalStake.ToDecimal()
+	totalStakeDec := num.DecimalFromUint(totalStake)
 	participationThreshold := totalStakeDec.Mul(params.RequiredParticipation)
 
 	if yesDec.GreaterThan(majorityThreshold) && totalVotesDec.GreaterThanOrEqual(participationThreshold) {
@@ -686,7 +686,7 @@ func (p *proposal) countVotes(votes map[string]*types.Vote, accounts Accounts, v
 
 func (p *proposal) weightVotes(votes map[string]*types.Vote, totalVotes num.Decimal) {
 	for _, v := range votes {
-		balanceDec := v.TotalGovernanceTokenBalance.ToDecimal()
+		balanceDec := num.DecimalFromUint(v.TotalGovernanceTokenBalance)
 		v.TotalGovernanceTokenWeight = balanceDec.Div(totalVotes)
 	}
 }
