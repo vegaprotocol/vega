@@ -7,8 +7,6 @@ import (
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
-	"github.com/shopspring/decimal"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/liquidity AuctionState
@@ -92,7 +90,7 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 		return
 	}
 	scaledTargetStakeDec := targetStake.ToDecimal()
-	scaledTargetStakeDec.Mul(decimal.NewFromFloat(c1))
+	scaledTargetStakeDec.Mul(num.NewFromFloat(c1))
 	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
 	if currentStake.LT(scaledTargetStake) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
 		if exp != nil {
