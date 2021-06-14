@@ -1,10 +1,11 @@
 package governance
 
 import (
+	"errors"
+
 	"code.vegaprotocol.io/vega/netparams"
 	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -60,12 +61,14 @@ func (e *Engine) getProposalParametersFromNetParams(
 	pp.MaxClose, _ = e.netp.GetDuration(maxCloseKey)
 	pp.MinEnact, _ = e.netp.GetDuration(minEnactKey)
 	pp.MaxEnact, _ = e.netp.GetDuration(maxEnactKey)
-	pp.RequiredParticipation, _ = e.netp.GetFloat(requiredParticipationKey)
-	pp.RequiredMajority, _ = e.netp.GetFloat(requiredMajorityKey)
+	rp, _ := e.netp.GetFloat(requiredParticipationKey)
+	pp.RequiredParticipation = num.NewDecimalFromFloat(rp)
+	rm, _ := e.netp.GetFloat(requiredMajorityKey)
+	pp.RequiredMajority = num.NewDecimalFromFloat(rm)
 	mpb, _ := e.netp.GetInt(minProposerBalanceKey)
-	pp.MinProposerBalance = uint64(mpb)
+	pp.MinProposerBalance = num.NewUint(uint64(mpb))
 	mvb, _ := e.netp.GetInt(minVoterBalanceKey)
-	pp.MinVoterBalance = uint64(mvb)
+	pp.MinVoterBalance = num.NewUint(uint64(mvb))
 	return &pp, nil
 }
 
