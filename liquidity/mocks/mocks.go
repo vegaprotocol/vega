@@ -6,7 +6,9 @@ package mocks
 
 import (
 	types "code.vegaprotocol.io/vega/types"
+	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 	reflect "reflect"
 )
 
@@ -34,10 +36,10 @@ func (m *MockRiskModel) EXPECT() *MockRiskModelMockRecorder {
 }
 
 // GetProjectionHorizon mocks base method
-func (m *MockRiskModel) GetProjectionHorizon() float64 {
+func (m *MockRiskModel) GetProjectionHorizon() decimal.Decimal {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProjectionHorizon")
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(decimal.Decimal)
 	return ret0
 }
 
@@ -48,10 +50,10 @@ func (mr *MockRiskModelMockRecorder) GetProjectionHorizon() *gomock.Call {
 }
 
 // ProbabilityOfTrading mocks base method
-func (m *MockRiskModel) ProbabilityOfTrading(arg0, arg1, arg2 float64, arg3, arg4 bool, arg5, arg6 float64) float64 {
+func (m *MockRiskModel) ProbabilityOfTrading(arg0, arg1, arg2, arg3 *num.Uint, arg4 decimal.Decimal, arg5, arg6 bool) decimal.Decimal {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProbabilityOfTrading", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(decimal.Decimal)
 	return ret0
 }
 
@@ -85,11 +87,11 @@ func (m *MockPriceMonitor) EXPECT() *MockPriceMonitorMockRecorder {
 }
 
 // GetValidPriceRange mocks base method
-func (m *MockPriceMonitor) GetValidPriceRange() (float64, float64) {
+func (m *MockPriceMonitor) GetValidPriceRange() (*num.Uint, *num.Uint) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidPriceRange")
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(float64)
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(*num.Uint)
 	return ret0, ret1
 }
 

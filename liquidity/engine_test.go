@@ -194,11 +194,11 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	}
 
 	// Expectations
-	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(0.0, 100.0).AnyTimes()
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewUint(0), num.NewUint(100)).AnyTimes()
 	any := gomock.Any()
 	tng.riskModel.EXPECT().ProbabilityOfTrading(
 		any, any, any, any, any, any, any,
-	).AnyTimes().Return(0.5)
+	).AnyTimes().Return(num.DecimalFromFloat(0.5))
 
 	newOrders, amendments, err := tng.engine.Update(context.Background(), markPrice, markPrice, fn, []*types.Order{})
 	require.NoError(t, err)
@@ -375,11 +375,11 @@ func TestUpdate(t *testing.T) {
 	}
 
 	// Expectations
-	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(0.0, 100.0).AnyTimes()
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewUint(0), num.NewUint(100)).AnyTimes()
 	any := gomock.Any()
 	tng.riskModel.EXPECT().ProbabilityOfTrading(
 		any, any, any, any, any, any, any,
-	).AnyTimes().Return(0.5)
+	).AnyTimes().Return(num.DecimalFromFloat(0.5))
 
 	orders := []*types.Order{
 		{Id: "1", PartyId: party, Price: num.NewUint(10), Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},

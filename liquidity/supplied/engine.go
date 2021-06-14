@@ -14,9 +14,9 @@ var (
 	ErrNoValidOrders = errors.New("no valid orders to cover the liquidity obligation with")
 )
 
-const (
-	defaultInRangeProbabilityOfTrading = .5
-	defaultMinimumProbabilityOfTrading = 1e-8
+var (
+	defaultInRangeProbabilityOfTrading = num.DecimalFromFloat(0.5)
+	defaultMinimumProbabilityOfTrading = num.DecimalFromFloat(1e-8)
 )
 
 // LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book
@@ -33,14 +33,14 @@ type LiquidityOrder struct {
 // RiskModel allows calculation of min/max price range and a probability of trading.
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
 type RiskModel interface {
-	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
-	GetProjectionHorizon() float64
+	ProbabilityOfTrading(currentPrice, orderPrice, minPrice, maxPrice *num.Uint, yearFraction num.Decimal, isBid, applyMinMax bool) num.Decimal
+	GetProjectionHorizon() num.Decimal
 }
 
 // PriceMonitor provides the range of valid prices, that is prices that wouldn't trade the current trading mode
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied PriceMonitor
 type PriceMonitor interface {
-	GetValidPriceRange() (float64, float64)
+	GetValidPriceRange() (*num.Uint, *num.Uint)
 }
 
 // Engine provides functionality related to supplied liquidity
@@ -48,16 +48,16 @@ type Engine struct {
 	rm RiskModel
 	pm PriceMonitor
 
-	horizon                        float64 // projection horizon used in probability calculations
-	probabilityOfTradingTauScaling float64
-	minProbabilityOfTrading        float64
+	horizon                        num.Decimal // projection horizon used in probability calculations
+	probabilityOfTradingTauScaling num.Decimal
+	minProbabilityOfTrading        num.Decimal
 
 	cachedMin *num.Uint
 	cachedMax *num.Uint
 	// Buy side cache
-	bCache map[num.Uint]float64
+	bCache map[num.Uint]num.Decimal
 	// Sell side cache
-	sCache map[num.Uint]float64
+	sCache map[num.Uint]num.Decimal
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
@@ -67,18 +67,18 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		pm: priceMonitor,
 
 		horizon:                        riskModel.GetProjectionHorizon(),
-		probabilityOfTradingTauScaling: 1, // this is the same as the default in the netparams
+		probabilityOfTradingTauScaling: num.DecimalFromFloat(1.0), // this is the same as the default in the netparams
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
-		bCache:                         map[num.Uint]float64{},
-		sCache:                         map[num.Uint]float64{},
+		bCache:                         map[num.Uint]num.Decimal{},
+		sCache:                         map[num.Uint]num.Decimal{},
 	}
 }
 
-func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v float64) {
+func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v num.Decimal) {
 	e.minProbabilityOfTrading = v
 }
 
-func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v float64) {
+func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 	e.probabilityOfTradingTauScaling = v
 }
 
@@ -88,9 +88,7 @@ func (e *Engine) CalculateSuppliedLiquidity(
 	orders []*types.Order,
 ) *num.Uint {
 	// Update this to return *Uint as part of monitor refactor TODO UINT
-	minP, maxP := e.pm.GetValidPriceRange()
-	minPrice, _ := num.UintFromDecimal(num.DecimalFromFloat(minP).Floor())
-	maxPrice, _ := num.UintFromDecimal(num.DecimalFromFloat(maxP).Ceil())
+	minPrice, maxPrice := e.pm.GetValidPriceRange()
 	bLiq, sLiq := e.calculateBuySellLiquidityWithMinMax(bestBidPrice, bestAskPrice, orders, minPrice, maxPrice)
 
 	return num.Min(bLiq, sLiq)
@@ -106,9 +104,7 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	buyShapes, sellShapes []*LiquidityOrder,
 ) error {
 	// Update this to return *Uint as part of monitor refactor PETE TODO
-	minP, maxP := e.pm.GetValidPriceRange()
-	minPrice, _ := num.UintFromDecimal(num.DecimalFromFloat(minP))
-	maxPrice, _ := num.UintFromDecimal(num.DecimalFromFloat(maxP))
+	minPrice, maxPrice := e.pm.GetValidPriceRange()
 
 	buySupplied, sellSupplied := e.calculateBuySellLiquidityWithMinMax(
 		bestBidPrice, bestAskPrice, orders, minPrice, maxPrice)
@@ -140,16 +136,14 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 		if o.Side == types.Side_SIDE_BUY {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
 			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), true, minPrice.Clone(), maxPrice.Clone())
-			d := num.DecimalFromFloat(prob)
-			d = d.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
+			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			bLiq = bLiq.Add(d)
 		}
 		if o.Side == types.Side_SIDE_SELL {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
 			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), false, minPrice.Clone(), maxPrice.Clone())
-			d := num.DecimalFromFloat(prob)
-			d = d.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
+			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			sLiq = sLiq.Add(d)
 		}
@@ -172,13 +166,13 @@ func (e *Engine) updateSizes(
 	}
 
 	var sum uint64 = 0
-	probs := make([]float64, 0, len(orders))
+	probs := make([]num.Decimal, 0, len(orders))
 	validatedProportions := make([]uint64, 0, len(orders))
 	for _, o := range orders {
 		proportion := o.Proportion
 
 		prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskprice.Clone(), o.Price.Clone(), isBid, minPrice.Clone(), maxPrice.Clone())
-		if prob <= 0 {
+		if prob.LessThanOrEqual(num.DecimalFromFloat(0.0)) {
 			proportion = 0
 		}
 
@@ -193,26 +187,26 @@ func (e *Engine) updateSizes(
 	fpSum := float64(sum)
 
 	for i, o := range orders {
-		scaling := 0.0
+		scaling := num.DecimalFromFloat(0.0)
 		prob := probs[i]
-		if prob > 0 {
-			fraction := float64(validatedProportions[i]) / fpSum
-			scaling = fraction / prob
+		if prob.GreaterThan(num.DecimalFromFloat(0.0)) {
+			fraction := num.DecimalFromFloat(float64(validatedProportions[i])).Div(num.DecimalFromFloat(fpSum))
+			scaling = fraction.Div(prob)
 		}
 		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
 		d := num.DecimalFromUint(liquidityObligation)
-		d = d.Mul(num.DecimalFromFloat(scaling))
+		d = d.Mul(scaling)
 		d = d.Div(num.DecimalFromUint(o.Price)).Ceil()
 		o.LiquidityImpliedVolume = uint64(d.BigInt().Int64())
 	}
 	return nil
 }
 
-func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice *num.Uint, maxPrice *num.Uint) (f float64) {
+func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice *num.Uint, maxPrice *num.Uint) num.Decimal {
 	// if min, max changed since caches were created then reset
 	if e.cachedMin != minPrice || e.cachedMax != maxPrice {
-		e.bCache = make(map[num.Uint]float64, len(e.bCache))
-		e.sCache = make(map[num.Uint]float64, len(e.sCache))
+		e.bCache = make(map[num.Uint]num.Decimal, len(e.bCache))
+		e.sCache = make(map[num.Uint]num.Decimal, len(e.sCache))
 		e.cachedMin, e.cachedMax = minPrice, maxPrice
 	}
 
@@ -240,7 +234,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 
 	// if prob of trading is > than the minimum
 	// we can return now.
-	if prob >= e.minProbabilityOfTrading {
+	if prob.GreaterThanOrEqual(e.minProbabilityOfTrading) {
 		return prob
 	}
 
@@ -249,7 +243,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	return e.minProbabilityOfTrading
 }
 
-func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice *num.Uint) (f float64) {
+func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice *num.Uint) num.Decimal {
 	cache := e.sCache
 	if isBid {
 		cache = e.bCache
@@ -257,12 +251,8 @@ func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice *num.Uint, is
 
 	prob, ok := cache[*orderPrice]
 	if !ok {
-		tauScaled := e.horizon * e.probabilityOfTradingTauScaling
-		// e.rm.ProbabilityOfTrading(float64(currentPrice.Uint64()), tauScaled, float64(orderPrice.Uint64()), isBid, true, minPrice, maxPrice)
-		cp := currentPrice.Float64()
-		op := orderPrice.Float64()
-		// Update this when we have migrated risk TODO UINT
-		prob = e.rm.ProbabilityOfTrading(cp, tauScaled, op, isBid, true, minPrice.Float64(), maxPrice.Float64())
+		tauScaled := e.horizon.Mul(e.probabilityOfTradingTauScaling)
+		prob = e.rm.ProbabilityOfTrading(currentPrice, orderPrice, minPrice, maxPrice, tauScaled, isBid, true)
 		cache[*orderPrice] = prob
 	}
 	return prob

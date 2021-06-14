@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/shopspring/decimal"
@@ -96,7 +97,7 @@ type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p, v uint64, now time.Time, persistent bool) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
-	GetValidPriceRange() (float64, float64)
+	GetValidPriceRange() (*num.Uint, *num.Uint)
 }
 
 // LiquidityMonitor
