@@ -2,7 +2,6 @@ package target
 
 import (
 	"errors"
-	"math"
 	"time"
 
 	"code.vegaprotocol.io/vega/types"
@@ -97,10 +96,12 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 	}
 
 	// float64(markPrice.Uint64()*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	factor := rf.Long
+	if factor.LessThan(rf.Short) {
+		factor = rf.Short
+	}
 	mp := num.DecimalFromUint(markPrice)
-	return mp.Mul(num.NewUint(e.max.OI).ToDecimal()).Mul(
-		num.DecimalFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor),
-	)
+	return mp.Mul(num.NewUint(e.max.OI).ToDecimal()).Mul(factor.Mul(num.DecimalFromFloat(e.sFactor)))
 }
 
 //GetTheoreticalTargetStake returns target stake based current time, risk factors
@@ -116,11 +117,15 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 		maxOI = theoreticalOI
 	}
 
+	factor := rf.Long
+	if factor.LessThan(rf.Short) {
+		factor = rf.Short
+	}
 	// float64(markPrice.Uint64()*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
 	mp := num.DecimalFromUint(markPrice).Mul(
 		num.NewUint(maxOI).ToDecimal(),
 	).Mul(
-		num.DecimalFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor),
+		factor.Mul(num.DecimalFromFloat(e.sFactor)),
 	)
 	// return the decimal as uint
 	retVal, _ := num.UintFromDecimal(mp)

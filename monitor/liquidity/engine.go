@@ -90,7 +90,7 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 		return
 	}
 	scaledTargetStakeDec := targetStake.ToDecimal()
-	scaledTargetStakeDec.Mul(num.NewFromFloat(c1))
+	scaledTargetStakeDec.Mul(num.DecimalFromFloat(c1))
 	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
 	if currentStake.LT(scaledTargetStake) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
 		if exp != nil {
