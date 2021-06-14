@@ -5,6 +5,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	dtypes "code.vegaprotocol.io/vega/types"
 )
 
 type Vote struct {
@@ -12,10 +13,10 @@ type Vote struct {
 	v types.Vote
 }
 
-func NewVoteEvent(ctx context.Context, v types.Vote) *Vote {
+func NewVoteEvent(ctx context.Context, v *dtypes.Vote) *Vote {
 	return &Vote{
 		Base: newBase(ctx, VoteEvent),
-		v:    v,
+		v:    *v.IntoProto(),
 	}
 }
 
