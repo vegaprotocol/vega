@@ -11,12 +11,12 @@ type SettleDistressed struct {
 	*Base
 	partyID  string
 	marketID string
-	margin   uint64
+	margin   *num.Uint
 	price    *num.Uint
 	ts       int64
 }
 
-func NewSettleDistressed(ctx context.Context, partyID, marketID string, price *num.Uint, margin uint64, ts int64) *SettleDistressed {
+func NewSettleDistressed(ctx context.Context, partyID, marketID string, price, margin *num.Uint, ts int64) *SettleDistressed {
 	return &SettleDistressed{
 		Base:     newBase(ctx, SettleDistressedEvent),
 		partyID:  partyID,
@@ -39,8 +39,8 @@ func (s SettleDistressed) MarketID() string {
 	return s.marketID
 }
 
-func (s SettleDistressed) Margin() uint64 {
-	return s.margin
+func (s SettleDistressed) Margin() *num.Uint {
+	return s.margin.Clone()
 }
 
 func (s SettleDistressed) Price() *num.Uint {
@@ -55,7 +55,7 @@ func (s SettleDistressed) Proto() eventspb.SettleDistressed {
 	return eventspb.SettleDistressed{
 		MarketId: s.marketID,
 		PartyId:  s.partyID,
-		Margin:   s.margin,
+		Margin:   s.margin.Uint64(),
 		Price:    s.price.Uint64(),
 	}
 }
