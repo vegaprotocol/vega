@@ -57,8 +57,8 @@ func Test_simpleDistributor_Run(t *testing.T) {
 				},
 			},
 			want: []events.Event{
-				events.NewLossSocializationEvent(context.Background(), "trader1", marketID, decimalPtr("-334"), nil, now),
-				events.NewLossSocializationEvent(context.Background(), "trader2", marketID, decimalPtr("-166"), nil, now),
+				events.NewLossSocializationEvent(context.Background(), "trader1", marketID, num.NewUint(334), true, now),
+				events.NewLossSocializationEvent(context.Background(), "trader2", marketID, num.NewUint(166), true, now),
 			},
 		},
 	}
@@ -76,7 +76,7 @@ func Test_simpleDistributor_Run(t *testing.T) {
 			}
 			got := s.Run(context.Background())
 
-			require.Equal(t, 2, len(got))
+			require.Equal(t, len(tt.want), len(got))
 			require.Equal(t, tt.want, got)
 		})
 	}
