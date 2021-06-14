@@ -3,7 +3,6 @@ package governance
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
@@ -14,6 +13,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	dtypes "code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/pkg/errors"
@@ -363,8 +363,8 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 func (e *Engine) startProposal(p *types.Proposal) {
 	e.activeProposals = append(e.activeProposals, &proposal{
 		Proposal: p,
-		yes:      map[string]*types.Vote{},
-		no:       map[string]*types.Vote{},
+		yes:      map[string]*dtypes.Vote{},
+		no:       map[string]*dtypes.Vote{},
 	})
 }
 
@@ -473,16 +473,16 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 	proposerTokens, err := getGovernanceTokens(e.accs, proposal.PartyId, voteAsset)
 	if err != nil {
 		e.log.Debug("proposer have no governance token",
-			logging.String("party-id", proposal.PartyId),
-			logging.String("id", proposal.Id))
+			logging.PartyID(proposal.PartyId),
+			logging.ProposalID(proposal.Id))
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
-	if proposerTokens < params.MinProposerBalance {
+	if proposerTokens.LT(params.MinProposerBalance) {
 		e.log.Debug("proposer have insufficient governance token",
-			logging.Uint64("expect-balance", params.MinProposerBalance),
-			logging.Uint64("proposer-balance", proposerTokens),
-			logging.String("party-id", proposal.PartyId),
-			logging.String("id", proposal.Id))
+			logging.String("expect-balance", params.MinProposerBalance.String()),
+			logging.String("proposer-balance", proposerTokens.String()),
+			logging.PartyID(proposal.PartyId),
+			logging.ProposalID(proposal.Id))
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS,
 			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", params.MinProposerBalance, proposerTokens)
 	}
@@ -522,25 +522,25 @@ func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, par
 		return err
 	}
 
-	vote := types.Vote{
-		PartyId:    party,
-		ProposalId: cmd.ProposalId,
-		Value:      cmd.Value,
-		Timestamp:  e.currentTime.UnixNano(),
-		// set the weight at 0 initially
-		TotalGovernanceTokenWeight: "0",
+	vote := dtypes.Vote{
+		PartyID:                     party,
+		ProposalID:                  cmd.ProposalId,
+		Value:                       cmd.Value,
+		Timestamp:                   e.currentTime.UnixNano(),
+		TotalGovernanceTokenBalance: num.NewUint(0),
+		TotalGovernanceTokenWeight:  num.NewDecimalFromFloat(0),
 	}
 
 	// we only want to count the last vote, so add to yes/no map, delete from the other
 	// if the party hasn't cast a vote yet, the delete is just a noop
 	if vote.Value == types.Vote_VALUE_YES {
-		delete(proposal.no, vote.PartyId)
-		proposal.yes[vote.PartyId] = &vote
+		delete(proposal.no, vote.PartyID)
+		proposal.yes[vote.PartyID] = &vote
 	} else {
-		delete(proposal.yes, vote.PartyId)
-		proposal.no[vote.PartyId] = &vote
+		delete(proposal.yes, vote.PartyID)
+		proposal.no[vote.PartyID] = &vote
 	}
-	e.broker.Send(events.NewVoteEvent(ctx, vote))
+	e.broker.Send(events.NewVoteEvent(ctx, *vote.IntoProto()))
 	return nil
 }
 
@@ -569,7 +569,7 @@ func (e *Engine) validateVote(vote commandspb.VoteSubmission, party string) (*pr
 	if err != nil {
 		return nil, err
 	}
-	if voterTokens < params.MinVoterBalance {
+	if voterTokens.LT(params.MinVoterBalance) {
 		return nil, ErrVoterInsufficientTokens
 	}
 
@@ -602,10 +602,10 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 	evts := []events.Event{}
 
 	for _, y := range proposal.yes {
-		evts = append(evts, events.NewVoteEvent(ctx, *y))
+		evts = append(evts, events.NewVoteEvent(ctx, *y.IntoProto()))
 	}
 	for _, n := range proposal.no {
-		evts = append(evts, events.NewVoteEvent(ctx, *n))
+		evts = append(evts, events.NewVoteEvent(ctx, *n.IntoProto()))
 	}
 
 	return evts
@@ -633,8 +633,8 @@ func (e *Engine) mustGetGovernanceVoteAsset() string {
 
 type proposal struct {
 	*types.Proposal
-	yes map[string]*types.Vote
-	no  map[string]*types.Vote
+	yes map[string]*dtypes.Vote
+	no  map[string]*dtypes.Vote
 }
 
 func (p *proposal) IsOpen() bool {
@@ -646,25 +646,27 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 		return p.State
 	}
 
-	totalStake, err := accounts.GetAssetTotalSupply(asset)
+	totalStake, err := getAssetTotalSupply(accounts, asset)
 	if err != nil {
 		return p.State
 	}
 
 	yes := p.countVotes(p.yes, accounts, asset)
+	yesDec := yes.ToDecimal()
 	no := p.countVotes(p.no, accounts, asset)
-	totalVotes := float64(yes + no)
+	totalVotes := num.Sum(yes, no)
+	totalVotesDec := totalVotes.ToDecimal()
 	p.weightVotes(p.yes, totalVotes)
 	p.weightVotes(p.no, totalVotes)
 
-	majorityThreshold := totalVotes * params.RequiredMajority
-	participationThreshold := float64(totalStake) * params.RequiredParticipation
+	majorityThreshold := num.MulDec(totalVotes, params.RequiredMajority)
+	participationThreshold := num.MulDec(totalStake, params.RequiredParticipation)
 
-	if float64(yes) > majorityThreshold && totalVotes >= participationThreshold {
+	if yesDec.GreaterThan(majorityThreshold) && totalVotesDec.GreaterThanOrEqual(participationThreshold) {
 		p.State = types.Proposal_STATE_PASSED
 	} else {
 		p.Reason = types.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
-		if totalVotes < participationThreshold {
+		if totalVotesDec.LessThan(participationThreshold) {
 			p.Reason = types.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
 		}
 		p.State = types.Proposal_STATE_DECLINED
@@ -673,34 +675,39 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 	return p.State
 }
 
-func (p *proposal) countVotes(votes map[string]*types.Vote, accounts Accounts, voteAsset string) uint64 {
-	var tally uint64
+func (p *proposal) countVotes(votes map[string]*dtypes.Vote, accounts Accounts, voteAsset string) *num.Uint {
+	tally := num.NewUint(0)
 	for _, v := range votes {
-		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyId, voteAsset)
-		tally += v.TotalGovernanceTokenBalance
+		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID, voteAsset)
+		tally.Add(tally, v.TotalGovernanceTokenBalance)
 	}
 	return tally
 }
 
-func (p *proposal) weightVotes(votes map[string]*types.Vote, totalVotes float64) {
+func (p *proposal) weightVotes(votes map[string]*dtypes.Vote, totalVotes *num.Uint) {
 	for _, v := range votes {
-		weight := float64(v.TotalGovernanceTokenBalance) / totalVotes
-		v.TotalGovernanceTokenWeight = strconv.FormatFloat(weight, 'f', -1, 64)
+		v.TotalGovernanceTokenWeight = num.DivDec(v.TotalGovernanceTokenBalance, totalVotes)
 	}
 }
 
-func getTokensBalance(accounts Accounts, partyID, voteAsset string) uint64 {
-	balance, err := getGovernanceTokens(accounts, partyID, voteAsset)
-	if err != nil {
-		return 0
-	}
+func getTokensBalance(accounts Accounts, partyID, voteAsset string) *num.Uint {
+	balance, _ := getGovernanceTokens(accounts, partyID, voteAsset)
 	return balance
 }
 
-func getGovernanceTokens(accounts Accounts, party, voteAsset string) (uint64, error) {
+// FIXME Should be a `Uint.Clone()` of account.Balance. We will update it when
+//  collateral package is migrated.
+func getGovernanceTokens(accounts Accounts, party, voteAsset string) (*num.Uint, error) {
 	account, err := accounts.GetPartyGeneralAccount(party, voteAsset)
 	if err != nil {
-		return 0, err
+		return num.NewUint(0), err
 	}
-	return account.Balance, nil
+	return num.NewUint(account.Balance), err
+}
+
+// FIXME Should be a `Uint.Clone()` of account.Balance. We will update it when
+//  collateral package is migrated.
+func getAssetTotalSupply(accounts Accounts, asset string) (*num.Uint, error) {
+	totalStake, err := accounts.GetAssetTotalSupply(asset)
+	return num.NewUint(totalStake), err
 }
