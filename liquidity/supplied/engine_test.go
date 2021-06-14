@@ -212,10 +212,32 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	validBuy2Prob := num.DecimalFromFloat(0.2)
 	validSell1Prob := num.DecimalFromFloat(0.22)
 	validSell2Prob := num.DecimalFromFloat(0.11)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, validBuy1.Price, minPrice, maxPrice, Horizon, true, true).Return(validBuy1Prob).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, validBuy2.Price, minPrice, maxPrice, Horizon, true, true).Return(validBuy2Prob).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, validSell1.Price, minPrice, maxPrice, Horizon, false, true).Return(validSell1Prob).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, validSell2.Price, minPrice, maxPrice, Horizon, false, true).Return(validSell2Prob).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), Horizon, true, true).Times(2).DoAndReturn(func(mPrice, orderPrice, min, max *num.Uint, _ num.Decimal, _, _ bool) num.Decimal {
+		require.True(t, mPrice.EQ(MarkPrice))
+		require.True(t, min.EQ(minPrice))
+		require.True(t, max.EQ(maxPrice))
+		if orderPrice.EQ(validBuy1.Price) {
+			return validBuy1Prob
+		}
+		if orderPrice.EQ(validBuy2.Price) {
+			return validBuy2Prob
+		}
+		require.True(t, false, "given order price unknown: %d", orderPrice.Uint64())
+		return num.DecimalFromFloat(0)
+	})
+	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), Horizon, false, true).Times(2).DoAndReturn(func(mPrice, orderPrice, min, max *num.Uint, _ num.Decimal, _, _ bool) num.Decimal {
+		require.True(t, mPrice.EQ(MarkPrice))
+		require.True(t, min.EQ(minPrice))
+		require.True(t, max.EQ(maxPrice))
+		if orderPrice.EQ(validSell1.Price) {
+			return validSell1Prob
+		}
+		if orderPrice.EQ(validSell2.Price) {
+			return validSell2Prob
+		}
+		require.True(t, false, "given order price unknown: %d", orderPrice.Uint64())
+		return num.DecimalFromFloat(0)
+	})
 
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
@@ -256,16 +278,29 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	err = engine.CalculateLiquidityImpliedVolumes(MarkPrice.Clone(), MarkPrice.Clone(), liquidityObligation, limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
 
-	expectedVolumeValidBuy1 := uint64(math.Ceil(liquidityObligation.Float64() * float64(validBuy1.Proportion) / float64(validBuy1.Proportion+validBuy2.Proportion) / validBuy1Prob / validBuy1.Price.Float64()))
-	expectedVolumeValidBuy2 := uint64(math.Ceil(liquidityObligation.Float64() * float64(validBuy2.Proportion) / float64(validBuy1.Proportion+validBuy2.Proportion) / validBuy2Prob / validBuy2.Price.Float64()))
+	loDec := liquidityObligation.ToDecimal()
+	vb1Prop := num.DecimalFromFloat(float64(validBuy1.Proportion))
+	vb2Prop := num.DecimalFromFloat(float64(validBuy2.Proportion))
+	vs1Prop := num.DecimalFromFloat(float64(validSell1.Proportion))
+	vs2Prop := num.DecimalFromFloat(float64(validSell2.Proportion))
+	vb1Price := validBuy1.Price.ToDecimal()
+	vb2Price := validBuy2.Price.ToDecimal()
+	vs1Price := validSell1.Price.ToDecimal()
+	vs2Price := validSell2.Price.ToDecimal()
+	expVolVB1 := loDec.Mul(vb1Prop).Div(vb1Prop.Add(vb2Prop)).Div(validBuy1Prob).Div(vb1Price).Ceil()
+	expVolVB2 := loDec.Mul(vb2Prop).Div(vb1Prop.Add(vb2Prop)).Div(validBuy2Prob).Div(vb2Price).Ceil()
 
-	expectedVolumeValidSell1 := uint64(math.Ceil(liquidityObligation.Float64() * float64(validSell1.Proportion) / float64(validSell1.Proportion+validSell2.Proportion) / validSell1Prob / validSell1.Price.Float64()))
-	expectedVolumeValidSell2 := uint64(math.Ceil(liquidityObligation.Float64() * float64(validSell2.Proportion) / float64(validSell1.Proportion+validSell2.Proportion) / validSell2Prob / validSell2.Price.Float64()))
+	expVolVS1 := loDec.Mul(vs1Prop).Div(vs1Prop.Add(vs2Prop)).Div(validSell1Prob).Div(vs1Price).Ceil()
+	expVolVS2 := loDec.Mul(vs2Prop).Div(vs1Prop.Add(vs2Prop)).Div(validSell2Prob).Div(vs2Price).Ceil()
 
-	require.Equal(t, expectedVolumeValidBuy1, validBuy1.LiquidityImpliedVolume)
-	require.Equal(t, expectedVolumeValidBuy2, validBuy2.LiquidityImpliedVolume)
-	require.Equal(t, expectedVolumeValidSell1, validSell1.LiquidityImpliedVolume)
-	require.Equal(t, expectedVolumeValidSell2, validSell2.LiquidityImpliedVolume)
+	expectedVolumeValidBuy1, _ := num.UintFromDecimal(expVolVB1)
+	expectedVolumeValidBuy2, _ := num.UintFromDecimal(expVolVB2)
+	expectedVolumeValidSell1, _ := num.UintFromDecimal(expVolVS1)
+	expectedVolumeValidSell2, _ := num.UintFromDecimal(expVolVS2)
+	require.Equal(t, expectedVolumeValidBuy1.Uint64(), validBuy1.LiquidityImpliedVolume)
+	require.Equal(t, expectedVolumeValidBuy2.Uint64(), validBuy2.LiquidityImpliedVolume)
+	require.Equal(t, expectedVolumeValidSell1.Uint64(), validSell1.LiquidityImpliedVolume)
+	require.Equal(t, expectedVolumeValidSell2.Uint64(), validSell2.LiquidityImpliedVolume)
 
 	// Verify engine is internally consistent
 	allOrders = collateOrders(limitOrders, buyShapes, sellShapes)

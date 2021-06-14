@@ -18,7 +18,7 @@ var (
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
 	tWindow time.Duration
-	sFactor float64
+	sFactor num.Decimal
 	oiCalc  OpenInterestCalculator
 
 	now               time.Time
@@ -32,6 +32,8 @@ type timestampedOI struct {
 	Time time.Time
 	OI   uint64
 }
+
+var zeroD = num.DecimalFromFloat(0)
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/open_interest_calculator_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/target OpenInterestCalculator
 type OpenInterestCalculator interface {
@@ -54,8 +56,8 @@ func (e *Engine) UpdateTimeWindow(tWindow time.Duration) {
 
 // UpdateScalingFactor updates the scaling factor used in target stake calculation
 // if it's non-negative and returns an error otherwise
-func (e *Engine) UpdateScalingFactor(sFactor float64) error {
-	if sFactor < 0 {
+func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
+	if sFactor.LessThan(zeroD) {
 		return ErrNegativeScalingFactor
 	}
 	e.sFactor = sFactor
@@ -101,7 +103,7 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 		factor = rf.Short
 	}
 	mp := num.DecimalFromUint(markPrice)
-	return mp.Mul(num.NewUint(e.max.OI).ToDecimal()).Mul(factor.Mul(num.DecimalFromFloat(e.sFactor)))
+	return mp.Mul(num.NewUint(e.max.OI).ToDecimal()).Mul(factor.Mul(e.sFactor))
 }
 
 //GetTheoreticalTargetStake returns target stake based current time, risk factors
@@ -125,7 +127,7 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	mp := num.DecimalFromUint(markPrice).Mul(
 		num.NewUint(maxOI).ToDecimal(),
 	).Mul(
-		factor.Mul(num.DecimalFromFloat(e.sFactor)),
+		factor.Mul(e.sFactor),
 	)
 	// return the decimal as uint
 	retVal, _ := num.UintFromDecimal(mp)
