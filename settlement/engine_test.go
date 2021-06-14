@@ -609,20 +609,20 @@ func (m marginVal) MarketID() string {
 	return m.marketID
 }
 
-func (m marginVal) MarginBalance() uint64 {
-	return m.margin
+func (m marginVal) MarginBalance() *num.Uint {
+	return num.NewUint(m.margin)
 }
 
-func (m marginVal) GeneralBalance() uint64 {
-	return m.general
+func (m marginVal) GeneralBalance() *num.Uint {
+	return num.NewUint(m.general)
 }
 
-func (m marginVal) BondBalance() uint64 {
-	return 0
+func (m marginVal) BondBalance() *num.Uint {
+	return num.NewUint(0)
 }
 
-func (m marginVal) MarginShortFall() uint64 {
-	return m.marginShortFall
+func (m marginVal) MarginShortFall() *num.Uint {
+	return num.NewUint(m.marginShortFall)
 }
 
 //  vim: set ts=4 sw=4 tw=0 foldlevel=1 foldmethod=marker noet :

@@ -70,5 +70,5 @@ func (m mtmTransfer) Transfer() *types.Transfer {
 	if m.transfer == nil {
 		return nil
 	}
-	return &m.transfer
+	return m.transfer
 }
