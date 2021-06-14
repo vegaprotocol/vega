@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/subscribers"
+	dtypes "code.vegaprotocol.io/vega/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -143,25 +144,25 @@ func testNoFilterVotes(t *testing.T) {
 	}
 	for _, p := range parties {
 		for i := range props {
-			sub.Push(events.NewVoteEvent(ctx, types.Vote{
-				ProposalId: props[i],
-				PartyId:    p,
+			sub.Push(events.NewVoteEvent(ctx, &dtypes.Vote{
+				ProposalID: props[i],
+				PartyID:    p,
 				Value:      types.Vote_VALUE_NO,
 			}))
-			sub.Push(events.NewVoteEvent(ctx, types.Vote{
-				ProposalId: props[i],
-				PartyId:    p,
+			sub.Push(events.NewVoteEvent(ctx, &dtypes.Vote{
+				ProposalID: props[i],
+				PartyID:    p,
 				Value:      types.Vote_VALUE_YES,
 			}))
 			if i > 1 {
-				sub.Push(events.NewVoteEvent(ctx, types.Vote{
-					ProposalId: props[i],
-					PartyId:    p,
+				sub.Push(events.NewVoteEvent(ctx, &dtypes.Vote{
+					ProposalID: props[i],
+					PartyID:    p,
 					Value:      types.Vote_VALUE_YES,
 				}))
-				sub.Push(events.NewVoteEvent(ctx, types.Vote{
-					ProposalId: props[i],
-					PartyId:    p,
+				sub.Push(events.NewVoteEvent(ctx, &dtypes.Vote{
+					ProposalID: props[i],
+					PartyID:    p,
 					Value:      types.Vote_VALUE_NO,
 				}))
 			}
