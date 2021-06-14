@@ -99,15 +99,6 @@ type Engine struct {
 	refPriceCache     map[int64]num.Decimal
 }
 
-// price monitoring trigger with decimals to avoid having to convert
-// floats to decimal all the time
-type decPMT struct {
-	proto             types.PriceMonitoringTrigger
-	Horizon           int64
-	Probability, hdec num.Decimal
-	AuctionExtension  int64
-}
-
 // NewMonitor returns a new instance of PriceMonitoring.
 func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings) (*Engine, error) {
 	if riskModel == nil {
