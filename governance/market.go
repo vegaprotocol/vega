@@ -1,15 +1,14 @@
 package governance
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/oracles"
-	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
+	"code.vegaprotocol.io/vega/proto"
 )
 
 var (
@@ -50,23 +49,23 @@ var (
 )
 
 func assignProduct(
-	source *types.InstrumentConfiguration,
-	target *types.Instrument,
-) (types.ProposalError, error) {
+	source *proto.InstrumentConfiguration,
+	target *proto.Instrument,
+) (proto.ProposalError, error) {
 	switch product := source.Product.(type) {
-	case *types.InstrumentConfiguration_Future:
+	case *proto.InstrumentConfiguration_Future:
 		if product.Future == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingFutureProduct
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingFutureProduct
 		}
 		if product.Future.OracleSpec == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpec
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpec
 		}
 		if product.Future.OracleSpecBinding == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecBinding
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecBinding
 		}
 
-		target.Product = &types.Instrument_Future{
-			Future: &types.Future{
+		target.Product = &proto.Instrument_Future{
+			Future: &proto.Future{
 				Maturity:          product.Future.Maturity,
 				SettlementAsset:   product.Future.SettlementAsset,
 				QuoteName:         product.Future.QuoteName,
@@ -75,19 +74,19 @@ func assignProduct(
 			},
 		}
 	default:
-		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductTypeNotSupported
+		return proto.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductTypeNotSupported
 	}
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
+func assignTradingMode(definition *proto.NewMarketConfiguration, target *proto.Market) error {
 	switch mode := definition.TradingMode.(type) {
-	case *types.NewMarketConfiguration_Continuous:
-		target.TradingModeConfig = &types.Market_Continuous{
+	case *proto.NewMarketConfiguration_Continuous:
+		target.TradingModeConfig = &proto.Market_Continuous{
 			Continuous: mode.Continuous,
 		}
-	case *types.NewMarketConfiguration_Discrete:
-		target.TradingModeConfig = &types.Market_Discrete{
+	case *proto.NewMarketConfiguration_Discrete:
+		target.TradingModeConfig = &proto.Market_Discrete{
 			Discrete: mode.Discrete,
 		}
 	default:
@@ -97,13 +96,13 @@ func assignTradingMode(definition *types.NewMarketConfiguration, target *types.M
 }
 
 func createInstrument(
-	input *types.InstrumentConfiguration,
+	input *proto.InstrumentConfiguration,
 	tags []string,
-) (*types.Instrument, types.ProposalError, error) {
-	result := &types.Instrument{
+) (*proto.Instrument, proto.ProposalError, error) {
+	result := &proto.Instrument{
 		Name: input.Name,
 		Code: input.Code,
-		Metadata: &types.InstrumentMetadata{
+		Metadata: &proto.InstrumentMetadata{
 			Tags: tags,
 		},
 	}
@@ -111,19 +110,19 @@ func createInstrument(
 	if perr, err := assignProduct(input, result); err != nil {
 		return nil, perr, err
 	}
-	return result, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return result, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func assignRiskModel(definition *types.NewMarketConfiguration, target *types.TradableInstrument) error {
+func assignRiskModel(definition *proto.NewMarketConfiguration, target *proto.TradableInstrument) error {
 	switch parameters := definition.RiskParameters.(type) {
-	case *types.NewMarketConfiguration_Simple:
-		target.RiskModel = &types.TradableInstrument_SimpleRiskModel{
-			SimpleRiskModel: &types.SimpleRiskModel{
+	case *proto.NewMarketConfiguration_Simple:
+		target.RiskModel = &proto.TradableInstrument_SimpleRiskModel{
+			SimpleRiskModel: &proto.SimpleRiskModel{
 				Params: parameters.Simple,
 			},
 		}
-	case *types.NewMarketConfiguration_LogNormal:
-		target.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	case *proto.NewMarketConfiguration_LogNormal:
+		target.RiskModel = &proto.TradableInstrument_LogNormalRiskModel{
 			LogNormalRiskModel: parameters.LogNormal,
 		}
 	default:
@@ -134,12 +133,12 @@ func assignRiskModel(definition *types.NewMarketConfiguration, target *types.Tra
 
 func createMarket(
 	marketID string,
-	definition *types.NewMarket,
+	definition *proto.NewMarket,
 	netp NetParams,
 	currentTime time.Time,
 	assets Assets,
 	openingAuctionDuration time.Duration,
-) (*types.Market, types.ProposalError, error) {
+) (*proto.Market, proto.ProposalError, error) {
 	if perr, err := validateNewMarket(currentTime, definition, assets, true, netp, openingAuctionDuration); err != nil {
 		return nil, perr, err
 	}
@@ -153,12 +152,12 @@ func createMarket(
 	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
 	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
 	// get the margin scaling factors
-	scalingFactors := types.ScalingFactors{}
+	scalingFactors := proto.ScalingFactors{}
 	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
 	// get price monitoring parameters
 	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
 	if definition.Changes.PriceMonitoringParameters == nil {
-		pmParams := &types.PriceMonitoringParameters{}
+		pmParams := &proto.PriceMonitoringParameters{}
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
 		definition.Changes.PriceMonitoringParameters = pmParams
 	}
@@ -171,13 +170,13 @@ func createMarket(
 		//get triggering ratio
 		triggeringRatio, _ := netp.GetFloat(netparams.MarketLiquidityTargetStakeTriggeringRatio)
 
-		params := &types.TargetStakeParameters{
+		params := &proto.TargetStakeParameters{
 			TimeWindow:    int64(tsTimeWindow.Seconds()),
 			ScalingFactor: tsScalingFactor,
 		}
 
 		if definition.Changes.LiquidityMonitoringParameters == nil {
-			definition.Changes.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
+			definition.Changes.LiquidityMonitoringParameters = &proto.LiquidityMonitoringParameters{
 				TargetStakeParameters: params,
 				TriggeringRatio:       triggeringRatio,
 			}
@@ -186,233 +185,233 @@ func createMarket(
 		}
 	}
 
-	market := &types.Market{
+	market := &proto.Market{
 		Id:            marketID,
 		DecimalPlaces: definition.Changes.DecimalPlaces,
-		Fees: &types.Fees{
-			Factors: &types.FeeFactors{
+		Fees: &proto.Fees{
+			Factors: &proto.FeeFactors{
 				MakerFee:          makerFee,
 				InfrastructureFee: infraFee,
 			},
 		},
-		OpeningAuction: &types.AuctionDuration{
+		OpeningAuction: &proto.AuctionDuration{
 			Duration: int64(openingAuctionDuration.Seconds()),
 		},
-		TradableInstrument: &types.TradableInstrument{
+		TradableInstrument: &proto.TradableInstrument{
 			Instrument: instrument,
-			MarginCalculator: &types.MarginCalculator{
-				ScalingFactors: &types.ScalingFactors{
+			MarginCalculator: &proto.MarginCalculator{
+				ScalingFactors: &proto.ScalingFactors{
 					CollateralRelease: scalingFactors.CollateralRelease,
 					InitialMargin:     scalingFactors.InitialMargin,
 					SearchLevel:       scalingFactors.SearchLevel,
 				},
 			},
 		},
-		PriceMonitoringSettings: &types.PriceMonitoringSettings{
+		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
 			Parameters:      definition.Changes.PriceMonitoringParameters,
 			UpdateFrequency: int64(pmUpdateFreq.Seconds()),
 		},
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
 	}
 	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
-		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 	if err := assignTradingMode(definition.Changes, market); err != nil {
-		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
-	return market, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return market, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateAsset(assetID string, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateAsset(assetID string, assets Assets, deepCheck bool) (proto.ProposalError, error) {
 	if len(assetID) <= 0 {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET,
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET,
 			errors.New("missing asset ID")
 	}
 
 	if !deepCheck {
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	}
 
 	_, err := assets.Get(assetID)
 	if err != nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, err
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, err
 	}
 	if !assets.IsEnabled(assetID) {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET,
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET,
 			fmt.Errorf("assets is not enabled %v", assetID)
 	}
 
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateFuture(currentTime time.Time, future *types.FutureProduct, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateFuture(currentTime time.Time, future *proto.FutureProduct, assets Assets, deepCheck bool) (proto.ProposalError, error) {
 	maturity, err := time.Parse(time.RFC3339, future.Maturity)
 	if err != nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, errors.Wrap(err, "future product maturity timestamp")
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, fmt.Errorf("invalid future product maturity timestamp: %v", err)
 	}
 
 	if deepCheck && maturity.UnixNano() < currentTime.UnixNano() {
-		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
+		return proto.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
 	}
 
 	if future.OracleSpec == nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpec
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpec
 	}
 	// ensure the oracle spec can be constructed
 	ospec, err := oracles.NewOracleSpec(*future.OracleSpec.ToOracleSpec())
 	if err != nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, err
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, err
 	}
 	if future.OracleSpecBinding == nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecBinding
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecBinding
 	}
 	if !ospec.CanBindProperty(future.OracleSpecBinding.SettlementPriceProperty) {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT,
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT,
 			ErrInvalidOracleSpecBinding
 	}
 
 	return validateAsset(future.SettlementAsset, assets, deepCheck)
 }
 
-func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateInstrument(currentTime time.Time, instrument *proto.InstrumentConfiguration, assets Assets, deepCheck bool) (proto.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
-		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, ErrNoProduct
-	case *types.InstrumentConfiguration_Future:
+		return proto.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, ErrNoProduct
+	case *proto.InstrumentConfiguration_Future:
 		return validateFuture(currentTime, product.Future, assets, deepCheck)
 	default:
-		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductInvalid
+		return proto.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductInvalid
 	}
 }
 
-func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalError, error) {
+func validateTradingMode(terms *proto.NewMarketConfiguration) (proto.ProposalError, error) {
 	switch terms.TradingMode.(type) {
 	case nil:
-		return types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE, ErrNoTradingMode
-	case *types.NewMarketConfiguration_Continuous, *types.NewMarketConfiguration_Discrete:
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+		return proto.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE, ErrNoTradingMode
+	case *proto.NewMarketConfiguration_Continuous, *proto.NewMarketConfiguration_Discrete:
+		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	default:
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrTradingModeInvalid
+		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrTradingModeInvalid
 	}
 }
 
-func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
+func validateRiskParameters(rp interface{}) (proto.ProposalError, error) {
 	switch r := rp.(type) {
-	case *types.NewMarketConfiguration_Simple:
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
-	case *types.NewMarketConfiguration_LogNormal:
+	case *proto.NewMarketConfiguration_Simple:
+		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	case *proto.NewMarketConfiguration_LogNormal:
 		if r.LogNormal.Params == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER, ErrInvalidRiskParameter
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER, ErrInvalidRiskParameter
 		}
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	case nil:
-		return types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS, ErrMissingRiskParameters
+		return proto.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS, ErrMissingRiskParameters
 	default:
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrRiskParametersNotSupported
+		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrRiskParametersNotSupported
 	}
 }
 
-func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (types.ProposalError, error) {
+func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (proto.ProposalError, error) {
 	minAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMinimumDuration)
 	if proposedDuration != 0 && proposedDuration < minAuctionDuration {
 		// Auction duration is too small
-		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL,
+		return proto.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL,
 			fmt.Errorf("proposal opening auction duration is too short, expected > %v, got %v", minAuctionDuration, proposedDuration)
 	}
 	maxAuctionDuration, _ := netp.GetDuration(netparams.MarketAuctionMaximumDuration)
 	if proposedDuration > maxAuctionDuration {
 		// Auction duration is too large
-		return types.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE,
+		return proto.ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE,
 			fmt.Errorf("proposal opening auction duration is too long, expected < %v, got %v", maxAuctionDuration, proposedDuration)
 	}
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 func validateCommitment(
-	commitment *types.NewMarketCommitment,
+	commitment *proto.NewMarketCommitment,
 	netp NetParams,
-) (types.ProposalError, error) {
+) (proto.ProposalError, error) {
 	maxShapesSize, _ := netp.GetInt(netparams.MarketLiquidityProvisionShapesMaxSize)
 	maxFee, _ := netp.GetFloat(netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel)
 
 	if commitment == nil {
-		return types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT, errors.New("market proposal is missing liquidity commitment")
+		return proto.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT, errors.New("market proposal is missing liquidity commitment")
 	}
 	if commitment.CommitmentAmount == 0 {
-		return types.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT,
+		return proto.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT,
 			fmt.Errorf("proposal commitment amount is 0 or missing")
 	}
 	if fee, err := strconv.ParseFloat(commitment.Fee, 64); err != nil || fee < 0 || len(commitment.Fee) <= 0 || fee > maxFee {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT,
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT,
 			errors.New("invalid liquidity provision fee")
 	}
 
-	if perr, err := validateShape(commitment.Buys, types.Side_SIDE_BUY, uint64(maxShapesSize)); err != nil {
+	if perr, err := validateShape(commitment.Buys, proto.Side_SIDE_BUY, uint64(maxShapesSize)); err != nil {
 		return perr, err
 	}
-	return validateShape(commitment.Sells, types.Side_SIDE_SELL, uint64(maxShapesSize))
+	return validateShape(commitment.Sells, proto.Side_SIDE_SELL, uint64(maxShapesSize))
 }
 
 func validateShape(
-	sh []*types.LiquidityOrder,
-	side types.Side,
+	sh []*proto.LiquidityOrder,
+	side proto.Side,
 	maxSize uint64,
-) (types.ProposalError, error) {
+) (proto.ProposalError, error) {
 	if len(sh) <= 0 {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("empty %v shape", side)
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("empty %v shape", side)
 	}
 	if len(sh) > int(maxSize) {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
 	}
 	for _, lo := range sh {
-		if lo.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+		if lo.Reference == proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			// We must specify a valid reference
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without reference")
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without reference")
 		}
 		if lo.Proportion == 0 {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without a proportion")
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without a proportion")
 		}
 
-		if side == types.Side_SIDE_BUY {
+		if side == proto.Side_SIDE_BUY {
 			switch lo.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			case proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+				return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")
+			case proto.PeggedReference_PEGGED_REFERENCE_BEST_BID:
 				if lo.Offset > 0 {
-					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be <= 0")
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be <= 0")
 				}
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
+			case proto.PeggedReference_PEGGED_REFERENCE_MID:
 				if lo.Offset >= 0 {
-					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be < 0")
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be < 0")
 				}
 			}
 		} else {
 			switch lo.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			case proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
 				if lo.Offset < 0 {
-					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be >= 0")
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be >= 0")
 				}
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell side shape with best bid price reference")
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
+			case proto.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+				return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell side shape with best bid price reference")
+			case proto.PeggedReference_PEGGED_REFERENCE_MID:
 				if lo.Offset <= 0 {
-					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be > 0")
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be > 0")
 				}
 			}
 		}
 	}
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 // ValidateNewMarket checks new market proposal terms
 func validateNewMarket(
 	currentTime time.Time,
-	terms *types.NewMarket,
+	terms *proto.NewMarket,
 	assets Assets,
 	deepCheck bool,
 	netp NetParams,
 	openingAuctionDuration time.Duration,
-) (types.ProposalError, error) {
+) (proto.ProposalError, error) {
 	if perr, err := validateInstrument(currentTime, terms.Changes.Instrument, assets, deepCheck); err != nil {
 		return perr, err
 	}
@@ -430,5 +429,5 @@ func validateNewMarket(
 		return perr, err
 	}
 
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

@@ -3,17 +3,17 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	dtypes "code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Vote struct {
 	*Base
-	v types.Vote
+	v proto.Vote
 }
 
-func NewVoteEvent(ctx context.Context, v *dtypes.Vote) *Vote {
+func NewVoteEvent(ctx context.Context, v types.Vote) *Vote {
 	return &Vote{
 		Base: newBase(ctx, VoteEvent),
 		v:    *v.IntoProto(),
@@ -21,7 +21,7 @@ func NewVoteEvent(ctx context.Context, v *dtypes.Vote) *Vote {
 }
 
 // Vote get the vote object
-func (v *Vote) Vote() types.Vote {
+func (v *Vote) Vote() proto.Vote {
 	return v.v
 }
 
@@ -41,7 +41,7 @@ func (v *Vote) PartyID() string {
 }
 
 // Value - return a Y/N value, makes subscribers easier to implement
-func (v *Vote) Value() types.Vote_Value {
+func (v *Vote) Value() proto.Vote_Value {
 	return v.v.Value
 }
 
@@ -57,7 +57,7 @@ func (v *Vote) TotalGovernanceTokenWeight() string {
 	return v.v.TotalGovernanceTokenWeight
 }
 
-func (v Vote) Proto() types.Vote {
+func (v Vote) Proto() proto.Vote {
 	return v.v
 }
 
