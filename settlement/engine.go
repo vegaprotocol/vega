@@ -253,7 +253,8 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	e.mu.Lock()
 	for _, v := range evts {
 		key := v.Party()
-		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), v.MarginBalance()+v.GeneralBalance(), e.currentTime.UnixNano()))
+		margin := num.Sum(v.MarginBalance(), v.GeneralBalance())
+		devts = append(devts, events.NewSettleDistressed(ctx, key, e.market, v.Price(), margin, e.currentTime.UnixNano()))
 		delete(e.pos, key)
 		delete(e.trades, key)
 	}
