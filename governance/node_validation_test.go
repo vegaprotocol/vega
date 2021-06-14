@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -50,9 +50,9 @@ func testNodeValidationRequiredTrue(t *testing.T) {
 	nv := getTestNodeValidation(t)
 	defer nv.ctrl.Finish()
 
-	p := &types.Proposal{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewAsset{},
+	p := &proto.Proposal{
+		Terms: &proto.ProposalTerms{
+			Change: &proto.ProposalTerms_NewAsset{},
 		},
 	}
 
@@ -63,9 +63,9 @@ func testNodeValidationRequiredFalse(t *testing.T) {
 	nv := getTestNodeValidation(t)
 	defer nv.ctrl.Finish()
 
-	p := &types.Proposal{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{},
+	p := &proto.Proposal{
+		Terms: &proto.ProposalTerms{
+			Change: &proto.ProposalTerms_NewMarket{},
 		},
 	}
 
@@ -76,9 +76,9 @@ func testStartErrorNoNodeValidationRequired(t *testing.T) {
 	nv := getTestNodeValidation(t)
 	defer nv.ctrl.Finish()
 
-	p := &types.Proposal{
-		Terms: &types.ProposalTerms{
-			Change: &types.ProposalTerms_NewMarket{},
+	p := &proto.Proposal{
+		Terms: &proto.ProposalTerms{
+			Change: &proto.ProposalTerms_NewMarket{},
 		},
 	}
 
@@ -91,11 +91,11 @@ func testStartErrorCheckProposalFailed(t *testing.T) {
 	defer nv.ctrl.Finish()
 
 	// first closing time < validation time
-	p := &types.Proposal{
-		Terms: &types.ProposalTerms{
+	p := &proto.Proposal{
+		Terms: &proto.ProposalTerms{
 			ClosingTimestamp:    1,
 			ValidationTimestamp: 2,
-			Change:              &types.ProposalTerms_NewAsset{},
+			Change:              &proto.ProposalTerms_NewAsset{},
 		},
 	}
 

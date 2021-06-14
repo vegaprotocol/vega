@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/subscribers"
-	dtypes "code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -31,14 +31,14 @@ func testGetByID(t *testing.T) {
 		"prop1",
 		"prop2",
 	}
-	lastState := types.Proposal_STATE_FAILED
+	lastState := proto.Proposal_STATE_FAILED
 	for _, id := range ids {
-		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
+		sub.Push(events.NewProposalEvent(ctx, proto.Proposal{
 			PartyId: "party",
 			Id:      id,
-			State:   types.Proposal_STATE_OPEN,
+			State:   proto.Proposal_STATE_OPEN,
 		}))
-		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
+		sub.Push(events.NewProposalEvent(ctx, proto.Proposal{
 			PartyId: "party",
 			Id:      id,
 			State:   lastState,
@@ -57,26 +57,26 @@ func testFilterByState(t *testing.T) {
 	defer cfunc()
 	sub := subscribers.NewGovernanceDataSub(ctx, true)
 	party := "test-party"
-	states := []types.Proposal_State{
-		types.Proposal_STATE_OPEN,
-		types.Proposal_STATE_DECLINED,
-		types.Proposal_STATE_FAILED,
-		types.Proposal_STATE_OPEN,
-		types.Proposal_STATE_PASSED,
-		types.Proposal_STATE_ENACTED,
-		types.Proposal_STATE_REJECTED,
-		types.Proposal_STATE_REJECTED,
+	states := []proto.Proposal_State{
+		proto.Proposal_STATE_OPEN,
+		proto.Proposal_STATE_DECLINED,
+		proto.Proposal_STATE_FAILED,
+		proto.Proposal_STATE_OPEN,
+		proto.Proposal_STATE_PASSED,
+		proto.Proposal_STATE_ENACTED,
+		proto.Proposal_STATE_REJECTED,
+		proto.Proposal_STATE_REJECTED,
 	}
-	expNr := map[types.Proposal_State]int{
-		types.Proposal_STATE_OPEN:     2,
-		types.Proposal_STATE_DECLINED: 1,
-		types.Proposal_STATE_FAILED:   1,
-		types.Proposal_STATE_PASSED:   1,
-		types.Proposal_STATE_ENACTED:  1,
-		types.Proposal_STATE_REJECTED: 2,
+	expNr := map[proto.Proposal_State]int{
+		proto.Proposal_STATE_OPEN:     2,
+		proto.Proposal_STATE_DECLINED: 1,
+		proto.Proposal_STATE_FAILED:   1,
+		proto.Proposal_STATE_PASSED:   1,
+		proto.Proposal_STATE_ENACTED:  1,
+		proto.Proposal_STATE_REJECTED: 2,
 	}
 	for i, s := range states {
-		prop := types.Proposal{
+		prop := proto.Proposal{
 			PartyId: party,
 			Id:      fmt.Sprintf("test-prop-%d", i),
 			State:   s,
@@ -101,17 +101,17 @@ func testFilterByParty(t *testing.T) {
 		"prop-3",
 	}
 	for _, id := range ids {
-		prop := types.Proposal{
+		prop := proto.Proposal{
 			PartyId: party,
 			Id:      id,
-			State:   types.Proposal_STATE_OPEN,
+			State:   proto.Proposal_STATE_OPEN,
 		}
 		sub.Push(events.NewProposalEvent(ctx, prop))
 	}
-	sub.Push(events.NewProposalEvent(ctx, types.Proposal{
+	sub.Push(events.NewProposalEvent(ctx, proto.Proposal{
 		PartyId: "some-other-party",
 		Id:      "foobar",
-		State:   types.Proposal_STATE_OPEN,
+		State:   proto.Proposal_STATE_OPEN,
 	}))
 	data := sub.Filter(false, subscribers.ProposalByPartyID(party))
 	assert.Equal(t, len(ids), len(data))
@@ -136,34 +136,34 @@ func testNoFilterVotes(t *testing.T) {
 	}
 	// last vote will always be yes
 	for i, p := range parties {
-		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
+		sub.Push(events.NewProposalEvent(ctx, proto.Proposal{
 			PartyId: p,
 			Id:      props[i],
-			State:   types.Proposal_STATE_OPEN,
+			State:   proto.Proposal_STATE_OPEN,
 		}))
 	}
 	for _, p := range parties {
 		for i := range props {
-			sub.Push(events.NewVoteEvent(ctx, &dtypes.Vote{
+			sub.Push(events.NewVoteEvent(ctx, types.Vote{
 				ProposalID: props[i],
 				PartyID:    p,
-				Value:      types.Vote_VALUE_NO,
+				Value:      proto.Vote_VALUE_NO,
 			}))
-			sub.Push(events.NewVoteEvent(ctx, &dtypes.Vote{
+			sub.Push(events.NewVoteEvent(ctx, types.Vote{
 				ProposalID: props[i],
 				PartyID:    p,
-				Value:      types.Vote_VALUE_YES,
+				Value:      proto.Vote_VALUE_YES,
 			}))
 			if i > 1 {
-				sub.Push(events.NewVoteEvent(ctx, &dtypes.Vote{
+				sub.Push(events.NewVoteEvent(ctx, types.Vote{
 					ProposalID: props[i],
 					PartyID:    p,
-					Value:      types.Vote_VALUE_YES,
+					Value:      proto.Vote_VALUE_YES,
 				}))
-				sub.Push(events.NewVoteEvent(ctx, &dtypes.Vote{
+				sub.Push(events.NewVoteEvent(ctx, types.Vote{
 					ProposalID: props[i],
 					PartyID:    p,
-					Value:      types.Vote_VALUE_NO,
+					Value:      proto.Vote_VALUE_NO,
 				}))
 			}
 		}
