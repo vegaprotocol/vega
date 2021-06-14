@@ -294,6 +294,11 @@ func (u Uint) IsZero() bool {
 	return u.u.IsZero()
 }
 
+// IsNegative returns whether the value is < 0
+func (u Uint) IsNegative() bool {
+	return u.u.Sign() == -1
+}
+
 // Copy create a copy of the uint
 // this if the equivalent to:
 // u = x

@@ -166,7 +166,7 @@ func (e *Engine) updateSizes(
 	isBid bool,
 	minPrice, maxPrice *num.Uint,
 ) error {
-	if liquidityObligation.LTE(num.NewUint(0)) {
+	if liquidityObligation.IsZero() || liquidityObligation.IsNegative() {
 		setSizesTo0(orders)
 		return nil
 	}

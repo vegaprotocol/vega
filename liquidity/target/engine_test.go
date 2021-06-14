@@ -179,7 +179,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	// No change in OI
 	theoreticalOI := oi
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
-	expectedTheoreticalTargetStake := expectedTargetStake
+	expectedTheoreticalTargetStake, _ := num.UintFromDecimal(expectedTargetStake)
 	theoreticalTargetStake := engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
@@ -187,7 +187,6 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	// OI decreases
 	theoreticalOI = oi - 2
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
-	expectedTheoreticalTargetStake = expectedTargetStake
 	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
@@ -197,9 +196,10 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
 
 	// float64(markPrice.Uint64()*theoreticalOI) * math.Max(rfLong, rfShort) * scalingFactor
-	expectedTheoreticalTargetStake = num.DecimalFromUint(markPrice)
-	expectedTheoreticalTargetStake = expectedTheoreticalTargetStake.Mul(num.DecimalFromUint(num.NewUint(theoreticalOI)))
-	expectedTheoreticalTargetStake = expectedTheoreticalTargetStake.Mul(num.DecimalFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
+	expectedTargetStake = num.DecimalFromUint(markPrice)
+	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromUint(num.NewUint(theoreticalOI)))
+	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromFloat(math.Max(rfLong, rfShort) * scalingFactor))
+	expectedTheoreticalTargetStake, _ = num.UintFromDecimal(expectedTargetStake)
 
 	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
