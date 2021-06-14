@@ -98,6 +98,8 @@ type Engine struct {
 	refPriceCache     map[int64]num.Decimal
 }
 
+// price monitoring trigger with decimals to avoid having to convert
+// floats to decimal all the time
 type decPMT struct {
 	proto             types.PriceMonitoringTrigger
 	Horizon           int64
@@ -214,7 +216,6 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 
 // CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
 func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v uint64, now time.Time, persistent bool) error {
-	p = p.Clone() // just to be safe
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
