@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/quant/interfaces"
 	pd "code.vegaprotocol.io/quant/pricedistribution"
 	"code.vegaprotocol.io/quant/riskmodelbs"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -60,14 +60,14 @@ func (f *LogNormal) CalculateRiskFactors(
 	rf := &types.RiskResult{
 		RiskFactors: map[string]*types.RiskFactor{
 			f.asset: {
-				Long:  rawrf.Long,
-				Short: rawrf.Short,
+				Long:  num.DecimalFromFloat(rawrf.Long),
+				Short: num.DecimalFromFloat(rawrf.Short),
 			},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
 			f.asset: {
-				Long:  rawrf.Long,
-				Short: rawrf.Short,
+				Long:  num.DecimalFromFloat(rawrf.Long),
+				Short: num.DecimalFromFloat(rawrf.Short),
 			},
 		},
 	}
@@ -76,7 +76,7 @@ func (f *LogNormal) CalculateRiskFactors(
 
 // PriceRange returns the minimum and maximum price as implied by the model's probability distribution with horizon given by yearFraction (e.g. 0.5 for half a year) and probability level (e.g. 0.95 for 95%).
 func (f *LogNormal) PriceRange(currentP, yFrac, probabilityLevel num.Decimal) (num.Decimal, num.Decimal) {
-	uPrice := num.UintFromDecimal(currentP)
+	uPrice, _ := num.UintFromDecimal(currentP)
 	dist := f.getDistribution(uPrice, yFrac)
 	// damn you quant!
 	pl, _ := probabilityLevel.Float64()
