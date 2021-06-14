@@ -16,14 +16,14 @@ import (
 var now = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
 
 func TestConstructor(t *testing.T) {
-	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
+	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
 	engine := target.NewEngine(params, nil)
 
 	require.NotNil(t, engine)
 }
 
 func TestRecordOpenInterest(t *testing.T) {
-	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
+	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
 	engine := target.NewEngine(params, nil)
 	err := engine.RecordOpenInterest(9, now)
 	require.NoError(t, err)
@@ -38,7 +38,7 @@ func TestRecordOpenInterest(t *testing.T) {
 }
 
 func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
-	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: 10}
+	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
 	engine := target.NewEngine(params, nil)
 	rf := types.RiskFactor{
 		Long:  num.DecimalFromFloat(0.3),
@@ -52,7 +52,7 @@ func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 
 func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	tWindow := time.Hour
-	scalingFactor := 11.3
+	scalingFactor := num.DecimalFromFloat(11.3)
 	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
 	rfLong := num.DecimalFromFloat(0.3)
 	rfShort := num.DecimalFromFloat(0.1)
@@ -66,7 +66,7 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	if factor.LessThan(rfShort) {
 		factor = rfShort
 	}
-	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(num.DecimalFromFloat(scalingFactor)))
+	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
 
 	engine := target.NewEngine(params, nil)
 	rf := types.RiskFactor{
@@ -89,7 +89,7 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 
 func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	tWindow := time.Hour
-	scalingFactor := 11.3
+	scalingFactor := num.DecimalFromFloat(11.3)
 	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
 	rfLong := num.DecimalFromFloat(0.3)
 	rfShort := num.DecimalFromFloat(0.1)
@@ -102,7 +102,7 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 		if factor.LessThan(rfShort) {
 			factor = rfShort
 		}
-		mp = mp.Mul(factor.Mul(num.DecimalFromFloat(scalingFactor)))
+		mp = mp.Mul(factor.Mul(scalingFactor))
 		return mp
 	}
 
@@ -156,7 +156,7 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 
 func TestGetTheoreticalTargetStake(t *testing.T) {
 	tWindow := time.Hour
-	scalingFactor := 11.3
+	scalingFactor := num.DecimalFromFloat(11.3)
 	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
 	rfLong := num.DecimalFromFloat(0.3)
 	rfShort := num.DecimalFromFloat(0.1)
@@ -170,7 +170,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	if factor.LessThan(rfShort) {
 		factor = rfShort
 	}
-	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(num.DecimalFromFloat(scalingFactor)))
+	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
 
 	ctrl := gomock.NewController(t)
 	oiCalc := mocks.NewMockOpenInterestCalculator(ctrl)
@@ -209,7 +209,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	// float64(markPrice.Uint64()*theoreticalOI) * math.Max(rfLong, rfShort) * scalingFactor
 	expectedTargetStake = num.DecimalFromUint(markPrice)
 	expectedTargetStake = expectedTargetStake.Mul(num.DecimalFromUint(num.NewUint(theoreticalOI)))
-	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(num.DecimalFromFloat(scalingFactor)))
+	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
 	expectedTheoreticalTargetStake, _ = num.UintFromDecimal(expectedTargetStake)
 
 	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)

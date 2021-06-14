@@ -5,6 +5,7 @@ package types
 import (
 	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type LiquidityMonitoringParameters = proto.LiquidityMonitoringParameters
@@ -33,3 +34,20 @@ const (
 	// margin check fails, then they will be cancelled without any penalties.
 	LiquidityProvision_STATUS_PENDING LiquidityProvision_Status = 6
 )
+
+type TargetStakeParameters struct {
+	TimeWindow    int64
+	ScalingFactor num.Decimal
+}
+
+func (t TargetStakeParameters) IntoProto() *proto.TargetStakeParameters {
+	sf, _ := t.ScalingFactor.Float64()
+	return &proto.TargetStakeParameters{
+		TimeWindow:    t.TimeWindow,
+		ScalingFactor: sf,
+	}
+}
+
+func (t TargetStakeParameters) String() string {
+	return t.IntoProto().String()
+}
