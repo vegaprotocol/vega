@@ -688,7 +688,7 @@ func (e *Engine) createOrdersFromShape(
 		// We either don't need this order anymore or
 		// we have just nothing to do about it.
 		if o.LiquidityImpliedVolume == 0 ||
-			// we check if the order was not nil, which mean we alread had a deployed order
+			// we check if the order was not nil, which mean we already had a deployed order
 			// if the order as not traded, and the size haven't changed, then we have nothing
 			// to do about it. If the size has changed, then we will want to recreate one.
 			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume)) ||
