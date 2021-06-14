@@ -5,6 +5,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // ProposalParameters stores proposal specific parameters
@@ -13,10 +14,10 @@ type ProposalParameters struct {
 	MaxClose              time.Duration
 	MinEnact              time.Duration
 	MaxEnact              time.Duration
-	RequiredParticipation float64
-	RequiredMajority      float64
-	MinProposerBalance    uint64
-	MinVoterBalance       uint64
+	RequiredParticipation num.Decimal
+	RequiredMajority      num.Decimal
+	MinProposerBalance    *num.Uint
+	MinVoterBalance       *num.Uint
 }
 
 // ToEnact wraps the proposal in a type that has a convenient interface
@@ -30,7 +31,7 @@ type ToEnact struct {
 	u  *types.UpdateMarket
 }
 
-// just a empty struct, to signal
+// ToEnactMarket is just a empty struct, to signal
 // an enacted market. nothing to be done with it
 // for now (later maybe add information to check
 // end of opening auction or so)

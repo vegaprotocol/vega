@@ -2,10 +2,12 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types/num"
+)
 
 type Proposal = proto.Proposal
-type Vote = proto.Vote
 type ProposalTerms = proto.ProposalTerms
 type InstrumentConfiguration = proto.InstrumentConfiguration
 type NewMarketConfiguration = proto.NewMarketConfiguration
@@ -111,3 +113,34 @@ const (
 	// Waiting for node validation of the proposal
 	Proposal_STATE_WAITING_FOR_NODE_VOTE Proposal_State = 7
 )
+
+
+// Vote represents a governance vote casted by a party for a given proposal.
+type Vote struct {
+	// PartyID is the party that casted the vote.
+	PartyID string
+	// ProposalID is the proposal identifier concerned by the vote.
+	ProposalID string
+	// Value is the actual position of the vote: yes or no.
+	Value Vote_Value
+	// Timestamp is the date and time (in nanoseconds) at which the vote has
+	// been casted.
+	Timestamp int64
+	// TotalGovernanceTokenBalance is the total number of tokens hold by the
+	// party that casted the vote.
+	TotalGovernanceTokenBalance *num.Uint
+	// TotalGovernanceTokenWeight is the weight of the vote compared to the
+	// total number of governance token.
+	TotalGovernanceTokenWeight num.Decimal
+}
+
+func (v Vote) IntoProto() *proto.Vote {
+	return &proto.Vote{
+		PartyId:                     v.PartyID,
+		Value:                       v.Value,
+		ProposalId:                  v.ProposalID,
+		Timestamp:                   v.Timestamp,
+		TotalGovernanceTokenBalance: v.TotalGovernanceTokenBalance.Uint64(),
+		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
+	}
+}
