@@ -14,7 +14,6 @@ import (
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/shopspring/decimal"
 )
 
 var (
@@ -506,7 +505,7 @@ func (e *Engine) createOrUpdateForParty(
 	var (
 		// Fix this after we update the commentamount to use Uint TODO UINT
 		ob             = float64(lp.CommitmentAmount) * e.stakeToObligationFactor
-		obligation, _  = num.UintFromDecimal(decimal.NewFromFloat(ob))
+		obligation, _  = num.UintFromDecimal(num.DecimalFromFloat(ob))
 		buysShape      = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
 		sellsShape     = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
 		repriceFailure bool
