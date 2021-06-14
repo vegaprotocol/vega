@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	"github.com/holiman/uint256"
-	"github.com/shopspring/decimal"
 )
 
 // Uint A wrapper for a big unsigned int
@@ -291,9 +290,4 @@ func (u Uint) Format(s fmt.State, ch rune) {
 // array
 func (u Uint) Bytes() [32]byte {
 	return u.u.Bytes32()
-}
-
-
-func (u *Uint) ToDecimal() Decimal {
-	return decimal.NewFromBigInt(u.u.ToBig(), 0)
 }
