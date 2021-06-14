@@ -8,7 +8,8 @@ import (
 
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/monitor/price/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
@@ -50,15 +51,17 @@ func TestEmptyParametersList(t *testing.T) {
 }
 
 func TestErrorWithNilRiskModel(t *testing.T) {
-	t1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
-	t2 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1, &t2},
+	settings := types.PriceMonitoringSettings{}
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
+	settings.FromProto(pSet)
 
 	pm, err := price.NewMonitor(nil, settings)
 	require.Error(t, err)
@@ -68,15 +71,17 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 func TestGetHorizonYearFractions(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	riskModel := mocks.NewMockRangeProvider(ctrl)
-	t1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
-	t2 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1, &t2},
+	settings := types.PriceMonitoringSettings{}
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
+	settings.FromProto(pSet)
 
 	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
@@ -95,14 +100,17 @@ func TestRecordPriceChange(t *testing.T) {
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	t1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
-	t2 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1, &t2},
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
+
+	settings := types.PriceMonitoringSettings{}
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
+	settings.FromProto(pSet)
 
 	cpDec := num.DecimalFromUint(currentPrice)
 	min, max := cpDec.Sub(num.DecimalFromFloat(10)), cpDec.Add(num.DecimalFromFloat(10))
@@ -135,14 +143,16 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	currentPrice := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	t1Time, t2Time := int64(60), int64(300)
-	t1 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: t1Time}
-	t2 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: t2Time}
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1, &t2},
+	t1 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: t1Time}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: t2Time}
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
+	settings := types.PriceMonitoringSettings{}
+	settings.FromProto(pSet)
 
 	maxDown1, maxUp1, maxDown2, maxUp2 := num.NewUint(1), num.NewUint(2), num.NewUint(3), num.NewUint(4)
 
@@ -487,15 +497,18 @@ func testAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	price1 := num.NewUint(123)
 	ctx := context.Background()
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	t1 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	t2 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1, &t2},
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
+	settings := types.PriceMonitoringSettings{}
+	settings.FromProto(pSet)
+
 	maxDown1, maxUp1 := num.NewUint(1), num.NewUint(2)
 	maxDown2 := num.Sum(maxUp1, maxUp1)   // yes, maxUp -> maxUp == maxDown*2, down2 == down1*4
 	maxUp2 := num.Sum(maxDown2, maxDown2) // double
@@ -559,15 +572,18 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	price1 := num.NewUint(123)
 	ctx := context.Background()
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	t1 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	t2 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1, &t2},
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
+	settings := types.PriceMonitoringSettings{}
+	settings.FromProto(pSet)
+
 	decPrice, pMin1, pMax1, _, maxUp1 := getPriceBounds(price1, 1, 2)
 	_, pMin2, pMax2, _, maxUp2 := getPriceBounds(price1, 1*4, 2*4)
 	h1 := horizonToYearFraction(t1.Horizon)
@@ -623,15 +639,17 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	price1 := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	t1 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
-	t2 := types.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.95, AuctionExtension: 60}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 600, Probability: 0.99, AuctionExtension: 120}
 	var boundUpdateFrequency int64 = 120
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1, &t2},
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
+	settings := types.PriceMonitoringSettings{}
+	settings.FromProto(pSet)
 	ctx := context.Background()
 	decPrice, pMin1, pMax1, _, maxUp1 := getPriceBounds(price1, 1, 2)
 	_, pMin2, pMax2, _, maxUp2 := getPriceBounds(price1, 1*4, 2*4)
@@ -660,15 +678,14 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 
 	bounds := pm.GetCurrentBounds()
 	require.Len(t, bounds, 2)
-	require.Equal(t, *bounds[0].Trigger, t1)
-	require.Equal(t, bounds[0].MinValidPrice, t1lb1.Uint64())
-	require.Equal(t, bounds[0].MaxValidPrice, t1ub1.Uint64())
-	refPrice, _ := decPrice.Float64()
-	require.Equal(t, bounds[0].ReferencePrice, refPrice)
-	require.Equal(t, *bounds[1].Trigger, t2)
-	require.Equal(t, bounds[1].MinValidPrice, t2lb1.Uint64())
-	require.Equal(t, bounds[1].MaxValidPrice, t2ub1.Uint64())
-	require.Equal(t, bounds[1].ReferencePrice, refPrice)
+	require.Equal(t, *bounds[0].Trigger.IntoProto(), t1)
+	require.True(t, bounds[0].MinValidPrice.EQ(t1lb1))
+	require.True(t, bounds[0].MaxValidPrice.EQ(t1ub1))
+	require.Equal(t, bounds[0].ReferencePrice, decPrice)
+	require.Equal(t, *bounds[1].Trigger.IntoProto(), t2)
+	require.True(t, bounds[1].MinValidPrice.EQ(t2lb1))
+	require.True(t, bounds[1].MaxValidPrice.EQ(t2ub1))
+	require.Equal(t, bounds[1].ReferencePrice, decPrice)
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension}
 	pm.SetMinDuration(time.Duration(end.Duration) * time.Second)
@@ -689,10 +706,10 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 
 	bounds = pm.GetCurrentBounds()
 	require.Len(t, bounds, 1)
-	require.Equal(t, *bounds[0].Trigger, t2)
-	require.Equal(t, bounds[0].MinValidPrice, t2lb1.Uint64())
-	require.Equal(t, bounds[0].MaxValidPrice, t2ub1.Uint64())
-	require.Equal(t, bounds[0].ReferencePrice, refPrice)
+	require.Equal(t, *bounds[0].Trigger.IntoProto(), t2)
+	require.True(t, bounds[0].MinValidPrice.EQ(t2lb1))
+	require.True(t, bounds[0].MaxValidPrice.EQ(t2ub1))
+	require.Equal(t, bounds[0].ReferencePrice, decPrice)
 
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)
 	now = afterInitialAuction
@@ -731,15 +748,14 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 
 	bounds = pm.GetCurrentBounds()
 	require.Len(t, bounds, 2)
-	require.Equal(t, *bounds[0].Trigger, t1)
-	require.Equal(t, bounds[0].MinValidPrice, t1lb1.Uint64())
-	require.Equal(t, bounds[0].MaxValidPrice, t1ub1.Uint64())
-	refPrice, _ = decPrice.Float64()
-	require.Equal(t, bounds[0].ReferencePrice, refPrice)
-	require.Equal(t, *bounds[1].Trigger, t2)
-	require.Equal(t, bounds[1].MinValidPrice, t2lb1.Uint64())
-	require.Equal(t, bounds[1].MaxValidPrice, t2ub1.Uint64())
-	require.Equal(t, bounds[0].ReferencePrice, refPrice)
+	require.Equal(t, *bounds[0].Trigger.IntoProto(), t1)
+	require.True(t, bounds[0].MinValidPrice.EQ(t1lb1))
+	require.True(t, bounds[0].MaxValidPrice.EQ(t1ub1))
+	require.Equal(t, bounds[0].ReferencePrice, decPrice)
+	require.Equal(t, *bounds[1].Trigger.IntoProto(), t2)
+	require.True(t, bounds[1].MinValidPrice.EQ(t2lb1))
+	require.True(t, bounds[1].MaxValidPrice.EQ(t2ub1))
+	require.Equal(t, bounds[1].ReferencePrice, decPrice)
 }
 
 func TestMarketInOpeningAuction(t *testing.T) {
@@ -748,14 +764,16 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
-	t1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1},
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1},
 		},
 		UpdateFrequency: 1,
 	}
+	settings := types.PriceMonitoringSettings{}
+	settings.FromProto(pSet)
 
 	decPrice, pMin1, pMax1, _, _ := getPriceBounds(currentPrice, 10, 10)
 	ctx := context.Background()
@@ -779,15 +797,17 @@ func TestMarketInGenericAuction(t *testing.T) {
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 	currentPrice := num.NewUint(123)
-	t1 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
+	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1},
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1},
 		},
 		UpdateFrequency: 1,
 	}
+	settings := types.PriceMonitoringSettings{}
+	settings.FromProto(pSet)
 
 	decPrice, pMin, pMax, maxDown, maxUp := getPriceBounds(currentPrice, 5, 10)
 	ctx := context.Background()
@@ -875,14 +895,16 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	var t1Time int64 = 60
 	var t2Time int64 = 300
-	t1 := types.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: t1Time}
-	t2 := types.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: t2Time}
-	settings := types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{&t1, &t2},
+	t1 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: t1Time}
+	t2 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: t2Time}
+	pSet := &proto.PriceMonitoringSettings{
+		Parameters: &proto.PriceMonitoringParameters{
+			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
+	settings := types.PriceMonitoringSettings{}
+	settings.FromProto(pSet)
 
 	ctx := context.Background()
 	decPr, pMin1, pMax1, maxDown1, maxUp1 := getPriceBounds(currentPrice, 1, 2)

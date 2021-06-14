@@ -6,7 +6,8 @@ import (
 	"sort"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -52,7 +53,7 @@ type bound struct {
 	Active     bool
 	UpFactor   num.Decimal
 	DownFactor num.Decimal
-	Trigger    *decPMT
+	Trigger    *types.PriceMonitoringTrigger
 }
 
 type priceRange struct {
@@ -113,16 +114,10 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 		return nil, ErrNilRangeProvider
 	}
 
-	parameters := make([]*decPMT, 0, len(settings.Parameters.Triggers))
+	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
 	for _, p := range settings.Parameters.Triggers {
-		p := &decPMT{
-			proto:            *p,
-			Horizon:          p.Horizon,
-			Probability:      num.DecimalFromFloat(p.Probability),
-			hdec:             num.DecimalFromFloat(float64(p.Horizon)),
-			AuctionExtension: p.AuctionExtension,
-		}
-		parameters = append(parameters, p)
+		p := *p
+		parameters = append(parameters, &p)
 	}
 
 	// Other functions depend on this sorting
@@ -140,7 +135,7 @@ func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings)
 			Trigger: p,
 		})
 		if _, ok := h[p.Horizon]; !ok {
-			h[p.Horizon] = p.hdec.Div(secondsPerYear)
+			h[p.Horizon] = p.HDec.Div(secondsPerYear)
 		}
 	}
 
@@ -195,13 +190,12 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 	ret := make([]*types.PriceMonitoringBounds, 0, len(priceRanges))
 	for b, pr := range priceRanges {
 		if b.Active {
-			ref, _ := pr.ReferencePrice.Float64()
 			ret = append(ret,
 				&types.PriceMonitoringBounds{
-					MinValidPrice:  pr.MinPrice.Uint64(),
-					MaxValidPrice:  pr.MaxPrice.Uint64(),
-					Trigger:        &b.Trigger.proto,
-					ReferencePrice: ref,
+					MinValidPrice:  pr.MinPrice.Clone(),
+					MaxValidPrice:  pr.MaxPrice.Clone(),
+					Trigger:        b.Trigger,
+					ReferencePrice: pr.ReferencePrice,
 				})
 		}
 	}
@@ -209,7 +203,7 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 	sort.SliceStable(ret,
 		func(i, j int) bool {
 			return ret[i].Trigger.Horizon <= ret[j].Trigger.Horizon &&
-				ret[i].Trigger.Probability <= ret[j].Trigger.Probability
+				ret[i].Trigger.Probability.LessThanOrEqual(ret[j].Trigger.Probability)
 		})
 	return ret
 }
@@ -251,7 +245,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		if !persistent {
 			// we're going to stay in continuous trading, make sure we still have bounds
 			e.reset(last.Price, last.Volume, now)
-			return types.ErrNonPersistentOrderOutOfBounds
+			return proto.ErrNonPersistentOrderOutOfBounds
 		}
 		duration := types.AuctionDuration{}
 		for _, b := range bounds {
@@ -396,7 +390,7 @@ func (e *Engine) checkBounds(ctx context.Context, p *num.Uint, v uint64) []*type
 		}
 		priceRange := priceRanges[b]
 		if p.LT(priceRange.MinPrice) || p.GT(priceRange.MaxPrice) {
-			ret = append(ret, &b.Trigger.proto)
+			ret = append(ret, b.Trigger)
 			// Disactivate the bound that just got violated so it doesn't prevent auction from terminating
 			b.Active = false
 		}
