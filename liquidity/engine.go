@@ -33,15 +33,15 @@ type Broker interface {
 
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
-	// Convert float to Uint when we update the risk module TODO UINT
-	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
-	GetProjectionHorizon() float64
+	ProbabilityOfTrading(currentPrice, orderPrice, minPrice, maxPrice *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
+
+	GetProjectionHorizon() num.Decimal
 }
 
 // PriceMonitor provides the range of valid prices, that is prices that
 // wouldn't trade the current trading mode
 type PriceMonitor interface {
-	GetValidPriceRange() (float64, float64)
+	GetValidPriceRange() (*num.Uint, *num.Uint)
 }
 
 // IDGen is an id generator for orders.
@@ -120,11 +120,11 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
 }
 
-func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v float64) {
+func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v num.Decimal) {
 	e.suppliedEngine.OnMinProbabilityOfTradingLPOrdersUpdate(v)
 }
 
-func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v float64) {
+func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 	e.suppliedEngine.OnProbabilityOfTradingTauScalingUpdate(v)
 }
 
