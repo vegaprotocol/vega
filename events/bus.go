@@ -232,7 +232,7 @@ func New(ctx context.Context, v interface{}) (interface{}, error) {
 		e := NewProposalEvent(ctx, tv)
 		return e, nil
 	case types.Vote:
-		e := NewVoteEvent(ctx, tv)
+		e := NewVoteEvent(ctx, *tv.IntoProto())
 		return e, nil
 	case types.MarketData:
 		e := NewMarketDataEvent(ctx, tv)
