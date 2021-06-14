@@ -479,7 +479,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 	}
 	if proposerTokens.LT(params.MinProposerBalance) {
 		e.log.Debug("proposer have insufficient governance token",
-			logging.String("expect-balance", params.MinProposerBalance.String()),
+			logging.BigUint("expect-balance", params.MinProposerBalance),
 			logging.String("proposer-balance", proposerTokens.String()),
 			logging.PartyID(proposal.PartyId),
 			logging.ProposalID(proposal.Id))
@@ -540,7 +540,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, par
 		delete(proposal.yes, vote.PartyID)
 		proposal.no[vote.PartyID] = &vote
 	}
-	e.broker.Send(events.NewVoteEvent(ctx, *vote.IntoProto()))
+	e.broker.Send(events.NewVoteEvent(ctx, &vote))
 	return nil
 }
 
@@ -602,10 +602,10 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 	evts := []events.Event{}
 
 	for _, y := range proposal.yes {
-		evts = append(evts, events.NewVoteEvent(ctx, *y.IntoProto()))
+		evts = append(evts, events.NewVoteEvent(ctx, y))
 	}
 	for _, n := range proposal.no {
-		evts = append(evts, events.NewVoteEvent(ctx, *n.IntoProto()))
+		evts = append(evts, events.NewVoteEvent(ctx, n))
 	}
 
 	return evts
@@ -656,11 +656,11 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 	no := p.countVotes(p.no, accounts, asset)
 	totalVotes := num.Sum(yes, no)
 	totalVotesDec := totalVotes.ToDecimal()
-	p.weightVotes(p.yes, totalVotes)
-	p.weightVotes(p.no, totalVotes)
-
-	majorityThreshold := num.MulDec(totalVotes, params.RequiredMajority)
-	participationThreshold := num.MulDec(totalStake, params.RequiredParticipation)
+	p.weightVotes(p.yes, totalVotesDec)
+	p.weightVotes(p.no, totalVotesDec)
+	majorityThreshold := totalVotesDec.Mul(params.RequiredMajority)
+	totalStakeDec := totalStake.ToDecimal()
+	participationThreshold := totalStakeDec.Mul(params.RequiredParticipation)
 
 	if yesDec.GreaterThan(majorityThreshold) && totalVotesDec.GreaterThanOrEqual(participationThreshold) {
 		p.State = types.Proposal_STATE_PASSED
@@ -679,14 +679,15 @@ func (p *proposal) countVotes(votes map[string]*dtypes.Vote, accounts Accounts, 
 	tally := num.NewUint(0)
 	for _, v := range votes {
 		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID, voteAsset)
-		tally.Add(tally, v.TotalGovernanceTokenBalance)
+		tally.AddSum(v.TotalGovernanceTokenBalance)
 	}
 	return tally
 }
 
-func (p *proposal) weightVotes(votes map[string]*dtypes.Vote, totalVotes *num.Uint) {
+func (p *proposal) weightVotes(votes map[string]*dtypes.Vote, totalVotes num.Decimal) {
 	for _, v := range votes {
-		v.TotalGovernanceTokenWeight = num.DivDec(v.TotalGovernanceTokenBalance, totalVotes)
+		balanceDec := v.TotalGovernanceTokenBalance.ToDecimal()
+		v.TotalGovernanceTokenWeight = balanceDec.Div(totalVotes)
 	}
 }
 
@@ -700,7 +701,7 @@ func getTokensBalance(accounts Accounts, partyID, voteAsset string) *num.Uint {
 func getGovernanceTokens(accounts Accounts, party, voteAsset string) (*num.Uint, error) {
 	account, err := accounts.GetPartyGeneralAccount(party, voteAsset)
 	if err != nil {
-		return num.NewUint(0), err
+		return nil, err
 	}
 	return num.NewUint(account.Balance), err
 }
