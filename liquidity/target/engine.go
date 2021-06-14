@@ -123,7 +123,8 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 		num.DecimalFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor),
 	)
 	// return the decimal as uint
-	return num.UintFromDecimal(mp)
+	retVal, _ := num.UintFromDecimal(mp)
+	return retVal
 }
 
 func (e *Engine) getMaxFromCurrent() uint64 {
