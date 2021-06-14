@@ -3,13 +3,13 @@ package models
 import (
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 // Simple represents a dummy risk model with fixed risk params.
 type Simple struct {
-	factorLong, factorShort float64
+	factorLong, factorShort num.Decimal
 	maxMoveUp, minMoveDown  num.Decimal
 	asset                   string
 	prob                    num.Decimal
@@ -18,8 +18,8 @@ type Simple struct {
 // NewSimple instantiates a new simple/dummy risk model with fixed risk params.
 func NewSimple(ps *types.SimpleRiskModel, asset string) (*Simple, error) {
 	return &Simple{
-		factorLong:  ps.Params.FactorLong,
-		factorShort: ps.Params.FactorShort,
+		factorLong:  num.DecimalFromFloat(ps.Params.FactorLong),
+		factorShort: num.DecimalFromFloat(ps.Params.FactorShort),
 		maxMoveUp:   num.DecimalFromFloat(ps.Params.MaxMoveUp),
 		minMoveDown: num.DecimalFromFloat(ps.Params.MinMoveDown),
 		asset:       asset,
