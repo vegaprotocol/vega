@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/subscribers"
-	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 )
@@ -45,8 +44,8 @@ type LSE interface {
 	events.Event
 	PartyID() string
 	MarketID() string
-	Loss() *num.Uint
-	Adjustment() *num.Uint
+	Amount() int64
+	AmountLost() int64
 	Timestamp() int64
 }
 
@@ -85,18 +84,18 @@ func (p *Positions) Push(evts ...events.Event) {
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
-	marketID, partyID, loss, adjustment := e.MarketID(), e.PartyID(), e.Loss(), e.Adjustment()
+	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), e.AmountLost()
 	pos, ok := p.data[marketID][partyID]
 	if !ok {
 		return
 	}
-	if loss != nil  {
-		pos.loss = pos.loss.Add(pos.loss, loss)
+	if amountLoss < 0 {
+		pos.loss += float64(-amountLoss)
 	} else {
-		pos.adjustment = pos.adjustment.Add(pos.adjustment, adjustment)
+		pos.adjustment += float64(amountLoss)
 	}
-	pos.RealisedPnlFP += float64(loss.Uint64())
-	pos.RealisedPnl += int64(loss.Uint64())
+	pos.RealisedPnlFP += float64(amountLoss)
+	pos.RealisedPnl += amountLoss
 	pos.Position.UpdatedAt = e.Timestamp()
 	p.data[marketID][partyID] = pos
 }
@@ -271,9 +270,9 @@ type Position struct {
 	UnrealisedPnlFP     float64
 
 	// what the party lost because of loss socialization
-	loss *num.Uint
+	loss float64
 	// what a party was missing which triggered loss socialization
-	adjustment *num.Uint
+	adjustment float64
 }
 
 func seToProto(e SE) Position {
