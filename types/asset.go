@@ -18,7 +18,7 @@ type Asset struct {
 	// Total circulating supply for the asset
 	TotalSupply *num.Uint
 	// Number of decimals / precision handled by this asset
-	Decimals uint64
+	Decimals uint8
 	// The definition of the external source for this asset
 	Source *AssetSource
 }
@@ -35,41 +35,15 @@ func (a Asset) DeepClone() *Asset {
 	return &cpy
 }
 
-func (a Asset) ToProto() *pb.Asset {
-	out := pb.Asset{
+func (a Asset) IntoProto() *pb.Asset {
+	return &pb.Asset{
 		Id:          a.Id,
 		Name:        a.Name,
 		Symbol:      a.Symbol,
 		TotalSupply: a.TotalSupply.String(),
-		Decimals:    a.Decimals,
+		Decimals:    uint64(a.Decimals),
+		Source:      a.Source.IntoProto(),
 	}
-	if a.Source == nil {
-		return &out
-	}
-
-	switch ss := a.Source.Source.(type) {
-	case BuiltinAsset:
-		out.Source = &pb.AssetSource{
-			Source: &pb.AssetSource_BuiltinAsset{
-				BuiltinAsset: &pb.BuiltinAsset{
-					Name:                ss.Name,
-					Symbol:              ss.Symbol,
-					TotalSupply:         ss.TotalSupply.String(),
-					Decimals:            ss.Decimals,
-					MaxFaucetAmountMint: ss.MaxFaucetAmountMint,
-				},
-			},
-		}
-	case ERC20:
-		out.Source = &pb.AssetSource{
-			Source: &pb.AssetSource_Erc20{
-				Erc20: &pb.ERC20{
-					ContractAddress: ss.ContractAddress,
-				},
-			},
-		}
-	}
-	return &out
 }
 
 // AssetSource is an asset source definition
@@ -91,6 +65,36 @@ func (s AssetSource) DeepCopy() *AssetSource {
 		out.Source = ss.DeepCopy()
 	}
 	return &out
+}
+
+func (a AssetSource) IntoProto() *pb.AssetSource {
+	if a.Source == nil {
+		return nil
+	}
+	var out *pb.AssetSource
+	switch ss := a.Source.(type) {
+	case BuiltinAsset:
+		out = &pb.AssetSource{
+			Source: &pb.AssetSource_BuiltinAsset{
+				BuiltinAsset: &pb.BuiltinAsset{
+					Name:                ss.Name,
+					Symbol:              ss.Symbol,
+					TotalSupply:         ss.TotalSupply.String(),
+					Decimals:            ss.Decimals,
+					MaxFaucetAmountMint: ss.MaxFaucetAmountMint,
+				},
+			},
+		}
+	case ERC20:
+		out = &pb.AssetSource{
+			Source: &pb.AssetSource_Erc20{
+				Erc20: &pb.ERC20{
+					ContractAddress: ss.ContractAddress,
+				},
+			},
+		}
+	}
+	return out
 }
 
 // BuiltinAsset is a Vega internal asset.
