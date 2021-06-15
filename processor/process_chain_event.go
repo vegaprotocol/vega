@@ -106,7 +106,7 @@ func (app *App) processChainEventERC20(
 	case *types.ERC20EventAssetDelist:
 		return errors.New("ERC20.AssetDelist not implemented")
 	case *types.ERC20EventDeposit:
-		act.Deposit.VegaAssetId = strings.TrimPrefix(act.Deposit.VegaAssetId, "0x")
+		act.Deposit.VegaAssetID = strings.TrimPrefix(act.Deposit.VegaAssetID, "0x")
 
 		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err

@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	ErrAssetInvalid      = errors.New("asset invalid")
-	ErrAssetDoesNotExist = errors.New("asset does not exist")
-	ErrUnknowAssetSource = errors.New("unknown asset source")
+	ErrAssetInvalid       = errors.New("asset invalid")
+	ErrAssetDoesNotExist  = errors.New("asset does not exist")
+	ErrUnknownAssetSource = errors.New("unknown asset source")
 )
 
 // TimeService ...
@@ -125,7 +125,7 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 		}
 		s.pendingAssets[assetID] = &Asset{asset}
 	default:
-		return "", ErrUnknowAssetSource
+		return "", ErrUnknownAssetSource
 	}
 
 	return assetID, nil

@@ -4,17 +4,18 @@ import (
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20"
-	types "code.vegaprotocol.io/vega/proto"
+	typespb "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type isAsset interface {
-	// get information about the asset itself
-	ProtoAsset() *types.Asset
-	// get the internal asset class
+	// ProtoAsset get information about the asset itself
+	ProtoAsset() *typespb.Asset
+	// GetAssetClass get the internal asset class
 	GetAssetClass() common.AssetClass
-	// is the order valid / validated with the target chain?
+	// IsValid is the order valid / validated with the target chain?
 	IsValid() bool
-	// this is used to validate that the asset
+	// Validate this is used to validate that the asset
 	// exist on the target chain
 	Validate() error
 	String() string
@@ -46,4 +47,8 @@ func (a *Asset) ERC20() (*erc20.ERC20, bool) {
 func (a *Asset) BuiltinAsset() (*builtin.Builtin, bool) {
 	asset, ok := a.isAsset.(*builtin.Builtin)
 	return asset, ok
+}
+
+func (a *Asset) ToAssetType() *types.Asset {
+	return types.AssetFromProto(a.ProtoAsset())
 }

@@ -50,7 +50,7 @@ var defaultCollateralAssets = []types.Asset{
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: "1000",
-			Source: &types.AssetDetails_BuiltinAsset{
+			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},
@@ -261,7 +261,7 @@ func getTestMarket2(
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: "1000",
-			Source: &types.AssetDetails_BuiltinAsset{
+			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},

@@ -12,7 +12,9 @@ import (
 	"code.vegaprotocol.io/vega/banking/mocks"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	typespb "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/golang/mock/gomock"
@@ -20,7 +22,7 @@ import (
 )
 
 var (
-	testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
+	testAsset = assets.NewAsset(builtin.New("VGT", &typespb.AssetDetails{
 		Name:   "VEGA TOKEN",
 		Symbol: "VGT",
 	}))
@@ -76,9 +78,9 @@ func testDepositSuccess(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetId: "VGT",
-		PartyId:     "someparty",
-		Amount:      42,
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      num.NewUint(42),
 	}
 
 	// call the deposit function
@@ -91,7 +93,7 @@ func testDepositSuccess(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyId, bad.VegaAssetId, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 }
@@ -105,9 +107,9 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetId: "VGT",
-		PartyId:     "someparty",
-		Amount:      42,
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      num.NewUint(42),
 	}
 
 	// call the deposit function
@@ -120,7 +122,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyId, bad.VegaAssetId, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 
@@ -134,7 +136,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 
 	// then we call time update, which should call the collateral to
 	// to do the deposit
-	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyId, bad.VegaAssetId, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
+	eng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.TransferResponse{}, nil)
 
 	eng.OnTick(context.Background(), now.Add(1*time.Second))
 }
@@ -148,9 +150,9 @@ func testDepositFailure(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetId: "VGT",
-		PartyId:     "someparty",
-		Amount:      42,
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      num.NewUint(42),
 	}
 
 	// call the deposit function
@@ -175,9 +177,9 @@ func testDepositError(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetId: "VGT",
-		PartyId:     "someparty",
-		Amount:      42,
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      num.NewUint(42),
 	}
 
 	// set an error to be return by the fake erc
@@ -199,9 +201,9 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	bad := &types.BuiltinAssetDeposit{
-		VegaAssetId: "VGT",
-		PartyId:     "someparty",
-		Amount:      42,
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      num.NewUint(42),
 	}
 
 	// call the deposit function
