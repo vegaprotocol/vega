@@ -1,7 +1,6 @@
 package supplied_test
 
 import (
-	"math"
 	"testing"
 
 	"code.vegaprotocol.io/vega/liquidity/supplied"
@@ -133,7 +132,7 @@ func Test_InteralConsistency(t *testing.T) {
 	limitOrders := []*types.Order{}
 
 	buy := &supplied.LiquidityOrder{
-		Price:      minPrice,
+		Price:      minPrice.Clone(),
 		Proportion: 1,
 	}
 	buyShapes := []*supplied.LiquidityOrder{
@@ -141,7 +140,7 @@ func Test_InteralConsistency(t *testing.T) {
 	}
 
 	sell := &supplied.LiquidityOrder{
-		Price:      maxPrice,
+		Price:      maxPrice.Clone(),
 		Proportion: 1,
 	}
 
@@ -184,7 +183,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	limitOrders := []*types.Order{}
 
 	validBuy1 := &supplied.LiquidityOrder{
-		Price:      minPrice,
+		Price:      minPrice.Clone(),
 		Proportion: 20,
 	}
 
@@ -201,7 +200,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 		Proportion: 11,
 	}
 	validSell2 := &supplied.LiquidityOrder{
-		Price:      maxPrice,
+		Price:      maxPrice.Clone(),
 		Proportion: 22,
 	}
 	sellShapes := []*supplied.LiquidityOrder{
@@ -320,7 +319,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(12)
 
 	validBuy1 := &supplied.LiquidityOrder{
-		Price:      minPrice,
+		Price:      minPrice.Clone(),
 		Proportion: 20,
 	}
 	validBuy2 := &supplied.LiquidityOrder{
@@ -336,7 +335,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		Proportion: 11,
 	}
 	validSell2 := &supplied.LiquidityOrder{
-		Price:      maxPrice,
+		Price:      maxPrice.Clone(),
 		Proportion: 22,
 	}
 	sellShapes := []*supplied.LiquidityOrder{
@@ -542,8 +541,8 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	sellShapes := []*supplied.LiquidityOrder{
 		invalidSell,
 	}
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, invalidBuy.Price, minPrice, maxPrice, Horizon, true, true).Return(0.0).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, invalidSell.Price, minPrice, maxPrice, Horizon, false, true).Return(0.0).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, invalidBuy.Price, minPrice, maxPrice, Horizon, true, true).Return(num.DecimalFromFloat(0.0)).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, invalidSell.Price, minPrice, maxPrice, Horizon, false, true).Return(num.DecimalFromFloat(0.0)).Times(1)
 
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
@@ -564,20 +563,17 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	riskModel := mocks.NewMockRiskModel(ctrl)
 	priceMonitor := mocks.NewMockPriceMonitor(ctrl)
 	riskModel.EXPECT().GetProjectionHorizon().Return(Horizon).Times(1)
-	minPrice := 89.2
-	maxPrice := 111.1
-
-	var minPriceInt = uint64(math.Ceil(minPrice))
-	var maxPriceInt = uint64(math.Floor(maxPrice))
+	minPrice := num.NewUint(89)
+	maxPrice := num.NewUint(111)
 
 	order1 := &types.Order{
-		Price:     num.NewUint(minPriceInt),
+		Price:     minPrice.Clone(),
 		Size:      15,
 		Remaining: 11,
 		Side:      types.Side_SIDE_BUY,
 	}
 	order2 := &types.Order{
-		Price:     num.NewUint(maxPriceInt),
+		Price:     maxPrice.Clone(),
 		Size:      60,
 		Remaining: 60,
 		Side:      types.Side_SIDE_SELL,
@@ -589,26 +585,25 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	}
 
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order1.Price, minPriceInt, maxPriceInt, Horizon, true, true).Return(0.123).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order2.Price, minPrice, maxPrice, Horizon, false, true).Return(0.234).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order1.Price, minPrice, maxPrice, Horizon, true, true).Return(num.DecimalFromFloat(0.123)).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order2.Price, minPrice, maxPrice, Horizon, false, true).Return(num.DecimalFromFloat(0.234)).Times(1)
 
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
 	liquidity1 := engine.CalculateSuppliedLiquidity(MarkPrice.Clone(), MarkPrice.Clone(), orders)
-	require.Less(t, 0.0, liquidity1)
+	require.True(t, liquidity1.GT(num.NewUint(0)))
 
 	// Change minPrice, maxPrice and verify that probability of trading is called with new values
-	minPrice -= 10
-	maxPrice += 10
+	minPrice.Sub(minPrice, num.NewUint(10))
+	maxPrice.Add(maxPrice, num.NewUint(10))
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order1.Price, minPrice, maxPrice, Horizon, true, true).Return(0.123).Times(1)
-	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order2.Price, minPrice, maxPrice, Horizon, false, true).Return(0.234).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order1.Price, minPrice, maxPrice, Horizon, true, true).Return(num.DecimalFromFloat(0.123)).Times(1)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order2.Price, minPrice, maxPrice, Horizon, false, true).Return(num.DecimalFromFloat(0.234)).Times(1)
 
 	liquidity2 := engine.CalculateSuppliedLiquidity(MarkPrice.Clone(), MarkPrice.Clone(), orders)
-	require.Less(t, 0.0, liquidity2)
+	require.True(t, liquidity2.GT(num.NewUint(0)))
 	require.Equal(t, liquidity1, liquidity2)
-
 }
 
 func collateOrders(limitOrders []*types.Order, buyShapes []*supplied.LiquidityOrder, sellShapes []*supplied.LiquidityOrder) []*types.Order {

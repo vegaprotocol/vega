@@ -3,21 +3,20 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type LiquidityProvision struct {
 	*Base
-	p types.LiquidityProvision
+	p *proto.LiquidityProvision
 }
 
 func NewLiquidityProvisionEvent(ctx context.Context, p *types.LiquidityProvision) *LiquidityProvision {
-	cpy := p.DeepClone()
-
 	order := &LiquidityProvision{
 		Base: newBase(ctx, LiquidityProvisionEvent),
-		p:    *cpy,
+		p:    p.IntoProto(),
 	}
 	return order
 }
@@ -34,11 +33,11 @@ func (p LiquidityProvision) MarketID() string {
 	return p.p.MarketId
 }
 
-func (p LiquidityProvision) LiquidityProvision() types.LiquidityProvision {
+func (p LiquidityProvision) LiquidityProvision() *proto.LiquidityProvision {
 	return p.p
 }
 
-func (p LiquidityProvision) Proto() types.LiquidityProvision {
+func (p LiquidityProvision) Proto() *proto.LiquidityProvision {
 	return p.p
 }
 
@@ -48,7 +47,7 @@ func (p LiquidityProvision) StreamMessage() *eventspb.BusEvent {
 		Block: p.TraceID(),
 		Type:  p.et.ToProto(),
 		Event: &eventspb.BusEvent_LiquidityProvision{
-			LiquidityProvision: &p.p,
+			LiquidityProvision: p.p,
 		},
 	}
 }
