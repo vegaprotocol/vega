@@ -252,7 +252,7 @@ func testReleasePartyMarginAccount(t *testing.T) {
 	generalAcc, _ := eng.GetAccountByID(gen)
 	assert.Equal(t, num.NewUint(600), generalAcc.Balance)
 	marginAcc, _ := eng.GetAccountByID(mar)
-	assert.Equal(t, num.NewUint(0), marginAcc.Balance)
+	assert.True(t, marginAcc.Balance.IsZero())
 
 }
 
@@ -557,7 +557,7 @@ func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
 	// now check the balances
 	// general should be empty
 	generalAcc, _ := eng.GetAccountByID(general)
-	assert.Equal(t, num.NewUint(0), generalAcc.Balance)
+	assert.True(t, generalAcc.Balance.IsZero())
 	marginAcc, _ := eng.GetAccountByID(margin)
 	assert.Equal(t, num.NewUint(600), marginAcc.Balance)
 }
@@ -620,7 +620,7 @@ func testAddMarginAccount(t *testing.T) {
 	// test balance is 0 when created
 	acc, err := eng.Engine.GetAccountByID(margin)
 	assert.Nil(t, err)
-	assert.Equal(t, num.NewUint(0), acc.Balance)
+	assert.True(t, acc.Balance.IsZero())
 }
 
 func testAddMarginAccountFail(t *testing.T) {
@@ -655,7 +655,7 @@ func testAddTrader(t *testing.T) {
 	// check the amount on each account now
 	acc, err := eng.Engine.GetAccountByID(margin)
 	assert.Nil(t, err)
-	assert.Equal(t, num.NewUint(0), acc.Balance)
+	assert.True(t, acc.Balance.IsZero())
 
 	acc, err = eng.Engine.GetAccountByID(general)
 	assert.Nil(t, err)
@@ -716,7 +716,7 @@ func testTransferLoss(t *testing.T) {
 	resp := responses[0]
 	assert.NoError(t, err)
 	// total balance of settlement account should be 3 times price
-	assert.Equal(t, num.NewUint(0).Mul(num.NewUint(2), price), num.NewUint(0).Add(resp.Balances[0].Balance, responses[1].Balances[0].Balance))
+	assert.Equal(t, num.Sum(price, price), num.Sum(resp.Balances[0].Balance, responses[1].Balances[0].Balance))
 	// there should be 2 ledger moves
 	assert.Equal(t, 1, len(resp.Transfers))
 }
@@ -724,7 +724,7 @@ func testTransferLoss(t *testing.T) {
 func testTransferComplexLoss(t *testing.T) {
 	trader := "test-trader"
 	half := num.NewUint(500)
-	price := num.NewUint(0).Mul(half, num.NewUint(2))
+	price := num.Sum(half, half)
 
 	eng := getTestEngine(t, testMarketID)
 	defer eng.Finish()
@@ -732,7 +732,8 @@ func testTransferComplexLoss(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
 	assert.Nil(t, err)
-	err = eng.UpdateBalance(context.Background(), insurancePool.Id, num.NewUint(0).Mul(price, num.NewUint(5)))
+	// 5x price
+	err = eng.UpdateBalance(context.Background(), insurancePool.Id, num.Sum(price, price, price, price, price))
 	assert.Nil(t, err)
 
 	// create trader accounts
@@ -806,7 +807,7 @@ func testDistributeWin(t *testing.T) {
 
 	// set settlement account
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.IncrementBalance(context.Background(), eng.marketSettlementID, num.NewUint(0).Mul(price, num.NewUint(2)))
+	err = eng.Engine.IncrementBalance(context.Background(), eng.marketSettlementID, num.Sum(price, price))
 	assert.Nil(t, err)
 
 	// create trader accounts, add balance for money trader
@@ -872,6 +873,7 @@ func testProcessBoth(t *testing.T) {
 	trader := "test-trader"
 	moneyTrader := "money-trader"
 	price := num.NewUint(1000)
+	priceX3 := num.Sum(price, price, price)
 
 	eng := getTestEngine(t, testMarketID)
 	defer eng.Finish()
@@ -879,7 +881,7 @@ func testProcessBoth(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
 	assert.Nil(t, err)
-	err = eng.UpdateBalance(context.Background(), insurancePool.Id, num.NewUint(0).Mul(price, num.NewUint(3)))
+	err = eng.UpdateBalance(context.Background(), insurancePool.Id, priceX3)
 	assert.Nil(t, err)
 
 	// create trader accounts
@@ -893,7 +895,7 @@ func testProcessBoth(t *testing.T) {
 	assert.Nil(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.IncrementBalance(context.Background(), marginMoneyTrader, num.NewUint(0).Mul(price, num.NewUint(5)))
+	err = eng.Engine.IncrementBalance(context.Background(), marginMoneyTrader, num.Sum(priceX3, price, price))
 	assert.Nil(t, err)
 
 	pos := []*types.Transfer{
@@ -947,7 +949,7 @@ func testProcessBoth(t *testing.T) {
 	// total balance of settlement account should be 3 times price
 	for _, bal := range resp.Balances {
 		if bal.Account.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
-			assert.Equal(t, num.NewUint(0), bal.Account.Balance)
+			assert.True(t, bal.Account.Balance.IsZero())
 		}
 	}
 	// resp = responses[1]
