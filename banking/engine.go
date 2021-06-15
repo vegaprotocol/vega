@@ -379,7 +379,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.withdrawals[w.ID] = withdrawalRef{w, ref}
 		e.log.Error("unable to start aggregating signature for the withdrawal",
-			logging.String("withdrawal-id", w.ID),
+			logging.WithdrawalID(w.ID),
 			logging.PartyID(party),
 			logging.AssetID(assetID),
 			logging.BigUint("amount", amount),
@@ -395,7 +395,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 		// we may not be able to sign for some reason, but other may be able
 		// and we would aggregate enough signature
 		e.log.Error("unable to sign withdrawal",
-			logging.String("withdrawal-id", w.ID),
+			logging.WithdrawalID(w.ID),
 			logging.PartyID(party),
 			logging.AssetID(assetID),
 			logging.BigUint("amount", amount),
@@ -410,7 +410,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 		// we may not be able to sign for some reason, but other may be able
 		// and we would aggregate enough signature
 		e.log.Error("unable to send node signature",
-			logging.String("withdrawal-id", w.ID),
+			logging.WithdrawalID(w.ID),
 			logging.PartyID(party),
 			logging.AssetID(assetID),
 			logging.BigUint("amount", amount),
