@@ -186,11 +186,9 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
 		retPrice := markPrice.Clone()
 		if order.Offset > 0 {
-			retPrice.Add(retPrice, num.NewUint(uint64(order.Offset)))
-		} else {
-			retPrice.Sub(retPrice, num.NewUint(uint64(-order.Offset)))
+			return retPrice.Add(retPrice, num.NewUint(uint64(order.Offset))), order, nil
 		}
-		return retPrice, order, nil
+		return retPrice.Sub(retPrice, num.NewUint(uint64(-order.Offset))), order, nil
 	}
 
 	// Expectations
