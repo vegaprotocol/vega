@@ -2,14 +2,14 @@ package assets
 
 import (
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 )
 
 // Plugin Exports functions for fetching assets
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/assets Plugin
 type Plugin interface {
-	GetByID(string) (*types.Asset, error)
-	GetAll() []types.Asset
+	GetByID(string) (*proto.Asset, error)
+	GetAll() []proto.Asset
 }
 
 // Svc is governance service, responsible for managing proposals and votes.
@@ -45,10 +45,10 @@ func (s *Svc) ReloadConf(cfg Config) {
 	s.cfg = cfg
 }
 
-func (s *Svc) GetByID(id string) (*types.Asset, error) {
+func (s *Svc) GetByID(id string) (*proto.Asset, error) {
 	return s.p.GetByID(id)
 }
 
-func (s *Svc) GetAll() ([]types.Asset, error) {
+func (s *Svc) GetAll() ([]proto.Asset, error) {
 	return s.p.GetAll(), nil
 }

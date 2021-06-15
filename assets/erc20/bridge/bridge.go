@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strings"
 
+	"code.vegaprotocol.io/vega/types/num"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

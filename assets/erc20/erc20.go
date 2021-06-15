@@ -16,7 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
-
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -241,8 +241,8 @@ func (b *ERC20) ValidateAssetList(w *proto.ERC20AssetList, blockNumber, txIndex 
 }
 
 func (b *ERC20) SignWithdrawal(
-	amount uint64,
-	expiry int64,
+	amount *num.Uint,
+	expirationDate int64,
 	ethPartyAddress string,
 	withdrawRef *big.Int,
 ) (msg []byte, sig []byte, err error) {
@@ -296,7 +296,7 @@ func (b *ERC20) SignWithdrawal(
 	// we use the withdrawRef as a nonce
 	// they are unique as generated as an increment from the banking
 	// layer
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(int64(amount)), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
+	buf, err := args.Pack([]interface{}{addr, amount, big.NewInt(expirationDate), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}

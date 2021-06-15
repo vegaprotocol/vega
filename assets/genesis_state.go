@@ -4,17 +4,17 @@ import (
 	"encoding/hex"
 	"encoding/json"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	"golang.org/x/crypto/sha3"
 )
 
 type GenesisState struct {
-	Builtins map[string]types.BuiltinAsset
-	ERC20    map[string]types.ERC20
+	Builtins map[string]proto.BuiltinAsset
+	ERC20    map[string]proto.ERC20
 }
 
 var (
-	governanceAsset = types.BuiltinAsset{
+	governanceAsset = proto.BuiltinAsset{
 		Name:                "VOTE",
 		Symbol:              "VOTE",
 		TotalSupply:         "0",
@@ -22,7 +22,7 @@ var (
 		MaxFaucetAmountMint: "100000",
 	}
 
-	defaultBuiltins = []types.BuiltinAsset{
+	defaultBuiltins = []proto.BuiltinAsset{
 		{
 			Name:                "Ether",
 			Symbol:              "ETH",
@@ -46,7 +46,7 @@ var (
 		},
 	}
 
-	defaultERC20s = []types.ERC20{
+	defaultERC20s = []proto.ERC20{
 		{
 			ContractAddress: "0x308C71DE1FdA14db838555188211Fc87ef349272",
 		},
@@ -54,8 +54,8 @@ var (
 )
 
 func DefaultGenesisState() GenesisState {
-	builtins := make(map[string]types.BuiltinAsset, len(defaultBuiltins))
-	erc20s := make(map[string]types.ERC20, len(defaultERC20s))
+	builtins := make(map[string]proto.BuiltinAsset, len(defaultBuiltins))
+	erc20s := make(map[string]proto.ERC20, len(defaultERC20s))
 
 	h := func(key []byte) []byte {
 		hasher := sha3.New256()
@@ -66,8 +66,8 @@ func DefaultGenesisState() GenesisState {
 	builtins["VOTE"] = governanceAsset
 
 	for _, v := range defaultBuiltins {
-		assetSrc := types.AssetSource{
-			Source: &types.AssetSource_BuiltinAsset{
+		assetSrc := proto.AssetSource{
+			Source: &proto.AssetSource_BuiltinAsset{
 				BuiltinAsset: &v,
 			},
 		}
@@ -75,8 +75,8 @@ func DefaultGenesisState() GenesisState {
 	}
 
 	for _, v := range defaultERC20s {
-		assetSrc := types.AssetSource{
-			Source: &types.AssetSource_Erc20{
+		assetSrc := proto.AssetSource{
+			Source: &proto.AssetSource_Erc20{
 				Erc20: &v,
 			},
 		}

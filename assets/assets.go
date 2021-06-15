@@ -10,13 +10,13 @@ import (
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 )
 
 var (
-	ErrAssetInvalid      = errors.New("asset invalid")
-	ErrAssetDoesNotExist = errors.New("asset does not exist")
-	ErrUnknowAssetSource = errors.New("unknown asset source")
+	ErrAssetInvalid       = errors.New("asset invalid")
+	ErrAssetDoesNotExist  = errors.New("asset does not exist")
+	ErrUnknownAssetSource = errors.New("unknown asset source")
 )
 
 // TimeService ...
@@ -106,15 +106,15 @@ func (s *Service) IsEnabled(assetID string) bool {
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
-func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string, error) {
+func (s *Service) NewAsset(assetID string, assetSrc *proto.AssetSource) (string, error) {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
 	switch assetSrcImpl := assetSrc.Source.(type) {
-	case *types.AssetSource_BuiltinAsset:
+	case *proto.AssetSource_BuiltinAsset:
 		s.pendingAssets[assetID] = &Asset{
 			builtin.New(assetID, assetSrcImpl.BuiltinAsset),
 		}
-	case *types.AssetSource_Erc20:
+	case *proto.AssetSource_Erc20:
 		wal, ok := s.nw.Get(nodewallet.Ethereum)
 		if !ok {
 			return "", errors.New("missing wallet for ETH")
@@ -125,7 +125,7 @@ func (s *Service) NewAsset(assetID string, assetSrc *types.AssetSource) (string,
 		}
 		s.pendingAssets[assetID] = &Asset{asset}
 	default:
-		return "", ErrUnknowAssetSource
+		return "", ErrUnknownAssetSource
 	}
 
 	return assetID, nil
