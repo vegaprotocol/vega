@@ -63,7 +63,7 @@ func (e *Engine) AmendLiquidityProvision(
 	e.liquidityOrders[party] = map[string]*types.Order{}
 	// then update the LP
 	lp.UpdatedAt = e.currentTime.UnixNano()
-	lp.CommitmentAmount = lps.CommitmentAmount
+	lp.CommitmentAmount = num.NewUint(lps.CommitmentAmount)
 	lp.Fee = lps.Fee
 	lp.Reference = lps.Reference
 	// only if it's active, we don't want to loose a PENDING
