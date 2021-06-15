@@ -51,7 +51,7 @@ func (n marginUpdate) GeneralBalance() *num.Uint {
 	if n.bond != nil && n.bond.Balance != nil {
 		bond = n.bond.Balance
 	}
-	return num.NewUint(0).Add(bond, gen)
+	return num.Sum(bond, gen)
 }
 
 func (n marginUpdate) MarginShortFall() *num.Uint {
@@ -60,7 +60,7 @@ func (n marginUpdate) MarginShortFall() *num.Uint {
 
 func (n marginUpdate) BondBalance() *num.Uint {
 	if n.bond == nil {
-		return num.NewUint(0)
+		return nil
 	}
 	return n.bond.Balance
 }
