@@ -13,12 +13,12 @@ type Uint struct {
 }
 
 // NewUint creates a new Uint with the value of the
-// uint64 passed as a paramter.
+// uint64 passed as a parameter.
 func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
 }
 
-// FromBig construct a new Uint with a big.Int
+// UintFromBig construct a new Uint with a big.Int
 // returns true if overflow happened
 func UintFromBig(b *big.Int) (*Uint, bool) {
 	u, ok := uint256.FromBig(b)
@@ -29,7 +29,7 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 	return &Uint{*u}, false
 }
 
-// FromString created a new Uint from a string
+// UintFromString created a new Uint from a string
 // interpreted using the give base.
 // A big.Int is used to read the string, so
 // all error related to big.Int parsing applied here.
@@ -48,56 +48,56 @@ func Sum(vals ...*Uint) *Uint {
 	return NewUint(0).AddSum(vals...)
 }
 
-func (z *Uint) Set(oth *Uint) *Uint {
-	z.u.Set(&oth.u)
-	return z
+func (u *Uint) Set(oth *Uint) *Uint {
+	u.u.Set(&oth.u)
+	return u
 }
 
-func (z *Uint) SetUint64(val uint64) *Uint {
-	z.u.SetUint64(val)
-	return z
+func (u *Uint) SetUint64(val uint64) *Uint {
+	u.u.SetUint64(val)
+	return u
 }
 
-func (z Uint) Uint64() uint64 {
-	return z.u.Uint64()
+func (u Uint) Uint64() uint64 {
+	return u.u.Uint64()
 }
 
 // Add will add x and y then store the result
 // into u
 // this is equivalent to:
-// `z = x + y`
+// `u = x + y`
 // u is returned for convenience, no
 // new variable is created.
-func (z *Uint) Add(x, y *Uint) *Uint {
-	z.u.Add(&x.u, &y.u)
-	return z
+func (u *Uint) Add(x, y *Uint) *Uint {
+	u.u.Add(&x.u, &y.u)
+	return u
 }
 
 // AddSum adds multiple values at the same time to a given uint
 // so x.AddSum(y, z) is equivalent to x + y + z
-func (z *Uint) AddSum(vals ...*Uint) *Uint {
+func (u *Uint) AddSum(vals ...*Uint) *Uint {
 	for _, x := range vals {
-		z.u.Add(&z.u, &x.u)
+		u.u.Add(&u.u, &x.u)
 	}
-	return z
+	return u
 }
 
-// AddOverflow will substract y to x then store the result
+// AddOverflow will subtract y to x then store the result
 // into u
 // this is equivalent to:
-// `z = x - y`
+// `u = x - y`
 // u is returned for convenience, no
 // new variable is created.
-// False is returned if an overflow occured
-func (z *Uint) AddOverflow(x, y *Uint) (*Uint, bool) {
-	_, ok := z.u.AddOverflow(&x.u, &y.u)
-	return z, ok
+// False is returned if an overflow occurred
+func (u *Uint) AddOverflow(x, y *Uint) (*Uint, bool) {
+	_, ok := u.u.AddOverflow(&x.u, &y.u)
+	return u, ok
 }
 
-// Sub will substract y to x then store the result
+// Sub will subtract y to x then store the result
 // into u
 // this is equivalent to:
-// `z = x - y`
+// `u = x - y`
 // u is returned for convenience, no
 // new variable is created.
 func (u *Uint) Sub(x, y *Uint) *Uint {
@@ -105,40 +105,40 @@ func (u *Uint) Sub(x, y *Uint) *Uint {
 	return u
 }
 
-// SubOverflow will substract y to x then store the result
+// SubOverflow will subtract y to x then store the result
 // into u
 // this is equivalent to:
-// `z = x - y`
+// `u = x - y`
 // u is returned for convenience, no
 // new variable is created.
-// False is returned if an overflow occured
-func (z *Uint) SubOverflow(x, y *Uint) (*Uint, bool) {
-	_, ok := z.u.SubOverflow(&x.u, &y.u)
-	return z, ok
+// False is returned if an overflow occurred
+func (u *Uint) SubOverflow(x, y *Uint) (*Uint, bool) {
+	_, ok := u.u.SubOverflow(&x.u, &y.u)
+	return u, ok
 }
 
 // Delta will subtract y from x and store the result
 // unless x-y overflowed, in which case the neg field will be set
 // and the result of y - x is set instead
-func (z *Uint) Delta(x, y *Uint) (*Uint, bool) {
+func (u *Uint) Delta(x, y *Uint) (*Uint, bool) {
 	// y is the bigger value - swap the two
 	if y.GT(x) {
-		_ = z.Sub(y, x)
-		return z, true
+		_ = u.Sub(y, x)
+		return u, true
 	}
-	_ = z.Sub(x, y)
-	return z, false
+	_ = u.Sub(x, y)
+	return u, false
 }
 
 // Mul will multiply x and y then store the result
-// into z
+// into u
 // this is equivalent to:
-// `z = x * y`
-// z is returned for convenience, no
+// `u = x * y`
+// u is returned for convenience, no
 // new variable is created.
-func (z *Uint) Mul(x, y *Uint) *Uint {
-	z.u.Mul(&x.u, &y.u)
-	return z
+func (u *Uint) Mul(x, y *Uint) *Uint {
+	u.u.Mul(&x.u, &y.u)
+	return u
 }
 
 // Div will divide x by y then store the result
@@ -233,7 +233,7 @@ func (u Uint) GTUint64(oth uint64) bool {
 }
 
 // GTE with check if the value stored in u is
-// greath than or equal to oth
+// greater than or equal to oth
 // this is equivalent to:
 // `u >= oth`
 func (u Uint) GTE(oth *Uint) bool {
@@ -241,31 +241,31 @@ func (u Uint) GTE(oth *Uint) bool {
 }
 
 // GTEUint64 with check if the value stored in u is
-// greath than or equal to oth
+// greater than or equal to oth
 // this is equivalent to:
 // `u >= oth`
 func (u Uint) GTEUint64(oth uint64) bool {
 	return u.u.GtUint64(oth) || u.EQUint64(oth)
 }
 
-// IsZero return wether u == 0 or not
+// IsZero return whether u == 0 or not
 func (u Uint) IsZero() bool {
 	return u.u.IsZero()
 }
 
 // Copy create a copy of the uint
-// this if the equivalenht to:
-// z = x
-func (z *Uint) Copy(x *Uint) *Uint {
-	z.u = x.u
-	return z
+// this if the equivalent to:
+// u = x
+func (u *Uint) Copy(x *Uint) *Uint {
+	u.u = x.u
+	return u
 }
 
 // Clone create copy of this value
 // this is the equivalent to:
-// x := z
-func (z Uint) Clone() *Uint {
-	return &Uint{z.u}
+// x := u
+func (u Uint) Clone() *Uint {
+	return &Uint{u.u}
 }
 
 // Hex returns the hexadecimal representation
