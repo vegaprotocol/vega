@@ -19,3 +19,7 @@ func DecimalFromUint(u *Uint) Decimal {
 func DecimalFromFloat(v float64) Decimal {
 	return decimal.NewFromFloat(v)
 }
+
+func DecimalFromString(s string) (Decimal, error) {
+	return decimal.NewFromString(s)
+}
