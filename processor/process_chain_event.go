@@ -59,7 +59,8 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *commandsp
 		if err := app.checkVegaAssetID(act.Deposit, "BuiltinAsset.Deposit"); err != nil {
 			return err
 		}
-		return app.banking.DepositBuiltinAsset(ctx, act.Deposit, id, ce.Nonce)
+		deposit := types.NewBuiltinAssetDeposit(act.Deposit)
+		return app.banking.DepositBuiltinAsset(ctx, deposit, id, ce.Nonce)
 	case *types.BuiltinAssetEvent_Withdrawal:
 		if err := app.checkVegaAssetID(act.Withdrawal, "BuiltinAsset.Withdrawal"); err != nil {
 			return err
@@ -101,7 +102,11 @@ func (app *App) processChainEventERC20(
 		if err := app.checkVegaAssetID(act.Deposit, "ERC20.AssetDeposit"); err != nil {
 			return err
 		}
-		return app.banking.DepositERC20(ctx, act.Deposit, id, evt.Block, evt.Index, ce.TxId)
+		deposit, err := types.NewERC20Deposit(act.Deposit)
+		if err != nil {
+			return err
+		}
+		return app.banking.DepositERC20(ctx, deposit, id, evt.Block, evt.Index, ce.TxId)
 	case *types.ERC20Event_Withdrawal:
 		act.Withdrawal.VegaAssetId = strings.TrimPrefix(act.Withdrawal.VegaAssetId, "0x")
 		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {

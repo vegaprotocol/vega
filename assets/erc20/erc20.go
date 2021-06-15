@@ -14,7 +14,8 @@ import (
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/nodewallet"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -37,23 +38,23 @@ var (
 )
 
 type ERC20 struct {
-	asset   *types.Asset
+	asset   *proto.Asset
 	address string
 	ok      bool
 	wallet  nodewallet.ETHWallet
 }
 
-func New(id string, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
+func New(id string, asset *proto.ERC20, w nodewallet.Wallet) (*ERC20, error) {
 	wal, ok := w.(nodewallet.ETHWallet)
 	if !ok {
 		return nil, ErrMissingETHWalletFromNodeWallet
 	}
 
 	return &ERC20{
-		asset: &types.Asset{
+		asset: &proto.Asset{
 			Id: id,
-			Source: &types.AssetSource{
-				Source: &types.AssetSource_Erc20{
+			Source: &proto.AssetSource{
+				Source: &proto.AssetSource_Erc20{
 					Erc20: asset,
 				},
 			},
@@ -63,7 +64,7 @@ func New(id string, asset *types.ERC20, w nodewallet.Wallet) (*ERC20, error) {
 	}, nil
 }
 
-func (b *ERC20) ProtoAsset() *types.Asset {
+func (b *ERC20) ProtoAsset() *proto.Asset {
 	return b.asset
 }
 
@@ -193,7 +194,7 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	return msg, sig, nil
 }
 
-func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) (hash string, logIndex uint, err error) {
+func (b *ERC20) ValidateAssetList(w *proto.ERC20AssetList, blockNumber, txIndex uint64) (hash string, logIndex uint, err error) {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
@@ -329,7 +330,7 @@ func (b *ERC20) SignWithdrawal(
 	return msg, sig, nil
 }
 
-func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {
+func (b *ERC20) ValidateWithdrawal(w *proto.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
@@ -409,13 +410,14 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return "", "", "", 0, 0, err
 	}
 
-	depamount, _ := new(big.Int).SetString(d.Amount, 10)
+	// FIXME We should use num.Uint instead
+	depamount, _ := new(big.Int).SetString(d.Amount.String(), 10)
 	defer iter.Close()
 	var event *bridge.BridgeAssetDeposited
 	for iter.Next() {
 		// here the event queu send us a 0x... pubkey
 		// we do the slice operation to remove it ([2:]
-		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyId[2:] &&
+		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyID[2:] &&
 			iter.Event.Amount.Cmp(depamount) == 0 &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
 			uint64(iter.Event.Raw.Index) == txIndex {
@@ -433,7 +435,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return "", "", "", 0, 0, err
 	}
 
-	return d.TargetPartyId, d.VegaAssetId, event.Raw.TxHash.Hex(), iter.Event.Amount.Uint64(), event.Raw.Index, nil
+	return d.TargetPartyID, d.VegaAssetID, event.Raw.TxHash.Hex(), iter.Event.Amount.Uint64(), event.Raw.Index, nil
 }
 
 func (b *ERC20) checkConfirmations(txBlock uint64) error {
