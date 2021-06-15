@@ -2,7 +2,6 @@ package collateral
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 	"sort"
 	"sync"
@@ -182,11 +181,12 @@ func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
 }
 
 func (e *Engine) Hash() []byte {
-	output := make([]byte, len(e.hashableAccs)*8)
+	output := make([]byte, len(e.hashableAccs)*32)
 	var i int
 	for _, k := range e.hashableAccs {
-		binary.BigEndian.PutUint64(output[i:], k.Balance.Uint64())
-		i += 8
+		bal := k.Balance.Bytes()
+		copy(output[i:], bal[:])
+		i += 32
 	}
 
 	return crypto.Hash(output)
