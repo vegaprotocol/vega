@@ -2339,7 +2339,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
-			Source: &types.AssetDetails_BuiltinAsset{
+			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
 		},

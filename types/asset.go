@@ -20,8 +20,8 @@ type AssetDetails struct {
 	TotalSupply *num.Uint
 	Decimals    uint64
 	MinLpStake  *num.Uint
-	//	*AssetDetails_BuiltinAsset
-	//	*AssetDetails_Erc20
+	//	*AssetDetailsBuiltinAsset
+	//	*AssetDetailsErc20
 	Source isAssetDetails
 }
 
@@ -31,7 +31,7 @@ type isAssetDetails interface {
 	DeepClone() isAssetDetails
 }
 
-type AssetDetails_BuiltinAsset struct {
+type AssetDetailsBuiltinAsset struct {
 	BuiltinAsset *BuiltinAsset
 }
 
@@ -40,7 +40,7 @@ type BuiltinAsset struct {
 	MaxFaucetAmountMint *num.Uint
 }
 
-type AssetDetails_Erc20 struct {
+type AssetDetailsErc20 struct {
 	Erc20 *ERC20
 }
 
@@ -101,7 +101,7 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 	}
 }
 
-func (a AssetDetails_BuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
+func (a AssetDetailsBuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
 	return &proto.AssetDetails_BuiltinAsset{
 		BuiltinAsset: &proto.BuiltinAsset{
 			MaxFaucetAmountMint: a.BuiltinAsset.MaxFaucetAmountMint.String(),
@@ -109,22 +109,22 @@ func (a AssetDetails_BuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset 
 	}
 }
 
-func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDetails_BuiltinAsset {
+func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDetailsBuiltinAsset {
 	max, _ := num.UintFromString(p.BuiltinAsset.MaxFaucetAmountMint, 10)
-	return &AssetDetails_BuiltinAsset{
+	return &AssetDetailsBuiltinAsset{
 		BuiltinAsset: &BuiltinAsset{
 			MaxFaucetAmountMint: max,
 		},
 	}
 }
 
-func (a AssetDetails_BuiltinAsset) adIntoProto() interface{} {
+func (a AssetDetailsBuiltinAsset) adIntoProto() interface{} {
 	return a.IntoProto()
 }
 
-func (AssetDetails_BuiltinAsset) isAssetDetails() {}
+func (AssetDetailsBuiltinAsset) isAssetDetails() {}
 
-func (a AssetDetails_BuiltinAsset) DeepClone() isAssetDetails {
+func (a AssetDetailsBuiltinAsset) DeepClone() isAssetDetails {
 	cpy := a
 	if a.BuiltinAsset == nil {
 		return &cpy
@@ -135,7 +135,7 @@ func (a AssetDetails_BuiltinAsset) DeepClone() isAssetDetails {
 	return &cpy
 }
 
-func (a AssetDetails_Erc20) IntoProto() *proto.AssetDetails_Erc20 {
+func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
 	return &proto.AssetDetails_Erc20{
 		Erc20: &proto.ERC20{
 			ContractAddress: a.Erc20.ContractAddress,
@@ -143,21 +143,21 @@ func (a AssetDetails_Erc20) IntoProto() *proto.AssetDetails_Erc20 {
 	}
 }
 
-func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) *AssetDetails_Erc20 {
-	return &AssetDetails_Erc20{
+func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) *AssetDetailsErc20 {
+	return &AssetDetailsErc20{
 		Erc20: &ERC20{
 			ContractAddress: p.Erc20.ContractAddress,
 		},
 	}
 }
 
-func (a AssetDetails_Erc20) adIntoProto() interface{} {
+func (a AssetDetailsErc20) adIntoProto() interface{} {
 	return a.IntoProto()
 }
 
-func (AssetDetails_Erc20) isAssetDetails() {}
+func (AssetDetailsErc20) isAssetDetails() {}
 
-func (a AssetDetails_Erc20) DeepClone() isAssetDetails {
+func (a AssetDetailsErc20) DeepClone() isAssetDetails {
 	cpy := a
 	return &cpy
 }

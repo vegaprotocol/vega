@@ -3,23 +3,24 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Deposit struct {
 	*Base
-	d types.Deposit
+	d proto.Deposit
 }
 
 func NewDepositEvent(ctx context.Context, d types.Deposit) *Deposit {
 	return &Deposit{
 		Base: newBase(ctx, DepositEvent),
-		d:    d,
+		d:    *d.IntoProto(),
 	}
 }
 
-func (d *Deposit) Deposit() types.Deposit {
+func (d *Deposit) Deposit() proto.Deposit {
 	return d.d
 }
 
@@ -29,7 +30,7 @@ func (d Deposit) IsParty(id string) bool {
 
 func (d Deposit) PartyID() string { return d.d.PartyId }
 
-func (d Deposit) Proto() types.Deposit {
+func (d Deposit) Proto() proto.Deposit {
 	return d.d
 }
 

@@ -193,6 +193,10 @@ func AssetID(id string) zap.Field {
 	return zap.String("asset-id", id)
 }
 
+func WithdrawalID(id string) zap.Field {
+	return zap.String("withdrawal-id", id)
+}
+
 func LiquidityID(id string) zap.Field {
 	return zap.String("liquidity-id", id)
 }
