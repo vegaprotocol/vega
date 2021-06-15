@@ -1259,8 +1259,8 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 		req.ToAccount = []*types.Account{
 			mEvt.margin,
 		}
-		req.Amount = p.Amount.Amount
-		req.MinAmount = p.MinAmount
+		req.Amount = p.Amount.Amount.Clone()
+		req.MinAmount = p.MinAmount.Clone()
 	case types.TransferType_TRANSFER_TYPE_MARGIN_HIGH:
 		req.FromAccount = []*types.Account{
 			mEvt.margin,
@@ -1268,8 +1268,8 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 		req.ToAccount = []*types.Account{
 			mEvt.general,
 		}
-		req.Amount = p.Amount.Amount
-		req.MinAmount = p.MinAmount
+		req.Amount = p.Amount.Amount.Clone()
+		req.MinAmount = p.MinAmount.Clone()
 	case types.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK:
 		req.FromAccount = []*types.Account{
 			mEvt.general,
@@ -1277,8 +1277,8 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 		req.ToAccount = []*types.Account{
 			mEvt.lock,
 		}
-		req.Amount = p.Amount.Amount
-		req.MinAmount = p.Amount.Amount
+		req.Amount = p.Amount.Amount.Clone()
+		req.MinAmount = p.Amount.Amount.Clone()
 	case types.TransferType_TRANSFER_TYPE_DEPOSIT:
 		// ensure we have the funds req.ToAccount deposit
 		eacc.Balance = eacc.Balance.Add(eacc.Balance, p.Amount.Amount)
@@ -1288,8 +1288,8 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 		req.ToAccount = []*types.Account{
 			mEvt.general,
 		}
-		req.Amount = p.Amount.Amount
-		req.MinAmount = p.Amount.Amount
+		req.Amount = p.Amount.Amount.Clone()
+		req.MinAmount = p.Amount.Amount.Clone()
 	case types.TransferType_TRANSFER_TYPE_WITHDRAW:
 		req.FromAccount = []*types.Account{
 			mEvt.lock,
@@ -1297,8 +1297,8 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 		req.ToAccount = []*types.Account{
 			eacc,
 		}
-		req.Amount = p.Amount.Amount
-		req.MinAmount = p.Amount.Amount
+		req.Amount = p.Amount.Amount.Clone()
+		req.MinAmount = p.Amount.Amount.Clone()
 	default:
 		return nil, errors.New("unexpected transfer type")
 	}
