@@ -5,10 +5,10 @@ package types
 import (
 	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type Deposit = proto.Deposit
-type Withdrawal = proto.Withdrawal
 type WithdrawExt = proto.WithdrawExt
 type WithdrawExt_Erc20 = proto.WithdrawExt_Erc20
 type BuiltinAssetDeposit = proto.BuiltinAssetDeposit
@@ -55,3 +55,45 @@ const (
 	// The deposit has been finalised and accounts have been updated
 	Deposit_STATUS_FINALIZED Deposit_Status = 3
 )
+
+type Withdrawal struct {
+	// Unique identifier for the withdrawal
+	ID string
+	// Unique party identifier of the user initiating the withdrawal
+	PartyID string
+	// The amount to be withdrawn
+	Amount *num.Uint
+	// The asset we want to withdraw funds from
+	Asset string
+	// The status of the withdrawal
+	Status Withdrawal_Status
+	// The reference which is used by the foreign chain
+	// to refer to this withdrawal
+	Ref string
+	// The hash of the foreign chain for this transaction
+	TxHash string
+	// Timestamp for when the network started to process this withdrawal
+	CreationDate int64
+	// Timestamp for when the withdrawal was finalised by the network
+	WithdrawalDate int64
+	// The time until when the withdrawal is valid
+	ExpirationDate int64
+	// Foreign chain specifics
+	Ext *WithdrawExt
+}
+
+func (w *Withdrawal) IntoProto() *proto.Withdrawal {
+	return &proto.Withdrawal{
+		Id:                 w.ID,
+		PartyId:            w.PartyID,
+		Amount:             w.Amount.Uint64(),
+		Asset:              w.Asset,
+		Status:             w.Status,
+		Ref:                w.Ref,
+		TxHash:             w.TxHash,
+		Expiry:             w.ExpirationDate,
+		CreatedTimestamp:   w.CreationDate,
+		WithdrawnTimestamp: w.WithdrawalDate,
+		Ext:                w.Ext,
+	}
+}
