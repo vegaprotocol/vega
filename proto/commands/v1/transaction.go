@@ -17,7 +17,7 @@ func NewTransaction(pubKey, data []byte, signature *Signature) *Transaction {
 
 func NewTransactionPubKey(pubKey []byte) *Transaction_PubKey {
 	return &Transaction_PubKey{
-		PubKey: hex.EncodeToString(pubKey),
+		PubKey: []byte(hex.EncodeToString(pubKey)),
 	}
 }
 
@@ -30,7 +30,7 @@ func NewInputData(height uint64) *InputData {
 
 func NewSignature(sig []byte, algo string, version uint32) *Signature {
 	return &Signature{
-		Value:   hex.EncodeToString(sig),
+		Bytes:   []byte(hex.EncodeToString(sig)),
 		Algo:    algo,
 		Version: version,
 	}
