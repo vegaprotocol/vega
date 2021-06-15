@@ -85,13 +85,6 @@ func (f *LogNormal) ProbabilityOfTrading(currentPrice, yearFraction, orderPrice 
 	if applyMinMax {
 		//Floor min price at zero since lognormal distribution has support [0, inf)
 		minPrice = math.Max(minPrice, 0)
-		if isBid {
-			//It is a buy order so only prices smaller than currentPrice will ever be allowed
-			maxPrice = currentPrice
-		} else {
-			//It is a sell order so only prices greater than currentPrice will ever be allowed
-			minPrice = currentPrice
-		}
 	}
 
 	return pd.ProbabilityOfTrading(dist, orderPrice, isBid, applyMinMax, minPrice, maxPrice)

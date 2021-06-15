@@ -16,7 +16,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the simple risk model named "simple-risk-model-1":
        | long | short | max move up | min move down | probability of trading |
-       | 0.1  | 0.1   | 100         | -100          | 0.1                    |
+       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee | liquidity fee |
       | 0.004     | 0.001              | 0.3           |
@@ -158,9 +158,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader1          |  10    | 0              | 0            |
       | trader2          | -10    | 0              | 0            |
 
-    And the market data for the market "ETH2/MAR22" should be:
-       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
-       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
+    # And the market data for the market "ETH2/MAR22" should be:
+    #    | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
+    #    | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
     
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
@@ -209,9 +209,9 @@ Feature: Test margin for lp near price monitoring boundaries
        | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
     
 
-    # # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
-    # # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
-    # # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
+    # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
+    # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
+    # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
 
     Then the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
