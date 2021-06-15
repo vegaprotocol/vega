@@ -107,7 +107,7 @@ func (e *Engine) GetPotentialShapeOrders(
 			if err != nil {
 				return nil, false
 			}
-			order.Price.Copy(price)
+			order.Price = price
 			shape = append(shape, order)
 		}
 		return shape, true
