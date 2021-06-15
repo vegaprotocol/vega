@@ -11,11 +11,8 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type Deposit = proto.Deposit
-type Withdrawal = proto.Withdrawal
 type WithdrawExt = proto.WithdrawExt
 type WithdrawExt_Erc20 = proto.WithdrawExt_Erc20
-
 type Erc20WithdrawExt = proto.Erc20WithdrawExt
 type ChainEvent_Btc = commandspb.ChainEvent_Btc
 type ChainEvent_Validator = commandspb.ChainEvent_Validator
@@ -25,29 +22,104 @@ type BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
 type Withdrawal_Status = proto.Withdrawal_Status
 
 const (
-	// Default value, always invalid
+	// Withdrawal_STATUS_UNSPECIFIED Default value, always invalid
 	Withdrawal_STATUS_UNSPECIFIED Withdrawal_Status = 0
-	// The withdrawal is open and being processed by the network
+	// Withdrawal_STATUS_OPEN The withdrawal is open and being processed by the network
 	Withdrawal_STATUS_OPEN Withdrawal_Status = 1
-	// The withdrawal have been cancelled
+	// Withdrawal_STATUS_CANCELLED The withdrawal have been cancelled
 	Withdrawal_STATUS_CANCELLED Withdrawal_Status = 2
-	// The withdrawal went through and is fully finalised, the funds are removed from the
+	// Withdrawal_STATUS_FINALIZED The withdrawal went through and is fully finalised, the funds are removed from the
 	// Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network
 	Withdrawal_STATUS_FINALIZED Withdrawal_Status = 3
 )
 
+type Withdrawal struct {
+	// ID Unique identifier for the withdrawal
+	ID string
+	// PartyID Unique party identifier of the user initiating the withdrawal
+	PartyID string
+	// Amount The amount to be withdrawn
+	Amount *num.Uint
+	// Asset The asset we want to withdraw funds from
+	Asset string
+	// Status The status of the withdrawal
+	Status Withdrawal_Status
+	// Ref The reference which is used by the foreign chain
+	// to refer to this withdrawal
+	Ref string
+	// TxHash The hash of the foreign chain for this transaction
+	TxHash string
+	// CreationDate Timestamp for when the network started to process this withdrawal
+	CreationDate int64
+	// WithdrawalDate Timestamp for when the withdrawal was finalised by the network
+	WithdrawalDate int64
+	// ExpirationDate The time until when the withdrawal is valid
+	ExpirationDate int64
+	// Ext Foreign chain specifics
+	Ext *WithdrawExt
+}
+
+func (w *Withdrawal) IntoProto() *proto.Withdrawal {
+	return &proto.Withdrawal{
+		Id:                 w.ID,
+		PartyId:            w.PartyID,
+		Amount:             w.Amount.Uint64(),
+		Asset:              w.Asset,
+		Status:             w.Status,
+		Ref:                w.Ref,
+		TxHash:             w.TxHash,
+		Expiry:             w.ExpirationDate,
+		CreatedTimestamp:   w.CreationDate,
+		WithdrawnTimestamp: w.WithdrawalDate,
+		Ext:                w.Ext,
+	}
+}
+
 type Deposit_Status = proto.Deposit_Status
 
 const (
-	// Default value, always invalid
+	// Deposit_STATUS_UNSPECIFIED Default value, always invalid
 	Deposit_STATUS_UNSPECIFIED Deposit_Status = 0
-	// The deposit is being processed by the network
+	// Deposit_STATUS_OPEN The deposit is being processed by the network
 	Deposit_STATUS_OPEN Deposit_Status = 1
-	// The deposit has been cancelled by the network
+	// Deposit_STATUS_CANCELLED The deposit has been cancelled by the network
 	Deposit_STATUS_CANCELLED Deposit_Status = 2
-	// The deposit has been finalised and accounts have been updated
+	// Deposit_STATUS_FINALIZED The deposit has been finalised and accounts have been updated
 	Deposit_STATUS_FINALIZED Deposit_Status = 3
 )
+
+// Deposit represent a deposit on to the Vega network
+type Deposit struct {
+	// ID Unique identifier for the deposit
+	ID string
+	// Status of the deposit
+	Status Deposit_Status
+	// Party identifier of the user initiating the deposit
+	PartyID string
+	// Asset The Vega asset targeted by this deposit
+	Asset string
+	// Amount The amount to be deposited
+	Amount *num.Uint
+	// TxHash The hash of the transaction from the foreign chain
+	TxHash string
+	// Timestamp for when the Vega account was updated with the deposit
+	CreditDate int64
+	// Timestamp for when the deposit was created on the Vega network
+	CreationDate int64
+}
+
+func (d *Deposit) IntoProto() *proto.Deposit {
+	return &proto.Deposit{
+		Id:                d.ID,
+		Status:            d.Status,
+		PartyId:           d.PartyID,
+		Asset:             d.Asset,
+		Amount:            d.Amount.String(),
+		TxHash:            d.TxHash,
+		CreditedTimestamp: d.CreditDate,
+		CreatedTimestamp:  d.CreationDate,
+	}
+}
 
 type ChainEventERC20 struct {
 	ERC20 *ERC20Event
@@ -76,17 +148,17 @@ func (c ChainEventERC20) String() string {
 
 type BuiltinAssetDeposit struct {
 	// A Vega network internal asset identifier
-	VegaAssetId string
+	VegaAssetID string
 	// A Vega party identifier (pub-key)
-	PartyId string
+	PartyID string
 	// The amount to be deposited
 	Amount *num.Uint
 }
 
 func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
 	b := BuiltinAssetDeposit{
-		VegaAssetId: p.VegaAssetId,
-		PartyId:     p.PartyId,
+		VegaAssetID: p.VegaAssetId,
+		PartyID:     p.PartyId,
 		Amount:      num.NewUint(p.Amount),
 	}
 	return &b, nil
@@ -94,8 +166,8 @@ func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAsse
 
 func (b BuiltinAssetDeposit) IntoProto() *proto.BuiltinAssetDeposit {
 	bd := &proto.BuiltinAssetDeposit{
-		VegaAssetId: b.VegaAssetId,
-		PartyId:     b.PartyId,
+		VegaAssetId: b.VegaAssetID,
+		PartyId:     b.PartyID,
 		Amount:      b.Amount.Uint64(),
 	}
 	return bd
@@ -106,7 +178,7 @@ func (b BuiltinAssetDeposit) String() string {
 }
 
 func (b BuiltinAssetDeposit) GetVegaAssetId() string {
-	return b.VegaAssetId
+	return b.VegaAssetID
 }
 
 type BuiltinAssetWithdrawal struct {
@@ -538,20 +610,20 @@ func (e ERC20EventDeposit) IntoProto() *proto.ERC20Event_Deposit {
 
 type ERC20Deposit struct {
 	// The vega network internal identifier of the asset
-	VegaAssetId string
+	VegaAssetID string
 	// The Ethereum wallet that initiated the deposit
 	SourceEthereumAddress string
 	// The Vega party identifier (pub-key) which is the target of the deposit
-	TargetPartyId string
+	TargetPartyID string
 	// The amount to be deposited
 	Amount *num.Uint
 }
 
 func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
 	e := ERC20Deposit{
-		VegaAssetId:           p.VegaAssetId,
+		VegaAssetID:           p.VegaAssetId,
 		SourceEthereumAddress: p.SourceEthereumAddress,
-		TargetPartyId:         p.TargetPartyId,
+		TargetPartyID:         p.TargetPartyId,
 	}
 	var failed bool
 	e.Amount, failed = num.UintFromString(p.Amount, 10)
@@ -563,9 +635,9 @@ func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
 
 func (e ERC20Deposit) IntoProto() *proto.ERC20Deposit {
 	erc := &proto.ERC20Deposit{
-		VegaAssetId:           e.VegaAssetId,
+		VegaAssetId:           e.VegaAssetID,
 		SourceEthereumAddress: e.SourceEthereumAddress,
-		TargetPartyId:         e.TargetPartyId,
+		TargetPartyId:         e.TargetPartyID,
 		Amount:                e.Amount.String(),
 	}
 	return erc
@@ -576,5 +648,5 @@ func (e ERC20Deposit) String() string {
 }
 
 func (e ERC20Deposit) GetVegaAssetId() string {
-	return e.VegaAssetId
+	return e.VegaAssetID
 }

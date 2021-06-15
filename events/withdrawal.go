@@ -3,23 +3,24 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Withdrawal struct {
 	*Base
-	w types.Withdrawal
+	w proto.Withdrawal
 }
 
 func NewWithdrawalEvent(ctx context.Context, w types.Withdrawal) *Withdrawal {
 	return &Withdrawal{
 		Base: newBase(ctx, WithdrawalEvent),
-		w:    w,
+		w:    *w.IntoProto(),
 	}
 }
 
-func (w *Withdrawal) Withdrawal() types.Withdrawal {
+func (w *Withdrawal) Withdrawal() proto.Withdrawal {
 	return w.w
 }
 
@@ -29,7 +30,7 @@ func (w Withdrawal) IsParty(id string) bool {
 
 func (w Withdrawal) PartyID() string { return w.w.PartyId }
 
-func (w Withdrawal) Proto() types.Withdrawal {
+func (w Withdrawal) Proto() proto.Withdrawal {
 	return w.w
 }
 
