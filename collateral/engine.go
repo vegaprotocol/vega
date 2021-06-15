@@ -779,7 +779,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		bond:            bondAcc,
 		asset:           asset,
 		marketID:        marketID,
-		marginShortFall: nil,
+		marginShortFall: num.NewUint(0),
 	}, nil
 }
 
@@ -798,9 +798,10 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		transfer := update.Transfer()
 		// although this is mainly a duplicate event, we need to pass it to getTransferRequest
 		mevt := &marginUpdate{
-			MarketPosition: update,
-			asset:          update.Asset(),
-			marketID:       update.MarketID(),
+			MarketPosition:  update,
+			asset:           update.Asset(),
+			marketID:        update.MarketID(),
+			marginShortFall: num.NewUint(0),
 		}
 
 		req, err := e.getTransferRequest(ctx, transfer, settle, nil, mevt)
@@ -810,7 +811,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 
 		// calculate the marginShortFall in case of a liquidityProvider
 		if mevt.bond != nil && transfer.Amount.Amount.GT(mevt.general.Balance) {
-			mevt.marginShortFall = num.NewUint(0).Sub(transfer.Amount.Amount, mevt.general.Balance)
+			mevt.marginShortFall.Sub(transfer.Amount.Amount, mevt.general.Balance)
 		}
 
 		res, err := e.getLedgerEntries(ctx, req)
@@ -829,7 +830,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		if transfer.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW &&
 			res.Balances[0].Account.Balance.LT(num.Sum(update.MarginBalance(), transfer.MinAmount)) {
 			closed = append(closed, mevt)
-		} else if mevt.marginShortFall != nil && !mevt.marginShortFall.IsZero() {
+		} else if !mevt.marginShortFall.IsZero() {
 			// party not closed out, but could also not fulfill it's margin requirement
 			// from it's general account we need to return this information so penalty can be
 			// calculated an taken out from him.
@@ -884,12 +885,13 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 			general,
 		},
 		Amount:    transfer.Amount.Amount.Clone(),
-		MinAmount: transfer.MinAmount,
+		MinAmount: num.NewUint(0),
 		Asset:     assetID,
 		Reference: transfer.Type.String(),
 	}
-	if req.MinAmount != nil {
-		req.MinAmount = req.MinAmount.Clone()
+	// @TODO we should be able to clone the min amount regardless
+	if transfer.MinAmount != nil {
+		req.MinAmount.Set(transfer.MinAmount)
 	}
 
 	res, err := e.getLedgerEntries(ctx, req)
@@ -949,9 +951,10 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	transfer := update.Transfer()
 	// although this is mainly a duplicate event, we need to pass it to getTransferRequest
 	mevt := marginUpdate{
-		MarketPosition: update,
-		asset:          update.Asset(),
-		marketID:       update.MarketID(),
+		MarketPosition:  update,
+		asset:           update.Asset(),
+		marketID:        update.MarketID(),
+		marginShortFall: num.NewUint(0),
 	}
 
 	req, err := e.getTransferRequest(ctx, transfer, settle, nil, &mevt)
@@ -968,7 +971,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	if mevt.bond != nil && transfer.Amount.Amount.GT(mevt.general.Balance) {
 		// this is a liquidity provider but it did not have enough funds to
 		// pay from the general account, we'll have to penalize later on
-		mevt.marginShortFall = num.NewUint(0).Sub(transfer.Amount.Amount, mevt.general.Balance)
+		mevt.marginShortFall.Sub(transfer.Amount.Amount, mevt.general.Balance)
 	}
 
 	// from here we know there's enough money,
@@ -990,7 +993,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		}
 	}
 
-	if mevt.marginShortFall != nil && !mevt.marginShortFall.IsZero() {
+	if !mevt.marginShortFall.IsZero() {
 		return res, mevt, nil
 	}
 	return res, nil, nil
