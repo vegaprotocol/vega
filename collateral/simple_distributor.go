@@ -93,5 +93,5 @@ func (e *lossSocializationEvt) PartyID() string {
 }
 
 func (e *lossSocializationEvt) AmountLost() *num.Uint {
-	return e.amountLost
+	return e.amountLost.Clone()
 }

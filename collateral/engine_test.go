@@ -2306,7 +2306,7 @@ func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Tr
 	tt := make([]events.Transfer, 0, len(transfers))
 	for _, t := range transfers {
 		// Apply some limited validation here so we can filter out bad transfers
-		if t.Amount.Amount.NEQ(num.NewUint(0)) {
+		if !t.Amount.Amount.IsZero() {
 			mt := mtmFake{
 				t:     t,
 				party: t.Owner,
