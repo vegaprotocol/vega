@@ -34,7 +34,7 @@ func (a Asset) StreamMessage() *eventspb.BusEvent {
 		Block: a.TraceID(),
 		Type:  a.et.ToProto(),
 		Event: &eventspb.BusEvent_Asset{
-			Asset: a.a.ToProto(),
+			Asset: a.a.IntoProto(),
 		},
 	}
 }
