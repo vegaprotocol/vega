@@ -165,39 +165,37 @@ func (e *Engine) updateSizes(
 		return nil
 	}
 
-	var sum uint64 = 0
+	sum := num.DecimalFromFloat(0.0)
 	probs := make([]num.Decimal, 0, len(orders))
-	validatedProportions := make([]uint64, 0, len(orders))
+	validatedProportions := make([]num.Decimal, 0, len(orders))
 	for _, o := range orders {
-		proportion := o.Proportion
+		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
 		prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskprice.Clone(), o.Price.Clone(), isBid, minPrice.Clone(), maxPrice.Clone())
 		if prob.LessThanOrEqual(num.DecimalFromFloat(0.0)) {
-			proportion = 0
+			proportion = num.DecimalFromFloat(0.0)
 		}
 
-		sum += proportion
+		sum = sum.Add(proportion)
 		validatedProportions = append(validatedProportions, proportion)
 		probs = append(probs, prob)
-
 	}
-	if sum == 0 {
+	if sum.IsZero() {
 		return ErrNoValidOrders
 	}
-	fpSum := float64(sum)
 
 	for i, o := range orders {
 		scaling := num.DecimalFromFloat(0.0)
 		prob := probs[i]
 		if prob.GreaterThan(num.DecimalFromFloat(0.0)) {
-			fraction := num.DecimalFromFloat(float64(validatedProportions[i])).Div(num.DecimalFromFloat(fpSum))
+			fraction := validatedProportions[i].Div(sum)
 			scaling = fraction.Div(prob)
 		}
 		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
 		d := num.DecimalFromUint(liquidityObligation)
 		d = d.Mul(scaling)
 		d = d.Div(num.DecimalFromUint(o.Price)).Ceil()
-		o.LiquidityImpliedVolume = uint64(d.BigInt().Int64())
+		o.LiquidityImpliedVolume = uint64(d.IntPart())
 	}
 	return nil
 }
