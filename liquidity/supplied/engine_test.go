@@ -344,33 +344,6 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		validSell2,
 	}
 
-	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), Horizon, true, true).MinTimes(2).MaxTimes(10).DoAndReturn(func(mPrice, oPrice, min, max *num.Uint, _ num.Decimal, _, _ bool) num.Decimal {
-		require.True(t, mPrice.EQ(MarkPrice))
-		require.True(t, min.EQ(minPrice))
-		require.True(t, max.EQ(maxPrice))
-		if oPrice.EQ(validBuy1.Price) {
-			return num.DecimalFromFloat(.1)
-		}
-		if oPrice.EQ(validBuy2.Price) {
-			return num.DecimalFromFloat(.2)
-		}
-		require.Equal(t, "", oPrice.String(), "invalid price")
-		return num.DecimalFromFloat(0)
-	})
-	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), Horizon, false, true).MinTimes(2).MaxTimes(10).DoAndReturn(func(mPrice, oPrice, min, max *num.Uint, _ num.Decimal, _, _ bool) num.Decimal {
-		require.True(t, mPrice.EQ(MarkPrice))
-		require.True(t, min.EQ(minPrice))
-		require.True(t, max.EQ(maxPrice))
-		if oPrice.EQ(validSell1.Price) {
-			return num.DecimalFromFloat(.22)
-		}
-		if oPrice.EQ(validSell2.Price) {
-			return num.DecimalFromFloat(.11)
-		}
-		require.Equal(t, "", oPrice.String(), "invalid price")
-		return num.DecimalFromFloat(0)
-	})
-
 	engine := supplied.NewEngine(riskModel, priceMonitor)
 	require.NotNil(t, engine)
 
@@ -397,26 +370,17 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		},
 	}
 
-	riskModel.EXPECT().ProbabilityOfTrading(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), Horizon, gomock.Any(), true).MinTimes(3).MaxTimes(15).DoAndReturn(func(mPrice, oPrice, min, max *num.Uint, _ num.Decimal, sell, _ bool) num.Decimal {
-		require.True(t, mPrice.EQ(MarkPrice))
-		require.True(t, min.EQ(minPrice))
-		require.True(t, max.EQ(maxPrice))
-		if sell {
-			require.True(t, oPrice.EQ(limitOrders[2].Price))
-			return num.DecimalFromFloat(.5)
-		}
-		if oPrice.EQ(limitOrders[0].Price) {
-			return num.DecimalFromFloat(.175)
-		}
-		if oPrice.EQ(limitOrders[1].Price) {
-			return num.DecimalFromFloat(.312)
-		}
-		require.Equal(t, "wrong price", oPrice.String())
-		return num.DecimalFromFloat(0)
-	})
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, limitOrders[0].Price, minPrice, maxPrice, Horizon, true, true).Return(num.DecimalFromFloat(0.175)).Times(12)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, limitOrders[1].Price, minPrice, maxPrice, Horizon, true, true).Return(num.DecimalFromFloat(0.312)).Times(12)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, limitOrders[2].Price, minPrice, maxPrice, Horizon, false, true).Return(num.DecimalFromFloat(0.5)).Times(12)
 
 	limitOrdersSuppliedLiquidity := engine.CalculateSuppliedLiquidity(MarkPrice.Clone(), MarkPrice.Clone(), collateOrders(limitOrders, nil, nil))
 	require.True(t, limitOrdersSuppliedLiquidity.LT(liquidityObligation))
+
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, validBuy1.Price, minPrice, maxPrice, Horizon, true, true).Return(num.DecimalFromFloat(0.1)).Times(6)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, validBuy2.Price, minPrice, maxPrice, Horizon, true, true).Return(num.DecimalFromFloat(0.2)).Times(6)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, validSell1.Price, minPrice, maxPrice, Horizon, false, true).Return(num.DecimalFromFloat(0.22)).Times(6)
+	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, validSell2.Price, minPrice, maxPrice, Horizon, false, true).Return(num.DecimalFromFloat(0.11)).Times(6)
 
 	err := engine.CalculateLiquidityImpliedVolumes(MarkPrice.Clone(), MarkPrice.Clone(), liquidityObligation, limitOrders, buyShapes, sellShapes)
 	require.NoError(t, err)
