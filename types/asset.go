@@ -46,6 +46,10 @@ func (a Asset) IntoProto() *pb.Asset {
 	}
 }
 
+type is_AssetSource interface {
+	is_AssetSource()
+}
+
 // AssetSource is an asset source definition
 type AssetSource struct {
 	// The source
@@ -53,7 +57,7 @@ type AssetSource struct {
 	// Types that are valid to be assigned to Source:
 	//	*BuiltinAsset
 	//	*ERC20
-	Source interface{}
+	Source is_AssetSource
 }
 
 func (s AssetSource) DeepCopy() *AssetSource {
@@ -111,6 +115,8 @@ type BuiltinAsset struct {
 	MaxFaucetAmountMint string
 }
 
+func (BuiltinAsset) is_AssetSource() {}
+
 func (b BuiltinAsset) DeepCopy() *BuiltinAsset {
 	out := b
 	out.TotalSupply = b.TotalSupply.Clone()
@@ -122,6 +128,8 @@ type ERC20 struct {
 	// The address of the contract for the token, on the ethereum network
 	ContractAddress string
 }
+
+func (ERC20) is_AssetSource() {}
 
 func (e ERC20) DeepCopy() *ERC20 {
 	return &e
