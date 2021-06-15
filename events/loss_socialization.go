@@ -39,6 +39,14 @@ func (l LossSoc) MarketID() string {
 	return l.marketID
 }
 
+func (l LossSoc) Negative() bool {
+	return l.neg
+}
+
+func (l LossSoc) AmountUint() *num.Uint {
+	return l.amount.Clone()
+}
+
 func (l LossSoc) Amount() int64 {
 	return int64(l.amount.Uint64())
 }
