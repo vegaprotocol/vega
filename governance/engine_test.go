@@ -13,11 +13,11 @@ import (
 	"code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
-	dtypes "code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -131,7 +131,7 @@ func testValidateProposalCommitment(t *testing.T) {
 	assert.Contains(t, err.Error(), "order in buy side shape offset must be <= 0")
 
 	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	prop.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Reference = types.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+	prop.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Reference = proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK
 	_, err = eng.SubmitProposal(context.Background(), *commandspb.ProposalSubmissionFromProposal(&prop), "proposal-id", party.Id)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "order in buy side shape with best ask price reference")
@@ -143,7 +143,7 @@ func testValidateProposalCommitment(t *testing.T) {
 	assert.Contains(t, err.Error(), "order in sell shape offset must be >= 0")
 
 	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	prop.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Reference = types.PeggedReference_PEGGED_REFERENCE_BEST_BID
+	prop.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Reference = proto.PeggedReference_PEGGED_REFERENCE_BEST_BID
 	_, err = eng.SubmitProposal(context.Background(), *commandspb.ProposalSubmissionFromProposal(&prop), "proposal-id", party.Id)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "order in sell side shape with best bid price reference")
@@ -168,11 +168,11 @@ func testCanRejectProposal(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	// now we try to reject to reject
-	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, errors.New("failure"))
+	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), proto.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, errors.New("failure"))
 	assert.NoError(t, err)
 
 	// just one more to make sure it was rejected...
-	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, errors.New("failure"))
+	err = eng.RejectProposal(context.Background(), toSubmit.Proposal(), proto.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, errors.New("failure"))
 	assert.EqualError(t, err, governance.ErrProposalDoesNotExists.Error())
 }
 
@@ -249,7 +249,7 @@ func testSubmittingDuplicatedProposalFails(t *testing.T) {
 
 	// given
 	aCopy = original
-	aCopy.State = types.Proposal_STATE_PASSED
+	aCopy.State = proto.Proposal_STATE_PASSED
 
 	// when
 	_, err = eng.SubmitProposal(context.Background(), *commandspb.ProposalSubmissionFromProposal(&aCopy), aCopy.Id, party.Id)
@@ -403,8 +403,8 @@ func testSubmittingProposalWithBadRiskParameter(t *testing.T) {
 	eng.expectAnyAsset()
 
 	proposal := eng.newOpenProposal(party.Id, now)
-	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfiguration_LogNormal{
-		LogNormal: &types.LogNormalRiskModel{
+	proposal.Terms.GetNewMarket().Changes.RiskParameters = &proto.NewMarketConfiguration_LogNormal{
+		LogNormal: &proto.LogNormalRiskModel{
 			Params: nil, // it's nil by zero value, but eh, let's show that's what we test
 		},
 	}
@@ -429,7 +429,7 @@ func testSubmittingProposalWithClosingTimeBeforeValidationTimeFails(t *testing.T
 	party := eng.newValidPartyTimes("a-valid-party", 1, 0)
 	proposal := eng.newOpenProposal(party.Id, now)
 	proposal.Terms.ValidationTimestamp = proposal.Terms.ClosingTimestamp + 10
-	proposal.Terms.Change = &types.ProposalTerms_NewAsset{}
+	proposal.Terms.Change = &proto.ProposalTerms_NewAsset{}
 
 	// setup
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
@@ -466,7 +466,7 @@ func testSubmittingValidVoteOnExistingProposalSucceeds(t *testing.T) {
 
 	// when
 	err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_YES,
+		Value:      proto.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
 	}, voter.Id)
 
@@ -481,7 +481,7 @@ func testSubmittingVoteOnNonexistingProposalFails(t *testing.T) {
 	// when
 	voter := eng.newValidPartyTimes("voter", 1, 0)
 	voteSub := commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_YES,
+		Value:      proto.Vote_VALUE_YES,
 		ProposalId: "id-of-non-existent-proposal",
 	}
 
@@ -518,7 +518,7 @@ func testSubmittingVoteWithNonexistingAccountFails(t *testing.T) {
 	// given
 	voterNoAccount := "voter-no-account"
 	vote := commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_YES,
+		Value:      proto.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
 	}
 
@@ -560,7 +560,7 @@ func testSubmittingVoteWithoutTokenFails(t *testing.T) {
 
 	// when
 	err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_YES,
+		Value:      proto.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
 	}, voterWithEmptyAccount.Id)
 
@@ -595,7 +595,7 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 
 	// then
 	err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_YES,
+		Value:      proto.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
 	}, voter1.Id)
 
@@ -610,7 +610,7 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_PASSED, p.State)
+		assert.Equal(t, proto.Proposal_STATE_PASSED, p.State)
 		assert.Equal(t, proposal.Id, p.Id)
 	})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
@@ -629,7 +629,7 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 
 	// when
 	err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_NO,
+		Value:      proto.Vote_VALUE_NO,
 		ProposalId: proposal.Id,
 	}, voter2.Id)
 
@@ -653,7 +653,7 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 
 	// when
 	err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_NO,
+		Value:      proto.Vote_VALUE_NO,
 		ProposalId: proposal.Id,
 	}, voter2.Id)
 
@@ -688,7 +688,7 @@ func testSubmittingMajorityOfInsuccifientParticipationMakesProposalDeclined(t *t
 	eng.expectSendVoteEvent(t, voter, proposal)
 	// when
 	err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_YES,
+		Value:      proto.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
 	}, voter.Id)
 
@@ -703,9 +703,9 @@ func testSubmittingMajorityOfInsuccifientParticipationMakesProposalDeclined(t *t
 		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State, p.State.String())
+		assert.Equal(t, proto.Proposal_STATE_DECLINED, p.State, p.State.String())
 		assert.Equal(t, proposal.Id, p.Id)
-		assert.Equal(t, types.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED, p.Reason)
+		assert.Equal(t, proto.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED, p.Reason)
 	})
 
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
@@ -760,7 +760,7 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 
 	// when
 	err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_YES,
+		Value:      proto.Vote_VALUE_YES,
 		ProposalId: proposal.Id,
 	}, voter.Id)
 
@@ -772,7 +772,7 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 
 	// when
 	err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-		Value:      types.Vote_VALUE_NO,
+		Value:      proto.Vote_VALUE_NO,
 		ProposalId: proposal.Id,
 	}, voter.Id)
 
@@ -787,9 +787,9 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_DECLINED, p.State)
+		assert.Equal(t, proto.Proposal_STATE_DECLINED, p.State)
 		assert.Equal(t, proposal.Id, p.Id)
-		assert.Equal(t, types.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED, p.Reason)
+		assert.Equal(t, proto.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED, p.Reason)
 	})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
 		v, ok := evts[0].(*events.Vote)
@@ -825,7 +825,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 
 	partyA := "party-A"
 	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).AnyTimes().Return(uint64(300), nil)
-	accountA := dtypes.Account{
+	accountA := types.Account{
 		Id:      partyA + "-account",
 		Owner:   partyA,
 		Balance: 200,
@@ -833,7 +833,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	}
 	eng.accounts.EXPECT().GetPartyGeneralAccount(accountA.Owner, "VOTE").AnyTimes().Return(&accountA, nil)
 	partyB := "party-B"
-	accountB := dtypes.Account{
+	accountB := types.Account{
 		Id:      partyB + "-account",
 		Owner:   partyB,
 		Balance: 100,
@@ -844,8 +844,8 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	const howMany = 100
 	now := time.Now()
 
-	passed := map[string]*types.Proposal{}
-	declined := map[string]*types.Proposal{}
+	passed := map[string]*proto.Proposal{}
+	declined := map[string]*proto.Proposal{}
 
 	var afterClosing time.Time
 	var afterEnactment time.Time
@@ -856,7 +856,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			pe, ok := e.(*events.Proposal)
 			assert.True(t, ok)
 			p := pe.Proposal()
-			assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
+			assert.Equal(t, proto.Proposal_STATE_OPEN, p.State)
 		})
 		_, err := eng.SubmitProposal(context.Background(), *commandspb.ProposalSubmissionFromProposal(&toBePassed), toBePassed.Id, partyA)
 		assert.NoError(t, err)
@@ -884,12 +884,12 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			assert.Equal(t, id, vote.ProposalId)
 		})
 		err := eng.AddVote(context.Background(), commandspb.VoteSubmission{
-			Value:      types.Vote_VALUE_YES, // matters!
+			Value:      proto.Vote_VALUE_YES, // matters!
 			ProposalId: id,
 		}, partyA)
 		assert.NoError(t, err)
 		err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-			Value:      types.Vote_VALUE_NO, // matters!
+			Value:      proto.Vote_VALUE_NO, // matters!
 			ProposalId: id,
 		}, partyB)
 		assert.NoError(t, err)
@@ -902,12 +902,12 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 			assert.Equal(t, id, vote.ProposalId)
 		})
 		err := eng.AddVote(context.Background(), commandspb.VoteSubmission{
-			Value:      types.Vote_VALUE_NO, // matters!
+			Value:      proto.Vote_VALUE_NO, // matters!
 			ProposalId: id,
 		}, partyA)
 		assert.NoError(t, err)
 		err = eng.AddVote(context.Background(), commandspb.VoteSubmission{
-			Value:      types.Vote_VALUE_YES, // matters!
+			Value:      proto.Vote_VALUE_YES, // matters!
 			ProposalId: id,
 		}, partyB)
 		assert.NoError(t, err)
@@ -918,11 +918,11 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		pe, ok := evt.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
-		if p.State == types.Proposal_STATE_PASSED {
+		if p.State == proto.Proposal_STATE_PASSED {
 			_, found := passed[p.Id]
 			assert.True(t, found, "passed proposal is in the passed collection")
 			howManyPassed++
-		} else if p.State == types.Proposal_STATE_DECLINED {
+		} else if p.State == proto.Proposal_STATE_DECLINED {
 			_, found := declined[p.Id]
 			assert.True(t, found, "declined proposal is in the declined collection")
 			howManyDeclined++
@@ -972,15 +972,15 @@ func getTestEngine(t *testing.T) *tstEngine {
 	}
 }
 
-func newValidMarketTerms() *types.ProposalTerms_NewMarket {
-	return &types.ProposalTerms_NewMarket{
-		NewMarket: &types.NewMarket{
-			Changes: &types.NewMarketConfiguration{
-				Instrument: &types.InstrumentConfiguration{
+func newValidMarketTerms() *proto.ProposalTerms_NewMarket {
+	return &proto.ProposalTerms_NewMarket{
+		NewMarket: &proto.NewMarket{
+			Changes: &proto.NewMarketConfiguration{
+				Instrument: &proto.InstrumentConfiguration{
 					Name: "June 2020 GBP vs VUSD future",
 					Code: "CRYPTO:GBPVUSD/JUN20",
-					Product: &types.InstrumentConfiguration_Future{
-						Future: &types.FutureProduct{
+					Product: &proto.InstrumentConfiguration_Future{
+						Future: &proto.FutureProduct{
 							Maturity:        "2030-06-30T22:59:59Z",
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
@@ -996,17 +996,17 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 									},
 								},
 							},
-							OracleSpecBinding: &types.OracleSpecToFutureBinding{
+							OracleSpecBinding: &proto.OracleSpecToFutureBinding{
 								SettlementPriceProperty: "prices.ETH.value",
 							},
 						},
 					},
 				},
-				RiskParameters: &types.NewMarketConfiguration_LogNormal{
-					LogNormal: &types.LogNormalRiskModel{
+				RiskParameters: &proto.NewMarketConfiguration_LogNormal{
+					LogNormal: &proto.LogNormalRiskModel{
 						RiskAversionParameter: 0.01,
 						Tau:                   0.00011407711613050422,
-						Params: &types.LogNormalModelParams{
+						Params: &proto.LogNormalModelParams{
 							Mu:    0,
 							R:     0.016,
 							Sigma: 0.09,
@@ -1015,8 +1015,8 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 				},
 				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
 				DecimalPlaces: 5,
-				TradingMode: &types.NewMarketConfiguration_Continuous{
-					Continuous: &types.ContinuousTrading{
+				TradingMode: &proto.NewMarketConfiguration_Continuous{
+					Continuous: &proto.ContinuousTrading{
 						TickSize: "0.1",
 					},
 				},
@@ -1026,31 +1026,31 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 	}
 }
 
-func newMarketLiquidityCommitment() *types.NewMarketCommitment {
-	return &types.NewMarketCommitment{
+func newMarketLiquidityCommitment() *proto.NewMarketCommitment {
+	return &proto.NewMarketCommitment{
 		CommitmentAmount: 1000,
 		Fee:              "0.5",
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 10},
+		Sells: []*proto.LiquidityOrder{
+			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 10},
 		},
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -10},
+		Buys: []*proto.LiquidityOrder{
+			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -10},
 		},
 	}
 }
 
-func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, times int) *types.Party {
-	account := dtypes.Account{
+func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, times int) *proto.Party {
+	account := types.Account{
 		Id:      partyID + "-account",
 		Owner:   partyID,
 		Balance: balance,
 		Asset:   "VOTE",
 	}
 	e.accounts.EXPECT().GetPartyGeneralAccount(partyID, "VOTE").Times(times).Return(&account, nil)
-	return &types.Party{Id: partyID}
+	return &proto.Party{Id: partyID}
 }
 
-func (e *tstEngine) newValidParty(partyID string, balance uint64) *types.Party {
+func (e *tstEngine) newValidParty(partyID string, balance uint64) *proto.Party {
 	return e.newValidPartyTimes(partyID, balance, 1)
 }
 
@@ -1059,14 +1059,14 @@ func (e *tstEngine) newProposalID() string {
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
 }
 
-func (e *tstEngine) newOpenProposal(partyID string, now time.Time) types.Proposal {
+func (e *tstEngine) newOpenProposal(partyID string, now time.Time) proto.Proposal {
 	id := e.newProposalID()
-	return types.Proposal{
+	return proto.Proposal{
 		Id:        id,
 		Reference: "ref-" + id,
 		PartyId:   partyID,
-		State:     types.Proposal_STATE_OPEN,
-		Terms: &types.ProposalTerms{
+		State:     proto.Proposal_STATE_OPEN,
+		Terms: &proto.ProposalTerms{
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
@@ -1085,12 +1085,12 @@ func (e *tstEngine) expectAnyAssetTimes(times int) {
 	e.assets.EXPECT().IsEnabled(gomock.Any()).Times(times).Return(true)
 }
 
-func (e *tstEngine) expectSendOpenProposalEvent(t *testing.T, party *types.Party, proposal types.Proposal) {
+func (e *tstEngine) expectSendOpenProposalEvent(t *testing.T, party *proto.Party, proposal proto.Proposal) {
 	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(ev events.Event) {
 		pe, ok := ev.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_OPEN, p.State)
+		assert.Equal(t, proto.Proposal_STATE_OPEN, p.State)
 		assert.Equal(t, party.Id, p.PartyId)
 		assert.Equal(t, proposal.Id, p.Id)
 	})
@@ -1101,7 +1101,7 @@ func (e *tstEngine) expectSendRejectedProposalEvent(t *testing.T, partyID string
 		pe, ok := e.(*events.Proposal)
 		assert.True(t, ok)
 		p := pe.Proposal()
-		assert.Equal(t, types.Proposal_STATE_REJECTED, p.State)
+		assert.Equal(t, proto.Proposal_STATE_REJECTED, p.State)
 		assert.Equal(t, partyID, p.PartyId)
 	})
 }
@@ -1172,7 +1172,7 @@ func (e *tstEngine) setMinProposerBalance(balance string) {
 	}
 }
 
-func (e *tstEngine) expectSendVoteEvent(t *testing.T, party *types.Party, proposal types.Proposal) {
+func (e *tstEngine) expectSendVoteEvent(t *testing.T, party *proto.Party, proposal proto.Proposal) {
 	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		ve, ok := e.(*events.Vote)
 		assert.True(t, ok)

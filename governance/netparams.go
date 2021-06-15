@@ -1,10 +1,11 @@
 package governance
 
 import (
-	"code.vegaprotocol.io/vega/netparams"
-	types "code.vegaprotocol.io/vega/proto"
+	"errors"
 
-	"github.com/pkg/errors"
+	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -60,33 +61,35 @@ func (e *Engine) getProposalParametersFromNetParams(
 	pp.MaxClose, _ = e.netp.GetDuration(maxCloseKey)
 	pp.MinEnact, _ = e.netp.GetDuration(minEnactKey)
 	pp.MaxEnact, _ = e.netp.GetDuration(maxEnactKey)
-	pp.RequiredParticipation, _ = e.netp.GetFloat(requiredParticipationKey)
-	pp.RequiredMajority, _ = e.netp.GetFloat(requiredMajorityKey)
+	rp, _ := e.netp.GetFloat(requiredParticipationKey)
+	pp.RequiredParticipation = num.NewDecimalFromFloat(rp)
+	rm, _ := e.netp.GetFloat(requiredMajorityKey)
+	pp.RequiredMajority = num.NewDecimalFromFloat(rm)
 	mpb, _ := e.netp.GetInt(minProposerBalanceKey)
-	pp.MinProposerBalance = uint64(mpb)
+	pp.MinProposerBalance = num.NewUint(uint64(mpb))
 	mvb, _ := e.netp.GetInt(minVoterBalanceKey)
-	pp.MinVoterBalance = uint64(mvb)
+	pp.MinVoterBalance = num.NewUint(uint64(mvb))
 	return &pp, nil
 }
 
 func validateNetworkParameterUpdate(
-	netp NetParams, np *types.NetworkParameter) (types.ProposalError, error) {
+	netp NetParams, np *proto.NetworkParameter) (proto.ProposalError, error) {
 	if len(np.Key) <= 0 {
-		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, ErrEmptyNetParamKey
+		return proto.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, ErrEmptyNetParamKey
 	}
 
 	if len(np.Value) <= 0 {
-		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, ErrEmptyNetParamValue
+		return proto.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, ErrEmptyNetParamValue
 	}
 
 	// so we seems to just need to call on validate in here.
 	// no need to know what's the parameter really or anything else
 	var (
-		perr = types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED
+		perr = proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED
 		err  = netp.Validate(np.Key, np.Value)
 	)
 	if err != nil {
-		perr = types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
+		perr = proto.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
 	}
 
 	return perr, err
