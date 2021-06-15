@@ -596,7 +596,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, 75129, int(acc.Balance))
+		assert.Equal(t, 67860, int(acc.Balance))
 	})
 
 	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
@@ -736,7 +736,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		acc, err = tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, 368378, int(acc.Balance))
+		assert.Equal(t, 336872, int(acc.Balance))
 	})
 
 	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
