@@ -73,7 +73,7 @@ func (u *Uint) ToDecimal() Decimal {
 	return DecimalFromUint(u)
 }
 
-// FromString created a new Uint from a string
+// UintFromString created a new Uint from a string
 // interpreted using the give base.
 // A big.Int is used to read the string, so
 // all error related to big.Int parsing applied here.
