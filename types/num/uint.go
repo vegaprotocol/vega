@@ -8,7 +8,12 @@ import (
 )
 
 var (
-	maxUint = mustUintFromString("340282366920938463463374607431768211455", 10)
+	// max uint256 value
+	big1    = big.NewInt(1)
+	maxU256 = new(big.Int).Sub(new(big.Int).Lsh(big1, 256), big1)
+
+	// initialise max variable
+	maxUint = setMaxUint()
 )
 
 // Uint A wrapper for a big unsigned int
@@ -22,7 +27,13 @@ func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
 }
 
-// MaxUint returns max value for uint246 (well for now uint228)
+// only called once, to initialise maxUint
+func setMaxUint() *Uint {
+	b, _ := UintFromBig(maxU256)
+	return b
+}
+
+// MaxUint returns max value for uint256
 func MaxUint() *Uint {
 	return maxUint.Clone()
 }
@@ -73,15 +84,6 @@ func UintFromString(str string, base int) (*Uint, bool) {
 		return NewUint(0), true
 	}
 	return UintFromBig(b)
-}
-
-// only use internally for "constants" like UintMax
-func mustUintFromString(str string, base int) *Uint {
-	v, fail := UintFromString(str, base)
-	if fail {
-		panic("could not convert string to uint" + str)
-	}
-	return v
 }
 
 // Sum just removes the need to write num.NewUint(0).Sum(x, y, z)
