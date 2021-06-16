@@ -33,7 +33,6 @@ Feature: Test pegged orders
       | lp1 | aux   | ETH/DEC21 | 110               | 0.001 | buy        | BID             | 500              | -10          |
       | lp1 | aux   | ETH/DEC21 | 110               | 0.001 | sell       | ASK             | 500              | 10           |
 
-   
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux     | ETH/DEC21 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-buy   |
@@ -156,8 +155,8 @@ Feature: Test pegged orders
     #Extend with liquidity auction and check that orders get unparked
     When the network moves ahead "61" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 110          | 110            | 1             |
+      | mark price | trading mode                    | auction trigger       | extension trigger         | target stake | supplied stake | open interest |
+      | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_LIQUIDITY | 110          | 110            | 1             |
    
     # TODO (WG): Am I missing something here? If at the end of price auction we don't have sufficient liquidity to uncross we should never leave auction, just extend it with liquidity
     # The auction isn't extended, we only check liquidity at the end of the price auction, at which point
