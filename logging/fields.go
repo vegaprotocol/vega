@@ -230,8 +230,13 @@ func OrderAmendment(oa *commandspb.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
+// OrderSubmissionProto constructs a single string field to contain all the object information
+func OrderSubmissionProto(os *commandspb.OrderSubmission) zap.Field {
+	return zap.String("order-submission", os.String())
+}
+
 // OrderSubmission constructs a single string field to contain all the object information
-func OrderSubmission(os *commandspb.OrderSubmission) zap.Field {
+func OrderSubmission(os *types.OrderSubmission) zap.Field {
 	return zap.String("order-submission", os.String())
 }
 

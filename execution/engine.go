@@ -427,7 +427,7 @@ func (e *Engine) removeMarket(mktID string) {
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.OrderSubmission, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(orderSubmission.MarketId, "execution", "SubmitOrder")
 
 	defer func() {
@@ -439,7 +439,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	order := types.OrderFromProto(orderSubmission.IntoOrder(party))
+	order := orderSubmission.IntoOrder(party)
 
 	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {
