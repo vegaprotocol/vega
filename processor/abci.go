@@ -143,7 +143,7 @@ func NewApp(
 	return app, nil
 }
 
-// addDeteremisticID will build the command id and .
+// addDeterministicID will build the command id and .
 // the command id is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
 // the hash is the hex string encoded
@@ -211,7 +211,6 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	}
 
 	return tmtypes.ResponseInitChain{}
-
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block
@@ -327,8 +326,12 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 	app.stats.IncTotalCreateOrder()
 
+	// Convert from proto to domain type
+	os := types.OrderSubmission{}
+	os.FromProto(s)
+
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, s, tx.Party())
+	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
