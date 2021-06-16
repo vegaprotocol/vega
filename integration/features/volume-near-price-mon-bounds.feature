@@ -30,7 +30,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | name             | value |
       | prices.ETH.value | 100   |
     And the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount     |
+      | trader  | asset | amount      |
       | lp1     | ETH   | 100000000   |
       | trader1 | ETH   |  10000000   |
       | trader2 | ETH   |  10000000   |
@@ -158,9 +158,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader1          |  10    | 0              | 0            |
       | trader2          | -10    | 0              | 0            |
 
-    # And the market data for the market "ETH2/MAR22" should be:
-    #    | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest  |
-    #    | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10             |
+    And the market data for the market "ETH2/MAR22" should be:
+       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest  |
+       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10             |
     
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
