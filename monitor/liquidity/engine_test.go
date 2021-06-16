@@ -54,7 +54,7 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 	exp := now.Add(-1 * time.Second)
 	keep := now.Add(time.Second)
 	mon := liquidity.NewMonitor(h.TargetStakeCalculator, &types.LiquidityMonitoringParameters{
-		TriggeringRatio: .7,
+		TriggeringRatio: num.DecimalFromFloat(.7),
 	})
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 
 	h := newTestHarness(t).WhenInLiquidityAuction(false)
 	mon := liquidity.NewMonitor(h.TargetStakeCalculator, &types.LiquidityMonitoringParameters{
-		TriggeringRatio: .5,
+		TriggeringRatio: num.DecimalFromFloat(.5),
 	})
 	h.AuctionState.EXPECT().InAuction().Return(false).Times(len(tests))
 	h.AuctionState.EXPECT().ExpiresAt().Times(len(tests)).Return(nil)

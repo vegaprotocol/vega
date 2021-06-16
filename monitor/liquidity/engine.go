@@ -54,7 +54,7 @@ func (e *Engine) SetMinDuration(d time.Duration) {
 	e.mu.Unlock()
 }
 
-func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio float64) {
+func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal) {
 	e.mu.Lock()
 	e.params.TriggeringRatio = ratio
 	// @TODO emit event
@@ -89,8 +89,8 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 		as.ExtendAuctionLiquidity(ext)
 		return
 	}
-	scaledTargetStakeDec := targetStake.ToDecimal()
-	scaledTargetStakeDec.Mul(num.DecimalFromFloat(c1))
+	// multiply target stake by triggering ratio
+	scaledTargetStakeDec := targetStake.ToDecimal().Mul(c1)
 	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
 	if currentStake.LT(scaledTargetStake) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
 		if exp != nil {
