@@ -254,8 +254,8 @@ func mtm(p *Position, markPrice uint64) {
 func updateSettlePosition(p *Position, e SPE) {
 	for _, t := range e.Trades() {
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
-		_ = closeV(p, closedVolume, t.Price())
-		openV(p, openedVolume, t.Price())
+		_ = closeV(p, closedVolume, t.Price().Uint64())
+		openV(p, openedVolume, t.Price().Uint64())
 		p.AverageEntryPrice = uint64(math.Round(p.AverageEntryPriceFP))
 		p.RealisedPnl = int64(math.Round(p.RealisedPnlFP))
 	}

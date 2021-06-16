@@ -4,22 +4,25 @@ import (
 	"context"
 
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type LossSoc struct {
 	*Base
 	partyID  string
 	marketID string
-	amount   int64
+	amount   *num.Uint
+	neg      bool
 	ts       int64
 }
 
-func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, amount int64, ts int64) *LossSoc {
+func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, amount *num.Uint, neg bool, ts int64) *LossSoc {
 	return &LossSoc{
 		Base:     newBase(ctx, LossSocializationEvent),
 		partyID:  partyID,
 		marketID: marketID,
 		amount:   amount,
+		neg:      neg,
 		ts:       ts,
 	}
 }
@@ -36,12 +39,24 @@ func (l LossSoc) MarketID() string {
 	return l.marketID
 }
 
+func (l LossSoc) Negative() bool {
+	return l.neg
+}
+
+func (l LossSoc) AmountUint() *num.Uint {
+	return l.amount.Clone()
+}
+
 func (l LossSoc) Amount() int64 {
-	return l.amount
+	return int64(l.amount.Uint64())
 }
 
 func (l LossSoc) AmountLost() int64 {
-	return l.amount
+	amt := int64(l.amount.Uint64())
+	if l.neg {
+		return -amt
+	}
+	return amt
 }
 
 func (l LossSoc) Timestamp() int64 {
@@ -52,7 +67,7 @@ func (l LossSoc) Proto() eventspb.LossSocialization {
 	return eventspb.LossSocialization{
 		MarketId: l.marketID,
 		PartyId:  l.partyID,
-		Amount:   l.amount,
+		Amount:   int64(l.amount.Uint64()),
 	}
 }
 

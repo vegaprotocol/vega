@@ -1,7 +1,7 @@
 package events
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -46,7 +46,7 @@ type FeesTransfer interface {
 	// The total amount of fees to be paid (all cumulated)
 	// per party if all the  transfers are to be executed
 	// map is party id -> total amount of fees to be transferred
-	TotalFeesAmountPerParty() map[string]uint64
+	TotalFeesAmountPerParty() map[string]*num.Uint
 }
 
 // Transfer is an event passed on by settlement engine, contains position
@@ -61,17 +61,17 @@ type Transfer interface {
 type Margin interface {
 	MarketPosition
 	Asset() string
-	MarginBalance() uint64
-	GeneralBalance() uint64
-	BondBalance() uint64
+	MarginBalance() *num.Uint
+	GeneralBalance() *num.Uint
+	BondBalance() *num.Uint
 	MarketID() string
-	MarginShortFall() uint64
+	MarginShortFall() *num.Uint
 }
 
 // Risk is an event that summarizes everything and an eventual update to margin account.
 type Risk interface {
 	Margin
-	Amount() uint64
+	Amount() *num.Uint
 	Transfer() *types.Transfer // I know, it's included in the Transfer interface, but this is to make it clear that this particular func is masked at this level
 	MarginLevels() *types.MarginLevels
 }

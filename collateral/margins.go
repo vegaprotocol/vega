@@ -2,6 +2,7 @@ package collateral
 
 import (
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/types"
 )
@@ -14,7 +15,7 @@ type marginUpdate struct {
 	bond            *types.Account
 	asset           string
 	marketID        string
-	marginShortFall uint64
+	marginShortFall *num.Uint
 }
 
 func (n marginUpdate) Transfer() *types.Transfer {
@@ -29,11 +30,11 @@ func (n marginUpdate) MarketID() string {
 	return n.marketID
 }
 
-func (n marginUpdate) MarginBalance() uint64 {
+func (n marginUpdate) MarginBalance() *num.Uint {
 	if n.margin == nil {
-		return 0
+		return num.NewUint(0)
 	}
-	return n.margin.Balance
+	return n.margin.Balance.Clone()
 }
 
 // GeneralBalance here we cumulate both the general
@@ -42,24 +43,25 @@ func (n marginUpdate) MarginBalance() uint64 {
 // if a bond account exists
 // TODO(): maybe rename this method into AvailableBalance
 // at some point if it makes senses overall the codebase
-func (n marginUpdate) GeneralBalance() uint64 {
-	var gen, bond uint64
-	if n.general != nil {
+func (n marginUpdate) GeneralBalance() *num.Uint {
+	gen, bond := num.NewUint(0), num.NewUint(0)
+	if n.general != nil && n.general.Balance != nil {
 		gen = n.general.Balance
 	}
-	if n.bond != nil {
+	if n.bond != nil && n.bond.Balance != nil {
 		bond = n.bond.Balance
 	}
-	return bond + gen
+	return num.Sum(bond, gen)
 }
 
-func (n marginUpdate) MarginShortFall() uint64 {
-	return n.marginShortFall
+func (n marginUpdate) MarginShortFall() *num.Uint {
+	return n.marginShortFall.Clone()
 }
 
-func (n marginUpdate) BondBalance() uint64 {
+// BondBalance - returns nil if no bond account is present, *num.Uint otherwise
+func (n marginUpdate) BondBalance() *num.Uint {
 	if n.bond == nil {
-		return 0
+		return num.NewUint(0)
 	}
-	return n.bond.Balance
+	return n.bond.Balance.Clone()
 }
