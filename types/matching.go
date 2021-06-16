@@ -156,13 +156,13 @@ type PeggedOrder struct {
 	Offset    int64
 }
 
-func PeggedOrderFromProto(p *proto.PeggedOrder) *PeggedOrder {
-	if p == nil {
+func (p PeggedOrder) FromProto(po *proto.PeggedOrder) *PeggedOrder {
+	if po == nil {
 		return nil
 	}
 	return &PeggedOrder{
-		Reference: p.Reference,
-		Offset:    p.Offset,
+		Reference: po.Reference,
+		Offset:    po.Offset,
 	}
 }
 
