@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/wallet"
+
 	"github.com/stretchr/testify/assert"
 )
 

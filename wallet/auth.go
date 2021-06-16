@@ -165,4 +165,3 @@ func ExtractToken(f func(string, http.ResponseWriter, *http.Request, httprouter.
 func genSession() string {
 	return hex.EncodeToString(crypto.Hash(crypto.RandomBytes(10)))
 }
-
