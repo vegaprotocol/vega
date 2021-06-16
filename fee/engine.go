@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	ErrEmptyTrades = errors.New("empty trades slice sent to fees")
+	ErrEmptyTrades      = errors.New("empty trades slice sent to fees")
+	ErrInvalidFeeFactor = errors.New("fee factors must be positive")
 )
 
 type Engine struct {
@@ -61,6 +62,9 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
+	if fees.Factors.MakerFee.IsNegative() || fees.Factors.InfrastructureFee.IsNegative() || fees.Factors.LiquidityFee.IsNegative() {
+		return ErrInvalidFeeFactor
+	}
 	e.f.makerFee = fees.Factors.MakerFee
 	e.f.infrastructureFee = fees.Factors.InfrastructureFee
 	// not sure we need the IsPositive check here, that ought to be validation
@@ -159,7 +163,7 @@ func (e *Engine) CalculateForContinuousMode(
 	})
 
 	return &feesTransfer{
-		totalFeesAmountsPerParty: map[string]*num.Uint{aggressor: totalFeeAmount},
+		totalFeesAmountsPerParty: map[string]*num.Uint{aggressor: totalFeeAmount, maker: num.NewUint(0)},
 		transfers:                append(transfers, transfersRecv...),
 	}, nil
 }

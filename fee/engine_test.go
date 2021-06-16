@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,9 +19,9 @@ const (
 var (
 	testFees = types.Fees{
 		Factors: &types.FeeFactors{
-			LiquidityFee:      "0.1",
-			InfrastructureFee: "0.05",
-			MakerFee:          "0.02",
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(0.05),
+			MakerFee:          num.DecimalFromFloat(0.02),
 		},
 	}
 )
@@ -63,9 +64,9 @@ func testUpdateFeeFactors(t *testing.T) {
 	eng := getTestFee(t)
 	okFees := types.Fees{
 		Factors: &types.FeeFactors{
-			LiquidityFee:      "0.1",
-			InfrastructureFee: "0.5",
-			MakerFee:          "0.25",
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(0.5),
+			MakerFee:          num.DecimalFromFloat(0.25),
 		},
 	}
 	err := eng.UpdateFeeFactors(okFees)
@@ -76,9 +77,9 @@ func testUpdateFeeFactorsError(t *testing.T) {
 	eng := getTestFee(t)
 	koFees := types.Fees{
 		Factors: &types.FeeFactors{
-			LiquidityFee:      "asdasd",
-			InfrastructureFee: "0.5",
-			MakerFee:          "0.25",
+			LiquidityFee:      num.DecimalFromFloat(-.1),
+			InfrastructureFee: num.DecimalFromFloat(0.5),
+			MakerFee:          num.DecimalFromFloat(0.25),
 		},
 	}
 	err := eng.UpdateFeeFactors(koFees)
@@ -86,18 +87,18 @@ func testUpdateFeeFactorsError(t *testing.T) {
 
 	koFees = types.Fees{
 		Factors: &types.FeeFactors{
-			LiquidityFee:      "0.1",
-			InfrastructureFee: "asdas",
-			MakerFee:          "0.25",
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(-.1),
+			MakerFee:          num.DecimalFromFloat(0.25),
 		},
 	}
 	err = eng.UpdateFeeFactors(koFees)
 	assert.Error(t, err)
 	koFees = types.Fees{
 		Factors: &types.FeeFactors{
-			LiquidityFee:      "0.1",
-			InfrastructureFee: "0.5",
-			MakerFee:          "asdas",
+			LiquidityFee:      num.DecimalFromFloat(0.1),
+			InfrastructureFee: num.DecimalFromFloat(0.5),
+			MakerFee:          num.DecimalFromFloat(-.1),
 		},
 	}
 	err = eng.UpdateFeeFactors(koFees)
@@ -114,9 +115,9 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	eng := getTestFee(t)
 	eng.UpdateFeeFactors(types.Fees{
 		Factors: &types.FeeFactors{
-			MakerFee:          "0.000250",
-			InfrastructureFee: "0.0005",
-			LiquidityFee:      "0.001",
+			MakerFee:          num.DecimalFromFloat(.000250),
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			LiquidityFee:      num.DecimalFromFloat(0.001),
 		},
 	})
 	trades := []*types.Trade{
@@ -125,7 +126,7 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      5,
-			Price:     100000,
+			Price:     num.NewUint(100000),
 		},
 	}
 
@@ -139,19 +140,19 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	for _, v := range transfers {
 		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
 			liquidity += 1
-			assert.Equal(t, 500, int(v.Amount.Amount))
+			assert.Equal(t, num.NewUint(500), v.Amount.Amount)
 		}
 		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
 			infra += 1
-			assert.Equal(t, 250, int(v.Amount.Amount))
+			assert.Equal(t, num.NewUint(250), v.Amount.Amount)
 		}
 		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
 			recv += 1
-			assert.Equal(t, 125, int(v.Amount.Amount))
+			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
 		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
 			pay += 1
-			assert.Equal(t, 125, int(v.Amount.Amount))
+			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
 	}
 
@@ -169,35 +170,35 @@ func testCalcContinuousTrading(t *testing.T) {
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      10,
-			Price:     10000,
+			Price:     num.NewUint(10000),
 		},
 		{
 			Aggressor: types.Side_SIDE_SELL,
 			Seller:    "party1",
 			Buyer:     "party3",
 			Size:      1,
-			Price:     10300,
+			Price:     num.NewUint(10300),
 		},
 		{
 			Aggressor: types.Side_SIDE_SELL,
 			Seller:    "party1",
 			Buyer:     "party4",
 			Size:      7,
-			Price:     10300,
+			Price:     num.NewUint(10300),
 		},
 		{
 			Aggressor: types.Side_SIDE_SELL,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      2,
-			Price:     10500,
+			Price:     num.NewUint(10500),
 		},
 		{
 			Aggressor: types.Side_SIDE_SELL,
 			Seller:    "party1",
 			Buyer:     "party5",
 			Size:      5,
-			Price:     11000,
+			Price:     num.NewUint(11000),
 		},
 	}
 
@@ -209,8 +210,7 @@ func testCalcContinuousTrading(t *testing.T) {
 	feeAmounts := ft.TotalFeesAmountPerParty()
 	party1Amount, ok := feeAmounts["party1"]
 	assert.True(t, ok)
-	assert.Equal(t, 43928, int(party1Amount))
-	_ = party1Amount
+	assert.Equal(t, num.NewUint(43928), party1Amount)
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
@@ -252,7 +252,7 @@ func testCalcAuctionTrading(t *testing.T) {
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      1,
-			Price:     100,
+			Price:     num.NewUint(100),
 		},
 	}
 
@@ -268,10 +268,10 @@ func testCalcAuctionTrading(t *testing.T) {
 	// so here we will expect 8 for each
 	party1Amount, ok := feeAmounts["party1"]
 	assert.True(t, ok)
-	assert.Equal(t, 8, int(party1Amount))
+	assert.Equal(t, num.NewUint(8), party1Amount)
 	party2Amount, ok := feeAmounts["party2"]
 	assert.True(t, ok)
-	assert.Equal(t, 8, int(party2Amount))
+	assert.Equal(t, num.NewUint(8), party2Amount)
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
@@ -313,7 +313,7 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 			Seller:             "party1",
 			Buyer:              "party2",
 			Size:               1,
-			Price:              100,
+			Price:              num.NewUint(100),
 			SellerAuctionBatch: 10,
 			BuyerAuctionBatch:  10,
 		},
@@ -331,10 +331,10 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 	// so here we will expect 8 for each
 	party1Amount, ok := feeAmounts["party1"]
 	assert.True(t, ok)
-	assert.Equal(t, 8, int(party1Amount))
+	assert.Equal(t, num.NewUint(8), party1Amount)
 	party2Amount, ok := feeAmounts["party2"]
 	assert.True(t, ok)
-	assert.Equal(t, 8, int(party2Amount))
+	assert.Equal(t, num.NewUint(8), party2Amount)
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
@@ -370,7 +370,7 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 			Seller:             "party1",
 			Buyer:              "party2",
 			Size:               1,
-			Price:              100,
+			Price:              num.NewUint(100),
 			SellerAuctionBatch: 11,
 			BuyerAuctionBatch:  10,
 		},
@@ -385,10 +385,10 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	// fees are (100 * 0.1 + 100 * 0.05 + 100 *0.02) = 17
 	party1Amount, ok := feeAmounts["party1"]
 	assert.True(t, ok)
-	assert.Equal(t, 17, int(party1Amount))
+	assert.Equal(t, num.NewUint(17), party1Amount)
 	party2Amount, ok := feeAmounts["party2"]
 	assert.True(t, ok)
-	assert.Equal(t, 0, int(party2Amount))
+	assert.True(t, party2Amount.IsZero())
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
@@ -424,14 +424,14 @@ func testCalcPositionResolution(t *testing.T) {
 			Seller:    "party1",
 			Buyer:     "network",
 			Size:      3,
-			Price:     1000,
+			Price:     num.NewUint(1000),
 		},
 		{
 			Aggressor: types.Side_SIDE_SELL,
 			Seller:    "party2",
 			Buyer:     "network",
 			Size:      2,
-			Price:     1100,
+			Price:     num.NewUint(1100),
 		},
 	}
 
@@ -451,22 +451,22 @@ func testCalcPositionResolution(t *testing.T) {
 	feeAmounts := ft.TotalFeesAmountPerParty()
 	party1Amount, ok := feeAmounts["bad-party1"]
 	assert.True(t, ok)
-	assert.Equal(t, 307, int(party1Amount))
+	assert.Equal(t, num.NewUint(307), party1Amount)
 	party2Amount, ok := feeAmounts["bad-party2"]
 	assert.True(t, ok)
-	assert.Equal(t, 217, int(party2Amount))
+	assert.Equal(t, num.NewUint(217), party2Amount)
 	party3Amount, ok := feeAmounts["bad-party3"]
 	assert.True(t, ok)
-	assert.Equal(t, 65, int(party3Amount))
+	assert.Equal(t, num.NewUint(65), party3Amount)
 	party4Amount, ok := feeAmounts["bad-party4"]
 	assert.True(t, ok)
-	assert.Equal(t, 307, int(party4Amount))
+	assert.Equal(t, num.NewUint(307), party4Amount)
 
 	// check the details of the parties
 	// 307 as expected
-	assert.Equal(t, 90, int(partiesFee["bad-party1"].InfrastructureFee))
-	assert.Equal(t, 37, int(partiesFee["bad-party1"].MakerFee))
-	assert.Equal(t, 180, int(partiesFee["bad-party1"].LiquidityFee))
+	assert.Equal(t, num.NewUint(90), partiesFee["bad-party1"].InfrastructureFee)
+	assert.Equal(t, num.NewUint(37), partiesFee["bad-party1"].MakerFee)
+	assert.Equal(t, num.NewUint(180), partiesFee["bad-party1"].LiquidityFee)
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
@@ -500,16 +500,16 @@ type fakeMktPos struct {
 	vwBuy, vwSell uint64
 }
 
-func (f fakeMktPos) Party() string { return f.party }
-func (f fakeMktPos) Size() int64   { return f.size }
-func (f fakeMktPos) Buy() int64    { return 0 }
-func (f fakeMktPos) Sell() int64   { return 0 }
-func (f fakeMktPos) Price() uint64 { return 0 }
+func (f fakeMktPos) Party() string    { return f.party }
+func (f fakeMktPos) Size() int64      { return f.size }
+func (f fakeMktPos) Buy() int64       { return 0 }
+func (f fakeMktPos) Sell() int64      { return 0 }
+func (f fakeMktPos) Price() *num.Uint { return num.NewUint(0) }
 
-func (f fakeMktPos) VWBuy() uint64 {
-	return f.vwBuy
+func (f fakeMktPos) VWBuy() *num.Uint {
+	return num.NewUint(f.vwBuy)
 }
 
-func (f fakeMktPos) VWSell() uint64 {
-	return f.vwSell
+func (f fakeMktPos) VWSell() *num.Uint {
+	return num.NewUint(f.vwSell)
 }
