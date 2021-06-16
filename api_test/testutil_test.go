@@ -237,6 +237,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatal("failed to create gRPC server")
 	}
 
+	go srv.Start()
+
 	t.Cleanup(func() {
 		srv.Stop()
 		cleanTempDir()
@@ -244,8 +246,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	})
 
 	if blocking {
-		go srv.Start()
-
 		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
 		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
 		if err != nil {

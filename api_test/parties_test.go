@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"context"
-	"sort"
 	"testing"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
-func TestParties(t *testing.T) {
+func TestPartyByID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
@@ -35,7 +34,7 @@ func TestParties(t *testing.T) {
 
 	partyID := "c1f55d6be5dddbbff20312e1103a6f4b86ff4a798b74d7e9c980f98fb6747c11"
 
-	var resp *apipb.PartiesResponse
+	var resp *apipb.PartyByIDResponse
 	var err error
 
 loop:
@@ -44,19 +43,15 @@ loop:
 		case <-ctx.Done():
 			t.Fatalf("test timeout")
 		case <-time.Tick(1 * time.Millisecond):
-			resp, err = client.Parties(ctx, &apipb.PartiesRequest{})
-			// excluding network party
-			if err == nil && len(resp.Parties) > 1 {
+			resp, err = client.PartyByID(ctx, &apipb.PartyByIDRequest{
+				PartyId: partyID,
+			})
+			if err == nil && resp != nil && resp.Party != nil {
 				break loop
 			}
 		}
 	}
 
-	sortedParties := resp.Parties
-	sort.Slice(sortedParties, func(i, j int) bool {
-		return sortedParties[i].Id > sortedParties[j].Id
-	})
-
-	assert.Equal(t, "network", sortedParties[0].Id)
-	assert.Equal(t, partyID, sortedParties[1].Id)
+	require.NotNil(t, t, resp.Party)
+	assert.Equal(t, partyID, resp.Party.Id)
 }
