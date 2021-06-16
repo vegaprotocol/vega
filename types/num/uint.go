@@ -7,6 +7,15 @@ import (
 	"github.com/holiman/uint256"
 )
 
+var (
+	// max uint256 value
+	big1    = big.NewInt(1)
+	maxU256 = new(big.Int).Sub(new(big.Int).Lsh(big1, 256), big1)
+
+	// initialise max variable
+	maxUint = setMaxUint()
+)
+
 // Uint A wrapper for a big unsigned int
 type Uint struct {
 	u uint256.Int
@@ -16,6 +25,33 @@ type Uint struct {
 // uint64 passed as a parameter.
 func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
+}
+
+// only called once, to initialise maxUint
+func setMaxUint() *Uint {
+	b, _ := UintFromBig(maxU256)
+	return b
+}
+
+// MaxUint returns max value for uint256
+func MaxUint() *Uint {
+	return maxUint.Clone()
+}
+
+// Min returns the smallest of the 2 numbers
+func Min(a, b *Uint) *Uint {
+	if a.LT(b) {
+		return a
+	}
+	return b
+}
+
+// Max returns the largest of the 2 numbers
+func Max(a, b *Uint) *Uint {
+	if a.GT(b) {
+		return a
+	}
+	return b
 }
 
 // UintFromBig construct a new Uint with a big.Int
@@ -29,7 +65,15 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 	return &Uint{*u}, false
 }
 
-// UintFromString created a new Uint from a string
+func UintFromDecimal(d Decimal) (*Uint, bool) {
+	return UintFromBig(d.BigInt())
+}
+
+func (u *Uint) ToDecimal() Decimal {
+	return DecimalFromUint(u)
+}
+
+// FromString created a new Uint from a string
 // interpreted using the give base.
 // A big.Int is used to read the string, so
 // all error related to big.Int parsing applied here.
@@ -62,6 +106,16 @@ func (u Uint) Uint64() uint64 {
 	return u.u.Uint64()
 }
 
+func (z Uint) BigInt() *big.Int {
+	return z.u.ToBig()
+}
+
+func (z Uint) Float64() float64 {
+	d := DecimalFromUint(&z)
+	retVal, _ := d.Float64()
+	return retVal
+}
+
 // Add will add x and y then store the result
 // into u
 // this is equivalent to:
@@ -89,12 +143,12 @@ func (u *Uint) AddSum(vals ...*Uint) *Uint {
 // u is returned for convenience, no
 // new variable is created.
 // False is returned if an overflow occurred
-func (u *Uint) AddOverflow(x, y *Uint) (*Uint, bool) {
-	_, ok := u.u.AddOverflow(&x.u, &y.u)
-	return u, ok
+func (z *Uint) AddOverflow(x, y *Uint) (*Uint, bool) {
+	_, ok := z.u.AddOverflow(&x.u, &y.u)
+	return z, ok
 }
 
-// Sub will subtract y to x then store the result
+// Sub will substract y from x then store the result
 // into u
 // this is equivalent to:
 // `u = x - y`
@@ -258,6 +312,11 @@ func (u Uint) GTEUint64(oth uint64) bool {
 // IsZero return whether u == 0 or not
 func (u Uint) IsZero() bool {
 	return u.u.IsZero()
+}
+
+// IsNegative returns whether the value is < 0
+func (u Uint) IsNegative() bool {
+	return u.u.Sign() == -1
 }
 
 // Copy create a copy of the uint

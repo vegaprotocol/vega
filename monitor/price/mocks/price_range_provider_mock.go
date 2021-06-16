@@ -6,6 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 	reflect "reflect"
 )
 
@@ -33,11 +34,11 @@ func (m *MockRangeProvider) EXPECT() *MockRangeProviderMockRecorder {
 }
 
 // PriceRange mocks base method
-func (m *MockRangeProvider) PriceRange(arg0, arg1, arg2 float64) (float64, float64) {
+func (m *MockRangeProvider) PriceRange(arg0, arg1, arg2 decimal.Decimal) (decimal.Decimal, decimal.Decimal) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PriceRange", arg0, arg1, arg2)
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(float64)
+	ret0, _ := ret[0].(decimal.Decimal)
+	ret1, _ := ret[1].(decimal.Decimal)
 	return ret0, ret1
 }
 

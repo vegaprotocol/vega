@@ -7,8 +7,8 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity/supplied"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 )
 
 func (e *Engine) CanAmend(
-	lps *commandspb.LiquidityProvisionSubmission,
+	lps *types.LiquidityProvisionSubmission,
 	party string,
 ) error {
 	// does the party is an LP
@@ -36,7 +36,7 @@ func (e *Engine) CanAmend(
 
 func (e *Engine) AmendLiquidityProvision(
 	ctx context.Context,
-	lps *commandspb.LiquidityProvisionSubmission,
+	lps *types.LiquidityProvisionSubmission,
 	party string,
 ) ([]*types.Order, error) {
 	if err := e.CanAmend(lps, party); err != nil {
@@ -62,7 +62,7 @@ func (e *Engine) AmendLiquidityProvision(
 	e.liquidityOrders[party] = map[string]*types.Order{}
 	// then update the LP
 	lp.UpdatedAt = e.currentTime.UnixNano()
-	lp.CommitmentAmount = lps.CommitmentAmount
+	lp.CommitmentAmount = lps.CommitmentAmount.Clone()
 	lp.Fee = lps.Fee
 	lp.Reference = lps.Reference
 	// only if it's active, we don't want to loose a PENDING
@@ -80,11 +80,11 @@ func (e *Engine) AmendLiquidityProvision(
 // GetPotentialShapeOrders is used to create orders from
 // shape when amending a liquidity provision this allows us to
 // ensure enough funds can be taken from the margin account in orders
-// to submit orders lateer on.
+// to submit orders later on.
 func (e *Engine) GetPotentialShapeOrders(
 	party string,
-	bestBidPrice, bestAskPrice uint64,
-	lps *commandspb.LiquidityProvisionSubmission,
+	bestBidPrice, bestAskPrice *num.Uint,
+	lps *types.LiquidityProvisionSubmission,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
@@ -121,8 +121,8 @@ func (e *Engine) GetPotentialShapeOrders(
 		return nil, errors.New("unable to price sell shape")
 	}
 
-	obligation := float64(lps.CommitmentAmount) * e.stakeToObligationFactor
-
+	// Update this once we have updated the commitment value to use Uint TODO UINT
+	obligation, _ := num.UintFromDecimal(lps.CommitmentAmount.ToDecimal().Mul(e.stakeToObligationFactor).Round(0))
 	// Create a slice shaped copy of the orders
 	orders := make([]*types.Order, 0, len(e.orders[party]))
 	for _, order := range e.orders[party] {
