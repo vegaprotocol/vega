@@ -296,15 +296,16 @@ type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
 	TargetStakeParameters *TargetStakeParameters
 	// Specifies the triggering ratio for entering liquidity auction
-	TriggeringRatio float64
+	TriggeringRatio num.Decimal
 	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
 	AuctionExtension int64
 }
 
 func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringParameters {
+	tr, _ := l.TriggeringRatio.Float64()
 	lmp := &proto.LiquidityMonitoringParameters{
 		TargetStakeParameters: l.TargetStakeParameters.IntoProto(),
-		TriggeringRatio:       l.TriggeringRatio,
+		TriggeringRatio:       tr,
 		AuctionExtension:      l.AuctionExtension,
 	}
 	return lmp
@@ -312,6 +313,6 @@ func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringPar
 
 func (l *LiquidityMonitoringParameters) FromProto(p *proto.LiquidityMonitoringParameters) {
 	l.AuctionExtension = p.AuctionExtension
-	l.TriggeringRatio = p.TriggeringRatio
+	l.TriggeringRatio = num.DecimalFromFloat(p.TriggeringRatio)
 	l.TargetStakeParameters.FromProto(p.TargetStakeParameters)
 }

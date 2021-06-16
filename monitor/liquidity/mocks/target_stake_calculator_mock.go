@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
@@ -37,7 +36,7 @@ func (m *MockTargetStakeCalculator) EXPECT() *MockTargetStakeCalculatorMockRecor
 }
 
 // GetTheoreticalTargetStake mocks base method
-func (m *MockTargetStakeCalculator) GetTheoreticalTargetStake(arg0 proto.RiskFactor, arg1 time.Time, arg2 *num.Uint, arg3 []*types.Trade) *num.Uint {
+func (m *MockTargetStakeCalculator) GetTheoreticalTargetStake(arg0 types.RiskFactor, arg1 time.Time, arg2 *num.Uint, arg3 []*types.Trade) *num.Uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTheoreticalTargetStake", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*num.Uint)
