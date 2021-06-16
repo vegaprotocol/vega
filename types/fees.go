@@ -28,3 +28,25 @@ func (f Fees) IntoProto() *proto.Fees {
 		Factors: f.Factors.IntoProto(),
 	}
 }
+
+type Fee struct {
+	MakerFee          *num.Uint
+	InfrastructureFee *num.Uint
+	LiquidityFee      *num.Uint
+}
+
+func (f Fee) IntoProto() *proto.Fee {
+	return &proto.Fee{
+		MakerFee:          f.MakerFee.Uint64(),
+		InfrastructureFee: f.InfrastructureFee.Uint64(),
+		LiquidityFee:      f.LiquidityFee.Uint64(),
+	}
+}
+
+func (f Fee) Clone() *Fee {
+	return &Fee{
+		MakerFee:          f.MakerFee.Clone(),
+		InfrastructureFee: f.InfrastructureFee.Clone(),
+		LiquidityFee:      f.LiquidityFee.Clone(),
+	}
+}
