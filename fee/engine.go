@@ -315,7 +315,11 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		partiesShare[v.Party()] = &feeShare{pos: uint64(size)}
 
 		// while we are at it, we initial the map of all fees per party
-		partiesFees[v.Party()] = &types.Fee{}
+		partiesFees[v.Party()] = &types.Fee{
+			MakerFee:          num.NewUint(0),
+			InfrastructureFee: num.NewUint(0),
+			LiquidityFee:      num.NewUint(0),
+		}
 	}
 
 	// no we accumulated all the absolute position, we
