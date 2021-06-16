@@ -7,11 +7,11 @@ import (
 	"math"
 	"math/big"
 	"sort"
-	"strconv"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/shopspring/decimal"
 )
@@ -30,9 +30,9 @@ type Engine struct {
 }
 
 type factors struct {
-	makerFee          float64
-	infrastructureFee float64
-	liquidityFee      float64
+	makerFee          num.Decimal
+	infrastructureFee num.Decimal
+	liquidityFee      num.Decimal
 }
 
 func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string) (*Engine, error) {
@@ -64,37 +64,19 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
-	f, err := strconv.ParseFloat(fees.Factors.MakerFee, 64)
-	if err != nil {
-		e.log.Error("unable to load makerfee", logging.Error(err))
-		return err
-	}
-	e.f.makerFee = f
-	f, err = strconv.ParseFloat(fees.Factors.InfrastructureFee, 64)
-	if err != nil {
-		e.log.Error("unable to load infrastructurefee", logging.Error(err))
-		return err
-	}
-	e.f.infrastructureFee = f
-
-	// liquidity fee is not required to create a network
-	if len(fees.Factors.LiquidityFee) > 0 {
-		if err := e.SetLiquidityFee(fees.Factors.LiquidityFee); err != nil {
-			e.log.Error("unable to load liquidityfee", logging.Error(err))
-			return err
-		}
+	e.f.makerFee = fees.Factors.MakerFee
+	e.f.infrastructureFee = fees.Factors.InfrastructureFee
+	// not sure we need the IsPositive check here, that ought to be validation
+	if !fees.Factors.LiquidityFee.IsZero() && fees.Factors.LiquidityFee.IsPositive() {
+		e.f.liquidityFee = fees.Factors.LiquidityFee
 	}
 
 	e.feeCfg = fees
 	return nil
 }
 
-func (e *Engine) SetLiquidityFee(v string) error {
-	f, err := strconv.ParseFloat(v, 64)
-	if err != nil {
-		return err
-	}
-	e.f.liquidityFee = f
+func (e *Engine) SetLiquidityFee(v num.Decimal) error {
+	e.f.liquidityFee = v
 	return nil
 }
 
