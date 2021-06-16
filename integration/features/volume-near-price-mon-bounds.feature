@@ -127,7 +127,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | horizon | probability  | auction extension |
       | 43200   | 0.982      | 300                 |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 2022-03-31T23:59:59Z |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name              | value  |
@@ -144,7 +144,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | commitment1 | lp1     | ETH2/MAR22 | 50000000         | 0.001 | sell       | ASK             | 500              | 100          |
  
     And the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | trader1 | ETH2/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
       | trader2 | ETH2/MAR22 | sell | 1      | 1109  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
@@ -159,8 +159,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader2          | -10    | 0              | 0            |
 
     # And the market data for the market "ETH2/MAR22" should be:
-    #    | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
-    #    | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
+    #    | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest  |
+    #    | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10             |
     
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
@@ -185,7 +185,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | lp1       | ETH2   | ETH2/MAR22 | 39083413    | 10916587   | 50000000 |
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | reference  |
       | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
     
     And the order book should have the following volumes for market "ETH2/MAR22":
@@ -201,11 +201,11 @@ Feature: Test margin for lp near price monitoring boundaries
 
     # now we place an order which makes the best bid 901. 
     Then the traders place the following orders:
-       | trader  | market id  | side  | volume | price | resulting trades   | type       | tif     | reference  |
+       | trader  | market id  | side  | volume | price | resulting trades  | type       | tif     | reference  |
        | trader1 | ETH2/MAR22 | buy   | 1      | 901   | 0                 | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
     
     And the market data for the market "ETH2/MAR22" should be:
-       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
+       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
        | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
     
 
