@@ -2,12 +2,12 @@ package storage
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"time"
 
 	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/pkg/errors"
@@ -130,11 +130,11 @@ func NewTestConfig() (Config, error) {
 		Markets:               DefaultStoreOptions(),
 		Orders:                DefaultStoreOptions(),
 		Trades:                DefaultStoreOptions(),
-		AccountsDirPath:       fmt.Sprintf("/tmp/vegatests/accountstore-%v", randSeq(5)),
-		OrdersDirPath:         fmt.Sprintf("/tmp/vegatests/orderstore-%v", randSeq(5)),
-		TradesDirPath:         fmt.Sprintf("/tmp/vegatests/tradestore-%v", randSeq(5)),
-		CandlesDirPath:        fmt.Sprintf("/tmp/vegatests/candlestore-%v", randSeq(5)),
-		MarketsDirPath:        fmt.Sprintf("/tmp/vegatests/marketstore-%v", randSeq(5)),
+		AccountsDirPath:       fmt.Sprintf("/tmp/vegatests/accountstore-%v", crypto.RandomStr(5)),
+		OrdersDirPath:         fmt.Sprintf("/tmp/vegatests/orderstore-%v", crypto.RandomStr(5)),
+		TradesDirPath:         fmt.Sprintf("/tmp/vegatests/tradestore-%v", crypto.RandomStr(5)),
+		CandlesDirPath:        fmt.Sprintf("/tmp/vegatests/candlestore-%v", crypto.RandomStr(5)),
+		MarketsDirPath:        fmt.Sprintf("/tmp/vegatests/marketstore-%v", crypto.RandomStr(5)),
 		LogPositionStoreDebug: true,
 		Timeout:               encoding.Duration{Duration: defaultStorageAccessTimeout},
 	}
@@ -169,14 +169,4 @@ func ensureDir(path string) error {
 		return err
 	}
 	return nil
-}
-
-var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = chars[rand.Intn(len(chars))]
-	}
-	return string(b)
 }

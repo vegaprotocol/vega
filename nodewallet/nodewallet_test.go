@@ -1,13 +1,13 @@
 package nodewallet_test
 
 import (
-	"crypto/rand"
 	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/nodewallet/eth"
@@ -22,7 +22,7 @@ var (
 )
 
 func rootDir() string {
-	path := filepath.Join(rootDirPath, randSeq(10))
+	path := filepath.Join(rootDirPath, crypto.RandomStr(10))
 	os.MkdirAll(path, os.ModePerm)
 	return path
 }
@@ -136,7 +136,7 @@ func testVerifySuccess(t *testing.T) {
 
 func testVerifyFailure(t *testing.T) {
 	// create a random non existing path
-	filepath := filepath.Join("/", randSeq(10), "somewallet")
+	filepath := filepath.Join("/", crypto.RandomStr(10), "somewallet")
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
 		StorePath:      filepath,
@@ -153,7 +153,7 @@ func testVerifyFailure(t *testing.T) {
 
 func testNewFailureInvalidStorePath(t *testing.T) {
 	// create a random non existing path
-	filepath := filepath.Join("/", randSeq(10), "somewallet")
+	filepath := filepath.Join("/", crypto.RandomStr(10), "somewallet")
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
 		StorePath:      filepath,
@@ -261,15 +261,4 @@ func testNewFailureInvalidPassphrase(t *testing.T) {
 	assert.EqualError(t, err, "unable to load nodewalletsore: unable to decrypt store file (cipher: message authentication failed)")
 	assert.Nil(t, nw)
 	assert.NoError(t, os.RemoveAll(rootDir))
-}
-
-var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		v, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
-		b[i] = chars[v.Int64()]
-	}
-	return string(b)
 }
