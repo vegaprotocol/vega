@@ -9,8 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
-	"github.com/shopspring/decimal"
 )
 
 var (
@@ -390,7 +388,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 // represented in float64 and fees are uint64, shares are floored and the
 // remainder is assigned to the last party on the share map. Note that the map
 // is sorted lexicographically to keep determinism.
-func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]decimal.Decimal, acc *types.Account) events.FeesTransfer {
+func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Decimal, acc *types.Account) events.FeesTransfer {
 	if len(shares) == 0 {
 		return nil
 	}
@@ -408,7 +406,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]decimal
 	}
 	sort.Strings(keys)
 
-	var floored decimal.Decimal
+	var floored num.Decimal
 	for _, key := range keys {
 		share := shares[key]
 		cs := acc.Balance.ToDecimal().Mul(share).Floor()
