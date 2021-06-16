@@ -268,20 +268,6 @@ func (t Trades) IntoProto() []*proto.Trade {
 	return out
 }
 
-type Fee struct {
-	MakerFee          uint64
-	InfrastructureFee uint64
-	LiquidityFee      uint64
-}
-
-func (f *Fee) IntoProto() *proto.Fee {
-	return &proto.Fee{
-		MakerFee:          f.MakerFee,
-		InfrastructureFee: f.InfrastructureFee,
-		LiquidityFee:      f.LiquidityFee,
-	}
-}
-
 type Trade_Type = proto.Trade_Type
 
 const (
