@@ -107,12 +107,12 @@ func (e *Engine) CalculateForContinuousMode(
 		switch v.Aggressor {
 		case types.Side_SIDE_BUY:
 			v.BuyerFee = fee
-			v.SellerFee = &types.Fee{}
+			v.SellerFee = types.NewFee()
 			aggressor = v.Buyer
 			maker = v.Seller
 		case types.Side_SIDE_SELL:
 			v.SellerFee = fee
-			v.BuyerFee = &types.Fee{}
+			v.BuyerFee = types.NewFee()
 			aggressor = v.Seller
 			maker = v.Buyer
 		}
@@ -313,11 +313,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		partiesShare[v.Party()] = &feeShare{pos: uint64(size)}
 
 		// while we are at it, we initial the map of all fees per party
-		partiesFees[v.Party()] = &types.Fee{
-			MakerFee:          num.NewUint(0),
-			InfrastructureFee: num.NewUint(0),
-			LiquidityFee:      num.NewUint(0),
-		}
+		partiesFees[v.Party()] = types.NewFee()
 	}
 
 	// no we accumulated all the absolute position, we
@@ -338,7 +334,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		t.SellerFee = fees
 		if goodParty == "network" {
 			goodParty = t.Seller
-			t.SellerFee = &types.Fee{}
+			t.SellerFee = types.NewFee()
 			t.BuyerFee = fees.Clone()
 		}
 
