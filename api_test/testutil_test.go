@@ -49,7 +49,6 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
-
 	"github.com/golang/mock/gomock"
 	tmp2p "github.com/tendermint/tendermint/p2p"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -333,7 +332,16 @@ func PublishEvents(
 	b.Unsubscribe(id)
 	// we've received the time event, but that could've been received before the other events.
 	// Now send out a second time event to ensure the other events get flushed/persisted
-	b.Send(events.NewTime(ctx, now.Add(time.Second)))
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.Tick(1 * time.Millisecond):
+				b.Send(events.NewTime(ctx, now.Add(time.Second)))
+			}
+		}
+	}()
 }
 
 func waitForTime(tmConf *TimeSub, now time.Time) bool {
