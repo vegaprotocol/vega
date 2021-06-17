@@ -81,7 +81,8 @@ func (o *Order) IntoProto() *proto.Order {
 func OrderFromProto(o *proto.Order) *Order {
 	var pegged *PeggedOrder
 	if o.PeggedOrder != nil {
-		pegged = PeggedOrderFromProto(o.PeggedOrder)
+		pegged = &PeggedOrder{}
+		pegged.FromProto(o.PeggedOrder)
 	}
 	return &Order{
 		Id:                   o.Id,
