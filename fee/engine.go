@@ -501,9 +501,9 @@ func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
 	size := num.NewUint(trade.Size)
 	// multiply by size
 	total := size.Mul(trade.Price, size).ToDecimal()
-	mf, _ := num.UintFromDecimal(total.Mul(e.f.makerFee).Round(0))
-	inf, _ := num.UintFromDecimal(total.Mul(e.f.infrastructureFee).Round(0))
-	lf, _ := num.UintFromDecimal(total.Mul(e.f.liquidityFee).Round(0))
+	mf, _ := num.UintFromDecimal(total.Mul(e.f.makerFee).Ceil())
+	inf, _ := num.UintFromDecimal(total.Mul(e.f.infrastructureFee).Ceil())
+	lf, _ := num.UintFromDecimal(total.Mul(e.f.liquidityFee).Ceil())
 	return &types.Fee{
 		MakerFee:          mf,
 		InfrastructureFee: inf,
