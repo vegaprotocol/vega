@@ -68,6 +68,12 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 	return p
 }
 
+func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) *OrderSubmission {
+	os := OrderSubmission{}
+	os.FromProto(p)
+	return &os
+}
+
 func (o *OrderSubmission) FromProto(p *commandspb.OrderSubmission) {
 	o.MarketId = p.MarketId
 	// Need to update protobuf to use string TODO UINT
@@ -150,6 +156,12 @@ type OrderAmendment struct {
 	// Amend the pegged order reference for the order
 	// - See [`PeggedReference`](#vega.PeggedReference)
 	PeggedReference proto.PeggedReference
+}
+
+func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) *OrderAmendment {
+	oa := OrderAmendment{}
+	oa.FromProto(p)
+	return &oa
 }
 
 func (o *OrderAmendment) FromProto(p *commandspb.OrderAmendment) {

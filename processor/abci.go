@@ -328,8 +328,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	app.stats.IncTotalCreateOrder()
 
 	// Convert from proto to domain type
-	os := types.OrderSubmission{}
-	os.FromProto(s)
+	os := types.NewOrderSubmissionFromProto(s)
 
 	// Submit the create order request to the execution engine
 	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
@@ -393,8 +392,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
 	// Convert protobuf into local domain type
-	oa := &types.OrderAmendment{}
-	oa.FromProto(order)
+	oa := types.NewOrderAmendmentFromProto(order)
 
 	// Submit the cancel new order request to the Vega trading core
 	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
