@@ -13,7 +13,6 @@ import (
 
 func TestDeprecatedService(t *testing.T) {
 	t.Run("sign ok", testServiceSignOK)
-	t.Run("sign any", testServiceSignAnyOK)
 	t.Run("sign fail invalid request", testServiceSignFailInvalidRequest)
 }
 
@@ -32,24 +31,6 @@ func testServiceSignOK(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	wallet.ExtractToken(s.SignTx)(w, r, nil)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-}
-
-func testServiceSignAnyOK(t *testing.T) {
-	s := getTestService(t)
-	defer s.ctrl.Finish()
-
-	s.handler.EXPECT().SignAny(gomock.Any(), gomock.Any(), gomock.Any()).
-		Times(1).Return([]byte("some sig"), nil)
-	payload := `{"inputData": "some data", "pubKey": "asdasasdasd"}`
-	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
-	r.Header.Set("Authorization", "Bearer eyXXzA")
-
-	w := httptest.NewRecorder()
-
-	wallet.ExtractToken(s.SignAny)(w, r, nil)
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

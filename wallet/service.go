@@ -2,6 +2,8 @@ package wallet
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -437,6 +439,35 @@ func (s *Service) UpdateMeta(t string, w http.ResponseWriter, r *http.Request, p
 	}
 
 	writeSuccess(w, SuccessResponse{Success: true}, http.StatusOK)
+}
+
+func (s *Service) SignAny(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	req := SignAnyRequest{}
+	if err := unmarshalBody(r, &req); err != nil {
+		writeError(w, newError(err.Error()), http.StatusBadRequest)
+		return
+	}
+	if len(req.InputData) <= 0 {
+		writeError(w, newError("missing inputData field"), http.StatusBadRequest)
+		return
+	}
+	if len(req.PubKey) <= 0 {
+		writeError(w, newError("missing pubKey field"), http.StatusBadRequest)
+		return
+	}
+
+	signature, err := s.handler.SignAny(t, req.InputData, req.PubKey)
+	if err != nil {
+		writeError(w, newError(err.Error()), http.StatusForbidden)
+		return
+	}
+
+	res := SignAnyResponse{
+		HexSignature:    hex.EncodeToString(signature),
+		Base64Signature: base64.StdEncoding.EncodeToString(signature),
+	}
+
+	writeSuccess(w, res, http.StatusOK)
 }
 
 func (s *Service) SignTxSyncV2(token string, w http.ResponseWriter, r *http.Request, p httprouter.Params) {

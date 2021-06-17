@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/crypto"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
