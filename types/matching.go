@@ -81,8 +81,7 @@ func (o *Order) IntoProto() *proto.Order {
 func OrderFromProto(o *proto.Order) *Order {
 	var pegged *PeggedOrder
 	if o.PeggedOrder != nil {
-		pegged = &PeggedOrder{}
-		pegged.FromProto(o.PeggedOrder)
+		pegged = NewPeggedOrderFromProto(o.PeggedOrder)
 	}
 	return &Order{
 		Id:                   o.Id,
@@ -157,13 +156,13 @@ type PeggedOrder struct {
 	Offset    int64
 }
 
-func (p PeggedOrder) FromProto(po *proto.PeggedOrder) *PeggedOrder {
-	if po == nil {
+func NewPeggedOrderFromProto(p *proto.PeggedOrder) *PeggedOrder {
+	if p == nil {
 		return nil
 	}
 	return &PeggedOrder{
-		Reference: po.Reference,
-		Offset:    po.Offset,
+		Reference: p.Reference,
+		Offset:    p.Offset,
 	}
 }
 
