@@ -50,3 +50,16 @@ func (f Fee) Clone() *Fee {
 		LiquidityFee:      f.LiquidityFee.Clone(),
 	}
 }
+
+// NewFee returns a new fee object, with all fields initialised
+func NewFee() *Fee {
+	f := &Fee{}
+	f.Init()
+	return f
+}
+
+func (f *Fee) Init() {
+	f.MakerFee = num.NewUint(0)
+	f.InfrastructureFee = num.NewUint(0)
+	f.LiquidityFee = num.NewUint(0)
+}
