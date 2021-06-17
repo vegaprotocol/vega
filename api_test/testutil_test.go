@@ -85,6 +85,10 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		ValidatorInfo: tmctypes.ValidatorInfo{},
 	}, nil)
 	blockchainClient.EXPECT().GetUnconfirmedTxCount(gomock.Any()).AnyTimes().Return(0, nil)
+	blockchainClient.EXPECT().GetNetworkInfo(gomock.Any()).AnyTimes().Return(&tmctypes.ResultNetInfo{
+		Listening: true,
+		NPeers:    1,
+	}, nil)
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -303,6 +307,8 @@ func PublishEvents(
 		b.SendBatch(e)
 	}
 
+	t.Logf("%d events sent", len(evts))
+
 	// add time event subscriber so we can verify the time event was received at the end
 	sCtx, cfunc := context.WithCancel(ctx)
 	tmConf := NewTimeSub(sCtx)
@@ -316,6 +322,9 @@ func PublishEvents(
 	if !waitForTime(tmConf, now) {
 		t.Fatal("Did not receive the expected time event within reasonable time")
 	}
+
+	t.Log("time event received")
+
 	// halt the subscriber
 	tmConf.Halt()
 	// cancel the subscriber ctx
