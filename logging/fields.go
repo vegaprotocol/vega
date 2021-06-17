@@ -197,8 +197,13 @@ func LiquidityID(id string) zap.Field {
 	return zap.String("liquidity-id", id)
 }
 
+func LiquidityProvisionSubmissionProto(
+	lp *commandspb.LiquidityProvisionSubmission) zap.Field {
+	return zap.String("liquidity-provision-submission", lp.String())
+}
+
 func LiquidityProvisionSubmission(
-	lp commandspb.LiquidityProvisionSubmission) zap.Field {
+	lp types.LiquidityProvisionSubmission) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
 }
 
@@ -226,7 +231,12 @@ func ProtoAccount(a ptypes.Account) zap.Field {
 }
 
 // OrderAmendment constructs a single string field to contain all the object information
-func OrderAmendment(oa *commandspb.OrderAmendment) zap.Field {
+func OrderAmendmentProto(oa *commandspb.OrderAmendment) zap.Field {
+	return zap.String("order-amendment", oa.String())
+}
+
+// OrderAmendment constructs a single string field to contain all the object information
+func OrderAmendment(oa *types.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
