@@ -81,6 +81,16 @@ Feature: A feature that reproduces some system test
       | ETH/DEC20 | ETH        | ETH   | 100        | default-simple-risk-model | default-margin-calculator | 1                | 0.004     | 0.001              | 0.3           | default-none     | default-for-future |
 ```
 
+## Life cycle
+
+To get a market up and running, here is the process:
+1. Configuration of network parameters. They have default values, so it's not required but if we ant to override them, it should be the first step called.
+2. Configuration of market.
+3. Declaration of the traders and their general account balance.
+4. Placement of orders by the traders, so the market can have a mark price.
+
+Once these steps are done, the market should be in a proper state.
+
 ## Steps
 
 The list of steps is located in `./main_test.go`.
