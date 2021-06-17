@@ -1428,6 +1428,20 @@ func (m *Market) handleConfirmationPassiveOrders(
 }
 
 func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfirmation) {
+	// When re-submitting liquidity order, it happen that the pricing is putting
+	// the order at a price which makes it uncross straight away.
+	// then triggering this handleConfirmation flow, etc.
+	// Although the order is considered aggressive, and we never expect in the flow
+	// for an aggressive order to be pegged, so we never remove them from the pegged
+	// list. All this impact the float of EnterAuction, which if triggered from there
+	// will try to park all pegged orders, including this order which have never been
+	// remove from the pegged list. We add this check to make sure  that if the
+	// aggressive order is pegged, we then do remove it from the list.
+	if conf.Order.PeggedOrder != nil {
+		if conf.Order.Remaining == 0 || conf.Order.Status != types.Order_STATUS_ACTIVE {
+			m.removePeggedOrder(conf.Order)
+		}
+	}
 
 	m.handleConfirmationPassiveOrders(ctx, conf)
 	end := m.as.CanLeave()
