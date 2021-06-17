@@ -403,6 +403,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 
 	for key := range shares {
 		keys = append(keys, key)
+		ft.totalFeesAmountsPerParty[key] = num.NewUint(0)
 	}
 	sort.Strings(keys)
 
