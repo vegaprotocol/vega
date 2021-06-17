@@ -29,16 +29,6 @@ func TestMarkets_GetAll(t *testing.T) {
 		return e, nil
 	}, "markets-events.golden")
 
-	// we also send a NewMarketUpdatedEvent for a market creation
-	// See execution.Engine#publishMarketInfos
-	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
-		market := be.GetMarket()
-		e := events.NewMarketUpdatedEvent(ctx, pb.Market{
-			Id: market.MarketId,
-		})
-		return e, nil
-	}, "markets-events.golden")
-
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
@@ -52,7 +42,7 @@ loop:
 		select {
 		case <-ctx.Done():
 			t.Fatalf("test timeout")
-		case <-time.Tick(1 * time.Millisecond):
+		case <-time.Tick(50 * time.Millisecond):
 			resp, err = client.Markets(ctx, &apipb.MarketsRequest{})
 			require.NotNil(t, resp)
 			require.NoError(t, err)

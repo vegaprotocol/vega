@@ -49,7 +49,7 @@ loop:
 		select {
 		case <-ctx.Done():
 			t.Fatalf("test timeout")
-		case <-time.Tick(1 * time.Millisecond):
+		case <-time.Tick(50 * time.Millisecond):
 			resp, err = client.PartyAccounts(ctx, &apipb.PartyAccountsRequest{
 				PartyId: partyID,
 				Type:    pb.AccountType_ACCOUNT_TYPE_GENERAL,

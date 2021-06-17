@@ -54,7 +54,7 @@ loop:
 		select {
 		case <-ctx.Done():
 			t.Fatalf("test timeout")
-		case <-time.Tick(1 * time.Millisecond):
+		case <-time.Tick(50 * time.Millisecond):
 			resp, err = client.LiquidityProvisions(ctx, &apipb.LiquidityProvisionsRequest{
 				Market: lpMmarketID,
 				Party:  lpPartyID,

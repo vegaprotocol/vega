@@ -332,9 +332,7 @@ func PublishEvents(
 	b.Unsubscribe(id)
 	// we've received the time event, but that could've been received before the other events.
 	// Now send out a second time event to ensure the other events get flushed/persisted
-	for i := 0; i < 10; i++ {
-		b.Send(events.NewTime(ctx, now.Add(time.Second)))
-	}
+	b.Send(events.NewTime(ctx, now.Add(time.Second)))
 }
 
 func waitForTime(tmConf *TimeSub, now time.Time) bool {
