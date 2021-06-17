@@ -105,6 +105,7 @@ func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvision
 func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisionSubmission) error {
 	var err error
 	l.MarketId = p.MarketId
+	// TODO UINT after proto is updated
 	l.CommitmentAmount = num.NewUint(p.CommitmentAmount)
 	l.Fee, err = num.DecimalFromString(p.Fee)
 	if err != nil {

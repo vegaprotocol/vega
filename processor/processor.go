@@ -38,7 +38,7 @@ type ExecutionEngine interface {
 	// orders stuff
 	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *commandspb.OrderAmendment, party string) (*types.OrderConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
@@ -47,7 +47,7 @@ type ExecutionEngine interface {
 	StartOpeningAuction(ctx context.Context, marketid string) error
 
 	// LP stuff
-	SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, id string) error
+	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
 
 	Hash() []byte
 }

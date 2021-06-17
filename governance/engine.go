@@ -528,7 +528,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, par
 		Value:                       cmd.Value,
 		Timestamp:                   e.currentTime.UnixNano(),
 		TotalGovernanceTokenBalance: num.NewUint(0),
-		TotalGovernanceTokenWeight:  num.NewDecimalFromFloat(0),
+		TotalGovernanceTokenWeight:  num.DecimalFromFloat(0),
 	}
 
 	// we only want to count the last vote, so add to yes/no map, delete from the other
@@ -703,7 +703,7 @@ func getGovernanceTokens(accounts Accounts, party, voteAsset string) (*num.Uint,
 	if err != nil {
 		return nil, err
 	}
-	return num.NewUint(account.Balance), err
+	return account.Balance, err
 }
 
 // FIXME Should be a `Uint.Clone()` of account.Balance. We will update it when

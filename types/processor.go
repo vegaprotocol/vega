@@ -3,24 +3,26 @@
 package types
 
 import (
-	"fmt"
-
 	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/protobuf/ptypes/wrappers"
 )
 
-//type WithdrawSubmission = commandspb.WithdrawSubmission
-//type OracleDataSubmission = commandspb.OracleDataSubmission
-//type NodeRegistration = commandspb.NodeRegistration
-//type NodeVote = commandspb.NodeVote
-//type Transaction = proto.Transaction
-//type ChainEvent = commandspb.ChainEvent
-//type SignedBundle = proto.SignedBundle
-//type NetworkParameter = proto.NetworkParameter
-//type Signature = proto.Signature
-//type Transaction_PubKey = proto.Transaction_PubKey
+//type OrderSubmission = commandspb.OrderSubmission
+//type OrderAmendment = commandspb.OrderAmendment
+
+type OrderCancellation = commandspb.OrderCancellation
+type WithdrawSubmission = commandspb.WithdrawSubmission
+type OracleDataSubmission = commandspb.OracleDataSubmission
+type NodeRegistration = commandspb.NodeRegistration
+type NodeVote = commandspb.NodeVote
+type Transaction = proto.Transaction
+type ChainEvent = commandspb.ChainEvent
+type SignedBundle = proto.SignedBundle
+type NetworkParameter = proto.NetworkParameter
+type Signature = proto.Signature
+type Transaction_PubKey = proto.Transaction_PubKey
 
 type OrderSubmission struct {
 	// Market identifier for the order, required field
@@ -101,7 +103,7 @@ func (o OrderSubmission) IntoOrder(party string) *Order {
 	return order
 }
 
-type OrderCancellation struct {
+/*type OrderCancellation struct {
 	// Unique identifier for the order (set by the system after consensus), required field
 	OrderId string
 	// Market identifier for the order, required field
@@ -123,7 +125,7 @@ func (o OrderCancellation) IntoProto() *commandspb.OrderCancellation {
 
 func (o OrderCancellation) String() string {
 	return o.IntoProto().String()
-}
+}*/
 
 type OrderAmendment struct {
 	// Order identifier, this is required to find the order and will not be updated, required field
@@ -192,7 +194,7 @@ func (o OrderAmendment) String() string {
 	return o.IntoProto().String()
 }
 
-type WithdrawSubmission struct {
+/*type WithdrawSubmission struct {
 	// The amount to be withdrawn
 	Amount uint64
 	// The asset we want to withdraw
@@ -346,6 +348,12 @@ type ChainEvent struct {
 func (c *ChainEvent) FromProto(p *commandspb.ChainEvent) {
 	c.TxId = p.TxId
 	c.Nonce = p.Nonce
+
+	// Work out which type of event this is
+	switch t := p.Event.(type) {
+	case *commandspb.ChainEvent_Builtin:
+	default:
+	}
 }
 
 func (c ChainEvent) IntoProto() *commandspb.ChainEvent {
@@ -453,3 +461,4 @@ func (t Transaction_PubKey) IntoProto() *proto.Transaction_PubKey {
 func (t Transaction_PubKey) String() string {
 	return fmt.Sprint(t.PubKey)
 }
+*/

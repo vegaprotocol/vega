@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
+	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
@@ -335,7 +336,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
-				logging.OrderSubmission(s),
+				logging.OrderSubmission(&os),
 				logging.OrderWithTag(*conf.Order, "aggressive-order"),
 				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
 				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
@@ -351,7 +352,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 	if err != nil && app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("error message on creating order",
-			logging.OrderSubmission(s),
+			logging.OrderSubmission(&os),
 			logging.Error(err))
 	}
 
@@ -391,8 +392,12 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	app.stats.IncTotalAmendOrder()
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
+	// Convert protobuf into local domain type
+	oa := &types.OrderAmendment{}
+	oa.FromProto(order)
+
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, order, tx.Party())
+	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -495,8 +500,12 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 		return err
 	}
 
+	// Convert protobuf message to local domain type
+	lps := &types.LiquidityProvisionSubmission{}
+	lps.FromProto(sub)
+
 	partyID := tx.Party()
-	return app.exec.SubmitLiquidityProvision(ctx, sub, partyID, id)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
@@ -588,7 +597,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 
 }
 
-func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
+func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *proto.Asset) {
 	prop.State = types.Proposal_STATE_ENACTED
 	// first check if this asset is real
 	asset, err := app.assets.Get(prop.Id)
