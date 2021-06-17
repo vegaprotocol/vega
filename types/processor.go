@@ -68,13 +68,8 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 	return p
 }
 
-func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) *OrderSubmission {
-	os := OrderSubmission{}
-	os.FromProto(p)
-	return &os
-}
-
-func (o *OrderSubmission) FromProto(p *commandspb.OrderSubmission) {
+func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmission, error) {
+	o := OrderSubmission{}
 	o.MarketId = p.MarketId
 	// Need to update protobuf to use string TODO UINT
 	o.Price = num.NewUint(p.Price)
@@ -84,7 +79,8 @@ func (o *OrderSubmission) FromProto(p *commandspb.OrderSubmission) {
 	o.ExpiresAt = p.ExpiresAt
 	o.Type = p.Type
 	o.Reference = p.Reference
-	o.PeggedOrder.FromProto(p.PeggedOrder)
+	o.PeggedOrder = NewPeggedOrderFromProto(p.PeggedOrder)
+	return &o, nil
 }
 
 func (o OrderSubmission) String() string {
@@ -158,13 +154,8 @@ type OrderAmendment struct {
 	PeggedReference proto.PeggedReference
 }
 
-func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) *OrderAmendment {
-	oa := OrderAmendment{}
-	oa.FromProto(p)
-	return &oa
-}
-
-func (o *OrderAmendment) FromProto(p *commandspb.OrderAmendment) {
+func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, error) {
+	o := OrderAmendment{}
 	o.OrderId = p.OrderId
 	o.MarketId = p.MarketId
 	// Needs to update the protobuf definition TODO UINT
@@ -180,6 +171,7 @@ func (o *OrderAmendment) FromProto(p *commandspb.OrderAmendment) {
 		o.PeggedOffset = p.PeggedOffset.Value
 	}
 	o.PeggedReference = p.PeggedReference
+	return &o, nil
 }
 
 func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
