@@ -15,6 +15,7 @@ import (
 )
 
 func TestGetByMarket(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
