@@ -15,7 +15,6 @@ import (
 )
 
 func TestGetByOrderID(t *testing.T) {
-	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
