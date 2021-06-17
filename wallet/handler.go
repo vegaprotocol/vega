@@ -14,7 +14,6 @@ import (
 )
 
 var (
-	ErrPubKeyAlreadyTainted = errors.New("public key is already tainted")
 	ErrPubKeyIsTainted      = errors.New("public key is tainted")
 )
 
