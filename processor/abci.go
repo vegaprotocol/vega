@@ -328,14 +328,21 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	app.stats.IncTotalCreateOrder()
 
 	// Convert from proto to domain type
-	os := types.NewOrderSubmissionFromProto(s)
+	os, err := types.NewOrderSubmissionFromProto(s)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert OrderSubmission protobuf message to domain type",
+				logging.OrderSubmissionProto(s), logging.Error(err))
+		}
+		return err
+	}
 
 	// Submit the create order request to the execution engine
 	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
-				logging.OrderSubmission(&os),
+				logging.OrderSubmission(os),
 				logging.OrderWithTag(*conf.Order, "aggressive-order"),
 				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
 				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
@@ -351,7 +358,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 	if err != nil && app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("error message on creating order",
-			logging.OrderSubmission(&os),
+			logging.OrderSubmission(os),
 			logging.Error(err))
 	}
 
@@ -392,7 +399,14 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
 	// Convert protobuf into local domain type
-	oa := types.NewOrderAmendmentFromProto(order)
+	oa, err := types.NewOrderAmendmentFromProto(order)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert Orderamendment protobuf message to domain type",
+				logging.OrderAmendmentProto(order), logging.Error(err))
+		}
+		return err
+	}
 
 	// Submit the cancel new order request to the Vega trading core
 	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
@@ -499,7 +513,14 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 	}
 
 	// Convert protobuf message to local domain type
-	lps := types.NewLiquidityProvisionSubmissionFromProto(sub)
+	lps, err := types.NewLiquidityProvisionSubmissionFromProto(sub)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert LiquidityProvisionSubmission protobuf message to domain type",
+				logging.LiquidityProvisionSubmissionProto(sub), logging.Error(err))
+		}
+		return err
+	}
 
 	partyID := tx.Party()
 	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
