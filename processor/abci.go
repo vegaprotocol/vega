@@ -501,8 +501,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 	}
 
 	// Convert protobuf message to local domain type
-	lps := &types.LiquidityProvisionSubmission{}
-	lps.FromProto(sub)
+	lps := types.NewLiquidityProvisionSubmissionFromProto(sub)
 
 	partyID := tx.Party()
 	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
