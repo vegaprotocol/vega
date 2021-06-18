@@ -101,7 +101,7 @@ Setting up a market is complex and the base for everything. As a result, we crea
 
 #### Flexibility with steps
 
-A market is composed of several set of parameters grouped by domain, such as margin, risk model, fees, and so on.
+A market is composed of several sets of parameters grouped by domain, such as margin, risk model, fees, and so on.
 
 Each set of parameters is declared in its own step into which a custom name is given. In our "lego" analogy, these named sets would be the "blocks".
 
