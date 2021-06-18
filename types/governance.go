@@ -8,10 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type ContinuousTrading = proto.ContinuousTrading
-type NewMarketConfiguration_Continuous = proto.NewMarketConfiguration_Continuous
-type NewMarketConfiguration_Discrete = proto.NewMarketConfiguration_Discrete
-
 type Vote_Value = proto.Vote_Value
 
 const (
@@ -176,10 +172,41 @@ type ProposalTerms struct {
 	Change pterms
 }
 
-type NewMarketConfiguration = proto.NewMarketConfiguration
 type NewMarket struct {
 	Changes             *NewMarketConfiguration
 	LiquidityCommitment *NewMarketCommitment
+}
+
+type NewMarketConfiguration struct {
+	Instrument                    *InstrumentConfiguration
+	DecimalPlaces                 uint64
+	Metadata                      []string
+	PriceMonitoringParameters     *PriceMonitoringParameters
+	LiquidityMonitoringParameters *LiquidityMonitoringParameters
+	RiskParameters                riskParams
+	TradingMode                   tradingMode
+	// New market risk model parameters
+	//
+	// Types that are valid to be assigned to RiskParameters:
+	//	*NewMarketConfiguration_Simple
+	//	*NewMarketConfiguration_LogNormal
+	// RiskParameters isNewMarketConfiguration_RiskParameters
+	// Trading mode for the new market
+	//
+	// Types that are valid to be assigned to TradingMode:
+	//	*NewMarketConfiguration_Continuous
+	//	*NewMarketConfiguration_Discrete
+	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
+}
+
+type riskParams interface {
+	isNMCRP()
+	rpIntoProto() interface{}
+}
+
+type tradingMode interface {
+	isTradingMode()
+	tmIntoProto() interface{}
 }
 
 type ProposalTerms_NewMarket struct {
@@ -191,7 +218,10 @@ type ProposalTerms_UpdateMarket struct {
 	UpdateMarket *UpdateMarket
 }
 
-type UpdateNetworkParameter = proto.UpdateNetworkParameter
+type UpdateNetworkParameter struct {
+	Changes *NetworkParameter
+}
+
 type ProposalTerms_UpdateNetworkParameter struct {
 	UpdateNetworkParameter *UpdateNetworkParameter
 }
@@ -211,9 +241,36 @@ type pterms interface {
 
 func (n NewMarket) IntoProto() *proto.NewMarket {
 	return &proto.NewMarket{
-		Changes:             n.Changes,
+		Changes:             n.Changes.IntoProto(),
 		LiquidityCommitment: n.LiquidityCommitment.IntoProto(),
 	}
+}
+
+func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
+	riskParams := n.RiskParameters.rpIntoProto()
+	tradingMode := n.TradingMode.tmIntoProto()
+	md := make([]string, 0, len(n.Metadata))
+	md = append(md, n.Metadata...)
+	r := &proto.NewMarketConfiguration{
+		Instrument:                    n.Instrument.IntoProto(),
+		DecimalPlaces:                 n.DecimalPlaces,
+		Metadata:                      md,
+		PriceMonitoringParameters:     n.PriceMonitoringParameters.IntoProto(),
+		LiquidityMonitoringParameters: n.LiquidityMonitoringParameters.IntoProto(),
+	}
+	switch rp := riskParams.(type) {
+	case *proto.NewMarketConfiguration_Simple:
+		r.RiskParameters = rp
+	case *proto.NewMarketConfiguration_LogNormal:
+		r.RiskParameters = rp
+	}
+	switch tm := tradingMode.(type) {
+	case *proto.NewMarketConfiguration_Continuous:
+		r.TradingMode = tm
+	case *proto.NewMarketConfiguration_Discrete:
+		r.TradingMode = tm
+	}
+	return r
 }
 
 func (p ProposalTerms) IntoProto() *proto.ProposalTerms {
@@ -264,13 +321,23 @@ func (a ProposalTerms_UpdateMarket) oneOfProto() interface{} {
 
 func (a ProposalTerms_UpdateNetworkParameter) IntoProto() *proto.ProposalTerms_UpdateNetworkParameter {
 	return &proto.ProposalTerms_UpdateNetworkParameter{
-		UpdateNetworkParameter: a.UpdateNetworkParameter,
+		UpdateNetworkParameter: a.UpdateNetworkParameter.IntoProto(),
 	}
 }
 
 func (a ProposalTerms_UpdateNetworkParameter) isPTerm() {}
 func (a ProposalTerms_UpdateNetworkParameter) oneOfProto() interface{} {
 	return a.IntoProto()
+}
+
+func (n UpdateNetworkParameter) IntoProto() *proto.UpdateNetworkParameter {
+	return &proto.UpdateNetworkParameter{
+		Changes: n.Changes.IntoProto(),
+	}
+}
+
+func (n UpdateNetworkParameter) String() string {
+	return n.IntoProto().String()
 }
 
 func (a ProposalTerms_NewAsset) IntoProto() *proto.ProposalTerms_NewAsset {
@@ -329,10 +396,22 @@ func (n NewMarketConfiguration_LogNormal) IntoProto() *proto.NewMarketConfigurat
 	}
 }
 
+func (*NewMarketConfiguration_LogNormal) isNMCRP() {}
+
+func (n NewMarketConfiguration_LogNormal) rpIntoProto() interface{} {
+	return n.IntoProto()
+}
+
 func (n NewMarketConfiguration_Simple) IntoProto() *proto.NewMarketConfiguration_Simple {
 	return &proto.NewMarketConfiguration_Simple{
 		Simple: n.Simple.IntoProto(),
 	}
+}
+
+func (*NewMarketConfiguration_Simple) isNMCRP() {}
+
+func (n NewMarketConfiguration_Simple) rpIntoProto() interface{} {
+	return n.IntoProto()
 }
 
 type InstrumentConfiguration struct {
@@ -396,4 +475,62 @@ func (f FutureProduct) IntoProto() *proto.FutureProduct {
 
 func (f FutureProduct) String() string {
 	return f.IntoProto().String()
+}
+
+type ContinuousTrading struct {
+	TickSize string
+}
+
+func (c ContinuousTrading) IntoProto() *proto.ContinuousTrading {
+	return &proto.ContinuousTrading{
+		TickSize: c.TickSize,
+	}
+}
+
+func (c ContinuousTrading) String() string {
+	return c.IntoProto().String()
+}
+
+type NewMarketConfiguration_Continuous struct {
+	Continuous *ContinuousTrading
+}
+
+func (n NewMarketConfiguration_Continuous) IntoProto() *proto.NewMarketConfiguration_Continuous {
+	return &proto.NewMarketConfiguration_Continuous{
+		Continuous: n.Continuous.IntoProto(),
+	}
+}
+
+func (*NewMarketConfiguration_Continuous) isTradingMode() {}
+
+func (n NewMarketConfiguration_Continuous) tmIntoProto() interface{} {
+	return n.IntoProto()
+}
+
+type NewMarketConfiguration_Discrete struct {
+	Discrete *DiscreteTrading
+}
+
+func (n NewMarketConfiguration_Discrete) IntoProto() *proto.NewMarketConfiguration_Discrete {
+	return &proto.NewMarketConfiguration_Discrete{
+		Discrete: n.Discrete.IntoProto(),
+	}
+}
+
+func (*NewMarketConfiguration_Discrete) isTradingMode() {}
+
+func (n NewMarketConfiguration_Discrete) tmIntoProto() interface{} {
+	return n.IntoProto()
+}
+
+type DiscreteTrading struct {
+	DurationNs int64
+	TickSize   string
+}
+
+func (d DiscreteTrading) IntoProto() *proto.DiscreteTrading {
+	return &proto.DiscreteTrading{
+		DurationNs: d.DurationNs,
+		TickSize:   d.TickSize,
+	}
 }
