@@ -56,9 +56,9 @@ Feature: Target stake
     # Traders 1, 2, 3 go long
     When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_1   | ETH/DEC21 | buy  | 10     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
-      | tt_2   | ETH/DEC21 | buy  | 20     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
-      | tt_3   | ETH/DEC21 | buy  | 30     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+      | tt_1   | ETH/DEC21 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
+      | tt_2   | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+      | tt_3   | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
 
     Then the opening auction period ends for market "ETH/DEC21"
 

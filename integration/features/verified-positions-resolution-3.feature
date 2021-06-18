@@ -59,8 +59,8 @@ Feature: Position resolution case 3
 # insurance pool generation - set new mark price (and trigger closeout)
     When the traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 # check positions
     Then the traders should have the following profit and loss:
@@ -89,6 +89,6 @@ Feature: Position resolution case 3
 # We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
     When the traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | sellSideProvider | ETH/DEC19 | sell | 10     | 40    | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
+      | sellSideProvider | ETH/DEC19 | sell | 10     | 40    | 2                | TYPE_LIMIT | TIF_FOK | ref-1     |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_FOK | ref-3     |

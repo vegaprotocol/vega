@@ -221,12 +221,12 @@ Scenario: Once market is in continuous trading mode: post a GFN order that shoul
      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 1000           | 10            |
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | no-reject |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GFN | reject-me |
-    Then the following orders should be stopped:
-      | trader  | market id | reason                                               |
-      | trader1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
+      | trader2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | no-reject |                                                             |
+      | trader1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GFN | reject-me | OrderError: non-persistent order trades out of price bounds |
+  Then the following orders should be stopped:
+    | trader  | market id | reason                                               |
+    | trader1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
     And the market data for the market "ETH/DEC21" should be:
      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1020      | 1000         | 1000           | 10            |
@@ -432,7 +432,6 @@ Scenario: Once market is in continuous trading mode: enter liquidity monitoring 
       #      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       #      | trader1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       #      | trader2 | ETH/DEC21 | sell | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
-      #    And debug trades
       #
       #    Then the market data for the market "ETH/DEC21" should be:
       #      | trading mode                    | auction trigger       |

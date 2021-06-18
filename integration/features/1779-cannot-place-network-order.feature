@@ -13,6 +13,5 @@ Feature: Cannot place an network order
       | trader  | asset | amount |
       | trader1 | ETH   | 1      |
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | type         | tif     | reference |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | TYPE_NETWORK | TIF_GTC | ref-1     |
-    Then the system should return error "invalid order type"
+      | trader  | market id | side | volume | price | type         | tif     | reference | error              |
+      | trader1 | ETH/DEC19 | sell | 1      | 1000  | TYPE_NETWORK | TIF_GTC | ref-1     | invalid order type |

@@ -70,9 +70,9 @@ Feature: Test liquidity provider reward distribution
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell  |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader2-buy |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
@@ -89,13 +89,12 @@ Feature: Test liquidity provider reward distribution
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     Then time is updated to "2019-11-30T00:20:05Z"
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+    When the traders place the following orders:
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 1                | TYPE_LIMIT | TIF_GTC | trader1-buy  |
+      | trader2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell |
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
-    Then debug orders
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     # here we get only a trade for a volume of 15 as it's what was on the LP
     # order, then the 25 remaining from trader1 are cancelled for self trade
@@ -173,11 +172,10 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
 
-    Then debug trades
     And the following trades should be executed:
       | buyer   | price | size | seller  |
       | trader2 | 951   | 8    | lp1     |
@@ -197,9 +195,9 @@ Feature: Test liquidity provider reward distribution
 
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 40     | 1100  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 2                | TYPE_LIMIT | TIF_GTC | trader1-buy  |
+      | trader2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell |
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
@@ -273,9 +271,9 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
@@ -300,9 +298,9 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 40     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader1-buy  |
+      | trader2 | ETH/DEC21 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell |
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
@@ -380,9 +378,9 @@ Feature: Test liquidity provider reward distribution
 
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
@@ -418,8 +416,8 @@ Feature: Test liquidity provider reward distribution
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 40     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 3                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC21 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
