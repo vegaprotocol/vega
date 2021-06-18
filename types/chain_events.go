@@ -222,15 +222,46 @@ func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAsse
 }
 
 func (b BuiltinAssetDeposit) IntoProto() *proto.BuiltinAssetDeposit {
-	biad := &proto.BuiltinAssetDeposit{
+	bd := &proto.BuiltinAssetDeposit{
 		VegaAssetId: b.VegaAssetId,
 		PartyId:     b.PartyId,
 		Amount:      b.Amount.Uint64(),
 	}
-	return biad
+	return bd
 }
 
 func (b BuiltinAssetDeposit) String() string {
+	return b.IntoProto().String()
+}
+
+type BuiltinAssetWithdrawal struct {
+	// A Vega network internal asset identifier
+	VegaAssetId string
+	// A Vega network party identifier (pub-key)
+	PartyId string
+	// The amount to be withdrawn
+	Amount *num.Uint
+}
+
+func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
+	b := BuiltinAssetWithdrawal{
+		VegaAssetId: p.VegaAssetId,
+		PartyId:     p.PartyId,
+		Amount:      num.NewUint(p.Amount),
+	}
+	return &b, nil
+}
+
+func (b BuiltinAssetWithdrawal) IntoProto() *proto.BuiltinAssetWithdrawal {
+	bd := &proto.BuiltinAssetWithdrawal{
+		VegaAssetId: b.VegaAssetId,
+		PartyId:     b.PartyId,
+		Amount:      b.Amount.Uint64(),
+	}
+	return bd
+}
+
+func (b BuiltinAssetWithdrawal) String() string {
 	return b.IntoProto().String()
 }
 
@@ -363,25 +394,99 @@ type BuiltinAssetEvent struct {
 	// Types that are valid to be assigned to Action:
 	//	*BuiltinAssetEvent_Deposit
 	//	*BuiltinAssetEvent_Withdrawal
-	Action isBuiltinAssetEvent_Action
+	Action builtinAssetEvent_Action
+}
+
+type builtinAssetEvent_Action interface {
+	isBuiltinAssetEvent()
+	oneOfProto() interface{}
 }
 
 func NewBuiltinAssetEventFromProto(p *proto.BuiltinAssetEvent) (*BuiltinAssetEvent, error) {
+	ae := &BuiltinAssetEvent{}
+	var err error
 	switch e := p.Action.(type) {
 	case *proto.BuiltinAssetEvent_Deposit:
-		return NewBuiltinAssetEventDeposit(e)
+		ae.Action, err = NewBuiltinAssetEventDeposit(e)
+		if err != nil {
+			return nil, err
+		}
+		return ae, nil
 	case *proto.BuiltinAssetEvent_Withdrawal:
-		return NewBuiltinAssetEventWithdrawal(e)
+		ae.Action, err = NewBuiltinAssetEventWithdrawal(e)
+		if err != nil {
+			return nil, err
+		}
+		return ae, nil
 	default:
 		return nil, errors.New("Unknown asset event type")
 	}
 }
 
 func (c BuiltinAssetEvent) IntoProto() *proto.BuiltinAssetEvent {
-	ceb := &proto.BuiltinAssetEvent{
-		Action: c.Action.IntoProto(),
+	action := c.Action.oneOfProto()
+	ceb := &proto.BuiltinAssetEvent{}
+	switch a := action.(type) {
+	case *proto.BuiltinAssetEvent_Deposit:
+		ceb.Action = a
+	case *proto.BuiltinAssetEvent_Withdrawal:
+		ceb.Action = a
 	}
 	return ceb
+}
+
+type BuiltinAssetEventDeposit struct {
+	Deposit *BuiltinAssetDeposit
+}
+
+func NewBuiltinAssetEventDeposit(p *proto.BuiltinAssetEvent_Deposit) (*BuiltinAssetEventDeposit, error) {
+	bd := BuiltinAssetEventDeposit{}
+	var err error
+	bd.Deposit, err = NewBuiltinAssetDepositFromProto(p.Deposit)
+	if err != nil {
+		return nil, err
+	}
+	return &bd, nil
+}
+
+func (b BuiltinAssetEventDeposit) IntoProto() *proto.BuiltinAssetEvent_Deposit {
+	p := &proto.BuiltinAssetEvent_Deposit{
+		Deposit: b.Deposit.IntoProto(),
+	}
+	return p
+
+}
+
+func (b BuiltinAssetEventDeposit) isBuiltinAssetEvent() {}
+func (b BuiltinAssetEventDeposit) oneOfProto() interface{} {
+	return b.IntoProto()
+}
+
+type BuiltinAssetEventWithdrawal struct {
+	Withdrawal *BuiltinAssetWithdrawal
+}
+
+func NewBuiltinAssetEventWithdrawal(p *proto.BuiltinAssetEvent_Withdrawal) (*BuiltinAssetEventWithdrawal, error) {
+	bd := BuiltinAssetEventWithdrawal{}
+	var err error
+	bd.Withdrawal, err = NewBuiltinAssetWithdrawalFromProto(p.Withdrawal)
+	if err != nil {
+		return nil, err
+	}
+	return &bd, nil
+}
+
+func (b BuiltinAssetEventWithdrawal) IntoProto() *proto.BuiltinAssetEvent_Withdrawal {
+	p := &proto.BuiltinAssetEvent_Withdrawal{
+		Withdrawal: b.Withdrawal.IntoProto(),
+	}
+	return p
+
+}
+
+func (b BuiltinAssetEventWithdrawal) isBuiltinAssetEvent() {}
+func (b BuiltinAssetEventWithdrawal) oneOfProto() interface{} {
+	return b.IntoProto()
 }
 
 /*type ChainEvent_Erc20 struct {
