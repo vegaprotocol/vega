@@ -84,7 +84,7 @@ Feature: A feature that reproduces some system test
 ## Life cycle
 
 To get a market up and running, here is the process:
-1. Configuration of network parameters. They have default values, so it's not required but if we ant to override them, it should be the first step called.
+1. Configuration of network parameters. They have default values so it's not required, but if we want to override them, it should be done in the first step.
 2. Configuration of market.
 3. Declaration of the traders and their general account balance.
 4. Placement of orders by the traders, so the market can have a mark price.
