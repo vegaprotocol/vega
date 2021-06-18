@@ -207,6 +207,16 @@ func LiquidityProvisionSubmission(
 	return zap.String("liquidity-provision-submission", lp.String())
 }
 
+func WithdrawSubmissionProto(
+	lp *commandspb.WithdrawSubmission) zap.Field {
+	return zap.String("withdraw-submission", lp.String())
+}
+
+func WithdrawSubmission(
+	lp types.WithdrawSubmission) zap.Field {
+	return zap.String("withdraw-submission", lp.String())
+}
+
 // Party constructs a field with the given VEGA party proto value.
 func Party(p types.Party) zap.Field {
 	return zap.String("party", p.String())

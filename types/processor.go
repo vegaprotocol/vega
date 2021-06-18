@@ -11,9 +11,9 @@ import (
 
 //type OrderSubmission = commandspb.OrderSubmission
 //type OrderAmendment = commandspb.OrderAmendment
+//type WithdrawSubmission = commandspb.WithdrawSubmission
 
 type OrderCancellation = commandspb.OrderCancellation
-type WithdrawSubmission = commandspb.WithdrawSubmission
 type OracleDataSubmission = commandspb.OracleDataSubmission
 type NodeRegistration = commandspb.NodeRegistration
 type NodeVote = commandspb.NodeVote
@@ -198,24 +198,28 @@ func (o OrderAmendment) String() string {
 	return o.IntoProto().String()
 }
 
-/*type WithdrawSubmission struct {
+type WithdrawSubmission struct {
 	// The amount to be withdrawn
-	Amount uint64
+	Amount *num.Uint
 	// The asset we want to withdraw
 	Asset string
 	// Foreign chain specifics
-	Ext *proto.WithdrawExt
+	Ext *WithdrawExt
 }
 
-func (w *WithdrawSubmission) FromProto(p *commandspb.WithdrawSubmission) {
-	w.Amount = p.Amount
-	w.Asset = p.Asset
-	w.Ext = p.Ext
+func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*WithdrawSubmission, error) {
+	w := WithdrawSubmission{
+		Amount: num.NewUint(p.Amount),
+		Asset:  p.Asset,
+		Ext:    p.Ext,
+	}
+	return &w, nil
 }
 
 func (w WithdrawSubmission) IntoProto() *commandspb.WithdrawSubmission {
 	ws := &commandspb.WithdrawSubmission{
-		Amount: w.Amount,
+		// Update once the protobuf changes TODO UINT
+		Amount: w.Amount.Uint64(),
 		Asset:  w.Asset,
 		Ext:    w.Ext,
 	}
@@ -226,7 +230,7 @@ func (w WithdrawSubmission) String() string {
 	return w.IntoProto().String()
 }
 
-type OracleDataSubmission struct {
+/*type OracleDataSubmission struct {
 	// The source from which the data is coming from
 	Source OracleDataSubmission_OracleSource
 	// The data provided by the third party provider

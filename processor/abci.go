@@ -428,7 +428,17 @@ func (app *App) DeliverWithdraw(
 		return err
 	}
 
-	return app.processWithdraw(ctx, w, id, tx.Party())
+	// Convert protobuf to local domain type
+	ws, err := types.NewWithdrawSubmissionFromProto(w)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert WithdrawSubmission protobuf message to domain type",
+				logging.WithdrawSubmissionProto(w), logging.Error(err))
+		}
+		return err
+	}
+
+	return app.processWithdraw(ctx, ws, id, tx.Party())
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {

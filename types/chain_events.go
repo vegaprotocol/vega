@@ -3,20 +3,25 @@
 package types
 
 import (
+	"errors"
+
 	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type Deposit = proto.Deposit
 type Withdrawal = proto.Withdrawal
 type WithdrawExt = proto.WithdrawExt
 type WithdrawExt_Erc20 = proto.WithdrawExt_Erc20
-type BuiltinAssetDeposit = proto.BuiltinAssetDeposit
+
+//type BuiltinAssetDeposit = proto.BuiltinAssetDeposit
 type ERC20Deposit = proto.ERC20Deposit
 type ERC20AssetList = proto.ERC20AssetList
 type ERC20Withdrawal = proto.ERC20Withdrawal
 type Erc20WithdrawExt = proto.Erc20WithdrawExt
-type ChainEvent_Builtin = commandspb.ChainEvent_Builtin
+
+//type ChainEvent_Builtin = commandspb.ChainEvent_Builtin
 type ChainEvent_Erc20 = commandspb.ChainEvent_Erc20
 type ChainEvent_Btc = commandspb.ChainEvent_Btc
 type ChainEvent_Validator = commandspb.ChainEvent_Validator
@@ -196,7 +201,7 @@ func (w WithdrawExt_Erc20) IntoProto() *proto.WithdrawExt_Erc20 {
 
 func (w WithdrawExt_Erc20) String() string {
 	return w.IntoProto().String()
-}
+}*/
 
 type BuiltinAssetDeposit struct {
 	// A Vega network internal asset identifier
@@ -204,20 +209,23 @@ type BuiltinAssetDeposit struct {
 	// A Vega party identifier (pub-key)
 	PartyId string
 	// The amount to be deposited
-	Amount uint64
+	Amount *num.Uint
 }
 
-func (b *BuiltinAssetDeposit) FromProto(p *proto.BuiltinAssetDeposit) {
-	b.VegaAssetId = p.VegaAssetId
-	b.PartyId = p.PartyId
-	b.Amount = p.Amount
+func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
+	b := BuiltinAssetDeposit{
+		VegaAssetId: p.VegaAssetId,
+		PartyId:     p.PartyId,
+		Amount:      num.NewUint(p.Amount),
+	}
+	return &b, nil
 }
 
 func (b BuiltinAssetDeposit) IntoProto() *proto.BuiltinAssetDeposit {
 	biad := &proto.BuiltinAssetDeposit{
 		VegaAssetId: b.VegaAssetId,
 		PartyId:     b.PartyId,
-		Amount:      b.Amount,
+		Amount:      b.Amount.Uint64(),
 	}
 	return biad
 }
@@ -226,7 +234,7 @@ func (b BuiltinAssetDeposit) String() string {
 	return b.IntoProto().String()
 }
 
-type ERC20Deposit struct {
+/*type ERC20Deposit struct {
 	// The vega network internal identifier of the asset
 	VegaAssetId string
 	// The Ethereum wallet that initiated the deposit
@@ -324,28 +332,59 @@ func (e Erc20WithdrawExt) IntoProto() *proto.Erc20WithdrawExt {
 
 func (e Erc20WithdrawExt) String() string {
 	return e.IntoProto().String()
-}
+}*/
 
 type ChainEvent_Builtin struct {
 	Builtin *BuiltinAssetEvent
 }
 
-func (c *ChainEvent_Builtin) FromProto(p *commandspb.ChainEvent_Builtin) {
-	c.Builtin.FromProto(p.Builtin)
+func NewChainEventBuiltinFromProto(p *commandspb.ChainEvent_Builtin) (*ChainEvent_Builtin, error) {
+	c := ChainEvent_Builtin{}
+	var err error
+	c.Builtin, err = NewBuiltinAssetEventFromProto(p.Builtin)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
 }
 
 func (c ChainEvent_Builtin) IntoProto() *commandspb.ChainEvent_Builtin {
 	ceb := &commandspb.ChainEvent_Builtin{
-		Builtin: c.IntoProto(),
+		Builtin: c.Builtin.IntoProto(),
 	}
 	return ceb
 }
 
 func (c ChainEvent_Builtin) String() string {
-	return c.IntoProto().String()
+	return c.IntoProto().Builtin.String()
 }
 
-type ChainEvent_Erc20 struct {
+type BuiltinAssetEvent struct {
+	// Types that are valid to be assigned to Action:
+	//	*BuiltinAssetEvent_Deposit
+	//	*BuiltinAssetEvent_Withdrawal
+	Action isBuiltinAssetEvent_Action
+}
+
+func NewBuiltinAssetEventFromProto(p *proto.BuiltinAssetEvent) (*BuiltinAssetEvent, error) {
+	switch e := p.Action.(type) {
+	case *proto.BuiltinAssetEvent_Deposit:
+		return NewBuiltinAssetEventDeposit(e)
+	case *proto.BuiltinAssetEvent_Withdrawal:
+		return NewBuiltinAssetEventWithdrawal(e)
+	default:
+		return nil, errors.New("Unknown asset event type")
+	}
+}
+
+func (c BuiltinAssetEvent) IntoProto() *proto.BuiltinAssetEvent {
+	ceb := &proto.BuiltinAssetEvent{
+		Action: c.Action.IntoProto(),
+	}
+	return ceb
+}
+
+/*type ChainEvent_Erc20 struct {
 	Erc20 ERC20Event
 }
 
