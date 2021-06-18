@@ -7,6 +7,53 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+type LogNormalModelParams struct {
+	Mu    num.Decimal
+	R     num.Decimal
+	Sigma num.Decimal
+}
+
+type TradableInstrument_LogNormalRiskModel struct {
+	LogNormalRiskModel *LogNormalRiskModel
+}
+
+type LogNormalRiskModel struct {
+	RiskAversionParameter num.Decimal
+	Tau                   num.Decimal
+	Params                *LogNormalModelParams
+}
+
+func (l LogNormalModelParams) IntoProto() *proto.LogNormalModelParams {
+	mu, _ := l.Mu.Float64()
+	r, _ := l.R.Float64()
+	sigma, _ := l.Sigma.Float64()
+	return &proto.LogNormalModelParams{
+		Mu:    mu,
+		R:     r,
+		Sigma: sigma,
+	}
+}
+
+func (l LogNormalModelParams) String() string {
+	return l.IntoProto().String()
+}
+
+func (l LogNormalRiskModel) IntoProto() *proto.LogNormalRiskModel {
+	ra, _ := l.RiskAversionParameter.Float64()
+	t, _ := l.Tau.Float64()
+	return &proto.LogNormalRiskModel{
+		RiskAversionParameter: ra,
+		Tau:                   t,
+		Params:                l.Params.IntoProto(),
+	}
+}
+
+func (t TradableInstrument_LogNormalRiskModel) IntoProto() *proto.TradableInstrument_LogNormalRiskModel {
+	return &proto.TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: t.LogNormalRiskModel.IntoProto(),
+	}
+}
+
 type MarginCalculator struct {
 	ScalingFactors *ScalingFactors
 }
@@ -114,5 +161,56 @@ func (s ScalingFactors) IntoProto() *proto.ScalingFactors {
 }
 
 func (s ScalingFactors) String() string {
+	return s.IntoProto().String()
+}
+
+type TradableInstrument_SimpleRiskModel struct {
+	SimpleRiskModel *SimpleRiskModel `protobuf:"bytes,101,opt,name=simple_risk_model,json=simpleRiskModel,proto3,oneof"`
+}
+
+type SimpleRiskModel struct {
+	Params *SimpleModelParams
+}
+
+type SimpleModelParams struct {
+	FactorLong           num.Decimal
+	FactorShort          num.Decimal
+	MaxMoveUp            num.Decimal
+	MinMoveDown          num.Decimal
+	ProbabilityOfTrading num.Decimal
+}
+
+func (t TradableInstrument_SimpleRiskModel) IntoProto() *proto.TradableInstrument_SimpleRiskModel {
+	return &proto.TradableInstrument_SimpleRiskModel{
+		SimpleRiskModel: t.SimpleRiskModel.IntoProto(),
+	}
+}
+
+func (s SimpleRiskModel) IntoProto() *proto.SimpleRiskModel {
+	return &proto.SimpleRiskModel{
+		Params: s.Params.IntoProto(),
+	}
+}
+
+func (s SimpleRiskModel) String() string {
+	return s.IntoProto().String()
+}
+
+func (s SimpleModelParams) IntoProto() *proto.SimpleModelParams {
+	lng, _ := s.FactorLong.Float64()
+	sht, _ := s.FactorShort.Float64()
+	up, _ := s.MaxMoveUp.Float64()
+	down, _ := s.MinMoveDown.Float64()
+	prob, _ := s.ProbabilityOfTrading.Float64()
+	return &proto.SimpleModelParams{
+		FactorLong:           lng,
+		FactorShort:          sht,
+		MaxMoveUp:            up,
+		MinMoveDown:          down,
+		ProbabilityOfTrading: prob,
+	}
+}
+
+func (s SimpleModelParams) String() string {
 	return s.IntoProto().String()
 }
