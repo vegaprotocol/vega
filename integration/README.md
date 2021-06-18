@@ -44,7 +44,7 @@ go test -v ./integration/... -godog.format=pretty $(pwd)/integration/features/my
 
 For performance reasons, `go test` will check whether the source of a package has changed, and reuse compiled objects or
 even test results in case it determines nothing has changed. Because the integration tests are tucked away in their own
-package, and likely won't have changed, changes to _other_ packages might not be compiled, and tests could possibly pass
+package, changes to _other_ packages might not be compiled, and tests could possibly pass
 without changes being applied. To ensure no cached results are used, the `-count` flag can be used:
 
 ```shell
@@ -80,6 +80,59 @@ Feature: A feature that reproduces some system test
       | id        | quote name | asset | mark price | risk model                | margin calculator         | auction duration | maker fee | infrastructure fee | liquidity fee | price monitoring | oracle config      |
       | ETH/DEC20 | ETH        | ETH   | 100        | default-simple-risk-model | default-margin-calculator | 1                | 0.004     | 0.001              | 0.3           | default-none     | default-for-future |
 ```
+
+## Life cycle
+
+To get a market up and running, here is the process:
+1. Configuration of network parameters. They have default values so it's not required, but if we want to override them, it should be done in the first step.
+2. Configuration of market.
+3. Declaration of the traders and their general account balance.
+4. Placement of orders by the traders, so the market can have a mark price.
+
+Once these steps are done, the market should be in a proper state.
+
+## Steps
+
+The list of steps is located in `./main_test.go`.
+
+### Market instantiation
+
+Setting up a market is complex and the base for everything. As a result, we created a "lego-like" system to help us strike the balance between flexibility and re-usability.
+
+#### Flexibility with steps
+
+A market is composed of several sets of parameters grouped by domain, such as margin, risk model, fees, and so on.
+
+Each set of parameters is declared in its own step into which a custom name is given. In our "lego" analogy, these named sets would be the "blocks".
+
+To declare a market, we tell to our market which "blocks" to use.
+
+Here is an example where we declare a risk model named "simple-risk-model-1". Then, we declare a "BTC" market, to which we associate the risk model "simple-risk-model-1".
+
+```gherkin
+Given the simple risk model named "simple-risk-model-1":
+  | long | short | max move up | min move down | probability of trading |
+  | 0.1  | 0.1   | 10          | -10           | 0.1                    |
+And the markets:
+  | id        | quote name | asset | risk model          | 
+  | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 |
+```
+ 
+#### Re-usability with defaults
+
+Because markets are tedious to instantiate, most of the time, we instantiate them using defaults stored in JSON files inside the folder `steps/market/defaults`.
+
+Each sub-folders contain the defaults for their domain. Referencing a default for the price monitoring that is not in the `price-monitoring` folder will result in failure.
+
+Using defaults works just like the named set, except that the file name will be used as the name. As a result, if the file containing the defaults is named `default-basic.json`, then the name to fill in will be `default-basic`.
+
+This is the recommended way. It's also fine to introduce a new defaults as long as it's used more than a couple of times.
+
+You can mix the use of steps and defaults in market declaration.
+
+### Debug
+
+Sometimes, you need to log some state. For this, you can use the `debug ...` steps.
 
 ## Convention
 
