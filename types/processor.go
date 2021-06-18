@@ -17,7 +17,6 @@ type Transaction = proto.Transaction
 
 type ChainEvent = commandspb.ChainEvent
 type SignedBundle = proto.SignedBundle
-type NetworkParameter = proto.NetworkParameter
 type Signature = proto.Signature
 type Transaction_PubKey = proto.Transaction_PubKey
 
