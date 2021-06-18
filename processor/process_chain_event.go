@@ -34,10 +34,20 @@ func (app *App) processChainEvent(
 
 	// OK the event was newly acknowledged, so now we need to
 	// figure out what to do with it.
-	switch ce.Event.(type) {
+	switch c := ce.Event.(type) {
 	case *commandspb.ChainEvent_Builtin:
+		// Convert from protobuf to local domain type
+		ce, err := types.NewChainEventBuiltinFromProto(c)
+		if err != nil {
+
+		}
 		return app.processChainEventBuiltinAsset(ctx, ce, id)
 	case *commandspb.ChainEvent_Erc20:
+		// Convert from protobuf to local domain type
+		ce, err := types.NewChainEventErc20FromProto(c)
+		if err != nil {
+
+		}
 		return app.processChainEventERC20(ctx, ce, id)
 	case *commandspb.ChainEvent_Btc:
 		return errors.New("BTC Event not implemented")
