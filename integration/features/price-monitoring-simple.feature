@@ -98,9 +98,8 @@ Feature: Price monitoring test using simple risk model
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | type       | tif     | reference |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111   | TYPE_LIMIT | TIF_GFN | ref-1     |
-    Then the system should return error "OrderError: non-persistent order trades out of price bounds"
+      | trader  | market id | side | volume | price | type       | tif     | reference | error                                                       |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111   | TYPE_LIMIT | TIF_GFN | ref-1     | OrderError: non-persistent order trades out of price bounds |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order don't result in an auction (both triggers breached)
@@ -132,7 +131,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
 
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
@@ -150,12 +149,10 @@ Feature: Price monitoring test using simple risk model
     And the mark price should be "111" for the market "ETH/DEC20"
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 211   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 211   | 0                | TYPE_LIMIT | TIF_FOK | ref-4     |
-
-    Then the system should return error "OrderError: non-persistent order trades out of price bounds"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
+      | trader1 | ETH/DEC20 | sell | 1      | 211   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |                                                             |
+      | trader2 | ETH/DEC20 | buy  | 1      | 211   | 0                | TYPE_LIMIT | TIF_FOK | ref-4     | OrderError: non-persistent order trades out of price bounds |
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "111" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.

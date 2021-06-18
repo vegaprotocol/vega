@@ -66,8 +66,8 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     # Now place a FOK order that would trigger a price auction (trader 1 has a buy at 95,000 on the book
 
     And the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | trader2 | ETH/DEC20 | sell | 3      | 0      | 0                | TYPE_MARKET | TIF_FOK |
+      | trader  | market id | side | volume | price | resulting trades | type        | tif     | error                                                       |
+      | trader2 | ETH/DEC20 | sell | 3      | 0     | 0                | TYPE_MARKET | TIF_FOK | OrderError: non-persistent order trades out of price bounds |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
 
@@ -75,6 +75,6 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     ## We'll see the mark price move as we've uncrossed with the orders at 100213 and 100050 we've just placed
     When the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 2                | TYPE_LIMIT  | TIF_GTC |
+      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 1                | TYPE_LIMIT  | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100213" for the market "ETH/DEC20"

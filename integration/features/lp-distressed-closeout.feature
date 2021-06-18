@@ -48,8 +48,8 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | trader1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
       | trader2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
 
     # this is a bit pointless, we're still in auction, price bounds aren't checked
     # And the price monitoring bounds are []
@@ -67,9 +67,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     # Now let's make some trades happen to increase the margin for LP
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3 | ETH/DEC21 | buy  | 3      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 5      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | trader3 | ETH/DEC21 | buy  | 3      | 1010  | 2                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
+      | trader2 | ETH/DEC21 | sell | 5      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-4 |
     # target stake 1313 with target trigger on 0.6 -> ~788 triggers liquidity auction
     Then the market data for the market "ETH/DEC21" should be:
      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -82,11 +82,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
     And the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader2 | ETH/DEC21 | sell | 15     | 1030  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3 | ETH/DEC21 | buy  | 10     | 1022  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3 | ETH/DEC21 | buy  | 3      | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 5      | 1030  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | trader2 | ETH/DEC21 | sell | 15     | 1030  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-1 |
+      | trader3 | ETH/DEC21 | buy  | 10     | 1022  | 2                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
+      | trader3 | ETH/DEC21 | buy  | 3      | 1020  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-2  |
+      | trader2 | ETH/DEC21 | sell | 5      | 1030  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-2 |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1789   | 0       | 0    |
@@ -101,12 +101,12 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     When the network moves ahead "2" blocks
     And the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3 | ETH/DEC21 | buy  | 3      | 1012  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 5      | 1012  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | trader3 | ETH/DEC21 | buy  | 3      | 1012  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-3  |
+      | trader2 | ETH/DEC21 | sell | 5      | 1012  | 2                | TYPE_LIMIT | TIF_GTC | trader2-sell-3 |
     Then the market data for the market "ETH/DEC21" should be:
-     | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-     | 1012       | TRADING_MODE_MONITORING_AUCTION | 1       | 1000      | 1020      | 2834         | 0              | 28            |
+      | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1012       | TRADING_MODE_MONITORING_AUCTION | 1       | 1000      | 1020      | 2834         | 0              | 28            |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1787   | 0       | 0    |
@@ -126,11 +126,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
-      | trader1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+      | trader1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+      | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
       | trader2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
 
     # this is a bit pointless, we're still in auction, price bounds aren't checked
     # And the price monitoring bounds are []
@@ -148,9 +148,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     # Now let's make some trades happen to increase the margin for LP
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3 | ETH/DEC21 | buy  | 3      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 5      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | trader3 | ETH/DEC21 | buy  | 3      | 1010  | 2                | TYPE_LIMIT | TIF_GTC | trader3-buy-4  |
+      | trader2 | ETH/DEC21 | sell | 5      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-4 |
     # target stake 1313 with target trigger on 0.6 -> ~788 triggers liquidity auction
     Then the market data for the market "ETH/DEC21" should be:
      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -163,13 +163,13 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
     And the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3 | ETH/DEC21 | buy  | 10     | 1022  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 75     | 1050  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3 | ETH/DEC21 | buy  | 3      | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | trader3 | ETH/DEC21 | buy  | 10     | 1022  | 2                | TYPE_LIMIT | TIF_GTC | trader3-buy-5  |
+      | trader2 | ETH/DEC21 | sell | 75     | 1050  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-5 |
+      | trader3 | ETH/DEC21 | buy  | 3      | 1020  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-6 |
     Then the market data for the market "ETH/DEC21" should be:
-     | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-     | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 10000          | 23            |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 10000          | 23            |
     # getting closer to distressed LP, still in continuous trading
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |

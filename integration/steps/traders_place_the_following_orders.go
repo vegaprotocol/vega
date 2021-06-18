@@ -31,6 +31,9 @@ func TradersPlaceTheFollowingOrders(
 		var resultingTrades int64 = -1
 		if row.Str("resulting trades") != "" {
 			resultingTrades = row.I64("resulting trades")
+			if resultingTrades > 0 && row.Str("error") != "" {
+				panic("you can't expect resulting trades and an error at the same time")
+			}
 		}
 
 		var expiresAt int64
@@ -56,20 +59,29 @@ func TradersPlaceTheFollowingOrders(
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, trader)
 		if err != nil {
-			errorHandler.HandleError(SubmitOrderError{
-				reference: reference,
-				request:   orderSubmission,
-				Err:       err,
-			})
+			errMsg := row.Str("error")
+			if err.Error() != errMsg {
+				return formatDiff(fmt.Sprintf("the order \"%v\" is failing as expected but not with the expected error message", reference),
+					map[string]string{
+						"error": errMsg,
+					},
+					map[string]string{
+						"error": err.Error(),
+					},
+				)
+			}
 			return nil
 		}
 
 		if resultingTrades != -1 && len(resp.Trades) != int(resultingTrades) {
-			errorHandler.HandleError(SubmitOrderError{
-				reference: reference,
-				request:   orderSubmission,
-				Err:       fmt.Errorf("expected %d trades executed, but got %d confirmations", resultingTrades, len(resp.Trades)),
-			})
+			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", reference),
+				map[string]string{
+					"total": fmt.Sprintf("%v", resultingTrades),
+				},
+				map[string]string{
+					"total": fmt.Sprintf("%v", len(resp.Trades)),
+				},
+			)
 		}
 	}
 	return nil

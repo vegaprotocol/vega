@@ -271,9 +271,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When time is updated to "2020-10-16T00:10:10Z"
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference | error                                                       |
+      | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |                                                             |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_FOK | ref-2     | OrderError: non-persistent order trades out of price bounds |
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110000" for the market "ETH/DEC20"
@@ -313,9 +313,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When time is updated to "2020-10-16T00:02:10Z"
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_IOC | ref-2     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference | error                                                       |
+      | trader1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |                                                             |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_IOC | ref-2     | OrderError: non-persistent order trades out of price bounds |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110000" for the market "ETH/DEC20"
@@ -327,9 +327,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | trader1 | ref-1     |
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFN | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFN | ref-2     |
+      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference | error                                                       |
+      | trader1 | ETH/DEC20 | sell | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFN | ref-1     |                                                             |
+      | trader2 | ETH/DEC20 | buy  | 2      | 133000 | 0                | TYPE_LIMIT | TIF_GFN | ref-2     | OrderError: non-persistent order trades out of price bounds |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110000" for the market "ETH/DEC20"

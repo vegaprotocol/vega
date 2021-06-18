@@ -71,9 +71,8 @@ Feature: Test trader accounts
       | trader2 | trader2-1 |
 
     When the traders place the following orders:
-      | trader    | market id | side | volume | price |  type       | tif     |reference |
-      | traderGuy | ETH/DEC19 | sell | 1      | 1000  |  TYPE_LIMIT |  TIF_GTC | trader1-1 |
-    Then the system should return error "margin check failed"
+      | trader    | market id | side | volume | price | type       | tif     | reference | error               |
+      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | TYPE_LIMIT | TIF_GTC | trader1-1 | margin check failed |
     Then the following orders should be rejected:
       | trader    | market id | reason                          |
       | traderGuy | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |
