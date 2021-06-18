@@ -122,7 +122,7 @@ And the markets:
 
 Because markets are tedious to instantiate, most of the time, we instantiate them using defaults stored in JSON files inside the folder `steps/market/defaults`.
 
-Each sub-folders contain the defaults for their domain. Reference a default for the price monitoring that is not in the `price-monitoring` folder will result in failure.
+Each sub-folders contain the defaults for their domain. Referencing a default for the price monitoring that is not in the `price-monitoring` folder will result in failure.
 
 Using defaults works just like the named set, except that the file name will be used as the name. As a result, if the file containing the defaults is named `default-basic.json`, then the name to fill in will be `default-basic`.
 
