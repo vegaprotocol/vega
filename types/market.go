@@ -4,17 +4,11 @@ package types
 
 import (
 	"code.vegaprotocol.io/vega/proto"
+	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 type Market = proto.Market
-type MarketData = proto.MarketData
-type Instrument = proto.Instrument
-type Instrument_Future = proto.Instrument_Future
-type Future = proto.Future
-type Market_Continuous = proto.Market_Continuous
-type Market_Discrete = proto.Market_Discrete
-type TradableInstrument = proto.TradableInstrument
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
 
 type MarketTimestamps struct {
@@ -147,4 +141,186 @@ func (t Timestamp) IntoProto() *proto.Timestamp {
 
 func (t Timestamp) String() string {
 	return t.IntoProto().String()
+}
+
+type TradableInstrument struct {
+	Instrument       *Instrument
+	MarginCalculator *MarginCalculator
+	RiskModel        isTRM
+}
+
+type isTRM interface {
+	isTRM()
+	trmIntoProto() interface{}
+}
+
+func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
+	rmp := t.RiskModel.trmIntoProto()
+	r := &proto.TradableInstrument{
+		Instrument:       t.Instrument,
+		MarginCalculator: t.MarginCalculator.IntoProto(),
+	}
+	switch rm := rmp.(type) {
+	case *proto.TradableInstrument_SimpleRiskModel:
+		r.RiskModel = rm
+	case *proto.TradableInstrument_LogNormalRiskModel:
+		r.RiskModel = rm
+	}
+	return r
+}
+
+func (t TradableInstrument) String() string {
+	return t.IntoProto().String()
+}
+
+type Market_Discrete struct {
+	Discrete *DiscreteTrading
+}
+
+func (m Market_Discrete) IntoProto() *proto.Market_Discrete {
+	return &proto.Market_Discrete{
+		Discrete: m.Discrete.IntoProto(),
+	}
+}
+
+type Market_Continuous struct {
+	Continuous *ContinuousTrading
+}
+
+func (m Market_Continuous) IntoProto() *proto.Market_Continuous {
+	return &proto.Market_Continuous{
+		Continuous: m.Continuous.IntoProto(),
+	}
+}
+
+type Instrument_Future struct {
+	Future *Future
+}
+
+type Future struct {
+	Maturity          string
+	SettlementAsset   string
+	QuoteName         string
+	OracleSpec        *v1.OracleSpec
+	OracleSpecBinding *OracleSpecToFutureBinding
+}
+
+func (f Future) IntoProto() *proto.Future {
+	return &proto.Future{
+		Maturity:          f.Maturity,
+		SettlementAsset:   f.SettlementAsset,
+		QuoteName:         f.QuoteName,
+		OracleSpec:        f.OracleSpec.DeepClone(),
+		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
+	}
+}
+
+func (i Instrument_Future) IntoProto() *proto.Instrument_Future {
+	return &proto.Instrument_Future{
+		Future: i.Future.IntoProto(),
+	}
+}
+
+func (i Instrument_Future) iIntoProto() interface{} {
+	return i.IntoProto()
+}
+
+type iProto interface {
+	iIntoProto() interface{}
+}
+
+type Instrument struct {
+	Id       string
+	Code     string
+	Name     string
+	Metadata *InstrumentMetadata
+	// Types that are valid to be assigned to Product:
+	//	*Instrument_Future
+	Product iProto
+}
+
+func (i Instrument) IntoProto() *proto.Instrument {
+	p := i.Product.iIntoProto()
+	r := &proto.Instrument{
+		Id:       i.Id,
+		Code:     i.Code,
+		Name:     i.Name,
+		Metadata: i.Metadata.IntoProto(),
+	}
+	switch pt := p.(type) {
+	case *proto.Instrument_Future:
+		r.Product = pt
+	}
+	return r
+}
+
+type MarketData struct {
+	MarkPrice                 *num.Uint
+	BestBidPrice              *num.Uint
+	BestBidVolume             uint64
+	BestOfferPrice            *num.Uint
+	BestOfferVolume           uint64
+	BestStaticBidPrice        *num.Uint
+	BestStaticBidVolume       uint64
+	BestStaticOfferPrice      *num.Uint
+	BestStaticOfferVolume     uint64
+	MidPrice                  *num.Uint
+	StaticMidPrice            *num.Uint
+	Market                    string
+	Timestamp                 int64
+	OpenInterest              uint64
+	AuctionEnd                int64
+	AuctionStart              int64
+	IndicativePrice           *num.Uint
+	IndicativeVolume          uint64
+	MarketTradingMode         Market_TradingMode
+	Trigger                   AuctionTrigger
+	ExtensionTrigger          AuctionTrigger
+	TargetStake               string
+	SuppliedStake             string
+	PriceMonitoringBounds     []*PriceMonitoringBounds
+	MarketValueProxy          string
+	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
+}
+
+func (m MarketData) IntoProto() *proto.MarketData {
+	r := &proto.MarketData{
+		MarkPrice:                 m.MarkPrice.Uint64(),
+		BestBidPrice:              m.BestBidPrice.Uint64(),
+		BestBidVolume:             m.BestBidVolume,
+		BestOfferPrice:            m.BestOfferPrice.Uint64(),
+		BestOfferVolume:           m.BestOfferVolume,
+		BestStaticBidPrice:        m.BestStaticBidPrice.Uint64(),
+		BestStaticBidVolume:       m.BestStaticBidVolume,
+		BestStaticOfferPrice:      m.BestStaticOfferPrice.Uint64(),
+		BestStaticOfferVolume:     m.BestStaticOfferVolume,
+		MidPrice:                  m.MidPrice.Uint64(),
+		StaticMidPrice:            m.StaticMidPrice.Uint64(),
+		Market:                    m.Market,
+		Timestamp:                 m.Timestamp,
+		OpenInterest:              m.OpenInterest,
+		AuctionEnd:                m.AuctionEnd,
+		AuctionStart:              m.AuctionStart,
+		IndicativePrice:           m.IndicativePrice.Uint64(),
+		IndicativeVolume:          m.IndicativeVolume,
+		MarketTradingMode:         m.MarketTradingMode,
+		Trigger:                   m.Trigger,
+		ExtensionTrigger:          m.ExtensionTrigger,
+		TargetStake:               m.TargetStake,
+		SuppliedStake:             m.SuppliedStake,
+		PriceMonitoringBounds:     make([]*proto.PriceMonitoringBounds, 0, len(m.PriceMonitoringBounds)),
+		MarketValueProxy:          m.MarketValueProxy,
+		LiquidityProviderFeeShare: make([]*proto.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
+	}
+	for _, pmb := range m.PriceMonitoringBounds {
+		r.PriceMonitoringBounds = append(r.PriceMonitoringBounds, pmb.IntoProto())
+	}
+	for _, lpfs := range m.LiquidityProviderFeeShare {
+		r.LiquidityProviderFeeShare = append(r.LiquidityProviderFeeShare, lpfs.DeepClone()) // call IntoProto if this type gets updated
+	}
+	return r
+}
+
+func (m MarketData) String() string {
+	return m.IntoProto().String()
 }
