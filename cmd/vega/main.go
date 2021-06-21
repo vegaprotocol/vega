@@ -41,7 +41,7 @@ func main() {
 }
 
 func Main(ctx context.Context) error {
-	parser := flags.NewParser(&config.Empty{}, flags.Default)
+	parser := flags.NewParser(&config.Empty{}, flags.PrintErrors|flags.PassDoubleDash)
 
 	if err := Register(ctx, parser,
 		Faucet,
@@ -54,17 +54,16 @@ func Main(ctx context.Context) error {
 		Version,
 		Wallet,
 		Watch,
+		Tm,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err
 	}
 
 	if _, err := parser.Parse(); err != nil {
-		switch t := err.(type) {
+		switch err.(type) {
 		case *flags.Error:
-			if t.Type != flags.ErrHelp {
-				parser.WriteHelp(os.Stdout)
-			}
+			parser.WriteHelp(os.Stdout)
 		}
 		return err
 	}

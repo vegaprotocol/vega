@@ -27,6 +27,7 @@ type WalletCmd struct {
 	Taint   walletTaint   `command:"taint" description:"Taints a public key" long-description:"Taints a public key"`
 	Meta    walletMeta    `command:"meta" description:"Adds metadata to a public key" long-description:"Adds a list of metadata to a public key"`
 	Service walletService `command:"service" description:"The wallet service" long-description:"Runs or initializes the wallet service"`
+	Help    bool          `short:"h" long:"help" description:"Show this help message"`
 }
 
 // walletCmd is a global variable that holds generic options for the wallet
@@ -68,9 +69,17 @@ func readWallet(rootPath, name, pass string) (*wallet.Wallet, error) {
 type walletGenkey struct {
 	config.PassphraseFlag
 	Name string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+	Help bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *walletGenkey) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega wallet genkey subcommand help",
+		}
+	}
+
 	name := opts.Name
 	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
@@ -115,9 +124,16 @@ func (opts *walletGenkey) Execute(_ []string) error {
 type walletList struct {
 	config.PassphraseFlag
 	Name string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
+	Help bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *walletList) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega wallet list subcommand help",
+		}
+	}
 	name := opts.Name
 	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
@@ -144,9 +160,16 @@ type walletSign struct {
 	Name    string          `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	Message encoding.Base64 `short:"m" long:"message" description:"Message to be signed (base64 encoded)" required:"true"`
 	PubKey  string          `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
+	Help    bool            `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *walletSign) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega wallet sign subcommand help",
+		}
+	}
 	name := opts.Name
 	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
@@ -191,9 +214,16 @@ type walletVerify struct {
 	Message encoding.Base64 `short:"m" long:"message" description:"Message to be signed (base64 encoded)" required:"true"`
 	PubKey  string          `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
 	Sig     encoding.Base64 `short:"s" long:"signature" description:"Signature to be verified (base64 encoded)" required:"true"`
+	Help    bool            `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *walletVerify) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega wallet verify subcommand help",
+		}
+	}
 	name := opts.Name
 	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
@@ -233,9 +263,16 @@ type walletTaint struct {
 	config.PassphraseFlag
 	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
+	Help   bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *walletTaint) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega wallet taint subcommand help",
+		}
+	}
 	name := opts.Name
 	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
@@ -271,9 +308,16 @@ type walletMeta struct {
 	Name   string `short:"n" long:"name" description:"Name of the wallet to user" required:"true"`
 	PubKey string `short:"k" long:"pubkey" description:"Public key to be used (hex encoded)" required:"true"`
 	Metas  string `short:"m" long:"metas" description:"A list of metadata e.g:'primary:true;asset:BTC'" required:"true"`
+	Help   bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *walletMeta) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega wallet meta subcommand help",
+		}
+	}
 	name := opts.Name
 	pass, err := opts.Passphrase.Get(name)
 	if err != nil {
@@ -318,9 +362,16 @@ func (opts *walletMeta) Execute(_ []string) error {
 type walletServiceInit struct {
 	Force  bool `short:"f" long:"force" description:"Erase existing configuration at specified path"`
 	GenRSA bool `short:"g" long:"genrsakey" description:"Generates RSA for the JWT tokens"`
+	Help   bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *walletServiceInit) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega wallet service init subcommand help",
+		}
+	}
 	if ok, err := fsutil.PathExists(walletCmd.RootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %v", err)
 	}
@@ -335,9 +386,16 @@ func (opts *walletServiceInit) Execute(_ []string) error {
 type walletServiceRun struct {
 	ctx    context.Context
 	Config wallet.Config
+	Help   bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *walletServiceRun) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega wallet service run subcommand help",
+		}
+	}
 	cfg, err := wallet.LoadConfig(walletCmd.RootPath)
 	if err != nil {
 		return err

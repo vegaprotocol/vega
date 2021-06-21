@@ -11,6 +11,7 @@ import (
 type VerifyCmd struct {
 	Asset   verify.AssetCmd   `command:"passet" description:"verify an asset proposal payload"`
 	Genesis verify.GenesisCmd `command:"genesis" description:"verify a vega genesis app state"`
+	Help    bool              `short:"h" long:"help" description:"Show this help message"`
 }
 
 var verifyCmd VerifyCmd

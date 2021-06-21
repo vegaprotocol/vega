@@ -14,11 +14,18 @@ type NodeCmd struct {
 	config.RootPathFlag
 
 	config.Config
+	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 var nodeCmd NodeCmd
 
 func (cmd *NodeCmd) Execute(args []string) error {
+	if cmd.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega node subcommand help",
+		}
+	}
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
