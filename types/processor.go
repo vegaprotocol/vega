@@ -30,22 +30,18 @@ type OrderSubmission struct {
 	Price *num.Uint
 	// Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
 	Size uint64
-	// Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field - See [`Side`](#vega.Side)
+	// Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field
 	Side proto.Side
 	// Time in force indicates how long an order will remain active before it is executed or expires, required field
-	// - See [`Order.TimeInForce`](#vega.Order.TimeInForce)
 	TimeInForce proto.Order_TimeInForce
 	// Timestamp for when the order will expire, in nanoseconds since the epoch,
-	// required field only for [`Order.TimeInForce`](#vega.Order.TimeInForce)`.TIME_IN_FORCE_GTT`
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	ExpiresAt int64
-	// Type for the order, required field - See [`Order.Type`](#vega.Order.Type)
+	// Type for the order, required field
 	Type proto.Order_Type
 	// Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
 	// set internally by the node to return a unique reference identifier for the order submission
 	Reference string
 	// Used to specify the details for a pegged order
-	// - See [`PeggedOrder`](#vega.PeggedOrder)
 	PeggedOrder *PeggedOrder
 }
 
@@ -107,7 +103,7 @@ type OrderAmendment struct {
 	OrderId string
 	// Market identifier, this is required to find the order and will not be updated
 	MarketId string
-	// Amend the price for the order, if the Price value is set, otherwise price will remain unchanged - See [`Price`](#vega.Price)
+	// Amend the price for the order, if the Price value is set, otherwise price will remain unchanged
 	Price *num.Uint
 	// Amend the size for the order by the delta specified:
 	// - To reduce the size from the current value set a negative integer value
@@ -115,16 +111,14 @@ type OrderAmendment struct {
 	// - To leave the size unchanged set a value of zero
 	SizeDelta int64
 	// Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	ExpiresAt int64
 	// Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
-	// - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
 	TimeInForce proto.Order_TimeInForce
 	// Amend the pegged order offset for the order
-	PeggedOffset         *num.Uint
+	PeggedOffset *num.Uint
+	// If the PeggedOffset is valid should the sign be positive or negative
 	PeggedOffsetPositive bool
 	// Amend the pegged order reference for the order
-	// - See [`PeggedReference`](#vega.PeggedReference)
 	PeggedReference proto.PeggedReference
 }
 
