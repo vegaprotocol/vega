@@ -2,7 +2,10 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types/num"
+)
 
 type Market = proto.Market
 type MarketData = proto.MarketData
@@ -13,11 +16,22 @@ type Market_Continuous = proto.Market_Continuous
 type Market_Discrete = proto.Market_Discrete
 type TradableInstrument = proto.TradableInstrument
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
-type AuctionDuration = proto.AuctionDuration
-type Price = proto.Price
-type Timestamp = proto.Timestamp
-type InstrumentMetadata = proto.InstrumentMetadata
-type MarketTimestamps = proto.MarketTimestamps
+
+type MarketTimestamps struct {
+	Proposed int64
+	Pending  int64
+	Open     int64
+	Close    int64
+}
+
+func (m MarketTimestamps) IntoProto() *proto.MarketTimestamps {
+	return &proto.MarketTimestamps{
+		Proposed: m.Proposed,
+		Pending:  m.Pending,
+		Open:     m.Open,
+		Close:    m.Close,
+	}
+}
 
 type Market_TradingMode = proto.Market_TradingMode
 
@@ -75,3 +89,62 @@ const (
 	// Liquidity monitoring trigger
 	AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY AuctionTrigger = 4
 )
+
+type InstrumentMetadata struct {
+	Tags []string
+}
+
+func (i InstrumentMetadata) IntoProto() *proto.InstrumentMetadata {
+	tags := make([]string, 0, len(i.Tags))
+	return &proto.InstrumentMetadata{
+		Tags: append(tags, i.Tags...),
+	}
+}
+
+func (i InstrumentMetadata) String() string {
+	return i.IntoProto().String()
+}
+
+type Timestamp struct {
+	Value int64
+}
+
+type Price struct {
+	Value *num.Uint
+}
+
+type AuctionDuration struct {
+	Duration int64
+	Volume   uint64
+}
+
+func (a AuctionDuration) IntoProto() *proto.AuctionDuration {
+	return &proto.AuctionDuration{
+		Duration: a.Duration,
+		Volume:   a.Volume,
+	}
+}
+
+func (a AuctionDuration) String() string {
+	return a.IntoProto().String()
+}
+
+func (p Price) IntoProto() *proto.Price {
+	return &proto.Price{
+		Value: p.Value.Uint64(),
+	}
+}
+
+func (p Price) String() string {
+	return p.IntoProto().String()
+}
+
+func (t Timestamp) IntoProto() *proto.Timestamp {
+	return &proto.Timestamp{
+		Value: t.Value,
+	}
+}
+
+func (t Timestamp) String() string {
+	return t.IntoProto().String()
+}
