@@ -121,10 +121,10 @@ func TestIssue2876(t *testing.T) {
 	// but also some margin to cover the orders
 	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 15318240, int(marginAccount.Balance))
+	assert.Equal(t, 30622560, int(marginAccount.Balance))
 
 	// but also some funds left in the genearal
 	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 83681760, int(generalAccount.Balance))
+	assert.Equal(t, 68377440, int(generalAccount.Balance))
 }

@@ -55,7 +55,7 @@ type Engine struct {
 	cachedMin float64
 	cachedMax float64
 	bCache    map[uint64]float64
-	sCache    map[uint64]float64
+	aCache    map[uint64]float64
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
@@ -68,7 +68,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		probabilityOfTradingTauScaling: 1, // this is the same as the default in the netparams
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
 		bCache:                         map[uint64]float64{},
-		sCache:                         map[uint64]float64{},
+		aCache:                         map[uint64]float64{},
 	}
 }
 
@@ -185,7 +185,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	// if min, max changed since caches were created then reset
 	if e.cachedMin != minPrice || e.cachedMax != maxPrice {
 		e.bCache = make(map[uint64]float64, len(e.bCache))
-		e.sCache = make(map[uint64]float64, len(e.sCache))
+		e.aCache = make(map[uint64]float64, len(e.aCache))
 		e.cachedMin, e.cachedMax = minPrice, maxPrice
 	}
 
@@ -196,18 +196,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 		return defaultInRangeProbabilityOfTrading
 	}
 
-	// Any part of shape that the peg puts at lower price
-	// than best bid will use probability of trading computed
-	// from best_static_bid to calculate volume.
-	// Any part of shape that the peg puts at price above
-	// best_static_ask will use probability of trading computed
-	// from best_static_ask.
-	currentPrice := bestAskPrice
-	if orderPrice < bestBidPrice {
-		currentPrice = bestBidPrice
-	}
-
-	prob := e.calcProbabilityOfTrading(currentPrice, orderPrice, isBid, minPrice, maxPrice)
+	prob := e.calcProbabilityOfTrading(isBid, bestBidPrice, bestAskPrice, orderPrice, minPrice, maxPrice)
 
 	// if prob of trading is > than the minimum
 	// we can return now.
@@ -220,19 +209,43 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	return e.minProbabilityOfTrading
 }
 
-func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice uint64, isBid bool, minPrice float64, maxPrice float64) (f float64) {
-	cache := e.sCache
+func (e *Engine) calcProbabilityOfTrading(isBid bool, bestBidPrice, bestAskPrice, orderPrice uint64, minPrice, maxPrice float64) (f float64) {
+	tauScaled := e.horizon * e.probabilityOfTradingTauScaling
+	// Any part of shape that the peg puts at lower price
+	// than best bid will use probability of trading computed
+	// from best_static_bid to calculate volume.
+	// Any part of shape that the peg puts at price above
+	// best_static_ask will use probability of trading computed
+	// from best_static_ask.
 	if isBid {
-		cache = e.bCache
+		return e.calcProbabilityOfTradingBid(bestBidPrice, orderPrice, minPrice, tauScaled)
 	}
+	return e.calcProbabilityOfTradingAsk(bestAskPrice, orderPrice, maxPrice, tauScaled)
+}
 
-	prob, ok := cache[orderPrice]
+func (e *Engine) calcProbabilityOfTradingAsk(bestAskPrice, orderPrice uint64, maxPrice, tauScaled float64) (f float64) {
+	prob, ok := e.aCache[orderPrice]
 	if !ok {
-		tauScaled := e.horizon * e.probabilityOfTradingTauScaling
-		prob = e.rm.ProbabilityOfTrading(float64(currentPrice), tauScaled, float64(orderPrice), isBid, true, minPrice, maxPrice)
-		cache[orderPrice] = prob
+		prob = e.rm.ProbabilityOfTrading(float64(bestAskPrice), tauScaled, float64(orderPrice), false, true, float64(bestAskPrice), maxPrice)
+		prob = rescaleProbability(prob)
+		e.aCache[orderPrice] = prob
 	}
 	return prob
+}
+
+func (e *Engine) calcProbabilityOfTradingBid(bestBidPrice, orderPrice uint64, minPrice, tauScaled float64) (f float64) {
+	prob, ok := e.bCache[orderPrice]
+	if !ok {
+		prob = e.rm.ProbabilityOfTrading(float64(bestBidPrice), tauScaled, float64(orderPrice), true, true, minPrice, float64(bestBidPrice))
+		prob = rescaleProbability(prob)
+		e.bCache[orderPrice] = prob
+	}
+	return prob
+}
+
+//Rescale probability so that it's at most the value returned between bid and ask.
+func rescaleProbability(prob float64) float64 {
+	return prob * defaultInRangeProbabilityOfTrading
 }
 
 func setSizesTo0(orders []*LiquidityOrder) {
