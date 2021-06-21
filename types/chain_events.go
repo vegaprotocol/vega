@@ -4,6 +4,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
@@ -16,9 +17,9 @@ type WithdrawExt = proto.WithdrawExt
 type WithdrawExt_Erc20 = proto.WithdrawExt_Erc20
 
 //type BuiltinAssetDeposit = proto.BuiltinAssetDeposit
-type ERC20Deposit = proto.ERC20Deposit
-type ERC20AssetList = proto.ERC20AssetList
-type ERC20Withdrawal = proto.ERC20Withdrawal
+//type ERC20Deposit = proto.ERC20Deposit
+//type ERC20Withdrawal = proto.ERC20Withdrawal
+//type ERC20AssetList = proto.ERC20AssetList
 type Erc20WithdrawExt = proto.Erc20WithdrawExt
 
 //type ChainEvent_Builtin = commandspb.ChainEvent_Builtin
@@ -29,8 +30,9 @@ type BuiltinAssetEvent_Deposit = proto.BuiltinAssetEvent_Deposit
 type BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
 type ERC20Event_AssetList = proto.ERC20Event_AssetList
 type ERC20Event_AssetDelist = proto.ERC20Event_AssetDelist
-type ERC20Event_Deposit = proto.ERC20Event_Deposit
-type ERC20Event_Withdrawal = proto.ERC20Event_Withdrawal
+
+//type ERC20Event_Deposit = proto.ERC20Event_Deposit
+//type ERC20Event_Withdrawal = proto.ERC20Event_Withdrawal
 
 type Withdrawal_Status = proto.Withdrawal_Status
 
@@ -265,106 +267,6 @@ func (b BuiltinAssetWithdrawal) String() string {
 	return b.IntoProto().String()
 }
 
-/*type ERC20Deposit struct {
-	// The vega network internal identifier of the asset
-	VegaAssetId string
-	// The Ethereum wallet that initiated the deposit
-	SourceEthereumAddress string
-	// The Vega party identifier (pub-key) which is the target of the deposit
-	TargetPartyId string
-	// The amount to be deposited
-	Amount string
-}
-
-func (e *ERC20Deposit) FromProto(p *proto.ERC20Deposit) {
-	e.VegaAssetId = p.VegaAssetId
-	e.SourceEthereumAddress = p.SourceEthereumAddress
-	e.TargetPartyId = p.TargetPartyId
-	e.Amount = p.Amount
-}
-
-func (e ERC20Deposit) IntoProto() *proto.ERC20Deposit {
-	erc := &proto.ERC20Deposit{
-		VegaAssetId:           e.VegaAssetId,
-		SourceEthereumAddress: e.SourceEthereumAddress,
-		TargetPartyId:         e.TargetPartyId,
-		Amount:                e.Amount,
-	}
-	return erc
-}
-
-func (e ERC20Deposit) String() string {
-	return e.IntoProto().String()
-}
-
-type ERC20AssetList struct {
-	// The Vega network internal identifier of the asset
-	VegaAssetId string
-}
-
-func (e *ERC20AssetList) FromProto(p *proto.ERC20AssetList) {
-	e.VegaAssetId = p.VegaAssetId
-}
-
-func (e ERC20AssetList) IntoProto() *proto.ERC20AssetList {
-	erc := &proto.ERC20Deposit{
-		VegaAssetId: e.VegaAssetId,
-	}
-	return erc
-}
-
-func (e ERC20AssetList) String() string {
-	return e.IntoProto().String()
-}
-
-type ERC20Withdrawal struct {
-	// The Vega network internal identifier of the asset
-	VegaAssetId string
-	// The target Ethereum wallet address
-	TargetEthereumAddress string
-	// The reference nonce used for the transaction
-	ReferenceNonce string
-}
-
-func (e *ERC20Withdrawal) FromProto(p *proto.ERC20Withdrawal) {
-	e.VegaAssetId = p.VegaAssetId
-	e.TargetEthereumAddress = p.TargetEthereumAddress
-	e.ReferenceNonce = p.ReferenceNonce
-}
-
-func (e ERC20Withdrawal) IntoProto() *proto.ERC20Withdrawal {
-	erc := &proto.ERC20Withdrawal{
-		VegaAssetId:           e.VegaAssetId,
-		TargetEthereumAddress: e.TargetEthereumAddress,
-		ReferenceNonce:        e.ReferenceNonce,
-	}
-	return erc
-}
-
-func (e ERC20Withdrawal) String() string {
-	return e.IntoProto().String()
-}
-
-type Erc20WithdrawExt struct {
-	// The address into which the bridge will release the funds
-	ReceiverAddress string
-}
-
-func (e *Erc20WithdrawExt) FromProto(p *proto.Erc20WithdrawExt) {
-	e.ReceiverAddress = p.ReceiverAddress
-}
-
-func (e Erc20WithdrawExt) IntoProto() *proto.Erc20WithdrawExt {
-	erc := &proto.Erc20WithdrawExt{
-		ReceiverAddress: e.ReceiverAddress,
-	}
-	return erc
-}
-
-func (e Erc20WithdrawExt) String() string {
-	return e.IntoProto().String()
-}*/
-
 type ChainEvent_Builtin struct {
 	Builtin *BuiltinAssetEvent
 }
@@ -394,10 +296,10 @@ type BuiltinAssetEvent struct {
 	// Types that are valid to be assigned to Action:
 	//	*BuiltinAssetEvent_Deposit
 	//	*BuiltinAssetEvent_Withdrawal
-	Action builtinAssetEvent_Action
+	Action builtinAssetEventAction
 }
 
-type builtinAssetEvent_Action interface {
+type builtinAssetEventAction interface {
 	isBuiltinAssetEvent()
 	oneOfProto() interface{}
 }
@@ -489,60 +391,279 @@ func (b BuiltinAssetEventWithdrawal) oneOfProto() interface{} {
 	return b.IntoProto()
 }
 
-/*type ChainEvent_Erc20 struct {
-	Erc20 ERC20Event
+type ERC20Event struct {
+	// Index of the transaction
+	Index uint64
+	// The block in which the transaction was added
+	Block uint64
+	// The action
+	//
+	// Types that are valid to be assigned to Action:
+	//	*ERC20Event_AssetList
+	//	*ERC20Event_AssetDelist
+	//	*ERC20Event_Deposit
+	//	*ERC20Event_Withdrawal
+	Action erc20EventAction
 }
 
-func (c *ChainEvent_Erc20) FromProto(p *commandspb.ChainEvent_Erc20) {
-	c.Erc20.FromProto(p.Erc20)
+type erc20EventAction interface {
+	isErc20EventAction()
+	oneOfProto() interface{}
 }
 
-func (c ChainEvent_Erc20) IntoProto() *commandspb.ChainEvent_Erc20 {
-	erc := &commandspb.ChainEvent_Erc20{
-		Erc20: c.IntoProto(),
+func NewERC20Event(p *proto.ERC20Event) (*ERC20Event, error) {
+	e := ERC20Event{
+		Index: p.Index,
+		Block: p.Block,
+	}
+
+	var err error
+	switch a := p.Action.(type) {
+	case *proto.ERC20Event_AssetDelist:
+		e.Action, err = NewERC20EventAssetDelist(a)
+		if err != nil {
+			return nil, err
+		}
+		return &e, nil
+	case *proto.ERC20Event_AssetList:
+		e.Action, err = NewERC20EventAssetList(a)
+		if err != nil {
+			return nil, err
+		}
+		return &e, nil
+	case *proto.ERC20Event_Deposit:
+		e.Action, err = NewERC20EventDeposit(a)
+		if err != nil {
+			return nil, err
+		}
+		return &e, nil
+	case *proto.ERC20Event_Withdrawal:
+		e.Action, err = NewERC20EventWithdrawal(a)
+		if err != nil {
+			return nil, err
+		}
+		return &e, nil
+	default:
+		return nil, errors.New("Unknown erc20 event type")
+	}
+}
+
+type ERC20EventAssetDelist struct {
+	AssetDelist *ERC20AssetDelist
+}
+
+func (ERC20EventAssetDelist) isErc20EventAction() {}
+func (e ERC20EventAssetDelist) oneOfProto() interface{} {
+	return e.AssetDelist.IntoProto()
+}
+
+func NewERC20EventAssetDelist(p *proto.ERC20Event_AssetDelist) (*ERC20EventAssetDelist, error) {
+	e := ERC20EventAssetDelist{}
+	var err error
+	e.AssetDelist, err = NewERC20AssetDelistFromProto(p.AssetDelist)
+	if err != nil {
+		return nil, err
+	}
+	return &e, nil
+}
+
+func (e ERC20EventAssetDelist) IntoProto() *proto.ERC20Event_AssetDelist {
+	p := proto.ERC20Event_AssetDelist{
+		AssetDelist: e.AssetDelist.IntoProto(),
+	}
+	return &p
+}
+
+type ERC20AssetDelist struct {
+	// The Vega network internal identifier of the asset
+	VegaAssetId string
+}
+
+func NewERC20AssetDelistFromProto(p *proto.ERC20AssetDelist) (*ERC20AssetDelist, error) {
+	e := ERC20AssetDelist{
+		VegaAssetId: p.VegaAssetId,
+	}
+	return &e, nil
+}
+
+func (e ERC20AssetDelist) IntoProto() *proto.ERC20AssetDelist {
+	erc := &proto.ERC20AssetDelist{
+		VegaAssetId: e.VegaAssetId,
 	}
 	return erc
 }
 
-func (c ChainEvent_Erc20) String() string {
-	return c.IntoProto().String()
+func (e ERC20AssetDelist) String() string {
+	return e.IntoProto().String()
 }
 
-type ChainEvent_Btc struct {
-	Btc *BTCEvent
+type ERC20EventAssetList struct {
+	AssetList *ERC20AssetList
 }
 
-func (c *ChainEvent_Btc) FromProto(p *commandspb.ChainEvent_Btc) {
-	c.Btc.FromProto(p.Btc)
+func (ERC20EventAssetList) isErc20EventAction() {}
+func (e ERC20EventAssetList) oneOfProto() interface{} {
+	return e.AssetList.IntoProto()
 }
 
-func (c ChainEvent_Btc) IntoProto() *commandspb.ChainEvent_Btc {
-	ce := &commandspb.ChainEvent_Btc{
-		Btc: c.Btc.IntoProto(),
+func NewERC20EventAssetList(p *proto.ERC20Event_AssetList) (*ERC20EventAssetList, error) {
+	e := ERC20EventAssetList{}
+	var err error
+	e.AssetList, err = NewERC20AssetListFromProto(p.AssetList)
+	if err != nil {
+		return nil, err
 	}
-	return ce
+	return &e, nil
 }
 
-func (c ChainEvent_Btc) String() string {
-	return c.IntoProto().String()
-}
-
-type ChainEvent_Validator struct {
-	Validator *ValidatorEvent
-}
-
-func (c *ChainEvent_Validator) FromProto(p *commandspb.ChainEvent_Validator) {
-	c.Validator.FromProto(p.Validator)
-}
-
-func (c ChainEvent_Validator) IntoProto() *commandspb.ChainEvent_Validator {
-	ce := &commandspb.ChainEvent_Validator{
-		Validator: c.Validator.IntoProto(),
+func (e ERC20EventAssetList) IntoProto() *proto.ERC20Event_AssetList {
+	p := proto.ERC20Event_AssetList{
+		AssetList: e.AssetList.IntoProto(),
 	}
-	return ce
+	return &p
 }
 
-func (c ChainEvent_Validator) String() string {
-	return c.IntoProto().String()
+type ERC20AssetList struct {
+	// The Vega network internal identifier of the asset
+	VegaAssetId string
 }
-*/
+
+func NewERC20AssetListFromProto(p *proto.ERC20AssetList) (*ERC20AssetList, error) {
+	e := ERC20AssetList{
+		VegaAssetId: p.VegaAssetId,
+	}
+	return &e, nil
+}
+
+func (e ERC20AssetList) IntoProto() *proto.ERC20AssetList {
+	erc := &proto.ERC20AssetList{
+		VegaAssetId: e.VegaAssetId,
+	}
+	return erc
+}
+
+func (e ERC20AssetList) String() string {
+	return e.IntoProto().String()
+}
+
+type ERC20EventWithdrawal struct {
+	Withdrawal *ERC20Withdrawal
+}
+
+func (ERC20EventWithdrawal) isErc20EventAction() {}
+func (e ERC20EventWithdrawal) oneOfProto() interface{} {
+	return e.Withdrawal.IntoProto()
+}
+
+func NewERC20EventWithdrawal(p *proto.ERC20Event_Withdrawal) (*ERC20EventWithdrawal, error) {
+	e := ERC20EventWithdrawal{}
+	var err error
+	e.Withdrawal, err = NewERC20WithdrawalFromProto(p.Withdrawal)
+	if err != nil {
+		return nil, err
+	}
+	return &e, nil
+}
+
+func (e ERC20EventWithdrawal) IntoProto() *proto.ERC20Event_Withdrawal {
+	p := proto.ERC20Event_Withdrawal{
+		Withdrawal: e.Withdrawal.IntoProto(),
+	}
+	return &p
+}
+
+type ERC20Withdrawal struct {
+	// The Vega network internal identifier of the asset
+	VegaAssetId string
+	// The target Ethereum wallet address
+	TargetEthereumAddress string
+	// The reference nonce used for the transaction
+	ReferenceNonce string
+}
+
+func NewERC20WithdrawalFromProto(p *proto.ERC20Withdrawal) (*ERC20Withdrawal, error) {
+	e := ERC20Withdrawal{
+		VegaAssetId:           p.VegaAssetId,
+		TargetEthereumAddress: p.TargetEthereumAddress,
+		ReferenceNonce:        p.ReferenceNonce,
+	}
+	return &e, nil
+}
+
+func (e ERC20Withdrawal) IntoProto() *proto.ERC20Withdrawal {
+	erc := &proto.ERC20Withdrawal{
+		VegaAssetId:           e.VegaAssetId,
+		TargetEthereumAddress: e.TargetEthereumAddress,
+		ReferenceNonce:        e.ReferenceNonce,
+	}
+	return erc
+}
+
+func (e ERC20Withdrawal) String() string {
+	return e.IntoProto().String()
+}
+
+type ERC20EventDeposit struct {
+	Deposit *ERC20Deposit
+}
+
+func (ERC20EventDeposit) isErc20EventAction() {}
+func (e ERC20EventDeposit) oneOfProto() interface{} {
+	return e.Deposit.IntoProto()
+}
+
+func NewERC20EventDeposit(p *proto.ERC20Event_Deposit) (*ERC20EventDeposit, error) {
+	e := ERC20EventDeposit{}
+	var err error
+	e.Deposit, err = NewERC20DepositFromProto(p.Deposit)
+	if err != nil {
+		return nil, err
+	}
+	return &e, nil
+}
+
+func (e ERC20EventDeposit) IntoProto() *proto.ERC20Event_Deposit {
+	p := proto.ERC20Event_Deposit{
+		Deposit: e.Deposit.IntoProto(),
+	}
+	return &p
+}
+
+type ERC20Deposit struct {
+	// The vega network internal identifier of the asset
+	VegaAssetId string
+	// The Ethereum wallet that initiated the deposit
+	SourceEthereumAddress string
+	// The Vega party identifier (pub-key) which is the target of the deposit
+	TargetPartyId string
+	// The amount to be deposited
+	Amount *num.Uint
+}
+
+func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
+	e := ERC20Deposit{
+		VegaAssetId:           p.VegaAssetId,
+		SourceEthereumAddress: p.SourceEthereumAddress,
+		TargetPartyId:         p.TargetPartyId,
+	}
+	var failed bool
+	e.Amount, failed = num.UintFromString(p.Amount, 10)
+	if failed {
+		return nil, fmt.Errorf("Failed to convert numerical string to Uint: %v", p.Amount)
+	}
+	return &e, nil
+}
+
+func (e ERC20Deposit) IntoProto() *proto.ERC20Deposit {
+	erc := &proto.ERC20Deposit{
+		VegaAssetId:           e.VegaAssetId,
+		SourceEthereumAddress: e.SourceEthereumAddress,
+		TargetPartyId:         e.TargetPartyId,
+		Amount:                e.Amount.String(),
+	}
+	return erc
+}
+
+func (e ERC20Deposit) String() string {
+	return e.IntoProto().String()
+}
