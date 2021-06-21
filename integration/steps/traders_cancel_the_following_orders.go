@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
@@ -15,22 +14,22 @@ import (
 func TradersCancelTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
-	errorHandler *helpers.ErrorHandler,
-	orders *gherkin.DataTable,
+	table *gherkin.DataTable,
 ) error {
-	for _, row := range TableWrapper(*orders).Parse() {
-		trader := row.MustStr("trader")
-		reference := row.Str("reference")
-		marketID := row.Str("market id")
+	for _, r := range parseCancelOrderTable(table) {
+		row := cancelOrderRow{row: r}
+		party := row.Party()
+		reference := row.Reference()
+		marketID := row.MarketID()
 
 		var orders []types.Order
 		switch {
 		case marketID != "":
-			orders = broker.GetOrdersByPartyAndMarket(trader, marketID)
+			orders = broker.GetOrdersByPartyAndMarket(party, marketID)
 		default:
-			o, err := broker.GetByReference(trader, reference)
+			o, err := broker.GetByReference(party, reference)
 			if err != nil {
-				return errOrderNotFound(trader, reference, err)
+				return errOrderNotFound(party, reference, err)
 			}
 			orders = append(orders, o)
 		}
@@ -40,8 +39,11 @@ func TradersCancelTheFollowingOrders(
 				OrderId:  o.Id,
 				MarketId: o.MarketId,
 			}
-			reference = o.Reference
-			cancelOrder(exec, errorHandler, cancel, trader, reference)
+			_, err := exec.CancelOrder(context.Background(), &cancel, party)
+			err = checkExpectedError(row, err)
+			if err != nil {
+				return err
+			}
 		}
 
 	}
@@ -49,12 +51,36 @@ func TradersCancelTheFollowingOrders(
 	return nil
 }
 
-func cancelOrder(exec *execution.Engine, errHandler *helpers.ErrorHandler, cancel commandspb.OrderCancellation, party string, ref string) {
-	if _, err := exec.CancelOrder(context.Background(), &cancel, party); err != nil {
-		errHandler.HandleError(CancelOrderError{
-			reference: ref,
-			request:   cancel,
-			Err:       err,
-		})
-	}
+type cancelOrderRow struct {
+	row RowWrapper
+}
+
+func parseCancelOrderTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"trader",
+	}, []string{
+		"reference",
+		"market id",
+		"error",
+	})
+}
+
+func (r cancelOrderRow) Party() string {
+	return r.row.MustStr("trader")
+}
+
+func (r cancelOrderRow) MarketID() string {
+	return r.row.Str("market id")
+}
+
+func (r cancelOrderRow) Reference() string {
+	return r.row.Str("reference")
+}
+
+func (r cancelOrderRow) Error() string {
+	return r.row.Str("error")
+}
+
+func (r cancelOrderRow) ExpectError() bool {
+	return len(r.row.Str("error")) > 0
 }

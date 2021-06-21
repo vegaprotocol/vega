@@ -37,15 +37,10 @@ Feature: Close a filled order twice
       | sellSideProvider | ETH/DEC19 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 10     | 120   | 1                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
     When the traders cancel the following orders:
-      | trader          | reference      |
-      | buySideProvider | buy-provider-1 |
-    Then the system should return error "unable to find the order in the market"
+      | trader          | reference      | error                                  |
+      | buySideProvider | buy-provider-1 | unable to find the order in the market |
     When the traders cancel the following orders:
-      | trader          | reference      |
-      | buySideProvider | buy-provider-1 |
-    Then the system should return error "unable to find the order in the market"
-    When the traders cancel the following orders:
-      | trader           | reference       |
-      | sellSideProvider | sell-provider-1 |
+      | trader           | reference       | error                                  |
+      | sellSideProvider | sell-provider-1 | unable to find the order in the market |
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     Then the cumulated balance for all accounts should be worth "200200000"

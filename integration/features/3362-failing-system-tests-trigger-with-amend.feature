@@ -58,8 +58,8 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     When the traders amend the following orders:
-      | trader  | reference | price  | size delta | expiresAt | tif     | success |
-      | trader3 | t3-b-1    | 100100 | 0          | 0         | TIF_GTC | true    |
+      | trader  | reference | price  | size delta | tif     |
+      | trader3 | t3-b-1    | 100100 | 0          | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 

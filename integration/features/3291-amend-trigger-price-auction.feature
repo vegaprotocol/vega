@@ -43,7 +43,7 @@ Feature: Amend order to trigger price monitoring auction
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the traders amend the following orders:
-      | trader  | reference | price   | size delta | expiresAt | tif     | success |
-      | trader2 | ref-2     | 5670005 | 0          | 0         | TIF_GTC | true    |
+      | trader  | reference | price   | size delta | tif     |
+      | trader2 | ref-2     | 5670005 | 0          | TIF_GTC |
     Then the mark price should be "5670000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
