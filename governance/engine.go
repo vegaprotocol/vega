@@ -703,6 +703,7 @@ func getGovernanceTokens(accounts Accounts, party, voteAsset string) (*num.Uint,
 	if err != nil {
 		return nil, err
 	}
+	// no need to clone here, as GetPartyGeneralAccount already returns a copy with cloned balance
 	return account.Balance, err
 }
 
