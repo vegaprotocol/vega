@@ -30,7 +30,7 @@ func GetFirstRow(table gherkin.DataTable) (RowWrapper, error) {
 type TableWrapper gherkin.DataTable
 
 // StrictParse parses and verifies the table integrity.
-func (t TableWrapper) StrictParse(columns ...string) []RowWrapper {
+func (t TableWrapper) StrictParse(required, optional []string) []RowWrapper {
 	dt := gherkin.DataTable(t)
 
 	tableLen := len(dt.Rows)
@@ -38,7 +38,12 @@ func (t TableWrapper) StrictParse(columns ...string) []RowWrapper {
 		panic("A table is required.")
 	}
 
-	verifyTableIntegrity(columns, dt.Rows[0])
+	if len(required) != 0 {
+		err := verifyTableIntegrity(required, optional, dt.Rows[0])
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	out := make([]RowWrapper, 0, tableLen-1)
 	for _, row := range dt.Rows[1:] {
@@ -53,37 +58,73 @@ func (t TableWrapper) StrictParse(columns ...string) []RowWrapper {
 }
 
 // Parse parses the table without verifying the integrity.
+// Prefer the use of StrictParse().
 func (t TableWrapper) Parse() []RowWrapper {
-	return t.StrictParse()
+	return t.StrictParse([]string{}, []string{})
 }
 
-// verifyTableIntegrity ensures the table declares the expected columns and does
-// not declared any unexpected columns.
-func verifyTableIntegrity(columns []string, header *gherkin.TableRow) {
-	if len(columns) == 0 {
-		return
+func verifyTableIntegrity(required, optional []string, header *gherkin.TableRow) error {
+	cols, err := newColumns(required, optional)
+	if err != nil {
+		return err
 	}
 
-	requiredColumnsSet := map[string]interface{}{}
-	for _, column := range columns {
-		requiredColumnsSet[column] = nil
-	}
-
-	declaredColumnsSet := map[string]interface{}{}
+	var headerNames []string
 	for _, cell := range header.Cells {
-		_, ok := requiredColumnsSet[cell.Value]
-		if !ok {
-			panic(fmt.Errorf("the column \"%s\" is not expected by this table", cell.Value))
-		}
-		declaredColumnsSet[cell.Value] = nil
+		headerNames = append(headerNames, cell.Value)
 	}
 
-	for requiredColumn := range requiredColumnsSet {
-		_, ok := declaredColumnsSet[requiredColumn]
+	return cols.Verify(headerNames)
+}
+
+type columns struct {
+	// config maps a column name to it required state.
+	// true == required
+	// false == optional
+	config map[string]bool
+}
+
+func newColumns(required []string, optional []string) (*columns, error) {
+	config := map[string]bool{}
+
+	for _, column := range required {
+		config[column] = true
+	}
+
+	for _, optColumn := range optional {
+		_, ok := config[optColumn]
+		if ok {
+			return nil, fmt.Errorf("column \"%s\" can't be required and optional at the same time", optColumn)
+		}
+		config[optColumn] = false
+	}
+
+	return &columns{
+		config: config,
+	}, nil
+}
+
+// Verify ensures the table declares the expected columns and does
+// not declared any unexpected columns.
+func (c *columns) Verify(header []string) error {
+	declaredColumnsSet := map[string]interface{}{}
+
+	for _, column := range header {
+		_, ok := c.config[column]
 		if !ok {
-			panic(fmt.Errorf("a column \"%s\" is required by this table", requiredColumn))
+			return fmt.Errorf("the column \"%s\" is not expected by this table", column)
+		}
+		declaredColumnsSet[column] = nil
+	}
+
+	for column, isRequired := range c.config {
+		_, ok := declaredColumnsSet[column]
+		if !ok && isRequired {
+			return fmt.Errorf("the column \"%s\" is required by this table", column)
 		}
 	}
+
+	return nil
 }
 
 type RowWrapper struct {

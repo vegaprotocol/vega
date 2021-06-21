@@ -66,15 +66,19 @@ type amendOrderRow struct {
 func (r amendOrderRow) trader() string {
 	return r.row.MustStr("trader")
 }
+
 func (r amendOrderRow) reference() string {
 	return r.row.MustStr("reference")
 }
+
 func (r amendOrderRow) price() *types.Price {
 	return r.row.MustPrice("price")
 }
+
 func (r amendOrderRow) sizeDelta() int64 {
 	return r.row.MustI64("size delta")
 }
+
 func (r amendOrderRow) timeInForce() types.Order_TimeInForce {
 	return r.row.MustTIF("tif")
 }
