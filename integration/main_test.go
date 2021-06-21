@@ -3,6 +3,8 @@ package core_test
 import (
 	"flag"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/cucumber/godog"
@@ -18,15 +20,23 @@ var (
 		Output: colors.Colored(os.Stdout),
 		Format: "progress",
 	}
+
+	features string
 )
 
 func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &gdOpts)
+	flag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
 }
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	gdOpts.Paths = flag.Args()
+
+	if features != "" {
+		paths := strings.Split(features, ",")
+		gdOpts.Paths = paths
+	}
 
 	status := godog.RunWithOptions("godogs", func(s *godog.Suite) {
 		FeatureContext(s)

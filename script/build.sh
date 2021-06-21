@@ -276,6 +276,17 @@ run() {
 		go test -v ./integration/... -godog.format=pretty
 		return "$?"
 		;;
+	qatest) ## Run qa integration tests (godog)
+	  if test -z "$specsrepo" ; then
+	    echo "specsrepo not specified"
+	    exit 1
+	  fi
+	  local features
+	  features="${specsrepo}/qa-scenarios"
+	  echo "features = $features"
+	  go test -v ./integration/... --features="$features" -godog.format=pretty
+	  return "$?"
+	  ;;
 	mocks) ## Generate mocks
 		go generate ./...
 		return "$?"
