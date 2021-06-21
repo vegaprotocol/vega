@@ -121,7 +121,8 @@ type OrderAmendment struct {
 	// - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
 	TimeInForce proto.Order_TimeInForce
 	// Amend the pegged order offset for the order
-	PeggedOffset int64
+	PeggedOffset         *num.Uint
+	PeggedOffsetPositive bool
 	// Amend the pegged order reference for the order
 	// - See [`PeggedReference`](#vega.PeggedReference)
 	PeggedReference proto.PeggedReference
@@ -141,7 +142,15 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 	}
 	o.TimeInForce = p.TimeInForce
 	if p.PeggedOffset != nil {
-		o.PeggedOffset = p.PeggedOffset.Value
+		var offset uint64
+		if p.PeggedOffset.Value < 0 {
+			offset = uint64(-p.PeggedOffset.Value)
+			o.PeggedOffsetPositive = false
+		} else {
+			offset = uint64(p.PeggedOffset.Value)
+			o.PeggedOffsetPositive = true
+		}
+		o.PeggedOffset = num.NewUint(offset)
 	}
 	o.PeggedReference = p.PeggedReference
 	return &o, nil
@@ -158,9 +167,16 @@ func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 	if !o.Price.IsZero() {
 		oa.Price = &proto.Price{Value: o.Price.Uint64()}
 	}
-	if o.PeggedOffset != 0 {
-		oa.PeggedOffset = &wrappers.Int64Value{Value: o.PeggedOffset}
+	if o.PeggedOffset != nil {
+		var offset int64
+		if o.PeggedOffsetPositive {
+			offset = int64(o.PeggedOffset.Uint64())
+		} else {
+			offset = -int64(o.PeggedOffset.Uint64())
+		}
+		oa.PeggedOffset = &wrappers.Int64Value{Value: offset}
 	}
+
 	if o.ExpiresAt != 0 {
 		oa.ExpiresAt = &proto.Timestamp{Value: o.ExpiresAt}
 	}
