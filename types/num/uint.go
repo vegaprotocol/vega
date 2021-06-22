@@ -62,6 +62,10 @@ func (u Uint) Uint64() uint64 {
 	return u.u.Uint64()
 }
 
+func (z Uint) BigInt() *big.Int {
+	return z.u.ToBig()
+}
+
 // Add will add x and y then store the result
 // into u
 // this is equivalent to:

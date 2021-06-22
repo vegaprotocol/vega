@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/shopspring/decimal"
 )
 
 // ErrNoValidOrders informs that there weren't any valid orders to cover the liquidity obligation with.
@@ -130,12 +131,20 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	sLiq := 0.0
 	for _, o := range orders {
 		if o.Side == types.Side_SIDE_BUY {
-			// PETE TODO
-			bLiq += float64(o.Price.Uint64()) * float64(o.Remaining) * e.getProbabilityOfTrading(bestBidPrice, bestAskPrice, o.Price, true, minPrice, maxPrice)
+			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
+			prob := e.getProbabilityOfTrading(bestBidPrice, bestAskPrice, o.Price, true, minPrice, maxPrice)
+			d := decimal.NewFromFloat(prob)
+			d = d.Mul(decimal.NewFromInt(int64(o.Remaining)))
+			d = d.Mul(decimal.NewFromBigInt(o.Price.BigInt(), 0))
+			bLiq, _ = d.Float64()
 		}
 		if o.Side == types.Side_SIDE_SELL {
-			// PETE TODO
-			sLiq += float64(o.Price.Uint64()) * float64(o.Remaining) * e.getProbabilityOfTrading(bestBidPrice, bestAskPrice, o.Price, false, minPrice, maxPrice)
+			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
+			prob := e.getProbabilityOfTrading(bestBidPrice, bestAskPrice, o.Price, false, minPrice, maxPrice)
+			d := decimal.NewFromFloat(prob)
+			d = d.Mul(decimal.NewFromInt(int64(o.Remaining)))
+			d = d.Mul(decimal.NewFromBigInt(o.Price.BigInt(), 0))
+			sLiq, _ = d.Float64()
 		}
 	}
 	return bLiq, sLiq
@@ -181,8 +190,10 @@ func (e *Engine) updateSizes(
 			fraction := float64(validatedProportions[i]) / fpSum
 			scaling = fraction / prob
 		}
-		// PETE TODO
-		o.LiquidityImpliedVolume = uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
+		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
+		d := decimal.NewFromFloat(math.Ceil(liquidityObligation * scaling))
+		d = d.Div(decimal.NewFromBigInt(o.Price.BigInt(), 0))
+		o.LiquidityImpliedVolume = uint64(d.BigInt().Int64())
 	}
 	return nil
 }
@@ -235,8 +246,10 @@ func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice *num.Uint, is
 	prob, ok := cache[orderPrice]
 	if !ok {
 		tauScaled := e.horizon * e.probabilityOfTradingTauScaling
-		// PETE TODO
-		prob = e.rm.ProbabilityOfTrading(float64(currentPrice.Uint64()), tauScaled, float64(orderPrice.Uint64()), isBid, true, minPrice, maxPrice)
+		// e.rm.ProbabilityOfTrading(float64(currentPrice.Uint64()), tauScaled, float64(orderPrice.Uint64()), isBid, true, minPrice, maxPrice)
+		cp, _ := decimal.NewFromBigInt(currentPrice.BigInt(), 0).Float64()
+		op, _ := decimal.NewFromBigInt(orderPrice.BigInt(), 0).Float64()
+		prob = e.rm.ProbabilityOfTrading(cp, tauScaled, op, isBid, true, minPrice, maxPrice)
 		cache[orderPrice] = prob
 	}
 	return prob

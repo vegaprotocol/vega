@@ -69,8 +69,7 @@ func testCanAmend(t *testing.T) {
 
 func getTestAmendSimpleSubmission() *commandspb.LiquidityProvisionSubmission {
 	return &commandspb.LiquidityProvisionSubmission{
-		MarketId: market,
-		// TODO PETE		CommitmentAmount: num.NewUint(10000),
+		MarketId:         market,
 		CommitmentAmount: 10000,
 		Fee:              "0.5",
 		Reference:        "ref-lp-submission-1",
