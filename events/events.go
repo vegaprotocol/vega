@@ -46,7 +46,7 @@ type FeesTransfer interface {
 	// The total amount of fees to be paid (all cumulated)
 	// per party if all the  transfers are to be executed
 	// map is party id -> total amount of fees to be transferred
-	TotalFeesAmountPerParty() map[string]uint64
+	TotalFeesAmountPerParty() map[string]*num.Uint
 }
 
 // Transfer is an event passed on by settlement engine, contains position
