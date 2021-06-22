@@ -157,7 +157,9 @@ func (e *Engine) GetAllLiquidityOrders() []*types.Order {
 	orders := []*types.Order{}
 	for _, v := range e.liquidityOrders {
 		for _, o := range v {
-			orders = append(orders, o)
+			if o.Status == types.Order_STATUS_ACTIVE {
+				orders = append(orders, o)
+			}
 		}
 	}
 
@@ -593,9 +595,9 @@ func (e *Engine) createOrUpdateForParty(
 
 func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	order := &types.Order{
+		// PeggedOrder:          pegged,
 		MarketId:             marketID,
 		Side:                 side,
-		PeggedOrder:          pegged,
 		Price:                price,
 		PartyId:              partyID,
 		Size:                 size,

@@ -69,7 +69,7 @@ func (m *Market) reSubmitPeggedOrders(
 
 	// Reinsert all the orders
 	for _, order := range toSubmitOrders {
-		conf, err := m.submitValidatedOrder(ctx, order)
+		conf, updts, err := m.submitValidatedOrder(ctx, order)
 		if err != nil {
 			m.log.Debug("could not re-submit a pegged order after repricing",
 				logging.MarketID(m.GetID()),
@@ -83,7 +83,10 @@ func (m *Market) reSubmitPeggedOrders(
 			m.log.Panic("submitting pegged orders after a reprice should never trade",
 				logging.Order(*order))
 		}
-		updatedOrders = append(updatedOrders, conf.Order)
+		if err == nil {
+			updatedOrders = append(updatedOrders, conf.Order)
+		}
+		updatedOrders = append(updatedOrders, updts...)
 	}
 
 	return updatedOrders
@@ -93,10 +96,20 @@ func (m *Market) repriceAllSpecialOrders(
 	ctx context.Context,
 	changes uint8,
 	orderUpdates []*types.Order,
-) {
-	// first we get all the pegged orders to be resubmitted with a new price
-	parked, toSubmit := m.repricePeggedOrders(ctx, changes)
+) []*types.Order {
+	if changes == 0 && len(orderUpdates) <= 0 {
+		// nothing to do, prices didn't move,
+		// no orders have been updated, there's no
+		// reason pegged order should get repriced or
+		// lp to be differnet than before
+		return nil
+	}
 
+	// first we get all the pegged orders to be resubmitted with a new price
+	var parked, toSubmit []*types.Order
+	if changes != 0 {
+		parked, toSubmit = m.repricePeggedOrders(ctx, changes)
+	}
 	// just checking if we need to take all lp of the book too
 	// normal lp updates would be fine without taking order from the
 	// book as no prices would be conlficting
@@ -118,12 +131,13 @@ func (m *Market) repriceAllSpecialOrders(
 	// we can then just re-submit all pegged orders
 	// if we needed to re-submit peggted orders,
 	// let's do it now
-	var updatedPegged = []*types.Order{}
+	var updatedPegged []*types.Order
 	if needsPeggedUpdates {
 		updatedPegged = m.reSubmitPeggedOrders(ctx, toSubmit)
 	}
 
-	allOrderUpdates := append(parked, updatedPegged...)
+	orderUpdates = append(orderUpdates, parked...)
+	orderUpdates = append(orderUpdates, updatedPegged...)
 
 	// now we have all the re-submitted pegged orders and the
 	// parked pegged orders from before
@@ -136,14 +150,56 @@ func (m *Market) repriceAllSpecialOrders(
 		// we do not return here, we could not get one of the prices eventually
 	}
 	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, allOrderUpdates)
+		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, orderUpdates)
 	if err != nil {
 		// TODO: figure out if error are really possible there,
 		// But I'd think not.
 		m.log.Error("could not update liquidity", logging.Error(err))
 	}
 
-	m.updateLPOrders(ctx, lpOrders, newOrders, cancels)
+	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels)
+}
+
+func (m *Market) enterAuctionSpecialOrders(
+	ctx context.Context,
+	updatedOrders []*types.Order,
+) []*types.Order {
+
+	// Park all pegged orders
+	updatedOrders = append(
+		updatedOrders,
+		m.parkAllPeggedOrders(ctx)...,
+	)
+
+	// we know we enter an auction here,
+	// so let's just get the list of all orders, and cancel them
+	bestBidPrice, bestAskPrice, err := m.getBestStaticPrices()
+	if err != nil {
+		m.log.Debug("could not get one of the static mid prices",
+			logging.Error(err))
+		// we do not return here, we could not get one of the prices eventually
+	}
+	newOrders, cancels, err := m.liquidity.Update(
+		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, updatedOrders)
+	if err != nil {
+		// TODO: figure out if error are really possible there,
+		// But I'd think not.
+		m.log.Error("could not update liquidity", logging.Error(err))
+	}
+
+	// we are entering an auction, the liquidity engine should always instruct
+	// to cancel all orders, and recreating none
+	if len(newOrders) > 0 {
+		m.log.Panic("liquidity engine instructed to create orders when entering auction",
+			logging.MarketID(m.GetID()),
+			logging.Int("new-order-count", len(newOrders)))
+	}
+
+	// method always return nil anyway
+	// TODO: API to be changed someday as we don't need to cancel anything
+	// now, we assume that all that were required to be cancelled already are.
+	orderUpdates, _ := m.updateAndCreateLPOrders(ctx, []*types.Order{}, cancels)
+	return orderUpdates
 }
 
 func (m *Market) updateLPOrders(
@@ -151,7 +207,7 @@ func (m *Market) updateLPOrders(
 	allOrders []*types.Order,
 	submits []*types.Order,
 	cancels []*liquidity.ToCancel,
-) {
+) []*types.Order {
 	cancelIDs := map[string]struct{}{}
 
 	// now we gonna map all the all order which
@@ -174,7 +230,7 @@ func (m *Market) updateLPOrders(
 		// so there's no reason we would not be able to submit
 		// let's panic if an issue happen
 		if _, ok := cancelIDs[order.Id]; !ok {
-			conf, err := m.submitOrder(ctx, order, false)
+			conf, _, err := m.submitOrder(ctx, order, false)
 			if err != nil {
 				m.log.Panic("lp should be able to re-submit the orders now",
 					logging.Error(err))
@@ -189,5 +245,7 @@ func (m *Market) updateLPOrders(
 	// method always return nil anyway
 	// TODO: API to be changed someday as we don't need to cancel anything
 	// now, we assume that all that were required to be cancelled already are.
-	_ = m.updateAndCreateLPOrders(ctx, submits, []*liquidity.ToCancel{})
+	orderUpdates, _ := m.updateAndCreateLPOrders(
+		ctx, submits, []*liquidity.ToCancel{})
+	return orderUpdates
 }

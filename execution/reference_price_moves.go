@@ -3,7 +3,6 @@ package execution
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -60,21 +59,21 @@ func (m *Market) checkForReferenceMoves(
 		changes = PriceMoveAll
 	}
 
-	// If we have a reference price move, update any pegged orders that reference it
-	if changes != 0 {
-		repricePegged, _ := m.repriceAllPeggedOrders(ctx, changes)
-		orderUpdates = append(orderUpdates, repricePegged...)
-	}
-
-	if err := m.liquidityUpdate(ctx, orderUpdates); err != nil {
-		m.log.Debug("error update liquidity engine",
-			logging.MarketID(m.GetID()),
-			logging.Error(err))
-	}
+	// now we can start all special order repricing...
+	orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
 
 	// 	// Update the last price values
 	m.lastMidBuyPrice = newMidBuy
 	m.lastMidSellPrice = newMidSell
 	m.lastBestBidPrice = newBestBid
 	m.lastBestAskPrice = newBestAsk
+
+	// now we had new orderUpdates while processing those,
+	// that would means someone got distressed, so some order
+	// got uncrossed, so we need to check all these again.
+	// we do not use the forceUpdate ffield here as it's
+	// not required that prices moved though
+	if len(orderUpdates) > 0 {
+		m.checkForReferenceMoves(ctx, orderUpdates, false)
+	}
 }
