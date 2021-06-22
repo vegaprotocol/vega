@@ -10,6 +10,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -122,8 +123,9 @@ func (e *Engine) GetPotentialShapeOrders(
 		return nil, errors.New("unable to price sell shape")
 	}
 
-	obligation := float64(lps.CommitmentAmount) * e.stakeToObligationFactor
-
+	// Update this once we have updated the commitment value to use Uint TODO UINT
+	ob := float64(lps.CommitmentAmount) * e.stakeToObligationFactor
+	obligation, _ := num.UintFromDecimal(decimal.NewFromFloat(ob))
 	// Create a slice shaped copy of the orders
 	orders := make([]*types.Order, 0, len(e.orders[party]))
 	for _, order := range e.orders[party] {
