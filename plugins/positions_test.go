@@ -31,14 +31,14 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
-	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, 1000, []events.TradeSettlement{
+	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  -1,
-			price: 1000,
+			price: num.NewUint(1000),
 		},
 		tradeStub{
 			size:  -1,
-			price: 1000,
+			price: num.NewUint(1000),
 		},
 	}, 1)
 	position.Push(ps)
@@ -53,14 +53,14 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
-	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, 1000, []events.TradeSettlement{
+	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  2,
-			price: 1000,
+			price: num.NewUint(1000),
 		},
 		tradeStub{
 			size:  -2,
-			price: 1500,
+			price: num.NewUint(1500),
 		},
 	}, 1)
 	position.Push(ps)
@@ -72,7 +72,7 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	assert.Equal(t, 1000, int(pp[0].RealisedPnl))
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, -300, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, num.NewUint(300), true, 1)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -86,14 +86,14 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
-	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, 1000, []events.TradeSettlement{
+	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  2,
-			price: 1000,
+			price: num.NewUint(1000),
 		},
 		tradeStub{
 			size:  3,
-			price: 1200,
+			price: num.NewUint(1200),
 		},
 	}, 1)
 	position.Push(ps)
@@ -106,7 +106,7 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, -300, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, num.NewUint(300), true, 1)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -115,7 +115,7 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	assert.Equal(t, -300, int(pp[0].RealisedPnl))
 	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 	// now assume this trader is distressed, and we've taken all their funds
-	sde := events.NewSettleDistressed(position.ctx, "trader1", market, 0, 100, 1)
+	sde := events.NewSettleDistressed(position.ctx, "trader1", market, num.NewUint(0), num.NewUint(100), 1)
 	position.Push(sde)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -128,14 +128,14 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
-	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, 1000, []events.TradeSettlement{
+	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  2,
-			price: 1000,
+			price: num.NewUint(1000),
 		},
 		tradeStub{
 			size:  3,
-			price: 1200,
+			price: num.NewUint(1200),
 		},
 	}, 1)
 	position.Push(ps)
@@ -148,7 +148,7 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 	assert.Equal(t, -600, int(pp[0].UnrealisedPnl))
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, -300, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, num.NewUint(300), true, 1)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -181,5 +181,5 @@ func (t tradeStub) Size() int64 {
 }
 
 func (t tradeStub) Price() *num.Uint {
-	return t.price
+	return t.price.Clone()
 }
