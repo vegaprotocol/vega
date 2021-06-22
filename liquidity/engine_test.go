@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -179,13 +180,17 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 
 	require.True(t, tng.engine.IsLiquidityProvider(party))
 
-	var (
-		markPrice = uint64(10)
-	)
+	var markPrice = num.NewUint(10)
 
 	// Now repriceFn works as expected, so initial orders should get created now
-	fn := func(order *types.PeggedOrder, _ types.Side) (uint64, *types.PeggedOrder, error) {
-		return markPrice + uint64(order.Offset), order, nil
+	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
+		retPrice := markPrice.Clone()
+		if order.Offset > 0 {
+			retPrice.Add(retPrice, num.NewUint(uint64(order.Offset)))
+		} else {
+			retPrice.Sub(retPrice, num.NewUint(uint64(-order.Offset)))
+		}
+		return retPrice, order, nil
 	}
 
 	// Expectations
@@ -357,12 +362,16 @@ func TestUpdate(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
 	)
 
-	var (
-		markPrice = uint64(10)
-	)
+	var markPrice = num.NewUint(10)
 
-	fn := func(order *types.PeggedOrder, _ types.Side) (uint64, *types.PeggedOrder, error) {
-		return markPrice + uint64(order.Offset), order, nil
+	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
+		retPrice := markPrice.Clone()
+		if order.Offset > 0 {
+			retPrice.Add(retPrice, num.NewUint(uint64(order.Offset)))
+		} else {
+			retPrice.Sub(retPrice, num.NewUint(uint64(-order.Offset)))
+		}
+		return retPrice, order, nil
 	}
 
 	// Expectations
@@ -373,8 +382,8 @@ func TestUpdate(t *testing.T) {
 	).AnyTimes().Return(0.5)
 
 	orders := []*types.Order{
-		{Id: "1", PartyId: party, Price: 10, Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
-		{Id: "2", PartyId: party, Price: 11, Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
+		{Id: "1", PartyId: party, Price: num.NewUint(10), Size: 1, Side: types.Side_SIDE_BUY, Status: types.Order_STATUS_ACTIVE},
+		{Id: "2", PartyId: party, Price: num.NewUint(11), Size: 1, Side: types.Side_SIDE_SELL, Status: types.Order_STATUS_ACTIVE},
 	}
 
 	creates, err := tng.engine.CreateInitialOrders(ctx, markPrice, markPrice, party, orders, fn)

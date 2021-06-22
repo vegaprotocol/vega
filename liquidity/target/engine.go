@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -89,18 +90,19 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 
 // GetTargetStake returns target stake based current time, risk factors
 // and the open interest time series constructed by calls to RecordOpenInterest
-func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64) float64 {
+func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) float64 {
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
 		e.computeMaxOI(now, minTime)
 	}
 
-	return float64(markPrice*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	// PETE TODO
+	return float64(markPrice.Uint64()*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
 }
 
 //GetTheoreticalTargetStake returns target stake based current time, risk factors
 //and the supplied trades without modifying the internal state
-func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64, trades []*types.Trade) float64 {
+func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) float64 {
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
@@ -111,7 +113,8 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 		maxOI = theoreticalOI
 	}
 
-	return float64(markPrice*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	// PETE TODO
+	return float64(markPrice.Uint64()*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
 }
 
 func (e *Engine) getMaxFromCurrent() uint64 {
