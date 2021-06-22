@@ -3,8 +3,9 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type MarketData struct {
@@ -28,8 +29,9 @@ func (m MarketData) MarketData() types.MarketData {
 	return m.md
 }
 
-func (m MarketData) Proto() types.MarketData {
-	return m.md
+func (m MarketData) Proto() proto.MarketData {
+	md := m.md.IntoProto()
+	return *md
 }
 
 func (m MarketData) StreamMessage() *eventspb.BusEvent {
@@ -38,7 +40,7 @@ func (m MarketData) StreamMessage() *eventspb.BusEvent {
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
 		Event: &eventspb.BusEvent_MarketData{
-			MarketData: &m.md,
+			MarketData: m.md.IntoProto(),
 		},
 	}
 }

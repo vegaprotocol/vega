@@ -38,7 +38,7 @@ type Broker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
-	GetAssetTotalSupply(asset string) (uint64, error)
+	GetAssetTotalSupply(asset string) (*num.Uint, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
@@ -707,9 +707,6 @@ func getGovernanceTokens(accounts Accounts, party, voteAsset string) (*num.Uint,
 	return account.Balance, err
 }
 
-// FIXME Should be a `Uint.Clone()` of account.Balance. We will update it when
-//  collateral package is migrated.
 func getAssetTotalSupply(accounts Accounts, asset string) (*num.Uint, error) {
-	totalStake, err := accounts.GetAssetTotalSupply(asset)
-	return num.NewUint(totalStake), err
+	return accounts.GetAssetTotalSupply(asset)
 }
