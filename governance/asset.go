@@ -42,14 +42,14 @@ func validateCommonAssetDetails(ad *proto.AssetDetails) (proto.ProposalError, er
 
 	u, err = strconv.ParseUint(ad.MinLpStake, 10, 64)
 	if err != nil || u == 0 {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS,
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS,
 			ErrInvalidAssetDetails
 	}
 
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateBuiltinAssetSource(ba *types.BuiltinAsset) (types.ProposalError, error) {
+func validateBuiltinAssetSource(ba *proto.BuiltinAsset) (proto.ProposalError, error) {
 	u, err := strconv.ParseUint(ba.MaxFaucetAmountMint, 10, 64)
 	if err != nil || u == 0 {
 		return proto.ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD, ErrMissingBuiltinAssetField
