@@ -30,7 +30,15 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 	return &Uint{*u}, false
 }
 
-// UintFromString created a new Uint from a string
+func UintFromDecimal(d decimal.Decimal) (*Uint, bool) {
+	return UintFromBig(d.BigInt())
+}
+
+func (u *Uint) ToDecimal() decimal.Decimal {
+	return decimal.NewFromBigInt(u.BigInt(), 0)
+}
+
+// FromString created a new Uint from a string
 // interpreted using the give base.
 // A big.Int is used to read the string, so
 // all error related to big.Int parsing applied here.
