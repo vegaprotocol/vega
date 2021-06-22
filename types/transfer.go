@@ -2,20 +2,7 @@ package types
 
 import (
 	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/types/num"
 )
-
-type FinancialAmount struct {
-	Amount *num.Uint
-	Asset  string
-}
-
-type Transfer struct {
-	Owner     string
-	Amount    *FinancialAmount
-	Type      TransferType
-	MinAmount *num.Uint
-}
 
 func (f FinancialAmount) String() string {
 	return f.IntoProto().String()
