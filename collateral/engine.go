@@ -593,8 +593,9 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.BigUint("amount", lsevt.amountLost),
 				logging.String("market-id", lsevt.market))
 
+			delta, neg := req.Amount.Delta(req.Amount, totalInAccount)
 			brokerEvts = append(brokerEvts,
-				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketId, decimalPtr(req.Amount.Sub(req.Amount, totalInAccount).String()), nil, e.currentTime))
+				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketId, delta, neg, e.currentTime))
 		}
 
 		// updating the accounts stored in the marginEvt
