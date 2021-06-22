@@ -34,7 +34,7 @@ func (n marginUpdate) MarginBalance() *num.Uint {
 	if n.margin == nil {
 		return num.NewUint(0)
 	}
-	return n.margin.Balance
+	return n.margin.Balance.Clone()
 }
 
 // GeneralBalance here we cumulate both the general
@@ -55,12 +55,13 @@ func (n marginUpdate) GeneralBalance() *num.Uint {
 }
 
 func (n marginUpdate) MarginShortFall() *num.Uint {
-	return n.marginShortFall
+	return n.marginShortFall.Clone()
 }
 
+// BondBalance - returns nil if no bond account is present, *num.Uint otherwise
 func (n marginUpdate) BondBalance() *num.Uint {
 	if n.bond == nil {
 		return nil
 	}
-	return n.bond.Balance
+	return n.bond.Balance.Clone()
 }

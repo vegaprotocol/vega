@@ -11,47 +11,49 @@ import (
 
 type request struct {
 	amount  num.Decimal
+	amt     *num.Uint
 	request *types.Transfer
 }
 
 type simpleDistributor struct {
 	log             *logging.Logger
 	marketID        string
-	expectCollected num.Decimal
-	collected       num.Decimal
+	expectCollected *num.Uint
+	collected       *num.Uint
 	requests        []request
 	ts              int64
 }
 
 func (s *simpleDistributor) LossSocializationEnabled() bool {
-	return s.collected.LessThan(s.expectCollected)
+	return s.collected.LT(s.expectCollected)
 }
 
 func (s *simpleDistributor) Add(req *types.Transfer) {
-	amount := num.DecimalFromUint(req.Amount.Amount).Mul(s.collected.Div(s.expectCollected))
+	col, exp := num.DecimalFromUint(s.collected), num.DecimalFromUint(s.expectCollected)
+	amount := num.DecimalFromUint(req.Amount.Amount).Mul(col.Div(exp)).Floor()
+	amt, _ := num.UintFromBig(amount.BigInt())
 	s.requests = append(s.requests, request{
 		amount:  amount,
+		amt:     amt,
 		request: req,
 	})
 }
 
 func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
-	if s.expectCollected.Equal(s.collected) {
+	if s.expectCollected.EQ(s.collected) {
 		return nil
 	}
 
 	var (
-		totalamount num.Decimal
-		evts        = make([]events.Event, 0, len(s.requests))
-		evt         *events.LossSoc
+		total = num.NewUint(0)
+		evts  = make([]events.Event, 0, len(s.requests))
+		evt   *events.LossSoc
 	)
 	for _, v := range s.requests {
-		amt := v.amount.Floor()
-		totalamount = totalamount.Add(amt)
-		loss := amt.Sub(num.DecimalFromUint(v.request.Amount.Amount))
-		bigIntLoss, _ := num.UintFromBig(loss.BigInt())
-		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, bigIntLoss, true, s.ts)
-		v.request.Amount.Amount, _ = num.UintFromBig(amt.BigInt())
+		total.AddSum(v.amt)
+		loss, _ := num.NewUint(0).Delta(v.amt, v.request.Amount.Amount)
+		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
+		v.request.Amount.Amount = v.amt.Clone()
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
 			logging.Int64("amount", evt.AmountLost()),
@@ -59,15 +61,12 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		evts = append(evts, evt)
 	}
 
-	// TODO(): just rounding the stuff, needs to be done differently later
-	if !totalamount.Equal(s.collected) {
+	if total.NEQ(s.collected) {
 		// last one get the remaining bits
-		mismatch := s.collected.Sub(totalamount)
-		bigIntMismatch, _ := num.UintFromBig(mismatch.BigInt())
-		s.requests[len(s.requests)-1].request.Amount.Amount.AddSum(bigIntMismatch)
+		mismatch, _ := total.Delta(s.collected, total)
+		s.requests[len(s.requests)-1].request.Amount.Amount.AddSum(mismatch)
 		// decAmt is negative
-		decAmt := num.DecimalFromUint(evt.AmountUint()).Sub(mismatch).Round(0)
-		loss, _ := num.UintFromBig(decAmt.BigInt())
+		loss := mismatch.Sub(evt.AmountUint(), mismatch)
 		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),
@@ -76,7 +75,6 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 			true,
 			s.ts)
 	}
-
 	return evts
 }
 

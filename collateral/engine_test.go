@@ -2460,8 +2460,15 @@ type transferFees struct {
 	tfa map[string]uint64
 }
 
-func (t transferFees) Transfers() []*types.Transfer               { return t.tfs }
-func (t transferFees) TotalFeesAmountPerParty() map[string]uint64 { return t.tfa }
+func (t transferFees) Transfers() []*types.Transfer { return t.tfs }
+
+func (t transferFees) TotalFeesAmountPerParty() map[string]*num.Uint {
+	ret := make(map[string]*num.Uint, len(t.tfa)) // convert in here, so the tests are easier to read
+	for k, v := range t.tfa {
+		ret[k] = num.NewUint(v)
+	}
+	return ret
+}
 
 func TestHash(t *testing.T) {
 	eng := getTestEngine(t, testMarketID)
