@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -96,8 +97,13 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 		e.computeMaxOI(now, minTime)
 	}
 
-	// PETE TODO
-	return float64(markPrice.Uint64()*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	// float64(markPrice.Uint64()*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	mp := decimal.NewFromBigInt(markPrice.BigInt(), 0)
+	mp = mp.Mul(decimal.NewFromInt(int64(e.max.OI)))
+	mp = mp.Mul(decimal.NewFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor))
+
+	retVal, _ := mp.Float64()
+	return retVal
 }
 
 //GetTheoreticalTargetStake returns target stake based current time, risk factors
@@ -113,8 +119,13 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 		maxOI = theoreticalOI
 	}
 
-	// PETE TODO
-	return float64(markPrice.Uint64()*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	// float64(markPrice.Uint64()*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	mp := decimal.NewFromBigInt(markPrice.BigInt(), 0)
+	mp = mp.Mul(decimal.NewFromInt(int64(maxOI)))
+	mp = mp.Mul(decimal.NewFromFloat(math.Max(rf.Long, rf.Short) * e.sFactor))
+
+	retVal, _ := mp.Float64()
+	return retVal
 }
 
 func (e *Engine) getMaxFromCurrent() uint64 {
