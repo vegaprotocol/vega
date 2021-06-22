@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/monitor/liquidity"
 	"code.vegaprotocol.io/vega/monitor/liquidity/mocks"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 )
 
@@ -65,7 +66,7 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 			}
 			var trades []*types.Trade = nil
 			var rf types.RiskFactor = types.RiskFactor{}
-			var markPrice uint64 = 100
+			var markPrice *num.Uint = num.NewUint(100)
 
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice, trades).Return(test.target)
 			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
@@ -107,7 +108,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 			}
 			var trades []*types.Trade = nil
 			var rf types.RiskFactor = types.RiskFactor{}
-			var markPrice uint64 = 100
+			var markPrice *num.Uint = num.NewUint(100)
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice, trades).Return(test.target)
 			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice, test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})
