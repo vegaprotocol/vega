@@ -106,7 +106,7 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*types.TransferResponse, error) {
 	mID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
-	factor := decimal.NewFromFloatWithExponent(m.bondPenaltyFactor, 0)
+	factor := decimal.NewFromFloat(m.bondPenaltyFactor)
 	ret := make([]*types.TransferResponse, 0, len(closed))
 	for _, c := range closed {
 		shortfall := decimal.NewFromBigInt(new(big.Int).SetUint64(c.MarginShortFall()), 0)
