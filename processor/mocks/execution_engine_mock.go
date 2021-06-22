@@ -37,7 +37,7 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 }
 
 // AmendOrder mocks base method
-func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *v1.OrderAmendment, arg2 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
@@ -109,7 +109,7 @@ func (mr *MockExecutionEngineMockRecorder) StartOpeningAuction(arg0, arg1 interf
 }
 
 // SubmitLiquidityProvision mocks base method
-func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *v1.LiquidityProvisionSubmission, arg2, arg3 string) error {
+func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionSubmission, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitLiquidityProvision", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -151,7 +151,7 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarketWithLiquidityProvision(ar
 }
 
 // SubmitOrder mocks base method
-func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *v1.OrderSubmission, arg2 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
