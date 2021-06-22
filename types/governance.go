@@ -280,6 +280,15 @@ func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 	return r
 }
 
+func ProposalTermsFromProto(p *proto.ProposalTerms) *ProposalTerms {
+	r := &ProposalTerms{
+		ClosingTimestamp:    p.ClosingTimestamp,
+		EnactmentTimestamp:  p.EnactmentTimestamp,
+		ValidationTimestamp: p.ValidationTimestamp,
+	}
+	return r
+}
+
 func (p ProposalTerms) IntoProto() *proto.ProposalTerms {
 	change := p.Change.oneOfProto()
 	r := &proto.ProposalTerms{
@@ -313,6 +322,12 @@ func (p ProposalTerms) String() string {
 func (a ProposalTerms_NewMarket) IntoProto() *proto.ProposalTerms_NewMarket {
 	return &proto.ProposalTerms_NewMarket{
 		NewMarket: a.NewMarket.IntoProto(),
+	}
+}
+
+func ProposalNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms_NewMarket {
+	return &ProposalTerms_NewMarket{
+		NewMarket: &NewMarket{}, // @TODO
 	}
 }
 
