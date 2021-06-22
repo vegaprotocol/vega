@@ -28,6 +28,12 @@ type PriceMonitoringBounds struct {
 	ReferencePrice num.Decimal
 }
 
+func PriceMonitoringSettingsFromProto(p *proto.PriceMonitoringSettings) *PriceMonitoringSettings {
+	pms := &PriceMonitoringSettings{}
+	pms.FromProto(p)
+	return pms
+}
+
 func (p PriceMonitoringSettings) IntoProto() *proto.PriceMonitoringSettings {
 	var parameters *proto.PriceMonitoringParameters
 	if p.Parameters != nil {
@@ -44,6 +50,16 @@ func (p *PriceMonitoringSettings) FromProto(pr *proto.PriceMonitoringSettings) {
 	if pr.Parameters != nil {
 		p.Parameters = &PriceMonitoringParameters{}
 		p.Parameters.FromProto(pr.Parameters)
+	}
+}
+
+func PriceMonitoringParametersFromProto(p *proto.PriceMonitoringParameters) *PriceMonitoringParameters {
+	triggers := make([]*PriceMonitoringTrigger, 0, len(p.Triggers))
+	for _, t := range p.Triggers {
+		triggers = append(triggers, PriceMonitoringTriggerFromProto(t))
+	}
+	return &PriceMonitoringParameters{
+		Triggers: triggers,
 	}
 }
 
@@ -86,6 +102,15 @@ func (p *PriceMonitoringBounds) FromProto(pr *proto.PriceMonitoringBounds) {
 	p.MaxValidPrice = num.NewUint(pr.MaxValidPrice)
 	p.Trigger.FromProto(pr.Trigger)
 	p.ReferencePrice = num.DecimalFromFloat(pr.ReferencePrice)
+}
+
+func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMonitoringTrigger {
+	return &PriceMonitoringTrigger{
+		Horizon:          p.Horizon,
+		HDec:             num.DecimalFromFloat(float64(p.Horizon)),
+		Probability:      num.DecimalFromFloat(p.Probability),
+		AuctionExtension: p.AuctionExtension,
+	}
 }
 
 // IntoProto return proto version of the PriceMonitoringTrigger

@@ -60,6 +60,20 @@ func (t TradableInstrument_LogNormalRiskModel) trmIntoProto() interface{} {
 	return t.IntoProto()
 }
 
+func MarginCalculatorFromProto(p *proto.MarginCalculator) *MarginCalculator {
+	return &MarginCalculator{
+		ScalingFactors: ScalingFactorsFromProto(p.ScalingFactors),
+	}
+}
+
+func ScalingFactorsFromProto(p *proto.ScalingFactors) *ScalingFactors {
+	return &ScalingFactors{
+		SearchLevel:       num.DecimalFromFloat(p.SearchLevel),
+		InitialMargin:     num.DecimalFromFloat(p.InitialMargin),
+		CollateralRelease: num.DecimalFromFloat(p.CollateralRelease),
+	}
+}
+
 type MarginCalculator struct {
 	ScalingFactors *ScalingFactors
 }
@@ -184,6 +198,52 @@ type SimpleModelParams struct {
 	MaxMoveUp            num.Decimal
 	MinMoveDown          num.Decimal
 	ProbabilityOfTrading num.Decimal
+}
+
+func isTRMFromProto(p interface{}) isTRM {
+	switch tirm := p.(type) {
+	case *proto.TradableInstrument_SimpleRiskModel:
+		return TradableInstrumentSimpleFromProto(tirm)
+	case *proto.TradableInstrument_LogNormalRiskModel:
+		return TradableInstrumentLogNoramlFromProto(tirm)
+	}
+	return nil
+}
+
+func LogNormalParamsFromProto(p *proto.LogNormalModelParams) *LogNormalModelParams {
+	return &LogNormalModelParams{
+		Mu:    num.DecimalFromFloat(p.Mu),
+		R:     num.DecimalFromFloat(p.R),
+		Sigma: num.DecimalFromFloat(p.Sigma),
+	}
+}
+
+func TradableInstrumentLogNoramlFromProto(p *proto.TradableInstrument_LogNormalRiskModel) *TradableInstrument_LogNormalRiskModel {
+	return &TradableInstrument_LogNormalRiskModel{
+		LogNormalRiskModel: &LogNormalRiskModel{
+			RiskAversionParameter: num.DecimalFromFloat(p.LogNormalRiskModel.RiskAversionParameter),
+			Tau:                   num.DecimalFromFloat(p.LogNormalRiskModel.Tau),
+			Params:                LogNormalParamsFromProto(p.LogNormalRiskModel.Params),
+		},
+	}
+}
+
+func TradableInstrumentSimpleFromProto(p *proto.TradableInstrument_SimpleRiskModel) *TradableInstrument_SimpleRiskModel {
+	return &TradableInstrument_SimpleRiskModel{
+		SimpleRiskModel: &SimpleRiskModel{
+			Params: SimpleModelParamsFromProto(p.SimpleRiskModel.Params),
+		},
+	}
+}
+
+func SimpleModelParamsFromProto(p *proto.SimpleModelParams) *SimpleModelParams {
+	return &SimpleModelParams{
+		FactorLong:           num.DecimalFromFloat(p.FactorLong),
+		FactorShort:          num.DecimalFromFloat(p.FactorShort),
+		MaxMoveUp:            num.DecimalFromFloat(p.MaxMoveUp),
+		MinMoveDown:          num.DecimalFromFloat(p.MinMoveDown),
+		ProbabilityOfTrading: num.DecimalFromFloat(p.ProbabilityOfTrading),
+	}
 }
 
 func (t TradableInstrument_SimpleRiskModel) IntoProto() *proto.TradableInstrument_SimpleRiskModel {

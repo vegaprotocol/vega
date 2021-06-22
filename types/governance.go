@@ -481,6 +481,12 @@ type ContinuousTrading struct {
 	TickSize string
 }
 
+func ContinuousTradingFromProto(c *proto.ContinuousTrading) *ContinuousTrading {
+	return &ContinuousTrading{
+		TickSize: c.TickSize,
+	}
+}
+
 func (c ContinuousTrading) IntoProto() *proto.ContinuousTrading {
 	return &proto.ContinuousTrading{
 		TickSize: c.TickSize,
@@ -526,6 +532,13 @@ func (n NewMarketConfiguration_Discrete) tmIntoProto() interface{} {
 type DiscreteTrading struct {
 	DurationNs int64
 	TickSize   string
+}
+
+func DiscreteTradingFromProto(d *proto.DiscreteTrading) *DiscreteTrading {
+	return &DiscreteTrading{
+		DurationNs: d.DurationNs,
+		TickSize:   d.TickSize,
+	}
 }
 
 func (d DiscreteTrading) IntoProto() *proto.DiscreteTrading {
