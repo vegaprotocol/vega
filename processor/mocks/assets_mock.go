@@ -5,10 +5,11 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	assets "code.vegaprotocol.io/vega/assets"
 	proto "code.vegaprotocol.io/vega/proto"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockAssets is a mock of Assets interface
