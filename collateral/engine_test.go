@@ -1716,7 +1716,7 @@ func TestMTMLossSocialization(t *testing.T) {
 		{
 			Owner: winTrader1,
 			Amount: &types.FinancialAmount{
-				Amount: num.NewUint(14000),
+				Amount: num.NewUint(1400),
 				Asset:  testMarketAsset,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
@@ -1737,10 +1737,10 @@ func TestMTMLossSocialization(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Owner == winTrader1 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			assert.Equal(t, 1066, acc.Balance)
+			assert.Equal(t, uint64(1066), acc.Balance)
 		}
 		if acc.Owner == winTrader2 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			assert.Equal(t, 534, acc.Balance)
+			assert.Equal(t, uint64(534), acc.Balance)
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)

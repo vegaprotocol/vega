@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -493,7 +495,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 
 	var (
 		winidx          int
-		expectCollected = num.NewUint(0)
+		expectCollected num.Decimal
 	)
 
 	// create batch of events
@@ -549,7 +551,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			return nil, nil, err
 		}
 		// accumulate the expected transfer size
-		expectCollected = num.NewUint(0).Add(expectCollected, req.Amount)
+		expectCollected = expectCollected.Add(decimal.RequireFromString(req.Amount.String()))
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
 		res, err := e.getLedgerEntries(ctx, req)
@@ -592,7 +594,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 				logging.String("market-id", lsevt.market))
 
 			brokerEvts = append(brokerEvts,
-				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketId, int64(num.NewUint(0).Sub(req.Amount, totalInAccount).Uint64()), e.currentTime))
+				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketId, decimalPtr(req.Amount.Sub(req.Amount, totalInAccount).String()), nil, e.currentTime))
 		}
 
 		// updating the accounts stored in the marginEvt
@@ -645,7 +647,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		log:             e.log,
 		marketID:        settle.MarketId,
 		expectCollected: expectCollected,
-		collected:       settle.Balance,
+		collected:       decimal.RequireFromString(settle.Balance.String()),
 		requests:        []request{},
 		ts:              e.currentTime,
 	}
@@ -654,7 +656,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		e.log.Warn("Entering loss socialization",
 			logging.String("market-id", marketID),
 			logging.String("asset", asset),
-			logging.BigUint("expect-collected", expectCollected),
+			logging.String("expect-collected", expectCollected.String()),
 			logging.BigUint("collected", settle.Balance))
 		for _, evt := range transfers[winidx:] {
 			transfer := evt.Transfer()
@@ -753,6 +755,11 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		return nil, nil, ErrSettlementBalanceNotZero
 	}
 	return marginEvts, responses, nil
+}
+
+func decimalPtr(s string) *num.Decimal {
+	d := decimal.RequireFromString(s)
+	return &d
 }
 
 // GetPartyMargin will return the current margin for a given party

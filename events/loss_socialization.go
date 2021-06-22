@@ -4,23 +4,26 @@ import (
 	"context"
 
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type LossSoc struct {
 	*Base
-	partyID  string
-	marketID string
-	amount   int64
-	ts       int64
+	partyID    string
+	marketID   string
+	loss       *num.Decimal
+	adjustment *num.Decimal
+	ts         int64
 }
 
-func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, amount int64, ts int64) *LossSoc {
+func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, loss *num.Decimal, adjustment *num.Decimal, ts int64) *LossSoc {
 	return &LossSoc{
-		Base:     newBase(ctx, LossSocializationEvent),
-		partyID:  partyID,
-		marketID: marketID,
-		amount:   amount,
-		ts:       ts,
+		Base:       newBase(ctx, LossSocializationEvent),
+		partyID:    partyID,
+		marketID:   marketID,
+		loss:       loss,
+		adjustment: adjustment,
+		ts:         ts,
 	}
 }
 
@@ -36,12 +39,12 @@ func (l LossSoc) MarketID() string {
 	return l.marketID
 }
 
-func (l LossSoc) Amount() int64 {
-	return l.amount
+func (l LossSoc) Loss() *num.Decimal {
+	return l.loss
 }
 
-func (l LossSoc) AmountLost() int64 {
-	return l.amount
+func (l LossSoc) Adjustment() *num.Decimal {
+	return l.adjustment
 }
 
 func (l LossSoc) Timestamp() int64 {
@@ -50,9 +53,10 @@ func (l LossSoc) Timestamp() int64 {
 
 func (l LossSoc) Proto() eventspb.LossSocialization {
 	return eventspb.LossSocialization{
-		MarketId: l.marketID,
-		PartyId:  l.partyID,
-		Amount:   l.amount,
+		MarketId:   l.marketID,
+		PartyId:    l.partyID,
+		Loss:       l.loss.BigInt().Uint64(),
+		Adjustment: l.adjustment.BigInt().Uint64(),
 	}
 }
 

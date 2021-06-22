@@ -2,7 +2,8 @@ package collateral
 
 import (
 	"context"
-	"math"
+
+	"github.com/shopspring/decimal"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -11,26 +12,27 @@ import (
 )
 
 type request struct {
-	amount  float64
+	amount  num.Decimal
 	request *types.Transfer
 }
 
 type simpleDistributor struct {
 	log             *logging.Logger
 	marketID        string
-	expectCollected *num.Uint
-	collected       *num.Uint
+	expectCollected num.Decimal
+	collected       num.Decimal
 	requests        []request
 	ts              int64
 }
 
 func (s *simpleDistributor) LossSocializationEnabled() bool {
-	return s.collected.LT(s.expectCollected)
+	return s.collected.LessThan(s.expectCollected)
 }
 
 func (s *simpleDistributor) Add(req *types.Transfer) {
+	amount := decimal.RequireFromString(req.Amount.Amount.String()).Mul(s.collected.Div(s.expectCollected))
 	s.requests = append(s.requests, request{
-		amount:  float64(num.NewUint(0).Mul(req.Amount.Amount, num.NewUint(0).Div(s.collected, s.expectCollected)).Uint64()),
+		amount:  amount,
 		request: req,
 	})
 }
@@ -41,31 +43,35 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	}
 
 	var (
-		totalamount = num.NewUint(0)
+		totalamount num.Decimal
 		evts        = make([]events.Event, 0, len(s.requests))
 		evt         *events.LossSoc
 	)
 	for _, v := range s.requests {
-		totalamount = num.NewUint(0).Add(totalamount, num.NewUint(uint64(math.Floor(v.amount))))
-		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, int64(math.Floor(v.amount))-int64(v.request.Amount.Amount.Uint64()), s.ts)
-		v.request.Amount.Amount = num.NewUint(uint64(math.Floor(v.amount)))
+		totalamount = totalamount.Add(v.amount.Floor())
+		loss := v.amount.Floor().Sub(decimal.RequireFromString(v.request.Amount.Amount.String()))
+		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, &loss, nil, s.ts)
+		v.request.Amount.Amount, _ = num.UintFromBig(v.amount.Floor().BigInt())
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
-			logging.Int64("amount", evt.AmountLost()),
+			logging.String("amount", evt.Loss().String()),
 			logging.String("market-id", evt.MarketID()))
 		evts = append(evts, evt)
 	}
 
 	// TODO(): just rounding the stuff, needs to be done differently later
-	if totalamount != s.collected {
+	if totalamount != decimal.RequireFromString(s.collected.String()) {
 		// last one get the remaining bits
-		mismatch := num.NewUint(0).Sub(s.collected, totalamount)
-		s.requests[len(s.requests)-1].request.Amount.Amount = num.NewUint(0).Add(s.requests[len(s.requests)-1].request.Amount.Amount, mismatch)
+		mismatch := s.collected.Sub(totalamount)
+		bigIntMismatch, _ := num.UintFromBig(mismatch.BigInt())
+		s.requests[len(s.requests)-1].request.Amount.Amount = num.NewUint(0).Add(s.requests[len(s.requests)-1].request.Amount.Amount, bigIntMismatch)
+		loss := evt.Loss().Add(mismatch).Round(0)
 		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),
 			evt.MarketID(),
-			evt.AmountLost()+int64(mismatch.Uint64()),
+			&loss,
+			nil,
 			s.ts)
 	}
 
