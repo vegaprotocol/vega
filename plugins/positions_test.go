@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/plugins"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,7 @@ import (
 
 type tradeStub struct {
 	size  int64
-	price uint64
+	price *num.Uint
 }
 
 type posPluginTst struct {
@@ -179,6 +180,6 @@ func (t tradeStub) Size() int64 {
 	return t.size
 }
 
-func (t tradeStub) Price() uint64 {
+func (t tradeStub) Price() *num.Uint {
 	return t.price
 }
