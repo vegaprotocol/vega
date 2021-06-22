@@ -9,9 +9,9 @@ import (
 
 	_ "code.vegaprotocol.io/vega/proto"
 	proto "github.com/golang/protobuf/proto"
+	_ "github.com/golang/protobuf/ptypes/wrappers"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"
-	_ "google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
