@@ -383,6 +383,44 @@ type MarketData struct {
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
 }
 
+func (m MarketData) DeepClone() *MarketData {
+	cpy := m
+	if m.MarkPrice != nil {
+		cpy.MarkPrice = m.MarkPrice.Clone()
+	}
+	if m.BestBidPrice != nil {
+		cpy.BestBidPrice = m.BestBidPrice.Clone()
+	}
+	if m.BestOfferPrice != nil {
+		cpy.BestOfferPrice = m.BestOfferPrice.Clone()
+	}
+	if m.BestStaticBidPrice != nil {
+		cpy.BestStaticBidPrice = m.BestStaticBidPrice.Clone()
+	}
+	if m.BestStaticOfferPrice != nil {
+		cpy.BestStaticOfferPrice = m.BestStaticOfferPrice.Clone()
+	}
+	if m.MidPrice != nil {
+		cpy.MidPrice = m.MidPrice.Clone()
+	}
+	if m.StaticMidPrice != nil {
+		cpy.StaticMidPrice = m.StaticMidPrice.Clone()
+	}
+	if m.IndicativePrice != nil {
+		cpy.IndicativePrice = m.IndicativePrice.Clone()
+	}
+	cpy.PriceMonitoringBounds = make([]*PriceMonitoringBounds, 0, len(m.PriceMonitoringBounds))
+	for _, pmb := range m.PriceMonitoringBounds {
+		cpy.PriceMonitoringBounds = append(cpy.PriceMonitoringBounds, pmb.DeepClone())
+	}
+	lpfs := make([]*LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare))
+	for _, fs := range m.LiquidityProviderFeeShare {
+		lpfs = append(lpfs, fs.DeepClone())
+	}
+	cpy.LiquidityProviderFeeShare = lpfs
+	return &cpy
+}
+
 func (m MarketData) IntoProto() *proto.MarketData {
 	r := &proto.MarketData{
 		MarkPrice:                 m.MarkPrice.Uint64(),

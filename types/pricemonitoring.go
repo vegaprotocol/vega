@@ -104,6 +104,17 @@ func (p *PriceMonitoringBounds) FromProto(pr *proto.PriceMonitoringBounds) {
 	p.ReferencePrice = num.DecimalFromFloat(pr.ReferencePrice)
 }
 
+func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {
+	cpy := p
+	if p.MinValidPrice != nil {
+		cpy.MinValidPrice = p.MinValidPrice.Clone()
+	}
+	if p.MaxValidPrice != nil {
+		cpy.MaxValidPrice = p.MaxValidPrice.Clone()
+	}
+	return &cpy
+}
+
 func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMonitoringTrigger {
 	return &PriceMonitoringTrigger{
 		Horizon:          p.Horizon,
