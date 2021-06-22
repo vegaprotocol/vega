@@ -2409,15 +2409,10 @@
           "type": "string",
           "title": "Party identifier (public key) for the event"
         },
-        "loss": {
+        "amount": {
           "type": "string",
-          "format": "uint64",
+          "format": "int64",
           "title": "Amount distributed"
-        },
-        "adjustment": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Amount missing which triggered loss socialization"
         }
       },
       "title": "A loss socialization event contains details on the amount of wins unable to be distributed"

@@ -50,11 +50,15 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	for _, v := range s.requests {
 		totalamount = totalamount.Add(v.amount.Floor())
 		loss := v.amount.Floor().Sub(decimal.RequireFromString(v.request.Amount.Amount.String()))
-		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, &loss, nil, s.ts)
+		bigIntLoss, overflow := num.UintFromBig(loss.BigInt())
+		if overflow {
+
+		}
+		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, bigIntLoss, true, s.ts)
 		v.request.Amount.Amount, _ = num.UintFromBig(v.amount.Floor().BigInt())
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
-			logging.String("amount", evt.Loss().String()),
+			logging.Int64("amount", evt.AmountLost()),
 			logging.String("market-id", evt.MarketID()))
 		evts = append(evts, evt)
 	}
@@ -65,13 +69,13 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		mismatch := s.collected.Sub(totalamount)
 		bigIntMismatch, _ := num.UintFromBig(mismatch.BigInt())
 		s.requests[len(s.requests)-1].request.Amount.Amount = num.NewUint(0).Add(s.requests[len(s.requests)-1].request.Amount.Amount, bigIntMismatch)
-		loss := evt.Loss().Add(mismatch).Round(0)
+		loss := evt.AmountLost() + mismatch.Round(0).IntPart()
 		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),
 			evt.MarketID(),
-			&loss,
-			nil,
+			num.NewUint(uint64(loss)),
+			true,
 			s.ts)
 	}
 

@@ -70,9 +70,7 @@ message LossSocialization {
   // Party identifier (public key) for the event
   string party_id = 2;
   // Amount distributed
-  uint64 loss = 3;
-  // Amount missing which triggered loss socialization
-  uint64 adjustment = 4;
+  int64 amount = 3;
 }
 
 // A trade settlement is part of the settle position event
