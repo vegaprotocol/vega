@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type Market = proto.Market
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
 
 type MarketTimestamps struct {
@@ -16,6 +15,15 @@ type MarketTimestamps struct {
 	Pending  int64
 	Open     int64
 	Close    int64
+}
+
+func MarketTimestampsFromProto(p *proto.MarketTimestamps) *MarketTimestamps {
+	return &MarketTimestamps{
+		Proposed: p.Proposed,
+		Pending:  p.Pending,
+		Open:     p.Open,
+		Close:    p.Close,
+	}
 }
 
 func (m MarketTimestamps) IntoProto() *proto.MarketTimestamps {
@@ -88,6 +96,12 @@ type InstrumentMetadata struct {
 	Tags []string
 }
 
+func InstrumentMetadataFromProto(m *proto.InstrumentMetadata) *InstrumentMetadata {
+	return &InstrumentMetadata{
+		Tags: append([]string{}, m.Tags...),
+	}
+}
+
 func (i InstrumentMetadata) IntoProto() *proto.InstrumentMetadata {
 	tags := make([]string, 0, len(i.Tags))
 	return &proto.InstrumentMetadata{
@@ -110,6 +124,13 @@ type Price struct {
 type AuctionDuration struct {
 	Duration int64
 	Volume   uint64
+}
+
+func AuctionDurationFromProto(ad *proto.AuctionDuration) *AuctionDuration {
+	return &AuctionDuration{
+		Duration: ad.Duration,
+		Volume:   ad.Volume,
+	}
 }
 
 func (a AuctionDuration) IntoProto() *proto.AuctionDuration {
@@ -154,10 +175,18 @@ type isTRM interface {
 	trmIntoProto() interface{}
 }
 
+func TradableInstrumentFromProto(ti *proto.TradableInstrument) *TradableInstrument {
+	return &TradableInstrument{
+		Instrument:       InstrumentFromProto(ti.Instrument),
+		MarginCalculator: MarginCalculatorFromProto(ti.MarginCalculator),
+		RiskModel:        isTRMFromProto(ti.RiskModel),
+	}
+}
+
 func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
 	rmp := t.RiskModel.trmIntoProto()
 	r := &proto.TradableInstrument{
-		Instrument:       t.Instrument,
+		Instrument:       t.Instrument.IntoProto(),
 		MarginCalculator: t.MarginCalculator.IntoProto(),
 	}
 	switch rm := rmp.(type) {
@@ -183,14 +212,48 @@ func (m Market_Discrete) IntoProto() *proto.Market_Discrete {
 	}
 }
 
+func (Market_Discrete) istmc() {}
+
+func (m Market_Discrete) tmcIntoProto() interface{} {
+	return m.IntoProto()
+}
+
+func MarketDiscreteFromProto(m *proto.Market_Discrete) *Market_Discrete {
+	return &Market_Discrete{
+		Discrete: DiscreteTradingFromProto(m.Discrete),
+	}
+}
+
 type Market_Continuous struct {
 	Continuous *ContinuousTrading
+}
+
+func MarketContinuousFromProto(c *proto.Market_Continuous) *Market_Continuous {
+	return &Market_Continuous{
+		Continuous: ContinuousTradingFromProto(c.Continuous),
+	}
 }
 
 func (m Market_Continuous) IntoProto() *proto.Market_Continuous {
 	return &proto.Market_Continuous{
 		Continuous: m.Continuous.IntoProto(),
 	}
+}
+
+func (Market_Continuous) istmc() {}
+
+func (m Market_Continuous) tmcIntoProto() interface{} {
+	return m.IntoProto()
+}
+
+func tmcFromProto(tm interface{}) istmc {
+	switch tmc := tm.(type) {
+	case *proto.Market_Continuous:
+		return MarketContinuousFromProto(tmc)
+	case *proto.Market_Discrete:
+		return MarketDiscreteFromProto(tmc)
+	}
+	return nil
 }
 
 type Instrument_Future struct {
@@ -205,6 +268,16 @@ type Future struct {
 	OracleSpecBinding *OracleSpecToFutureBinding
 }
 
+func FutureFromProto(f *proto.Future) *Future {
+	return &Future{
+		Maturity:          f.Maturity,
+		SettlementAsset:   f.SettlementAsset,
+		QuoteName:         f.QuoteName,
+		OracleSpec:        f.OracleSpec.DeepClone(),
+		OracleSpecBinding: OracleSpecToFutureBindingFromProto(f.OracleSpecBinding),
+	}
+}
+
 func (f Future) IntoProto() *proto.Future {
 	return &proto.Future{
 		Maturity:          f.Maturity,
@@ -212,6 +285,20 @@ func (f Future) IntoProto() *proto.Future {
 		QuoteName:         f.QuoteName,
 		OracleSpec:        f.OracleSpec.DeepClone(),
 		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
+	}
+}
+
+func iInstrumentFromProto(pi interface{}) iProto {
+	switch i := pi.(type) {
+	case *proto.Instrument_Future:
+		return InstrumentFutureFromProto(i)
+	}
+	return nil
+}
+
+func InstrumentFutureFromProto(f *proto.Instrument_Future) *Instrument_Future {
+	return &Instrument_Future{
+		Future: FutureFromProto(f.Future),
 	}
 }
 
@@ -237,6 +324,19 @@ type Instrument struct {
 	// Types that are valid to be assigned to Product:
 	//	*Instrument_Future
 	Product iProto
+}
+
+func InstrumentFromProto(i *proto.Instrument) *Instrument {
+	if i == nil {
+		return nil
+	}
+	return &Instrument{
+		Id:       i.Id,
+		Code:     i.Code,
+		Name:     i.Name,
+		Metadata: InstrumentMetadataFromProto(i.Metadata),
+		Product:  iInstrumentFromProto(i.Product),
+	}
 }
 
 func (i Instrument) IntoProto() *proto.Instrument {
@@ -322,5 +422,67 @@ func (m MarketData) IntoProto() *proto.MarketData {
 }
 
 func (m MarketData) String() string {
+	return m.IntoProto().String()
+}
+
+type istmc interface {
+	istmc()
+	tmcIntoProto() interface{}
+}
+
+type Market struct {
+	Id                            string
+	TradableInstrument            *TradableInstrument
+	DecimalPlaces                 uint64
+	Fees                          *Fees
+	OpeningAuction                *AuctionDuration
+	TradingModeConfig             istmc
+	PriceMonitoringSettings       *PriceMonitoringSettings
+	LiquidityMonitoringParameters *LiquidityMonitoringParameters
+	TradingMode                   Market_TradingMode
+	State                         Market_State
+	MarketTimestamps              *MarketTimestamps
+}
+
+func MarketFromProto(mkt *proto.Market) *Market {
+	return &Market{
+		Id:                            mkt.Id,
+		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
+		DecimalPlaces:                 mkt.DecimalPlaces,
+		Fees:                          FeesFromProto(mkt.Fees),
+		OpeningAuction:                AuctionDurationFromProto(mkt.OpeningAuction),
+		TradingModeConfig:             tmcFromProto(mkt.TradingModeConfig),
+		PriceMonitoringSettings:       PriceMonitoringSettingsFromProto(mkt.PriceMonitoringSettings),
+		LiquidityMonitoringParameters: LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters),
+		TradingMode:                   mkt.TradingMode,
+		State:                         mkt.State,
+		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
+	}
+}
+
+func (m Market) IntoProto() *proto.Market {
+	tmc := m.TradingModeConfig.tmcIntoProto()
+	r := &proto.Market{
+		Id:                            m.Id,
+		TradableInstrument:            m.TradableInstrument.IntoProto(),
+		DecimalPlaces:                 m.DecimalPlaces,
+		Fees:                          m.Fees.IntoProto(),
+		OpeningAuction:                m.OpeningAuction.IntoProto(),
+		PriceMonitoringSettings:       m.PriceMonitoringSettings.IntoProto(),
+		LiquidityMonitoringParameters: m.LiquidityMonitoringParameters.IntoProto(),
+		TradingMode:                   m.TradingMode,
+		State:                         m.State,
+		MarketTimestamps:              m.MarketTimestamps.IntoProto(),
+	}
+	switch tm := tmc.(type) {
+	case *proto.Market_Continuous:
+		r.TradingModeConfig = tm
+	case *proto.Market_Discrete:
+		r.TradingModeConfig = tm
+	}
+	return r
+}
+
+func (m Market) String() string {
 	return m.IntoProto().String()
 }
