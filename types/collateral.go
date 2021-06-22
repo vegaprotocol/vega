@@ -141,26 +141,6 @@ func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
 
 type Party = proto.Party
 
-// Transfer represents a financial transfer within Vega
-type Transfer struct {
-	// Party identifier for the owner of the transfer
-	Owner string
-	// A financial amount (of an asset) to transfer
-	Amount *FinancialAmount
-	// The type of transfer, gives the reason for the transfer
-	Type TransferType
-	// A minimum amount
-	MinAmount *num.Uint
-}
-
-// FinancialAmount is the asset value information used within a transfer
-type FinancialAmount struct {
-	// A signed integer amount of asset
-	Amount *num.Uint
-	// Asset identifier
-	Asset string
-}
-
 type AccountType = proto.AccountType
 
 const (

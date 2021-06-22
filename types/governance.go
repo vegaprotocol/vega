@@ -129,6 +129,12 @@ type Proposal struct {
 	ErrorDetails string
 }
 
+func (p Proposal) DeepClone() *Proposal {
+	cpy := p
+	cpy.Terms = p.Terms.DeepClone()
+	return &cpy
+}
+
 func (p Proposal) IntoProto() *proto.Proposal {
 	return &proto.Proposal{
 		Id:           p.Id,
@@ -227,7 +233,7 @@ type ProposalTerms_UpdateNetworkParameter struct {
 }
 
 type NewAsset struct {
-	Changes *AssetSource
+	Changes *AssetDetails
 }
 
 type ProposalTerms_NewAsset struct {
@@ -237,6 +243,7 @@ type ProposalTerms_NewAsset struct {
 type pterms interface {
 	isPTerm()
 	oneOfProto() interface{} // calls IntoProto
+	DeepClone() pterms
 }
 
 func (n NewMarket) IntoProto() *proto.NewMarket {
@@ -293,6 +300,12 @@ func (p ProposalTerms) IntoProto() *proto.ProposalTerms {
 	return r
 }
 
+func (p ProposalTerms) DeepClone() *ProposalTerms {
+	cpy := p
+	cpy.Change = p.Change.DeepClone()
+	return &cpy
+}
+
 func (p ProposalTerms) String() string {
 	return p.IntoProto().String()
 }
@@ -308,6 +321,11 @@ func (a ProposalTerms_NewMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 
+// DeepClone @TODO
+func (a ProposalTerms_NewMarket) DeepClone() pterms {
+	return a
+}
+
 func (a ProposalTerms_UpdateMarket) IntoProto() *proto.ProposalTerms_UpdateMarket {
 	return &proto.ProposalTerms_UpdateMarket{
 		UpdateMarket: a.UpdateMarket,
@@ -319,6 +337,11 @@ func (a ProposalTerms_UpdateMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 
+// DeepClone @TODO
+func (a ProposalTerms_UpdateMarket) DeepClone() pterms {
+	return a
+}
+
 func (a ProposalTerms_UpdateNetworkParameter) IntoProto() *proto.ProposalTerms_UpdateNetworkParameter {
 	return &proto.ProposalTerms_UpdateNetworkParameter{
 		UpdateNetworkParameter: a.UpdateNetworkParameter.IntoProto(),
@@ -328,6 +351,11 @@ func (a ProposalTerms_UpdateNetworkParameter) IntoProto() *proto.ProposalTerms_U
 func (a ProposalTerms_UpdateNetworkParameter) isPTerm() {}
 func (a ProposalTerms_UpdateNetworkParameter) oneOfProto() interface{} {
 	return a.IntoProto()
+}
+
+// DeepClone @TODO
+func (a ProposalTerms_UpdateNetworkParameter) DeepClone() pterms {
+	return a
 }
 
 func (n UpdateNetworkParameter) IntoProto() *proto.UpdateNetworkParameter {
@@ -349,6 +377,11 @@ func (a ProposalTerms_NewAsset) IntoProto() *proto.ProposalTerms_NewAsset {
 func (a ProposalTerms_NewAsset) isPTerm() {}
 func (a ProposalTerms_NewAsset) oneOfProto() interface{} {
 	return a.IntoProto()
+}
+
+// DeepClone @TODO
+func (a ProposalTerms_NewAsset) DeepClone() pterms {
+	return a
 }
 
 func (n NewAsset) IntoProto() *proto.NewAsset {
