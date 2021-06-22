@@ -323,11 +323,7 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 			return nil, ErrAccountDoesNotExist
 		}
 
-<<<<<<< HEAD
 		if num.Sum(marginAcc.Balance, generalAcc.Balance).LT(amount) {
-=======
-		if num.Sum(marginAcc.Balance, generalAcc.Balance).LT(num.NewUint(amount)) {
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 			return nil, ErrInsufficientFundsToPayFees
 		}
 	}
@@ -570,11 +566,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		amountCollected := num.NewUint(0)
 		// // update the to accounts now
 		for _, bal := range res.Balances {
-<<<<<<< HEAD
 			amountCollected.AddSum(bal.Balance)
-=======
-			amountCollected = amountCollected.Add(amountCollected, bal.Balance)
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 			if err := e.IncrementBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
@@ -585,11 +577,6 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			}
 		}
 
-<<<<<<< HEAD
-=======
-		totalInAccount := num.Sum(marginAcc.Balance, generalAcc.Balance)
-
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 		// here we check if we were able to collect all monies,
 		// if not send an event to notify the plugins
 		if totalInAccount := num.Sum(marginAcc.Balance, generalAcc.Balance); totalInAccount.LT(req.Amount) {
@@ -785,7 +772,6 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 	bondAcc, _ := e.GetAccountByID(bondID)
 
 	return marginUpdate{
-<<<<<<< HEAD
 		MarketPosition:  pos,
 		margin:          marAcc,
 		general:         genAcc,
@@ -793,17 +779,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		bond:            bondAcc,
 		asset:           asset,
 		marketID:        marketID,
-		marginShortFall: nil,
-=======
-		pos,
-		marAcc,
-		genAcc,
-		nil,
-		bondAcc,
-		asset,
-		marketID,
-		nil,
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
+		marginShortFall: num.NewUint(0),
 	}, nil
 }
 
@@ -822,9 +798,10 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		transfer := update.Transfer()
 		// although this is mainly a duplicate event, we need to pass it to getTransferRequest
 		mevt := &marginUpdate{
-			MarketPosition: update,
-			asset:          update.Asset(),
-			marketID:       update.MarketID(),
+			MarketPosition:  update,
+			asset:           update.Asset(),
+			marketID:        update.MarketID(),
+			marginShortFall: num.NewUint(0),
 		}
 
 		req, err := e.getTransferRequest(ctx, transfer, settle, nil, mevt)
@@ -834,7 +811,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 
 		// calculate the marginShortFall in case of a liquidityProvider
 		if mevt.bond != nil && transfer.Amount.Amount.GT(mevt.general.Balance) {
-			mevt.marginShortFall = num.NewUint(0).Sub(transfer.Amount.Amount, mevt.general.Balance)
+			mevt.marginShortFall.Sub(transfer.Amount.Amount, mevt.general.Balance)
 		}
 
 		res, err := e.getLedgerEntries(ctx, req)
@@ -853,7 +830,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 		if transfer.Type == types.TransferType_TRANSFER_TYPE_MARGIN_LOW &&
 			res.Balances[0].Account.Balance.LT(num.Sum(update.MarginBalance(), transfer.MinAmount)) {
 			closed = append(closed, mevt)
-		} else if mevt.marginShortFall != nil && !mevt.marginShortFall.IsZero() {
+		} else if !mevt.marginShortFall.IsZero() {
 			// party not closed out, but could also not fulfill it's margin requirement
 			// from it's general account we need to return this information so penalty can be
 			// calculated an taken out from him.
@@ -908,12 +885,13 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 			general,
 		},
 		Amount:    transfer.Amount.Amount.Clone(),
-		MinAmount: transfer.MinAmount,
+		MinAmount: num.NewUint(0),
 		Asset:     assetID,
 		Reference: transfer.Type.String(),
 	}
-	if req.MinAmount != nil {
-		req.MinAmount = req.MinAmount.Clone()
+	// @TODO we should be able to clone the min amount regardless
+	if transfer.MinAmount != nil {
+		req.MinAmount.Set(transfer.MinAmount)
 	}
 
 	res, err := e.getLedgerEntries(ctx, req)
@@ -973,9 +951,10 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	transfer := update.Transfer()
 	// although this is mainly a duplicate event, we need to pass it to getTransferRequest
 	mevt := marginUpdate{
-		MarketPosition: update,
-		asset:          update.Asset(),
-		marketID:       update.MarketID(),
+		MarketPosition:  update,
+		asset:           update.Asset(),
+		marketID:        update.MarketID(),
+		marginShortFall: num.NewUint(0),
 	}
 
 	req, err := e.getTransferRequest(ctx, transfer, settle, nil, &mevt)
@@ -992,7 +971,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 	if mevt.bond != nil && transfer.Amount.Amount.GT(mevt.general.Balance) {
 		// this is a liquidity provider but it did not have enough funds to
 		// pay from the general account, we'll have to penalize later on
-		mevt.marginShortFall = num.NewUint(0).Sub(transfer.Amount.Amount, mevt.general.Balance)
+		mevt.marginShortFall.Sub(transfer.Amount.Amount, mevt.general.Balance)
 	}
 
 	// from here we know there's enough money,
@@ -1014,7 +993,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		}
 	}
 
-	if mevt.marginShortFall != nil && !mevt.marginShortFall.IsZero() {
+	if !mevt.marginShortFall.IsZero() {
 		return res, mevt, nil
 	}
 	return res, nil, nil
@@ -1372,13 +1351,8 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 					Timestamp:   e.currentTime,
 				}
 				ret.Transfers = append(ret.Transfers, lm)
-<<<<<<< HEAD
 				to.Balance.AddSum(parts)
 				to.Account.Balance.AddSum(parts)
-=======
-				to.Balance = to.Balance.Add(to.Balance, parts)
-				to.Account.Balance = num.Sum(to.Account.Balance, parts)
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 			}
 			// add remainder
 			if !remainder.IsZero() {
@@ -1568,19 +1542,11 @@ func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) boo
 
 	bondAcc, ok := e.accs[bondID]
 	if ok {
-<<<<<<< HEAD
 		availableBalance.AddSum(bondAcc.Balance)
 	}
 	genAcc, ok := e.accs[genID]
 	if ok {
 		availableBalance.AddSum(genAcc.Balance)
-=======
-		availableBalance = availableBalance.Add(availableBalance, bondAcc.Balance)
-	}
-	genAcc, ok := e.accs[genID]
-	if ok {
-		availableBalance = availableBalance.Add(availableBalance, genAcc.Balance)
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 	}
 
 	return availableBalance.GTE(amount)
@@ -1777,12 +1743,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 			return nil, err
 		}
 		// If any balance remains on bond account, move it over to margin account
-<<<<<<< HEAD
 		if bondAcc.Balance != nil && !bondAcc.Balance.IsZero() {
-=======
-		zero := num.NewUint(0)
-		if bondAcc.Balance != nil && bondAcc.Balance.GT(zero) {
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
 				FromAccount: bondAcc.Id,
 				ToAccount:   marginAcc.Id,
@@ -1794,21 +1755,13 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 			if err := e.IncrementBalance(ctx, marginAcc.Id, bondAcc.Balance); err != nil {
 				return nil, err
 			}
-<<<<<<< HEAD
 			if err := e.UpdateBalance(ctx, bondAcc.Id, bondAcc.Balance.SetUint64(0)); err != nil {
-=======
-			if err := e.UpdateBalance(ctx, bondAcc.Id, zero); err != nil {
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 				return nil, err
 			}
 		}
 		// take whatever is left on the general account, and move to margin balance
 		// we can take everything from the account, as whatever amount was left here didn't cover the minimum margin requirement
-<<<<<<< HEAD
 		if genAcc.Balance != nil && !genAcc.Balance.IsZero() {
-=======
-		if genAcc.Balance != nil && genAcc.Balance.GT(zero) {
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
 				FromAccount: genAcc.Id,
 				ToAccount:   marginAcc.Id,
@@ -1820,20 +1773,12 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 			if err := e.IncrementBalance(ctx, marginAcc.Id, genAcc.Balance); err != nil {
 				return nil, err
 			}
-<<<<<<< HEAD
 			if err := e.UpdateBalance(ctx, genAcc.Id, genAcc.Balance.SetUint64(0)); err != nil {
-=======
-			if err := e.UpdateBalance(ctx, genAcc.Id, zero); err != nil {
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 				return nil, err
 			}
 		}
 		// move monies from the margin account (balance is general, bond, and margin combined now)
-<<<<<<< HEAD
 		if !marginAcc.Balance.IsZero() {
-=======
-		if marginAcc.Balance.GT(zero) {
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 			resp.Transfers = append(resp.Transfers, &types.LedgerEntry{
 				FromAccount: marginAcc.Id,
 				ToAccount:   ins.Id,
@@ -1845,11 +1790,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 			if err := e.IncrementBalance(ctx, ins.Id, marginAcc.Balance); err != nil {
 				return nil, err
 			}
-<<<<<<< HEAD
 			if err := e.UpdateBalance(ctx, marginAcc.Id, marginAcc.Balance.SetUint64(0)); err != nil {
-=======
-			if err := e.UpdateBalance(ctx, marginAcc.Id, zero); err != nil {
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 				return nil, err
 			}
 		}
@@ -2117,7 +2058,7 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 	if !ok {
 		return ErrAccountDoesNotExist
 	}
-	acc.Balance = balance.Clone()
+	acc.Balance.Set(balance)
 	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
@@ -2145,11 +2086,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint)
 	if !ok {
 		return fmt.Errorf("account does not exist: %s", id)
 	}
-<<<<<<< HEAD
 	acc.Balance.Sub(acc.Balance, dec)
-=======
-	acc.Balance, _ = acc.Balance.SubOverflow(acc.Balance, dec)
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 	if acc.Type != types.AccountType_ACCOUNT_TYPE_EXTERNAL {
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
@@ -2175,11 +2112,7 @@ func (e *Engine) GetAssetTotalSupply(asset string) (*num.Uint, error) {
 		return nil, fmt.Errorf("invalid asset: %s", asset)
 	}
 
-<<<<<<< HEAD
 	return asst.GetAssetTotalSupply(), nil
-=======
-	return asst.TotalSupply.Clone(), nil
->>>>>>> 3e21a826b (refactor(collateral): resolve pr issues)
 }
 
 func (e *Engine) removeAccount(id string) error {
