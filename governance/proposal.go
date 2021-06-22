@@ -27,7 +27,7 @@ type ToEnact struct {
 	m  *ToEnactMarket
 	a  *proto.Asset
 	n  *proto.NetworkParameter
-	as *proto.AssetSource
+	as *proto.AssetDetails
 	u  *proto.UpdateMarket
 }
 
@@ -54,7 +54,7 @@ func (t ToEnact) IsUpdateNetworkParameter() bool {
 	return t.n != nil
 }
 
-func (t ToEnact) IsNewAssetSource() bool {
+func (t ToEnact) IsNewAssetDetails() bool {
 	return t.IsNewAsset()
 }
 
@@ -66,7 +66,7 @@ func (t *ToEnact) NewAsset() *proto.Asset {
 	return t.a
 }
 
-func (t *ToEnact) NewAssetSource() *proto.AssetSource {
+func (t *ToEnact) NewAssetDetails() *proto.AssetDetails {
 	return t.as
 }
 
