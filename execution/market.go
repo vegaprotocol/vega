@@ -40,18 +40,6 @@ import (
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network
 const InitialOrderVersion = 1
 
-// PriceMoveMid used to indicate that the mid price has moved
-const PriceMoveMid = 1
-
-// PriceMoveBestBid used to indicate that the best bid price has moved
-const PriceMoveBestBid = 2
-
-// PriceMoveBestAsk used to indicate that the best ask price has moved
-const PriceMoveBestAsk = 4
-
-// PriceMoveAll used to indicate everything has moved
-const PriceMoveAll = PriceMoveMid + PriceMoveBestBid + PriceMoveBestAsk
-
 var (
 	// ErrMarketClosed signals that an action have been tried to be applied on a closed market
 	ErrMarketClosed = errors.New("market closed")
@@ -652,7 +640,7 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 
 	// Go through all the pegged orders and remove from the order book
 	for _, order := range m.peggedOrders.orders {
-		if HasReferenceMoved(order, changes) {
+		if OrderReferenceCheck(*order).HasMoved(changes) {
 
 			// First if the order isn't parked, then
 			// we will just remove if from the orderbook
@@ -884,22 +872,9 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// Send an event bus update
 	m.broker.Send(endEvt)
 
-	// We are moving to continuous trading so we have to unpark any pegged orders
-	repricedOrders, _ := m.repriceAllPeggedOrders(ctx, PriceMoveAll)
-
-	// update the liquidity engine with the state of every orders
-	// which got updated during auction
-	if err := m.liquidityUpdate(ctx, append(updatedOrders, repricedOrders...)); err != nil {
-		m.log.Debug("could not update liquidity", logging.Error(err))
-	}
+	m.checkForReferenceMoves(ctx, updatedOrders, true)
 
 	m.updateLiquidityFee(ctx)
-
-	// Store the lastest prices so we can see if anything moves
-	m.lastMidBuyPrice, _ = m.getStaticMidPrice(types.Side_SIDE_BUY)
-	m.lastMidSellPrice, _ = m.getStaticMidPrice(types.Side_SIDE_SELL)
-	m.lastBestBidPrice, _ = m.getBestStaticBidPrice()
-	m.lastBestAskPrice, _ = m.getBestStaticAskPrice()
 }
 
 func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) types.OrderError {
@@ -1169,7 +1144,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 	}
 
 	if !order.IsLiquidityOrder() {
-		m.checkForReferenceMoves(ctx)
+		m.checkForReferenceMoves(ctx, []*types.Order{}, false)
 	}
 
 	return orderConf, err
@@ -2053,11 +2028,6 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 
 	// add all orders being eventually parked
 	orders = append(orders, m.peggedOrders.GetAllForParty(partyID)...)
-	// for _, order := range m.peggedOrders {
-	// 	if order.PartyId == partyID {
-	// 		orders = append(orders, order)
-	// 	}
-	// }
 
 	// just an early exit, there's just no orders...
 	if len(orders) <= 0 {
@@ -2179,7 +2149,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 
 	if !order.IsLiquidityOrder() {
-		m.checkForReferenceMoves(ctx)
+		m.checkForReferenceMoves(ctx, []*types.Order{}, false)
 
 		if foundOnBook {
 			if err := m.liquidityUpdate(ctx, []*types.Order{order}); err != nil {
@@ -2397,7 +2367,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 
 		m.removePeggedOrder(amendedOrder)
 
-		m.checkForReferenceMoves(ctx)
+		m.checkForReferenceMoves(ctx, []*types.Order{}, false)
 
 		return &types.OrderConfirmation{
 			Order: amendedOrder,
@@ -2435,12 +2405,6 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 				}
 				// Update pegged order with new amended version
 				m.peggedOrders.Amend(amendedOrder)
-				// for i, o := range m.peggedOrders {
-				// 	if o.Id == amendedOrder.Id {
-				// 		m.peggedOrders[i] = amendedOrder
-				// 		break
-				// 	}
-				// }
 				return orderConf, err
 			}
 		}
@@ -2474,7 +2438,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
-			m.checkForReferenceMoves(ctx)
+			m.checkForReferenceMoves(ctx, []*types.Order{}, false)
 		}
 		return ret, err
 	}
@@ -2508,7 +2472,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 		if err == nil {
 			m.handleConfirmation(ctx, confirmation)
 			m.broker.Send(events.NewOrderEvent(ctx, confirmation.Order))
-			m.checkForReferenceMoves(ctx)
+			m.checkForReferenceMoves(ctx, []*types.Order{}, false)
 		}
 		return confirmation, err
 	}
@@ -2525,7 +2489,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 		ret, err := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if err == nil {
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
-			m.checkForReferenceMoves(ctx)
+			m.checkForReferenceMoves(ctx, []*types.Order{}, false)
 		}
 		return ret, err
 	}
@@ -2794,12 +2758,8 @@ func (m *Market) RemoveExpiredOrders(
 		for i := range expired {
 			expiredPtrs[i] = &expired[i]
 		}
-		if err := m.liquidityUpdate(ctx, expiredPtrs); err != nil {
-			m.log.Debug("error update liquidity engine",
-				logging.MarketID(m.GetID()),
-				logging.Error(err))
-		}
-		m.checkForReferenceMoves(ctx)
+
+		m.checkForReferenceMoves(ctx, expiredPtrs, false)
 	}
 
 	return expired, nil
@@ -2849,67 +2809,6 @@ func (m *Market) getStaticMidPrice(side types.Side) (uint64, error) {
 	return mid, nil
 }
 
-// checkForReferenceMoves looks to see if the reference prices have moved since the
-// last transaction was processed.
-func (m *Market) checkForReferenceMoves(ctx context.Context) {
-	if m.as.InAuction() {
-		return
-	}
-	var repricedCount uint64
-	for repricedCount = 1; repricedCount > 0; {
-		// Get the current reference values and compare them to the last saved set
-		newBestBid, _ := m.getBestStaticBidPrice()
-		newBestAsk, _ := m.getBestStaticAskPrice()
-		newMidBuy, _ := m.getStaticMidPrice(types.Side_SIDE_BUY)
-		newMidSell, _ := m.getStaticMidPrice(types.Side_SIDE_SELL)
-
-		// Look for a move
-		var changes uint8
-		if newMidBuy != m.lastMidBuyPrice ||
-			newMidSell != m.lastMidSellPrice {
-			changes |= PriceMoveMid
-		}
-		if newBestBid != m.lastBestBidPrice {
-			changes |= PriceMoveBestBid
-		}
-		if newBestAsk != m.lastBestAskPrice {
-			changes |= PriceMoveBestAsk
-		}
-
-		// If we have a reference price move, update any pegged orders that reference it
-		if changes != 0 {
-			var updatedOrders []*types.Order
-			updatedOrders, repricedCount = m.repriceAllPeggedOrders(ctx, changes)
-			if err := m.liquidityUpdate(ctx, updatedOrders); err != nil {
-				m.log.Debug("error update liquidity engine",
-					logging.MarketID(m.GetID()),
-					logging.Error(err))
-			}
-		} else {
-			repricedCount = 0
-		}
-
-		// Update the last price values
-		m.lastMidBuyPrice = newMidBuy
-		m.lastMidSellPrice = newMidSell
-		m.lastBestBidPrice = newBestBid
-		m.lastBestAskPrice = newBestAsk
-	}
-}
-
-// func (m *Market) addPeggedOrder(order *types.Order) {
-// 	m.peggedOrders = append(m.peggedOrders, order)
-// }
-
-// func (m *Market) getAllParkedOrdersForParty(party string) (orders []*types.Order) {
-// 	for _, order := range m.peggedOrders {
-// 		if order.PartyId == party && order.Status == types.Order_STATUS_PARKED {
-// 			orders = append(orders, order)
-// 		}
-// 	}
-// 	return
-// }
-
 // removePeggedOrder looks through the pegged and parked list
 // and removes the matching order if found
 func (m *Market) removePeggedOrder(order *types.Order) {
@@ -2932,11 +2831,6 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 	if o := m.peggedOrders.GetByID(orderID); o != nil {
 		return o, false, nil
 	}
-	// for _, order := range m.peggedOrders {
-	// 	if order.Id == orderID {
-	// 		return order, false, nil
-	// 	}
-	// }
 
 	// We couldn't find it
 	return nil, false, ErrOrderNotFound

@@ -1,3 +1,5 @@
+//lint:file-ignore U1000 Ignore unused functions
+
 package execution
 
 import (
@@ -18,7 +20,7 @@ func (m *Market) repricePeggedOrders(
 
 	// Go through all the pegged orders and remove from the order book
 	for _, order := range m.peggedOrders.orders {
-		if HasReferenceMoved(order, changes) {
+		if OrderReferenceCheck(*order).HasMoved(changes) {
 			// First if the order isn't parked, then
 			// we will just remove if from the orderbook
 			if order.Status != types.Order_STATUS_PARKED {
@@ -77,6 +79,9 @@ func (m *Market) reSubmitPeggedOrders(
 			// order could not be submitted, it's then been rejected
 			// we just completely remove it.
 			m.removePeggedOrder(order)
+		} else if len(conf.Trades) > 0 {
+			m.log.Panic("submitting pegged orders after a reprice should never trade",
+				logging.Order(*order))
 		}
 		updatedOrders = append(updatedOrders, conf.Order)
 	}
@@ -169,10 +174,14 @@ func (m *Market) updateLPOrders(
 		// so there's no reason we would not be able to submit
 		// let's panic if an issue happen
 		if _, ok := cancelIDs[order.Id]; !ok {
-			_, err := m.submitOrder(ctx, order, false)
+			conf, err := m.submitOrder(ctx, order, false)
 			if err != nil {
 				m.log.Panic("lp should be able to re-submit the orders now",
 					logging.Error(err))
+			} else if len(conf.Trades) > 0 {
+				m.log.Panic("submitting liquidity orders after a reprice should never trade",
+					logging.Order(*order))
+
 			}
 		}
 	}
@@ -181,16 +190,4 @@ func (m *Market) updateLPOrders(
 	// TODO: API to be changed someday as we don't need to cancel anything
 	// now, we assume that all that were required to be cancelled already are.
 	_ = m.updateAndCreateLPOrders(ctx, submits, []*liquidity.ToCancel{})
-}
-
-func HasReferenceMoved(order *types.Order, changes uint8) bool {
-	if (order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_MID &&
-		changes&PriceMoveMid > 0) ||
-		(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_BID &&
-			changes&PriceMoveBestBid > 0) ||
-		(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_ASK &&
-			changes&PriceMoveBestAsk > 0) {
-		return true
-	}
-	return false
 }

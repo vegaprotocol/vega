@@ -266,7 +266,7 @@ func (m *Market) updateAndCreateLPOrders(
 			// be patient...
 			continue
 		}
-		if _, err := m.submitOrder(ctx, order, false); err != nil {
+		if conf, err := m.submitOrder(ctx, order, false); err != nil {
 			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
 				logging.OrderID(order.Id),
 				logging.PartyID(order.PartyId),
@@ -276,6 +276,10 @@ func (m *Market) updateAndCreateLPOrders(
 			faultyLPs[order.PartyId] = true
 			faultyLPOrders[order.PartyId] = order
 			continue
+		} else if len(conf.Trades) > 0 {
+			m.log.Panic("submitting liquidity orders after a reprice should never trade",
+				logging.Order(*order))
+
 		}
 		faultyLPs[order.PartyId] = false
 	}
