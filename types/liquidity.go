@@ -315,6 +315,12 @@ type LiquidityMonitoringParameters struct {
 	AuctionExtension int64
 }
 
+func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParameters) *LiquidityMonitoringParameters {
+	l := &LiquidityMonitoringParameters{}
+	l.FromProto(p)
+	return l
+}
+
 func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringParameters {
 	tr, _ := l.TriggeringRatio.Float64()
 	lmp := &proto.LiquidityMonitoringParameters{
@@ -328,5 +334,6 @@ func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringPar
 func (l *LiquidityMonitoringParameters) FromProto(p *proto.LiquidityMonitoringParameters) {
 	l.AuctionExtension = p.AuctionExtension
 	l.TriggeringRatio = num.DecimalFromFloat(p.TriggeringRatio)
+	l.TargetStakeParameters = &TargetStakeParameters{}
 	l.TargetStakeParameters.FromProto(p.TargetStakeParameters)
 }

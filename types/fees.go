@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -9,6 +11,26 @@ type FeeFactors struct {
 	MakerFee          num.Decimal
 	InfrastructureFee num.Decimal
 	LiquidityFee      num.Decimal
+}
+
+func FeeFactorsFromProto(f *proto.FeeFactors) *FeeFactors {
+	mf, err := num.DecimalFromString(f.MakerFee)
+	if err != nil {
+		panic(fmt.Sprintf("Could not convert maker fee %s to float: %+v", f.MakerFee, err))
+	}
+	inf, err := num.DecimalFromString(f.InfrastructureFee)
+	if err != nil {
+		panic(fmt.Sprintf("Could not convert infrastructure fee %s to float: %+v", f.InfrastructureFee, err))
+	}
+	lf, err := num.DecimalFromString(f.LiquidityFee)
+	if err != nil {
+		panic(fmt.Sprintf("Could not convert liquidity fee %s to float: %+v", f.LiquidityFee, err))
+	}
+	return &FeeFactors{
+		MakerFee:          mf,
+		InfrastructureFee: inf,
+		LiquidityFee:      lf,
+	}
 }
 
 func (f FeeFactors) IntoProto() *proto.FeeFactors {
@@ -21,6 +43,12 @@ func (f FeeFactors) IntoProto() *proto.FeeFactors {
 
 type Fees struct {
 	Factors *FeeFactors
+}
+
+func FeesFromProto(f *proto.Fees) *Fees {
+	return &Fees{
+		Factors: FeeFactorsFromProto(f.Factors),
+	}
 }
 
 func (f Fees) IntoProto() *proto.Fees {
