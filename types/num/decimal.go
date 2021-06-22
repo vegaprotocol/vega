@@ -1,6 +1,8 @@
 package num
 
 import (
+	"math/big"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -10,6 +12,10 @@ func NewDecimalFromFloat(f float64) Decimal {
 	return decimal.NewFromFloat(f)
 }
 
+func NewDecimalFromBigInt(value *big.Int, exp int32) Decimal {
+	return decimal.NewFromBigInt(value, exp)
+}
+
 func DecimalFromUint(u *Uint) Decimal {
-	return decimal.NewFromBigInt(u.u.ToBig(), 0)
+	return decimal.NewFromBigInt(u.BigInt(), 0)
 }
