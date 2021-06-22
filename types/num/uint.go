@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	"github.com/holiman/uint256"
-	"github.com/shopspring/decimal"
 )
 
 // Uint A wrapper for a big unsigned int
@@ -46,12 +45,12 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 	return &Uint{*u}, false
 }
 
-func UintFromDecimal(d decimal.Decimal) (*Uint, bool) {
+func UintFromDecimal(d Decimal) (*Uint, bool) {
 	return UintFromBig(d.BigInt())
 }
 
-func (u *Uint) ToDecimal() decimal.Decimal {
-	return decimal.NewFromBigInt(u.BigInt(), 0)
+func (u *Uint) ToDecimal() Decimal {
+	return DecimalFromUint(u)
 }
 
 // FromString created a new Uint from a string
@@ -92,7 +91,7 @@ func (z Uint) BigInt() *big.Int {
 }
 
 func (z Uint) Float64() float64 {
-	d := decimal.NewFromBigInt(z.BigInt(), 0)
+	d := DecimalFromUint(&z)
 	retVal, _ := d.Float64()
 	return retVal
 }
