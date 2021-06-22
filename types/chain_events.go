@@ -16,23 +16,11 @@ type Withdrawal = proto.Withdrawal
 type WithdrawExt = proto.WithdrawExt
 type WithdrawExt_Erc20 = proto.WithdrawExt_Erc20
 
-//type BuiltinAssetDeposit = proto.BuiltinAssetDeposit
-//type ERC20Deposit = proto.ERC20Deposit
-//type ERC20Withdrawal = proto.ERC20Withdrawal
-//type ERC20AssetList = proto.ERC20AssetList
 type Erc20WithdrawExt = proto.Erc20WithdrawExt
-
-//type ChainEvent_Builtin = commandspb.ChainEvent_Builtin
-type ChainEvent_Erc20 = commandspb.ChainEvent_Erc20
 type ChainEvent_Btc = commandspb.ChainEvent_Btc
 type ChainEvent_Validator = commandspb.ChainEvent_Validator
 type BuiltinAssetEvent_Deposit = proto.BuiltinAssetEvent_Deposit
 type BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
-type ERC20Event_AssetList = proto.ERC20Event_AssetList
-type ERC20Event_AssetDelist = proto.ERC20Event_AssetDelist
-
-//type ERC20Event_Deposit = proto.ERC20Event_Deposit
-//type ERC20Event_Withdrawal = proto.ERC20Event_Withdrawal
 
 type Withdrawal_Status = proto.Withdrawal_Status
 
@@ -61,149 +49,30 @@ const (
 	Deposit_STATUS_FINALIZED Deposit_Status = 3
 )
 
-/*type Deposit struct {
-	// Unique identifier for the deposit
-	Id string
-	// Status of the deposit
-	Status Deposit_Status
-	// Party identifier of the user initiating the deposit
-	PartyId string
-	// The Vega asset targeted by this deposit
-	Asset string
-	// The amount to be deposited
-	Amount uint64
-	// The hash of the transaction from the foreign chain
-	TxHash string
-	// Timestamp for when the Vega account was updated with the deposit
-	CreditedTimestamp int64
-	// Timestamp for when the deposit was created on the Vega network
-	CreatedTimestamp int64
+type ChainEventERC20 struct {
+	ERC20 *ERC20Event
 }
 
-func (d *Deposit) FromProto(p *proto.Deposit) {
-	d.Id = p.Id
-	d.Status = p.Status
-	d.PartyId = p.PartyId
-	d.Asset = p.Asset
-	d.Amount, _ = strconv.ParseUint(p.Amount, 10, 64)
-	d.TxHash = p.TxHash
-	d.CreditedTimestamp = p.CreditedTimestamp
-	d.CreatedTimestamp = p.CreatedTimestamp
-}
-
-func (d Deposit) IntoProto() *proto.Deposit {
-	dep := &proto.Deposit{
-		Id:                d.Id,
-		Status:            d.Status,
-		PartyId:           d.PartyId,
-		Asset:             d.Asset,
-		Amount:            strconv.FormatUint(d.Amount, 10),
-		TxHash:            d.TxHash,
-		CreditedTimestamp: d.CreditedTimestamp,
-		CreatedTimestamp:  d.CreatedTimestamp,
+func NewChainEventERC20FromProto(p *commandspb.ChainEvent_Erc20) (*ChainEventERC20, error) {
+	c := ChainEventERC20{}
+	var err error
+	c.ERC20, err = NewERC20Event(p.Erc20)
+	if err != nil {
+		return nil, err
 	}
-	return dep
+	return &c, nil
 }
 
-func (d Deposit) String() string {
-	return d.IntoProto().String()
-}
-
-type Withdrawal struct {
-	// Unique identifier for the withdrawal
-	Id string
-	// Unique party identifier of the user initiating the withdrawal
-	PartyId string
-	// The amount to be withdrawn
-	Amount uint64
-	// The asset we want to withdraw funds from
-	Asset string
-	// The status of the withdrawal
-	Status Withdrawal_Status
-	// The reference which is used by the foreign chain
-	// to refer to this withdrawal
-	Ref string
-	// The time until when the withdrawal is valid
-	Expiry int64
-	// The hash of the foreign chain for this transaction
-	TxHash string
-	// Timestamp for when the network started to process this withdrawal
-	CreatedTimestamp int64
-	// Timestamp for when the withdrawal was finalised by the network
-	WithdrawnTimestamp int64
-	// Foreign chain specifics
-	Ext *WithdrawExt
-}
-
-func (w *Withdrawal) FromProto(p *proto.Withdrawal) {
-	w.Id = p.Id
-	w.PartyId = p.PartyId
-	w.Amount = p.Amount
-	w.Asset = p.Asset
-	w.Status = p.Status
-	w.Ref = p.Ref
-	w.Expiry = p.Expiry
-	w.TxHash = p.TxHash
-	w.CreatedTimestamp = p.CreatedTimestamp
-	//	w.Ext.FromProto(p.Ext)
-}
-
-func (w Withdrawal) IntoProto() *proto.Withdrawal {
-	dep := &proto.Withdrawal{
-		Id:                 w.Id,
-		PartyId:            w.PartyId,
-		Amount:             w.Amount,
-		Asset:              w.Asset,
-		Status:             w.Status,
-		Ref:                w.Ref,
-		Expiry:             w.Expiry,
-		TxHash:             w.TxHash,
-		CreatedTimestamp:   w.CreatedTimestamp,
-		WithdrawnTimestamp: w.WithdrawnTimestamp,
-		//		Ext: nil,
+func (c ChainEventERC20) IntoProto() *commandspb.ChainEvent_Erc20 {
+	p := &commandspb.ChainEvent_Erc20{
+		Erc20: c.ERC20.IntoProto(),
 	}
-	return dep
+	return p
 }
 
-func (w Withdrawal) String() string {
-	return w.IntoProto().String()
+func (c ChainEventERC20) String() string {
+	return c.IntoProto().Erc20.String()
 }
-
-type WithdrawExt struct {
-	// Foreign chain specifics
-	//
-	// Types that are valid to be assigned to Ext:
-	//	*WithdrawExt_Erc20
-	Ext isWithdrawExt_Ext
-}
-
-func (w *WithdrawExt) FromProto(p *proto.WithdrawExt) {
-}
-
-func (w WithdrawExt) IntoProto() *proto.WithdrawExt {
-	we := &proto.WithdrawExt{}
-	return we
-}
-
-func (w WithdrawExt) String() string {
-	return w.IntoProto().String()
-}
-
-type WithdrawExt_Erc20 struct {
-	Erc20 *Erc20WithdrawExt
-}
-
-func (w *WithdrawExt_Erc20) FromProto(p *proto.WithdrawExt_Erc20) {
-}
-
-func (w WithdrawExt_Erc20) IntoProto() *proto.WithdrawExt_Erc20 {
-	we := &proto.WithdrawExt_Erc20{}
-	return we
-}
-
-func (w WithdrawExt_Erc20) String() string {
-	return w.IntoProto().String()
-}*/
 
 type BuiltinAssetDeposit struct {
 	// A Vega network internal asset identifier
@@ -236,6 +105,10 @@ func (b BuiltinAssetDeposit) String() string {
 	return b.IntoProto().String()
 }
 
+func (b BuiltinAssetDeposit) GetVegaAssetId() string {
+	return b.VegaAssetId
+}
+
 type BuiltinAssetWithdrawal struct {
 	// A Vega network internal asset identifier
 	VegaAssetId string
@@ -265,6 +138,10 @@ func (b BuiltinAssetWithdrawal) IntoProto() *proto.BuiltinAssetWithdrawal {
 
 func (b BuiltinAssetWithdrawal) String() string {
 	return b.IntoProto().String()
+}
+
+func (b BuiltinAssetWithdrawal) GetVegaAssetId() string {
+	return b.VegaAssetId
 }
 
 type ChainEvent_Builtin struct {
@@ -399,10 +276,10 @@ type ERC20Event struct {
 	// The action
 	//
 	// Types that are valid to be assigned to Action:
-	//	*ERC20Event_AssetList
-	//	*ERC20Event_AssetDelist
-	//	*ERC20Event_Deposit
-	//	*ERC20Event_Withdrawal
+	//	*ERC20EventAssetList
+	//	*ERC20EventAssetDelist
+	//	*ERC20EventDeposit
+	//	*ERC20EventWithdrawal
 	Action erc20EventAction
 }
 
@@ -446,6 +323,28 @@ func NewERC20Event(p *proto.ERC20Event) (*ERC20Event, error) {
 	default:
 		return nil, errors.New("Unknown erc20 event type")
 	}
+}
+
+func (e ERC20Event) IntoProto() *proto.ERC20Event {
+	p := &proto.ERC20Event{
+		Index: e.Index,
+		Block: e.Block,
+	}
+
+	switch a := e.Action.(type) {
+	case *ERC20EventAssetDelist:
+		p.Action = a.IntoProto()
+	case *ERC20EventAssetList:
+		p.Action = a.IntoProto()
+	case *ERC20EventDeposit:
+		p.Action = a.IntoProto()
+	case *ERC20EventWithdrawal:
+		p.Action = a.IntoProto()
+	default:
+		return nil
+	}
+
+	return p
 }
 
 type ERC20EventAssetDelist struct {
@@ -546,6 +445,10 @@ func (e ERC20AssetList) String() string {
 	return e.IntoProto().String()
 }
 
+func (e ERC20AssetList) GetVegaAssetId() string {
+	return e.VegaAssetId
+}
+
 type ERC20EventWithdrawal struct {
 	Withdrawal *ERC20Withdrawal
 }
@@ -601,6 +504,10 @@ func (e ERC20Withdrawal) IntoProto() *proto.ERC20Withdrawal {
 
 func (e ERC20Withdrawal) String() string {
 	return e.IntoProto().String()
+}
+
+func (e ERC20Withdrawal) GetVegaAssetId() string {
+	return e.VegaAssetId
 }
 
 type ERC20EventDeposit struct {
@@ -666,4 +573,8 @@ func (e ERC20Deposit) IntoProto() *proto.ERC20Deposit {
 
 func (e ERC20Deposit) String() string {
 	return e.IntoProto().String()
+}
+
+func (e ERC20Deposit) GetVegaAssetId() string {
+	return e.VegaAssetId
 }
