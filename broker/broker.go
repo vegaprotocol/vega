@@ -68,14 +68,22 @@ func New(ctx context.Context) *Broker {
 }
 
 func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
-	ctx, cfunc := context.WithTimeout(b.ctx, time.Second)
-	defer cfunc()
+	// wait for a max of 1 second
+	timeout := time.NewTimer(time.Second)
+	defer func() {
+		// drain the channel if we managed to leave the function before the timer expired
+		if !timeout.Stop() {
+			<-timeout.C
+		}
+	}()
 	select {
-	case <-ctx.Done():
+	case <-b.ctx.Done():
 		return
 	case <-sub.Closed():
 		return
 	case sub.C() <- evts:
+		return
+	case <-timeout.C:
 		return
 	}
 }
