@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -80,10 +81,10 @@ func (e *Engine) AmendLiquidityProvision(
 // GetPotentialShapeOrders is used to create orders from
 // shape when amending a liquidity provision this allows us to
 // ensure enough funds can be taken from the margin account in orders
-// to submit orders lateer on.
+// to submit orders later on.
 func (e *Engine) GetPotentialShapeOrders(
 	party string,
-	bestBidPrice, bestAskPrice uint64,
+	bestBidPrice, bestAskPrice *num.Uint,
 	lps *commandspb.LiquidityProvisionSubmission,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
