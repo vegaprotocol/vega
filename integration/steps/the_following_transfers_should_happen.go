@@ -16,7 +16,7 @@ func TheFollowingTransfersShouldHappen(
 ) error {
 	transfers := getTransfers(broker)
 
-	for _, r := range TableWrapper(*table).Parse() {
+	for _, r := range parseTransferTable(table) {
 		row := transferRow{row: r}
 
 		matched, divergingAmounts := matchTransfers(transfers, row)
@@ -39,9 +39,9 @@ func TheFollowingTransfersShouldHappen(
 
 func errTransferFoundButNotRightAmount(row transferRow, divergingAmounts []uint64) error {
 	return formatDiff(
-		fmt.Sprintf("invalid amount for transfer from %s to %s", row.fromAccountID(), row.toAccountID()),
+		fmt.Sprintf("invalid amount for transfer from %s to %s", row.FromAccountID(), row.ToAccountID()),
 		map[string]string{
-			"amount": u64ToS(row.amount()),
+			"amount": u64ToS(row.Amount()),
 		},
 		map[string]string{
 			"amount": u64SToS(divergingAmounts),
@@ -51,15 +51,15 @@ func errTransferFoundButNotRightAmount(row transferRow, divergingAmounts []uint6
 
 func errMissingTransfer(row transferRow) error {
 	return fmt.Errorf("missing transfers between %v and %v for amount %v",
-		row.fromAccountID(), row.toAccountID(), row.amount(),
+		row.FromAccountID(), row.ToAccountID(), row.Amount(),
 	)
 }
 
 func matchTransfers(transfers []*types.LedgerEntry, row transferRow) (bool, []uint64) {
 	divergingAmounts := []uint64{}
 	for _, transfer := range transfers {
-		if transfer.FromAccount == row.fromAccountID() && transfer.ToAccount == row.toAccountID() {
-			if transfer.Amount == row.amount() {
+		if transfer.FromAccount == row.FromAccountID() && transfer.ToAccount == row.ToAccountID() {
+			if transfer.Amount == row.Amount() {
 				return true, nil
 			}
 			divergingAmounts = append(divergingAmounts, transfer.Amount)
@@ -79,42 +79,54 @@ func getTransfers(broker *stubs.BrokerStub) []*types.LedgerEntry {
 	return transfers
 }
 
+func parseTransferTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"from",
+		"from account",
+		"to",
+		"to account",
+		"market id",
+		"amount",
+		"asset",
+	}, []string{})
+}
+
 type transferRow struct {
 	row RowWrapper
 }
 
-func (r transferRow) from() string {
+func (r transferRow) From() string {
 	return r.row.MustStr("from")
 }
 
-func (r transferRow) fromAccount() types.AccountType {
+func (r transferRow) FromAccount() types.AccountType {
 	return r.row.MustAccount("from account")
 }
 
-func (r transferRow) fromAccountID() string {
-	return accountID(r.marketID(), r.from(), r.asset(), r.fromAccount())
+func (r transferRow) FromAccountID() string {
+	return accountID(r.MarketID(), r.From(), r.Asset(), r.FromAccount())
 }
 
-func (r transferRow) to() string {
+func (r transferRow) To() string {
 	return r.row.MustStr("to")
 }
 
-func (r transferRow) toAccount() types.AccountType {
+func (r transferRow) ToAccount() types.AccountType {
 	return r.row.MustAccount("to account")
 }
 
-func (r transferRow) toAccountID() string {
-	return accountID(r.marketID(), r.to(), r.asset(), r.toAccount())
+func (r transferRow) ToAccountID() string {
+	return accountID(r.MarketID(), r.To(), r.Asset(), r.ToAccount())
 }
 
-func (r transferRow) marketID() string {
+func (r transferRow) MarketID() string {
 	return r.row.MustStr("market id")
 }
 
-func (r transferRow) amount() uint64 {
+func (r transferRow) Amount() uint64 {
 	return r.row.MustU64("amount")
 }
 
-func (r transferRow) asset() string {
+func (r transferRow) Asset() string {
 	return r.row.MustStr("asset")
 }

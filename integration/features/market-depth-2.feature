@@ -25,10 +25,10 @@ Feature: Test market depth events for pegged orders
       | aux2             | BTC   | 100000000 |
 # setup pegged orders
     Then the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset |
-      | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     |
-      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | -15    |
-      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | -10    |
+      | trader  | market id | side | volume | pegged reference | offset |
+      | pegged1 | ETH/DEC19 | sell | 1000   | MID              | 10     |
+      | pegged2 | ETH/DEC19 | buy  | 500    | MID              | -15    |
+      | pegged3 | ETH/DEC19 | buy  | 500    | MID              | -10    |
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset | price | status        |
       | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     | 0     | STATUS_PARKED |

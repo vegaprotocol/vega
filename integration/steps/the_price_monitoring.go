@@ -14,7 +14,7 @@ func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency s
 	}
 
 	var triggers []*types.PriceMonitoringTrigger
-	for _, r := range TableWrapper(*table).Parse() {
+	for _, r := range parsePriceMonitoringTable(table) {
 		row := priceMonitoringRow{row: r}
 		p := &types.PriceMonitoringTrigger{
 			Horizon:          row.horizon(),
@@ -33,6 +33,14 @@ func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency s
 			UpdateFrequency: updateFrequency,
 		},
 	)
+}
+
+func parsePriceMonitoringTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"horizon",
+		"probability",
+		"auction extension",
+	}, []string{})
 }
 
 type priceMonitoringRow struct {

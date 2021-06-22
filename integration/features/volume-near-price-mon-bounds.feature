@@ -19,8 +19,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 100         | -100          | 0.1                    |
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.004     | 0.001              | 0.3           |
+      | maker fee | infrastructure fee |
+      | 0.004     | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
@@ -40,7 +40,6 @@ Feature: Test margin for lp near price monitoring boundaries
       | id          | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy  | BID              | 500        | -100   |
       | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell | ASK              | 500        | 100    |
-
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -105,8 +104,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | risk aversion | tau     | mu | r | sigma |
       | 0.000001      | 0.00273 | 0  | 0 | 1.2   |
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.004     | 0.001              | 0.3           |
+      | maker fee | infrastructure fee |
+      | 0.004     | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-2":
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
@@ -126,7 +125,6 @@ Feature: Test margin for lp near price monitoring boundaries
       | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | -100   |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    |
-
     And the traders place the following orders:
       | trader  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |

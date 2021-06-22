@@ -68,10 +68,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader1 | t1-s-1    | 12500000 | 0          | TIF_GTC |
       | trader2 | t2-b-1    | 10500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -91,10 +87,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader1 | t1-s-1    | 14500000 | 0          | TIF_GTC |
       | trader2 | t2-b-1    | 13500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -114,10 +106,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader1 | t1-s-1    | 16500000 | 0          | TIF_GTC |
       | trader2 | t2-b-1    | 15500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -137,10 +125,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader1 | t1-s-1    | 18500000 | 0          | TIF_GTC |
       | trader2 | t2-b-1    | 17500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -161,10 +145,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader2 | t2-b-1    | 13500000 | 0          | TIF_GTC |
       | trader1 | t1-s-1    | 14500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -185,12 +165,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader2 | t2-b-1    | 11500000 | 0          | TIF_GTC |
       | trader1 | t1-s-1    | 12500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
-
-    When the traders place the following orders:
+    And the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
       | trader2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-8    |
@@ -210,12 +185,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader2 | t2-b-1    | 10500000 | 0          | TIF_GTC |
       | trader1 | t1-s-1    | 11500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
-
-    When the traders place the following orders:
+    And the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 11000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-6    |
       | trader2 | ETH/DEC20 | buy  | 1      | 11000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-9    |
@@ -234,12 +204,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader2 | t2-b-1    | 9500000  | 0          | TIF_GTC |
       | trader1 | t1-s-1    | 10500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
-
-    When the traders place the following orders:
+    And the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-7    |
       | trader2 | ETH/DEC20 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-10   |

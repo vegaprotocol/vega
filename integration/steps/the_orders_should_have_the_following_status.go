@@ -9,14 +9,14 @@ import (
 )
 
 func TheOrdersShouldHaveTheFollowingStatus(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
-	for _, row := range TableWrapper(*table).Parse() {
-		trader := row.MustStr("trader")
+	for _, row := range parseOrderStatusTable(table) {
+		party := row.MustStr("trader")
 		reference := row.MustStr("reference")
 		status := row.MustOrderStatus("status")
 
-		o, err := broker.GetByReference(trader, reference)
+		o, err := broker.GetByReference(party, reference)
 		if err != nil {
-			return errOrderNotFound(reference, trader, err)
+			return errOrderNotFound(reference, party, err)
 		}
 
 		if status != o.Status {
@@ -29,4 +29,12 @@ func TheOrdersShouldHaveTheFollowingStatus(broker *stubs.BrokerStub, table *gher
 
 func errInvalidOrderStatus(o types.Order, status types.Order_Status) error {
 	return fmt.Errorf("invalid order status for order ref %v, expected %v got %v", o.Reference, status, o.Status)
+}
+
+func parseOrderStatusTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"trader",
+		"reference",
+		"status",
+	}, []string{})
 }

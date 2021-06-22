@@ -14,7 +14,7 @@ func TradersHaveTheFollowingProfitAndLoss(
 	positionService *plugins.Positions,
 	table *gherkin.DataTable,
 ) error {
-	for _, r := range TableWrapper(*table).Parse() {
+	for _, r := range parseProfitAndLossTable(table) {
 		row := pnlRow{row: r}
 		if err := positionAPIProduceTheFollowingRow(positionService, row); err != nil {
 			return err
@@ -79,6 +79,15 @@ func areSamePosition(pos []*types.Position, row pnlRow) bool {
 
 func errCannotGetPositionForParty(trader string, err error) error {
 	return fmt.Errorf("error getting party position, trader(%v), err(%v)", trader, err)
+}
+
+func parseProfitAndLossTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"trader",
+		"volume",
+		"unrealised pnl",
+		"realised pnl",
+	}, []string{})
 }
 
 type pnlRow struct {

@@ -139,6 +139,13 @@ func (r RowWrapper) mustColumn(name string) string {
 	return s
 }
 
+func (r RowWrapper) HasColumn(name string) bool {
+	if v, ok := r.values[name]; !ok || v == "" {
+		return false
+	}
+	return true
+}
+
 func (r RowWrapper) MustStr(name string) string {
 	return r.mustColumn(name)
 }

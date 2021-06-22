@@ -14,7 +14,7 @@ func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table 
 	binding := &types.OracleSpecToFutureBinding{}
 
 	var filters []*oraclesv1.Filter
-	for _, r := range TableWrapper(*table).Parse() {
+	for _, r := range parseOracleSpecTable(table) {
 		row := oracleSpecRow{row: r}
 		filter := &oraclesv1.Filter{
 			Key: &oraclesv1.PropertyKey{
@@ -38,6 +38,14 @@ func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table 
 		},
 		binding,
 	)
+}
+
+func parseOracleSpecTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"property",
+		"type",
+		"binding",
+	}, []string{})
 }
 
 type oracleSpecRow struct {

@@ -14,7 +14,7 @@ func TheFollowingTradesShouldBeExecuted(
 	table *gherkin.DataTable,
 ) error {
 	var err error
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseExecutedTradesTable(table) {
 		buyer := row.MustStr("buyer")
 		seller := row.MustStr("seller")
 		price := row.MustU64("price")
@@ -34,6 +34,15 @@ func TheFollowingTradesShouldBeExecuted(
 	}
 
 	return err
+}
+
+func parseExecutedTradesTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"buyer",
+		"seller",
+		"price",
+		"size",
+	}, []string{})
 }
 
 // TheAuctionTradedVolumeAndPriceShouldBe pass in time at which the trades should happen in case there are previous trades in the broker stub

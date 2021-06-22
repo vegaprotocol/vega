@@ -98,9 +98,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following network parameters are set:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingNetworkParametersAreSet(execsetup.netParams, table)
 	})
-	s.Step(`^"([^"]*)" withdraws "([^"]*)" from the account "([^"]*)"$`, func(owner, rawAmount, asset string) error {
-		return steps.TraderWithdrawsFromAccount(execsetup.collateralEngine, owner, rawAmount, asset)
-	})
 	s.Step(`^time is updated to "([^"]*)"$`, func(rawTime string) error {
 		return steps.TimeIsUpdatedTo(execsetup.timeService, rawTime)
 	})
@@ -108,7 +105,7 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders cancel all their orders for the markets:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
+		return steps.TradersCancelAllTheirOrdersForTheMarkets(execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders amend the following orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersAmendTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
@@ -117,7 +114,10 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TradersPlaceTheFollowingPeggedOrders(execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders deposit on asset's general account the following amount:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersDepositAssets(execsetup.collateralEngine, execsetup.broker, table)
+		return steps.TradersDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
+	})
+	s.Step(`^the traders withdraw the following assets:$`, func(table *gherkin.DataTable) error {
+		return steps.TradersWithdrawTheFollowingAssets(execsetup.collateralEngine, table)
 	})
 	s.Step(`^the traders place the following orders:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersPlaceTheFollowingOrders(execsetup.executionEngine, table)
@@ -148,9 +148,6 @@ func FeatureContext(s *godog.Suite) {
 	})
 
 	// Assertion steps
-	s.Step(`^the following amendments should be accepted:$`, func(table *gherkin.DataTable) error {
-		return steps.TheFollowingAmendmentsShouldBeAccepted(table)
-	})
 	s.Step(`^the traders should have the following account balances:$`, func(table *gherkin.DataTable) error {
 		return steps.TradersShouldHaveTheFollowingAccountBalances(execsetup.broker, table)
 	})

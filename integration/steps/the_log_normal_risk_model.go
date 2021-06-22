@@ -8,6 +8,8 @@ import (
 )
 
 func TheLogNormalRiskModel(config *market.Config, name string, table *gherkin.DataTable) error {
+	_ = parseLogNormalRiskModelTable(table)
+
 	r, err := GetFirstRow(*table)
 	if err != nil {
 		return err
@@ -26,6 +28,16 @@ func TheLogNormalRiskModel(config *market.Config, name string, table *gherkin.Da
 			},
 		},
 	})
+}
+
+func parseLogNormalRiskModelTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"risk aversion",
+		"tau",
+		"mu",
+		"r",
+		"sigma",
+	}, []string{})
 }
 
 type logNormalRiskModelRow struct {

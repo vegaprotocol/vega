@@ -34,8 +34,8 @@ func parseOracleDataPubKeys(rawPubKeys string) []string {
 func parseOracleDataProperties(table *gherkin.DataTable) (map[string]string, error) {
 	properties := map[string]string{}
 
-	for _, r := range TableWrapper(*table).Parse() {
-		row := propertyRow{row: r}
+	for _, r := range parseOracleBroadcastTable(table) {
+		row := oracleDataPropertyRow{row: r}
 		_, ok := properties[row.name()]
 		if ok {
 			return nil, errPropertyRedeclared(row.name())
@@ -50,14 +50,21 @@ func errPropertyRedeclared(name string) error {
 	return fmt.Errorf("property %s has been declared multiple times", name)
 }
 
-type propertyRow struct {
+func parseOracleBroadcastTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"name",
+		"value",
+	}, []string{})
+}
+
+type oracleDataPropertyRow struct {
 	row RowWrapper
 }
 
-func (r propertyRow) name() string {
+func (r oracleDataPropertyRow) name() string {
 	return r.row.MustStr("name")
 }
 
-func (r propertyRow) value() string {
+func (r oracleDataPropertyRow) value() string {
 	return r.row.MustStr("value")
 }

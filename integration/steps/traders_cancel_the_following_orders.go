@@ -5,7 +5,6 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/cucumber/godog/gherkin"
@@ -18,32 +17,23 @@ func TradersCancelTheFollowingOrders(
 ) error {
 	for _, r := range parseCancelOrderTable(table) {
 		row := cancelOrderRow{row: r}
-		party := row.Party()
-		reference := row.Reference()
-		marketID := row.MarketID()
 
-		var orders []types.Order
-		switch {
-		case marketID != "":
-			orders = broker.GetOrdersByPartyAndMarket(party, marketID)
-		default:
-			o, err := broker.GetByReference(party, reference)
-			if err != nil {
-				return errOrderNotFound(party, reference, err)
-			}
-			orders = append(orders, o)
+		party := row.Party()
+
+		order, err := broker.GetByReference(party, row.Reference())
+		if err != nil {
+			return errOrderNotFound(party, row.Reference(), err)
 		}
 
-		for _, o := range orders {
-			cancel := commandspb.OrderCancellation{
-				OrderId:  o.Id,
-				MarketId: o.MarketId,
-			}
-			_, err := exec.CancelOrder(context.Background(), &cancel, party)
-			err = checkExpectedError(row, err)
-			if err != nil {
-				return err
-			}
+		cancel := commandspb.OrderCancellation{
+			OrderId:  order.Id,
+			MarketId: order.MarketId,
+		}
+
+		_, err = exec.CancelOrder(context.Background(), &cancel, party)
+		err = checkExpectedError(row, err)
+		if err != nil {
+			return err
 		}
 
 	}
@@ -58,9 +48,8 @@ type cancelOrderRow struct {
 func parseCancelOrderTable(table *gherkin.DataTable) []RowWrapper {
 	return TableWrapper(*table).StrictParse([]string{
 		"trader",
-	}, []string{
 		"reference",
-		"market id",
+	}, []string{
 		"error",
 	})
 }
@@ -69,8 +58,8 @@ func (r cancelOrderRow) Party() string {
 	return r.row.MustStr("trader")
 }
 
-func (r cancelOrderRow) MarketID() string {
-	return r.row.Str("market id")
+func (r cancelOrderRow) HasMarketID() bool {
+	return r.row.HasColumn("market id")
 }
 
 func (r cancelOrderRow) Reference() string {
@@ -82,5 +71,5 @@ func (r cancelOrderRow) Error() string {
 }
 
 func (r cancelOrderRow) ExpectError() bool {
-	return len(r.row.Str("error")) > 0
+	return r.row.HasColumn("error")
 }

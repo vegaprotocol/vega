@@ -15,8 +15,8 @@ Feature: Target stake
       | risk aversion | tau                    | mu | r  | sigma |
       | 0.000001      | 0.00011407711613050422 | -1 | -1 | -1    |
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.00025   | 0.0005             | 0.001         |
+      | maker fee | infrastructure fee |
+      | 0.00025   | 0.0005             |
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
       | 1.1           | 1.2            | 1.4            |

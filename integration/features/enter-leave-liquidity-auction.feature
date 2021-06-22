@@ -39,9 +39,9 @@ Feature: Ensure we can enter and leave liquidity auction
 
 # add a few pegged orders now
     Then the traders place the following pegged orders:
-      | trader | market id | side | volume | reference | offset | price |
-      | aux2   | ETH/DEC19 | sell | 10     | ASK       | 9      | 100   |
-      | aux2   | ETH/DEC19 | buy  | 5      | BID       | -9     | 100   |
+      | trader | market id | side | volume | pegged reference | offset |
+      | aux2   | ETH/DEC19 | sell | 10     | ASK              | 9      |
+      | aux2   | ETH/DEC19 | buy  | 5      | BID              | -9     |
 
 # now consume all the volume on the sell side
     When the traders place the following orders:

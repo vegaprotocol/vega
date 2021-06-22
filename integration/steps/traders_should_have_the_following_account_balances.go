@@ -13,31 +13,31 @@ func TradersShouldHaveTheFollowingAccountBalances(
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {
-	for _, r := range TableWrapper(*table).Parse() {
+	for _, r := range parseAccountBalancesTable(table) {
 		row := accountBalancesRow{row: r}
 		var hasError bool
 
-		generalAccount, err := broker.GetTraderGeneralAccount(row.trader(), row.asset())
+		generalAccount, err := broker.GetTraderGeneralAccount(row.Party(), row.Asset())
 		if err != nil {
-			return errCannotGetTraderGeneralAccount(row.trader(), row.asset(), err)
+			return errCannotGetTraderGeneralAccount(row.Party(), row.Asset(), err)
 		}
-		if generalAccount.GetBalance() != row.generalAccountBalance() {
+		if generalAccount.GetBalance() != row.GeneralAccountBalance() {
 			hasError = true
 		}
 
-		marginAccount, err := broker.GetTraderMarginAccount(row.trader(), row.marketID())
+		marginAccount, err := broker.GetTraderMarginAccount(row.Party(), row.MarketID())
 		if err != nil {
-			return errCannotGetTraderMarginAccount(row.trader(), row.asset(), err)
+			return errCannotGetTraderMarginAccount(row.Party(), row.Asset(), err)
 		}
 		// check bond
 		var bondAcc types.Account
-		if bbal, ok := row.bondAccountBalance(); ok {
-			bondAcc, err = broker.GetTraderBondAccount(row.trader(), row.asset())
-			if err == nil && bondAcc.Balance != bbal {
+		if row.ExpectBondAccountBalance() {
+			bondAcc, err = broker.GetTraderBondAccount(row.Party(), row.Asset())
+			if err == nil && bondAcc.Balance != row.BondAccountBalance() {
 				hasError = true
 			}
 		}
-		if marginAccount.GetBalance() != row.marginAccountBalance() {
+		if marginAccount.GetBalance() != row.MarginAccountBalance() {
 			hasError = true
 		}
 
@@ -64,13 +64,12 @@ func errCannotGetTraderMarginAccount(trader, asset string, err error) error {
 func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, generalAccount, bondAcc types.Account) error {
 	// if bond account was given
 	if bondAcc.Type == types.AccountType_ACCOUNT_TYPE_BOND {
-		bbal, _ := row.bondAccountBalance()
 		return formatDiff(
-			fmt.Sprintf("account balances did not match for party(%s)", row.trader()),
+			fmt.Sprintf("account balances did not match for party(%s)", row.Party()),
 			map[string]string{
-				"margin account balance":  u64ToS(row.marginAccountBalance()),
-				"general account balance": u64ToS(row.generalAccountBalance()),
-				"bond account balance":    u64ToS(bbal),
+				"margin account balance":  u64ToS(row.MarginAccountBalance()),
+				"general account balance": u64ToS(row.GeneralAccountBalance()),
+				"bond account balance":    u64ToS(row.BondAccountBalance()),
 			},
 			map[string]string{
 				"margin account balance":  u64ToS(marginAccount.GetBalance()),
@@ -80,10 +79,10 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 		)
 	}
 	return formatDiff(
-		fmt.Sprintf("account balances did not match for party(%s)", row.trader()),
+		fmt.Sprintf("account balances did not match for party(%s)", row.Party()),
 		map[string]string{
-			"margin account balance":  u64ToS(row.marginAccountBalance()),
-			"general account balance": u64ToS(row.generalAccountBalance()),
+			"margin account balance":  u64ToS(row.MarginAccountBalance()),
+			"general account balance": u64ToS(row.GeneralAccountBalance()),
 		},
 		map[string]string{
 			"margin account balance":  u64ToS(marginAccount.GetBalance()),
@@ -92,30 +91,46 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 	)
 }
 
+func parseAccountBalancesTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"trader",
+		"asset",
+		"market id",
+		"margin",
+		"general",
+	}, []string{
+		"bond",
+	})
+}
+
 type accountBalancesRow struct {
 	row RowWrapper
 }
 
-func (r accountBalancesRow) trader() string {
+func (r accountBalancesRow) Party() string {
 	return r.row.MustStr("trader")
 }
 
-func (r accountBalancesRow) asset() string {
+func (r accountBalancesRow) Asset() string {
 	return r.row.MustStr("asset")
 }
 
-func (r accountBalancesRow) marketID() string {
+func (r accountBalancesRow) MarketID() string {
 	return r.row.MustStr("market id")
 }
 
-func (r accountBalancesRow) marginAccountBalance() uint64 {
+func (r accountBalancesRow) MarginAccountBalance() uint64 {
 	return r.row.MustU64("margin")
 }
 
-func (r accountBalancesRow) generalAccountBalance() uint64 {
+func (r accountBalancesRow) GeneralAccountBalance() uint64 {
 	return r.row.MustU64("general")
 }
 
-func (r accountBalancesRow) bondAccountBalance() (uint64, bool) {
-	return r.row.U64B("bond")
+func (r accountBalancesRow) ExpectBondAccountBalance() bool {
+	return r.row.HasColumn("bond")
+}
+
+func (r accountBalancesRow) BondAccountBalance() uint64 {
+	return r.row.U64("bond")
 }

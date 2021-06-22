@@ -91,7 +91,7 @@ func (r amendOrderRow) TimeInForce() types.Order_TimeInForce {
 }
 
 func (r amendOrderRow) ExpirationDate() *types.Timestamp {
-	if len(r.row.Str("expiration date")) == 0 {
+	if !r.row.HasColumn("expiration date") {
 		return nil
 	}
 
@@ -108,5 +108,5 @@ func (r amendOrderRow) Error() string {
 }
 
 func (r amendOrderRow) ExpectError() bool {
-	return len(r.row.Str("error")) > 0
+	return r.row.HasColumn("error")
 }

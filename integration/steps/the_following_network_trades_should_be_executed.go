@@ -9,7 +9,7 @@ import (
 )
 
 func TheFollowingNetworkTradesShouldBeExecuted(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseNetworkTradesTable(table) {
 		var (
 			trader        = row.MustStr("trader")
 			aggressorSide = row.MustSide("aggressor side")
@@ -35,4 +35,12 @@ func TheFollowingNetworkTradesShouldBeExecuted(broker *stubs.BrokerStub, table *
 
 func errTradeMissing(party string, aggressorSide types.Side, volume uint64) error {
 	return fmt.Errorf("expecting trade was missing: %v, %v, %v", party, aggressorSide, volume)
+}
+
+func parseNetworkTradesTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"trader",
+		"aggressor side",
+		"volume",
+	}, []string{})
 }

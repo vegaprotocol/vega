@@ -35,13 +35,18 @@ func TradersPlaceTheFollowingOrders(
 			return err
 		}
 
-		if row.ExpectResultingTrades() && int64(len(resp.Trades)) != row.ResultingTrades() {
+		if !row.ExpectResultingTrades() {
+			continue
+		}
+
+		actualTradeCount := int64(len(resp.Trades))
+		if actualTradeCount != row.ResultingTrades() {
 			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
 				map[string]string{
-					"total": fmt.Sprintf("%v", row.ResultingTrades()),
+					"total": i64ToS(row.ResultingTrades()),
 				},
 				map[string]string{
-					"total": fmt.Sprintf("%v", len(resp.Trades)),
+					"total": i64ToS(actualTradeCount),
 				},
 			)
 		}
@@ -70,8 +75,8 @@ type submitOrderRow struct {
 	row RowWrapper
 }
 
-func newSubmitOrderRow(r RowWrapper) *submitOrderRow {
-	row := &submitOrderRow{
+func newSubmitOrderRow(r RowWrapper) submitOrderRow {
+	row := submitOrderRow{
 		row: r,
 	}
 
@@ -124,7 +129,7 @@ func (r submitOrderRow) ExpirationDate() int64 {
 }
 
 func (r submitOrderRow) ExpectResultingTrades() bool {
-	if len(r.row.Str("resulting trades")) == 0 {
+	if !r.row.HasColumn("resulting trades") {
 		return false
 	}
 	return r.ResultingTrades() > 0
@@ -143,5 +148,5 @@ func (r submitOrderRow) Error() string {
 }
 
 func (r submitOrderRow) ExpectError() bool {
-	return len(r.Error()) > 0
+	return r.row.HasColumn("error")
 }

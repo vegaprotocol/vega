@@ -11,7 +11,7 @@ import (
 
 func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *gherkin.DataTable) error {
 	ctx := context.Background()
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseNetworkParametersTable(table) {
 		name := row.MustStr("name")
 
 		switch name {
@@ -49,4 +49,11 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *gher
 	netParams.DispatchChanges(ctx)
 
 	return nil
+}
+
+func parseNetworkParametersTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"name",
+		"value",
+	}, []string{})
 }

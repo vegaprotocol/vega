@@ -8,7 +8,7 @@ import (
 )
 
 func ClearOrdersByReference(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseClearOrdersTable(table) {
 		trader := row.MustStr("trader")
 		reference := row.MustStr("reference")
 		if err := broker.ClearOrderByReference(trader, reference); err != nil {
@@ -20,4 +20,11 @@ func ClearOrdersByReference(broker *stubs.BrokerStub, table *gherkin.DataTable) 
 
 func errClearingOrder(trader, reference string, err error) error {
 	return fmt.Errorf("failed to clear order for trader %s with reference %s: %v", trader, reference, err)
+}
+
+func parseClearOrdersTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"trader",
+		"reference",
+	}, []string{})
 }

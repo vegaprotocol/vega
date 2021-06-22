@@ -14,7 +14,7 @@ func ThePriceMonitoringBoundsForTheMarketShouldBe(engine *execution.Engine, mark
 		return errMarketDataNotFound(marketID, err)
 	}
 
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parsePriceMonitoringBoundsTable(table) {
 		expected := types.PriceMonitoringBounds{
 			MinValidPrice: row.MustU64("min bound"),
 			MaxValidPrice: row.MustU64("max bound"),
@@ -38,4 +38,11 @@ func ThePriceMonitoringBoundsForTheMarketShouldBe(engine *execution.Engine, mark
 
 func errMissingPriceMonitoringBounds(market string, expected types.PriceMonitoringBounds) error {
 	return fmt.Errorf("missing price monitoring bounds for market %s  want %v", market, expected)
+}
+
+func parsePriceMonitoringBoundsTable(table *gherkin.DataTable) []RowWrapper {
+	return TableWrapper(*table).StrictParse([]string{
+		"min bound",
+		"max bound",
+	}, []string{})
 }

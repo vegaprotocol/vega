@@ -65,8 +65,8 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | trader3 | ETH/DEC19 | buy  | 106    | 110000 | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
 
     Then the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset |
-      | trader3 | ETH/DEC19 | buy  | 3      | BID       | -900   |
+      | trader  | market id | side | volume | pegged reference | offset |
+      | trader3 | ETH/DEC19 | buy  | 3      | BID              | -900   |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
