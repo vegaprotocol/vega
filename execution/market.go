@@ -192,8 +192,7 @@ type Market struct {
 
 	as *monitor.AuctionState // @TODO this should be an interface
 
-	// A collection of time sorted pegged orders
-	peggedOrders   []*types.Order
+	peggedOrders   *PeggedOrders
 	expiringOrders *ExpiringOrders
 
 	// Store the previous price values so we can see what has changed
@@ -353,6 +352,7 @@ func NewMarket(
 		pMonitor:           pMonitor,
 		lMonitor:           lMonitor,
 		tsCalc:             tsCalc,
+		peggedOrders:       NewPeggedOrders(),
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
 		equityShares:       NewEquityShares(decimal.Zero),
@@ -510,6 +510,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	// some engines still needs to get updates:
 	m.currentTime = t
+	m.peggedOrders.OnTimeUpdate(t)
 	m.liquidity.OnChainTimeUpdate(ctx, t)
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
@@ -637,18 +638,6 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
-func HasReferenceMoved(order *types.Order, changes uint8) bool {
-	if (order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_MID &&
-		changes&PriceMoveMid > 0) ||
-		(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_BID &&
-			changes&PriceMoveBestBid > 0) ||
-		(order.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_ASK &&
-			changes&PriceMoveBestAsk > 0) {
-		return true
-	}
-	return false
-}
-
 // repriceAllPeggedOrders runs through the slice of pegged orders and reprices all those
 // which are using a reference that has moved. Returns the number of orders that were repriced.
 func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*types.Order, uint64) {
@@ -659,12 +648,17 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 	)
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "repriceAllPeggedOrders")
 
-	// Go through all the pegged orders and remove from the order book
-	for _, order := range m.peggedOrders {
-		if HasReferenceMoved(order, changes) {
-			if order.Status != types.Order_STATUS_PARKED {
-				// Remove order if any volume remains, otherwise it's already been popped by the matching engine.
+	var toSubmitOrders []*types.Order
 
+	// Go through all the pegged orders and remove from the order book
+	for _, order := range m.peggedOrders.orders {
+		if HasReferenceMoved(order, changes) {
+
+			// First if the order isn't parked, then
+			// we will just remove if from the orderbook
+			if order.Status != types.Order_STATUS_PARKED {
+				// Remove order if any volume remains,
+				// otherwise it's already been popped by the matching engine.
 				cancellation, err := m.matching.CancelOrder(order)
 				if cancellation == nil || err != nil {
 					m.log.Panic("Failure after cancel order from matching engine",
@@ -675,26 +669,23 @@ func (m *Market) repriceAllPeggedOrders(ctx context.Context, changes uint8) ([]*
 				// Remove it from the trader position
 				_ = m.position.UnregisterOrder(order)
 			}
-			updatedOrders = append(updatedOrders, order)
-		}
-	}
 
-	var toSubmitOrders []*types.Order
-	// Reprice all the pegged order
-	for _, order := range updatedOrders {
-		if price, err := m.getNewPeggedPrice(order); err != nil {
-			// Failed to reprice, if we are parked we do nothing, if not parked we need to park
-			if order.Status != types.Order_STATUS_PARKED {
-				order.UpdatedAt = m.currentTime.UnixNano()
+			if price, err := m.getNewPeggedPrice(order); err != nil {
+				// Failed to reprice, if we are parked we do nothing,
+				// if not parked we need to park
+				if order.Status != types.Order_STATUS_PARKED {
+					order.UpdatedAt = m.currentTime.UnixNano()
+					order.Status = types.Order_STATUS_PARKED
+					order.Price = 0
+					m.broker.Send(events.NewOrderEvent(ctx, order))
+				}
+			} else {
+				// Repriced so all good make sure status is correct
+				order.Price = price
 				order.Status = types.Order_STATUS_PARKED
-				order.Price = 0
-				m.broker.Send(events.NewOrderEvent(ctx, order))
+				toSubmitOrders = append(toSubmitOrders, order)
 			}
-		} else {
-			// Repriced so all good make sure status is correct
-			order.Price = price
-			order.Status = types.Order_STATUS_PARKED
-			toSubmitOrders = append(toSubmitOrders, order)
+
 		}
 	}
 
@@ -767,6 +758,14 @@ func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) err
 	return nil
 }
 
+func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
+	toPark := m.peggedOrders.GetAllActiveOrders()
+	for _, order := range toPark {
+		m.parkOrder(ctx, order)
+	}
+	return toPark
+}
+
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	// Change market type to auction
@@ -782,12 +781,10 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	updatedOrders := make([]*types.Order, 0, len(ordersToCancel))
 
 	// Park all pegged orders
-	for _, order := range m.peggedOrders {
-		if order.Status != types.Order_STATUS_PARKED {
-			m.parkOrder(ctx, order)
-			updatedOrders = append(updatedOrders, order)
-		}
-	}
+	updatedOrders = append(
+		updatedOrders,
+		m.parkAllPeggedOrders(ctx)...,
+	)
 
 	// Cancel all the orders that were invalid
 	for _, order := range ordersToCancel {
@@ -1151,7 +1148,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 
 	if order.PeggedOrder != nil {
 		// Add pegged order to time sorted list
-		m.addPeggedOrder(order)
+		m.peggedOrders.Add(order)
 	}
 
 	// Now that validation is handled, call the code to place the order
@@ -1625,13 +1622,18 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 
 	// now we also remove ALL parked order for the different parties
 	for _, v := range distressedPos {
-		orders := m.getAllParkedOrdersForParty(v.Party())
-		for _, o := range orders {
-			m.removePeggedOrder(o)
-			o.UpdatedAt = m.currentTime.UnixNano()
-			o.Status = types.Order_STATUS_STOPPED // closing out = status STOPPED
-			evts = append(evts, events.NewOrderEvent(ctx, o))
+		orders, oevts := m.peggedOrders.RemoveAllParkedForParty(
+			ctx, v.Party(), types.Order_STATUS_STOPPED)
+
+		for _, v := range orders {
+			m.expiringOrders.RemoveOrder(v.ExpiresAt, v.Id)
 		}
+
+		// add all pegged orders too to the orderUpdates
+		orderUpdates = append(orderUpdates, orders...)
+		// add all events to evts list
+		evts = append(evts, oevts...)
+
 		if m.liquidity.IsLiquidityProvider(v.Party()) {
 			if err := m.confiscateBondAccount(ctx, v.Party()); err != nil {
 				m.log.Error("unable to confiscate liquidity provision for a distressed party",
@@ -1641,9 +1643,6 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 				)
 			}
 		}
-
-		// add all pegged orders too to the orderUpdates
-		orderUpdates = append(orderUpdates, orders...)
 	}
 
 	// send all orders which got stopped through the event bus
@@ -2053,11 +2052,12 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	orders := m.matching.GetOrdersPerParty(partyID)
 
 	// add all orders being eventually parked
-	for _, order := range m.peggedOrders {
-		if order.PartyId == partyID {
-			orders = append(orders, order)
-		}
-	}
+	orders = append(orders, m.peggedOrders.GetAllForParty(partyID)...)
+	// for _, order := range m.peggedOrders {
+	// 	if order.PartyId == partyID {
+	// 		orders = append(orders, order)
+	// 	}
+	// }
 
 	// just an early exit, there's just no orders...
 	if len(orders) <= 0 {
@@ -2197,9 +2197,9 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 }
 
 // parkOrderAndAdd removes the order from the orderbook and adds it to the parked list
-func (m *Market) parkOrderAndAdd(ctx context.Context, order *types.Order) {
-	m.parkOrder(ctx, order)
-}
+// func (m *Market) parkOrderAndAdd(ctx context.Context, order *types.Order) {
+// 	m.parkOrder(ctx, order)
+// }
 
 // parkOrder removes the given order from the orderbook
 // parkOrder will panic if it encounters errors, which means that it reached an
@@ -2213,10 +2213,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 			logging.Error(err))
 	}
 
-	// Update the order in our stores (will be marked as parked)
-	order.UpdatedAt = m.currentTime.UnixNano()
-	order.Status = types.Order_STATUS_PARKED
-	order.Price = 0
+	m.peggedOrders.Park(order)
 	m.broker.Send(events.NewOrderEvent(ctx, order))
 	_ = m.position.UnregisterOrder(order)
 }
@@ -2423,7 +2420,7 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 			// Failed to reprice so we have to park the order
 			if amendedOrder.Status != types.Order_STATUS_PARKED {
 				// If we are live then park
-				m.parkOrderAndAdd(ctx, existingOrder)
+				m.parkOrder(ctx, existingOrder)
 			}
 			ret := m.orderAmendWhenParked(existingOrder, amendedOrder)
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
@@ -2437,12 +2434,13 @@ func (m *Market) amendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 					return nil, err
 				}
 				// Update pegged order with new amended version
-				for i, o := range m.peggedOrders {
-					if o.Id == amendedOrder.Id {
-						m.peggedOrders[i] = amendedOrder
-						break
-					}
-				}
+				m.peggedOrders.Amend(amendedOrder)
+				// for i, o := range m.peggedOrders {
+				// 	if o.Id == amendedOrder.Id {
+				// 		m.peggedOrders[i] = amendedOrder
+				// 		break
+				// 	}
+				// }
 				return orderConf, err
 			}
 		}
@@ -2899,34 +2897,25 @@ func (m *Market) checkForReferenceMoves(ctx context.Context) {
 	}
 }
 
-func (m *Market) addPeggedOrder(order *types.Order) {
-	m.peggedOrders = append(m.peggedOrders, order)
-}
+// func (m *Market) addPeggedOrder(order *types.Order) {
+// 	m.peggedOrders = append(m.peggedOrders, order)
+// }
 
-func (m *Market) getAllParkedOrdersForParty(party string) (orders []*types.Order) {
-	for _, order := range m.peggedOrders {
-		if order.PartyId == party && order.Status == types.Order_STATUS_PARKED {
-			orders = append(orders, order)
-		}
-	}
-	return
-}
+// func (m *Market) getAllParkedOrdersForParty(party string) (orders []*types.Order) {
+// 	for _, order := range m.peggedOrders {
+// 		if order.PartyId == party && order.Status == types.Order_STATUS_PARKED {
+// 			orders = append(orders, order)
+// 		}
+// 	}
+// 	return
+// }
 
 // removePeggedOrder looks through the pegged and parked list
 // and removes the matching order if found
 func (m *Market) removePeggedOrder(order *types.Order) {
 	// remove if order was expiring
 	m.expiringOrders.RemoveOrder(order.ExpiresAt, order.Id)
-
-	for i, po := range m.peggedOrders {
-		if po.Id == order.Id {
-			// Remove item from slice
-			copy(m.peggedOrders[i:], m.peggedOrders[i+1:])
-			m.peggedOrders[len(m.peggedOrders)-1] = nil
-			m.peggedOrders = m.peggedOrders[:len(m.peggedOrders)-1]
-			break
-		}
-	}
+	m.peggedOrders.Remove(order)
 }
 
 // getOrderBy looks for the order in the order book and in the list
@@ -2940,11 +2929,14 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 
 	// The pegged order list contains all the pegged orders in the system
 	// whether they are parked or live. Check this list of a matching order
-	for _, order := range m.peggedOrders {
-		if order.Id == orderID {
-			return order, false, nil
-		}
+	if o := m.peggedOrders.GetByID(orderID); o != nil {
+		return o, false, nil
 	}
+	// for _, order := range m.peggedOrders {
+	// 	if order.Id == orderID {
+	// 		return order, false, nil
+	// 	}
+	// }
 
 	// We couldn't find it
 	return nil, false, ErrOrderNotFound

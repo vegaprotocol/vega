@@ -153,6 +153,21 @@ func (e *Engine) RemovePending(party string) {
 	delete(e.pendings, party)
 }
 
+func (e *Engine) GetAllLiquidityOrders() []*types.Order {
+	orders := []*types.Order{}
+	for _, v := range e.liquidityOrders {
+		for _, o := range v {
+			orders = append(orders, o)
+		}
+	}
+
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].Id < orders[j].Id
+	})
+
+	return orders
+}
+
 func (e *Engine) GetLiquidityOrders(party string) []*types.Order {
 	orders := []*types.Order{}
 	for _, v := range e.liquidityOrders[party] {
@@ -174,7 +189,8 @@ func (e *Engine) GetInactiveParties() map[string]struct{} {
 }
 
 func (e *Engine) stopLiquidityProvision(
-	ctx context.Context, party string, status types.LiquidityProvision_Status) ([]*types.Order, error) {
+	ctx context.Context, party string, status types.LiquidityProvision_Status,
+) ([]*types.Order, error) {
 	lp := e.provisions[party]
 	if lp == nil {
 		return nil, errors.New("party have no liquidity provision orders")
