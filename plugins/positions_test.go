@@ -69,7 +69,7 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	assert.NotZero(t, len(pp))
 	// average entry price should be 1k
 	// initially calculation say the RealisedPNL should be 1000
-	assert.Equal(t, num.NewDecimalFromFloat(1000).String(), pp[0].RealisedPnl.String())
+	assert.Equal(t, "1000", pp[0].RealisedPnl.String())
 
 	// then we process the event for LossSocialization
 	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, num.NewUint(300), true, 1)

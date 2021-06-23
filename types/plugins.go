@@ -6,8 +6,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-//type Position = proto.Position
-
 type Position struct {
 	// Market identifier
 	MarketId string
