@@ -104,7 +104,7 @@ func (r transferRow) FromAccount() types.AccountType {
 }
 
 func (r transferRow) FromAccountID() string {
-	return accountID(r.MarketID(), r.From(), r.Asset(), r.FromAccount())
+	return AccountID(r.MarketID(), r.From(), r.Asset(), r.FromAccount())
 }
 
 func (r transferRow) To() string {
@@ -116,7 +116,7 @@ func (r transferRow) ToAccount() types.AccountType {
 }
 
 func (r transferRow) ToAccountID() string {
-	return accountID(r.MarketID(), r.To(), r.Asset(), r.ToAccount())
+	return AccountID(r.MarketID(), r.To(), r.Asset(), r.ToAccount())
 }
 
 func (r transferRow) MarketID() string {
