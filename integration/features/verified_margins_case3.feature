@@ -7,8 +7,8 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value   |
       | prices.ETH.value | 9400000 |
@@ -22,11 +22,11 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price    | resulting trades | type        | tif     | reference      |
-      | aux     | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT  | TIF_GTC | cancel-me-buy  |
-      | aux     | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT  | TIF_GTC | cancel-me-sell |
-      | aux     | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-1        |
-      | aux2    | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-1        |
+      | trader | market id | side | volume | price    | resulting trades | type       | tif     | reference      |
+      | aux    | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-buy  |
+      | aux    | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-sell |
+      | aux    | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1        |
+      | aux2   | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1        |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "10300000" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"

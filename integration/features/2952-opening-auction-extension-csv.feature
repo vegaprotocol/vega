@@ -103,7 +103,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     # Check MTM Loss transfer happened
     Then the following transfers should happen:
       | from    | to     | from account         | to account              | market id | amount | asset |
-      | trader3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 650575  | ETH   |
+      | trader3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 650575 | ETH   |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1574328 | 991375672 |

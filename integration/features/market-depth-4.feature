@@ -6,8 +6,8 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -68,7 +68,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | pegged4 | ETH/DEC19 | buy  | 500    | MID       | -10    | 90    | STATUS_ACTIVE |
 ##  Cancel some pegged events, and clear order event buffer so we can ignore the events we checked above
     When the traders cancel all their orders for the markets:
-      | trader  | market id  |
+      | trader  | market id |
       | pegged1 | ETH/DEC19 |
       | pegged3 | ETH/DEC19 |
       | pegged2 | ETH/DEC19 |

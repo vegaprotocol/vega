@@ -6,8 +6,8 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
@@ -26,11 +26,11 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference |
-      | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-1   |
-      | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-1   |
-      | t2_aux | ETH/DEC19 | buy  | 1      | 20    | 0                | TYPE_LIMIT  | TIF_GTC | aux-b-2   |
-      | tt_aux | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT  | TIF_GTC | aux-s-2   |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
+      | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      | t2_aux | ETH/DEC19 | buy  | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
+      | tt_aux | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
     Then the opening auction period ends for market "ETH/DEC19"
 
     # place orders and generate trades

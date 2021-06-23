@@ -18,11 +18,11 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
       | aux2       | ETH   | 1000000000 |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price    | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux2    | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price    | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "10300000" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -37,13 +37,13 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     # setting order book
     And the traders place the following orders:
       | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0      | TYPE_LIMIT | TIF_GTC | _sell1    |
-      | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0      | TYPE_LIMIT | TIF_GTC | _sell2    |
-      | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0      | TYPE_LIMIT | TIF_GTC | _sell3    |
-      | buySideMM  | ETH/DEC19 | buy  | 1      | 10000000 | 0      | TYPE_LIMIT | TIF_GTC | buy1      |
-      | buySideMM  | ETH/DEC19 | buy  | 3      | 9600000  | 0      | TYPE_LIMIT | TIF_GTC | buy2      |
-      | buySideMM  | ETH/DEC19 | buy  | 15     | 8000000  | 0      | TYPE_LIMIT | TIF_GTC | _buy3     |
-      | buySideMM  | ETH/DEC19 | buy  | 50     | 7700000  | 0      | TYPE_LIMIT | TIF_GTC | _buy4     |
+      | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | _sell1    |
+      | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | _sell2    |
+      | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | _sell3    |
+      | buySideMM  | ETH/DEC19 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | buy1      |
+      | buySideMM  | ETH/DEC19 | buy  | 3      | 9600000  | 0                | TYPE_LIMIT | TIF_GTC | buy2      |
+      | buySideMM  | ETH/DEC19 | buy  | 15     | 8000000  | 0                | TYPE_LIMIT | TIF_GTC | _buy3     |
+      | buySideMM  | ETH/DEC19 | buy  | 50     | 7700000  | 0                | TYPE_LIMIT | TIF_GTC | _buy4     |
 
 
   Scenario:

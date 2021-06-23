@@ -6,8 +6,8 @@ Feature: Ensure network trader are generated
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -48,8 +48,8 @@ Feature: Ensure network trader are generated
       | trader          | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 400    | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
     And the traders cancel the following orders:
-      | trader          | reference      |
-      | aux2            | aux-b-2        |
+      | trader | reference |
+      | aux2   | aux-b-2   |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
 # insurance pool generation - set new mark price (and trigger closeout)
