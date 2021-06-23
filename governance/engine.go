@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
@@ -132,7 +131,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 }
 
-func (e *Engine) preEnactProposal(p *proto.Proposal) (te *ToEnact, perr proto.ProposalError, err error) {
+func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.ProposalError, err error) {
 	te = &ToEnact{
 		p: p,
 	}
@@ -143,12 +142,12 @@ func (e *Engine) preEnactProposal(p *proto.Proposal) (te *ToEnact, perr proto.Pr
 		}
 	}()
 	switch change := p.Terms.Change.(type) {
-	case *proto.ProposalTerms_NewMarket:
+	case *types.ProposalTerms_NewMarket:
 		te.m = &ToEnactMarket{}
-	case *proto.ProposalTerms_UpdateNetworkParameter:
+	case *types.ProposalTerms_UpdateNetworkParameter:
 		te.n = change.UpdateNetworkParameter.Changes
-	case *proto.ProposalTerms_NewAsset:
-		asset, err := e.assets.Get(p.GetId())
+	case *types.ProposalTerms_NewAsset:
+		asset, err := e.assets.Get(p.Id)
 		if err != nil {
 			return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 		}
@@ -157,12 +156,12 @@ func (e *Engine) preEnactProposal(p *proto.Proposal) (te *ToEnact, perr proto.Pr
 	return
 }
 
-func (e *Engine) preVoteClosedProposal(p *proto.Proposal) *VoteClosed {
+func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
 	vc := &VoteClosed{
 		p: p,
 	}
 	switch p.Terms.Change.(type) {
-	case *proto.ProposalTerms_NewMarket:
+	case *types.ProposalTerms_NewMarket:
 		startAuction := true
 		if p.State != proto.Proposal_STATE_PASSED {
 			startAuction = false
@@ -262,7 +261,7 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 // Only open can be submitted and validated at this point. No further validation happens.
 func (e *Engine) SubmitProposal(
 	ctx context.Context,
-	psub commandspb.ProposalSubmission,
+	psub types.ProposalSubmission,
 	id, party string,
 ) (ts *ToSubmit, err error) {
 
@@ -270,7 +269,7 @@ func (e *Engine) SubmitProposal(
 		return nil, ErrProposalIsDuplicate // state is not allowed to change externally
 	}
 
-	p := proto.Proposal{
+	p := types.Proposal{
 		Id:        id,
 		Timestamp: e.currentTime.UnixNano(),
 		PartyId:   party,
@@ -310,7 +309,7 @@ func (e *Engine) SubmitProposal(
 }
 
 func (e *Engine) RejectProposal(
-	ctx context.Context, p *proto.Proposal, r proto.ProposalError, errorDetails error,
+	ctx context.Context, p *types.Proposal, r types.ProposalError, errorDetails error,
 ) error {
 	if _, ok := e.getProposal(p.Id); !ok {
 		return ErrProposalDoesNotExists
@@ -321,20 +320,20 @@ func (e *Engine) RejectProposal(
 	return nil
 }
 
-func (e *Engine) rejectProposal(p *proto.Proposal, r proto.ProposalError, errorDetails error) {
+func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorDetails error) {
 	e.removeProposal(p.Id)
 	p.ErrorDetails = errorDetails.Error()
 	p.Reason = r
-	p.State = proto.Proposal_STATE_REJECTED
+	p.State = types.Proposal_STATE_REJECTED
 }
 
 // toSubmit build the return response for the SubmitProposal
 // method
-func (e *Engine) intoToSubmit(p *proto.Proposal) (*ToSubmit, error) {
+func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
 	switch change := p.Terms.Change.(type) {
-	case *proto.ProposalTerms_NewMarket:
+	case *types.ProposalTerms_NewMarket:
 		// use to calculate the auction duration
 		// which is basically enacttime - closetime
 		// FIXME(): normally we should use the closetime
@@ -352,7 +351,7 @@ func (e *Engine) intoToSubmit(p *proto.Proposal) (*ToSubmit, error) {
 			m: mkt,
 		}
 		if change.NewMarket.LiquidityCommitment != nil {
-			tsb.m.l = commandspb.LiquidityProvisionSubmissionFromMarketCommitment(
+			tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
 				change.NewMarket.LiquidityCommitment, p.Id)
 		}
 	}
@@ -360,7 +359,7 @@ func (e *Engine) intoToSubmit(p *proto.Proposal) (*ToSubmit, error) {
 	return tsb, nil
 }
 
-func (e *Engine) startProposal(p *proto.Proposal) {
+func (e *Engine) startProposal(p *types.Proposal) {
 	e.activeProposals = append(e.activeProposals, &proposal{
 		Proposal: p,
 		yes:      map[string]*types.Vote{},
@@ -368,21 +367,21 @@ func (e *Engine) startProposal(p *proto.Proposal) {
 	})
 }
 
-func (e *Engine) startTwoStepsProposal(p *proto.Proposal) error {
+func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
 	return e.nodeProposalValidation.Start(p)
 }
 
-func (e *Engine) isTwoStepsProposal(p *proto.Proposal) bool {
+func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 	return e.nodeProposalValidation.IsNodeValidationRequired(p)
 }
 
-func (e *Engine) getProposalParams(terms *proto.ProposalTerms) (*ProposalParameters, error) {
+func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
 	switch terms.Change.(type) {
-	case *proto.ProposalTerms_NewMarket:
+	case *types.ProposalTerms_NewMarket:
 		return e.getNewMarketProposalParameters()
-	case *proto.ProposalTerms_NewAsset:
+	case *types.ProposalTerms_NewAsset:
 		return e.getNewAssetProposalParameters()
-	case *proto.ProposalTerms_UpdateNetworkParameter:
+	case *types.ProposalTerms_UpdateNetworkParameter:
 		return e.getUpdateNetworkParameterProposalParameters()
 	default:
 		return nil, ErrUnsupportedProposalType
@@ -390,13 +389,13 @@ func (e *Engine) getProposalParams(terms *proto.ProposalTerms) (*ProposalParamet
 }
 
 // validates proposals read from the chain
-func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalError, error) {
+func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalError, error) {
 	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
 		// FIXME(): not checking the error here
 		// we return unspecified here because not getting proposal
 		// params is not possible, the check done before needs to be removed
-		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 
 	closeTime := time.Unix(proposal.Terms.ClosingTimestamp, 0)
@@ -406,7 +405,7 @@ func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalEr
 			logging.Time("expected-min", minCloseTime),
 			logging.Time("provided", closeTime),
 			logging.String("id", proposal.Id))
-		return proto.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON,
+		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON,
 			fmt.Errorf("proposal closing time too soon, expected > %v, got %v", minCloseTime, closeTime)
 	}
 
@@ -416,7 +415,7 @@ func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalEr
 			logging.Time("expected-max", maxCloseTime),
 			logging.Time("provided", closeTime),
 			logging.String("id", proposal.Id))
-		return proto.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE,
+		return types.ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE,
 			fmt.Errorf("proposal closing time too late, expected < %v, got %v", maxCloseTime, closeTime)
 	}
 
@@ -427,7 +426,7 @@ func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalEr
 			logging.Time("expected-min", minEnactTime),
 			logging.Time("provided", enactTime),
 			logging.String("id", proposal.Id))
-		return proto.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON,
+		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON,
 			fmt.Errorf("proposal enactment time too soon, expected > %v, got %v", minEnactTime, enactTime)
 	}
 
@@ -437,7 +436,7 @@ func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalEr
 			logging.Time("expected-max", maxEnactTime),
 			logging.Time("provided", enactTime),
 			logging.String("id", proposal.Id))
-		return proto.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE,
+		return types.ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE,
 			fmt.Errorf("proposal enactment time too late, expected < %v, got %v", maxEnactTime, enactTime)
 	}
 
@@ -448,7 +447,7 @@ func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalEr
 				logging.Time("closing-time", closeTime),
 				logging.Time("validation-time", validationTime),
 				logging.String("id", proposal.Id))
-			return proto.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS,
+			return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS,
 				fmt.Errorf("proposal closing time cannot be before validation time, expected > %v got %v", validationTime, closeTime)
 		}
 	}
@@ -458,7 +457,7 @@ func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalEr
 			logging.Time("enactment-time", enactTime),
 			logging.Time("closing-time", closeTime),
 			logging.String("id", proposal.Id))
-		return proto.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS,
+		return types.ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS,
 			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
 	}
 
@@ -475,7 +474,7 @@ func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalEr
 		e.log.Debug("proposer have no governance token",
 			logging.PartyID(proposal.PartyId),
 			logging.ProposalID(proposal.Id))
-		return proto.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
+		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
 	if proposerTokens.LT(params.MinProposerBalance) {
 		e.log.Debug("proposer have insufficient governance token",
@@ -483,16 +482,16 @@ func (e *Engine) validateOpenProposal(proposal proto.Proposal) (proto.ProposalEr
 			logging.String("proposer-balance", proposerTokens.String()),
 			logging.PartyID(proposal.PartyId),
 			logging.ProposalID(proposal.Id))
-		return proto.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS,
+		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS,
 			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", params.MinProposerBalance, proposerTokens)
 	}
 	return e.validateChange(proposal.Terms)
 }
 
 // validates proposed change
-func (e *Engine) validateChange(terms *proto.ProposalTerms) (proto.ProposalError, error) {
+func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch change := terms.Change.(type) {
-	case *proto.ProposalTerms_NewMarket:
+	case *types.ProposalTerms_NewMarket:
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
 
@@ -500,17 +499,17 @@ func (e *Engine) validateChange(terms *proto.ProposalTerms) (proto.ProposalError
 		if err != nil {
 			return perr, err
 		}
-		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
-	case *proto.ProposalTerms_NewAsset:
+		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	case *types.ProposalTerms_NewAsset:
 		return validateNewAsset(change.NewAsset.Changes)
-	case *proto.ProposalTerms_UpdateNetworkParameter:
+	case *types.ProposalTerms_UpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, change.UpdateNetworkParameter.Changes)
 	}
-	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
-func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, party string) error {
+func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
 	if err := commands.CheckVoteSubmission(&cmd); err != nil {
 		return err
 	}
@@ -544,11 +543,11 @@ func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, par
 	return nil
 }
 
-func (e *Engine) validateVote(vote commandspb.VoteSubmission, party string) (*proposal, error) {
+func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposal, error) {
 	proposal, found := e.getProposal(vote.ProposalId)
 	if !found {
 		return nil, ErrProposalNotFound
-	} else if proposal.State == proto.Proposal_STATE_PASSED {
+	} else if proposal.State == types.Proposal_STATE_PASSED {
 		return nil, ErrProposalPassed
 	}
 
@@ -588,9 +587,9 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 
 	finalState := proposal.Close(asset, params, e.accs)
 
-	if finalState == proto.Proposal_STATE_PASSED {
+	if finalState == types.Proposal_STATE_PASSED {
 		e.log.Debug("Proposal passed", logging.ProposalID(proposal.Id))
-	} else if finalState == proto.Proposal_STATE_DECLINED {
+	} else if finalState == types.Proposal_STATE_DECLINED {
 		e.log.Debug("Proposal declined", logging.ProposalID(proposal.Id))
 	}
 
@@ -632,16 +631,16 @@ func (e *Engine) mustGetGovernanceVoteAsset() string {
 }
 
 type proposal struct {
-	*proto.Proposal
+	*types.Proposal
 	yes map[string]*types.Vote
 	no  map[string]*types.Vote
 }
 
 func (p *proposal) IsOpen() bool {
-	return p.State == proto.Proposal_STATE_OPEN
+	return p.State == types.Proposal_STATE_OPEN
 }
 
-func (p *proposal) Close(asset string, params *ProposalParameters, accounts Accounts) proto.Proposal_State {
+func (p *proposal) Close(asset string, params *ProposalParameters, accounts Accounts) types.Proposal_State {
 	if !p.IsOpen() {
 		return p.State
 	}
@@ -696,15 +695,13 @@ func getTokensBalance(accounts Accounts, partyID, voteAsset string) *num.Uint {
 	return balance
 }
 
-// FIXME Should be a `Uint.Clone()` of account.Balance. We will update it when
-//  collateral package is migrated.
 func getGovernanceTokens(accounts Accounts, party, voteAsset string) (*num.Uint, error) {
 	account, err := accounts.GetPartyGeneralAccount(party, voteAsset)
 	if err != nil {
 		return nil, err
 	}
 	// no need to clone here, as GetPartyGeneralAccount already returns a copy with cloned balance
-	return account.Balance, err
+	return account.Balance.Clone(), err
 }
 
 func getAssetTotalSupply(accounts Accounts, asset string) (*num.Uint, error) {

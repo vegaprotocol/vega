@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (

@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/nodewallet"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -427,7 +427,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return "", "", "", 0, 0, err
 	}
 
-	depamount, _ := new(big.Int).SetString(d.Amount, 10)
+	depamount := d.Amount.BigInt()
 	defer iter.Close()
 	var event *bridge.BridgeAssetDeposited
 	for iter.Next() {
