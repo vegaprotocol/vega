@@ -494,7 +494,10 @@ func (e *Engine) createOrUpdateForParty(
 	bestBidPrice, bestAskPrice uint64,
 	party string,
 	repriceFn RepricePeggedOrder,
-) ([]*types.Order, *ToCancel, error) {
+) (ordres []*types.Order, _ *ToCancel, errr error) {
+	defer func() {
+		fmt.Printf("len(%v) - ERROR: %v\n", len(ordres), errr)
+	}()
 	lp := e.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return nil, nil, nil
@@ -516,6 +519,7 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    buy.OrderId,
 			Proportion: uint64(buy.LiquidityOrder.Proportion),
 		}
+		fmt.Printf("REPRICING: %v\n", buy.OrderId)
 		if price, peggedO, err := repriceFn(pegged, types.Side_SIDE_BUY); err != nil {
 			e.log.Debug("Building Buy Shape", logging.Error(err))
 			repriceFailure = true
@@ -535,6 +539,7 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    sell.OrderId,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
 		}
+		fmt.Printf("REPRICING: %v\n", sell.OrderId)
 		if price, peggedO, err := repriceFn(pegged, types.Side_SIDE_SELL); err != nil {
 			e.log.Debug("Building Sell Shape", logging.Error(err))
 			repriceFailure = true
@@ -685,7 +690,7 @@ func (e *Engine) createOrdersFromShape(
 			ref = lp.Sells[i]
 		}
 
-		if order != nil && (order.HasTraded() || order.Size != o.LiquidityImpliedVolume) {
+		if order != nil && (order.HasTraded() || order.Size != o.LiquidityImpliedVolume || order.Price != o.Price) {
 			// we always remove the order from our store, and add it to the amendment
 
 			// only amend if order remaining > 0

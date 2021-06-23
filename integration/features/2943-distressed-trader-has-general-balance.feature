@@ -70,10 +70,10 @@ Feature: Distressed traders should not have general balance left
       | id  | party   | market    | commitment amount | status        |
       | lp1 | trader3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |
 
-    Then the pegged orders should have the following states:
-      | trader  | market id | side | volume | reference | offset | price | status        |
-      | trader3 | ETH/DEC20 | buy  | 945    | BID       | -10    | 100   | STATUS_ACTIVE |
-      | trader3 | ETH/DEC20 | sell | 724    | ASK       | 10     | 130   | STATUS_ACTIVE |
+    Then the orders should have the following states:
+      | trader  | market id | side | volume | price | status        |
+      | trader3 | ETH/DEC20 | buy  | 945    | 100   | STATUS_ACTIVE |
+      | trader3 | ETH/DEC20 | sell | 724    | 130   | STATUS_ACTIVE |
     ## The sum of the margin + general account == 10000 - 10000 (commitment amount)
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
@@ -87,8 +87,7 @@ Feature: Distressed traders should not have general balance left
 
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC20 | 12606  | 1394    |
-      # expected balances to be margin(15165) general(0), instead saw margin(13186), general(814), (trader: trader3)
+      | trader3 | ETH   | ETH/DEC20 | 15127  | 0       |
 
     ## Now let's increase the mark price so trader3 gets distressed
     When the traders place the following orders:

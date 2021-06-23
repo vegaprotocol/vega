@@ -198,7 +198,8 @@ func (m *Market) enterAuctionSpecialOrders(
 	// method always return nil anyway
 	// TODO: API to be changed someday as we don't need to cancel anything
 	// now, we assume that all that were required to be cancelled already are.
-	orderUpdates, _ := m.updateAndCreateLPOrders(ctx, []*types.Order{}, cancels)
+	orderUpdates, _ := m.updateAndCreateLPOrders(
+		ctx, []*types.Order{}, cancels, []*types.Order{})
 	return orderUpdates
 }
 
@@ -210,6 +211,20 @@ func (m *Market) updateLPOrders(
 ) []*types.Order {
 	cancelIDs := map[string]struct{}{}
 
+	// fmt.Printf("SUBMITS:\n")
+	// for _, v := range submits {
+	// 	fmt.Printf("%#v\n", v.String())
+	// }
+	// fmt.Printf("CANCELS:\n")
+	// for _, v := range cancels {
+	// 	fmt.Printf("%#v -> %#v\n", v.Party, v.OrderIDs)
+	// }
+	// fmt.Printf("ALLS:\n")
+	// for _, v := range allOrders {
+	// 	fmt.Printf("%#v\n", v.String())
+	// }
+	// m.matching.PrintState("LOL")
+
 	// now we gonna map all the all order which
 	// where to be cancelled, and just do nothing in
 	// those case.
@@ -219,11 +234,21 @@ func (m *Market) updateLPOrders(
 		}
 	}
 
+	// this is a list of order which a LP distressed
+	var (
+		orders  []*types.Order
+		parties = map[string]struct{}{}
+	)
+
 	// now we iterate over all the orders which
 	// were initially cancelled, and remove them
 	// from the list if the liquidity engine instructed to
 	// cancel them
 	for _, order := range allOrders {
+		if _, ok := parties[order.PartyId]; ok {
+			// party is distressed, not processing
+			continue
+		}
 		// set the status to active again
 		order.Status = types.Order_STATUS_ACTIVE
 		// these orders were submitted exactly the same before,
@@ -232,8 +257,13 @@ func (m *Market) updateLPOrders(
 		if _, ok := cancelIDs[order.Id]; !ok {
 			conf, _, err := m.submitOrder(ctx, order, false)
 			if err != nil {
-				m.log.Panic("lp should be able to re-submit the orders now",
-					logging.Error(err))
+				// lp cannot submit the order with a margin check failed
+				// we add the order to the list and not do not process any others of
+				// this party orders
+				orders = append(orders, order)
+				parties[order.PartyId] = struct{}{}
+				// m.log.Panic("should be able to re-submit the orders now",
+				// 	logging.Error(err), logging.Order(*order))
 			} else if len(conf.Trades) > 0 {
 				m.log.Panic("submitting liquidity orders after a reprice should never trade",
 					logging.Order(*order))
@@ -246,6 +276,6 @@ func (m *Market) updateLPOrders(
 	// TODO: API to be changed someday as we don't need to cancel anything
 	// now, we assume that all that were required to be cancelled already are.
 	orderUpdates, _ := m.updateAndCreateLPOrders(
-		ctx, submits, []*liquidity.ToCancel{})
+		ctx, submits, []*liquidity.ToCancel{}, orders)
 	return orderUpdates
 }

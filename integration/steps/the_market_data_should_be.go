@@ -67,14 +67,14 @@ func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.D
 	for _, i := range i64Set {
 		e, g := cmp.i64Map[i], parsed.i64Map[i]
 		if *e != *g {
-			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead fot '%d'", *e, i, *g))
+			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead got '%d'", *e, i, *g))
 		}
 	}
 	// compare times, which is basically identical to comparing i64
 	for _, i := range tSet {
 		e, g := cmp.tMap[i], parsed.tMap[i]
 		if *e != *g {
-			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead fot '%d'", *e, i, *g))
+			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead got '%d'", *e, i, *g))
 		}
 	}
 	// compare strings

@@ -219,6 +219,7 @@ func (m *Market) updateAndCreateLPOrders(
 	ctx context.Context,
 	newOrders []*types.Order,
 	cancels []*liquidity.ToCancel,
+	distressed []*types.Order,
 ) ([]*types.Order, error) {
 
 	market := m.GetID()
@@ -247,6 +248,12 @@ func (m *Market) updateAndCreateLPOrders(
 	initialMargins := map[string]uint64{}
 	var orderUpdates []*types.Order
 
+	// first add all party which are already distressed here
+	for _, v := range distressed {
+		faultyLPOrders[v.PartyId] = v
+		faultyLPs[v.PartyId] = true
+	}
+
 	mktID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
 	for _, order := range newOrders {
@@ -267,6 +274,9 @@ func (m *Market) updateAndCreateLPOrders(
 			// be patient...
 			continue
 		}
+		md := m.GetMarketData()
+		fmt.Printf("\nMARKET DATA: %#v\n", md.String())
+		// m.matching.PrintState("LOL")
 		conf, orderUpdts, err := m.submitOrder(ctx, order, false)
 		if err != nil {
 			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
@@ -279,6 +289,11 @@ func (m *Market) updateAndCreateLPOrders(
 			faultyLPOrders[order.PartyId] = order
 			continue
 		} else if len(conf.Trades) > 0 {
+			md := m.GetMarketData()
+			fmt.Printf("\nMARKET DATA: %#v\n", md.String())
+			for _, v := range conf.Trades {
+				fmt.Printf("%#v\n", v.String())
+			}
 			m.log.Panic("submitting liquidity orders after a reprice should never trade",
 				logging.Order(*order))
 		}
@@ -547,6 +562,7 @@ func (m *Market) repriceLiquidityOrder(
 	switch po.Reference {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
 		price, err = m.getStaticMidPrice(side)
+		fmt.Printf("STATIC MID: %d\n", price)
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
 		price, err = m.getBestStaticBidPrice()
 	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
@@ -558,7 +574,11 @@ func (m *Market) repriceLiquidityOrder(
 	return m.adjustPriceRange(po, side, price)
 }
 
-func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price uint64) (uint64, *types.PeggedOrder, error) {
+func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price uint64) (p uint64, _ *types.PeggedOrder, _ error) {
+	fmt.Printf("price: %d -> %#v\n", price, po)
+	defer func() {
+		fmt.Printf("final price: %d\n", p)
+	}()
 	// now from here, we will be adjusting the offset
 	// to ensure the price is always in the range [minPrice, maxPrice]
 	// from the price monitoring engine.
