@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -73,7 +74,7 @@ func (e *Engine) getProposalParametersFromNetParams(
 }
 
 func validateNetworkParameterUpdate(
-	netp NetParams, np *proto.NetworkParameter) (proto.ProposalError, error) {
+	netp NetParams, np *types.NetworkParameter) (proto.ProposalError, error) {
 	if len(np.Key) <= 0 {
 		return proto.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, ErrEmptyNetParamKey
 	}

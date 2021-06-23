@@ -3,8 +3,6 @@ package governance
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -63,23 +61,23 @@ func (t *ToEnact) NewMarket() *ToEnactMarket {
 	return t.m
 }
 
-func (t *ToEnact) NewAsset() *proto.Asset {
+func (t *ToEnact) NewAsset() *types.Asset {
 	return t.a
 }
 
-func (t *ToEnact) NewAssetDetails() *proto.AssetDetails {
+func (t *ToEnact) NewAssetDetails() *types.AssetDetails {
 	return t.as
 }
 
-func (t *ToEnact) UpdateNetworkParameter() *proto.NetworkParameter {
+func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 	return t.n
 }
 
-func (t *ToEnact) UpdateMarket() *proto.UpdateMarket {
+func (t *ToEnact) UpdateMarket() *types.UpdateMarket {
 	return t.u
 }
 
-func (t *ToEnact) Proposal() *proto.Proposal {
+func (t *ToEnact) Proposal() *types.Proposal {
 	return t.p
 }
 
@@ -88,11 +86,11 @@ func (t *ToEnact) Proposal() *proto.Proposal {
 // This cover every kind of proposal which requires action after a
 // a proposal is submitted
 type ToSubmit struct {
-	p *proto.Proposal
+	p *types.Proposal
 	m *ToSubmitNewMarket
 }
 
-func (t *ToSubmit) Proposal() *proto.Proposal {
+func (t *ToSubmit) Proposal() *types.Proposal {
 	return t.p
 }
 
@@ -105,15 +103,15 @@ func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
 }
 
 type ToSubmitNewMarket struct {
-	m *proto.Market
-	l *commandspb.LiquidityProvisionSubmission
+	m *types.Market
+	l *types.LiquidityProvisionSubmission
 }
 
-func (t *ToSubmitNewMarket) Market() *proto.Market {
+func (t *ToSubmitNewMarket) Market() *types.Market {
 	return t.m
 }
 
-func (t *ToSubmitNewMarket) LiquidityProvisionSubmission() *commandspb.LiquidityProvisionSubmission {
+func (t *ToSubmitNewMarket) LiquidityProvisionSubmission() *types.LiquidityProvisionSubmission {
 	return t.l
 }
 
@@ -122,7 +120,7 @@ type VoteClosed struct {
 	m *NewMarketVoteClosed
 }
 
-func (t *VoteClosed) Proposal() *proto.Proposal {
+func (t *VoteClosed) Proposal() *types.Proposal {
 	return t.p
 }
 
