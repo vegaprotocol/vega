@@ -133,7 +133,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 }
 
 // IsNodeValidationRequired returns true if the given proposal require validation from a node.
-func (n *NodeValidation) IsNodeValidationRequired(p *proto.Proposal) bool {
+func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	switch p.Terms.Change.(type) {
 	case *proto.ProposalTerms_NewAsset:
 		return true
@@ -143,7 +143,7 @@ func (n *NodeValidation) IsNodeValidationRequired(p *proto.Proposal) bool {
 }
 
 // Start the node validation of a proposal
-func (n *NodeValidation) Start(p *proto.Proposal) error {
+func (n *NodeValidation) Start(p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
 		n.log.Error("no node validation required", logging.String("ref", p.Id))
 		return ErrNoNodeValidationRequired
@@ -173,9 +173,9 @@ func (n *NodeValidation) Start(p *proto.Proposal) error {
 		np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
 }
 
-func (n *NodeValidation) getChecker(p *proto.Proposal) (func() error, error) {
+func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 	switch change := p.Terms.Change.(type) {
-	case *proto.ProposalTerms_NewAsset:
+	case *types.ProposalTerms_NewAsset:
 		assetID, err := n.assets.NewAsset(p.Id,
 			change.NewAsset.GetChanges())
 		if err != nil {
@@ -219,7 +219,7 @@ func (n *NodeValidation) checkAsset(assetID string) error {
 	return nil
 }
 
-func (n *NodeValidation) checkProposal(prop *proto.Proposal) error {
+func (n *NodeValidation) checkProposal(prop *types.Proposal) error {
 	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
 		return ErrProposalValidationTimestampInvalid
 	}
