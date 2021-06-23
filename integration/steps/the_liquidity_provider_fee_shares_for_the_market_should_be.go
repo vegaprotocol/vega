@@ -15,7 +15,7 @@ func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine *execution.Engine,
 		return errMarketDataNotFound(marketID, err)
 	}
 
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseLiquidityFeeSharesTable(table) {
 		expected := types.LiquidityProviderFeeShare{
 			Party:                 row.MustStr("party"),
 			EquityLikeShare:       row.MustStr("equity like share"),
@@ -46,4 +46,12 @@ func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine *execution.Engine,
 
 func errMissingLPFeeShare(market string, expected types.LiquidityProviderFeeShare, got []types.LiquidityProviderFeeShare) error {
 	return fmt.Errorf("missing fee share for market %s got %#v, want %#v", market, expected, got)
+}
+
+func parseLiquidityFeeSharesTable(table *gherkin.DataTable) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"party",
+		"equity like share",
+		"average entry valuation",
+	}, []string{})
 }

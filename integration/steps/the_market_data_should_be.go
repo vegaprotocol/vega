@@ -106,7 +106,7 @@ func cmpLPFeeShare(expect *MappedMD, got types.MarketData) []error {
 		for _, g := range got.LiquidityProviderFeeShare {
 			if lpfs.Party == g.Party {
 				found = g
-				match = (lpfs.AverageEntryValuation == g.AverageEntryValuation && lpfs.EquityLikeShare == g.EquityLikeShare)
+				match = lpfs.AverageEntryValuation == g.AverageEntryValuation && lpfs.EquityLikeShare == g.EquityLikeShare
 				break
 			}
 		}
@@ -139,7 +139,7 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 		for _, g := range got.PriceMonitoringBounds {
 			if g.Trigger.Horizon == pmb.Trigger.Horizon {
 				bounds = g
-				match = (pmb.MaxValidPrice == g.MaxValidPrice && pmb.MinValidPrice == g.MinValidPrice)
+				match = pmb.MaxValidPrice == g.MaxValidPrice && pmb.MinValidPrice == g.MinValidPrice
 				break
 			}
 		}
@@ -165,7 +165,7 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 }
 
 func getPriceBounds(data *gherkin.DataTable) (ret []*types.PriceMonitoringBounds) {
-	for _, row := range TableWrapper(*data).Parse() {
+	for _, row := range ParseTable(data) {
 		h, ok := row.I64B("horizon")
 		if !ok {
 			return nil
@@ -183,7 +183,7 @@ func getPriceBounds(data *gherkin.DataTable) (ret []*types.PriceMonitoringBounds
 }
 
 func getLPFeeShare(data *gherkin.DataTable) (ret []*types.LiquidityProviderFeeShare) {
-	for _, r := range TableWrapper(*data).Parse() {
+	for _, r := range ParseTable(data) {
 		avg, ok := r.StrB("average entry valuation")
 		if !ok {
 			return nil
@@ -203,7 +203,7 @@ func (m *MappedMD) parseSpecial(data *gherkin.DataTable) {
 		"auction trigger":   {},
 		"extension trigger": {},
 	}
-	for _, r := range TableWrapper(*data).Parse() {
+	for _, r := range ParseTable(data) {
 		for k := range todo {
 			if _, ok := r.StrB(k); ok {
 				switch k {
@@ -229,7 +229,7 @@ func (m *MappedMD) parseSpecial(data *gherkin.DataTable) {
 // parses the data, and returns a slice of keys for the values that were provided
 func (m *MappedMD) parseU64(data *gherkin.DataTable) []string {
 	set := make([]string, 0, len(m.u64Map))
-	for _, r := range TableWrapper(*data).Parse() {
+	for _, r := range ParseTable(data) {
 		for k, ptr := range m.u64Map {
 			if u, ok := r.U64B(k); ok {
 				*ptr = u
@@ -247,7 +247,7 @@ func (m *MappedMD) parseTimes(data *gherkin.DataTable) []string {
 	// does some trickery WRT auction end time, so we can check if the auction duration is N seconds
 	end, start := int64(0), *m.tMap["auction start"]
 	set := make([]string, 0, len(m.tMap))
-	for _, r := range TableWrapper(*data).Parse() {
+	for _, r := range ParseTable(data) {
 		for k, ptr := range m.tMap {
 			if i, ok := r.I64B(k); ok {
 				if k == "auction end" {
@@ -268,7 +268,7 @@ func (m *MappedMD) parseTimes(data *gherkin.DataTable) []string {
 
 func (m *MappedMD) parseI64(data *gherkin.DataTable) []string {
 	set := make([]string, 0, len(m.i64Map))
-	for _, r := range TableWrapper(*data).Parse() {
+	for _, r := range ParseTable(data) {
 		for k, ptr := range m.i64Map {
 			if i, ok := r.I64B(k); ok {
 				*ptr = i
@@ -283,7 +283,7 @@ func (m *MappedMD) parseI64(data *gherkin.DataTable) []string {
 
 func (m *MappedMD) parseStr(data *gherkin.DataTable) []string {
 	set := make([]string, 0, len(m.strMap))
-	for _, r := range TableWrapper(*data).Parse() {
+	for _, r := range ParseTable(data) {
 		for k, ptr := range m.strMap {
 			if i, ok := r.StrB(k); ok {
 				*ptr = i

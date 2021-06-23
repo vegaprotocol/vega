@@ -8,10 +8,10 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TheFollowingOrdersShouldBeRejected(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
-	var orderNotRejected []string
+func TheFollowingOrdersShouldBeStopped(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+	var orderNotStopped []string
 	count := len(table.Rows) - 1
-	for _, row := range parseRejectedOrdersTable(table) {
+	for _, row := range parseStoppedOrdersTable(table) {
 		trader := row.MustStr("trader")
 		marketID := row.MustStr("market id")
 		reason := row.MustStr("reason")
@@ -20,27 +20,27 @@ func TheFollowingOrdersShouldBeRejected(broker *stubs.BrokerStub, table *gherkin
 		for _, o := range data {
 			v := o.Order()
 			if v.PartyId == trader && v.MarketId == marketID {
-				if v.Status == types.Order_STATUS_REJECTED && v.Reason.String() == reason {
+				if v.Status == types.Order_STATUS_STOPPED && v.Reason.String() == reason {
 					count -= 1
 					continue
 				}
-				orderNotRejected = append(orderNotRejected, v.Reference)
+				orderNotStopped = append(orderNotStopped, v.Reference)
 			}
 		}
 	}
 
 	if count > 0 {
-		return errOrderNotRejected(orderNotRejected)
+		return errOrderNotStopped(orderNotStopped)
 	}
 
 	return nil
 }
 
-func errOrderNotRejected(orderNotRejected []string) error {
-	return fmt.Errorf("orders with reference %v were not rejected", orderNotRejected)
+func errOrderNotStopped(orderNotRejected []string) error {
+	return fmt.Errorf("orders with reference %v were not stopped", orderNotRejected)
 }
 
-func parseRejectedOrdersTable(table *gherkin.DataTable) []RowWrapper {
+func parseStoppedOrdersTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"trader",
 		"market id",

@@ -40,8 +40,8 @@ Feature: Amend orders
       | myboi  | myboi-ref-1 |
 
     Then the traders amend the following orders:
-      | trader | reference   | price | size delta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 2     | 3          | 0         | TIF_GTC | false   |
+      | trader | reference   | price | size delta | tif     | error                        |
+      | myboi  | myboi-ref-1 | 2     | 3          | TIF_GTC | OrderError: Invalid Order ID |
 
   Scenario: Reduce size success and not loosing position in order book
 # setup accounts
@@ -70,8 +70,8 @@ Feature: Amend orders
 
 # reducing size
     Then the traders amend the following orders:
-      | trader | reference   | price | size delta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | -2         | 0         | TIF_GTC | true    |
+      | trader | reference   | price | size delta | tif     |
+      | myboi  | myboi-ref-1 | 0     | -2         | TIF_GTC |
 
 # matching the order now
 # this should match with the size 3 order of myboi
@@ -110,8 +110,8 @@ Feature: Amend orders
 
 # reducing size
     And the traders amend the following orders:
-      | trader | reference   | price | size delta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | 3          | 0         | TIF_GTC | true    |
+      | trader | reference   | price | size delta | tif     |
+      | myboi  | myboi-ref-1 | 0     | 3          | TIF_GTC |
 
 # matching the order now
 # this should match with the size 3 order of myboi
@@ -155,8 +155,8 @@ Feature: Amend orders
 
 # reducing size, remaining goes from 2 to -1, this will cancel
     Then the traders amend the following orders:
-      | trader | reference   | price | size delta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | -3         | 0         | TIF_GTC | true    |
+      | trader | reference   | price | size delta | tif     |
+      | myboi  | myboi-ref-1 | 0     | -3         | TIF_GTC |
 
 # check the order status, it should be cancelled
     And the orders should have the following status:
@@ -188,8 +188,8 @@ Feature: Amend orders
 
 # cannot amend TIF to TIF_FOK so this will be rejected
     Then the traders amend the following orders:
-      | trader | reference   | price | size delta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | 0          | 0         | TIF_FOK | false   |
+      | trader | reference   | price | size delta | tif     | error                                      |
+      | myboi  | myboi-ref-1 | 0     | 0          | TIF_FOK | OrderError: Cannot amend TIF to FOK or IOC |
 
   Scenario: TIF_GTC to TIF_GTT rejected without expiry
 # setup accounts
@@ -208,10 +208,10 @@ Feature: Amend orders
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
-# TIF_GTT rejected because of missing expiresAt
+# TIF_GTT rejected because of missing expiration date
     Then the traders amend the following orders:
-      | trader | reference   | price | size delta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | 0          | 0         | TIF_GTT | false   |
+      | trader | reference   | price | size delta | tif     | error                                                           |
+      | myboi  | myboi-ref-1 | 0     | 0          | TIF_GTT | OrderError: Cannot amend order to GTT without an expiryAt field |
 
   Scenario: TIF_GTC to TIF_GTT with time in the past
 # setup accounts
@@ -237,5 +237,5 @@ Feature: Amend orders
 
 # reducing size, remaining goes from 2 to -1, this will cancel
     Then the traders amend the following orders:
-      | trader | reference   | price | size delta | expiresAt | tif     | success |
-      | myboi  | myboi-ref-1 | 2     | 0          | 10000     | TIF_GTT | false   |
+      | trader | reference   | price | expiration date      | size delta | tif     |
+      | myboi  | myboi-ref-1 | 2     | 2030-11-30T00:00:00Z | 0          | TIF_GTT |

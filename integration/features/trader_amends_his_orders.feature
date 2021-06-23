@@ -38,11 +38,8 @@ Feature: Trader amends his orders
       | trader | reference   |
       | myboi  | myboi-ref-1 |
     And the traders amend the following orders:
-      | trader | reference   | price | size delta | tif     |
-      | myboi  | myboi-ref-1 | 2     | 3          | TIF_GTC |
-    But the following amendments should be rejected:
-      | trader | reference   | error                        |
-      | myboi  | myboi-ref-1 | OrderError: Invalid Order ID |
+      | trader | reference   | price | size delta | tif     | error                        |
+      | myboi  | myboi-ref-1 | 2     | 3          | TIF_GTC | OrderError: Invalid Order ID |
 
   Scenario: Reduce size success and not loosing position in order book
     Given the traders deposit on asset's general account the following amount:
@@ -69,16 +66,13 @@ Feature: Trader amends his orders
       | myboi2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
-    Then the traders amend the following orders:
+    When the traders amend the following orders:
       | trader | reference   | price | size delta | tif     |
       | myboi  | myboi-ref-1 | 0     | -2         | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader | reference   |
-      | myboi  | myboi-ref-1 |
 
 # matching the order now
 # this should match with the size 3 order of myboi
-    Then the traders place the following orders:
+    And the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  | 3      | 2     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
@@ -110,15 +104,12 @@ Feature: Trader amends his orders
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
       | myboi2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
     And the traders amend the following orders:
-      | trader | reference   | price | size delta | tif     | success |
-      | myboi  | myboi-ref-1 | 0     | 3          | TIF_GTC | true    |
-    Then the following amendments should be accepted:
-      | trader | reference   |
-      | myboi  | myboi-ref-1 |
+      | trader | reference   | price | size delta | tif     |
+      | myboi  | myboi-ref-1 | 0     | 3          | TIF_GTC |
 
 # matching the order now
 # this should match with the size 3 order of myboi
-    When the traders place the following orders:
+    And the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  | 3      | 2     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
     Then the following trades should be executed:
@@ -157,10 +148,7 @@ Feature: Trader amends his orders
     And the traders amend the following orders:
       | trader | reference   | price | size delta | tif     |
       | myboi  | myboi-ref-1 | 0     | -3         | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader | reference   |
-      | myboi  | myboi-ref-1 |
-    And the orders should have the following status:
+    Then the orders should have the following status:
       | trader | reference   | status           |
       | myboi  | myboi-ref-1 | STATUS_CANCELLED |
 
@@ -185,12 +173,8 @@ Feature: Trader amends his orders
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
     And the traders amend the following orders:
-      | trader | reference   | price | size delta | tif     |
-      | myboi  | myboi-ref-1 | 0     | 0          | TIF_FOK |
-    But the following amendments should be rejected:
-      | trader | reference   | error                                      |
-      | myboi  | myboi-ref-1 | OrderError: Cannot amend TIF to FOK or IOC |
-
+      | trader | reference   | price | size delta | tif     | error                                      |
+      | myboi  | myboi-ref-1 | 0     | 0          | TIF_FOK | OrderError: Cannot amend TIF to FOK or IOC |
 
   Scenario: TIF_GTC to TIF_GTT rejected without expiry
     Given the traders deposit on asset's general account the following amount:
@@ -207,11 +191,8 @@ Feature: Trader amends his orders
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
     And the traders amend the following orders:
-      | trader | reference   | price | size delta | tif     |
-      | myboi  | myboi-ref-1 | 0     | 0          | TIF_GTT |
-    But the following amendments should be rejected:
-      | trader | reference   | error                                                           |
-      | myboi  | myboi-ref-1 | OrderError: Cannot amend order to GTT without an expiryAt field |
+      | trader | reference   | price | size delta | tif     | error                                                           |
+      | myboi  | myboi-ref-1 | 0     | 0          | TIF_GTT | OrderError: Cannot amend order to GTT without an expiryAt field |
 
 
   Scenario: TIF_GTC to TIF_GTT with time in the past
@@ -235,9 +216,6 @@ Feature: Trader amends his orders
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
     And the traders amend the following orders:
-      | trader | reference   | price | size delta | expiration date      | tif     |
-      | myboi  | myboi-ref-1 | 2     | 0          | 2019-11-30T00:00:00Z | TIF_GTT |
-    But the following amendments should be rejected:
-      | trader | reference   | error                                                   |
-      | myboi  | myboi-ref-1 | OrderError: ExpiryAt field must not be before CreatedAt |
+      | trader | reference   | price | size delta | expiration date      | tif     | error                                                   |
+      | myboi  | myboi-ref-1 | 2     | 0          | 2019-11-30T00:00:00Z | TIF_GTT | OrderError: ExpiryAt field must not be before CreatedAt |
 

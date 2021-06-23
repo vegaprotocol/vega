@@ -13,34 +13,39 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func GetFirstRow(table gherkin.DataTable) (RowWrapper, error) {
-	rows := TableWrapper(table).Parse()
+// StrictParseFirstRow parses and verifies, table integrity and returns only the
+// first row. This is suitable of table that act more as object than actual
+// table.
+func StrictParseFirstRow(table *gherkin.DataTable, required, optional []string) RowWrapper {
+	rows := StrictParseTable(table, required, optional)
 
 	if len(rows) > 1 {
-		return RowWrapper{}, fmt.Errorf("this table supports only one row")
+		panic("this table supports only one row")
 	}
 
-	for _, r := range rows {
-		return r, nil
-	}
-
-	return RowWrapper{}, fmt.Errorf("missing row")
+	return rows[0]
 }
 
-type TableWrapper gherkin.DataTable
-
-// StrictParse parses and verifies the table integrity.
-func (t TableWrapper) StrictParse(columns ...string) []RowWrapper {
-	dt := gherkin.DataTable(t)
-
+// StrictParseTable parses and verifies the table integrity.
+func StrictParseTable(dt *gherkin.DataTable, required, optional []string) []RowWrapper {
 	tableLen := len(dt.Rows)
 	if tableLen < 1 {
 		panic("A table is required.")
 	}
 
-	verifyTableIntegrity(columns, dt.Rows[0])
+	if len(required) != 0 {
+		err := verifyTableIntegrity(required, optional, dt.Rows[0])
+		if err != nil {
+			panic(err)
+		}
+	}
 
-	out := make([]RowWrapper, 0, tableLen-1)
+	tableWithoutHeaderLen := tableLen - 1
+	if tableWithoutHeaderLen == 0 {
+		panic("Did you forget the table header?")
+	}
+
+	out := make([]RowWrapper, 0, tableWithoutHeaderLen)
 	for _, row := range dt.Rows[1:] {
 		wrapper := RowWrapper{values: map[string]string{}}
 		for i := range row.Cells {
@@ -52,38 +57,74 @@ func (t TableWrapper) StrictParse(columns ...string) []RowWrapper {
 	return out
 }
 
-// Parse parses the table without verifying the integrity.
-func (t TableWrapper) Parse() []RowWrapper {
-	return t.StrictParse()
+// ParseTable parses the table without verifying its integrity.
+// Prefer the use of StrictParseTable().
+func ParseTable(dt *gherkin.DataTable) []RowWrapper {
+	return StrictParseTable(dt, []string{}, []string{})
 }
 
-// verifyTableIntegrity ensures the table declares the expected columns and does
-// not declared any unexpected columns.
-func verifyTableIntegrity(columns []string, header *gherkin.TableRow) {
-	if len(columns) == 0 {
-		return
+func verifyTableIntegrity(required, optional []string, header *gherkin.TableRow) error {
+	cols, err := newColumns(required, optional)
+	if err != nil {
+		return err
 	}
 
-	requiredColumnsSet := map[string]interface{}{}
-	for _, column := range columns {
-		requiredColumnsSet[column] = nil
-	}
-
-	declaredColumnsSet := map[string]interface{}{}
+	var headerNames []string
 	for _, cell := range header.Cells {
-		_, ok := requiredColumnsSet[cell.Value]
-		if !ok {
-			panic(fmt.Errorf("the column \"%s\" is not expected by this table", cell.Value))
-		}
-		declaredColumnsSet[cell.Value] = nil
+		headerNames = append(headerNames, cell.Value)
 	}
 
-	for requiredColumn := range requiredColumnsSet {
-		_, ok := declaredColumnsSet[requiredColumn]
+	return cols.Verify(headerNames)
+}
+
+type columns struct {
+	// config maps a column name to it required state.
+	// true == required
+	// false == optional
+	config map[string]bool
+}
+
+func newColumns(required []string, optional []string) (*columns, error) {
+	config := map[string]bool{}
+
+	for _, column := range required {
+		config[column] = true
+	}
+
+	for _, optColumn := range optional {
+		_, ok := config[optColumn]
+		if ok {
+			return nil, fmt.Errorf("column \"%s\" can't be required and optional at the same time", optColumn)
+		}
+		config[optColumn] = false
+	}
+
+	return &columns{
+		config: config,
+	}, nil
+}
+
+// Verify ensures the table declares the expected columns and does
+// not declared any unexpected columns.
+func (c *columns) Verify(header []string) error {
+	declaredColumnsSet := map[string]interface{}{}
+
+	for _, column := range header {
+		_, ok := c.config[column]
 		if !ok {
-			panic(fmt.Errorf("a column \"%s\" is required by this table", requiredColumn))
+			return fmt.Errorf("the column \"%s\" is not expected by this table", column)
+		}
+		declaredColumnsSet[column] = nil
+	}
+
+	for column, isRequired := range c.config {
+		_, ok := declaredColumnsSet[column]
+		if !ok && isRequired {
+			return fmt.Errorf("the column \"%s\" is required by this table", column)
 		}
 	}
+
+	return nil
 }
 
 type RowWrapper struct {
@@ -98,18 +139,21 @@ func (r RowWrapper) mustColumn(name string) string {
 	return s
 }
 
+func (r RowWrapper) HasColumn(name string) bool {
+	if v, ok := r.values[name]; !ok || v == "" {
+		return false
+	}
+	return true
+}
+
 func (r RowWrapper) MustStr(name string) string {
 	return r.mustColumn(name)
 }
 
-// StrB simply returns the string value, but includes the bool indicating whether or not the column was set
+// StrB does the same as Str, but returns a bool indicating whether or not the
+// column was set
 func (r RowWrapper) StrB(name string) (string, bool) {
-	s, ok := r.values[name]
-	// empty strings don't count - this would mess things up with multi-line checks (e.g. price monitoring in market data)
-	if ok && s == "" {
-		return "", false
-	}
-	return s, ok
+	return r.Str(name), r.HasColumn(name)
 }
 
 func (r RowWrapper) Str(name string) string {
@@ -137,14 +181,13 @@ func (r RowWrapper) MustU64(name string) uint64 {
 	return value
 }
 
-// U64B does the same as U64, but returns a bool indicating whether or not an explicit 0 was set
-// or the column simply doesn't exist
+// U64B does the same as U64, but returns a bool indicating whether or not the
+// column was set
 func (r RowWrapper) U64B(name string) (uint64, bool) {
-	if v, ok := r.values[name]; !ok || v == "" {
+	if !r.HasColumn(name) {
 		return 0, false
 	}
-	v := r.U64(name)
-	return v, true
+	return r.U64(name), true
 }
 
 func (r RowWrapper) U64(name string) uint64 {
@@ -204,13 +247,13 @@ func (r RowWrapper) MustI64(name string) int64 {
 	return value
 }
 
-// I64B does the same as U64B (ie same as I64, but returns a bool for empty/missing columns)
+// I64B does the same as U64B, but returns a bool indicating whether or not the
+// column was set
 func (r RowWrapper) I64B(name string) (int64, bool) {
-	if v, ok := r.values[name]; !ok || v == "" {
+	if !r.HasColumn(name) {
 		return 0, false
 	}
-	v := r.I64(name)
-	return v, true
+	return r.I64(name), true
 }
 
 func (r RowWrapper) I64(name string) int64 {
@@ -344,12 +387,6 @@ func (r RowWrapper) MustOrderType(name string) types.Order_Type {
 	return orderType
 }
 
-func (r RowWrapper) OrderType(name string) types.Order_Type {
-	orderType, err := OrderType(r.Str(name))
-	panicW(name, err)
-	return orderType
-}
-
 func OrderType(rawValue string) (types.Order_Type, error) {
 	ty, ok := types.Order_Type_value[rawValue]
 	if !ok {
@@ -360,12 +397,6 @@ func OrderType(rawValue string) (types.Order_Type, error) {
 
 func (r RowWrapper) MustOrderStatus(name string) types.Order_Status {
 	s, err := OrderStatus(r.MustStr(name))
-	panicW(name, err)
-	return s
-}
-
-func (r RowWrapper) OrderStatus(name string) types.Order_Status {
-	s, err := OrderStatus(r.Str(name))
 	panicW(name, err)
 	return s
 }
@@ -384,12 +415,6 @@ func (r RowWrapper) MustLiquidityStatus(name string) types.LiquidityProvision_St
 	return s
 }
 
-func (r RowWrapper) LiquidityStatus(name string) types.LiquidityProvision_Status {
-	s, err := LiquidityStatus(r.Str(name))
-	panicW(name, err)
-	return s
-}
-
 func LiquidityStatus(rawValue string) (types.LiquidityProvision_Status, error) {
 	ty, ok := types.LiquidityProvision_Status_value[rawValue]
 	if !ok {
@@ -400,12 +425,6 @@ func LiquidityStatus(rawValue string) (types.LiquidityProvision_Status, error) {
 
 func (r RowWrapper) MustTIF(name string) types.Order_TimeInForce {
 	tif, err := TIF(r.MustStr(name))
-	panicW(name, err)
-	return tif
-}
-
-func (r RowWrapper) TIF(name string) types.Order_TimeInForce {
-	tif, err := TIF(r.Str(name))
 	panicW(name, err)
 	return tif
 }
@@ -424,12 +443,6 @@ func (r RowWrapper) MustSide(name string) types.Side {
 	return side
 }
 
-func (r RowWrapper) Side(name string) types.Side {
-	side, err := Side(r.Str(name))
-	panicW(name, err)
-	return side
-}
-
 func Side(rawValue string) (types.Side, error) {
 	switch rawValue {
 	case "sell":
@@ -443,10 +456,6 @@ func Side(rawValue string) (types.Side, error) {
 
 func (r RowWrapper) MustPeggedReference(name string) types.PeggedReference {
 	return peggedReference(r.MustStr(name))
-}
-
-func (r RowWrapper) PeggedReference(name string) types.PeggedReference {
-	return peggedReference(r.Str(name))
 }
 
 func peggedReference(rawValue string) types.PeggedReference {
@@ -467,12 +476,6 @@ func (r RowWrapper) MustOracleSpecPropertyType(name string) oraclesv1.PropertyKe
 	return ty
 }
 
-func (r RowWrapper) OracleSpecPropertyType(name string) oraclesv1.PropertyKey_Type {
-	ty, err := OracleSpecPropertyType(r.Str(name))
-	panicW(name, err)
-	return ty
-}
-
 func OracleSpecPropertyType(name string) (oraclesv1.PropertyKey_Type, error) {
 	ty, ok := oraclesv1.PropertyKey_Type_value[name]
 
@@ -484,12 +487,6 @@ func OracleSpecPropertyType(name string) (oraclesv1.PropertyKey_Type, error) {
 
 func (r RowWrapper) MustAuctionTrigger(name string) types.AuctionTrigger {
 	at, err := AuctionTrigger(r.MustStr(name))
-	panicW(name, err)
-	return at
-}
-
-func (r RowWrapper) AuctionTrigger(name string) types.AuctionTrigger {
-	at, err := AuctionTrigger(r.Str(name))
 	panicW(name, err)
 	return at
 }
@@ -508,12 +505,6 @@ func (r RowWrapper) MustTradingMode(name string) types.Market_TradingMode {
 	return ty
 }
 
-func (r RowWrapper) TradingMode(name string) types.Market_TradingMode {
-	ty, err := TradingMode(r.Str(name))
-	panicW(name, err)
-	return ty
-}
-
 func TradingMode(name string) (types.Market_TradingMode, error) {
 	ty, ok := types.Market_TradingMode_value[name]
 
@@ -524,76 +515,21 @@ func TradingMode(name string) (types.Market_TradingMode, error) {
 }
 
 func (r RowWrapper) MustAccount(name string) types.AccountType {
-	return account(r.MustStr(name))
-}
-
-func (r RowWrapper) Account(name string) types.AccountType {
-	return account(r.Str(name))
-}
-
-func (r RowWrapper) MustPrice(name string) *types.Price {
-	n := r.MustU64(name)
-	// nil instead of zero value of Price is expected by APIs
-	if n == 0 {
-		return nil
-	}
-	return Price(n)
-}
-func (r RowWrapper) Price(name string) *types.Price {
-	n := r.U64(name)
-	// nil instead of zero value of Price is expected by APIs
-	if n == 0 {
-		return nil
-	}
-	return Price(n)
-}
-
-func (r RowWrapper) MustDuration(name string) time.Duration {
-	return time.Duration(r.MustU64(name))
-}
-
-func (r RowWrapper) MustDurationStr(name string) time.Duration {
-	s := r.MustStr(name)
-	d, err := time.ParseDuration(s)
+	acc, err := Account(r.MustStr(name))
 	panicW(name, err)
-	return d
+	return acc
 }
 
-func (r RowWrapper) Duration(name string) time.Duration {
-	return time.Duration(r.U64(name))
-}
-
-func (r RowWrapper) MustDurationSec(name string) time.Duration {
-	n := r.MustU64(name)
-	if n == 0 {
-		return 0
-	}
-	return time.Duration(n) * time.Second
-}
-
-func (r RowWrapper) DurationSec(name string) time.Duration {
-	n := r.U64(name)
-	if n == 0 {
-		return 0
-	}
-	return time.Duration(n) * time.Second
-}
-
-func Price(n uint64) *types.Price {
-	return &types.Price{Value: n}
-}
-
-func account(name string) types.AccountType {
+func Account(name string) (types.AccountType, error) {
 	value := types.AccountType(types.AccountType_value[name])
 
 	if value == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
-		panic(fmt.Sprintf("invalid account type %s", name))
+		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("invalid account type %s", name)
 	}
-
-	return value
+	return value, nil
 }
 
-func accountID(marketID, partyID, asset string, ty types.AccountType) string {
+func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 	idBuf := make([]byte, 256)
 
 	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
@@ -620,6 +556,50 @@ func accountID(marketID, partyID, asset string, ty types.AccountType) string {
 	ln += len(asset)
 	idBuf[ln] = byte(ty + 48)
 	return string(idBuf[:ln+1])
+}
+
+func (r RowWrapper) MustPrice(name string) *types.Price {
+	n := r.MustU64(name)
+	// nil instead of zero value of Price is expected by APIs
+	if n == 0 {
+		return nil
+	}
+	return Price(n)
+}
+
+func Price(n uint64) *types.Price {
+	return &types.Price{Value: n}
+}
+
+func (r RowWrapper) MustDuration(name string) time.Duration {
+	return time.Duration(r.MustU64(name))
+}
+
+func (r RowWrapper) Duration(name string) time.Duration {
+	return time.Duration(r.U64(name))
+}
+
+func (r RowWrapper) MustDurationStr(name string) time.Duration {
+	s := r.MustStr(name)
+	d, err := time.ParseDuration(s)
+	panicW(name, err)
+	return d
+}
+
+func (r RowWrapper) MustDurationSec(name string) time.Duration {
+	n := r.MustU64(name)
+	if n == 0 {
+		return 0
+	}
+	return time.Duration(n) * time.Second
+}
+
+func (r RowWrapper) DurationSec(name string) time.Duration {
+	n := r.U64(name)
+	if n == 0 {
+		return 0
+	}
+	return time.Duration(n) * time.Second
 }
 
 func panicW(field string, err error) {

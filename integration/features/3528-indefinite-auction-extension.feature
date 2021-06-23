@@ -15,8 +15,8 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.004     | 0.001              | 0.3           |
+      | maker fee | infrastructure fee |
+      | 0.004     | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
@@ -240,6 +240,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
   Scenario: When in liquidity auction, we should only trigger price extension once
 
     Given the following network parameters are set:
+      | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8 |
     And the traders submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |

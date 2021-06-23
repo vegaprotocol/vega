@@ -29,8 +29,8 @@ func NewBrokerStub() *BrokerStub {
 
 func (b *BrokerStub) Subscribe(sub broker.Subscriber) {
 	b.mu.Lock()
-	types := sub.Types()
-	for _, t := range types {
+	ty := sub.Types()
+	for _, t := range ty {
 		if _, ok := b.subT[t]; !ok {
 			b.subT[t] = []broker.Subscriber{}
 		}
@@ -177,6 +177,8 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy ma
 			ord = et.Order()
 		case events.Order:
 			ord = et.Order()
+		default:
+			continue
 		}
 
 		if ord.MarketId != market {
@@ -212,8 +214,14 @@ func (b *BrokerStub) GetMarket(marketID string) *types.Market {
 	for i := len(batch) - 1; i >= 0; i-- {
 		switch mkt := batch[i].(type) {
 		case *events.MarketUpdated:
+			if mkt.MarketID() != marketID {
+				continue
+			}
 			return mkt.Market().DeepClone()
 		case events.MarketUpdated:
+			if mkt.MarketID() != marketID {
+				continue
+			}
 			return mkt.Market().DeepClone()
 		}
 	}
@@ -283,7 +291,7 @@ func (b *BrokerStub) GetTradeEvents() []events.Trade {
 	return ret
 }
 
-func (b *BrokerStub) GetAccounts() []events.Acc {
+func (b *BrokerStub) GetAccountEvents() []events.Acc {
 	batch := b.GetBatch(events.AccountEvent)
 	if len(batch) == 0 {
 		return nil
@@ -302,6 +310,15 @@ func (b *BrokerStub) GetAccounts() []events.Acc {
 		s = append(s, e)
 	}
 	return s
+}
+
+func (b *BrokerStub) GetAccounts() []types.Account {
+	evts := b.GetAccountEvents()
+	accounts := make([]types.Account, 0, len(evts))
+	for _, a := range evts {
+		accounts = append(accounts, a.Account())
+	}
+	return accounts
 }
 
 func (b *BrokerStub) GetAuctionEvents() []events.Auction {
@@ -353,7 +370,7 @@ func (b *BrokerStub) GetMarginByPartyAndMarket(partyID, marketID string) (types.
 }
 
 func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account, error) {
-	batch := b.GetAccounts()
+	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
@@ -364,7 +381,7 @@ func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account
 }
 
 func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Account, error) {
-	batch := b.GetAccounts()
+	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY {
@@ -375,7 +392,7 @@ func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Acco
 }
 
 func (b *BrokerStub) GetTraderMarginAccount(trader, market string) (types.Account, error) {
-	batch := b.GetAccounts()
+	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketId == market {
@@ -386,7 +403,7 @@ func (b *BrokerStub) GetTraderMarginAccount(trader, market string) (types.Accoun
 }
 
 func (b *BrokerStub) GetMarketSettlementAccount(market string) (types.Account, error) {
-	batch := b.GetAccounts()
+	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
 		if v.Owner == "*" && v.MarketId == market && v.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
@@ -398,7 +415,7 @@ func (b *BrokerStub) GetMarketSettlementAccount(market string) (types.Account, e
 
 // GetTraderGeneralAccount returns the latest event WRT the trader's general account
 func (b *BrokerStub) GetTraderGeneralAccount(trader, asset string) (ga types.Account, err error) {
-	batch := b.GetAccounts()
+	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
@@ -412,7 +429,7 @@ func (b *BrokerStub) GetTraderGeneralAccount(trader, asset string) (ga types.Acc
 }
 
 func (b *BrokerStub) GetTraderBondAccount(trader, asset string) (ba types.Account, err error) {
-	batch := b.GetAccounts()
+	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
@@ -509,6 +526,12 @@ func (b *BrokerStub) filterTxErr(predicate func(errProto eventspb.TxErrorEvent) 
 	}
 	b.mu.Unlock()
 	return errs
+}
+
+func (b *BrokerStub) Reset() {
+	b.mu.Lock()
+	b.data = map[events.Type][]events.Event{}
+	b.mu.Unlock()
 }
 
 func derefTxErr(e events.Event) events.TxErr {

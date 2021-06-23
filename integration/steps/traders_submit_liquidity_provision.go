@@ -17,47 +17,37 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 	parties := map[string]string{}
 	keys := []string{}
 
-	for _, row := range TableWrapper(*table).Parse() {
-		id := row.MustStr("id")
-		party := row.MustStr("party")
-		marketID := row.MustStr("market id")
-		amount := row.MustU64("commitment amount")
-		fee := row.MustStr("fee")
-		side := row.MustSide("side")
-		reference := row.MustPeggedReference("pegged reference")
-		proportion := row.MustU32("proportion")
-		offset := row.MustI64("offset")
-		orderReference := row.Str("reference")
+	for _, r := range parseSubmitLiquidityProvisionTable(table) {
+		row := submitLiquidityProvisionRow{row: r}
 
-		if id == "id" {
-			continue
-		}
+		id := row.ID()
 
 		lp, ok := lps[id]
 		if !ok {
 			lp = &commandspb.LiquidityProvisionSubmission{
-				MarketId:         marketID,
-				CommitmentAmount: amount,
-				Fee:              fee,
+				MarketId:         row.MarketID(),
+				CommitmentAmount: row.CommitmentAmount(),
+				Fee:              row.Fee(),
 				Sells:            []*types.LiquidityOrder{},
 				Buys:             []*types.LiquidityOrder{},
-				Reference:        orderReference,
+				Reference:        row.Reference(),
 			}
-			parties[id] = party
+			parties[id] = row.Party()
 			lps[id] = lp
 			keys = append(keys, id)
 		}
 		lo := &types.LiquidityOrder{
-			Reference:  reference,
-			Proportion: proportion,
-			Offset:     offset,
+			Reference:  row.PeggedReference(),
+			Proportion: row.Proportion(),
+			Offset:     row.Offset(),
 		}
-		if side == types.Side_SIDE_BUY {
+		if row.Side() == types.Side_SIDE_BUY {
 			lp.Buys = append(lp.Buys, lo)
 		} else {
 			lp.Sells = append(lp.Sells, lo)
 		}
 	}
+
 	// ensure we always submit in the same order
 	sort.Strings(keys)
 	for _, id := range keys {
@@ -75,4 +65,64 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 
 func errSubmittingLiquidityProvision(lp *commandspb.LiquidityProvisionSubmission, party, id string, err error) error {
 	return fmt.Errorf("failed to submit [%v] for party %s and id %s: %v", lp, party, id, err)
+}
+
+func parseSubmitLiquidityProvisionTable(table *gherkin.DataTable) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"id",
+		"party",
+		"market id",
+		"commitment amount",
+		"fee",
+		"side",
+		"pegged reference",
+		"proportion",
+		"offset",
+	}, []string{
+		"reference",
+	})
+}
+
+type submitLiquidityProvisionRow struct {
+	row RowWrapper
+}
+
+func (r submitLiquidityProvisionRow) ID() string {
+	return r.row.MustStr("id")
+}
+
+func (r submitLiquidityProvisionRow) Party() string {
+	return r.row.MustStr("party")
+}
+
+func (r submitLiquidityProvisionRow) MarketID() string {
+	return r.row.MustStr("market id")
+}
+
+func (r submitLiquidityProvisionRow) Side() types.Side {
+	return r.row.MustSide("side")
+}
+
+func (r submitLiquidityProvisionRow) CommitmentAmount() uint64 {
+	return r.row.MustU64("commitment amount")
+}
+
+func (r submitLiquidityProvisionRow) Fee() string {
+	return r.row.MustStr("fee")
+}
+
+func (r submitLiquidityProvisionRow) Offset() int64 {
+	return r.row.MustI64("offset")
+}
+
+func (r submitLiquidityProvisionRow) Proportion() uint32 {
+	return r.row.MustU32("proportion")
+}
+
+func (r submitLiquidityProvisionRow) PeggedReference() types.PeggedReference {
+	return r.row.MustPeggedReference("pegged reference")
+}
+
+func (r submitLiquidityProvisionRow) Reference() string {
+	return r.row.Str("reference")
 }

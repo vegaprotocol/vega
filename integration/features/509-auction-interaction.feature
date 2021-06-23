@@ -14,8 +14,8 @@ Feature: Test interactions between different auction types
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.004     | 0.001              | 0.3           |
+      | maker fee | infrastructure fee |
+      | 0.004     | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |

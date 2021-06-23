@@ -10,7 +10,7 @@ import (
 )
 
 func TheOrderBookOfMarketShouldHaveTheFollowingVolumes(broker *stubs.BrokerStub, marketID string, table *gherkin.DataTable, ) error {
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseOrderBookTable(table) {
 		volume := row.MustU64("volume")
 		price := row.MustU64("price")
 		side := row.MustSide("side")
@@ -29,4 +29,12 @@ func TheOrderBookOfMarketShouldHaveTheFollowingVolumes(broker *stubs.BrokerStub,
 		}
 	}
 	return nil
+}
+
+func parseOrderBookTable(table *gherkin.DataTable) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"volume",
+		"price",
+		"side",
+	}, []string{})
 }

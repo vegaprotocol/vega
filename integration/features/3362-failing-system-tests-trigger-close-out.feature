@@ -82,18 +82,18 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader3 | ETH/DEC20 | buy  | 70     | 106000 | 0                | TYPE_LIMIT | TIF_GFA |
     And the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset |
-      | trader4 | ETH/DEC20 | buy  | 35     | BID       | -1000  |
-      | trader4 | ETH/DEC20 | sell | 35     | ASK       | 3000   |
+      | trader  | market id | side | volume | pegged reference | offset |
+      | trader4 | ETH/DEC20 | buy  | 35     | BID              | -1000  |
+      | trader4 | ETH/DEC20 | sell | 35     | ASK              | 3000   |
     And the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader2 | ETH/DEC20 | sell | 80     | 105000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC20 | buy  | 81     | 106000 | 0                | TYPE_LIMIT | TIF_GFA |
       | trader3 | ETH/DEC20 | buy  | 86     | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset |
-      | trader1 | ETH/DEC20 | buy  | 100    | BID       | -5000  |
-      | trader2 | ETH/DEC20 | sell | 95     | ASK       | 1000   |
+      | trader  | market id | side | volume | pegged reference | offset |
+      | trader1 | ETH/DEC20 | buy  | 100    | BID              | -5000  |
+      | trader2 | ETH/DEC20 | sell | 95     | ASK              | 1000   |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "107100" for the market "ETH/DEC20"
 

@@ -83,8 +83,8 @@ Feature: A feature that reproduces some system test
   Background:
     Given the initial insurance pool balance is "0" for the markets :
     And the markets:
-      | id        | quote name | asset | mark price | risk model                | margin calculator         | auction duration | maker fee | infrastructure fee | liquidity fee | price monitoring | oracle config      |
-      | ETH/DEC20 | ETH        | ETH   | 100        | default-simple-risk-model | default-margin-calculator | 1                | 0.004     | 0.001              | 0.3           | default-none     | default-for-future |
+      | id        | quote name | asset | risk model                | margin calculator         | auction duration | price monitoring | oracle config      |
+      | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model | default-margin-calculator | 1                | default-none     | default-for-future |
 ```
 
 ## Life cycle
@@ -122,11 +122,11 @@ we associate the risk model "simple-risk-model-1".
 
 ```gherkin
 Given the simple risk model named "simple-risk-model-1":
-  | long | short | max move up | min move down | probability of trading |
-  | 0.1  | 0.1   | 10          | -10           | 0.1                    |
+| long | short | max move up | min move down | probability of trading |
+| 0.1  | 0.1   | 10          | -10           | 0.1                    |
 And the markets:
-  | id        | quote name | asset | risk model          | 
-  | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 |
+| id        | quote name | asset | risk model          |
+| ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 |
 ```
 
 #### Re-usability with defaults
