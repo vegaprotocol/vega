@@ -157,12 +157,7 @@ func (r RowWrapper) MustStr(name string) string {
 
 // StrB simply returns the string value, but includes the bool indicating whether or not the column was set
 func (r RowWrapper) StrB(name string) (string, bool) {
-	s, ok := r.values[name]
-	// empty strings don't count - this would mess things up with multi-line checks (e.g. price monitoring in market data)
-	if ok && s == "" {
-		return "", false
-	}
-	return s, ok
+	return r.Str(name), r.HasColumn(name)
 }
 
 func (r RowWrapper) Str(name string) string {
@@ -193,11 +188,10 @@ func (r RowWrapper) MustU64(name string) uint64 {
 // U64B does the same as U64, but returns a bool indicating whether or not an explicit 0 was set
 // or the column simply doesn't exist
 func (r RowWrapper) U64B(name string) (uint64, bool) {
-	if v, ok := r.values[name]; !ok || v == "" {
+	if !r.HasColumn(name) {
 		return 0, false
 	}
-	v := r.U64(name)
-	return v, true
+	return r.U64(name), true
 }
 
 func (r RowWrapper) U64(name string) uint64 {
@@ -259,11 +253,10 @@ func (r RowWrapper) MustI64(name string) int64 {
 
 // I64B does the same as U64B (ie same as I64, but returns a bool for empty/missing columns)
 func (r RowWrapper) I64B(name string) (int64, bool) {
-	if v, ok := r.values[name]; !ok || v == "" {
+	if !r.HasColumn(name) {
 		return 0, false
 	}
-	v := r.I64(name)
-	return v, true
+	return r.I64(name), true
 }
 
 func (r RowWrapper) I64(name string) int64 {
