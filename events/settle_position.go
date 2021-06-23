@@ -39,8 +39,8 @@ func (s SettlePos) PartyID() string {
 	return s.partyID
 }
 
-func (s SettlePos) Price() uint64 {
-	return s.price.Uint64()
+func (s SettlePos) Price() *num.Uint {
+	return s.price.Clone()
 }
 
 func (s SettlePos) Trades() []TradeSettlement {
