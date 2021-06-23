@@ -29,8 +29,8 @@ func NewBrokerStub() *BrokerStub {
 
 func (b *BrokerStub) Subscribe(sub broker.Subscriber) {
 	b.mu.Lock()
-	types := sub.Types()
-	for _, t := range types {
+	ty := sub.Types()
+	for _, t := range ty {
 		if _, ok := b.subT[t]; !ok {
 			b.subT[t] = []broker.Subscriber{}
 		}
@@ -177,6 +177,8 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy ma
 			ord = et.Order()
 		case events.Order:
 			ord = et.Order()
+		default:
+			continue
 		}
 
 		if ord.MarketId != market {

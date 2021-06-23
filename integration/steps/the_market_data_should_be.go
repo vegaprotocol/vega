@@ -106,7 +106,7 @@ func cmpLPFeeShare(expect *MappedMD, got types.MarketData) []error {
 		for _, g := range got.LiquidityProviderFeeShare {
 			if lpfs.Party == g.Party {
 				found = g
-				match = (lpfs.AverageEntryValuation == g.AverageEntryValuation && lpfs.EquityLikeShare == g.EquityLikeShare)
+				match = lpfs.AverageEntryValuation == g.AverageEntryValuation && lpfs.EquityLikeShare == g.EquityLikeShare
 				break
 			}
 		}
@@ -139,7 +139,7 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 		for _, g := range got.PriceMonitoringBounds {
 			if g.Trigger.Horizon == pmb.Trigger.Horizon {
 				bounds = g
-				match = (pmb.MaxValidPrice == g.MaxValidPrice && pmb.MinValidPrice == g.MinValidPrice)
+				match = pmb.MaxValidPrice == g.MaxValidPrice && pmb.MinValidPrice == g.MinValidPrice
 				break
 			}
 		}
