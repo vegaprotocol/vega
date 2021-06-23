@@ -683,6 +683,7 @@ func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
 
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
+	fmt.Printf("ENTER AUCTION\n")
 	// Change market type to auction
 	ordersToCancel, err := m.matching.EnterAuction()
 	if err != nil {
@@ -716,6 +717,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
+	fmt.Printf("LEAVE AUCTION\n")
 	// Change market type to continuous trading
 	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.currentTime)
 	if err != nil {
@@ -1016,10 +1018,12 @@ func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.Or
 		[]*types.Order{conf.Order}, conf.PassiveOrdersAffected...)
 	allUpdatedOrders = append(allUpdatedOrders, orderUpdates...)
 
+	fmt.Printf("SUBMIT ORDER BEFORE\n")
 	m.checkForReferenceMoves(
 		ctx, allUpdatedOrders, false)
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)
+	fmt.Printf("SUBMIT ORDER AFTER\n")
 
 	return conf, nil
 }

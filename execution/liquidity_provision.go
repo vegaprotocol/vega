@@ -793,6 +793,7 @@ func (m *Market) cancelLiquidityProvision(
 	// force update of shares so they are updated for all
 	_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 
+	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)
 
@@ -1002,6 +1003,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 func (m *Market) amendLiquidityProvisionContinuous(
 	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
 ) error {
+	fmt.Printf("AMEND DURING CONTINUOUS\n")
 	bestBidPrice, bestAskPrice, err := m.getBestStaticPrices()
 	if err != nil {
 		m.log.Debug("could not get mid prices to call liquidity",
@@ -1090,15 +1092,13 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 		m.equityShares.SetPartyStake(party, sub.CommitmentAmount)
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
-
-		m.checkLiquidity(ctx, nil)
-		m.commandLiquidityAuction(ctx)
-
 	}()
 
 	// this workd but we definitely trigger some recursive loop which
 	// are unlikely to be fine.
-	// m.liquidityUpdate(ctx, nil)
+	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 
 	return nil
 }

@@ -182,6 +182,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	})
 
+	fmt.Printf("\n\nSUBMITTING NOW\n\n")
 	tm.events = nil
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
@@ -194,7 +195,8 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				if evt.Order().PartyId == "trader-2" {
+				if evt.Order().PartyId == "trader-2" &&
+					evt.Order().Id == "V0000000000-0000000010" {
 					found = append(found, types.OrderFromProto(evt.Order()))
 				}
 			}
@@ -226,11 +228,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			},
 		}
 
-		// require.Len(t, found, len(expectedStatus))
-
-		for _, v := range found {
-			fmt.Printf("%v\n", v.String())
-		}
+		require.Len(t, found, len(expectedStatus))
 
 		for i, expect := range expectedStatus {
 			got := found[i].Status

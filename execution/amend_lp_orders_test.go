@@ -2,6 +2,7 @@ package execution_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -119,6 +120,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				lp := evt.LiquidityProvision()
+				fmt.Printf("%v\n", lp.String())
 				found[lp.Id] = lp
 			}
 		}
@@ -617,15 +619,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 			}
 		}
 
-		require.Len(t, found, 8)
+		require.Len(t, found, 4)
 
-		// first 4 are parking, then cancellation
+		// only 4 cancellations
 		i := 0
 		for _, o := range found {
 			var expectedStatus = types.Order_STATUS_CANCELLED
-			if i < 4 {
-				expectedStatus = types.Order_STATUS_PARKED
-			}
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -757,15 +756,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 			}
 		}
 
-		require.Len(t, found, 8)
+		require.Len(t, found, 4)
 
-		// first 4 are parking, then cancellation
+		// 4 cancellations
 		i := 0
 		for _, o := range found {
 			var expectedStatus = types.Order_STATUS_CANCELLED
-			if i < 4 {
-				expectedStatus = types.Order_STATUS_PARKED
-			}
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
