@@ -2,7 +2,6 @@ package execution
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/types"
 )
@@ -35,7 +34,6 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 func (m *Market) checkForReferenceMoves(
 	ctx context.Context, orderUpdates []*types.Order, forceUpdate bool,
 ) {
-	fmt.Printf("CHECK FOR REFERENCE MOVES\n")
 
 	if m.as.InAuction() {
 		return

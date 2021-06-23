@@ -495,9 +495,6 @@ func (e *Engine) createOrUpdateForParty(
 	party string,
 	repriceFn RepricePeggedOrder,
 ) (ordres []*types.Order, _ *ToCancel, errr error) {
-	defer func() {
-		fmt.Printf("len(%v) - ERROR: %v\n", len(ordres), errr)
-	}()
 	lp := e.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return nil, nil, nil
@@ -519,7 +516,6 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    buy.OrderId,
 			Proportion: uint64(buy.LiquidityOrder.Proportion),
 		}
-		fmt.Printf("REPRICING: %v\n", buy.OrderId)
 		if price, peggedO, err := repriceFn(pegged, types.Side_SIDE_BUY); err != nil {
 			e.log.Debug("Building Buy Shape", logging.Error(err))
 			repriceFailure = true
@@ -539,7 +535,6 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    sell.OrderId,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
 		}
-		fmt.Printf("REPRICING: %v\n", sell.OrderId)
 		if price, peggedO, err := repriceFn(pegged, types.Side_SIDE_SELL); err != nil {
 			e.log.Debug("Building Sell Shape", logging.Error(err))
 			repriceFailure = true
