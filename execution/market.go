@@ -2121,12 +2121,6 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 	m.commandLiquidityAuction(ctx)
 
 	return conf, nil
-
-	// if err := m.liquidityUpdate(ctx, append(conf.PassiveOrdersAffected, conf.Order)); err != nil {
-	// 	return nil, err
-	// }
-
-	return conf, nil
 }
 
 func (m *Market) amendOrder(
