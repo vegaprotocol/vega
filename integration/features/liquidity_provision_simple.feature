@@ -6,8 +6,8 @@ Feature: Test LP orders
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -22,11 +22,11 @@ Feature: Test LP orders
       | aux2             | ETH   | 100000000 |
 
     When the traders place the following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-      | auxiliary        | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | oa-b-1          |
-      | auxiliary        | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-1          |
-      | aux2             | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2          |
-      | auxiliary        | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2          |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | auxiliary | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | oa-b-1    |
+      | auxiliary | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-1    |
+      | aux2      | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
+      | auxiliary | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-2    |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -42,9 +42,9 @@ Feature: Test LP orders
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
     And clear order events
     Then the traders submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
-      | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | buy        | BID             | 500              | -10          |
-      | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | sell       | ASK             | 500              | 10           |
+      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
+      | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | -10    |
+      | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | sell | ASK              | 500        | 10     |
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
       | lp1 | trader1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |

@@ -26,11 +26,11 @@ Feature: Amend order to trigger price monitoring auction
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type        | tif     |
-      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2       | ETH/DEC20 | buy  | 1      | 5670000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
+      | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2      | ETH/DEC20 | buy  | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 

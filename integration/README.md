@@ -18,19 +18,23 @@ go test ./...
 
 ### Running just the integration tests
 
-The integration tests have been hooked up to run as regular unit tests, so you can run just the integration tests with a simple command:
+The integration tests have been hooked up to run as regular unit tests, so you can run just the integration tests with a
+simple command:
 
 ```shell
 go test ./integration/...
 ```
 
-When running these tests, you'll probably want to get a more verbose output (showing which steps of the tests passed and failed), which can be done by adding 2 flags:
+When running these tests, you'll probably want to get a more verbose output (showing which steps of the tests passed and
+failed), which can be done by adding 2 flags:
 
 ```
 go test -v ./integration/... -godog.format=pretty
 ```
 
-The `-v` flag tells `go test` to run with verbose output (sending logging to stdout). The `-godog.format=pretty` flag (which must be put at the end) instructs godog to print out the scenario's and, in case an assertion fails, show which particular step of a given scenario didn't work.
+The `-v` flag tells `go test` to run with verbose output (sending logging to stdout). The `-godog.format=pretty` flag (
+which must be put at the end) instructs godog to print out the scenario's and, in case an assertion fails, show which
+particular step of a given scenario didn't work.
 
 ### Running specific scenario's
 
@@ -44,14 +48,15 @@ go test -v ./integration/... -godog.format=pretty $(pwd)/integration/features/my
 
 For performance reasons, `go test` will check whether the source of a package has changed, and reuse compiled objects or
 even test results in case it determines nothing has changed. Because the integration tests are tucked away in their own
-package, changes to _other_ packages might not be compiled, and tests could possibly pass
-without changes being applied. To ensure no cached results are used, the `-count` flag can be used:
+package, changes to _other_ packages might not be compiled, and tests could possibly pass without changes being applied.
+To ensure no cached results are used, the `-count` flag can be used:
 
 ```shell
 go test -v -count=1 ./integration/... -godog.format=pretty
 ```
 
-Should there be tests that are intermittently failing, this could indicate a data race somewhere in the code. To use the race detector to check for this, you can add the `-race` flag to the command. The full commands then would be:
+Should there be tests that are intermittently failing, this could indicate a data race somewhere in the code. To use the
+race detector to check for this, you can add the `-race` flag to the command. The full commands then would be:
 
 ```shell
 # Run all integration tests, verbose mode, ensure recompiled binaries, enable race detection, and use godog pretty formatting
@@ -61,7 +66,8 @@ go test -v -count=1 -race ./integration/... -godog.format=pretty
 go test -v -count=1 -race ./integration/... -godog.format=pretty $(pwd)/integration/feature/my-feature.feature
 ```
 
-Race detection is a complex thing to do, so it will make running tests significantly slower. The pipeline runs the tests with race detection, so this shouldn't be required to do locally.
+Race detection is a complex thing to do, so it will make running tests significantly slower. The pipeline runs the tests
+with race detection, so this shouldn't be required to do locally.
 
 ### Reproducing/replicating system tests
 
@@ -84,7 +90,9 @@ Feature: A feature that reproduces some system test
 ## Life cycle
 
 To get a market up and running, here is the process:
-1. Configuration of network parameters. They have default values so it's not required, but if we want to override them, it should be done in the first step.
+
+1. Configuration of network parameters. They have default values so it's not required, but if we want to override them,
+   it should be done in the first step.
 2. Configuration of market.
 3. Declaration of the traders and their general account balance.
 4. Placement of orders by the traders, so the market can have a mark price.
@@ -97,17 +105,20 @@ The list of steps is located in `./main_test.go`.
 
 ### Market instantiation
 
-Setting up a market is complex and the base for everything. As a result, we created a "lego-like" system to help us strike the balance between flexibility and re-usability.
+Setting up a market is complex and the base for everything. As a result, we created a "lego-like" system to help us
+strike the balance between flexibility and re-usability.
 
 #### Flexibility with steps
 
 A market is composed of several sets of parameters grouped by domain, such as margin, risk model, fees, and so on.
 
-Each set of parameters is declared in its own step into which a custom name is given. In our "lego" analogy, these named sets would be the "blocks".
+Each set of parameters is declared in its own step into which a custom name is given. In our "lego" analogy, these named
+sets would be the "blocks".
 
 To declare a market, we tell to our market which "blocks" to use.
 
-Here is an example where we declare a risk model named "simple-risk-model-1". Then, we declare a "BTC" market, to which we associate the risk model "simple-risk-model-1".
+Here is an example where we declare a risk model named "simple-risk-model-1". Then, we declare a "BTC" market, to which
+we associate the risk model "simple-risk-model-1".
 
 ```gherkin
 Given the simple risk model named "simple-risk-model-1":
@@ -117,16 +128,20 @@ And the markets:
   | id        | quote name | asset | risk model          | 
   | ETH/DEC21 | BTC        | BTC   | simple-risk-model-1 |
 ```
- 
+
 #### Re-usability with defaults
 
-Because markets are tedious to instantiate, most of the time, we instantiate them using defaults stored in JSON files inside the folder `steps/market/defaults`.
+Because markets are tedious to instantiate, most of the time, we instantiate them using defaults stored in JSON files
+inside the folder `steps/market/defaults`.
 
-Each sub-folders contain the defaults for their domain. Referencing a default for the price monitoring that is not in the `price-monitoring` folder will result in failure.
+Each sub-folders contain the defaults for their domain. Referencing a default for the price monitoring that is not in
+the `price-monitoring` folder will result in failure.
 
-Using defaults works just like the named set, except that the file name will be used as the name. As a result, if the file containing the defaults is named `default-basic.json`, then the name to fill in will be `default-basic`.
+Using defaults works just like the named set, except that the file name will be used as the name. As a result, if the
+file containing the defaults is named `default-basic.json`, then the name to fill in will be `default-basic`.
 
-This is the recommended way. It's also fine to introduce a new defaults as long as it's used more than a couple of times.
+This is the recommended way. It's also fine to introduce a new defaults as long as it's used more than a couple of
+times.
 
 You can mix the use of steps and defaults in market declaration.
 
@@ -233,7 +248,6 @@ Scenario:
 
 Okay...
 
-
 #### Given
 
 `Given` should only be used for prerequisite declaration. Arguably, it's a bit tricky to distinguish a prerequisite from
@@ -278,8 +292,8 @@ The passive voice sounds better `The system receives the following oracle data`.
 
 #### Then
 
-`Then` should only be used when asserting a state. It shouldn't be use for commands. The preferred construct
-of assertion steps is:
+`Then` should only be used when asserting a state. It shouldn't be use for commands. The preferred construct of
+assertion steps is:
 
 ```
 <actor> should <state verb> <target>
@@ -338,7 +352,8 @@ backing. Use `But` for negative outcomes.
 * The first word should start we a lower-case letter.
 * Words (and table columns) should be lower-case with space separation, like plain human style. No upper-case location
   to be remembered.
-* Acronyms should be lower-case, like the rest, without trailing dot. We want to avoid interrogation such as : `ID` or `Id` or `Id.` ?
+* Acronyms should be lower-case, like the rest, without trailing dot. We want to avoid interrogation such as : `ID`
+  or `Id` or `Id.` ?
 
 ###### Good
 

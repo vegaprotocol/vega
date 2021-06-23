@@ -6,8 +6,8 @@ Feature: Amend orders
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -22,17 +22,17 @@ Feature: Amend orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell |      1 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi  | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # cancel the order, so we cannot edit it.
     And the traders cancel the following orders:
@@ -55,18 +55,18 @@ Feature: Amend orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
     Then the traders amend the following orders:
@@ -77,7 +77,7 @@ Feature: Amend orders
 # this should match with the size 3 order of myboi
     Then the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  | 3      | 2     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
     Then the following trades should be executed:
       | buyer  | seller | price | size |
@@ -95,18 +95,18 @@ Feature: Amend orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Then the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
     And the traders amend the following orders:
@@ -117,10 +117,10 @@ Feature: Amend orders
 # this should match with the size 3 order of myboi
     When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  | 3      | 2     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
     Then the following trades should be executed:
       | buyer  | seller | price | size |
-      | myboi3 | myboi2 |     2 |    3 |
+      | myboi3 | myboi2 | 2     | 3    |
 
   Scenario: Reduce size success and order cancelled as  < to remaining
 # setup accounts
@@ -134,24 +134,24 @@ Feature: Amend orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Then the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
-      | myboi2 | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
+      | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | myboi2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # matching the order now
 # this will reduce the remaining to 2 so it get cancelled later on
     When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | myboi3 | ETH/DEC19 | buy  |      3 |     2 |                1 | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
+      | myboi3 | ETH/DEC19 | buy  | 3      | 2     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
     Then the traders amend the following orders:
@@ -173,17 +173,17 @@ Feature: Amend orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Then the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 
 # cannot amend TIF to TIF_FOK so this will be rejected
@@ -200,13 +200,13 @@ Feature: Amend orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # TIF_GTT rejected because of missing expiresAt
     Then the traders amend the following orders:
@@ -223,19 +223,19 @@ Feature: Amend orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Then the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type  | tif | reference   |
-      | myboi  | ETH/DEC19 | sell |      5 |     2 |                0 | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
     Then the traders amend the following orders:
-      | trader | reference   | price | size delta | expiresAt | tif | success |
-      | myboi  | myboi-ref-1 |     2 |          0 |     10000 | TIF_GTT | false   |
+      | trader | reference   | price | size delta | expiresAt | tif     | success |
+      | myboi  | myboi-ref-1 | 2     | 0          | 10000     | TIF_GTT | false   |

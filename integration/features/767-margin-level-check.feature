@@ -8,7 +8,7 @@ Feature: Regression test for issue 767
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-   
+
   Scenario: Traders place orders meeting the maintenance margin, but not the initial margin requirements, and can close out
     Given the traders deposit on asset's general account the following amount:
       | trader  | asset | amount  |
@@ -20,9 +20,9 @@ Feature: Regression test for issue 767
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:

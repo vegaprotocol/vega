@@ -13,8 +13,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | id        | quote name | asset | maturity date        | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | my-log-normal-risk-model | default-margin-calculator | 6                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 6      |
+      | name                           | value |
+      | market.auction.minimumDuration | 6     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -31,9 +31,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC20 | buy  | 1      | 2      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 2      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 110000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the traders place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference      |

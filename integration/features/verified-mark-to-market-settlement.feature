@@ -18,13 +18,13 @@ Feature: MTM settlement tests
       | trader3 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -82,13 +82,13 @@ Feature: MTM settlement tests
       | trader3 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -143,8 +143,8 @@ Feature: MTM settlement tests
 
 # MTM win transfers: 200+90-64=226 as per spreadsheet
     Then the following transfers should happen:
-      | from    | to     | from account         | to account              | market id | amount | asset |
-      | trader1 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     64 | BTC   |
+      | from    | to     | from account        | to account              | market id | amount | asset |
+      | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 64     | BTC   |
 
   Scenario: case 3 - LONG - LESS LONG - one trade
 # setup accounts
@@ -155,13 +155,13 @@ Feature: MTM settlement tests
       | trader3 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -219,13 +219,13 @@ Feature: MTM settlement tests
       | trader3 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -279,8 +279,8 @@ Feature: MTM settlement tests
 
 # MTM win transfers: 200+30-16=214 as per spreadsheet
     Then the following transfers should happen:
-      | from    | to     | from account         | to account              | market id | amount | asset |
-      | trader1 | market | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     16 | BTC   |
+      | from    | to     | from account        | to account              | market id | amount | asset |
+      | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 16     | BTC   |
 
   Scenario: case 5 - LONG - ZERO - one trade
 # setup accounts
@@ -290,13 +290,13 @@ Feature: MTM settlement tests
       | trader2 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -339,13 +339,13 @@ Feature: MTM settlement tests
       | trader2 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -397,13 +397,13 @@ Feature: MTM settlement tests
       | trader2 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -447,13 +447,13 @@ Feature: MTM settlement tests
       | trader3 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -519,13 +519,13 @@ Feature: MTM settlement tests
       | trader3 | BTC   | 10000    |
       | trader4 | BTC   | 10000000 |
       | trader5 | BTC   | 10000000 |
-      | aux     | BTC   | 100000 |
+      | aux     | BTC   | 100000   |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 10      |   99  | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 10      |  115  | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 10     | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 10     | 115   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -580,4 +580,4 @@ Feature: MTM settlement tests
 # MTM win transfers: 200+120-60=260 as per spreadsheet
     Then the following transfers should happen:
       | from    | to     | from account        | to account              | market id | amount | asset |
-      | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |     60 | BTC   |
+      | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 60     | BTC   |

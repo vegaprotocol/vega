@@ -6,8 +6,8 @@ Feature: Distressed traders should not have general balance left
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -25,11 +25,11 @@ Feature: Distressed traders should not have general balance left
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type        | tif     |
-      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2       | ETH/DEC20 | buy  | 1      | 100      | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 100      | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
+      | auxiliary | ETH/DEC20 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2      | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -48,8 +48,8 @@ Feature: Distressed traders should not have general balance left
     Then time is updated to "2020-10-16T00:01:00Z"
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif      | reference |
-      | trader4 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC  | ref-1     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader4 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -63,9 +63,9 @@ Feature: Distressed traders should not have general balance left
       | trader5 | ETH   | ETH/DEC20 | 372    | 9999999999628 |
     And clear order events
     Then the traders submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
-      | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | buy        | BID             | 10               | -10          |
-      | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | sell       | ASK             | 10               | 10           |
+      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
+      | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | -10    |
+      | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 10         | 10     |
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
       | lp1 | trader3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |

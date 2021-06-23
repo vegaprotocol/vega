@@ -5,9 +5,9 @@ Feature: Target stake
 
   Background:
     Given the following network parameters are set:
-      | name                              | value   |
-      | market.stake.target.timeWindow    | 168h    |
-      | market.stake.target.scalingFactor | 1.5     |
+      | name                              | value |
+      | market.stake.target.timeWindow    | 168h  |
+      | market.stake.target.scalingFactor | 1.5   |
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 10          | -10           | 0.1                    |
@@ -76,7 +76,7 @@ Feature: Target stake
     # Trader 3 closes out 20
     When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_3 | ETH/DEC21 | sell | 20 | 90 | 1 | TYPE_LIMIT | TIF_GTC | tt_2_1 |
+      | tt_3   | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
     Then the mark price should be "90" for the market "ETH/DEC21"
 
