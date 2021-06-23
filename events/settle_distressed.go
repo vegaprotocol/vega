@@ -21,7 +21,7 @@ func NewSettleDistressed(ctx context.Context, partyID, marketID string, price, m
 		Base:     newBase(ctx, SettleDistressedEvent),
 		partyID:  partyID,
 		marketID: marketID,
-		margin:   margin,
+		margin:   margin.Clone(),
 		price:    price.Clone(),
 		ts:       ts,
 	}
