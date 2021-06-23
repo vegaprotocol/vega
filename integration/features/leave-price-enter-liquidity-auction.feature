@@ -23,9 +23,9 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 
 # submit our LP
     Then the traders submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
-      | lp1 | traderlp | ETH/DEC19 | 16000000          | 0.3 | buy        | BID             | 2                | -10          |
-      | lp1 | traderlp | ETH/DEC19 | 16000000          | 0.3 | sell       | ASK             | 13               | 10           |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
+      | lp1 | traderlp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | -10    |
+      | lp1 | traderlp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     |
 
 # get out of auction
     When the traders place the following orders:

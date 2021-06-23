@@ -38,9 +38,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
   Scenario: LP gets distressed during continuous trading
 
     Given the traders submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 500              | -10          |
-      | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 500              | 10           |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
+      | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
 
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -117,11 +117,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
   Scenario: LP gets distressed after auction
 
     Given the traders submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 500              | -10          |
-      | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 500              | 10           |
-      | lp2 | trader5 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 500              | -10          |
-      | lp2 | trader5 | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 500              | 10           |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
+      | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
+      | lp2 | trader5 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
+      | lp2 | trader5 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
 
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |

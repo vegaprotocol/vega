@@ -23,10 +23,10 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 		marketID := row.MustStr("market id")
 		amount := row.MustU64("commitment amount")
 		fee := row.MustStr("fee")
-		side := row.MustSide("order side")
-		reference := row.MustPeggedReference("order reference")
-		proportion := row.MustU32("order proportion")
-		offset := row.MustI64("order offset")
+		side := row.MustSide("side")
+		reference := row.MustPeggedReference("pegged reference")
+		proportion := row.MustU32("proportion")
+		offset := row.MustI64("offset")
 		orderReference := row.Str("reference")
 
 		if id == "id" {

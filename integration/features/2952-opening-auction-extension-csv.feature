@@ -23,9 +23,9 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | auxiliary | ETH   | 100000000000 |
       | trader-lp | ETH   | 100000000000 |
     And the traders submit the following liquidity provision:
-      | id  | party     | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
-      | lp1 | trader-lp | ETH/DEC20 | 30000000          | 0.3 | buy        | BID             | 50               | -10          |
-      | lp1 | trader-lp | ETH/DEC20 | 30000000          | 0.3 | sell       | ASK             | 50               | 10           |
+      | id  | party     | market id | commitment amount | fee | side | pegged reference | proportion | offset |
+      | lp1 | trader-lp | ETH/DEC20 | 30000000          | 0.3 | buy  | BID              | 50         | -10    |
+      | lp1 | trader-lp | ETH/DEC20 | 30000000          | 0.3 | sell | ASK              | 50         | 10     |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the traders place the following orders:

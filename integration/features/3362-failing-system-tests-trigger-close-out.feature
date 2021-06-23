@@ -39,9 +39,9 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | trader1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the traders submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
-      | lp1 | trader1 | ETH/DEC20 | 16000000          | 0.3 | buy        | BID             | 2                | -10          |
-      | lp1 | trader1 | ETH/DEC20 | 16000000          | 0.3 | sell       | ASK             | 13               | 10           |
+      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
+      | lp1 | trader1 | ETH/DEC20 | 16000000          | 0.3 | buy  | BID              | 2          | -10    |
+      | lp1 | trader1 | ETH/DEC20 | 16000000          | 0.3 | sell | ASK              | 13         | 10     |
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 

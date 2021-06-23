@@ -63,9 +63,9 @@ Feature: Distressed traders should not have general balance left
       | trader5 | ETH   | ETH/DEC20 | 372    | 9999999999628 |
     And clear order events
     Then the traders submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
-      | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | buy        | BID             | 10               | -10          |
-      | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | sell       | ASK             | 10               | 10           |
+      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
+      | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | buy  | BID              | 10         | -10    |
+      | lp1 | trader3 | ETH/DEC20 | 10000             | 0.1 | sell | ASK              | 10         | 10     |
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
       | lp1 | trader3 | ETH/DEC20 | 10000             | STATUS_ACTIVE |

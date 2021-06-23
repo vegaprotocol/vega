@@ -28,9 +28,9 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | t2_aux    | BTC   | 100000000 |
       | trader-lp | BTC   | 100000000 |
     And the traders submit the following liquidity provision:
-      | id  | party     | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | buy        | BID             | 50               | -10          |
-      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | sell       | ASK             | 50               | 10           |
+      | id  | party     | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | buy  | BID              | 50         | -10    |
+      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | sell | ASK              | 50         | 10     |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |

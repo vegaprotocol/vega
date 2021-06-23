@@ -37,9 +37,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader2 | ETH   | 10000000  |
 
     Given the traders submit the following liquidity provision:
-      | id          | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy        | BID             | 500              | -100         |
-      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell       | ASK             | 500              | 100          |
+      | id          | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy  | BID              | 500        | -100   |
+      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell | ASK              | 500        | 100    |
 
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -123,9 +123,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader2 | ETH2  | 10000000  |
 
     Given the traders submit the following liquidity provision:
-      | id          | party | market id  | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy        | BID             | 500              | -100         |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell       | ASK             | 500              | 100          |
+      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | -100   |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    |
 
     And the traders place the following orders:
       | trader  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |

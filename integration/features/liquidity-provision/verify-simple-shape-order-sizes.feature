@@ -31,9 +31,9 @@ Feature: Verify the order size is correctly cumulated.
     And the mark price should be "12000000" for the market "ETH/DEC19"
 
     When the traders submit the following liquidity provision:
-      | id  | party       | market id | commitment amount | fee | order side | order reference | order proportion | order offset | reference |
-      | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy        | MID             | 1                | -10          | lp-1-ref  |
-      | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell       | MID             | 1                | 10           | lp-1-ref  |
+      | id  | party       | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference |
+      | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | -10    | lp-1-ref  |
+      | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 10     | lp-1-ref  |
     Then the liquidity provisions should have the following states:
       | id  | party       | market    | commitment amount | status        |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | STATUS_ACTIVE |

@@ -34,11 +34,11 @@ Feature: Test liquidity provider reward distribution
       | trader2 | ETH   | 100000000  |
 
     And the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy        | BID             | 1                | -2           |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy        | MID             | 2                | -1           |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell       | ASK             | 1                | 2            |
-      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell       | MID             | 2                | 1            |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -126,17 +126,17 @@ Feature: Test liquidity provider reward distribution
       | trader2 | ETH   | 100000000  |
 
     And the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 1                | -2           |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy        | MID             | 2                | -1           |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 1                | 2            |
-      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell       | MID             | 2                | 1            |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | MID              | 2          | 1      |
     And the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy        | BID             | 1                | -2           |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy        | MID             | 2                | -1           |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell       | ASK             | 1                | 2            |
-      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell       | MID             | 2                | 1            |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | BID              | 1          | -2     |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | MID              | 2          | -1     |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | ASK              | 1          | 2      |
+      | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | MID              | 2          | 1      |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -225,17 +225,17 @@ Feature: Test liquidity provider reward distribution
       | trader2 | ETH   | 100000000  |
 
     And the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy        | BID             | 1                | -2           |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy        | MID             | 2                | -1           |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell       | ASK             | 1                | 2            |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell       | MID             | 2                | 1            |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      |
     And the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy        | BID             | 1                | -2           |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy        | MID             | 2                | -1           |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell       | ASK             | 1                | 2            |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell       | MID             | 2                | 1            |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | -2     |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | -1     |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -331,17 +331,17 @@ Feature: Test liquidity provider reward distribution
       | trader2 | ETH   | 100000000  |
 
     And the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy        | BID             | 1                | -2           |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy        | MID             | 2                | -1           |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell       | ASK             | 1                | 2            |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell       | MID             | 2                | 1            |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      |
     And the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy        | BID             | 1                | -2           |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy        | MID             | 2                | -1           |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell       | ASK             | 1                | 2            |
-      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell       | MID             | 2                | 1            |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | -2     |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | -1     |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -402,11 +402,11 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     And the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy        | BID             | 1                | -2           |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy        | MID             | 2                | -1           |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell       | ASK             | 1                | 2            |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell       | MID             | 2                | 1            |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share | average entry valuation |
