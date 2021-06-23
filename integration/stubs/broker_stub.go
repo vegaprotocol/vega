@@ -214,8 +214,14 @@ func (b *BrokerStub) GetMarket(marketID string) *types.Market {
 	for i := len(batch) - 1; i >= 0; i-- {
 		switch mkt := batch[i].(type) {
 		case *events.MarketUpdated:
+			if mkt.MarketID() != marketID {
+				continue
+			}
 			return mkt.Market().DeepClone()
 		case events.MarketUpdated:
+			if mkt.MarketID() != marketID {
+				continue
+			}
 			return mkt.Market().DeepClone()
 		}
 	}
