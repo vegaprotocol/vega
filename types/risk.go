@@ -184,6 +184,10 @@ func (s ScalingFactors) String() string {
 	return s.IntoProto().String()
 }
 
+func (s *ScalingFactors) Reset() {
+	*s = ScalingFactors{}
+}
+
 type TradableInstrument_SimpleRiskModel struct {
 	SimpleRiskModel *SimpleRiskModel `protobuf:"bytes,101,opt,name=simple_risk_model,json=simpleRiskModel,proto3,oneof"`
 }

@@ -83,6 +83,10 @@ func (p *PriceMonitoringParameters) FromProto(pr *proto.PriceMonitoringParameter
 	p.Triggers = triggers
 }
 
+func (p *PriceMonitoringParameters) Reset() {
+	*p = PriceMonitoringParameters{}
+}
+
 func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
 	ref, _ := p.ReferencePrice.Float64()
 	var trigger *proto.PriceMonitoringTrigger
