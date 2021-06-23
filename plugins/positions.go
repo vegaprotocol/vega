@@ -84,18 +84,18 @@ func (p *Positions) Push(evts ...events.Event) {
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
-	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), num.DecimalFromUint(num.NewUint(uint64(e.AmountLost())))
+	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), num.DecimalFromFloat(float64(e.AmountLost()))
 	pos, ok := p.data[marketID][partyID]
 	if !ok {
 		return
 	}
 	if amountLoss.LessThan(num.DecimalFromFloat(0.0)) {
-		pos.loss.Sub(amountLoss)
+		pos.loss = pos.loss.Sub(amountLoss)
 	} else {
-		pos.adjustment.Add(amountLoss)
+		pos.adjustment = pos.adjustment.Add(amountLoss)
 	}
-	pos.RealisedPnlFP.Add(amountLoss)
-	pos.RealisedPnl.Add(amountLoss)
+	pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amountLoss)
+	pos.RealisedPnl = pos.RealisedPnl.Add(amountLoss)
 	pos.Position.UpdatedAt = e.Timestamp()
 	p.data[marketID][partyID] = pos
 }
@@ -124,14 +124,14 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 		calc = seToProto(e)
 	}
 	margin := e.Margin()
-	calc.RealisedPnl.Add(calc.UnrealisedPnl)
-	calc.RealisedPnlFP.Add(calc.UnrealisedPnlFP)
+	calc.RealisedPnl = calc.RealisedPnl.Add(calc.UnrealisedPnl)
+	calc.RealisedPnlFP = calc.RealisedPnlFP.Add(calc.UnrealisedPnlFP)
 	calc.OpenVolume = 0
 	calc.UnrealisedPnl = num.NewDecimalFromFloat(0)
 	calc.AverageEntryPrice = num.NewUint(0)
 	// realised P&L includes whatever we had in margin account at this point
-	calc.RealisedPnl.Sub(num.DecimalFromUint(margin))
-	calc.RealisedPnlFP.Sub(num.DecimalFromUint(margin))
+	calc.RealisedPnl = calc.RealisedPnl.Sub(num.DecimalFromUint(margin))
+	calc.RealisedPnlFP = calc.RealisedPnlFP.Sub(num.DecimalFromUint(margin))
 	// @TODO average entry price shouldn't be affected(?)
 	// the volume now is zero, though, so we'll end up moving this position to storage
 	calc.UnrealisedPnlFP = num.DecimalFromFloat(0.0)
@@ -223,8 +223,8 @@ func closeV(p *Position, closedVolume int64, tradedPrice *num.Uint) num.Decimal 
 	if closedVolume == 0 {
 		return num.DecimalFromFloat(0.0)
 	}
-	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromUint(num.NewUint(uint64(closedVolume))))
-	p.RealisedPnlFP.Add(realisedPnlDelta)
+	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromFloat(float64(closedVolume)))
+	p.RealisedPnlFP = p.RealisedPnlFP.Add(realisedPnlDelta)
 	p.OpenVolume -= closedVolume
 	return realisedPnlDelta
 }
