@@ -45,7 +45,12 @@ func (t TableWrapper) StrictParse(required, optional []string) []RowWrapper {
 		}
 	}
 
-	out := make([]RowWrapper, 0, tableLen-1)
+	tableWithoutHeaderLen := tableLen - 1
+	if tableWithoutHeaderLen == 0 {
+		panic("Did you forget the table header?")
+	}
+
+	out := make([]RowWrapper, 0, tableWithoutHeaderLen)
 	for _, row := range dt.Rows[1:] {
 		wrapper := RowWrapper{values: map[string]string{}}
 		for i := range row.Cells {
