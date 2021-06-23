@@ -2,12 +2,12 @@ package plugins
 
 import (
 	"context"
-	"math"
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 )
@@ -21,7 +21,7 @@ type SE interface {
 	events.Event
 	PartyID() string
 	MarketID() string
-	Price() uint64
+	Price() *num.Uint
 	Timestamp() int64
 }
 
@@ -35,7 +35,7 @@ type SPE interface {
 // SDE SettleDistressedEvent
 type SDE interface {
 	SE
-	Margin() uint64
+	Margin() *num.Uint
 	Timestamp() int64
 }
 
@@ -84,18 +84,18 @@ func (p *Positions) Push(evts ...events.Event) {
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
-	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), e.AmountLost()
+	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), num.DecimalFromUint(num.NewUint(uint64(e.AmountLost())))
 	pos, ok := p.data[marketID][partyID]
 	if !ok {
 		return
 	}
-	if amountLoss < 0 {
-		pos.loss += float64(-amountLoss)
+	if amountLoss.LessThan(num.DecimalFromFloat(0.0)) {
+		pos.loss.Sub(amountLoss)
 	} else {
-		pos.adjustment += float64(amountLoss)
+		pos.adjustment.Add(amountLoss)
 	}
-	pos.RealisedPnlFP += float64(amountLoss)
-	pos.RealisedPnl += amountLoss
+	pos.RealisedPnlFP.Add(amountLoss)
+	pos.RealisedPnl.Add(amountLoss)
 	pos.Position.UpdatedAt = e.Timestamp()
 	p.data[marketID][partyID] = pos
 }
@@ -124,18 +124,18 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 		calc = seToProto(e)
 	}
 	margin := e.Margin()
-	calc.RealisedPnl += calc.UnrealisedPnl
-	calc.RealisedPnlFP += calc.UnrealisedPnlFP
+	calc.RealisedPnl.Add(calc.UnrealisedPnl)
+	calc.RealisedPnlFP.Add(calc.UnrealisedPnlFP)
 	calc.OpenVolume = 0
-	calc.UnrealisedPnl = 0
-	calc.AverageEntryPrice = 0
+	calc.UnrealisedPnl = num.NewDecimalFromFloat(0)
+	calc.AverageEntryPrice = num.NewUint(0)
 	// realised P&L includes whatever we had in margin account at this point
-	calc.RealisedPnl -= int64(margin)
-	calc.RealisedPnlFP -= float64(margin)
+	calc.RealisedPnl.Sub(num.DecimalFromUint(margin))
+	calc.RealisedPnlFP.Sub(num.DecimalFromUint(margin))
 	// @TODO average entry price shouldn't be affected(?)
 	// the volume now is zero, though, so we'll end up moving this position to storage
-	calc.UnrealisedPnlFP = 0
-	calc.AverageEntryPriceFP = 0
+	calc.UnrealisedPnlFP = num.DecimalFromFloat(0.0)
+	calc.AverageEntryPriceFP = num.DecimalFromFloat(0.0)
 	calc.Position.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
 }
@@ -219,60 +219,75 @@ func calculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, in
 	return tradedVolume, 0
 }
 
-func closeV(p *Position, closedVolume int64, tradedPrice uint64) float64 {
+func closeV(p *Position, closedVolume int64, tradedPrice *num.Uint) num.Decimal {
 	if closedVolume == 0 {
-		return 0
+		return num.DecimalFromFloat(0.0)
 	}
-	realisedPnlDelta := float64(closedVolume) * (float64(tradedPrice) - p.AverageEntryPriceFP)
-	p.RealisedPnlFP += realisedPnlDelta
+	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromUint(num.NewUint(uint64(closedVolume))))
+	p.RealisedPnlFP.Add(realisedPnlDelta)
 	p.OpenVolume -= closedVolume
 	return realisedPnlDelta
 }
 
-func updateVWAP(vwap float64, volume int64, addVolume int64, addPrice uint64) float64 {
+func updateVWAP(vwap num.Decimal, volume int64, addVolume int64, addPrice *num.Uint) num.Decimal {
 	if volume+addVolume == 0 {
-		return 0
+		return num.DecimalFromFloat(0.0)
 	}
-	return ((vwap * float64(volume)) + (float64(addPrice) * float64(addVolume))) / (float64(volume) + float64(addVolume))
+
+	volumeDec := num.DecimalFromFloat(float64(volume))
+	addVolumeDec := num.DecimalFromFloat(float64(addVolume))
+	addPriceDec := num.DecimalFromUint(addPrice)
+
+	//	return ((vwap * float64(volume)) + (float64(addPrice) * float64(addVolume))) / (float64(volume) + float64(addVolume))
+	return vwap.Mul(volumeDec).Add(addPriceDec.Mul(addVolumeDec)).Div(volumeDec.Add(addVolumeDec))
 }
 
-func openV(p *Position, openedVolume int64, tradedPrice uint64) {
+func openV(p *Position, openedVolume int64, tradedPrice *num.Uint) {
 	// calculate both average entry price here.
 	p.AverageEntryPriceFP = updateVWAP(p.AverageEntryPriceFP, p.OpenVolume, openedVolume, tradedPrice)
 	p.OpenVolume += openedVolume
 }
 
-func mtm(p *Position, markPrice uint64) {
+func mtm(p *Position, markPrice *num.Uint) {
 	if p.OpenVolume == 0 {
-		p.UnrealisedPnlFP = 0
-		p.UnrealisedPnl = 0
+		p.UnrealisedPnlFP = num.DecimalFromFloat(0.0)
+		p.UnrealisedPnl = num.DecimalFromFloat(0.0)
 		return
 	}
-	p.UnrealisedPnlFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
+	markPriceDec := num.DecimalFromUint(markPrice)
+	openVolumeDec := num.DecimalFromFloat(float64(p.OpenVolume))
+
+	//	p.UnrealisedPnlFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
+	p.UnrealisedPnlFP = openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPriceFP))
 }
 
 func updateSettlePosition(p *Position, e SPE) {
+	var overflow bool
 	for _, t := range e.Trades() {
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
-		_ = closeV(p, closedVolume, t.Price().Uint64())
-		openV(p, openedVolume, t.Price().Uint64())
-		p.AverageEntryPrice = uint64(math.Round(p.AverageEntryPriceFP))
-		p.RealisedPnl = int64(math.Round(p.RealisedPnlFP))
+		_ = closeV(p, closedVolume, t.Price().Clone())
+		openV(p, openedVolume, t.Price().Clone())
+		p.AverageEntryPrice, overflow = num.UintFromDecimal(p.AverageEntryPriceFP.Round(0))
+		if overflow {
+			// We need to report the error somehow
+		}
+
+		p.RealisedPnl = p.RealisedPnlFP.Round(0)
 	}
-	mtm(p, e.Price())
-	p.UnrealisedPnl = int64(math.Round(p.UnrealisedPnlFP))
+	mtm(p, e.Price().Clone())
+	p.UnrealisedPnl = p.UnrealisedPnlFP.Round(0)
 }
 
 type Position struct {
 	types.Position
-	AverageEntryPriceFP float64
-	RealisedPnlFP       float64
-	UnrealisedPnlFP     float64
+	AverageEntryPriceFP num.Decimal
+	RealisedPnlFP       num.Decimal
+	UnrealisedPnlFP     num.Decimal
 
 	// what the party lost because of loss socialization
-	loss float64
+	loss num.Decimal
 	// what a party was missing which triggered loss socialization
-	adjustment float64
+	adjustment num.Decimal
 }
 
 func seToProto(e SE) Position {
@@ -281,9 +296,9 @@ func seToProto(e SE) Position {
 			MarketId: e.MarketID(),
 			PartyId:  e.PartyID(),
 		},
-		AverageEntryPriceFP: 0,
-		RealisedPnlFP:       0,
-		UnrealisedPnlFP:     0,
+		AverageEntryPriceFP: num.NewDecimalFromFloat(0.0),
+		RealisedPnlFP:       num.NewDecimalFromFloat(0.0),
+		UnrealisedPnlFP:     num.NewDecimalFromFloat(0.0),
 	}
 }
 

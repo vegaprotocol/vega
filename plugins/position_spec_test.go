@@ -11,10 +11,10 @@ import (
 )
 
 type expect struct {
-	AverageEntryPrice int
-	OpenVolume        int
-	RealisedPNL       int
-	UnrealisedPNL     int
+	AverageEntryPrice *num.Uint
+	OpenVolume        int64
+	RealisedPNL       num.Decimal
+	UnrealisedPNL     num.Decimal
 }
 
 func TestPositionSpecSuite(t *testing.T) {
@@ -38,10 +38,10 @@ func TestPositionSpecSuite(t *testing.T) {
 				},
 			}, 1),
 			expect: expect{
-				AverageEntryPrice: 60,
+				AverageEntryPrice: num.NewUint(60),
 				OpenVolume:        125,
-				UnrealisedPNL:     5000,
-				RealisedPNL:       0,
+				UnrealisedPNL:     num.NewDecimalFromFloat(5000.0),
+				RealisedPNL:       num.NewDecimalFromFloat(0.0),
 			},
 		},
 		{
@@ -57,10 +57,10 @@ func TestPositionSpecSuite(t *testing.T) {
 				},
 			}, 1),
 			expect: expect{
-				AverageEntryPrice: 50,
+				AverageEntryPrice: num.NewUint(50),
 				OpenVolume:        75,
-				UnrealisedPNL:     3750,
-				RealisedPNL:       1250,
+				UnrealisedPNL:     num.NewDecimalFromFloat(3750),
+				RealisedPNL:       num.NewDecimalFromFloat(1250),
 			},
 		},
 		{
@@ -77,9 +77,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: 0,
-				UnrealisedPNL:     0,
-				RealisedPNL:       5000,
+				AverageEntryPrice: num.NewUint(0),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(5000),
 			},
 		},
 		{
@@ -96,9 +96,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        -25,
-				AverageEntryPrice: 100,
-				UnrealisedPNL:     0,
-				RealisedPNL:       5000,
+				AverageEntryPrice: num.NewUint(100),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(5000),
 			},
 		},
 		{
@@ -115,9 +115,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        -125,
-				AverageEntryPrice: 60,
-				UnrealisedPNL:     -5000,
-				RealisedPNL:       0,
+				AverageEntryPrice: num.NewUint(60),
+				UnrealisedPNL:     num.NewDecimalFromFloat(-5000),
+				RealisedPNL:       num.NewDecimalFromFloat(0),
 			},
 		},
 		{
@@ -134,9 +134,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        -75,
-				AverageEntryPrice: 50,
-				UnrealisedPNL:     -3750,
-				RealisedPNL:       -1250,
+				AverageEntryPrice: num.NewUint(50),
+				UnrealisedPNL:     num.NewDecimalFromFloat(-3750),
+				RealisedPNL:       num.NewDecimalFromFloat(-1250),
 			},
 		},
 		{
@@ -153,9 +153,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: 0,
-				UnrealisedPNL:     0,
-				RealisedPNL:       -5000,
+				AverageEntryPrice: num.NewUint(0),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(-5000),
 			},
 		},
 		{
@@ -172,9 +172,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        25,
-				AverageEntryPrice: 100,
-				UnrealisedPNL:     0,
-				RealisedPNL:       -5000,
+				AverageEntryPrice: num.NewUint(100),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(-5000),
 			},
 		},
 		{
@@ -199,9 +199,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        25,
-				AverageEntryPrice: 80,
-				UnrealisedPNL:     -125,
-				RealisedPNL:       -2375,
+				AverageEntryPrice: num.NewUint(80),
+				UnrealisedPNL:     num.NewDecimalFromFloat(-125),
+				RealisedPNL:       num.NewDecimalFromFloat(-2375),
 			},
 		},
 		{
@@ -222,9 +222,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: 0,
-				UnrealisedPNL:     0,
-				RealisedPNL:       8750,
+				AverageEntryPrice: num.NewUint(0),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(8750),
 			},
 		},
 		{
@@ -245,9 +245,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: 0,
-				UnrealisedPNL:     0,
-				RealisedPNL:       8750,
+				AverageEntryPrice: num.NewUint(0),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(8750),
 			},
 		},
 		{
@@ -268,9 +268,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: 0,
-				UnrealisedPNL:     0,
-				RealisedPNL:       -2500,
+				AverageEntryPrice: num.NewUint(0),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(-2500),
 			},
 		},
 		{
@@ -291,9 +291,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: 0,
-				UnrealisedPNL:     0,
-				RealisedPNL:       3750,
+				AverageEntryPrice: num.NewUint(0),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(3750),
 			},
 		},
 		{
@@ -346,9 +346,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        2,
-				AverageEntryPrice: 1010,
-				UnrealisedPNL:     0,
-				RealisedPNL:       -446,
+				AverageEntryPrice: num.NewUint(1010),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(-446),
 			},
 		},
 		{
@@ -413,9 +413,9 @@ func TestPositionSpecSuite(t *testing.T) {
 			}, 1),
 			expect: expect{
 				OpenVolume:        0,
-				AverageEntryPrice: 0,
-				UnrealisedPNL:     0,
-				RealisedPNL:       -116,
+				AverageEntryPrice: num.NewUint(0),
+				UnrealisedPNL:     num.NewDecimalFromFloat(0),
+				RealisedPNL:       num.NewDecimalFromFloat(-116),
 			},
 		},
 	}
@@ -430,10 +430,10 @@ func TestPositionSpecSuite(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotZero(t, len(pp))
 			// average entry price should be 1k
-			assert.Equal(t, tc.expect.AverageEntryPrice, int(pp[0].AverageEntryPrice), "invalid average entry price")
-			assert.Equal(t, tc.expect.OpenVolume, int(pp[0].OpenVolume), "invalid open volume")
-			assert.Equal(t, tc.expect.UnrealisedPNL, int(pp[0].UnrealisedPnl), "invalid unrealised pnl")
-			assert.Equal(t, tc.expect.RealisedPNL, int(pp[0].RealisedPnl), "invalid realised pnl")
+			assert.Equal(t, tc.expect.AverageEntryPrice, pp[0].AverageEntryPrice, "invalid average entry price")
+			assert.Equal(t, tc.expect.OpenVolume, pp[0].OpenVolume, "invalid open volume")
+			assert.Equal(t, tc.expect.UnrealisedPNL.String(), pp[0].UnrealisedPnl.String(), "invalid unrealised pnl")
+			assert.Equal(t, tc.expect.RealisedPNL.String(), pp[0].RealisedPnl.String(), "invalid realised pnl")
 		})
 	}
 }
