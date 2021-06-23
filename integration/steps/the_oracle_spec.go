@@ -41,7 +41,7 @@ func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table 
 }
 
 func parseOracleSpecTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"property",
 		"type",
 		"binding",

@@ -177,7 +177,7 @@ func openingAuction(row marketRow) *types.AuctionDuration {
 }
 
 func parseMarketsTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"id",
 		"quote name",
 		"asset",

@@ -49,7 +49,7 @@ func errMissingLPFeeShare(market string, expected types.LiquidityProviderFeeShar
 }
 
 func parseLiquidityFeeSharesTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"party",
 		"equity like share",
 		"average entry valuation",

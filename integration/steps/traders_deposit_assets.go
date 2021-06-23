@@ -46,7 +46,7 @@ func errNoGeneralAccountForTrader(party depositAssetRow, err error) error {
 }
 
 func parseDepositAssetTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"asset",
 		"amount",

@@ -36,7 +36,7 @@ func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency s
 }
 
 func parsePriceMonitoringTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"horizon",
 		"probability",
 		"auction extension",

@@ -32,7 +32,7 @@ func TheOrderBookOfMarketShouldHaveTheFollowingVolumes(broker *stubs.BrokerStub,
 }
 
 func parseOrderBookTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"volume",
 		"price",
 		"side",

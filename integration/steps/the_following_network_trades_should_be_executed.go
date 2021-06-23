@@ -38,7 +38,7 @@ func errTradeMissing(party string, aggressorSide types.Side, volume uint64) erro
 }
 
 func parseNetworkTradesTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"aggressor side",
 		"volume",

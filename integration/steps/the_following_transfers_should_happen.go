@@ -80,7 +80,7 @@ func getTransfers(broker *stubs.BrokerStub) []*types.LedgerEntry {
 }
 
 func parseTransferTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"from",
 		"from account",
 		"to",

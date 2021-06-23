@@ -51,7 +51,7 @@ func errPropertyRedeclared(name string) error {
 }
 
 func parseOracleBroadcastTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"name",
 		"value",
 	}, []string{})

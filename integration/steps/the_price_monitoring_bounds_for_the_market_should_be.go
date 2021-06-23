@@ -41,7 +41,7 @@ func errMissingPriceMonitoringBounds(market string, expected types.PriceMonitori
 }
 
 func parsePriceMonitoringBoundsTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"min bound",
 		"max bound",
 	}, []string{})

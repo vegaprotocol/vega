@@ -13,26 +13,21 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func GetFirstRow(table gherkin.DataTable) (RowWrapper, error) {
-	rows := TableWrapper(table).Parse()
+// StrictParseFirstRow parses and verifies, table integrity and returns only the
+// first row. This is suitable of table that act more as object than actual
+// table.
+func StrictParseFirstRow(table *gherkin.DataTable, required, optional []string) RowWrapper {
+	rows := StrictParseTable(table, required, optional)
 
 	if len(rows) > 1 {
-		return RowWrapper{}, fmt.Errorf("this table supports only one row")
+		panic("this table supports only one row")
 	}
 
-	for _, r := range rows {
-		return r, nil
-	}
-
-	return RowWrapper{}, fmt.Errorf("missing row")
+	return rows[0]
 }
 
-type TableWrapper gherkin.DataTable
-
-// StrictParse parses and verifies the table integrity.
-func (t TableWrapper) StrictParse(required, optional []string) []RowWrapper {
-	dt := gherkin.DataTable(t)
-
+// StrictParseTable parses and verifies the table integrity.
+func StrictParseTable(dt *gherkin.DataTable, required, optional []string) []RowWrapper {
 	tableLen := len(dt.Rows)
 	if tableLen < 1 {
 		panic("A table is required.")
@@ -62,10 +57,10 @@ func (t TableWrapper) StrictParse(required, optional []string) []RowWrapper {
 	return out
 }
 
-// Parse parses the table without verifying the integrity.
-// Prefer the use of StrictParse().
-func (t TableWrapper) Parse() []RowWrapper {
-	return t.StrictParse([]string{}, []string{})
+// ParseTable parses the table without verifying its integrity.
+// Prefer the use of StrictParseTable().
+func ParseTable(dt *gherkin.DataTable) []RowWrapper {
+	return StrictParseTable(dt, []string{}, []string{})
 }
 
 func verifyTableIntegrity(required, optional []string, header *gherkin.TableRow) error {

@@ -35,7 +35,7 @@ func errCannotLockFundsForWithdrawal(row withdrawAssetRow, err error) error {
 }
 
 func parseWithdrawAssetTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"asset",
 		"amount",

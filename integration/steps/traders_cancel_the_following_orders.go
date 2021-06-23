@@ -46,7 +46,7 @@ type cancelOrderRow struct {
 }
 
 func parseCancelOrderTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"reference",
 	}, []string{

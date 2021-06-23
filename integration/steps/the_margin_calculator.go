@@ -8,14 +8,7 @@ import (
 )
 
 func TheMarginCalculator(config *market.Config, name string, table *gherkin.DataTable) error {
-	_ = parseMarginCalculatorTable(table)
-
-	r, err := GetFirstRow(*table)
-	if err != nil {
-		return err
-	}
-
-	row := marginCalculatorRow{row: r}
+	row := marginCalculatorRow{row: parseMarginCalculatorTable(table)}
 
 	return config.MarginCalculators.Add(name, &types.MarginCalculator{
 		ScalingFactors: &types.ScalingFactors{
@@ -26,8 +19,8 @@ func TheMarginCalculator(config *market.Config, name string, table *gherkin.Data
 	})
 }
 
-func parseMarginCalculatorTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+func parseMarginCalculatorTable(table *gherkin.DataTable) RowWrapper {
+	return StrictParseFirstRow(table, []string{
 		"release factor",
 		"initial factor",
 		"search factor",

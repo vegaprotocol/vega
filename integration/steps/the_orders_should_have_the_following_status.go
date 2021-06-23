@@ -32,7 +32,7 @@ func errInvalidOrderStatus(o types.Order, status types.Order_Status) error {
 }
 
 func parseOrderStatusTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"reference",
 		"status",

@@ -92,7 +92,7 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 }
 
 func parseAccountBalancesTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"asset",
 		"market id",

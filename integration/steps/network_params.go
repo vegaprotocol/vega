@@ -52,7 +52,7 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *gher
 }
 
 func parseNetworkParametersTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"name",
 		"value",
 	}, []string{})

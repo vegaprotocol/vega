@@ -37,7 +37,7 @@ func TheFollowingTradesShouldBeExecuted(
 }
 
 func parseExecutedTradesTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"buyer",
 		"seller",
 		"price",

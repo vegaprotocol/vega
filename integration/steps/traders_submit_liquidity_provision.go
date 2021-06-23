@@ -68,7 +68,7 @@ func errSubmittingLiquidityProvision(lp *commandspb.LiquidityProvisionSubmission
 }
 
 func parseSubmitLiquidityProvisionTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"id",
 		"party",
 		"market id",

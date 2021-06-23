@@ -41,7 +41,7 @@ func errOrderNotRejected(orderNotRejected []string) error {
 }
 
 func parseRejectedOrdersTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"market id",
 		"reason",

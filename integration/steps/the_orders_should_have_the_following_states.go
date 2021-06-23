@@ -33,7 +33,7 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *gher
 }
 
 func parseOrdersStatesTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"market id",
 		"side",

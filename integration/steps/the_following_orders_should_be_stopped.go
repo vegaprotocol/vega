@@ -41,7 +41,7 @@ func errOrderNotStopped(orderNotRejected []string) error {
 }
 
 func parseStoppedOrdersTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse([]string{
+	return StrictParseTable(table, []string{
 		"trader",
 		"market id",
 		"reason",
