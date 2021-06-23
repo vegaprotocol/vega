@@ -544,19 +544,6 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
-	// for _, e := range tm.events {
-	// 	switch evt := e.(type) {
-	// 	case *events.Order:
-	// 		fmt.Printf("order: %v\n", evt.Order().String())
-	// 	case *events.Acc:
-	// 		acc := evt.Account()
-	// 		fmt.Printf("accounts: %v\n", acc.String())
-	// 	case *events.TransferResponse:
-	// 		tr := evt.Proto()
-	// 		fmt.Printf("transfers: %v\n", tr.String())
-	// 	}
-	// }
-
 	// FIXME(): the bond account seems actually fine in this case.
 	// a top up of 3 is taken initially from the bon, this can be seen
 	// via the transfers, but then another top is done from mtm win
@@ -1581,7 +1568,6 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				fmt.Printf("%#v\n", evt.Order().String())
 				if ord := evt.Order(); ord.PartyId == lpparty {
 					found[ord.Id] = ord
 				}
@@ -2458,7 +2444,6 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				fmt.Printf("%#v\n", evt.Order().String())
 				found[evt.Order().Id] = evt.Order()
 			}
 		}

@@ -2,7 +2,6 @@ package execution_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -120,7 +119,6 @@ func TestAmendDeployedCommitment(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				lp := evt.LiquidityProvision()
-				fmt.Printf("%v\n", lp.String())
 				found[lp.Id] = lp
 			}
 		}

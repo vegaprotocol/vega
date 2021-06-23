@@ -211,20 +211,6 @@ func (m *Market) updateLPOrders(
 ) []*types.Order {
 	cancelIDs := map[string]struct{}{}
 
-	// fmt.Printf("SUBMITS:\n")
-	// for _, v := range submits {
-	// 	fmt.Printf("%#v\n", v.String())
-	// }
-	// fmt.Printf("CANCELS:\n")
-	// for _, v := range cancels {
-	// 	fmt.Printf("%#v -> %#v\n", v.Party, v.OrderIDs)
-	// }
-	// fmt.Printf("ALLS:\n")
-	// for _, v := range allOrders {
-	// 	fmt.Printf("%#v\n", v.String())
-	// }
-	// m.matching.PrintState("LOL")
-
 	// now we gonna map all the all order which
 	// where to be cancelled, and just do nothing in
 	// those case.

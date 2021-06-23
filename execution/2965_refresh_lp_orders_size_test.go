@@ -2,7 +2,6 @@ package execution_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -182,7 +181,6 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	})
 
-	fmt.Printf("\n\nSUBMITTING NOW\n\n")
 	tm.events = nil
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
