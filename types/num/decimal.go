@@ -8,6 +8,14 @@ import (
 
 type Decimal = decimal.Decimal
 
+var (
+	zero = decimal.Zero
+)
+
+func DecimalZero() Decimal {
+	return zer
+}
+
 func NewDecimalFromFloat(f float64) Decimal {
 	return decimal.NewFromFloat(f)
 }

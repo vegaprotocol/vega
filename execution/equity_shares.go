@@ -2,23 +2,22 @@ package execution
 
 import (
 	"fmt"
-	"math/big"
 
-	"github.com/shopspring/decimal"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // lp holds LiquidityProvider stake and avg values
 type lp struct {
-	stake decimal.Decimal
-	share decimal.Decimal
-	avg   decimal.Decimal
+	stake num.Decimal
+	share num.Decimal
+	avg   num.Decimal
 }
 
 // EquityShares module controls the Equity sharing algorithm described on the spec:
 // https://github.com/vegaprotocol/product/blob/02af55e048a92a204e9ee7b7ae6b4475a198c7ff/specs/0042-setting-fees-and-rewarding-lps.md#calculating-liquidity-provider-equity-like-share
 type EquityShares struct {
 	// mvp is the MarketValueProxy
-	mvp decimal.Decimal
+	mvp num.Decimal
 
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
@@ -26,7 +25,7 @@ type EquityShares struct {
 	openingAuctionEnded bool
 }
 
-func NewEquityShares(mvp decimal.Decimal) *EquityShares {
+func NewEquityShares(mvp num.Decimal) *EquityShares {
 	return &EquityShares{
 		mvp: mvp,
 		lps: map[string]*lp{},
@@ -53,23 +52,22 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 	}
 }
 
-func (es *EquityShares) WithMVP(mvp decimal.Decimal) *EquityShares {
+func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
 	es.mvp = mvp
 	return es
 }
 
 // SetPartyStake sets LP values for a given party.
-func (es *EquityShares) SetPartyStake(id string, newStakeU64 uint64) {
+func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 	if !es.openingAuctionEnded {
 		defer es.setOpeningAuctionAVG()
 	}
 
-	newStake := decimal.NewFromBigInt(new(big.Int).SetUint64(newStakeU64), 0)
+	newStake := num.DecimalFromUint(newStakeU)
 	v, found := es.lps[id]
 	// first time we set the newStake and mvp as avg.
 	if !found {
-		if newStake.GreaterThan(decimal.Zero) {
-			avg := decimal.Zero
+		if avg := num.DecimalZero(); newStake.GreaterThan(avg) {
 			if es.openingAuctionEnded {
 				avg = es.mvp
 			}
@@ -80,7 +78,7 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU64 uint64) {
 		return
 	}
 
-	if newStake.Equal(decimal.Zero) {
+	if newStake.IsZero() {
 		// We are removing an existing stake
 		delete(es.lps, id)
 		return
@@ -102,14 +100,14 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU64 uint64) {
 }
 
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
-func (es *EquityShares) AvgEntryValuation(id string) decimal.Decimal {
+func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 	if v, ok := es.lps[id]; ok {
 		return v.avg
 	}
-	return decimal.Zero
+	return num.DecimalZero()
 }
 
-func (es *EquityShares) mustEquity(party string) decimal.Decimal {
+func (es *EquityShares) mustEquity(party string) num.Decimal {
 	eq, err := es.equity(party)
 	if err != nil {
 		panic(err)
@@ -122,20 +120,20 @@ func (es *EquityShares) mustEquity(party string) decimal.Decimal {
 // given a party id (i).
 //
 // Returns an error if the party has no stake.
-func (es *EquityShares) equity(id string) (decimal.Decimal, error) {
+func (es *EquityShares) equity(id string) (num.Decimal, error) {
 	if v, ok := es.lps[id]; ok {
 		return (v.stake.Mul(es.mvp)).Div(v.avg), nil
 	}
 
-	return decimal.Zero, fmt.Errorf("party %s has no stake", id)
+	return num.DecimalZero(), fmt.Errorf("party %s has no stake", id)
 }
 
 // Shares returns the ratio of equity for a given party
-func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]decimal.Decimal {
+func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]num.Decimal {
 	// Calculate the equity for each party and the totalEquity (the sum of all
 	// the equities)
-	var totalEquity decimal.Decimal
-	shares := map[string]decimal.Decimal{}
+	var totalEquity num.Decimal
+	shares := map[string]num.Decimal{}
 	for id := range es.lps {
 		// if the party is not one of the deployed parties,
 		// we just skip
