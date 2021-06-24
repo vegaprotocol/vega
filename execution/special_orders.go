@@ -278,14 +278,6 @@ func (m *Market) updateLPOrders(
 		}
 	}
 
-	// if enteredAuction {
-	// 	for _, v := range allOrders[auctionFrom:] {
-	// 		cancelEvts = append(cancelEvts, events.NewOrderEvent(ctx, v))
-	// 	}
-	// 	m.broker.SendBatch(cancelEvts)
-	// 	return nil
-	// }
-
 	// send cancel events
 	m.broker.SendBatch(cancelEvts)
 
