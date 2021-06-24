@@ -3,6 +3,7 @@ package steps
 import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/proto"
+
 	"github.com/cucumber/godog/gherkin"
 )
 

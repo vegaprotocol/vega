@@ -273,15 +273,14 @@ Feature: Test liquidity provider reward distribution
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader2 | 951   | 3    | lp2     |
       | trader2 | 951   | 12   | lp1     |
-      | trader2 | 1000  | 5    | trader1 |
+      | trader2 | 1000  | 8    | trader1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -380,13 +379,12 @@ Feature: Test liquidity provider reward distribution
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
+      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader2 | 951   | 3    | lp2     |
       | trader2 | 951   | 12   | lp1     |
-      | trader2 | 1000  | 5    | trader1 |
+      | trader2 | 1000  | 8    | trader1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -410,9 +408,9 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 0.7362            | 10000                   |
-      | lp2   | 0.1840            | 10000                   |
-      | lp3   | 0.0797            | 115397                  |
+      | lp1   | 0.7366            | 10000                   |
+      | lp2   | 0.1841            | 10000                   |
+      | lp3   | 0.0791            | 116278                  |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |

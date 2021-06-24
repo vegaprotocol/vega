@@ -131,7 +131,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     When the network moves ahead "290" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 1030       | TRADING_MODE_CONTINUOUS | 1       | 1020      | 1040      | 3090         | 10000          | 30            | 0           |
+      | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 3162         | 10000          | 31            | 0           |
 
   Scenario: Enter liquidity auction, extended by trades at liq. auction end, multiple trades -> still a single extension
 
@@ -235,7 +235,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     When the network moves ahead "290" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 1030       | TRADING_MODE_CONTINUOUS | 1       | 1020      | 1040      | 3090         | 10000          | 30            | 0           |
+      | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 3162         | 10000          | 31            | 0           |
 
   Scenario: When in liquidity auction, we should only trigger price extension once
 

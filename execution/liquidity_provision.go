@@ -219,7 +219,8 @@ func (m *Market) updateAndCreateLPOrders(
 	ctx context.Context,
 	newOrders []*types.Order,
 	cancels []*liquidity.ToCancel,
-) error {
+	distressed []*types.Order,
+) ([]*types.Order, error) {
 
 	market := m.GetID()
 
@@ -245,6 +246,13 @@ func (m *Market) updateAndCreateLPOrders(
 	faultyLPs := map[string]bool{}
 	faultyLPOrders := map[string]*types.Order{}
 	initialMargins := map[string]uint64{}
+	var orderUpdates []*types.Order
+
+	// first add all party which are already distressed here
+	for _, v := range distressed {
+		faultyLPOrders[v.PartyId] = v
+		faultyLPs[v.PartyId] = true
+	}
 
 	mktID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
@@ -266,7 +274,8 @@ func (m *Market) updateAndCreateLPOrders(
 			// be patient...
 			continue
 		}
-		if _, err := m.submitOrder(ctx, order, false); err != nil {
+		conf, orderUpdts, err := m.submitOrder(ctx, order, false)
+		if err != nil {
 			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
 				logging.OrderID(order.Id),
 				logging.PartyID(order.PartyId),
@@ -277,6 +286,12 @@ func (m *Market) updateAndCreateLPOrders(
 			faultyLPOrders[order.PartyId] = order
 			continue
 		}
+		if len(conf.Trades) > 0 {
+			m.log.Panic("submitting liquidity orders after a reprice should never trade",
+				logging.Order(*order))
+		}
+
+		orderUpdates = append(orderUpdates, orderUpdts...)
 		faultyLPs[order.PartyId] = false
 	}
 
@@ -317,7 +332,7 @@ func (m *Market) updateAndCreateLPOrders(
 		}
 
 		// now the party had not enough enough funds to pay the margin
-		err := m.cancelDistressedLiquidityProvision(
+		orders, err := m.cancelDistressedLiquidityProvision(
 			ctx, v.Party, faultyLPOrders[v.Party])
 		if err != nil {
 			m.log.Debug("issue cancelling liquidity provision",
@@ -325,6 +340,8 @@ func (m *Market) updateAndCreateLPOrders(
 				logging.MarketID(m.GetID()),
 				logging.PartyID(v.Party))
 		}
+		orderUpdates = append(orderUpdates, orders...)
+
 		// update shares to remove this party from the shares
 		updateShares = true
 	}
@@ -334,7 +351,7 @@ func (m *Market) updateAndCreateLPOrders(
 		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 	}
 
-	return nil
+	return orderUpdates, nil
 }
 
 func (m *Market) cancelPendingLiquidityProvision(
@@ -359,7 +376,7 @@ func (m *Market) cancelDistressedLiquidityProvision(
 	ctx context.Context,
 	party string,
 	order *types.Order,
-) error {
+) ([]*types.Order, error) {
 	mktID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
 
@@ -368,7 +385,7 @@ func (m *Market) cancelDistressedLiquidityProvision(
 		m.log.Debug("error getting party position",
 			logging.PartyID(party),
 			logging.MarketID(mktID))
-		return nil
+		return nil, nil
 	}
 
 	margin, perr := m.collateral.GetPartyMargin(mpos, asset, mktID)
@@ -377,18 +394,19 @@ func (m *Market) cancelDistressedLiquidityProvision(
 			logging.PartyID(party),
 			logging.MarketID(mktID),
 			logging.Error(perr))
-		return perr
+		return nil, perr
 	}
-	err := m.resolveClosedOutTraders(ctx, []events.Margin{margin}, order)
+	orderUpdates, err := m.resolveClosedOutTraders(
+		ctx, []events.Margin{margin}, order)
 	if err != nil {
 		m.log.Error("could not resolve out traders",
 			logging.MarketID(mktID),
 			logging.PartyID(party),
 			logging.Error(err))
-		return err
+		return nil, err
 	}
 
-	return nil
+	return orderUpdates, nil
 }
 
 func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.Order) (err error) {
@@ -445,7 +463,10 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 	}()
 
 	for _, order := range newOrders {
-		if _, err := m.submitOrder(ctx, order, false); err != nil {
+		// ignoring updated orders as we expect
+		// no updates there as the party should ever be able to
+		// submit without issues or not at all.
+		if conf, _, err := m.submitOrder(ctx, order, false); err != nil {
 			failedOnID = order.Id
 			m.log.Debug("unable to submit liquidity provision order",
 				logging.MarketID(m.GetID()),
@@ -453,6 +474,9 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 				logging.PartyID(order.PartyId),
 				logging.Error(err))
 			return err
+		} else if len(conf.Trades) > 0 {
+			m.log.Panic("liquidity provision initial submission should never trade",
+				logging.Error(err))
 		}
 		m.log.Debug("new liquidity order submitted successfully",
 			logging.MarketID(m.GetID()),
@@ -542,7 +566,7 @@ func (m *Market) repriceLiquidityOrder(
 	return m.adjustPriceRange(po, side, price)
 }
 
-func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price uint64) (uint64, *types.PeggedOrder, error) {
+func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price uint64) (p uint64, _ *types.PeggedOrder, _ error) {
 	// now from here, we will be adjusting the offset
 	// to ensure the price is always in the range [minPrice, maxPrice]
 	// from the price monitoring engine.
@@ -777,6 +801,7 @@ func (m *Market) cancelLiquidityProvision(
 	// force update of shares so they are updated for all
 	_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
 
+	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)
 
@@ -1074,15 +1099,13 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 		m.equityShares.SetPartyStake(party, sub.CommitmentAmount)
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
-
-		m.checkLiquidity(ctx, nil)
-		m.commandLiquidityAuction(ctx)
-
 	}()
 
 	// this workd but we definitely trigger some recursive loop which
 	// are unlikely to be fine.
-	m.liquidityUpdate(ctx, nil)
+	m.checkForReferenceMoves(ctx, []*types.Order{}, true)
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 
 	return nil
 }
