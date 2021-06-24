@@ -99,11 +99,13 @@ const (
 	Proposal_STATE_WAITING_FOR_NODE_VOTE Proposal_State = 7
 )
 
+type Proposal_Terms_TYPE int
+
 const (
-	ProposalTerms_UPDATEMARKET           int = 1
-	ProposalTerms_NEWMARKET              int = 2
-	ProposalTerms_UPDATENETWORKPARAMETER int = 3
-	ProposalTerms_NEWASSET               int = 4
+	ProposalTerms_UPDATEMARKET Proposal_Terms_TYPE = iota
+	ProposalTerms_NEWMARKET
+	ProposalTerms_UPDATENETWORKPARAMETER
+	ProposalTerms_NEWASSET
 )
 
 // Vote represents a governance vote casted by a party for a given proposal.
@@ -251,7 +253,7 @@ type pterms interface {
 	isPTerm()
 	oneOfProto() interface{} // calls IntoProto
 	DeepClone() pterms
-	GetTermType() int
+	GetTermType() Proposal_Terms_TYPE
 }
 
 func (m *NewAsset) GetChanges() *AssetDetails {
@@ -377,7 +379,7 @@ func (a ProposalTerms_NewMarket) isPTerm() {}
 func (a ProposalTerms_NewMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
-func (a ProposalTerms_NewMarket) GetTermType() int {
+func (a ProposalTerms_NewMarket) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_NEWMARKET
 }
 
@@ -396,7 +398,7 @@ func (a ProposalTerms_UpdateMarket) isPTerm() {}
 func (a ProposalTerms_UpdateMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
-func (a ProposalTerms_UpdateMarket) GetTermType() int {
+func (a ProposalTerms_UpdateMarket) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_UPDATEMARKET
 }
 
@@ -415,7 +417,7 @@ func (a ProposalTerms_UpdateNetworkParameter) isPTerm() {}
 func (a ProposalTerms_UpdateNetworkParameter) oneOfProto() interface{} {
 	return a.IntoProto()
 }
-func (a ProposalTerms_UpdateNetworkParameter) GetTermType() int {
+func (a ProposalTerms_UpdateNetworkParameter) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_UPDATENETWORKPARAMETER
 }
 
@@ -444,7 +446,7 @@ func (a ProposalTerms_NewAsset) isPTerm() {}
 func (a ProposalTerms_NewAsset) oneOfProto() interface{} {
 	return a.IntoProto()
 }
-func (a ProposalTerms_NewAsset) GetTermType() int {
+func (a ProposalTerms_NewAsset) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_NEWASSET
 }
 
