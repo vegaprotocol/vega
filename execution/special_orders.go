@@ -243,11 +243,7 @@ func (m *Market) updateLPOrders(
 	// were initially cancelled, and remove them
 	// from the list if the liquidity engine instructed to
 	// cancel them
-	var (
-		cancelEvts []events.Event
-		//		enteredAuction bool
-		//auctionFrom    int
-	)
+	var cancelEvts []events.Event
 	for _, order := range allOrders {
 		if _, ok := parties[order.PartyId]; ok {
 			// party is distressed, not processing
