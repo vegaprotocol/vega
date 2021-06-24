@@ -6,7 +6,6 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/golang/protobuf/ptypes/wrappers"
 )
 
 type OrderCancellation = commandspb.OrderCancellation
@@ -95,89 +94,6 @@ func (o OrderSubmission) IntoOrder(party string) *Order {
 		PeggedOrder: o.PeggedOrder,
 	}
 	return order
-}
-
-type OrderAmendment struct {
-	// Order identifier, this is required to find the order and will not be updated, required field
-	OrderId string
-	// Market identifier, this is required to find the order and will not be updated
-	MarketId string
-	// Amend the price for the order, if the Price value is set, otherwise price will remain unchanged
-	Price *num.Uint
-	// Amend the size for the order by the delta specified:
-	// - To reduce the size from the current value set a negative integer value
-	// - To increase the size from the current value, set a positive integer value
-	// - To leave the size unchanged set a value of zero
-	SizeDelta int64
-	// Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
-	ExpiresAt int64
-	// Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
-	TimeInForce proto.Order_TimeInForce
-	// Amend the pegged order offset for the order
-	PeggedOffset *num.Uint
-	// If the PeggedOffset is valid should the sign be positive or negative
-	PeggedOffsetPositive bool
-	// Amend the pegged order reference for the order
-	PeggedReference proto.PeggedReference
-}
-
-func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, error) {
-	o := OrderAmendment{}
-	o.OrderId = p.OrderId
-	o.MarketId = p.MarketId
-	// Needs to update the protobuf definition TODO UINT
-	if p.Price != nil {
-		o.Price = num.NewUint(p.Price.Value)
-	}
-	o.SizeDelta = p.SizeDelta
-	if p.ExpiresAt != nil {
-		o.ExpiresAt = p.ExpiresAt.Value
-	}
-	o.TimeInForce = p.TimeInForce
-	if p.PeggedOffset != nil {
-		var offset uint64
-		if p.PeggedOffset.Value < 0 {
-			offset = uint64(-p.PeggedOffset.Value)
-			o.PeggedOffsetPositive = false
-		} else {
-			offset = uint64(p.PeggedOffset.Value)
-			o.PeggedOffsetPositive = true
-		}
-		o.PeggedOffset = num.NewUint(offset)
-	}
-	o.PeggedReference = p.PeggedReference
-	return &o, nil
-}
-
-func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
-	oa := &commandspb.OrderAmendment{
-		OrderId:         o.OrderId,
-		MarketId:        o.MarketId,
-		SizeDelta:       o.SizeDelta,
-		TimeInForce:     o.TimeInForce,
-		PeggedReference: o.PeggedReference,
-	}
-	if !o.Price.IsZero() {
-		oa.Price = &proto.Price{Value: o.Price.Uint64()}
-	}
-	if o.PeggedOffset != nil {
-		var offset int64
-		if o.PeggedOffsetPositive {
-			offset = int64(o.PeggedOffset.Uint64())
-		} else {
-			offset = -int64(o.PeggedOffset.Uint64())
-		}
-		oa.PeggedOffset = &wrappers.Int64Value{Value: offset}
-	}
-
-	if o.ExpiresAt != 0 {
-		oa.ExpiresAt = &proto.Timestamp{Value: o.ExpiresAt}
-	}
-	return oa
-}
-
-func (o OrderAmendment) String() string {
-	return o.IntoProto().String()
 }
 
 type WithdrawSubmission struct {

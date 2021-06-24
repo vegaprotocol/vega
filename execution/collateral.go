@@ -86,7 +86,7 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 		responses = append(responses, tr)
 	}
 	// margin shortfall && liquidity provider -> bond slashing
-	if closed != nil && closed.MarginShortFall() > 0 {
+	if closed != nil && !closed.MarginShortFall().IsZero() {
 		// we pay the bond penalty if the order was not pending
 		if !m.liquidity.IsPending(closed.Party()) {
 			// get bond penalty

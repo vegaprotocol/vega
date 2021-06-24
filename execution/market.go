@@ -7,9 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"math"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -100,7 +98,7 @@ type PriceMonitor interface {
 
 // LiquidityMonitor
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake num.Decimal, trades []*types.Trade, rf types.RiskFactor, markPrice, bestStaticBidVolume, bestStaticAskVolume *num.Uint)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64)
 	SetMinDuration(d time.Duration)
 	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
 }
@@ -202,7 +200,7 @@ type Market struct {
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
 func SetMarketID(marketcfg *types.Market, seq uint64) error {
 	marketcfg.Id = ""
-	marketbytes, err := proto.Marshal(marketcfg)
+	marketbytes, err := proto.Marshal(marketcfg.IntoProto())
 	if err != nil {
 		return err
 	}
@@ -383,7 +381,8 @@ func (m *Market) GetMarketData() types.MarketData {
 	bestStaticOfferPrice, bestStaticOfferVolume, _ := m.getBestStaticAskPriceAndVolume()
 
 	// Auction related values
-	indicativePrice, indicativeVolume := num.NewUint(0), num.NewUint(0)
+	indicativePrice := num.NewUint(0)
+	indicativeVolume := uint64(0)
 	var auctionStart, auctionEnd int64
 	if m.as.InAuction() {
 		indicativePrice, indicativeVolume, _ = m.matching.GetIndicativePriceAndVolume()
@@ -429,8 +428,8 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketTradingMode:         m.as.Mode(),
 		Trigger:                   m.as.Trigger(),
 		ExtensionTrigger:          m.as.ExtensionTrigger(),
-		TargetStake:               strconv.FormatUint(uint64(math.Ceil(m.getTargetStake())), 10),
-		SuppliedStake:             strconv.FormatUint(m.getSuppliedStake(), 10),
+		TargetStake:               m.getTargetStake().Ceil().String(),
+		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
 		MarketValueProxy:          m.lastMarketValueProxy.String(),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
@@ -654,7 +653,7 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	}
 
 	if order.PeggedOrder.Offset >= 0 {
-		return num.Sum(price, num.NewUint(order.PeggedOrder.Offset)), nil
+		return num.Sum(price, num.NewUint(uint64(order.PeggedOrder.Offset))), nil
 	}
 
 	// At this stage offset is negative so we change it's sign to cast it to an
@@ -1418,8 +1417,8 @@ func (m *Market) confirmMTM(
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
 // the fee engine.
 func (m *Market) updateLiquidityFee(ctx context.Context) {
-	stake := m.getTargetStake()
-	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(num.NewUint(uint64(stake)))
+	stake, _ := num.UintFromDecimal(m.getTargetStake())
+	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(stake)
 	if !fee.Equals(m.getLiquidityFee()) {
 		m.fee.SetLiquidityFee(fee)
 		m.setLiquidityFee(fee)
@@ -1813,7 +1812,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		}
 		tSize := trader.Size()
 		order.Size = uint64(tSize)
-		if ts < 0 {
+		if tSize < 0 {
 			order.Size = uint64(-tSize)
 		}
 
@@ -2709,13 +2708,13 @@ func (m *Market) getBestStaticPrices() (bid, ask *num.Uint, err error) {
 func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 	bid, err := m.matching.GetBestStaticBidPrice()
 	if err != nil {
-		return 0, err
+		return num.Zero(), err
 	}
 	ask, err := m.matching.GetBestStaticAskPrice()
 	if err != nil {
-		return 0, err
+		return num.Zero(), err
 	}
-	mid := num.NewUint(0)
+	mid := num.Zero()
 	one := num.NewUint(1)
 	if side == types.Side_SIDE_BUY {
 		mid = mid.Div(num.Sum(bid, ask, one), num.Sum(one, one))
@@ -2770,7 +2769,7 @@ func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *ty
 			asset: {Long: num.DecimalFromFloat(0.15), Short: num.DecimalFromFloat(0.25)},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			asset: {Long: num.DecimalFromFloaT(0.15), Short: num.DecimalFromFloat(0.25)},
+			asset: {Long: num.DecimalFromFloat(0.15), Short: num.DecimalFromFloat(0.25)},
 		},
 	}
 }
@@ -2792,7 +2791,7 @@ func (m *Market) getTargetStake() num.Decimal {
 	if err != nil {
 		logging.Error(err)
 		m.log.Debug("unable to get risk factors, can't calculate target")
-		return 0
+		return num.DecimalZero()
 	}
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.markPrice.Clone())
 }
@@ -2806,7 +2805,7 @@ func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context
 }
 
 func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, v float64) {
-	m.bondPenaltyFactor = num.DecimalFromFloat(num.DecimalFromFloat(v))
+	m.bondPenaltyFactor = num.DecimalFromFloat(v)
 }
 
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
@@ -2906,7 +2905,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 
 	m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
-		num.DecimalFromUint(m.getSuppliedStake()),
+		m.getSuppliedStake(),
 		trades,
 		*rf,
 		m.markPrice.Clone(),

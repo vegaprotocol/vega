@@ -65,18 +65,11 @@ func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 		}
 	}
 	if o.PeggedOffset != nil {
-		or.PeggedOffset = &wrapperspb.Int64Value{
+		r.PeggedOffset = &wrapperspb.Int64Value{
 			Value: *o.PeggedOffset,
 		}
 	}
 	return r
-}
-
-func (o OrderAmendment) Price() *num.Uint {
-	if o.Price != nil {
-		return o.Price.Clone()
-	}
-	return nil
 }
 
 // Validate santiy-checks the order amendment as-is, the market will further validate the amendment
@@ -89,7 +82,7 @@ func (o OrderAmendment) Validate() error {
 
 	if o.TimeInForce == Order_TIME_IN_FORCE_GTC && o.ExpiresAt != nil {
 		// this is cool, but we need to ensure and expiry is not set
-		return types.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
+		return OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
 	}
 
 	if o.TimeInForce == Order_TIME_IN_FORCE_FOK || o.TimeInForce == Order_TIME_IN_FORCE_IOC {
@@ -98,4 +91,16 @@ func (o OrderAmendment) Validate() error {
 	}
 
 	return nil
+}
+
+func (o OrderAmendment) String() string {
+	return o.IntoProto().String()
+}
+
+func (o OrderAmendment) GetOrderId() string {
+	return o.OrderId
+}
+
+func (o OrderAmendment) GetMarketId() string {
+	return o.MarketId
 }

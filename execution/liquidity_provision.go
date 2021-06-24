@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/positions"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -128,7 +127,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		if newerr != nil {
 			m.log.Debug("unable to rollback bon account topup",
 				logging.String("party", party),
-				logging.Int64("amount", amount),
+				logging.BigUint("amount", amount),
 				logging.Error(err))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
@@ -598,7 +597,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	// this is handling bestAsk / mid for ASK.
 	if side == types.Side_SIDE_SELL {
 		// that's our initial price with our offset
-		basePrice := num.Sum(price, num.NewUint(po.Offset))
+		basePrice := num.Sum(price, num.NewUint(uint64(po.Offset)))
 		// now if this price+offset is < to maxPrice,
 		// nothing needs to be changed. we return
 		// both the current price, and the offset
@@ -691,7 +690,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// now this is the case where basePrice is < minPrice
 		// and minPrice is non-negative + inferior to bestBid
 		if !minPrice.IsZero() && minPrice.LT(price) {
-			off := num.Zero(price, minPrice)
+			off := num.Sum(price, minPrice)
 			po.Offset = -int64(off.Uint64())
 			return price.Sub(price, off), po, nil
 		}
@@ -993,7 +992,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 }
 
 func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
-	ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error

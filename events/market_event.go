@@ -4,26 +4,29 @@ import (
 	"context"
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type MarketCreated struct {
 	*Base
-	m types.Market
+	m  types.Market
+	pm proto.Market
 }
 
 func NewMarketCreatedEvent(ctx context.Context, m types.Market) *MarketCreated {
-	cpy := m.DeepClone()
+	pm := m.IntoProto()
 	return &MarketCreated{
 		Base: newBase(ctx, MarketCreatedEvent),
-		m:    *cpy,
+		m:    m,
+		pm:   *pm,
 	}
 }
 
 // MarketEvent -> is needs to be logged as a market event
 func (m MarketCreated) MarketEvent() string {
-	return fmt.Sprintf("Market ID %s created (%s)", m.m.Id, m.m.String())
+	return fmt.Sprintf("Market ID %s created (%s)", m.m.Id, m.pm.String())
 }
 
 func (m MarketCreated) MarketID() string {
@@ -34,8 +37,8 @@ func (m MarketCreated) Market() types.Market {
 	return m.m
 }
 
-func (m MarketCreated) Proto() types.Market {
-	return m.m
+func (m MarketCreated) Proto() proto.Market {
+	return m.pm
 }
 
 func (m MarketCreated) MarketProto() eventspb.MarketEvent {

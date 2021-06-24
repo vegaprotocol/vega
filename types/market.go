@@ -10,6 +10,14 @@ import (
 
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
 
+type MarketTradingConfigType int
+
+const (
+	MARKET_TRADING_CONFIG_UNDEFINED MarketTradingConfigType = iota
+	MARKET_TRADING_CONFIG_CONTINUOUS
+	MARKET_TRADING_CONFIG_DISCRETE
+)
+
 type MarketTimestamps struct {
 	Proposed int64
 	Pending  int64
@@ -224,6 +232,10 @@ func MarketDiscreteFromProto(m *proto.Market_Discrete) *Market_Discrete {
 	}
 }
 
+func (Market_Discrete) tmcType() MarketTradingConfigType {
+	return MARKET_TRADING_CONFIG_DISCRETE
+}
+
 type Market_Continuous struct {
 	Continuous *ContinuousTrading
 }
@@ -238,6 +250,10 @@ func (m Market_Continuous) IntoProto() *proto.Market_Continuous {
 	return &proto.Market_Continuous{
 		Continuous: m.Continuous.IntoProto(),
 	}
+}
+
+func (Market_Continuous) tmcType() MarketTradingConfigType {
+	return MARKET_TRADING_CONFIG_CONTINUOUS
 }
 
 func (Market_Continuous) istmc() {}
@@ -466,6 +482,7 @@ func (m MarketData) String() string {
 type istmc interface {
 	istmc()
 	tmcIntoProto() interface{}
+	tmcType() MarketTradingConfigType
 }
 
 type Market struct {
@@ -480,10 +497,11 @@ type Market struct {
 	TradingMode                   Market_TradingMode
 	State                         Market_State
 	MarketTimestamps              *MarketTimestamps
+	tmc                           MarketTradingConfigType
 }
 
 func MarketFromProto(mkt *proto.Market) *Market {
-	return &Market{
+	m := &Market{
 		Id:                            mkt.Id,
 		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
 		DecimalPlaces:                 mkt.DecimalPlaces,
@@ -496,6 +514,8 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 	}
+	m.tmc = m.TradingModeConfig.tmcType()
+	return m
 }
 
 func (m Market) IntoProto() *proto.Market {
@@ -518,6 +538,31 @@ func (m Market) IntoProto() *proto.Market {
 	case *proto.Market_Discrete:
 		r.TradingModeConfig = tm
 	}
+	return r
+}
+
+func (m Market) GetId() string {
+	return m.Id
+}
+
+func (m Market) GetAsset() (string, error) {
+	// @TODO implement this in a better way
+	return m.IntoProto().GetAsset()
+}
+
+func (m Market) GetContinuous() *Market_Continuous {
+	if m.tmc != MARKET_TRADING_CONFIG_CONTINUOUS {
+		return nil
+	}
+	r, _ := m.TradingModeConfig.(*Market_Continuous)
+	return r
+}
+
+func (m Market) GetDiscrete() *Market_Discrete {
+	if m.tmc != MARKET_TRADING_CONFIG_DISCRETE {
+		return nil
+	}
+	r, _ := m.TradingModeConfig.(*Market_Discrete)
 	return r
 }
 
