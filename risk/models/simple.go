@@ -18,12 +18,12 @@ type Simple struct {
 // NewSimple instantiates a new simple/dummy risk model with fixed risk params.
 func NewSimple(ps *types.SimpleRiskModel, asset string) (*Simple, error) {
 	return &Simple{
-		factorLong:  num.DecimalFromFloat(ps.Params.FactorLong),
-		factorShort: num.DecimalFromFloat(ps.Params.FactorShort),
-		maxMoveUp:   num.DecimalFromFloat(ps.Params.MaxMoveUp),
-		minMoveDown: num.DecimalFromFloat(ps.Params.MinMoveDown),
+		factorLong:  ps.Params.FactorLong,
+		factorShort: ps.Params.FactorShort,
+		maxMoveUp:   ps.Params.MaxMoveUp,
+		minMoveDown: ps.Params.MinMoveDown,
 		asset:       asset,
-		prob:        num.DecimalFromFloat(ps.Params.ProbabilityOfTrading),
+		prob:        ps.Params.ProbabilityOfTrading,
 	}, nil
 }
 
