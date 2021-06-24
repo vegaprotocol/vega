@@ -15,36 +15,38 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		return
 	}
 	wt, nt := m.matching.CanLeaveAuction()
+	if !wt && m.as.IsOpeningAuction() {
+		// we won't be able to leave opening auction anyway
+		// in case the opening auction has expired, we might want to extend by 1s
+		// but current behaviour is to leave the auction ASAP
+		// m.extendAuctionIncompleteBook()
+		return
+	}
 	// at this point, it doesn't matter what auction type we're in
 	p, v, _ := m.matching.GetIndicativePriceAndVolume()
 	// opening auction
 	if m.as.IsOpeningAuction() {
-		if !wt {
-			// this causes unit tests to fail ATM, we should leave the auction ASASP
-			// instead of extending by 1 sec
-			// m.extendAuctionIncompleteBook()
+		if endTS := m.as.ExpiresAt(); endTS == nil || !endTS.Before(now) {
 			return
 		}
-		if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(now) {
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, now, true); err != nil {
-				m.log.Panic("unable to run check price with price monitor",
-					logging.String("market-id", m.GetID()),
-					logging.Error(err))
-			}
-			if evt := m.as.AuctionExtended(ctx); evt != nil {
-				// this should never, ever happen
-				m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
-			}
-			m.as.SetReadyToLeave()
-			m.LeaveAuction(ctx, now)
-			// the market is now in a ACTIVE state
-			m.mkt.State = types.Market_STATE_ACTIVE
-			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-			m.equityShares.OpeningAuctionEnded()
-			// start the market fee window
-			m.feeSplitter.TimeWindowStart(now)
+		if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
+			m.log.Panic("unable to run check price with price monitor",
+				logging.String("market-id", m.GetID()),
+				logging.Error(err))
 		}
+		if evt := m.as.AuctionExtended(ctx); evt != nil {
+			// this should never, ever happen
+			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
+		}
+		m.as.SetReadyToLeave()
+		m.LeaveAuction(ctx, now)
+		// the market is now in a ACTIVE state
+		m.mkt.State = types.Market_STATE_ACTIVE
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
+		m.equityShares.OpeningAuctionEnded()
+		// start the market fee window
+		m.feeSplitter.TimeWindowStart(now)
 		return
 	}
 	// price and liquidity auctions
@@ -54,14 +56,14 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		ft := []*types.Trade{
 			{
 				Size:  v,
-				Price: p,
+				Price: p.Clone(),
 			},
 		}
 		if !isPrice {
 			m.checkLiquidity(ctx, ft)
 		}
 		if isPrice || m.as.CanLeave() {
-			if err := m.pMonitor.CheckPrice(ctx, m.as, p, v, now, true); err != nil {
+			if err := m.pMonitor.CheckPrice(ctx, m.as, p.Clone(), v, now, true); err != nil {
 				m.log.Panic("unable to run check price with price monitor",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))

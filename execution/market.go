@@ -94,7 +94,7 @@ var (
 // PriceMonitor interface to handle price monitoring/auction triggers
 // @TODO the interface shouldn't be imported here
 type PriceMonitor interface {
-	CheckPrice(ctx context.Context, as price.AuctionState, p, v uint64, now time.Time, persistent bool) error
+	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, now time.Time, persistent bool) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (*num.Uint, *num.Uint)
@@ -190,8 +190,8 @@ type Market struct {
 	lastMidBuyPrice  uint64
 	lastMidSellPrice uint64
 
-	lastMarketValueProxy    decimal.Decimal
-	bondPenaltyFactor       float64
+	lastMarketValueProxy    num.Decimal
+	bondPenaltyFactor       num.Decimal
 	marketValueWindowLength time.Duration
 
 	// Liquidity Fee
@@ -2804,7 +2804,7 @@ func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context
 }
 
 func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, v float64) {
-	m.bondPenaltyFactor = v
+	m.bondPenaltyFactor = num.DecimalFromFloat(v)
 }
 
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
