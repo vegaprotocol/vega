@@ -2339,7 +2339,7 @@ func (m *Market) amendOrder(
 	// from here these are the normal amendment
 	var priceIncrease, priceShift, sizeIncrease, sizeDecrease, expiryChange, timeInForceChange bool
 
-	if !amendOrder.Price.EQ(existingOrder.Price) {
+	if amendedOrder.Price.NEQ(existingOrder.Price) {
 		priceShift = true
 		priceIncrease = existingOrder.Price.LT(amendedOrder.Price)
 	}
