@@ -34,7 +34,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/shopspring/decimal"
 )
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network
@@ -343,7 +342,11 @@ func NewMarket(
 		peggedOrders:       NewPeggedOrders(),
 		expiringOrders:     NewExpiringOrders(),
 		feeSplitter:        &FeeSplitter{},
-		equityShares:       NewEquityShares(decimal.Zero),
+		equityShares:       NewEquityShares(num.DecimalZero()),
+		lastBestAskPrice:   num.Zero(),
+		lastMidSellPrice:   num.Zero(),
+		lastMidBuyPrice:    num.Zero(),
+		lastBestBidPrice:   num.Zero(),
 	}
 
 	return market, nil
