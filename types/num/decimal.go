@@ -13,7 +13,7 @@ var (
 )
 
 func DecimalZero() Decimal {
-	return zer
+	return zero
 }
 
 func NewDecimalFromFloat(f float64) Decimal {
