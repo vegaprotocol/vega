@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/liquidity"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +48,9 @@ func testCanAmend(t *testing.T) {
 	assert.NoError(t, tng.engine.CanAmend(sub, party))
 
 	sub = getTestAmendSimpleSubmission()
-	sub.Fee = ""
+	// previously, this tested for an empty string, this is impossible now with the decimal type
+	// so let's check for negatives instead
+	sub.Fee = num.DecimalFromFloat(-1)
 	assert.EqualError(t,
 		tng.engine.CanAmend(sub, party),
 		"invalid liquidity provision fee",
@@ -67,19 +71,22 @@ func testCanAmend(t *testing.T) {
 	)
 }
 
-func getTestAmendSimpleSubmission() *commandspb.LiquidityProvisionSubmission {
-	return &commandspb.LiquidityProvisionSubmission{
+func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
+	pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         market,
 		CommitmentAmount: 10000,
 		Fee:              "0.5",
 		Reference:        "ref-lp-submission-1",
-		Buys: []*types.LiquidityOrder{
+		Buys: []*proto.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 7, Offset: -10},
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 3, Offset: -15},
 		},
-		Sells: []*types.LiquidityOrder{
+		Sells: []*proto.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 8, Offset: 10},
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: 15},
 		},
 	}
+	t := &types.LiquidityProvisionSubmission{}
+	t.FromProto(pb)
+	return t
 }

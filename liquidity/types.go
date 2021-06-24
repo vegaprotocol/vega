@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type ToCancel struct {
@@ -37,16 +38,15 @@ type LiquidityProvisions []*types.LiquidityProvision
 // [target stake] < sum from i=1 to k of [MM-stake-i]. In other words we want in this
 // ordered list to find the liquidity providers that supply the liquidity
 // that's required. If no such k exists we set k=N.
-func (l LiquidityProvisions) feeForTarget(t uint64) string {
+func (l LiquidityProvisions) feeForTarget(t *num.Uint) num.Decimal {
 	if len(l) == 0 {
-		return ""
+		return num.DecimalFromFloat(0)
 	}
 
-	var n uint64
-
+	n := num.NewUint(0)
 	for _, i := range l {
-		n += i.CommitmentAmount
-		if n >= t {
+		n.AddSum(i.CommitmentAmount)
+		if n.GTE(t) {
 			return i.Fee
 		}
 	}
@@ -58,7 +58,7 @@ func (l LiquidityProvisions) feeForTarget(t uint64) string {
 type lpsByFee LiquidityProvisions
 
 func (l lpsByFee) Len() int           { return len(l) }
-func (l lpsByFee) Less(i, j int) bool { return l[i].Float64Fee() < l[j].Float64Fee() }
+func (l lpsByFee) Less(i, j int) bool { return l[i].Fee.LessThan(l[j].Fee) }
 func (l lpsByFee) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
 
 // sortByFee sorts in-place and returns the LiquidityProvisions for convenience.
@@ -82,16 +82,16 @@ func (l ProvisionsPerParty) Slice() LiquidityProvisions {
 	return slice
 }
 
-func (l ProvisionsPerParty) FeeForTarget(v uint64) string {
+func (l ProvisionsPerParty) FeeForTarget(v *num.Uint) num.Decimal {
 	return l.Slice().sortByFee().feeForTarget(v)
 }
 
 // TotalStake returns the sum of all CommitmentAmount, which corresponds to the
 // total stake of a market.
-func (l ProvisionsPerParty) TotalStake() uint64 {
-	var n uint64
+func (l ProvisionsPerParty) TotalStake() *num.Uint {
+	n := num.NewUint(0)
 	for _, p := range l {
-		n += p.CommitmentAmount
+		n.AddSum(p.CommitmentAmount)
 	}
 	return n
 }
