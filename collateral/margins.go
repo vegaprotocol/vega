@@ -61,7 +61,7 @@ func (n marginUpdate) MarginShortFall() *num.Uint {
 // BondBalance - returns nil if no bond account is present, *num.Uint otherwise
 func (n marginUpdate) BondBalance() *num.Uint {
 	if n.bond == nil {
-		return num.NewUint(0)
+		return nil
 	}
 	return n.bond.Balance.Clone()
 }
