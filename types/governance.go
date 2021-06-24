@@ -99,6 +99,13 @@ const (
 	Proposal_STATE_WAITING_FOR_NODE_VOTE Proposal_State = 7
 )
 
+const (
+	ProposalTerms_UPDATEMARKET           int = 1
+	ProposalTerms_NEWMARKET              int = 2
+	ProposalTerms_UPDATENETWORKPARAMETER int = 3
+	ProposalTerms_NEWASSET               int = 4
+)
+
 // Vote represents a governance vote casted by a party for a given proposal.
 type Vote struct {
 	// PartyID is the party that casted the vote.
@@ -244,6 +251,7 @@ type pterms interface {
 	isPTerm()
 	oneOfProto() interface{} // calls IntoProto
 	DeepClone() pterms
+	GetTermType() int
 }
 
 func (m *NewAsset) GetChanges() *AssetDetails {
@@ -335,6 +343,24 @@ func (m *ProposalTerms) GetNewAsset() *NewAsset {
 	}
 }
 
+func (m *ProposalTerms) GetNewMarket() *NewMarket {
+	switch c := m.Change.(type) {
+	case ProposalTerms_NewMarket:
+		return c.NewMarket
+	default:
+		return nil
+	}
+}
+
+func (m *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
+	switch c := m.Change.(type) {
+	case ProposalTerms_UpdateNetworkParameter:
+		return c.UpdateNetworkParameter
+	default:
+		return nil
+	}
+}
+
 func (a ProposalTerms_NewMarket) IntoProto() *proto.ProposalTerms_NewMarket {
 	return &proto.ProposalTerms_NewMarket{
 		NewMarket: a.NewMarket.IntoProto(),
@@ -350,6 +376,9 @@ func ProposalNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms
 func (a ProposalTerms_NewMarket) isPTerm() {}
 func (a ProposalTerms_NewMarket) oneOfProto() interface{} {
 	return a.IntoProto()
+}
+func (a ProposalTerms_NewMarket) GetTermType() int {
+	return ProposalTerms_NEWMARKET
 }
 
 // DeepClone @TODO
@@ -367,6 +396,9 @@ func (a ProposalTerms_UpdateMarket) isPTerm() {}
 func (a ProposalTerms_UpdateMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+func (a ProposalTerms_UpdateMarket) GetTermType() int {
+	return ProposalTerms_UPDATEMARKET
+}
 
 // DeepClone @TODO
 func (a ProposalTerms_UpdateMarket) DeepClone() pterms {
@@ -382,6 +414,9 @@ func (a ProposalTerms_UpdateNetworkParameter) IntoProto() *proto.ProposalTerms_U
 func (a ProposalTerms_UpdateNetworkParameter) isPTerm() {}
 func (a ProposalTerms_UpdateNetworkParameter) oneOfProto() interface{} {
 	return a.IntoProto()
+}
+func (a ProposalTerms_UpdateNetworkParameter) GetTermType() int {
+	return ProposalTerms_UPDATENETWORKPARAMETER
 }
 
 // DeepClone @TODO
@@ -408,6 +443,9 @@ func (a ProposalTerms_NewAsset) IntoProto() *proto.ProposalTerms_NewAsset {
 func (a ProposalTerms_NewAsset) isPTerm() {}
 func (a ProposalTerms_NewAsset) oneOfProto() interface{} {
 	return a.IntoProto()
+}
+func (a ProposalTerms_NewAsset) GetTermType() int {
+	return ProposalTerms_NEWASSET
 }
 
 // DeepClone @TODO
