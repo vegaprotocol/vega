@@ -32,13 +32,17 @@ func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, 
 	if pf.Params == nil {
 		return nil, ErrMissingLogNormalParameter
 	}
+	// the quant stuff really needs to be updated to use the same num types...
+	mu, _ := pf.Params.Mu.Float64()
+	r, _ := pf.Params.R.Float64()
+	sigma, _ := pf.Params.Sigma.Float64()
 	return &LogNormal{
-		riskAversionParameter: num.DecimalFromFloat(pf.RiskAversionParameter),
-		tau:                   num.DecimalFromFloat(pf.Tau),
+		riskAversionParameter: pf.RiskAversionParameter,
+		tau:                   pf.Tau,
 		params: riskmodelbs.ModelParamsBS{
-			Mu:    pf.Params.Mu,
-			R:     pf.Params.R,
-			Sigma: pf.Params.Sigma,
+			Mu:    mu,
+			R:     r,
+			Sigma: sigma,
 		},
 		asset: asset,
 	}, nil
