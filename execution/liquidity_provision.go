@@ -631,11 +631,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		if price.LT(maxPrice) {
 			// this is the case where maxPrice is > to price,
 			// then we need to adapt the offset
-			off, neg := num.Zero().Delta(maxPrice, price)
+			off := num.Zero().Sub(maxPrice, price)
 			po.Offset = int64(off.Uint64())
-			if neg {
-				po.Offset *= -1
-			}
 			// and our price is the maxPrice
 			return maxPrice, po, nil
 		}
