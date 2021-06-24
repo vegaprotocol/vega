@@ -1809,9 +1809,9 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 			nSide = types.Side_SIDE_BUY
 		}
 		tSize := trader.Size()
-		order.Size = uint64(ts)
+		order.Size = uint64(tSize)
 		if ts < 0 {
-			order.Size = uint64(-ts)
+			order.Size = uint64(-tSize)
 		}
 
 		// set order fields (network order)
@@ -1823,7 +1823,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		// this is the party order
 		partyOrder := types.Order{
 			MarketId:    marketID,
-			Size:        tSize,
+			Size:        order.Size,
 			Remaining:   0,
 			Status:      types.Order_STATUS_FILLED,
 			PartyId:     trader.Party(),
