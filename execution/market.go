@@ -2071,11 +2071,6 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	return &types.OrderCancellationConfirmation{Order: order}, nil
 }
 
-// parkOrderAndAdd removes the order from the orderbook and adds it to the parked list
-// func (m *Market) parkOrderAndAdd(ctx context.Context, order *types.Order) {
-// 	m.parkOrder(ctx, order)
-// }
-
 // parkOrder removes the given order from the orderbook
 // parkOrder will panic if it encounters errors, which means that it reached an
 // invalid state.

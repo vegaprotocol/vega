@@ -119,12 +119,17 @@ func (m *Market) repriceAllSpecialOrders(
 	lpOrders := m.liquidity.GetAllLiquidityOrders()
 	// now we remove them all from the book
 	for _, order := range lpOrders {
-		_, err := m.cancelOrder(ctx, order.PartyId, order.Id)
-		if err != nil {
-			m.log.Panic("could not delete order from the book",
+		// Remove order if any volume remains,
+		// otherwise it's already been popped by the matching engine.
+		cancellation, err := m.matching.CancelOrder(order)
+		if cancellation == nil || err != nil {
+			m.log.Panic("could not remove liquidity order from the book",
 				logging.Order(*order),
 				logging.Error(err))
 		}
+
+		// Remove it from the trader position
+		_ = m.position.UnregisterOrder(order)
 	}
 
 	// now no lp orders are in the book anymore,
@@ -235,25 +240,24 @@ func (m *Market) updateLPOrders(
 			// party is distressed, not processing
 			continue
 		}
-		// set the status to active again
-		order.Status = types.Order_STATUS_ACTIVE
-		// these orders were submitted exactly the same before,
-		// so there's no reason we would not be able to submit
-		// let's panic if an issue happen
-		if _, ok := cancelIDs[order.Id]; !ok {
-			conf, _, err := m.submitOrder(ctx, order, false)
-			if err != nil {
-				// lp cannot submit the order with a margin check failed
-				// we add the order to the list and not do not process any others of
-				// this party orders
+
+		// these order were actually cancelled, just send the event
+		if _, ok := cancelIDs[order.Id]; ok {
+			m.broker.Send(events.NewOrderEvent(ctx, order))
+
+			// these orders were submitted exactly the same before,
+			// so there's no reason we would not be able to submit
+			// let's panic if an issue happen
+		} else {
+			// set the status to active again
+			order.Status = types.Order_STATUS_ACTIVE
+			conf, _, err := m.submitValidatedOrder(ctx, order)
+			if conf == nil || err != nil {
 				orders = append(orders, order)
 				parties[order.PartyId] = struct{}{}
-				// m.log.Panic("should be able to re-submit the orders now",
-				// 	logging.Error(err), logging.Order(*order))
 			} else if len(conf.Trades) > 0 {
 				m.log.Panic("submitting liquidity orders after a reprice should never trade",
 					logging.Order(*order))
-
 			}
 		}
 	}
