@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -514,10 +513,6 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
 func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
-	if err := commands.CheckVoteSubmission(&cmd); err != nil {
-		return err
-	}
-
 	proposal, err := e.validateVote(cmd, party)
 	if err != nil {
 		// vote was not created/accepted, send TxErrEvent

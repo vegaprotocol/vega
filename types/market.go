@@ -524,3 +524,24 @@ func (m Market) IntoProto() *proto.Market {
 func (m Market) String() string {
 	return m.IntoProto().String()
 }
+
+func (m *Market) GetTradingModeConfig() istmc {
+	if m != nil {
+		return m.TradingModeConfig
+	}
+	return nil
+}
+
+func (m *Market) GetContinuous() *ContinuousTrading {
+	if x, ok := m.GetTradingModeConfig().(*Market_Continuous); ok {
+		return x.Continuous
+	}
+	return nil
+}
+
+func (m *Market) GetDiscrete() *DiscreteTrading {
+	if x, ok := m.GetTradingModeConfig().(*Market_Discrete); ok {
+		return x.Discrete
+	}
+	return nil
+}

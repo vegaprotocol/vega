@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
@@ -504,7 +505,14 @@ func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 		logging.String("vote-party", party),
 		logging.String("vote-value", vote.Value.String()))
 
-	return app.gov.AddVote(ctx, *vote, party)
+	if err := commands.CheckVoteSubmission(vote); err != nil {
+		return err
+	}
+
+	// Convert to local domain type
+	v := types.NewVoteSubmissionFromProto(vote)
+
+	return app.gov.AddVote(ctx, v, party)
 }
 
 func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
