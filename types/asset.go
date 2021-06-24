@@ -3,8 +3,16 @@
 package types
 
 import (
+	"errors"
+
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types/num"
+)
+
+var (
+	ErrMissingERC20ContractAddress = errors.New("missing erc20 contract address")
+	ErrMissingBuiltinAssetField    = errors.New("missing builtin asset field")
+	ErrInvalidAssetDetails         = errors.New("invalid asset details")
 )
 
 type Asset struct {
@@ -29,6 +37,7 @@ type isAssetDetails interface {
 	isAssetDetails()
 	adIntoProto() interface{}
 	DeepClone() isAssetDetails
+	ValidateAssetSource() (ProposalError, error)
 }
 
 type AssetDetailsBuiltinAsset struct {
@@ -143,6 +152,13 @@ func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
 	}
 }
 
+func (a AssetDetails_BuiltinAsset) ValidateAssetSource() (ProposalError, error) {
+	if a.BuiltinAsset.MaxFaucetAmountMint.IsZero() {
+		return ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD, ErrMissingBuiltinAssetField
+	}
+	return ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+}
+
 func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) *AssetDetailsErc20 {
 	return &AssetDetailsErc20{
 		Erc20: &ERC20{
@@ -160,6 +176,13 @@ func (AssetDetailsErc20) isAssetDetails() {}
 func (a AssetDetailsErc20) DeepClone() isAssetDetails {
 	cpy := a
 	return &cpy
+}
+
+func (a AssetDetails_Erc20) ValidateAssetSource() (ProposalError, error) {
+	if len(a.Erc20.ContractAddress) <= 0 {
+		return ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS, ErrMissingERC20ContractAddress
+	}
+	return ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 // DeepClone returns a deep clone of a.
