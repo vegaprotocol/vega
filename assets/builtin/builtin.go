@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/assets/common"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -20,7 +21,7 @@ func New(id string, asset *types.AssetDetails) *Builtin {
 	}
 }
 
-func (b *Builtin) ProtoAsset() *types.Asset {
+func (b *Builtin) ProtoAsset() *proto.Asset {
 	return b.asset.IntoProto()
 }
 
