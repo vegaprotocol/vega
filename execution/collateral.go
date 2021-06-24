@@ -115,7 +115,8 @@ func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*
 				Amount: penalty,
 				Asset:  asset,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+			Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+			MinAmount: num.Zero(),
 		})
 		if err != nil {
 			return nil, err
