@@ -256,6 +256,7 @@ func (m *Market) updateAndCreateLPOrders(
 
 	mktID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
+	var enteredAuction bool
 	for _, order := range newOrders {
 		// before we submit orders, we check if the party was pending
 		// and save the amount of the margin balance.
@@ -289,6 +290,12 @@ func (m *Market) updateAndCreateLPOrders(
 		if len(conf.Trades) > 0 {
 			m.log.Panic("submitting liquidity orders after a reprice should never trade",
 				logging.Order(*order))
+		}
+
+		// did we enter auction
+		if m.as.InAuction() {
+			enteredAuction = true
+			break
 		}
 
 		orderUpdates = append(orderUpdates, orderUpdts...)
@@ -349,6 +356,12 @@ func (m *Market) updateAndCreateLPOrders(
 	if updateShares {
 		// force update of shares so they are updated for all
 		_ = m.equityShares.Shares(m.liquidity.GetInactiveParties())
+	}
+
+	// if we are in an option, there's nothing to be done with these
+	// updates specifically, let's just return
+	if enteredAuction {
+		orderUpdates = nil
 	}
 
 	return orderUpdates, nil
