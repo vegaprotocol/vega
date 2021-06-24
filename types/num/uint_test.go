@@ -86,3 +86,20 @@ func TestUint256Print(t *testing.T) {
 
 	assert.Equal(t, expected, fmt.Sprintf("%v", n))
 }
+
+func TestDeferDoCopy(t *testing.T) {
+	var (
+		expected1 uint64 = 42
+		expected2 uint64 = 84
+		n1               = num.NewUint(42)
+	)
+
+	n2 := *n1
+
+	assert.Equal(t, expected1, n1.Uint64())
+	assert.Equal(t, expected1, n2.Uint64())
+
+	n2.SetUint64(expected2)
+	assert.Equal(t, expected1, n1.Uint64())
+	assert.Equal(t, expected2, n2.Uint64())
+}

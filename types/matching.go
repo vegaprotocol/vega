@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
-	"google.golang.org/protobuf/types/known/wrapperspb"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type Order struct {
@@ -15,7 +15,7 @@ type Order struct {
 	MarketId             string
 	PartyId              string
 	Side                 Side
-	Price                uint64
+	Price                *num.Uint
 	Size                 uint64
 	Remaining            uint64
 	TimeInForce          Order_TimeInForce
@@ -60,7 +60,7 @@ func (o *Order) IntoProto() *proto.Order {
 		MarketId:             o.MarketId,
 		PartyId:              o.PartyId,
 		Side:                 o.Side,
-		Price:                o.Price,
+		Price:                o.Price.Uint64(),
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,
@@ -88,7 +88,7 @@ func OrderFromProto(o *proto.Order) *Order {
 		MarketId:             o.MarketId,
 		PartyId:              o.PartyId,
 		Side:                 o.Side,
-		Price:                o.Price,
+		Price:                num.NewUint(o.Price),
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,
@@ -130,36 +130,6 @@ func (o *Order) IsPersistent() bool {
 		o.TimeInForce == Order_TIME_IN_FORCE_GFA) &&
 		o.Type == Order_TYPE_LIMIT &&
 		o.Remaining > 0
-}
-
-func (o *Order) AmendSize(newSize int64) *OrderAmendment {
-	a := &OrderAmendment{
-		OrderId:  o.Id,
-		MarketId: o.MarketId,
-
-		SizeDelta:   newSize - int64(o.Size),
-		TimeInForce: o.TimeInForce,
-	}
-	if e := o.ExpiresAt; e > 0 {
-		a.ExpiresAt = &Timestamp{
-			Value: e,
-		}
-	}
-
-	if p := o.PeggedOrder; p != nil {
-		a.PeggedReference = p.Reference
-		a.PeggedOffset = &wrapperspb.Int64Value{
-			Value: p.Offset,
-		}
-	} else {
-		if p := o.Price; p > 0 {
-			a.Price = &Price{
-				Value: p,
-			}
-		}
-	}
-
-	return a
 }
 
 func (o *Order) IsExpireable() bool {
@@ -230,7 +200,7 @@ func (o *OrderCancellationConfirmation) IntoProto() *proto.OrderCancellationConf
 type Trade struct {
 	Id                 string
 	MarketId           string
-	Price              uint64
+	Price              *num.Uint
 	Size               uint64
 	Buyer              string
 	Seller             string
@@ -268,7 +238,7 @@ func (t *Trade) IntoProto() *proto.Trade {
 	return &proto.Trade{
 		Id:                 t.Id,
 		MarketId:           t.MarketId,
-		Price:              t.Price,
+		Price:              t.Price.Uint64(),
 		Size:               t.Size,
 		Buyer:              t.Buyer,
 		Seller:             t.Seller,

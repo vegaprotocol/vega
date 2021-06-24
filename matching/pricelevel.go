@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -16,13 +17,13 @@ var (
 
 // PriceLevel represents all the Orders placed at a given price.
 type PriceLevel struct {
-	price  uint64
+	price  *num.Uint
 	orders []*types.Order
 	volume uint64
 }
 
 // NewPriceLevel instantiate a new PriceLevel
-func NewPriceLevel(price uint64) *PriceLevel {
+func NewPriceLevel(price *num.Uint) *PriceLevel {
 	return &PriceLevel{
 		price:  price,
 		orders: []*types.Order{},
@@ -199,7 +200,7 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	return &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		MarketId:  agg.MarketId,
-		Price:     pass.Price,
+		Price:     pass.Price.Clone(),
 		Size:      size,
 		Aggressor: agg.Side,
 		Buyer:     buyer.PartyId,
