@@ -14,6 +14,7 @@ var (
 
 	// initialise max variable
 	maxUint = setMaxUint()
+	zero    = NewUint(0)
 )
 
 // Uint A wrapper for a big unsigned int
@@ -25,6 +26,10 @@ type Uint struct {
 // uint64 passed as a parameter.
 func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
+}
+
+func Zero() *num.Uint {
+	return zero.Clone()
 }
 
 // only called once, to initialise maxUint
@@ -41,17 +46,17 @@ func MaxUint() *Uint {
 // Min returns the smallest of the 2 numbers
 func Min(a, b *Uint) *Uint {
 	if a.LT(b) {
-		return a
+		return a.Clone()
 	}
-	return b
+	return b.Clone()
 }
 
 // Max returns the largest of the 2 numbers
 func Max(a, b *Uint) *Uint {
 	if a.GT(b) {
-		return a
+		return a.Clone()
 	}
-	return b
+	return b.Clone()
 }
 
 // FromBig construct a new Uint with a big.Int

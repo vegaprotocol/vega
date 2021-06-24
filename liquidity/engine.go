@@ -127,12 +127,12 @@ func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 }
 
 // OnSuppliedStakeToObligationFactorUpdate updates the stake factor
-func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
-	e.stakeToObligationFactor = num.DecimalFromFloat(v)
+func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v num.Decimal) {
+	e.stakeToObligationFactor = v
 }
 
-func (e *Engine) OnMaximumLiquidityFeeFactorLevelUpdate(f float64) {
-	e.maxFee = num.DecimalFromFloat(f)
+func (e *Engine) OnMaximumLiquidityFeeFactorLevelUpdate(f num.Decimal) {
+	e.maxFee = f
 }
 
 func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {

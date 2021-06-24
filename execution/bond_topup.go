@@ -6,6 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func (m *Market) checkBondBalance(ctx context.Context) {
@@ -20,16 +21,17 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 			continue
 		}
 		// commitment is covered by bond balance already
-		if bondAcc.Balance >= lp.CommitmentAmount {
+		if bondAcc.Balance.GTE(lp.CommitmentAmount) {
 			continue
 		}
 		gen, err := m.collateral.GetPartyGeneralAccount(party, asset)
 		// no balance in general account
-		if err != nil || gen.Balance == 0 {
+		if err != nil || gen.Balance.IsZero() {
 			continue
 		}
-		bondShort := lp.CommitmentAmount - bondAcc.Balance
-		amt := min(bondShort, gen.Balance)
+		bondShort := num.NewUint(0).Sub(lp.CommitmentAmount, bondAcc.Balance)
+		// Min clones
+		amt := num.Min(bondShort, gen.Balance)
 		t := &types.Transfer{
 			Owner: party,
 			Type:  types.TransferType_TRANSFER_TYPE_BOND_LOW,
@@ -37,7 +39,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 				Asset:  asset,
 				Amount: amt,
 			},
-			MinAmount: amt,
+			MinAmount: amt.Clone(),
 		}
 		resp, err := m.collateral.BondUpdate(ctx, mID, party, t)
 		if err != nil {
@@ -53,11 +55,4 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 	if len(transfers) > 0 {
 		m.broker.Send(events.NewTransferResponse(ctx, transfers))
 	}
-}
-
-func min(a, b uint64) uint64 {
-	if a < b {
-		return a
-	}
-	return b
 }

@@ -556,17 +556,15 @@ func (f *feesTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
 }
 func (f *feesTransfer) Transfers() []*types.Transfer { return f.transfers }
 
-func (e *Engine) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
-	d := num.DecimalFromFloat(f)
-	e.feeCfg.Factors.MakerFee = d
-	e.f.makerFee = d
+func (e *Engine) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f num.Decimal) error {
+	e.feeCfg.Factors.MakerFee = f
+	e.f.makerFee = f
 	return nil
 }
 
-func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
-	d := num.DecimalFromFloat(f)
-	e.feeCfg.Factors.InfrastructureFee = d
-	e.f.infrastructureFee = d
+func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f num.Decimal) error {
+	e.feeCfg.Factors.InfrastructureFee = f
+	e.f.infrastructureFee = f
 	return nil
 }
 

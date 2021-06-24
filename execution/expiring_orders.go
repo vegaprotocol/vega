@@ -31,6 +31,10 @@ func (a *ExpiringOrders) GetExpiryingOrderCount() int {
 }
 
 func (a *ExpiringOrders) Insert(order types.Order) {
+	if order.Price != nil {
+		// ensure the price isn't a pointer found elsewhere
+		order.Price = order.Price.Clone()
+	}
 	item := &ordersAtTS{ts: order.ExpiresAt}
 	if item := a.orders.Get(item); item != nil {
 		item.(*ordersAtTS).orders = append(item.(*ordersAtTS).orders, order)
