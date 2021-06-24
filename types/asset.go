@@ -186,3 +186,12 @@ func (a Asset) GetAssetTotalSupply() *num.Uint {
 	}
 	return a.Details.TotalSupply.Clone()
 }
+
+func (a AssetDetails) GetErc20() *ERC20 {
+	switch s := a.Source.(type) {
+	case AssetDetails_Erc20:
+		return s.Erc20
+	default:
+		return nil
+	}
+}
