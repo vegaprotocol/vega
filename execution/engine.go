@@ -240,8 +240,12 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	// TODO(): remove check once LiquidityProvision is required
 	// for now it is optional
 	if lp != nil {
+		lps, err := types.NewLiquidityProvisionSubmissionFromProto(lp)
+		if err != nil {
+			return err
+		}
 		// now we try to submit the liquidity
-		if err := mkt.SubmitLiquidityProvision(ctx, lp, party, lpID); err != nil {
+		if err := mkt.SubmitLiquidityProvision(ctx, lps, party, lpID); err != nil {
 			e.removeMarket(marketConfig.Id)
 			return err
 		}
@@ -469,8 +473,9 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, party)
 	}()
 
+	oa := types.NewOrderAmendmentFromProto(orderAmendment)
 	if e.log.IsDebug() {
-		e.log.Debug("amend order", logging.OrderAmendment(orderAmendment))
+		e.log.Debug("amend order", logging.OrderAmendment(oa))
 	}
 
 	mkt, ok := e.markets[orderAmendment.MarketId]
@@ -480,7 +485,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(ctx, orderAmendment, party)
+	conf, err := mkt.AmendOrder(ctx, oa, party)
 	if err != nil {
 		return nil, err
 	}
@@ -644,9 +649,13 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 }
 
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
+	lpSub, err := types.NewLiquidityProvisionSubmissionFromProto(sub)
+	if err != nil {
+		return err
+	}
 	if e.log.IsDebug() {
 		e.log.Debug("submit liquidity provision",
-			logging.LiquidityProvisionSubmission(*sub),
+			logging.LiquidityProvisionSubmission(*lpSub),
 			logging.PartyID(party),
 			logging.LiquidityID(lpID),
 		)
@@ -657,7 +666,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.L
 		return types.ErrInvalidMarketID
 	}
 
-	return mkt.SubmitLiquidityProvision(ctx, sub, party, lpID)
+	return mkt.SubmitLiquidityProvision(ctx, lpSub, party, lpID)
 }
 
 func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {

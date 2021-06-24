@@ -28,7 +28,7 @@ func NewUint(val uint64) *Uint {
 	return &Uint{*uint256.NewInt(val)}
 }
 
-func Zero() *num.Uint {
+func Zero() *Uint {
 	return zero.Clone()
 }
 

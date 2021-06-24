@@ -42,7 +42,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 }
 
 func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
-	ctx context.Context, pos *positions.MarketPosition, price uint64,
+	ctx context.Context, pos *positions.MarketPosition, price *num.Uint,
 ) (events.Risk, error) {
 	asset, _ := m.mkt.GetAsset()
 	market := m.GetID()

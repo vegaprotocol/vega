@@ -9,11 +9,11 @@ import (
 type Decimal = decimal.Decimal
 
 var (
-	zero = decimal.Zero
+	dzero = decimal.Zero
 )
 
 func DecimalZero() Decimal {
-	return zero
+	return dzero
 }
 
 func NewDecimalFromFloat(f float64) Decimal {
