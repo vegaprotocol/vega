@@ -304,7 +304,7 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	case *types.NewMarketConfiguration_LogNormal:
 		if r.LogNormal.Params == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER, ErrInvalidRiskParameter
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER, ErrInvalidRiskParameter
 		}
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	case nil:
