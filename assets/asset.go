@@ -4,13 +4,12 @@ import (
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20"
-	typespb "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 )
 
 type isAsset interface {
 	// ProtoAsset get information about the asset itself
-	ProtoAsset() *typespb.Asset
+	Type() *types.Asset
 	// GetAssetClass get the internal asset class
 	GetAssetClass() common.AssetClass
 	// IsValid is the order valid / validated with the target chain?
@@ -50,5 +49,5 @@ func (a *Asset) BuiltinAsset() (*builtin.Builtin, bool) {
 }
 
 func (a *Asset) ToAssetType() *types.Asset {
-	return types.AssetFromProto(a.ProtoAsset())
+	return a.Type()
 }
