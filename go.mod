@@ -38,7 +38,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.1.2
 	github.com/stretchr/testify v1.7.0
-	github.com/tendermint/tendermint v0.34.10
+	github.com/tendermint/tendermint v0.34.11
 	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/zannen/toml v0.3.2
