@@ -141,12 +141,16 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 			p.Reason = perr
 		}
 	}()
-	switch change := p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+
+	switch p.Terms.Change.GetTermType() {
+	case types.ProposalTerms_NEWMARKET:
 		te.m = &ToEnactMarket{}
-	case *types.ProposalTerms_UpdateNetworkParameter:
-		te.n = change.UpdateNetworkParameter.Changes
-	case *types.ProposalTerms_NewAsset:
+	case types.ProposalTerms_UPDATENETWORKPARAMETER:
+		unp := p.Terms.GetUpdateNetworkParameter()
+		if unp != nil {
+			te.n = unp.Changes
+		}
+	case types.ProposalTerms_NEWASSET:
 		asset, err := e.assets.Get(p.Id)
 		if err != nil {
 			return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -160,8 +164,8 @@ func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
 	vc := &VoteClosed{
 		p: p,
 	}
-	switch p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	switch p.Terms.Change.GetTermType() {
+	case types.ProposalTerms_NEWMARKET:
 		startAuction := true
 		if p.State != proto.Proposal_STATE_PASSED {
 			startAuction = false
@@ -332,17 +336,17 @@ func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorD
 func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
-	switch change := p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	switch p.Terms.Change.GetTermType() {
+	case types.ProposalTerms_NEWMARKET:
 		// use to calculate the auction duration
 		// which is basically enacttime - closetime
 		// FIXME(): normally we should use the closetime
-		// but this would not play well with the MarketAcutionState stuff
+		// but this would not play well with the MarketAuctionState stuff
 		// for now we start the auction as of now.
 		closeTime := e.currentTime
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
-
-		mkt, perr, err := createMarket(p.Id, change.NewMarket, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
+		newMarket := p.Terms.GetNewMarket()
+		mkt, perr, err := createMarket(p.Id, newMarket, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
 		if err != nil {
 			e.rejectProposal(p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -350,9 +354,9 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		tsb.m = &ToSubmitNewMarket{
 			m: mkt,
 		}
-		if change.NewMarket.LiquidityCommitment != nil {
+		if newMarket.LiquidityCommitment != nil {
 			tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
-				change.NewMarket.LiquidityCommitment, p.Id)
+				newMarket.LiquidityCommitment, p.Id)
 		}
 	}
 
