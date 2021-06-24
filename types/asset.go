@@ -152,7 +152,7 @@ func (a AssetDetailsErc20) IntoProto() *proto.AssetDetails_Erc20 {
 	}
 }
 
-func (a AssetDetails_BuiltinAsset) ValidateAssetSource() (ProposalError, error) {
+func (a AssetDetailsBuiltinAsset) ValidateAssetSource() (ProposalError, error) {
 	if a.BuiltinAsset.MaxFaucetAmountMint.IsZero() {
 		return ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD, ErrMissingBuiltinAssetField
 	}
@@ -178,7 +178,7 @@ func (a AssetDetailsErc20) DeepClone() isAssetDetails {
 	return &cpy
 }
 
-func (a AssetDetails_Erc20) ValidateAssetSource() (ProposalError, error) {
+func (a AssetDetailsErc20) ValidateAssetSource() (ProposalError, error) {
 	if len(a.Erc20.ContractAddress) <= 0 {
 		return ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS, ErrMissingERC20ContractAddress
 	}
@@ -212,7 +212,7 @@ func (a Asset) GetAssetTotalSupply() *num.Uint {
 
 func (a AssetDetails) GetErc20() *ERC20 {
 	switch s := a.Source.(type) {
-	case AssetDetails_Erc20:
+	case AssetDetailsErc20:
 		return s.Erc20
 	default:
 		return nil
