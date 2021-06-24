@@ -42,7 +42,7 @@ type Accounts interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
 type Assets interface {
-	NewAsset(ref string, assetSrc *proto.AssetDetails) (string, error)
+	NewAsset(ref string, assetSrc *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }

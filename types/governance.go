@@ -246,6 +246,13 @@ type pterms interface {
 	DeepClone() pterms
 }
 
+func (m *NewAsset) GetChanges() *AssetDetails {
+	if m != nil {
+		return m.Changes
+	}
+	return nil
+}
+
 func (n NewMarket) IntoProto() *proto.NewMarket {
 	return &proto.NewMarket{
 		Changes:             n.Changes.IntoProto(),
@@ -317,6 +324,15 @@ func (p ProposalTerms) DeepClone() *ProposalTerms {
 
 func (p ProposalTerms) String() string {
 	return p.IntoProto().String()
+}
+
+func (m *ProposalTerms) GetNewAsset() *NewAsset {
+	switch c := m.Change.(type) {
+	case ProposalTerms_NewAsset:
+		return c.NewAsset
+	default:
+		return nil
+	}
 }
 
 func (a ProposalTerms_NewMarket) IntoProto() *proto.ProposalTerms_NewMarket {
