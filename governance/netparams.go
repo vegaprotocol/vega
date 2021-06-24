@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -74,23 +73,23 @@ func (e *Engine) getProposalParametersFromNetParams(
 }
 
 func validateNetworkParameterUpdate(
-	netp NetParams, np *types.NetworkParameter) (proto.ProposalError, error) {
+	netp NetParams, np *types.NetworkParameter) (types.ProposalError, error) {
 	if len(np.Key) <= 0 {
-		return proto.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, ErrEmptyNetParamKey
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY, ErrEmptyNetParamKey
 	}
 
 	if len(np.Value) <= 0 {
-		return proto.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, ErrEmptyNetParamValue
+		return types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE, ErrEmptyNetParamValue
 	}
 
 	// so we seems to just need to call on validate in here.
 	// no need to know what's the parameter really or anything else
 	var (
-		perr = proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED
+		perr = types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED
 		err  = netp.Validate(np.Key, np.Value)
 	)
 	if err != nil {
-		perr = proto.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
+		perr = types.ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED
 	}
 
 	return perr, err
