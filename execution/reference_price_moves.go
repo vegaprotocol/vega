@@ -46,14 +46,13 @@ func (m *Market) checkForReferenceMoves(
 	// Look for a move
 	var changes uint8
 	if !forceUpdate {
-		if newMidBuy != m.lastMidBuyPrice ||
-			newMidSell != m.lastMidSellPrice {
+		if newMidBuy.NEQ(m.lastMidBuyPrice) || newMidSell.NEQ(m.lastMidSellPrice) {
 			changes |= PriceMoveMid
 		}
-		if newBestBid != m.lastBestBidPrice {
+		if newBestBid.NEQ(m.lastBestBidPrice) {
 			changes |= PriceMoveBestBid
 		}
-		if newBestAsk != m.lastBestAskPrice {
+		if newBestAsk.NEQ(m.lastBestAskPrice) {
 			changes |= PriceMoveBestAsk
 		}
 	} else {
@@ -63,7 +62,8 @@ func (m *Market) checkForReferenceMoves(
 	// now we can start all special order repricing...
 	orderUpdates = m.repriceAllSpecialOrders(ctx, changes, orderUpdates)
 
-	// 	// Update the last price values
+	// Update the last price values
+	// no need to clone the prices, they're not used in calculations anywhere in this function
 	m.lastMidBuyPrice = newMidBuy
 	m.lastMidSellPrice = newMidSell
 	m.lastBestBidPrice = newBestBid

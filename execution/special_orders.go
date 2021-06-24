@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func (m *Market) repricePeggedOrders(
@@ -43,13 +44,13 @@ func (m *Market) repricePeggedOrders(
 				if order.Status != types.Order_STATUS_PARKED {
 					order.UpdatedAt = m.currentTime.UnixNano()
 					order.Status = types.Order_STATUS_PARKED
-					order.Price = 0
+					order.Price = num.Zero()
 					m.broker.Send(events.NewOrderEvent(ctx, order))
 					parked = append(parked, order)
 				}
 			} else {
 				// Repriced so all good make sure status is correct
-				order.Price = price
+				order.Price = price.Clone()
 				order.Status = types.Order_STATUS_PARKED
 				toSubmit = append(toSubmit, order)
 			}
@@ -163,7 +164,7 @@ func (m *Market) repriceAllSpecialOrders(
 		// we do not return here, we could not get one of the prices eventually
 	}
 	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, orderUpdates)
+		ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), m.repriceLiquidityOrder, orderUpdates)
 	if err != nil {
 		// TODO: figure out if error are really possible there,
 		// But I'd think not.
@@ -193,7 +194,7 @@ func (m *Market) enterAuctionSpecialOrders(
 		// we do not return here, we could not get one of the prices eventually
 	}
 	newOrders, cancels, err := m.liquidity.Update(
-		ctx, bestBidPrice, bestAskPrice, m.repriceLiquidityOrder, updatedOrders)
+		ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), m.repriceLiquidityOrder, updatedOrders)
 	if err != nil {
 		// TODO: figure out if error are really possible there,
 		// But I'd think not.
