@@ -33,8 +33,6 @@ type timestampedOI struct {
 	OI   uint64
 }
 
-var zeroD = num.DecimalFromFloat(0)
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/open_interest_calculator_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/target OpenInterestCalculator
 type OpenInterestCalculator interface {
 	GetOpenInterestGivenTrades(trades []*types.Trade) uint64
@@ -57,7 +55,7 @@ func (e *Engine) UpdateTimeWindow(tWindow time.Duration) {
 // UpdateScalingFactor updates the scaling factor used in target stake calculation
 // if it's non-negative and returns an error otherwise
 func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
-	if sFactor.LessThan(zeroD) {
+	if sFactor.IsNegative() {
 		return ErrNegativeScalingFactor
 	}
 	e.sFactor = sFactor
