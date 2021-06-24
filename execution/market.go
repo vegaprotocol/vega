@@ -394,14 +394,15 @@ func (m *Market) GetMarketData() types.MarketData {
 	}
 
 	// If we do not have one of the best_* prices, leave the mid price as zero
+	two := num.NewUint(2)
 	midPrice := num.NewUint(0)
 	if !bestBidPrice.IsZero() && !bestOfferPrice.IsZero() {
-		midPrice = midPrice.Div(num.Sum(bestBidPrice, bestOfferPrice), num.NewUint(2))
+		midPrice = midPrice.Div(num.Sum(bestBidPrice, bestOfferPrice), two)
 	}
 
-	var staticMidPrice uint64
-	if bestStaticBidPrice > 0 && bestStaticOfferPrice > 0 {
-		staticMidPrice = (bestStaticBidPrice + bestStaticOfferPrice) / 2
+	staticMidPrice := num.NewUint(0)
+	if !bestStaticBidPrice.IsZero() && !bestStaticOfferPrice.IsZero() {
+		staticMidPrice = staticMidPrice.Div(num.Sum(bestStaticBidPrice, bestStaticOfferPrice), two)
 	}
 
 	return types.MarketData{
@@ -2682,23 +2683,23 @@ func (m *Market) RemoveExpiredOrders(
 	return expired, nil
 }
 
-func (m *Market) getBestStaticAskPrice() (uint64, error) {
+func (m *Market) getBestStaticAskPrice() (*num.Uint, error) {
 	return m.matching.GetBestStaticAskPrice()
 }
 
-func (m *Market) getBestStaticAskPriceAndVolume() (uint64, uint64, error) {
+func (m *Market) getBestStaticAskPriceAndVolume() (*num.Uint, uint64, error) {
 	return m.matching.GetBestStaticAskPriceAndVolume()
 }
 
-func (m *Market) getBestStaticBidPrice() (uint64, error) {
+func (m *Market) getBestStaticBidPrice() (*num.Uint, error) {
 	return m.matching.GetBestStaticBidPrice()
 }
 
-func (m *Market) getBestStaticBidPriceAndVolume() (uint64, uint64, error) {
+func (m *Market) getBestStaticBidPriceAndVolume() (*num.Uint, uint64, error) {
 	return m.matching.GetBestStaticBidPriceAndVolume()
 }
 
-func (m *Market) getBestStaticPrices() (bid, ask uint64, err error) {
+func (m *Market) getBestStaticPrices() (bid, ask *num.Uint, err error) {
 	bid, err = m.getBestStaticBidPrice()
 	if err != nil {
 		return
@@ -2707,7 +2708,7 @@ func (m *Market) getBestStaticPrices() (bid, ask uint64, err error) {
 	return
 }
 
-func (m *Market) getStaticMidPrice(side types.Side) (uint64, error) {
+func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 	bid, err := m.matching.GetBestStaticBidPrice()
 	if err != nil {
 		return 0, err
@@ -2716,11 +2717,12 @@ func (m *Market) getStaticMidPrice(side types.Side) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	var mid uint64
+	mid := num.NewUint(0)
+	one := num.NewUint(1)
 	if side == types.Side_SIDE_BUY {
-		mid = (bid + ask + 1) / 2
+		mid = mid.Div(num.Sum(bid, ask, one), num.Sum(one, one))
 	} else {
-		mid = (bid + ask) / 2
+		mid = mid.Div(num.Sum(bid, ask), num.Sum(one, one))
 	}
 
 	return mid, nil
