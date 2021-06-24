@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (
@@ -37,7 +38,7 @@ type NodeValidation struct {
 }
 
 type nodeProposal struct {
-	*proto.Proposal
+	*types.Proposal
 	state   uint32
 	checker func() error
 }
@@ -100,7 +101,7 @@ func (n *NodeValidation) removeProposal(id string) {
 }
 
 // OnChainTimeUpdate returns validated proposal by all nodes
-func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proto.Proposal, rejected []*proto.Proposal) {
+func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Proposal, rejected []*types.Proposal) {
 	n.currentTimestamp = t
 
 	var toRemove []string // id of proposals to remove

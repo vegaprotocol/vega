@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -23,12 +24,12 @@ type ProposalParameters struct {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data
 type ToEnact struct {
-	p  *proto.Proposal
+	p  *types.Proposal
 	m  *ToEnactMarket
-	a  *proto.Asset
-	n  *proto.NetworkParameter
-	as *proto.AssetDetails
-	u  *proto.UpdateMarket
+	a  *types.Asset
+	n  *types.NetworkParameter
+	as *types.AssetDetails
+	u  *types.UpdateMarket
 }
 
 // ToEnactMarket is just a empty struct, to signal
@@ -117,7 +118,7 @@ func (t *ToSubmitNewMarket) LiquidityProvisionSubmission() *commandspb.Liquidity
 }
 
 type VoteClosed struct {
-	p *proto.Proposal
+	p *types.Proposal
 	m *NewMarketVoteClosed
 }
 
