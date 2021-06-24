@@ -4,6 +4,8 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
+	htypes "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 func fromTMValidatorUpdates(ups []types.ValidatorUpdate) []*ValidatorUpdate {
@@ -12,7 +14,7 @@ func fromTMValidatorUpdates(ups []types.ValidatorUpdate) []*ValidatorUpdate {
 		out = append(out, &ValidatorUpdate{
 			PubKey: &PublicKey{
 				Sum: &PublicKey_Ed25519{
-					Ed25519: up.PubKey.GetData(),
+					Ed25519: up.PubKey.GetEd25519(),
 				},
 			},
 			Power: up.Power,
@@ -25,8 +27,10 @@ func intoTMValidatorUpdates(ups []*ValidatorUpdate) []types.ValidatorUpdate {
 	out := make([]types.ValidatorUpdate, 0, len(ups))
 	for _, up := range ups {
 		out = append(out, types.ValidatorUpdate{
-			PubKey: types.PubKey{
-				Data: up.PubKey.GetEd25519(),
+			PubKey: crypto.PublicKey{
+				Sum: &crypto.PublicKey_Ed25519{
+					Ed25519: up.PubKey.GetEd25519(),
+				},
 			},
 			Power: up.Power,
 		})
@@ -53,7 +57,7 @@ func (r *RequestInitChain) IntoTM() types.RequestInitChain {
 	}
 }
 
-func fromTMHeader(t types.Header) *Header {
+func fromTMHeader(t htypes.Header) *Header {
 	return &Header{
 		ChainId: t.ChainID,
 		Height:  t.Height,
@@ -61,8 +65,8 @@ func fromTMHeader(t types.Header) *Header {
 	}
 }
 
-func intoTMHeader(t *Header) types.Header {
-	return types.Header{
+func intoTMHeader(t *Header) htypes.Header {
+	return htypes.Header{
 		ChainID: t.ChainId,
 		Height:  t.Height,
 		Time:    vegatime.UnixNano(t.Time),
