@@ -27,3 +27,17 @@ func DecimalFromFloat(v float64) Decimal {
 func DecimalFromString(s string) (Decimal, error) {
 	return decimal.NewFromString(s)
 }
+
+func MaxD(a, b Decimal) Decimal {
+	if a.GreaterThan(b) {
+		return a
+	}
+	return b
+}
+
+func MinD(a, b Decimal) Decimal {
+	if a.LessThan(b) {
+		return a
+	}
+	return b
+}

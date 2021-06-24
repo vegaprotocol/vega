@@ -1361,7 +1361,9 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			}
 			// add trade to settlement engine for correct MTM settlement of individual trades
 			m.settlement.AddTrade(trade)
-			m.feeSplitter.AddTradeValue(trade.Size * trade.Price)
+			m.feeSplitter.AddTradeValue(num.NewUint(
+				num.NewUint(trade.Size), trade.Price,
+			))
 		}
 		m.broker.SendBatch(tradeEvts)
 
