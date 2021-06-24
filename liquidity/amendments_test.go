@@ -71,10 +71,10 @@ func testCanAmend(t *testing.T) {
 	)
 }
 
-func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
-	pb := &commandspb.LiquidityProvisionSubmission{
+func getTestAmendSimpleSubmission() *commandspb.LiquidityProvisionSubmission {
+	return &commandspb.LiquidityProvisionSubmission{
 		MarketId:         market,
-		CommitmentAmount: 10000,
+		CommitmentAmount: num.NewUint(10000),
 		Fee:              "0.5",
 		Reference:        "ref-lp-submission-1",
 		Buys: []*proto.LiquidityOrder{
