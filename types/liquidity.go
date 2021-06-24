@@ -103,6 +103,14 @@ func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvision
 }
 
 func NewLiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmission) (*LiquidityProvisionSubmission, error) {
+	lps := &LiquidityProvisionSubmission{}
+	if err := lps.FromProto(p); err != nil {
+		return nil, err
+	}
+	return lps, nil
+}
+
+func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisionSubmission) error {
 	var err error
 	l := LiquidityProvisionSubmission{}
 	l.MarketId = p.MarketId
