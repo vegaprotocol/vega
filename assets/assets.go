@@ -110,11 +110,11 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
 	switch assetDetails.Source.(type) {
-	case *types.AssetDetails_BuiltinAsset:
+	case *types.AssetDetailsBuiltinAsset:
 		s.pendingAssets[assetID] = &Asset{
 			builtin.New(assetID, assetDetails),
 		}
-	case *types.AssetDetails_Erc20:
+	case *types.AssetDetailsErc20:
 		wal, ok := s.nw.Get(nodewallet.Ethereum)
 		if !ok {
 			return "", errors.New("missing wallet for ETH")
