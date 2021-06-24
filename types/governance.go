@@ -102,10 +102,10 @@ const (
 type Proposal_Terms_TYPE int
 
 const (
-	ProposalTerms_UPDATEMARKET Proposal_Terms_TYPE = iota
-	ProposalTerms_NEWMARKET
-	ProposalTerms_UPDATENETWORKPARAMETER
-	ProposalTerms_NEWASSET
+	ProposalTerms_UPDATE_MARKET Proposal_Terms_TYPE = iota
+	ProposalTerms_NEW_MARKET
+	ProposalTerms_UPDATE_NETWORK_PARAMETER
+	ProposalTerms_NEW_ASSET
 )
 
 // Vote represents a governance vote casted by a party for a given proposal.
@@ -380,7 +380,7 @@ func (a ProposalTerms_NewMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 func (a ProposalTerms_NewMarket) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_NEWMARKET
+	return ProposalTerms_NEW_MARKET
 }
 
 // DeepClone @TODO
@@ -399,7 +399,7 @@ func (a ProposalTerms_UpdateMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 func (a ProposalTerms_UpdateMarket) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_UPDATEMARKET
+	return ProposalTerms_UPDATE_MARKET
 }
 
 // DeepClone @TODO
@@ -418,7 +418,7 @@ func (a ProposalTerms_UpdateNetworkParameter) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 func (a ProposalTerms_UpdateNetworkParameter) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_UPDATENETWORKPARAMETER
+	return ProposalTerms_UPDATE_NETWORK_PARAMETER
 }
 
 // DeepClone @TODO
@@ -447,7 +447,7 @@ func (a ProposalTerms_NewAsset) oneOfProto() interface{} {
 	return a.IntoProto()
 }
 func (a ProposalTerms_NewAsset) GetTermType() Proposal_Terms_TYPE {
-	return ProposalTerms_NEWASSET
+	return ProposalTerms_NEW_ASSET
 }
 
 // DeepClone @TODO

@@ -42,7 +42,7 @@ type Accounts interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
 type Assets interface {
-	NewAsset(ref string, assetSrc *types.AssetDetails) (string, error)
+	NewAsset(ref string, assetDetails *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }
@@ -143,14 +143,14 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	}()
 
 	switch p.Terms.Change.GetTermType() {
-	case types.ProposalTerms_NEWMARKET:
+	case types.ProposalTerms_NEW_MARKET:
 		te.m = &ToEnactMarket{}
-	case types.ProposalTerms_UPDATENETWORKPARAMETER:
+	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
 		unp := p.Terms.GetUpdateNetworkParameter()
 		if unp != nil {
 			te.n = unp.Changes
 		}
-	case types.ProposalTerms_NEWASSET:
+	case types.ProposalTerms_NEW_ASSET:
 		asset, err := e.assets.Get(p.Id)
 		if err != nil {
 			return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
@@ -165,7 +165,7 @@ func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
 		p: p,
 	}
 	switch p.Terms.Change.GetTermType() {
-	case types.ProposalTerms_NEWMARKET:
+	case types.ProposalTerms_NEW_MARKET:
 		startAuction := true
 		if p.State != proto.Proposal_STATE_PASSED {
 			startAuction = false
@@ -337,7 +337,7 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
 	switch p.Terms.Change.GetTermType() {
-	case types.ProposalTerms_NEWMARKET:
+	case types.ProposalTerms_NEW_MARKET:
 		// use to calculate the auction duration
 		// which is basically enacttime - closetime
 		// FIXME(): normally we should use the closetime
@@ -380,12 +380,12 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 }
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
-	switch terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	switch terms.Change.GetTermType() {
+	case types.ProposalTerms_NEW_MARKET:
 		return e.getNewMarketProposalParameters()
-	case *types.ProposalTerms_NewAsset:
+	case types.ProposalTerms_NEW_ASSET:
 		return e.getNewAssetProposalParameters()
-	case *types.ProposalTerms_UpdateNetworkParameter:
+	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
 		return e.getUpdateNetworkParameterProposalParameters()
 	default:
 		return nil, ErrUnsupportedProposalType
@@ -494,20 +494,20 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 
 // validates proposed change
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
-	switch change := terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	switch terms.Change.GetTermType() {
+	case types.ProposalTerms_NEW_MARKET:
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
 
-		perr, err := validateNewMarket(e.currentTime, change.NewMarket, e.assets, true, e.netp, enactTime.Sub(closeTime))
+		perr, err := validateNewMarket(e.currentTime, terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime))
 		if err != nil {
 			return perr, err
 		}
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
-	case *types.ProposalTerms_NewAsset:
-		return validateNewAsset(change.NewAsset.Changes)
-	case *types.ProposalTerms_UpdateNetworkParameter:
-		return validateNetworkParameterUpdate(e.netp, change.UpdateNetworkParameter.Changes)
+	case types.ProposalTerms_NEW_ASSET:
+		return validateNewAsset(terms.GetNewAsset().Changes)
+	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
+		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
