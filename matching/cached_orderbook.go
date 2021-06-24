@@ -6,6 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type CachedOrderBook struct {
@@ -51,11 +52,11 @@ func (b *CachedOrderBook) maybeInvalidateDuringAuction(order *types.Order) {
 	// uncrossing range
 	switch order.Side {
 	case types.Side_SIDE_BUY:
-		if order.Price >= bestAsk {
+		if order.Price.GTE(bestAsk) {
 			b.cache.Invalidate()
 		}
 	case types.Side_SIDE_SELL:
-		if order.Price <= bestBid {
+		if order.Price.LTE(bestBid) {
 			b.cache.Invalidate()
 		}
 	}
@@ -116,25 +117,25 @@ func (b *CachedOrderBook) RemoveDistressedOrders(
 	return b.OrderBook.RemoveDistressedOrders(parties)
 }
 
-func (b *CachedOrderBook) GetIndicativePriceAndVolume() (uint64, uint64, types.Side) {
+func (b *CachedOrderBook) GetIndicativePriceAndVolume() (*num.Uint, uint64, types.Side) {
 	price, cachedPriceOk := b.cache.GetIndicativePrice()
 	volume, cachedVolOk := b.cache.GetIndicativeVolume()
 	side, cachedSideOk := b.cache.GetIndicativeUncrossingSide()
 	if !cachedPriceOk || !cachedVolOk || !cachedSideOk {
 		price, volume, side = b.OrderBook.GetIndicativePriceAndVolume()
-		b.cache.SetIndicativePrice(price)
+		b.cache.SetIndicativePrice(price.Clone())
 		b.cache.SetIndicativeVolume(volume)
 		b.cache.SetIndicativeUncrossingSide(side)
 	}
 	return price, volume, side
 }
 
-func (b *CachedOrderBook) GetIndicativePrice() uint64 {
+func (b *CachedOrderBook) GetIndicativePrice() *num.Uint {
 	price, ok := b.cache.GetIndicativePrice()
 
 	if !ok {
 		price = b.OrderBook.GetIndicativePrice()
-		b.cache.SetIndicativePrice(price)
+		b.cache.SetIndicativePrice(price.Clone())
 	}
 	return price
 }
