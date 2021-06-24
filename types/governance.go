@@ -4,6 +4,7 @@ package types
 
 import (
 	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -125,6 +126,29 @@ type Vote struct {
 	// TotalGovernanceTokenWeight is the weight of the vote compared to the
 	// total number of governance token.
 	TotalGovernanceTokenWeight num.Decimal
+}
+
+type ProposalSubmission struct {
+	// Proposal reference
+	Reference string
+	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted
+	Terms *ProposalTerms
+}
+
+func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalSubmission {
+	ps := ProposalSubmission{
+		Reference: p.Reference,
+		Terms:     NewProposalTermsFromProto(p.Terms),
+	}
+	return &ps
+}
+
+func (p ProposalSubmission) IntoProto() (*commandspb.ProposalSubmission, error) {
+	ps := commandspb.ProposalSubmission{
+		Reference: p.Reference,
+		Terms:     p.Terms.IntoProto(),
+	}
+	return &ps, nil
 }
 
 type Proposal struct {
