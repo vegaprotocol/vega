@@ -21,7 +21,11 @@ func New(id string, asset *types.AssetDetails) *Builtin {
 }
 
 func (b *Builtin) ProtoAsset() *types.Asset {
-	return b.asset
+	return b.asset.IntoProto()
+}
+
+func (b Builtin) Type() *types.Asset {
+	return b.asset.DeepClone()
 }
 
 func (b *Builtin) GetAssetClass() common.AssetClass {

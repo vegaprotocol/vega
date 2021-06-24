@@ -77,6 +77,10 @@ func (b *ERC20) ProtoAsset() *typespb.Asset {
 	return b.asset.IntoProto()
 }
 
+func (b ERC20) Type() *types.Asset {
+	return b.asset.DeepClone()
+}
+
 func (b *ERC20) GetAssetClass() common.AssetClass {
 	return common.ERC20
 }
