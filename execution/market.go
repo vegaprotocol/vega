@@ -381,7 +381,7 @@ func (m *Market) GetMarketData() types.MarketData {
 	bestStaticOfferPrice, bestStaticOfferVolume, _ := m.getBestStaticAskPriceAndVolume()
 
 	// Auction related values
-	var indicativePrice, indicativeVolume uint64
+	indicativePrice, indicativeVolume := num.NewUint(0), num.NewUint(0)
 	var auctionStart, auctionEnd int64
 	if m.as.InAuction() {
 		indicativePrice, indicativeVolume, _ = m.matching.GetIndicativePriceAndVolume()
@@ -394,9 +394,9 @@ func (m *Market) GetMarketData() types.MarketData {
 	}
 
 	// If we do not have one of the best_* prices, leave the mid price as zero
-	var midPrice uint64
-	if bestBidPrice > 0 && bestOfferPrice > 0 {
-		midPrice = (bestBidPrice + bestOfferPrice) / 2
+	midPrice := num.NewUint(0)
+	if !bestBidPrice.IsZero() && !bestOfferPrice.IsZero() {
+		midPrice = midPrice.Div(num.Sum(bestBidPrice, bestOfferPrice), num.NewUint(2))
 	}
 
 	var staticMidPrice uint64
