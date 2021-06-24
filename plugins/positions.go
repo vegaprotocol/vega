@@ -44,8 +44,8 @@ type LSE interface {
 	events.Event
 	PartyID() string
 	MarketID() string
-	Amount() int64
-	AmountLost() int64
+	AmountUint() *num.Uint
+	Negative() bool
 	Timestamp() int64
 }
 
@@ -84,13 +84,13 @@ func (p *Positions) Push(evts ...events.Event) {
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
-	marketID, partyID, amountLoss := e.MarketID(), e.PartyID(), num.DecimalFromFloat(float64(e.AmountLost()))
+	marketID, partyID, amountLoss, neg := e.MarketID(), e.PartyID(), num.DecimalFromUint(e.AmountUint()), e.Negative()
 	pos, ok := p.data[marketID][partyID]
 	if !ok {
 		return
 	}
-	if amountLoss.LessThan(num.DecimalFromFloat(0.0)) {
-		pos.loss = pos.loss.Sub(amountLoss)
+	if neg {
+		pos.loss = pos.loss.Add(amountLoss)
 	} else {
 		pos.adjustment = pos.adjustment.Add(amountLoss)
 	}
