@@ -155,7 +155,7 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 		if err != nil {
 			return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 		}
-		te.a = asset.ProtoAsset()
+		te.a = asset.Type()
 	}
 	return
 }
