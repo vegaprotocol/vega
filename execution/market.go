@@ -184,10 +184,10 @@ type Market struct {
 	expiringOrders *ExpiringOrders
 
 	// Store the previous price values so we can see what has changed
-	lastBestBidPrice uint64
-	lastBestAskPrice uint64
-	lastMidBuyPrice  uint64
-	lastMidSellPrice uint64
+	lastBestBidPrice *num.Uint
+	lastBestAskPrice *num.Uint
+	lastMidBuyPrice  *num.Uint
+	lastMidSellPrice *num.Uint
 
 	lastMarketValueProxy    num.Decimal
 	bondPenaltyFactor       num.Decimal
