@@ -34,10 +34,10 @@ func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
 func (m *Market) checkForReferenceMoves(
 	ctx context.Context, orderUpdates []*types.Order, forceUpdate bool,
 ) {
-
 	if m.as.InAuction() {
 		return
 	}
+
 	newBestBid, _ := m.getBestStaticBidPrice()
 	newBestAsk, _ := m.getBestStaticAskPrice()
 	newMidBuy, _ := m.getStaticMidPrice(types.Side_SIDE_BUY)

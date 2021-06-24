@@ -102,16 +102,16 @@ type PriceMonitor interface {
 
 // LiquidityMonitor
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake float64, trades []*types.Trade, rf types.RiskFactor, markPrice uint64, bestStaticBidVolume, bestStaticAskVolume uint64)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake num.Decimal, trades []*types.Trade, rf types.RiskFactor, markPrice, bestStaticBidVolume, bestStaticAskVolume *num.Uint)
 	SetMinDuration(d time.Duration)
-	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio float64)
+	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
 }
 
 // TargetStakeCalculator interface
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
-	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64) float64
-	UpdateScalingFactor(sFactor float64) error
+	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) num.Decimal
+	UpdateScalingFactor(sFactor num.Decimal) error
 	UpdateTimeWindow(tWindow time.Duration)
 }
 
@@ -155,7 +155,7 @@ type Market struct {
 
 	mu sync.Mutex
 
-	markPrice uint64
+	markPrice *num.Uint
 
 	// own engines
 	matching           *matching.CachedOrderBook
@@ -568,7 +568,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 
 	// market is closed, final settlement
 	// call settlement and stuff
-	positions, err := m.settlement.Settle(t, m.markPrice)
+	positions, err := m.settlement.Settle(t, m.markPrice.Clone())
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market close",
 			logging.Error(err))
@@ -628,14 +628,15 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 	return err
 }
 
-func (m *Market) getNewPeggedPrice(order *types.Order) (uint64, error) {
+func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
+	zero := num.NewUint(0)
 	if m.as.InAuction() {
-		return 0, ErrCannotRepriceDuringAuction
+		return zero, ErrCannotRepriceDuringAuction
 	}
 
 	var (
 		err   error
-		price uint64
+		price *num.Uint
 	)
 
 	switch order.PeggedOrder.Reference {
@@ -647,21 +648,21 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (uint64, error) {
 		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
-		return 0, ErrUnableToReprice
+		return zero, ErrUnableToReprice
 	}
 
 	if order.PeggedOrder.Offset >= 0 {
-		return price + uint64(order.PeggedOrder.Offset), nil
+		return num.Sum(price, num.NewUint(order.PeggedOrder.Offset)), nil
 	}
 
 	// At this stage offset is negative so we change it's sign to cast it to an
 	// unsigned type
-	offset := uint64(-order.PeggedOrder.Offset)
-	if price <= offset {
-		return 0, ErrUnableToReprice
+	offset := num.NewUint(uint64(-order.PeggedOrder.Offset))
+	if price.LTE(offset) {
+		return zero, ErrUnableToReprice
 	}
 
-	return price - offset, nil
+	return zero.Sub(price, offset), nil
 }
 
 // Reprice a pegged order. This only updates the price on the order
@@ -798,6 +799,8 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	m.broker.Send(endEvt)
 
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
+	m.checkLiquidity(ctx, nil)
+	m.commandLiquidityAuction(ctx)
 
 	m.updateLiquidityFee(ctx)
 }
