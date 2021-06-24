@@ -544,11 +544,26 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
-	// FIXME(): the bond account seems actually fine in this case.
-	// a top up of 3 is taken initially from the bon, this can be seen
-	// via the transfers, but then another top is done from mtm win
-	// Check the bond account has been reduced to cover the price move
-	// assert.Less(t, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset), uint64(1000))
+	t.Run("expect bond slashing transfer", func(t *testing.T) {
+		// First collect all the orders events
+		found := []*ptypes.TransferResponse{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.TransferResponse:
+				for _, v := range evt.TransferResponses() {
+					for _, t := range v.Transfers {
+						if t.Reference == "TRANSFER_TYPE_BOND_SLASHING" {
+							found = append(found, v)
+						}
+					}
+				}
+			}
+		}
+
+		assert.Len(t, found, 1)
+
+	})
+
 }
 
 func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {

@@ -2263,12 +2263,10 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 	mktData := tm.market.GetMarketData()
 	lpOrderVolumeBid := mktData.BestBidVolume - mktData.BestStaticBidVolume
 	lpOrderVolumeOffer := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
-	_ = lpOrderVolumeBid
-	_ = lpOrderVolumeOffer
 
-	// var zero uint64 = 0
-	// require.Greater(t, lpOrderVolumeBid, zero)
-	// require.Greater(t, lpOrderVolumeOffer, zero)
+	var zero uint64 = 0
+	require.Greater(t, lpOrderVolumeBid, zero)
+	require.Greater(t, lpOrderVolumeOffer, zero)
 }
 
 func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
@@ -2332,14 +2330,11 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	mktData := tm.market.GetMarketData()
 	lpOrderVolumeBid := mktData.BestBidVolume - mktData.BestStaticBidVolume
 	lpOrderVolumeOffer := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
-	_ = lpOrderVolumeBid
-	_ = lpOrderVolumeOffer
 
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, mktData.MarketTradingMode)
-	// var zero uint64 = 0
-	// require.Greater(t, lpOrderVolumeBid, zero)
-	// require.Greater(t, lpOrderVolumeOffer, zero)
-
+	var zero uint64 = 0
+	require.Greater(t, lpOrderVolumeBid, zero)
+	require.Greater(t, lpOrderVolumeOffer, zero)
 }
 
 func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {

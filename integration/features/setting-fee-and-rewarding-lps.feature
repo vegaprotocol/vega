@@ -270,16 +270,12 @@ Feature: Test liquidity provider reward distribution
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-    And debug orders
-
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
       | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
-
-    And debug trades
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |

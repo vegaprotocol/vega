@@ -235,6 +235,7 @@ func (m *Market) updateLPOrders(
 	// were initially cancelled, and remove them
 	// from the list if the liquidity engine instructed to
 	// cancel them
+	var cancelEvts []events.Event
 	for _, order := range allOrders {
 		if _, ok := parties[order.PartyId]; ok {
 			// party is distressed, not processing
@@ -243,8 +244,7 @@ func (m *Market) updateLPOrders(
 
 		// these order were actually cancelled, just send the event
 		if _, ok := cancelIDs[order.Id]; ok {
-			m.broker.Send(events.NewOrderEvent(ctx, order))
-
+			cancelEvts = append(cancelEvts, events.NewOrderEvent(ctx, order))
 			// these orders were submitted exactly the same before,
 			// so there's no reason we would not be able to submit
 			// let's panic if an issue happen
@@ -261,6 +261,9 @@ func (m *Market) updateLPOrders(
 			}
 		}
 	}
+
+	// send cancel events
+	m.broker.SendBatch(cancelEvts)
 
 	// method always return nil anyway
 	// TODO: API to be changed someday as we don't need to cancel anything

@@ -285,7 +285,8 @@ func (m *Market) updateAndCreateLPOrders(
 			faultyLPs[order.PartyId] = true
 			faultyLPOrders[order.PartyId] = order
 			continue
-		} else if len(conf.Trades) > 0 {
+		}
+		if len(conf.Trades) > 0 {
 			m.log.Panic("submitting liquidity orders after a reprice should never trade",
 				logging.Order(*order))
 		}
