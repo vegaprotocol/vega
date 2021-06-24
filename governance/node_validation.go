@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -135,7 +134,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 // IsNodeValidationRequired returns true if the given proposal require validation from a node.
 func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	switch p.Terms.Change.(type) {
-	case *proto.ProposalTerms_NewAsset:
+	case *types.ProposalTerms_NewAsset:
 		return true
 	default:
 		return false
