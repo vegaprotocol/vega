@@ -110,7 +110,7 @@ func NewLiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSu
 	return lps, nil
 }
 
-func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisionSubmission) error {
+func (ls *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisionSubmission) error {
 	var err error
 	l := LiquidityProvisionSubmission{}
 	l.MarketId = p.MarketId
@@ -118,7 +118,7 @@ func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisio
 	l.CommitmentAmount = num.NewUint(p.CommitmentAmount)
 	l.Fee, err = num.DecimalFromString(p.Fee)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	l.Sells = make([]*LiquidityOrder, 0, len(p.Sells))
@@ -141,7 +141,8 @@ func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisio
 		l.Buys = append(l.Buys, order)
 	}
 	l.Reference = p.Reference
-	return &l, err
+	*ls = l
+	return nil
 }
 
 func (l LiquidityProvisionSubmission) String() string {
