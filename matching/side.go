@@ -32,7 +32,6 @@ func (s *OrderBookSide) Hash() []byte {
 	output := make([]byte, len(s.levels)*40)
 	var i int
 	for _, l := range s.levels {
-		// FIXME(): change that to use the full price
 		// Data is already coming as big endian out of
 		// Uint.Bytes()
 		price := l.price.Bytes()
