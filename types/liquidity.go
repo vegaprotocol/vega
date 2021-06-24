@@ -48,7 +48,7 @@ func (t TargetStakeParameters) IntoProto() *proto.TargetStakeParameters {
 	}
 }
 
-func (t TargetStakeParameters) FromProto(p *proto.TargetStakeParameters) {
+func (t *TargetStakeParameters) FromProto(p *proto.TargetStakeParameters) {
 	t.ScalingFactor = num.DecimalFromFloat(p.ScalingFactor)
 	t.TimeWindow = p.TimeWindow
 }
@@ -77,8 +77,8 @@ func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvision
 		MarketId:         l.MarketId,
 		CommitmentAmount: l.CommitmentAmount.Uint64(),
 		Fee:              l.Fee.String(),
-		Sells:            make([]*proto.LiquidityOrder, 0),
-		Buys:             make([]*proto.LiquidityOrder, 0),
+		Sells:            make([]*proto.LiquidityOrder, 0, len(l.Sells)),
+		Buys:             make([]*proto.LiquidityOrder, 0, len(l.Buys)),
 		Reference:        l.Reference,
 	}
 
@@ -102,7 +102,7 @@ func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvision
 	return lps
 }
 
-func (l LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisionSubmission) error {
+func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisionSubmission) error {
 	var err error
 	l.MarketId = p.MarketId
 	l.CommitmentAmount = num.NewUint(p.CommitmentAmount)
@@ -111,7 +111,7 @@ func (l LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvision
 		return err
 	}
 
-	l.Sells = make([]*LiquidityOrder, 0)
+	l.Sells = make([]*LiquidityOrder, 0, len(p.Sells))
 	for _, sell := range p.Sells {
 		order := &LiquidityOrder{
 			Reference:  sell.Reference,
@@ -121,7 +121,7 @@ func (l LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvision
 		l.Sells = append(l.Sells, order)
 	}
 
-	l.Buys = make([]*LiquidityOrder, 0)
+	l.Buys = make([]*LiquidityOrder, 0, len(p.Buys))
 	for _, buy := range p.Buys {
 		order := &LiquidityOrder{
 			Reference:  buy.Reference,
@@ -150,7 +150,7 @@ type LiquidityProvision struct {
 	// Specified as a unitless number that represents the amount of settlement asset of the market
 	CommitmentAmount *num.Uint
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
-	Fee string
+	Fee num.Decimal
 	// A set of liquidity sell orders to meet the liquidity provision obligation
 	Sells []*LiquidityOrderReference
 	// A set of liquidity buy orders to meet the liquidity provision obligation
@@ -171,7 +171,7 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 		UpdatedAt:        l.UpdatedAt,
 		MarketId:         l.MarketId,
 		CommitmentAmount: l.CommitmentAmount.Uint64(),
-		Fee:              l.Fee,
+		Fee:              l.Fee.String(),
 		Version:          l.Version,
 		Status:           l.Status,
 		Reference:        l.Reference,
@@ -205,10 +205,10 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 	return lp
 }
 
-func (l LiquidityProvision) FromProto(p *proto.LiquidityProvision) {
+func (l *LiquidityProvision) FromProto(p *proto.LiquidityProvision) {
 	l.CommitmentAmount = num.NewUint(p.CommitmentAmount)
 	l.CreatedAt = p.CreatedAt
-	l.Fee = p.Fee
+	l.Fee, _ = num.DecimalFromString(p.Fee)
 	l.Id = p.Id
 	l.MarketId = p.MarketId
 	l.PartyId = p.PartyId
@@ -217,7 +217,7 @@ func (l LiquidityProvision) FromProto(p *proto.LiquidityProvision) {
 	l.UpdatedAt = p.UpdatedAt
 	l.Version = p.Version
 
-	l.Sells = make([]*LiquidityOrderReference, 0)
+	l.Sells = make([]*LiquidityOrderReference, 0, len(p.Sells))
 	for _, sell := range p.Sells {
 		lor := &LiquidityOrderReference{
 			OrderId: sell.OrderId,
@@ -230,8 +230,8 @@ func (l LiquidityProvision) FromProto(p *proto.LiquidityProvision) {
 		l.Sells = append(l.Sells, lor)
 	}
 
-	l.Buys = make([]*LiquidityOrderReference, 0)
-	for _, buy := range p.Sells {
+	l.Buys = make([]*LiquidityOrderReference, 0, len(p.Buys))
+	for _, buy := range p.Buys {
 		lor := &LiquidityOrderReference{
 			OrderId: buy.OrderId,
 			LiquidityOrder: &LiquidityOrder{
@@ -259,7 +259,7 @@ func (l LiquidityOrderReference) IntoProto() *proto.LiquidityOrderReference {
 	return lor
 }
 
-func (l LiquidityOrderReference) FromProto(p *proto.LiquidityOrderReference) {
+func (l *LiquidityOrderReference) FromProto(p *proto.LiquidityOrderReference) {
 	l.OrderId = p.OrderId
 	l.LiquidityOrder = &LiquidityOrder{
 		Reference:  p.LiquidityOrder.Reference,
@@ -286,7 +286,7 @@ func (l LiquidityOrder) IntoProto() *proto.LiquidityOrder {
 	return lo
 }
 
-func (l LiquidityOrder) FromProto(p *proto.LiquidityOrder) {
+func (l *LiquidityOrder) FromProto(p *proto.LiquidityOrder) {
 	l.Offset = p.Offset
 	l.Proportion = p.Proportion
 	l.Reference = p.Reference
@@ -310,7 +310,7 @@ func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringPar
 	return lmp
 }
 
-func (l LiquidityMonitoringParameters) FromProto(p *proto.LiquidityMonitoringParameters) {
+func (l *LiquidityMonitoringParameters) FromProto(p *proto.LiquidityMonitoringParameters) {
 	l.AuctionExtension = p.AuctionExtension
 	l.TriggeringRatio = p.TriggeringRatio
 	l.TargetStakeParameters.FromProto(p.TargetStakeParameters)
