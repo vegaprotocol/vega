@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
-	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
@@ -399,14 +399,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
 	// Convert protobuf into local domain type
-	oa, err := types.NewOrderAmendmentFromProto(order)
-	if err != nil {
-		if app.log.GetLevel() <= logging.DebugLevel {
-			app.log.Debug("Unable to convert Orderamendment protobuf message to domain type",
-				logging.OrderAmendmentProto(order), logging.Error(err))
-		}
-		return err
-	}
+	oa := types.NewOrderAmendmentFromProto(order)
 
 	// Submit the cancel new order request to the Vega trading core
 	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
@@ -504,7 +497,13 @@ func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 		logging.String("vote-party", party),
 		logging.String("vote-value", vote.Value.String()))
 
-	return app.gov.AddVote(ctx, *vote, party)
+	if err := commands.CheckVoteSubmission(vote); err != nil {
+		return err
+	}
+
+	v := types.NewVoteSubmissionFromProto(vote)
+
+	return app.gov.AddVote(ctx, *v, party)
 }
 
 func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
@@ -625,7 +624,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 
 }
 
-func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *proto.Asset) {
+func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
 	prop.State = types.Proposal_STATE_ENACTED
 	// first check if this asset is real
 	asset, err := app.assets.Get(prop.Id)
@@ -641,7 +640,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *proto.A
 	// if this is a builtin asset nothing needs to be done, just start the asset
 	// straight away
 	if asset.IsBuiltinAsset() {
-		err = app.banking.EnableBuiltinAsset(ctx, asset.ProtoAsset().Id)
+		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().Id)
 		if err != nil {
 			// this should not happen
 			app.log.Error("unable to get builtin asset enabled",
