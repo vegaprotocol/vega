@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/vega/types"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -323,7 +324,7 @@ func (s *Svc) GetNewAssetProposals(inState *proto.Proposal_State) []*proto.Gover
 
 // PrepareProposal performs basic validation and bundles together fields required for a proposal
 func (s *Svc) PrepareProposal(
-	_ context.Context, reference string, terms *proto.ProposalTerms,
+	_ context.Context, reference string, terms *types.ProposalTerms,
 ) (*commandspb.ProposalSubmission, error) {
 	if len(reference) <= 0 {
 		reference = uuid.NewV4().String()
@@ -331,7 +332,7 @@ func (s *Svc) PrepareProposal(
 
 	cmd := &commandspb.ProposalSubmission{
 		Reference: reference,
-		Terms:     terms,
+		Terms:     terms.IntoProto(),
 	}
 
 	if err := commands.CheckProposalSubmission(cmd); err != nil {
@@ -342,10 +343,11 @@ func (s *Svc) PrepareProposal(
 }
 
 // PrepareVote - some additional validation on the vote message we're preparing
-func (s *Svc) PrepareVote(cmd *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error) {
-	if err := commands.CheckVoteSubmission(cmd); err != nil {
+func (s *Svc) PrepareVote(cmd *types.VoteSubmission) (*commandspb.VoteSubmission, error) {
+	vs := cmd.IntoProto()
+	if err := commands.CheckVoteSubmission(vs); err != nil {
 		return nil, err
 	}
 
-	return cmd, nil
+	return vs, nil
 }
