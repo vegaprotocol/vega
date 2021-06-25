@@ -7,6 +7,12 @@ pipeline {
     }
 
     stages {
+        stage('setup') {
+            steps {
+                sh 'printenv'
+                echo "${params}"
+            }
+        }
         stage('Git clone') {
             parallel {
                 stage('vega core') {
