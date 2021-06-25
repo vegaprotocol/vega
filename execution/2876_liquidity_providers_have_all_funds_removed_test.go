@@ -7,6 +7,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -95,17 +96,17 @@ func TestIssue2876(t *testing.T) {
 	bondAccount, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
 	assert.NoError(t, err)
 	// we expect the whole commitment to be there
-	assert.Equal(t, 1000000, int(bondAccount.Balance))
+	assert.Equal(t, num.NewUint(1000000), bondAccount.Balance)
 
 	// but also some margin to cover the orders
 	marginAccount, err := tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 27000, int(marginAccount.Balance))
+	assert.Equal(t, num.NewUint(27000), marginAccount.Balance)
 
 	// but also some funds left in the genearal
 	generalAccount, err := tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 98973000, int(generalAccount.Balance))
+	assert.Equal(t, num.NewUint(98973000), generalAccount.Balance)
 
 	// now let's move time and see
 	// this should end the opening auction
@@ -116,15 +117,15 @@ func TestIssue2876(t *testing.T) {
 	bondAccount, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
 	assert.NoError(t, err)
 	// we expect the whole commitment to be there
-	assert.Equal(t, 1000000, int(bondAccount.Balance))
+	assert.Equal(t, num.NewUint(1000000), bondAccount.Balance)
 
 	// but also some margin to cover the orders
 	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 15318240, int(marginAccount.Balance))
+	assert.Equal(t, num.NewUint(15318240), marginAccount.Balance)
 
 	// but also some funds left in the genearal
 	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 83681760, int(generalAccount.Balance))
+	assert.Equal(t, num.NewUint(83681760), generalAccount.Balance)
 }

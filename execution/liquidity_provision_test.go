@@ -10,6 +10,7 @@ import (
 	ptypes "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -41,24 +42,26 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 	}
 
 	// Submitting a zero or smaller fee should cause a reject
-	lps := &commandspb.LiquidityProvisionSubmission{
-		Fee:              "-0.50",
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.50),
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000,
+		CommitmentAmount: num.NewUint(1000),
 		Buys:             buys,
-		Sells:            sells}
+		Sells:            sells,
+	}
 
 	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder02")
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
 	// Submitting a fee greater than 1.0 should cause a reject
-	lps = &commandspb.LiquidityProvisionSubmission{
-		Fee:              "1.01",
+	lps = &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(1.01),
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000,
+		CommitmentAmount: num.NewUint(1000),
 		Buys:             buys,
-		Sells:            sells}
+		Sells:            sells,
+	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder03")
 	require.Error(t, err)
@@ -90,22 +93,24 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 	}
 
 	// Submitting a shape with no buys should cause a reject
-	lps := &commandspb.LiquidityProvisionSubmission{
-		Fee:              "0.01",
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000,
-		Sells:            sells}
+		CommitmentAmount: num.NewUint(1000),
+		Sells:            sells,
+	}
 
 	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
 	// Submitting a shape with no sells should cause a reject
-	lps = &commandspb.LiquidityProvisionSubmission{
-		Fee:              "0.01",
+	lps = &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000,
-		Buys:             buys}
+		CommitmentAmount: num.NewUint(1000),
+		Buys:             buys,
+	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder02")
 	require.Error(t, err)
@@ -164,12 +169,13 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	}
 
 	// Submitting a correct entry
-	lps := &commandspb.LiquidityProvisionSubmission{
-		Fee:              "0.01",
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000,
+		CommitmentAmount: num.NewUint(1000),
 		Buys:             buys,
-		Sells:            sells}
+		Sells:            sells,
+	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)

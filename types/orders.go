@@ -7,6 +7,28 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
+type PriceLevel struct {
+	Price          *num.Uint
+	NumberOfOrders uint64
+	Volume         uint64
+}
+
+func NewPriceLevelFromProto(p *proto.PriceLevel) *PriceLevel {
+	return &PriceLevel{
+		Price:          num.NewUint(p.Price),
+		NumberOfOrders: p.NumberOfOrders,
+		Volume:         p.Volume,
+	}
+}
+
+func (p PriceLevel) IntoProto() *proto.PriceLevel {
+	return &proto.PriceLevel{
+		Price:          p.Price.Uint64(),
+		NumberOfOrders: p.NumberOfOrders,
+		Volume:         p.Volume,
+	}
+}
+
 type OrderAmendment struct {
 	OrderId         string
 	MarketId        string

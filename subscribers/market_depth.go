@@ -9,12 +9,13 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type priceLevel struct {
 	// Price of the price level
-	price uint64
+	price *num.Uint
 	// How many orders are at this level
 	totalOrders uint64
 	// How much volume is at this level
@@ -131,14 +132,14 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 
 func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 	pl := &priceLevel{
-		price:       order.Price,
+		price:       order.Price.Clone(),
 		totalOrders: 1,
 		totalVolume: order.Remaining,
 		side:        order.Side,
 	}
 
 	if order.Side == types.Side_SIDE_BUY {
-		index := sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price <= order.Price })
+		index := sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price.LTE(Price) })
 		if index < len(md.buySide) {
 			// We need to go midslice
 			md.buySide = append(md.buySide, nil)
@@ -149,7 +150,7 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 			md.buySide = append(md.buySide, pl)
 		}
 	} else {
-		index := sort.Search(len(md.sellSide), func(i int) bool { return md.sellSide[i].price >= order.Price })
+		index := sort.Search(len(md.sellSide), func(i int) bool { return md.sellSide[i].price.GTE(order.Price) })
 		if index < len(md.sellSide) {
 			// We need to go midslice
 			md.sellSide = append(md.sellSide, nil)
@@ -182,7 +183,7 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 
 func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	// If the price is the same, we can update the original order
-	if originalOrder.Price == newOrder.Price {
+	if originalOrder.Price.EQ(newOrder.Price) {
 		if newOrder.Remaining == 0 {
 			md.removeOrder(newOrder)
 		} else {
@@ -201,18 +202,18 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	}
 }
 
-func (md *MarketDepth) getPriceLevel(side types.Side, price uint64) *priceLevel {
+func (md *MarketDepth) getPriceLevel(side types.Side, price *num.Uint) *priceLevel {
 	var i int
 	if side == types.Side_SIDE_BUY {
 		// buy side levels should be ordered in descending
-		i = sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price <= price })
-		if i < len(md.buySide) && md.buySide[i].price == price {
+		i = sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price.LTE(price) })
+		if i < len(md.buySide) && md.buySide[i].price.EQ(price) {
 			return md.buySide[i]
 		}
 	} else {
 		// sell side levels should be ordered in ascending
-		i = sort.Search(len(md.sellSide), func(i int) bool { return md.sellSide[i].price >= price })
-		if i < len(md.sellSide) && md.sellSide[i].price == price {
+		i = sort.Search(len(md.sellSide), func(i int) bool { return md.sellSide[i].price.GTE(price) })
+		if i < len(md.sellSide) && md.sellSide[i].price.EQ(price) {
 			return md.sellSide[i]
 		}
 	}
@@ -223,17 +224,17 @@ func (md *MarketDepth) removePriceLevel(order *types.Order) {
 	var i int
 	if order.Side == types.Side_SIDE_BUY {
 		// buy side levels should be ordered in descending
-		i = sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price <= order.Price })
-		if i < len(md.buySide) && md.buySide[i].price == order.Price {
+		i = sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price.LTE(order.Price) })
+		if i < len(md.buySide) && md.buySide[i].price.EQ(order.Price) {
 			copy(md.buySide[i:], md.buySide[i+1:])
 			md.buySide[len(md.buySide)-1] = nil
 			md.buySide = md.buySide[:len(md.buySide)-1]
 		}
 	} else {
 		// sell side levels should be ordered in ascending
-		i = sort.Search(len(md.sellSide), func(i int) bool { return md.sellSide[i].price >= order.Price })
+		i = sort.Search(len(md.sellSide), func(i int) bool { return md.sellSide[i].price.GTE(order.Price) })
 		// we found the level just return it.
-		if i < len(md.sellSide) && md.sellSide[i].price == order.Price {
+		if i < len(md.sellSide) && md.sellSide[i].price.EQ(order.Price) {
 			copy(md.sellSide[i:], md.sellSide[i+1:])
 			md.sellSide[len(md.sellSide)-1] = nil
 			md.sellSide = md.sellSide[:len(md.sellSide)-1]
@@ -304,13 +305,13 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	for _, pl := range md.changes {
 		if pl.side == types.Side_SIDE_BUY {
 			buyPtr = append(buyPtr, &types.PriceLevel{
-				Price:          pl.price,
+				Price:          pl.price.Clone(),
 				NumberOfOrders: pl.totalOrders,
 				Volume:         pl.totalVolume,
 			})
 		} else {
 			sellPtr = append(sellPtr, &types.PriceLevel{
-				Price:          pl.price,
+				Price:          pl.price.Clone(),
 				NumberOfOrders: pl.totalOrders,
 				Volume:         pl.totalVolume,
 			})
@@ -369,13 +370,15 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 	for index, pl := range md.buySide[:buyLimit] {
 		buyPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
 			NumberOfOrders: pl.totalOrders,
-			Price:          pl.price}
+			Price:          pl.price.Clone(),
+		}
 	}
 
 	for index, pl := range md.sellSide[:sellLimit] {
 		sellPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
 			NumberOfOrders: pl.totalOrders,
-			Price:          pl.price}
+			Price:          pl.price.Clone(),
+		}
 	}
 
 	return &types.MarketDepth{
@@ -426,7 +429,7 @@ func (mdb *MarketDepthBuilder) GetOrderCount(market string) int64 {
 func (mdb *MarketDepthBuilder) GetVolumeAtPrice(market string, side types.Side, price uint64) uint64 {
 	md := mdb.marketDepths[market]
 	if md != nil {
-		pl := md.getPriceLevel(side, price)
+		pl := md.getPriceLevel(side, num.NewUint(price))
 		if pl == nil {
 			return 0
 		}
@@ -456,7 +459,7 @@ func (mdb *MarketDepthBuilder) GetTotalVolume(market string) int64 {
 func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(market string, side types.Side, price uint64) uint64 {
 	md := mdb.marketDepths[market]
 	if md != nil {
-		pl := md.getPriceLevel(side, price)
+		pl := md.getPriceLevel(side, num.NewUint(price))
 		if pl == nil {
 			return 0
 		}
@@ -475,7 +478,7 @@ func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) uint64 {
 	md := mdb.marketDepths[market]
 	if md != nil {
 		if len(md.buySide) > 0 {
-			return md.buySide[0].price
+			return md.buySide[0].price.Uint64()
 		}
 	}
 	return 0
@@ -486,7 +489,7 @@ func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) uint64 {
 	md := mdb.marketDepths[market]
 	if md != nil {
 		if len(md.sellSide) > 0 {
-			return md.sellSide[0].price
+			return md.sellSide[0].price.Uint64()
 		}
 	}
 	return 0

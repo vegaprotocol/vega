@@ -9,6 +9,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -18,10 +19,16 @@ import (
 func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *testMarket {
 	closingAt := time.Unix(1000000000, 0)
 
+	pmt := &types.PriceMonitoringTrigger{
+		Horizon:          60,
+		HDec:             num.DecimalFromFloat(60),
+		Probability:      num.DecimalFromFloat(.95),
+		AuctionExtension: 60,
+	}
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
-				{Horizon: 60, Probability: 0.95, AuctionExtension: 60},
+				pmt,
 			},
 		},
 		UpdateFrequency: 600,
@@ -104,17 +111,17 @@ func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepth
 		correct = false
 	}
 	// Do we have the same best bid price?
-	if !assert.Equal(t, tm.market.GetMarketData().BestBidPrice, mdb.GetBestBidPrice(tm.market.GetID())) {
+	if !assert.True(t, tm.market.GetMarketData().BestBidPrice.EQ(mdb.GetBestBidPrice(tm.market.GetID()))) {
 		correct = false
 	}
 	// Do we have the same best ask price?
-	if !assert.Equal(t, tm.market.GetMarketData().BestOfferPrice, mdb.GetBestAskPrice(tm.market.GetID())) {
+	if !assert.True(t, tm.market.GetMarketData().BestOfferPrice.EQ(mdb.GetBestAskPrice(tm.market.GetID()))) {
 		correct = false
 	}
 
 	// Check volume at each level is correct
-	bestBid := tm.market.GetMarketData().BestBidPrice
-	bestAsk := tm.market.GetMarketData().BestOfferPrice
+	bestBid := tm.market.GetMarketData().BestBidPrice.Clone()
+	bestAsk := tm.market.GetMarketData().BestOfferPrice.Clone()
 
 	if !assert.Equal(t, tm.market.GetMarketData().BestBidVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_BUY, bestBid)) {
 		correct = false

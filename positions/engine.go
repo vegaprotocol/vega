@@ -278,7 +278,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 // of the updated positions
 func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
 	for _, pos := range e.positions {
-		pos.price = markPrice
+		pos.price.Set(markPrice)
 	}
 	return e.positionsCpy
 }

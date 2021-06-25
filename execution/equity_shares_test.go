@@ -268,26 +268,28 @@ func testWithinMarket(t *testing.T) {
 	// Retrieve both MarketLiquidityFee account balance and Party Balance
 	// before the fee distribution.
 	var (
-		originalBalance = esm.LiquidityFeeAccount().Balance
-		party1Balance   = esm.PartyMarginAccount("party1").Balance
-		party2Balance   = esm.PartyMarginAccount("party2").Balance
+		originalBalance = esm.LiquidityFeeAccount().Balance.Clone()
+		party1Balance   = esm.PartyMarginAccount("party1").Balance.Clone()
+		party2Balance   = esm.PartyMarginAccount("party2").Balance.Clone()
 	)
 
 	curTime = curTime.Add(1 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, curTime)
 
-	assert.Zero(t, esm.LiquidityFeeAccount().Balance,
+	assert.True(t, esm.LiquidityFeeAccount().Balance.IsZero(),
 		"LiquidityFeeAccount should be empty after a fee distribution")
 
-	assert.EqualValues(t,
-		int(float64(originalBalance)*(2./3)),
-		int(esm.PartyMarginAccount("party1").Balance-party1Balance),
+	oneThird := num.DecimalFromFloat(1. / 3)
+	twoThirds := oneThird.Add(oneThird)
+	exp, _ := num.UintFromDecimal(num.DecimalFromUint(originalBalance).Mul(twoThirds))
+	assert.True(t,
+		exp.EQ(num.Zero().Sub(esm.PartyMarginAccount("party1").Balance, party1Balance)),
 		"party1 should get 2/3 of the fees",
 	)
 
-	assert.EqualValues(t,
-		int(float64(originalBalance)*(1./3)),
-		int(esm.PartyMarginAccount("party2").Balance-party2Balance),
+	exp, _ = num.UintFromDecimal(num.DecimalFromUint(originalBalance).Mul(oneThird))
+	assert.True(t,
+		exp.EQ(num.Zero().Sub(esm.PartyMarginAccount("party2").Balance, party2Balance)),
 		"party2 should get 2/3 of the fees",
 	)
 }
