@@ -4,6 +4,7 @@ package types
 
 import (
 	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -125,6 +126,56 @@ type Vote struct {
 	// TotalGovernanceTokenWeight is the weight of the vote compared to the
 	// total number of governance token.
 	TotalGovernanceTokenWeight num.Decimal
+}
+
+type VoteSubmission struct {
+	// The ID of the proposal to vote for.
+	ProposalId string
+	// The actual value of the vote
+	Value Vote_Value
+}
+
+func NewVoteSubmissionFromProto(p *commandspb.VoteSubmission) *VoteSubmission {
+	vs := VoteSubmission{
+		ProposalId: p.ProposalId,
+		Value:      p.Value,
+	}
+	return &vs
+}
+
+func (v VoteSubmission) IntoProto() *commandspb.VoteSubmission {
+	vs := commandspb.VoteSubmission{
+		ProposalId: v.ProposalId,
+		Value:      v.Value,
+	}
+	return &vs
+}
+
+func (v VoteSubmission) String() string {
+	return v.IntoProto().String()
+}
+
+type ProposalSubmission struct {
+	// Proposal reference
+	Reference string
+	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted
+	Terms *ProposalTerms
+}
+
+func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalSubmission {
+	ps := ProposalSubmission{
+		Reference: p.Reference,
+		Terms:     ProposalTermsFromProto(p.Terms),
+	}
+	return &ps
+}
+
+func (p ProposalSubmission) IntoProto() (*commandspb.ProposalSubmission, error) {
+	ps := commandspb.ProposalSubmission{
+		Reference: p.Reference,
+		Terms:     p.Terms.IntoProto(),
+	}
+	return &ps, nil
 }
 
 type Proposal struct {
@@ -295,6 +346,20 @@ func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 		r.TradingMode = tm
 	}
 	return r
+}
+
+func (m *NewMarketConfiguration) GetTradingMode() tradingMode {
+	if m != nil {
+		return m.TradingMode
+	}
+	return nil
+}
+
+func (m *NewMarketConfiguration) GetContinuous() *ContinuousTrading {
+	if x, ok := m.GetTradingMode().(*NewMarketConfiguration_Continuous); ok {
+		return x.Continuous
+	}
+	return nil
 }
 
 func ProposalTermsFromProto(p *proto.ProposalTerms) *ProposalTerms {

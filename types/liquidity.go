@@ -338,3 +338,17 @@ func (l *LiquidityMonitoringParameters) FromProto(p *proto.LiquidityMonitoringPa
 	l.TargetStakeParameters = &TargetStakeParameters{}
 	l.TargetStakeParameters.FromProto(p.TargetStakeParameters)
 }
+
+func LiquidityProvisionSubmissionFromMarketCommitment(
+	nmc *NewMarketCommitment,
+	market string,
+) *LiquidityProvisionSubmission {
+	return &LiquidityProvisionSubmission{
+		MarketId:         market,
+		CommitmentAmount: nmc.CommitmentAmount,
+		Fee:              nmc.Fee,
+		Sells:            nmc.Sells,
+		Buys:             nmc.Buys,
+		Reference:        nmc.Reference,
+	}
+}
