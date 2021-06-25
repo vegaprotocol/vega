@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
@@ -33,8 +34,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const MAXMOVEUP = 1000
-const MINMOVEDOWN = -500
+var (
+	MAXMOVEUP   = num.DecimalFromFloat(1000)
+	MINMOVEDOWN = num.DecimalFromFloat(-500)
+)
 
 var defaultCollateralAssets = []types.Asset{
 	{
@@ -49,7 +52,8 @@ var defaultCollateralAssets = []types.Asset{
 			Name:        "VOTE",
 			Symbol:      "VOTE",
 			Decimals:    5,
-			TotalSupply: "1000",
+			TotalSupply: num.NewUint(1000),
+			MinLpStake:  num.NewUint(0),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -247,7 +251,9 @@ func getTestMarket2(
 	collateralEngine.EnableAsset(context.Background(), types.Asset{
 		Id: "ETH",
 		Details: &types.AssetDetails{
-			Symbol: "ETH",
+			Symbol:      "ETH",
+			TotalSupply: num.Zero(),
+			MinLpStake:  num.Zero(),
 		},
 	})
 
@@ -260,7 +266,8 @@ func getTestMarket2(
 			Name:        "VOTE",
 			Symbol:      "VOTE",
 			Decimals:    5,
-			TotalSupply: "1000",
+			TotalSupply: num.NewUint(1000),
+			MinLpStake:  num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -320,9 +327,9 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 	mkt := types.Market{
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
-				LiquidityFee:      "0.3",
-				InfrastructureFee: "0.001",
-				MakerFee:          "0.004",
+				LiquidityFee:      num.DecimalFromFloat(0.3),
+				InfrastructureFee: num.DecimalFromFloat(0.001),
+				MakerFee:          num.DecimalFromFloat(0.004),
 			},
 		},
 		TradableInstrument: &types.TradableInstrument{
@@ -361,19 +368,19 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 			},
 			MarginCalculator: &types.MarginCalculator{
 				ScalingFactors: &types.ScalingFactors{
-					SearchLevel:       1.1,
-					InitialMargin:     1.2,
-					CollateralRelease: 1.4,
+					SearchLevel:       num.DecimalFromFloat(1.1),
+					InitialMargin:     num.DecimalFromFloat(1.2),
+					CollateralRelease: num.DecimalFromFloat(1.4),
 				},
 			},
 			RiskModel: &types.TradableInstrument_SimpleRiskModel{
 				SimpleRiskModel: &types.SimpleRiskModel{
 					Params: &types.SimpleModelParams{
-						FactorLong:           0.15,
-						FactorShort:          0.25,
+						FactorLong:           num.DecimalFromFloat(0.15),
+						FactorShort:          num.DecimalFromFloat(0.25),
 						MaxMoveUp:            MAXMOVEUP,
 						MinMoveDown:          MINMOVEDOWN,
-						ProbabilityOfTrading: 0.1,
+						ProbabilityOfTrading: num.DecimalFromFloat(0.1),
 					},
 				},
 			},
@@ -386,9 +393,9 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
 				TimeWindow:    3600, // seconds = 1h
-				ScalingFactor: 10,
+				ScalingFactor: num.DecimalFromFloat(10),
 			},
-			TriggeringRatio: 0,
+			TriggeringRatio: num.DecimalZero(),
 		},
 	}
 
@@ -397,11 +404,11 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 }
 
 func addAccount(market *testMarket, party string) {
-	market.collateralEngine.Deposit(context.Background(), party, market.asset, 1000000000)
+	market.collateralEngine.Deposit(context.Background(), party, market.asset, num.NewUint(1000000000))
 }
 
 func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.TransferResponse {
-	r, _ := market.collateralEngine.Deposit(context.Background(), party, market.asset, amnt)
+	r, _ := market.collateralEngine.Deposit(context.Background(), party, market.asset, num.NewUint(amnt))
 	return r
 }
 
@@ -410,10 +417,11 @@ func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id st
 	buys, sells []*types.LiquidityOrder) *testMarket {
 	ctx := context.Background()
 
-	lps := &commandspb.LiquidityProvisionSubmission{
+	f, _ := num.DecimalFromString(fee)
+	lps := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: amount,
-		Fee:              fee,
+		CommitmentAmount: num.NewUint(amount),
+		Fee:              f,
 		Buys:             buys,
 		Sells:            sells,
 	}
