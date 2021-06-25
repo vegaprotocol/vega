@@ -217,7 +217,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Run feature (integration) tests from specs-internal repo') {
+                stage('feature (integration) tests from specs-internal repo') {
                     steps {
                         retry(3) {
                             dir('vega') {
@@ -226,12 +226,13 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-
-        stage('Run system-tests') {
-            steps {
-                echo 'End to end testing ..'
+                stage('system-tests') {
+                    steps {
+                        dir('system-tests') {
+                            echo 'Run system-tests'
+                        }
+                    }
+                }
             }
         }
 
