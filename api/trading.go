@@ -9,7 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
@@ -51,7 +52,7 @@ type AccountService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
 type GovernanceService interface {
 	PrepareProposal(ctx context.Context, reference string, terms *types.ProposalTerms) (*commandspb.ProposalSubmission, error)
-	PrepareVote(vote *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error)
+	PrepareVote(vote *types.VoteSubmission) (*commandspb.VoteSubmission, error)
 }
 
 // EvtForwarder
@@ -258,7 +259,10 @@ func (s *tradingService) PrepareProposalSubmission(
 	if req.Submission == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing submission"))
 	}
-	proposal, err := s.governanceService.PrepareProposal(ctx, req.Submission.Reference, req.Submission.Terms)
+
+	terms := types.ProposalTermsFromProto(req.Submission.Terms)
+
+	proposal, err := s.governanceService.PrepareProposal(ctx, req.Submission.Reference, terms)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
 	}
@@ -288,7 +292,9 @@ func (s *tradingService) PrepareVoteSubmission(ctx context.Context, req *protoap
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	vote, err := s.governanceService.PrepareVote(req.Submission)
+	votesub := types.NewVoteSubmissionFromProto(req.Submission)
+
+	vote, err := s.governanceService.PrepareVote(votesub)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareVote, err)
 	}
