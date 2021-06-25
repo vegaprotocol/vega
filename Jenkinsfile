@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    options {
+        skipDefaultCheckout true
+    }
     parameters {
         string(name: 'VEGA_CORE_BRANCH', defaultValue: "${CHANGE_BRANCH}", description: 'Git branch name of the vegaprotocol/vega repository')
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
