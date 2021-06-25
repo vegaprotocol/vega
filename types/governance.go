@@ -9,6 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+type GovernanceData = proto.GovernanceData
+
 type Vote_Value = proto.Vote_Value
 
 const (
