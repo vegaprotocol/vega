@@ -253,5 +253,22 @@ pipeline {
                 echo 'Run basic tests on Devnet network ...'
             }
         }
+
+        stage('Do something on master') {
+            when {
+                branch 'master'
+            }
+            steps {
+                echo 'Do something on master....'
+            }
+        }
+
+        stage('Build and publish version') {
+            when { tag "v*" }
+            steps {
+                echo 'Build version because this commit is tagged...'
+                echo 'and publish it'
+            }
+        }
     }
 }
