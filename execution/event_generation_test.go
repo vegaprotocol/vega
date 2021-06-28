@@ -210,11 +210,14 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_PRICE, tm.market.GetMarketData().Trigger)
 
 	// Check we have the right amount of events
-	assert.Equal(t, uint64(8), tm.orderEventCount)
-	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
+	// assert.Equal(t, uint64(8), tm.orderEventCount)
+	assert.Equal(t, uint64(7), tm.orderEventCount)
+	// assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(5), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
+	// assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
+	assert.Equal(t, int64(5), mdb.GetOrderCount(tm.market.GetID()))
 }
 
 func TestEvents_CloseOutTrader(t *testing.T) {
@@ -249,6 +252,8 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
+	md = tm.market.GetMarketData()
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
 
 	// Fill some of it to set the mark price
 	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 10, 2)
@@ -256,14 +261,16 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
-	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+	// assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-A", 1, 10)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
 
-	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
+	// assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
 	// Move price high to force a close out
 	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_BUY, "trader-B", 1, 100)
@@ -271,7 +278,8 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
+	// assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(5), tm.market.GetOrdersOnBookCount())
 
 	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 100, 100)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
@@ -279,7 +287,7 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 	require.NoError(t, err)
 
 	md = tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode, "market not continuous: %s (trigger: %s)", md.MarketTradingMode, md.Trigger)
 
 	// Check we have the right amount of events
 	assert.Equal(t, uint64(14), tm.orderEventCount)
