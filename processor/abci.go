@@ -366,14 +366,15 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
-	order := &commandspb.OrderCancellation{}
-	if err := tx.Unmarshal(order); err != nil {
+	porder := &commandspb.OrderCancellation{}
+	if err := tx.Unmarshal(porder); err != nil {
 		return err
 	}
 
 	app.stats.IncTotalCancelOrder()
-	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderId))
+	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", porder.OrderId))
 
+	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
 	msg, err := app.exec.CancelOrder(ctx, order, tx.Party())
 	if err != nil {
@@ -450,8 +451,8 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
-	propSubmission, err := types.NewProposalSubmissionFromProto(prop)
-	toSubmit, err := app.gov.SubmitProposal(ctx, propSubmission, id, party)
+	propSubmission := types.NewProposalSubmissionFromProto(prop)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, id, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
 			logging.ProposalID(id),
@@ -488,6 +489,8 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 	vote := &commandspb.VoteSubmission{}
+	fmt.Printf("DELIVER VOTE\n\n\n\n")
+
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}

@@ -264,7 +264,7 @@ func OrderSubmission(os *types.OrderSubmission) zap.Field {
 	return zap.String("order-submission", os.String())
 }
 
-func OrderCancellation(oc *commandspb.OrderCancellation) zap.Field {
+func OrderCancellation(oc *types.OrderCancellation) zap.Field {
 	return zap.String("order-cancellation", oc.String())
 }
 

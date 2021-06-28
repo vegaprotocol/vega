@@ -45,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -272,7 +273,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 			mkt.TradableInstrument.Instrument.GetFuture().OracleSpec = specWithID
 			// end of hot fix
 
-			err = l.executionEngine.SubmitMarket(l.ctx, &mkt)
+			err = l.executionEngine.SubmitMarket(l.ctx, types.MarketFromProto(&mkt))
 			if err != nil {
 				l.Log.Panic("Unable to submit market",
 					logging.Error(err))
@@ -284,7 +285,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 }
 
 func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
-	aid, err := l.assets.NewAsset(id, v)
+	aid, err := l.assets.NewAsset(id, types.AssetDetailsFromProto(v))
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
 	}
@@ -315,7 +316,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 		return fmt.Errorf("unable to enable asset: %v", err)
 	}
 
-	assetD := asset.ProtoAsset()
+	assetD := asset.Type()
 	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
 		return fmt.Errorf("unable to enable asset in collateral: %v", err)
 	}

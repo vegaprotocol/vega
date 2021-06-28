@@ -6,22 +6,24 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAssetBuiltInAssetDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	a := proto.Asset{
+	a := types.Asset{
 		Id: "Id",
-		Details: &proto.AssetDetails{
+		Details: &types.AssetDetails{
 			Name:        "Name",
 			Symbol:      "Symbol",
-			TotalSupply: "10000",
+			TotalSupply: num.NewUint(10000),
 			Decimals:    5,
-			Source: &proto.AssetDetails_BuiltinAsset{
-				BuiltinAsset: &proto.BuiltinAsset{
-					MaxFaucetAmountMint: "100000000",
+			Source: &types.AssetDetailsBuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					MaxFaucetAmountMint: num.NewUint(100000000),
 				},
 			},
 		},
@@ -34,12 +36,12 @@ func TestAssetBuiltInAssetDeepClone(t *testing.T) {
 	a.Id = "Changed"
 	a.Details.Name = "Changed"
 	a.Details.Symbol = "Changed"
-	a.Details.TotalSupply = "999"
+	a.Details.TotalSupply = num.NewUint(999)
 	a.Details.Decimals = 999
 
-	as := a.Details.Source.(*proto.AssetDetails_BuiltinAsset)
+	as := a.Details.Source.(*types.AssetDetailsBuiltinAsset)
 	bia := as.BuiltinAsset
-	bia.MaxFaucetAmountMint = "999"
+	bia.MaxFaucetAmountMint = num.NewUint(999)
 
 	as2 := a2.Details.Source.(*proto.AssetDetails_BuiltinAsset)
 	bia2 := as2.BuiltinAsset
@@ -56,15 +58,15 @@ func TestAssetBuiltInAssetDeepClone(t *testing.T) {
 func TestAssetERCDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	a := proto.Asset{
+	a := types.Asset{
 		Id: "Id",
-		Details: &proto.AssetDetails{
+		Details: &types.AssetDetails{
 			Name:        "Name",
 			Symbol:      "Symbol",
-			TotalSupply: "10000",
+			TotalSupply: num.NewUint(10000),
 			Decimals:    5,
-			Source: &proto.AssetDetails_Erc20{
-				Erc20: &proto.ERC20{
+			Source: &types.AssetDetailsErc20{
+				Erc20: &types.ERC20{
 					ContractAddress: "Contact Address",
 				},
 			},
@@ -78,10 +80,10 @@ func TestAssetERCDeepClone(t *testing.T) {
 	a.Id = "Changed"
 	a.Details.Name = "Changed"
 	a.Details.Symbol = "Changed"
-	a.Details.TotalSupply = "999"
+	a.Details.TotalSupply = num.NewUint(999)
 	a.Details.Decimals = 999
 
-	as := a.Details.Source.(*proto.AssetDetails_Erc20)
+	as := a.Details.Source.(*types.AssetDetailsErc20)
 	erc := as.Erc20
 	erc.ContractAddress = "Changed"
 

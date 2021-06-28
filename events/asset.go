@@ -3,28 +3,28 @@ package events
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	"code.vegaprotocol.io/vega/types"
 )
 
 type Asset struct {
 	*Base
-	a types.Asset
+	a proto.Asset
 }
 
 func NewAssetEvent(ctx context.Context, a types.Asset) *Asset {
-	cpy := a.DeepClone()
 	return &Asset{
 		Base: newBase(ctx, AssetEvent),
-		a:    *cpy,
+		a:    *a.IntoProto(),
 	}
 }
 
-func (a *Asset) Asset() types.Asset {
+func (a *Asset) Asset() proto.Asset {
 	return a.a
 }
 
-func (a Asset) Proto() types.Asset {
+func (a Asset) Proto() proto.Asset {
 	return a.a
 }
 
@@ -34,7 +34,7 @@ func (a Asset) StreamMessage() *eventspb.BusEvent {
 		Block: a.TraceID(),
 		Type:  a.et.ToProto(),
 		Event: &eventspb.BusEvent_Asset{
-			Asset: a.a.IntoProto(),
+			Asset: &a.a,
 		},
 	}
 }

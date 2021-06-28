@@ -161,8 +161,7 @@ func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
 	return e.finalizeAssetList(ctx, assetID)
 }
 
-func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID string, amnt uint64) error {
-	amount := num.NewUint(amnt)
+func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID string, amount *num.Uint) error {
 	asset, err := e.assets.Get(assetID)
 	if err != nil {
 		e.log.Error("unable to get asset by id",
