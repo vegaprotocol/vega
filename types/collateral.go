@@ -21,10 +21,14 @@ func (a Account) String() string {
 }
 
 func (a *Account) IntoProto() *proto.Account {
+	var balance uint64
+	if a.Balance != nil {
+		balance = a.Balance.Uint64()
+	}
 	return &proto.Account{
 		Id:       a.Id,
 		Owner:    a.Owner,
-		Balance:  a.Balance.Uint64(),
+		Balance:  balance,
 		Asset:    a.Asset,
 		MarketId: a.MarketId,
 		Type:     a.Type,

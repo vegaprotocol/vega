@@ -193,30 +193,41 @@ type Proposal struct {
 
 func (p Proposal) DeepClone() *Proposal {
 	cpy := p
-	cpy.Terms = p.Terms.DeepClone()
+	if p.Terms != nil {
+		cpy.Terms = p.Terms.DeepClone()
+	}
 	return &cpy
 }
 
 func (p Proposal) IntoProto() *proto.Proposal {
+	var terms *proto.ProposalTerms
+	if p.Terms != nil {
+		terms = p.Terms.IntoProto()
+	}
 	return &proto.Proposal{
 		Id:           p.Id,
 		Reference:    p.Reference,
 		PartyId:      p.PartyId,
 		State:        p.State,
 		Timestamp:    p.Timestamp,
-		Terms:        p.Terms.IntoProto(),
+		Terms:        terms,
 		Reason:       p.Reason,
 		ErrorDetails: p.ErrorDetails,
 	}
 }
 
 func (v Vote) IntoProto() *proto.Vote {
+	var totalGovernanceTokenBalance uint64
+	if v.TotalGovernanceTokenBalance != nil {
+		totalGovernanceTokenBalance = v.TotalGovernanceTokenBalance.Uint64()
+	}
+
 	return &proto.Vote{
 		PartyId:                     v.PartyID,
 		Value:                       v.Value,
 		ProposalId:                  v.ProposalID,
 		Timestamp:                   v.Timestamp,
-		TotalGovernanceTokenBalance: v.TotalGovernanceTokenBalance.Uint64(),
+		TotalGovernanceTokenBalance: totalGovernanceTokenBalance,
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
 	}
 }

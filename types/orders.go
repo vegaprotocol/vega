@@ -29,6 +29,16 @@ func (p PriceLevel) IntoProto() *proto.PriceLevel {
 	}
 }
 
+type PriceLevels []*PriceLevel
+
+func (p PriceLevels) IntoProto() []*proto.PriceLevel {
+	out := make([]*proto.PriceLevel, 0, len(p))
+	for _, v := range p {
+		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
 type OrderAmendment struct {
 	OrderId         string
 	MarketId        string

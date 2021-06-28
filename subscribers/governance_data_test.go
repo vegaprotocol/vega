@@ -33,12 +33,12 @@ func testGetByID(t *testing.T) {
 	}
 	lastState := proto.Proposal_STATE_FAILED
 	for _, id := range ids {
-		sub.Push(events.NewProposalEvent(ctx, proto.Proposal{
+		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
 			PartyId: "party",
 			Id:      id,
 			State:   proto.Proposal_STATE_OPEN,
 		}))
-		sub.Push(events.NewProposalEvent(ctx, proto.Proposal{
+		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
 			PartyId: "party",
 			Id:      id,
 			State:   lastState,
@@ -76,7 +76,7 @@ func testFilterByState(t *testing.T) {
 		proto.Proposal_STATE_REJECTED: 2,
 	}
 	for i, s := range states {
-		prop := proto.Proposal{
+		prop := types.Proposal{
 			PartyId: party,
 			Id:      fmt.Sprintf("test-prop-%d", i),
 			State:   s,
@@ -101,14 +101,14 @@ func testFilterByParty(t *testing.T) {
 		"prop-3",
 	}
 	for _, id := range ids {
-		prop := proto.Proposal{
+		prop := types.Proposal{
 			PartyId: party,
 			Id:      id,
 			State:   proto.Proposal_STATE_OPEN,
 		}
 		sub.Push(events.NewProposalEvent(ctx, prop))
 	}
-	sub.Push(events.NewProposalEvent(ctx, proto.Proposal{
+	sub.Push(events.NewProposalEvent(ctx, types.Proposal{
 		PartyId: "some-other-party",
 		Id:      "foobar",
 		State:   proto.Proposal_STATE_OPEN,
@@ -136,7 +136,7 @@ func testNoFilterVotes(t *testing.T) {
 	}
 	// last vote will always be yes
 	for i, p := range parties {
-		sub.Push(events.NewProposalEvent(ctx, proto.Proposal{
+		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
 			PartyId: p,
 			Id:      props[i],
 			State:   proto.Proposal_STATE_OPEN,

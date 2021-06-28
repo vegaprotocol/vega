@@ -21,8 +21,8 @@ func NewProposalEvent(ctx context.Context, p types.Proposal) *Proposal {
 	}
 }
 
-func (p *Proposal) Proposal() types.Proposal {
-	return p.p
+func (p *Proposal) Proposal() proto.Proposal {
+	return *p.p.IntoProto()
 }
 
 // ProposalID - for combined subscriber, communal interface
