@@ -55,7 +55,7 @@ type ExecutionEngine interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
-	SubmitProposal(context.Context, commandspb.ProposalSubmission, string, string) (*governance.ToSubmit, error)
+	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
 	AddVote(context.Context, types.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error

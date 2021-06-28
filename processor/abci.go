@@ -450,7 +450,8 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
-	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id, party)
+	propSubmission, err := types.NewProposalSubmissionFromProto(prop)
+	toSubmit, err := app.gov.SubmitProposal(ctx, propSubmission, id, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
 			logging.ProposalID(id),

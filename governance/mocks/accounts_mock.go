@@ -6,6 +6,7 @@ package mocks
 
 import (
 	types "code.vegaprotocol.io/vega/types"
+	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +35,10 @@ func (m *MockAccounts) EXPECT() *MockAccountsMockRecorder {
 }
 
 // GetAssetTotalSupply mocks base method
-func (m *MockAccounts) GetAssetTotalSupply(arg0 string) (uint64, error) {
+func (m *MockAccounts) GetAssetTotalSupply(arg0 string) (*num.Uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAssetTotalSupply", arg0)
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(*num.Uint)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
