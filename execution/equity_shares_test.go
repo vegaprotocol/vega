@@ -199,11 +199,10 @@ func (esm *equityShareMarket) PartyMarginAccount(party string) *types.Account {
 }
 
 func testWithinMarket(t *testing.T) {
-	t.Skip("The fee distribution seems off")
 	var (
 		ctx = context.Background()
 		// as we will split fees in 1/3 and 2/3
-		// we use 900000 cause we need this number be divisible by 3
+		// we use 900000 cause we need this number to be divisible by 3
 		matchingPrice = uint64(900000)
 		one           = uint64(1)
 	)
@@ -280,19 +279,20 @@ func testWithinMarket(t *testing.T) {
 	assert.True(t, esm.LiquidityFeeAccount().Balance.IsZero(),
 		"LiquidityFeeAccount should be empty after a fee distribution")
 
-	oneThird := num.DecimalFromFloat(1. / 3)
-	twoThirds := num.DecimalFromFloat(2. / 3)
-	exp, _ := num.UintFromDecimal(num.DecimalFromUint(originalBalance).Mul(twoThirds))
+	// exp = originalBalance*(2/3)
+	exp := num.Zero().Mul(num.NewUint(2), originalBalance)
+	exp = exp.Div(exp, num.NewUint(3))
 	actual := num.Zero().Sub(esm.PartyMarginAccount("party1").Balance, party1Balance)
 	assert.True(t,
 		exp.EQ(actual),
-		"party1 should get 2/3 of the fees (got %s expected %s)", actual.String(), party1Balance.String(),
+		"party1 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
 	)
 
-	exp, _ = num.UintFromDecimal(num.DecimalFromUint(originalBalance).Mul(oneThird))
+	// exp = originalBalance*(1/3)
+	exp = num.Zero().Div(originalBalance, num.NewUint(3))
 	actual = num.Zero().Sub(esm.PartyMarginAccount("party2").Balance, party2Balance)
 	assert.True(t,
 		exp.EQ(actual),
-		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), party2Balance.String(),
+		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
 	)
 }
