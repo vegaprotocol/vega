@@ -19,7 +19,6 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
 	ptypes "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
@@ -2475,7 +2474,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeBidPrev := mktData.BestBidVolume - mktData.BestStaticBidVolume
 	lpOrderVolumeOfferPrev := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
 	// Amend limit order
-	amendment := &commandspb.OrderAmendment{
+	amendment := &types.OrderAmendment{
 		OrderId: confirmationBuy.Order.Id,
 		// SizeDelta: 9,
 		SizeDelta: 2,
