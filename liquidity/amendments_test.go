@@ -74,7 +74,7 @@ func testCanAmend(t *testing.T) {
 func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
 	pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         market,
-		CommitmentAmount: num.NewUint(10000),
+		CommitmentAmount: 10000,
 		Fee:              "0.5",
 		Reference:        "ref-lp-submission-1",
 		Buys: []*proto.LiquidityOrder{
@@ -86,7 +86,6 @@ func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: 15},
 		},
 	}
-	t := &types.LiquidityProvisionSubmission{}
-	t.FromProto(pb)
+	t, _ := types.NewLiquidityProvisionSubmissionFromProto(pb)
 	return t
 }
