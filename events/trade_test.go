@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func TestTradeDeepClone(t *testing.T) {
 	trade := &types.Trade{
 		Id:        "Id",
 		MarketId:  "MarketId",
-		Price:     1000,
+		Price:     num.NewUint(1000),
 		Size:      2000,
 		Buyer:     "Buyer",
 		Seller:    "Seller",
@@ -26,14 +27,14 @@ func TestTradeDeepClone(t *testing.T) {
 		Timestamp: 3000,
 		Type:      proto.Trade_TYPE_DEFAULT,
 		BuyerFee: &types.Fee{
-			MakerFee:          4000,
-			InfrastructureFee: 5000,
-			LiquidityFee:      6000,
+			MakerFee:          num.NewUint(4000),
+			InfrastructureFee: num.NewUint(5000),
+			LiquidityFee:      num.NewUint(6000),
 		},
 		SellerFee: &types.Fee{
-			MakerFee:          7000,
-			InfrastructureFee: 8000,
-			LiquidityFee:      9000,
+			MakerFee:          num.NewUint(7000),
+			InfrastructureFee: num.NewUint(8000),
+			LiquidityFee:      num.NewUint(9000),
 		},
 		BuyerAuctionBatch:  10000,
 		SellerAuctionBatch: 11000,
@@ -45,7 +46,7 @@ func TestTradeDeepClone(t *testing.T) {
 	// Change the original values
 	trade.Id = "Changed"
 	trade.MarketId = "Changed"
-	trade.Price = 999
+	trade.Price = num.NewUint(999)
 	trade.Size = 999
 	trade.Buyer = "Changed"
 	trade.Seller = "Changed"
@@ -54,12 +55,12 @@ func TestTradeDeepClone(t *testing.T) {
 	trade.SellOrder = "Changed"
 	trade.Timestamp = 999
 	trade.Type = proto.Trade_TYPE_UNSPECIFIED
-	trade.BuyerFee.MakerFee = 999
-	trade.BuyerFee.InfrastructureFee = 999
-	trade.BuyerFee.LiquidityFee = 999
-	trade.SellerFee.MakerFee = 999
-	trade.SellerFee.InfrastructureFee = 999
-	trade.SellerFee.LiquidityFee = 999
+	trade.BuyerFee.MakerFee = num.NewUint(999)
+	trade.BuyerFee.InfrastructureFee = num.NewUint(999)
+	trade.BuyerFee.LiquidityFee = num.NewUint(999)
+	trade.SellerFee.MakerFee = num.NewUint(999)
+	trade.SellerFee.InfrastructureFee = num.NewUint(999)
+	trade.SellerFee.LiquidityFee = num.NewUint(999)
 	trade.BuyerAuctionBatch = 999
 	trade.SellerAuctionBatch = 999
 

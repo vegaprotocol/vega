@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,7 @@ func TestOrderDeepClone(t *testing.T) {
 		MarketId:    "MarketId",
 		PartyId:     "PartyId",
 		Side:        proto.Side_SIDE_BUY,
-		Price:       1000,
+		Price:       num.NewUint(1000),
 		Size:        2000,
 		Remaining:   3000,
 		TimeInForce: proto.Order_TIME_IN_FORCE_GFN,
@@ -46,7 +47,7 @@ func TestOrderDeepClone(t *testing.T) {
 	o.MarketId = "Changed"
 	o.PartyId = "Changed"
 	o.Side = proto.Side_SIDE_UNSPECIFIED
-	o.Price = 999
+	o.Price = num.NewUint(999)
 	o.Size = 999
 	o.Remaining = 999
 	o.TimeInForce = proto.Order_TIME_IN_FORCE_UNSPECIFIED
