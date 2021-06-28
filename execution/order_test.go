@@ -55,14 +55,15 @@ func TestOrderBufferOutputCount(t *testing.T) {
 		OrderId:  orderAmend.Id,
 	}
 
+	one := num.NewUint(1)
 	// Amend price down (generates one order message)
-	amend.Price = &types.Price{Value: orderBuy.Price - 1}
+	amend.Price = num.Zero().Sub(orderBuy.Price, one)
 	amendConf, err := tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend price up (generates one order message)
-	amend.Price = &types.Price{Value: orderBuy.Price + 1}
+	amend.Price.AddSum(one, one) // we subtracted one, add 1 to get == to orderBuy.Price, + 1 again
 	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
@@ -317,7 +318,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	// Move the current time forward
 	tm.market.OnChainTimeUpdate(context.Background(), time.Unix(10, 100))
 
-	exp := 10000000010
+	exp := int64(10000000010)
 	amend := &types.OrderAmendment{
 		OrderId:     buyConfirmation.Order.Id,
 		MarketId:    tm.market.GetID(),
@@ -424,7 +425,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check the values are correct
-	assert.True(amended.Order.Price.EQ(amend.Price))
+	assert.True(t, amended.Order.Price.EQ(amend.Price))
 	assert.EqualValues(t, amended.Order.Remaining, 10)
 	assert.EqualValues(t, amended.Order.Size, 20)
 }
@@ -643,7 +644,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 	}
 
 	confirmation, err := tm.market.SubmitOrder(context.Background(), order)
-	assert.NotNil(t, confirmation)
+	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Move time forward one second
@@ -2128,7 +2129,7 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 
 	// Amend offset so we cannot reprice
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	off := -5
+	off := int64(-5)
 	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
@@ -2263,7 +2264,8 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
-	amend.ExpiresAt = &types.Timestamp{Value: 20000000000}
+	exp := int64(20000000000)
+	amend.ExpiresAt = &exp
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
@@ -2320,7 +2322,7 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
-	exp := 20000000000
+	exp := int64(20000000000)
 	amend.ExpiresAt = &exp
 	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
@@ -2378,15 +2380,15 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 	confirmation2, err := tm.market.SubmitOrder(context.Background(), &order2)
 	require.NotNil(t, confirmation2)
 	assert.NoError(t, err)
-	assert.True(t, confirmation2.Order.Price(num.NewUint(120)))
+	assert.True(t, confirmation2.Order.Price.EQ(num.NewUint(120)))
 
 	// Make the mid price wonky (needs rounding)
 	buyOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 91)
 	require.NotNil(t, buyOrder2)
 
 	// Check the pegged orders have reprices properly
-	assert.True(t, confirmation1.Order.Price.EQ(num.NewUint(81))) // Buy price gets rounded up
-	assert.True(t, confirmation2.Order.Price(num.NewUint(120)))   // Sell price gets rounded down
+	assert.True(t, confirmation1.Order.Price.EQ(num.NewUint(81)))  // Buy price gets rounded up
+	assert.True(t, confirmation2.Order.Price.EQ(num.NewUint(120))) // Sell price gets rounded down
 }
 
 func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {

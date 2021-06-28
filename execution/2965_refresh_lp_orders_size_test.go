@@ -317,9 +317,9 @@ func TestCommitmentIsDeployed(t *testing.T) {
 	})
 	mktCfg.Fees = &types.Fees{
 		Factors: &types.FeeFactors{
-			LiquidityFee:      num.DecimalFromFloaT(0.001),
-			InfrastructureFee: num.DecimalFromFloaT(0.0005),
-			MakerFee:          num.DecimalFromFloaT(0.00025),
+			LiquidityFee:      num.DecimalFromFloat(0.001),
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
 	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{

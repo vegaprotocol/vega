@@ -1,9 +1,10 @@
-package execution
+package execution_test
 
 import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/require"
@@ -45,7 +46,7 @@ func TestFeeSplitter(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			fs := &FeeSplitter{}
+			fs := execution.NewFeeSplitter()
 			fs.TimeWindowStart(timeWindowStart)
 			require.NoError(t,
 				fs.SetCurrentTime(test.currentTime),

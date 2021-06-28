@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
-	ptypes "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -182,12 +181,13 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	// Try to reduce our commitment to below the minimum level
-	lps = &commandspb.LiquidityProvisionSubmission{
-		Fee:              "0.01",
+	lps = &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1,
+		CommitmentAmount: num.NewUint(1),
 		Buys:             buys,
-		Sells:            sells}
+		Sells:            sells,
+	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.Error(t, err)
@@ -359,7 +359,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 2, Proportion: 50}}
 
 	// Submitting a correct entry
-	lps := &commandspb.LiquidityProvisionSubmission{
+	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.01),
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000),
@@ -556,7 +556,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 
 	t.Run("expect bond slashing transfer", func(t *testing.T) {
 		// First collect all the orders events
-		found := []*ptypes.TransferResponse{}
+		found := []*proto.TransferResponse{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:
@@ -1098,7 +1098,7 @@ func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 	// make sure LP order is deployed
 	t.Run("expect commitment statuses", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
+		found := map[string]*proto.LiquidityProvision{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -1191,7 +1191,7 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 	// make sure LP order is deployed
 	t.Run("new LP order is active", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
+		found := map[string]*proto.LiquidityProvision{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -1303,7 +1303,7 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 	// make sure LP order is deployed
 	t.Run("new LP order is active", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
+		found := map[string]*proto.LiquidityProvision{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -1536,13 +1536,14 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 
 	t.Run("lp submission is pending", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.LiquidityProvision{}
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
 			}
 		}
+		require.NotNil(t, found)
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
 	})
@@ -1606,7 +1607,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 
 	t.Run("verify LP orders sizes", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]*ptypes.Order{}
+		found := map[string]*proto.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -1717,13 +1718,14 @@ func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
 
 	t.Run("lp submission is pending", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.LiquidityProvision{}
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
 			}
 		}
+		require.NotNil(t, found)
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
 	})
@@ -1736,13 +1738,14 @@ func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
 
 	t.Run("lp submission is stopped", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.LiquidityProvision{}
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
 			}
 		}
+		require.NotNil(t, found)
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_STOPPED.String())
 	})
@@ -1814,13 +1817,14 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 
 	t.Run("lp submission is pending", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.LiquidityProvision{}
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
 			}
 		}
+		require.NotNil(t, found)
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
 	})
@@ -1867,7 +1871,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 
 	t.Run("pegged order is PARKED", func(t *testing.T) {
 		// First collect all the orders events
-		found := &ptypes.Order{}
+		found := &proto.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -1913,7 +1917,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 
 	t.Run("pegged order is REJECTED", func(t *testing.T) {
 		// First collect all the orders events
-		found := &ptypes.Order{}
+		found := &proto.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -2003,13 +2007,14 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 
 	t.Run("lp submission is pending", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.LiquidityProvision{}
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
 			}
 		}
+		require.NotNil(t, found)
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
 	})
@@ -2183,13 +2188,14 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 
 	t.Run("lp submission is pending", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.LiquidityProvision{}
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
 			}
 		}
+		require.NotNil(t, found)
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
 	})
@@ -2321,13 +2327,14 @@ func TestFeesNotPaidToUndeployedLPs(t *testing.T) {
 
 	t.Run("lp submission is pending", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.LiquidityProvision{}
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
 				found = evt.LiquidityProvision()
 			}
 		}
+		require.NotNil(t, found)
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_PENDING.String())
 	})
@@ -2453,8 +2460,8 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 
 	t.Run("lp submission is active", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.LiquidityProvision{}
-		var ord *ptypes.Order
+		var found *proto.LiquidityProvision
+		var ord *proto.Order
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -2463,6 +2470,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 				ord = evt.Order()
 			}
 		}
+		require.NotNil(t, found)
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvision_STATUS_ACTIVE.String())
 		// no update to the liquidity fee
@@ -2482,7 +2490,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 	// one lp of size 6, on normal limit of size 500
 	t.Run("lp order size decrease", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]*ptypes.Order{}
+		found := map[string]*proto.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -2526,7 +2534,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 	// one lp of size 6, on normal limit of size 500
 	t.Run("lp order size increase again after expiry", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]*ptypes.Order{}
+		found := map[string]*proto.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:

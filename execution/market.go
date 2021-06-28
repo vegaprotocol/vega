@@ -339,7 +339,7 @@ func NewMarket(
 		tsCalc:             tsCalc,
 		peggedOrders:       NewPeggedOrders(),
 		expiringOrders:     NewExpiringOrders(),
-		feeSplitter:        &FeeSplitter{},
+		feeSplitter:        NewFeeSplitter(),
 		equityShares:       NewEquityShares(num.DecimalZero()),
 		lastBestAskPrice:   num.Zero(),
 		lastMidSellPrice:   num.Zero(),
@@ -569,7 +569,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 
 	// market is closed, final settlement
 	// call settlement and stuff
-	positions, err := m.settlement.Settle(t, m.markPrice.Clone())
+	positions, err := m.settlement.Settle(t, m.getCurrentMarkPrice())
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market close",
 			logging.Error(err))
@@ -768,7 +768,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// now that we're left the auction, we can mark all positions
 	// in case any trader is distressed (Which shouldn't be possible)
 	// we'll fall back to the a network order at the new mark price (mid-price)
-	m.confirmMTM(ctx, &types.Order{Price: m.markPrice.Clone()})
+	m.confirmMTM(ctx, &types.Order{Price: m.getCurrentMarkPrice()})
 
 	// keep var to see if we're leaving opening auction
 	isOpening := m.as.IsOpeningAuction()
@@ -1382,8 +1382,9 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 func (m *Market) confirmMTM(
 	ctx context.Context, order *types.Order) (orderUpdates []*types.Order) {
 	// now let's get the transfers for MTM settlement
-	evts := m.position.UpdateMarkPrice(m.markPrice)
-	settle := m.settlement.SettleMTM(ctx, m.markPrice, evts)
+	markPrice := m.getCurrentMarkPrice()
+	evts := m.position.UpdateMarkPrice(markPrice)
+	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
 
 	// Only process collateral and risk once per order, not for every trade
 	margins := m.collateralAndRisk(ctx, settle)
@@ -1931,7 +1932,7 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.markPrice.Clone())
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getCurrentMarkPrice())
 	if len(riskUpdates) == 0 {
 		return nil
 	}
@@ -2697,6 +2698,7 @@ func (m *Market) getBestStaticBidPriceAndVolume() (*num.Uint, uint64, error) {
 }
 
 func (m *Market) getBestStaticPrices() (bid, ask *num.Uint, err error) {
+	bid, ask = num.Zero(), num.Zero()
 	bid, err = m.getBestStaticBidPrice()
 	if err != nil {
 		return
@@ -2793,7 +2795,7 @@ func (m *Market) getTargetStake() num.Decimal {
 		m.log.Debug("unable to get risk factors, can't calculate target")
 		return num.DecimalZero()
 	}
-	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.markPrice.Clone())
+	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.getCurrentMarkPrice())
 }
 
 func (m *Market) getSuppliedStake() *num.Uint {
@@ -2908,7 +2910,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 		m.getSuppliedStake(),
 		trades,
 		*rf,
-		m.markPrice.Clone(),
+		m.getCurrentMarkPrice(),
 		vBid, vAsk)
 	if evt := m.as.AuctionExtended(ctx); evt != nil {
 		m.broker.Send(evt)

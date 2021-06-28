@@ -39,6 +39,7 @@ func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, 
 	return &LogNormal{
 		riskAversionParameter: pf.RiskAversionParameter,
 		tau:                   pf.Tau,
+		cachePrice:            num.Zero(),
 		params: riskmodelbs.ModelParamsBS{
 			Mu:    mu,
 			R:     r,

@@ -203,11 +203,24 @@ func TradableInstrumentFromProto(ti *proto.TradableInstrument) *TradableInstrume
 }
 
 func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
-	rmp := t.RiskModel.trmIntoProto()
-	r := &proto.TradableInstrument{
-		Instrument:       t.Instrument.IntoProto(),
-		MarginCalculator: t.MarginCalculator.IntoProto(),
+	var (
+		i *proto.Instrument
+		m *proto.MarginCalculator
+	)
+	if t.Instrument != nil {
+		i = t.Instrument.IntoProto()
 	}
+	if t.MarginCalculator != nil {
+		m = t.MarginCalculator.IntoProto()
+	}
+	r := &proto.TradableInstrument{
+		Instrument:       i,
+		MarginCalculator: m,
+	}
+	if t.RiskModel == nil {
+		return r
+	}
+	rmp := t.RiskModel.trmIntoProto()
 	switch rm := rmp.(type) {
 	case *proto.TradableInstrument_SimpleRiskModel:
 		r.RiskModel = rm
@@ -552,19 +565,48 @@ func MarketFromProto(mkt *proto.Market) *Market {
 }
 
 func (m Market) IntoProto() *proto.Market {
-	tmc := m.TradingModeConfig.tmcIntoProto()
+	var (
+		openAuct *proto.AuctionDuration
+		mktTS    *proto.MarketTimestamps
+		ti       *proto.TradableInstrument
+		fees     *proto.Fees
+		pms      *proto.PriceMonitoringSettings
+		lms      *proto.LiquidityMonitoringParameters
+	)
+	if m.OpeningAuction != nil {
+		openAuct = m.OpeningAuction.IntoProto()
+	}
+	if m.MarketTimestamps != nil {
+		mktTS = m.MarketTimestamps.IntoProto()
+	}
+	if m.TradableInstrument != nil {
+		ti = m.TradableInstrument.IntoProto()
+	}
+	if m.Fees != nil {
+		fees = m.Fees.IntoProto()
+	}
+	if m.PriceMonitoringSettings != nil {
+		pms = m.PriceMonitoringSettings.IntoProto()
+	}
+	if m.LiquidityMonitoringParameters != nil {
+		lms = m.LiquidityMonitoringParameters.IntoProto()
+	}
 	r := &proto.Market{
 		Id:                            m.Id,
-		TradableInstrument:            m.TradableInstrument.IntoProto(),
+		TradableInstrument:            ti,
 		DecimalPlaces:                 m.DecimalPlaces,
-		Fees:                          m.Fees.IntoProto(),
-		OpeningAuction:                m.OpeningAuction.IntoProto(),
-		PriceMonitoringSettings:       m.PriceMonitoringSettings.IntoProto(),
-		LiquidityMonitoringParameters: m.LiquidityMonitoringParameters.IntoProto(),
+		Fees:                          fees,
+		OpeningAuction:                openAuct,
+		PriceMonitoringSettings:       pms,
+		LiquidityMonitoringParameters: lms,
 		TradingMode:                   m.TradingMode,
 		State:                         m.State,
-		MarketTimestamps:              m.MarketTimestamps.IntoProto(),
+		MarketTimestamps:              mktTS,
 	}
+	if m.TradingModeConfig == nil {
+		return r
+	}
+	tmc := m.TradingModeConfig.tmcIntoProto()
 	switch tm := tmc.(type) {
 	case *proto.Market_Continuous:
 		r.TradingModeConfig = tm
