@@ -6194,7 +6194,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
-	require.Equal(t, matchingPrice, md.MarkPrice)
+	require.True(t, md.MarkPrice.EQ(num.NewUint(matchingPrice)))
 	require.Equal(t, "0", md.TargetStake)
 
 	sellOrder3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "sellOrder3", types.Side_SIDE_SELL, trader2, 1, buyOrder1.Price.Uint64())
