@@ -22,7 +22,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 		return err
 	}
 
-	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.markPrice)
+	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getCurrentMarkPrice())
 	if err != nil {
 		return err
 	}

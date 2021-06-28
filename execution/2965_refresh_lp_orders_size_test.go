@@ -184,6 +184,8 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	})
 
+	md := tm.market.GetMarketData()
+	require.Equal(t, md.MarketTradingMode, types.Market_TRADING_MODE_CONTINUOUS, "not in continuous trading")
 	tm.events = nil
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
