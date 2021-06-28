@@ -56,15 +56,15 @@ var (
 		RiskFactors: map[string]*types.RiskFactor{
 			"ETH": {
 				Market: "ETH/DEC19",
-				Short:  .20,
-				Long:   .25,
+				Short:  num.DecimalFromFloat(.20),
+				Long:   num.DecimalFromFloat(.25),
 			},
 		},
 		PredictedNextRiskFactors: map[string]*types.RiskFactor{
 			"ETH": {
 				Market: "ETH/DEC19",
-				Short:  .20,
-				Long:   .25,
+				Short:  num.DecimalFromFloat(.20),
+				Long:   num.DecimalFromFloat(.25),
 			},
 		},
 	}
@@ -375,10 +375,13 @@ func testMarginWithOrderInBook(t *testing.T) {
 	}
 	assert.Nil(t, err)
 	margins := riskevt.MarginLevels()
+	searchLevel, _ := mc.ScalingFactors.SearchLevel.Float64()
+	initialMargin, _ := mc.ScalingFactors.InitialMargin.Float64()
+	colRelease, _ := mc.ScalingFactors.CollateralRelease.Float64()
 	assert.EqualValues(t, 542, margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(542*mc.ScalingFactors.SearchLevel.Float64()), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(542*mc.ScalingFactors.InitialMargin), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(542*mc.ScalingFactors.CollateralRelease), margins.CollateralReleaseLevel.Uint64())
+	assert.Equal(t, uint64(542*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(542*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(542*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
 // testcase 1 from: https://drive.google.com/file/d/1B8-rLK2NB6rWvjzZX9sLtqOQzLz8s2ky/view
@@ -482,10 +485,14 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	}
 	assert.Nil(t, err)
 	margins := riskevt.MarginLevels()
+	searchLevel, _ := mc.ScalingFactors.SearchLevel.Float64()
+	initialMargin, _ := mc.ScalingFactors.InitialMargin.Float64()
+	colRelease, _ := mc.ScalingFactors.CollateralRelease.Float64()
+
 	assert.Equal(t, uint64(277), margins.MaintenanceMargin.Uint64())
-	assert.Equal(t, uint64(277*mc.ScalingFactors.SearchLevel.Float64()), margins.SearchLevel.Uint64())
-	assert.Equal(t, uint64(277*mc.ScalingFactors.InitialMargin.Float64()), margins.InitialMargin.Uint64())
-	assert.Equal(t, uint64(277*mc.ScalingFactors.CollateralRelease.Float64()), margins.CollateralReleaseLevel.Uint64())
+	assert.Equal(t, uint64(277*searchLevel), margins.SearchLevel.Uint64())
+	assert.Equal(t, uint64(277*initialMargin), margins.InitialMargin.Uint64())
+	assert.Equal(t, uint64(277*colRelease), margins.CollateralReleaseLevel.Uint64())
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
