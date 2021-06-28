@@ -7,8 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/products/mocks"
-	types "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -62,7 +62,7 @@ func TestFuture(t *testing.T) {
 
 	proto := getValidInstrumentProto()
 
-	prodSpec := proto.GetProduct()
+	prodSpec := proto.Product
 	require.NotNil(t, prodSpec)
 	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe)
 
