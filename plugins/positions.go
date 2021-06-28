@@ -91,11 +91,14 @@ func (p *Positions) applyLossSocialization(e LSE) {
 	}
 	if neg {
 		pos.loss = pos.loss.Add(amountLoss)
+		pos.RealisedPnlFP = pos.RealisedPnlFP.Sub(amountLoss)
+		pos.RealisedPnl = pos.RealisedPnl.Sub(amountLoss)
 	} else {
 		pos.adjustment = pos.adjustment.Add(amountLoss)
+		pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amountLoss)
+		pos.RealisedPnl = pos.RealisedPnl.Add(amountLoss)
 	}
-	pos.RealisedPnlFP = pos.RealisedPnlFP.Add(amountLoss)
-	pos.RealisedPnl = pos.RealisedPnl.Add(amountLoss)
+
 	pos.Position.UpdatedAt = e.Timestamp()
 	p.data[marketID][partyID] = pos
 }
