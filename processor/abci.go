@@ -450,8 +450,8 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
-	propSubmission, err := types.NewProposalSubmissionFromProto(prop)
-	toSubmit, err := app.gov.SubmitProposal(ctx, propSubmission, id, party)
+	propSubmission := types.NewProposalSubmissionFromProto(prop)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, id, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
 			logging.ProposalID(id),
@@ -488,6 +488,8 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 	vote := &commandspb.VoteSubmission{}
+	fmt.Printf("DELIVER VOTE\n\n\n\n")
+
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
