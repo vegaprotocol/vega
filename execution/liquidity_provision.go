@@ -964,8 +964,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 		// never had a position open before that, we may be in the auction
 		// the party join, and never had the chance to get anything deployed
 		// so not positions exists
-		pos = &positions.MarketPosition{}
-		pos.SetParty(party)
+		pos = positions.NewMarketPosition(party)
 	}
 
 	// now we register all these orders as potential positions
@@ -1045,8 +1044,7 @@ func (m *Market) amendLiquidityProvisionContinuous(
 		// never had a position open before that, we may be in the auction
 		// the party join, and never had the chance to get anything deployed
 		// so not positions exists
-		pos = &positions.MarketPosition{}
-		pos.SetParty(party)
+		pos = positions.NewMarketPosition(party)
 	}
 
 	// first remove all existing orders from the potential positions
