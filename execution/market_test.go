@@ -1035,7 +1035,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             60,
+					HDec:             num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1278,13 +1278,19 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
-				{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+				{
+					Horizon:          60,
+					HDec:             num.DecimalFromFloat(60),
+					Probability:      num.DecimalFromFloat(0.95),
+					AuctionExtension: auctionExtensionSeconds,
+				},
 			},
 		},
 		UpdateFrequency: 600,
 	}
-	var initialPrice uint64 = 100
-	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
+	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
+	initialPrice := uint64(100)
+	auctionTriggeringPrice := initialPrice + 1 + mmu.Uint64()
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
 
 	addAccount(tm, party1)
@@ -1330,7 +1336,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       initialPrice,
+		Price:       num.NewUint(initialPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1349,7 +1355,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       initialPrice,
+		Price:       num.NewUint(initialPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-1",
@@ -1372,7 +1378,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       num.NewUint(auctionTriggeringPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1391,7 +1397,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice - 1,
+		Price:       num.NewUint(auctionTriggeringPrice - 1),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-2",
@@ -1405,9 +1411,9 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
-	amendedOrder := &commandspb.OrderAmendment{
+	amendedOrder := &types.OrderAmendment{
 		OrderId:     orderBuy2.Id,
-		Price:       &types.Price{Value: auctionTriggeringPrice},
+		Price:       num.NewUint(auctionTriggeringPrice),
 		SizeDelta:   0,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}
@@ -1432,7 +1438,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       num.NewUint(auctionTriggeringPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-3",
@@ -1450,7 +1456,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       num.NewUint(auctionTriggeringPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1485,13 +1491,19 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
-				{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+				{
+					Horizon:          60,
+					HDec:             num.DecimalFromFloat(60),
+					Probability:      num.DecimalFromFloat(0.95),
+					AuctionExtension: auctionExtensionSeconds,
+				},
 			},
 		},
 		UpdateFrequency: 600,
 	}
-	var initialPrice uint64 = 100
-	var auctionTriggeringPriceHigh = initialPrice + MAXMOVEUP + 1
+	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
+	initialPrice := uint64(100)
+	auctionTriggeringPriceHigh := initialPrice + 1 + mmu.Uint64()
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: auctionExtensionSeconds,
 	})
@@ -1539,7 +1551,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       initialPrice,
+		Price:       num.NewUint(initialPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1558,7 +1570,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       initialPrice,
+		Price:       num.NewUint(initialPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-1",
@@ -1581,7 +1593,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        3,
-		Price:       auctionTriggeringPriceHigh - 1,
+		Price:       num.NewUint(auctionTriggeringPriceHigh - 1),
 		Remaining:   3,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1605,7 +1617,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       auctionTriggeringPriceHigh,
+		Price:       num.NewUint(auctionTriggeringPriceHigh),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1654,7 +1666,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	auctionEnd = md.AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) //Not in auction
 
-	require.Equal(t, initialPrice, md.MarkPrice)
+	require.True(t, md.MarkPrice.EQ(num.NewUint(initialPrice)))
 }
 
 func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
@@ -1665,8 +1677,18 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	extension := int64(45)
-	t1 := &types.PriceMonitoringTrigger{Horizon: 60, Probability: 0.95, AuctionExtension: extension}
-	t2 := &types.PriceMonitoringTrigger{Horizon: 120, Probability: 0.99, AuctionExtension: extension * 2}
+	t1 := &types.PriceMonitoringTrigger{
+		Horizon:          60,
+		HDec:             num.DecimalFromFloat(60),
+		Probability:      num.DecimalFromFloat(0.95),
+		AuctionExtension: extension,
+	}
+	t2 := &types.PriceMonitoringTrigger{
+		Horizon:          120,
+		HDec:             num.DecimalFromFloat(120),
+		Probability:      num.DecimalFromFloat(0.99),
+		AuctionExtension: extension * 2,
+	}
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
@@ -1680,23 +1702,26 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	// auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	// we don't have to add both anymore, the first auction period is determined by network parameter
 	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
-	var initialPrice uint64 = 100
-	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
+	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
+	mmd, _ := num.UintFromDecimal(MINMOVEDOWN)
+	initialPrice := uint64(100)
+	auctionTriggeringPrice := initialPrice + mmu.Uint64() + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: extension,
 	})
 
+	inital := num.NewUint(initialPrice)
 	expectedPmRange1 := types.PriceMonitoringBounds{
-		MinValidPrice:  uint64(int64(initialPrice) + MINMOVEDOWN),
-		MaxValidPrice:  initialPrice + MAXMOVEUP,
+		MinValidPrice:  num.Zero().Sub(initial, mmd),
+		MaxValidPrice:  num.Sum(initial, mmu),
 		Trigger:        t1,
-		ReferencePrice: float64(initialPrice),
+		ReferencePrice: num.DecimalFromFloat(float64(initialPrice)),
 	}
 	expectedPmRange2 := types.PriceMonitoringBounds{
-		MinValidPrice:  uint64(int64(initialPrice) + MINMOVEDOWN),
-		MaxValidPrice:  initialPrice + MAXMOVEUP,
+		MinValidPrice:  num.Zero().Sub(initial, mmd),
+		MaxValidPrice:  num.Sum(initial, mmu),
 		Trigger:        t2,
-		ReferencePrice: float64(initialPrice),
+		ReferencePrice: num.DecimalFromFloat(float64(initialPrice)),
 	}
 
 	addAccount(tm, party1)
@@ -1742,7 +1767,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       initialPrice,
+		Price:       num.NewUint(initialPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1761,7 +1786,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       initialPrice,
+		Price:       num.NewUint(initialPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-1",
@@ -1791,7 +1816,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       num.NewUint(auctionTriggeringPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1810,7 +1835,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       num.NewUint(auctionTriggeringPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-2",
@@ -1865,7 +1890,12 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	})
 
 	rmParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
-	expectedTargetStake := float64(matchingPrice*oi) * math.Max(rmParams.FactorLong, rmParams.FactorShort) * tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor
+	expectedTargetStake := num.DecimalFromFloat(float64(matchingPrice * oi)).Mul(tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor)
+	if rmParams.FactorLong.GreaterThan(rmParams.FactorShort) {
+		expectedTargetStake = expectedTargetStake.Mul(rmParams.FactorLong)
+	} else {
+		expectedTargetStake = expectedTargetStake.Mul(rmParams.FactorShort)
+	}
 
 	addAccount(tm, party1)
 	addAccount(tm, party2)
@@ -1910,7 +1940,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        oi - 1, // -1 because we trade during opening auction
-		Price:       matchingPrice,
+		Price:       num.NewUint(matchingPrice),
 		Remaining:   oi - 1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -1929,7 +1959,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        oi - 1,
-		Price:       matchingPrice,
+		Price:       num.NewUint(matchingPrice),
 		Remaining:   oi - 1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order-1",
@@ -1942,7 +1972,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-	require.Equal(t, strconv.FormatFloat(expectedTargetStake, 'f', -1, 64), mktData.TargetStake)
+	require.Equal(t, expectedTargetStake.String(), mktData.TargetStake)
 }
 
 func TestHandleLPCommitmentChange(t *testing.T) {
@@ -2006,7 +2036,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		PartyId:     party3,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party3-sell-order-1",
@@ -2020,7 +2050,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		PartyId:     party4,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party4-sell-order-1",
@@ -2039,7 +2069,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		PartyId:     party4,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party5-sell-order-1",
@@ -2053,7 +2083,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		PartyId:     party3,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party6-sell-order-1",
@@ -2074,7 +2104,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       matchingPrice + 1,
+		Price:       num.NewUint(matchingPrice + 1),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -2093,7 +2123,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       matchingPrice - 1,
+		Price:       num.NewUint(matchingPrice - 1),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -2102,10 +2132,10 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	_, err = tm.market.SubmitOrder(ctx, orderBuy1)
 	require.NoError(t, err)
 
-	lp := &commandspb.LiquidityProvisionSubmission{
+	lp := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 2000,
-		Fee:              "0.05",
+		CommitmentAmount: num.NewUint(2000),
+		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
 		},
@@ -2122,20 +2152,20 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	tm.market.TSCalc().RecordOpenInterest(10, now)
 
 	// by set a very low commitment we should fail
-	lp.CommitmentAmount = 1
+	lp.CommitmentAmount = num.NewUint(1)
 	require.Equal(t, execution.ErrNotEnoughStake,
 		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
 	)
 
 	// 2000 + 600 should be enough to get us on top of the
 	// target stake
-	lp.CommitmentAmount = 2000 + 600
+	lp.CommitmentAmount = num.NewUint(2000 + 600)
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
 	)
 
 	// 2600 - 125 should be enough to get just at the required stake
-	lp.CommitmentAmount = 2600 - 125
+	lp.CommitmentAmount = num.NewUint(2600 - 125)
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
 	)
@@ -2163,7 +2193,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       matchingPrice + 1,
+		Price:       num.NewUint(matchingPrice + 1),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -2182,7 +2212,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       matchingPrice - 1,
+		Price:       num.NewUint(matchingPrice - 1),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -2194,10 +2224,10 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
-	lp1 := &commandspb.LiquidityProvisionSubmission{
+	lp1 := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 200,
-		Fee:              "0.05",
+		CommitmentAmount: num.NewUint(200),
+		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
 		},
@@ -2209,10 +2239,10 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(context.Background(), lp1, party1, "id-lp1")
 	require.NoError(t, err)
 
-	lp2 := &commandspb.LiquidityProvisionSubmission{
+	lp2 := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 100,
-		Fee:              "0.06",
+		CommitmentAmount: num.NewUint(100),
+		Fee:              num.DecimalFromFloat(0.06),
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
 		},
@@ -2226,9 +2256,9 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-	expectedSuppliedStake := lp1.CommitmentAmount + lp2.CommitmentAmount
+	expectedSuppliedStake := num.DecimalFromUint(num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount))
 
-	require.Equal(t, strconv.FormatUint(expectedSuppliedStake, 10), mktData.SuppliedStake)
+	require.Equal(t, expectedSuppliedStake.String(), mktData.SuppliedStake)
 }
 
 func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
@@ -2250,10 +2280,10 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
-	lp1 := &commandspb.LiquidityProvisionSubmission{
+	lp1 := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 200,
-		Fee:              "0.05",
+		CommitmentAmount: num.NewUint(200),
+		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
 		},
@@ -2307,10 +2337,10 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	addAccount(tm, p2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	lp1 := &commandspb.LiquidityProvisionSubmission{
+	lp1 := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 200,
-		Fee:              "0.05",
+		CommitmentAmount: num.NewUint(200),
+		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
 		},
@@ -2423,10 +2453,10 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	require.Equal(t, mktData.BestOfferPrice, mktData.BestStaticOfferPrice)
 	require.Equal(t, mktData.BestOfferVolume, mktData.BestStaticOfferVolume)
 
-	lp1 := &commandspb.LiquidityProvisionSubmission{
+	lp1 := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 2000,
-		Fee:              "0.05",
+		CommitmentAmount: num.NewUint(2000),
+		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
 		},
@@ -2534,7 +2564,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	require.Equal(t, 0, len(confirmationAux.Trades))
 
 	var sizeDiff uint64 = 3
-	orderBuy2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-2", types.Side_SIDE_BUY, mainParty, auxOrder2.Size+sizeDiff, auxOrder2.Price)
+	orderBuy2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-2", types.Side_SIDE_BUY, mainParty, auxOrder2.Size+sizeDiff, auxOrder2.Price.Uint64())
 	confirmationBuy2, err := tm.market.SubmitOrder(ctx, orderBuy2)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(confirmationBuy2.Trades))
@@ -2581,7 +2611,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeBidPrev = mktData.BestBidVolume - mktData.BestStaticBidVolume
 
 	orderBuy3SizeBeforeTrade := orderBuy3.Remaining
-	auxOrder4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux-order-4", types.Side_SIDE_SELL, auxParty, orderBuy3.Size+1, orderBuy3.Price)
+	auxOrder4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux-order-4", types.Side_SIDE_SELL, auxParty, orderBuy3.Size+1, orderBuy3.Price.Uint64())
 	confirmationAux, err = tm.market.SubmitOrder(ctx, auxOrder4)
 	assert.NoError(t, err)
 	require.Equal(t, 2, len(confirmationAux.Trades))
@@ -2610,7 +2640,7 @@ func getMarketOrder(tm *testMarket,
 		PartyId:     partyID,
 		MarketId:    tm.market.GetID(),
 		Size:        size,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   size,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "marketorder",
@@ -2864,13 +2894,19 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	pMonitorSettings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{
-				{Horizon: 60, Probability: 0.95, AuctionExtension: auctionExtensionSeconds},
+				{
+					Horizon:          60,
+					HDec:             num.DecimalFromFloat(60),
+					Probability:      num.DecimalFromFloat(0.95),
+					AuctionExtension: auctionExtensionSeconds,
+				},
 			},
 		},
 		UpdateFrequency: 600,
 	}
+	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	initialPrice := uint64(100)
-	var auctionTriggeringPrice = initialPrice + MAXMOVEUP + 1
+	auctionTriggeringPrice := initialPrice + 1 + mmu.Uint64()
 
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, openingAuctionDuration)
 
@@ -2907,7 +2943,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 			PartyId:     party3,
 			MarketId:    tm.market.GetID(),
 			Size:        1,
-			Price:       initialPrice - 5,
+			Price:       num.NewUint(initialPrice - 5),
 			Remaining:   1,
 			CreatedAt:   now.UnixNano(),
 			ExpiresAt:   closingAt.UnixNano(),
@@ -2922,7 +2958,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 			PartyId:     party4,
 			MarketId:    tm.market.GetID(),
 			Size:        1,
-			Price:       initialPrice + 10,
+			Price:       num.NewUint(initialPrice + 10),
 			Remaining:   1,
 			CreatedAt:   now.UnixNano(),
 			Reference:   "party4-sell-order-1",
@@ -2941,7 +2977,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       initialPrice,
+		Price:       num.NewUint(initialPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -2960,7 +2996,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       initialPrice,
+		Price:       num.NewUint(initialPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-1",
@@ -2993,7 +3029,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       num.NewUint(auctionTriggeringPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   closingAt.UnixNano(),
@@ -3012,7 +3048,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       auctionTriggeringPrice,
+		Price:       num.NewUint(auctionTriggeringPrice),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order-2",
@@ -3094,7 +3130,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	now = now.Add(time.Second * 1)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
-	assert.Equal(t, uint64(90), o2.Price)
+	assert.Equal(t, num.NewUint(90), o2.Price)
 
 	// Force the pegged order to reprice
 	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_BUY, "aaa", 1, 110)
@@ -3104,19 +3140,19 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	now = now.Add(time.Second * 1)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
-	assert.Equal(t, uint64(100), o2.Price)
+	assert.Equal(t, num.NewUint(100), o2.Price)
 
 	// Flip to auction so the pegged order will be parked
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
 	tm.mas.AuctionStarted(ctx)
 	tm.market.EnterAuction(ctx)
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
-	assert.Equal(t, uint64(0), o2.Price)
+	assert.True(t, o2.Price.IsZero())
 
 	// Flip out of auction to un-park it
 	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
 	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
-	assert.Equal(t, uint64(100), o2.Price)
+	assert.Equal(t, num.NewUint(100), o2.Price)
 }
 
 func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
