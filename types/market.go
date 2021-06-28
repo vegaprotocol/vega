@@ -172,22 +172,33 @@ func (t Timestamp) String() string {
 	return t.IntoProto().String()
 }
 
+type rmType int
+
+const (
+	SIMPLE_RISK_MODEL rmType = iota
+	LOGNORMAL_RISK_MODEL
+)
+
 type TradableInstrument struct {
 	Instrument       *Instrument
 	MarginCalculator *MarginCalculator
 	RiskModel        isTRM
+	rmt              rmType
 }
 
 type isTRM interface {
 	isTRM()
 	trmIntoProto() interface{}
+	rmType() rmType
 }
 
 func TradableInstrumentFromProto(ti *proto.TradableInstrument) *TradableInstrument {
+	rm := isTRMFromProto(ti.RiskModel)
 	return &TradableInstrument{
 		Instrument:       InstrumentFromProto(ti.Instrument),
 		MarginCalculator: MarginCalculatorFromProto(ti.MarginCalculator),
-		RiskModel:        isTRMFromProto(ti.RiskModel),
+		RiskModel:        rm,
+		rmt:              rm.rmType(),
 	}
 }
 
@@ -204,6 +215,28 @@ func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
 		r.RiskModel = rm
 	}
 	return r
+}
+
+func (t TradableInstrument) GetSimpleRiskModel() *SimpleRiskModel {
+	if t.rmt == SIMPLE_RISK_MODEL {
+		srm, ok := t.RiskModel.(*TradableInstrument_SimpleRiskModel)
+		if !ok || srm == nil {
+			return nil
+		}
+		return srm.SimpleRiskModel
+	}
+	return nil
+}
+
+func (t TradableInstrument) GetLogNormalRiskModel() *LogNormalRiskModel {
+	if t.rmt == LOGNORMAL_RISK_MODEL {
+		lrm, ok := t.RiskModel.(*TradableInstrument_LogNormalRiskModel)
+		if !ok || lrm == nil {
+			return nil
+		}
+		return lrm.LogNormalRiskModel
+	}
+	return nil
 }
 
 func (t TradableInstrument) String() string {

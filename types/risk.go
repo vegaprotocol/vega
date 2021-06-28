@@ -60,6 +60,10 @@ func (t TradableInstrument_LogNormalRiskModel) trmIntoProto() interface{} {
 	return t.IntoProto()
 }
 
+func (TradableInstrument_LogNormalRiskModel) rmType() rmType {
+	return LOGNORMAL_RISK_MODEL
+}
+
 func MarginCalculatorFromProto(p *proto.MarginCalculator) *MarginCalculator {
 	return &MarginCalculator{
 		ScalingFactors: ScalingFactorsFromProto(p.ScalingFactors),
@@ -260,6 +264,10 @@ func (TradableInstrument_SimpleRiskModel) isTRM() {}
 
 func (t TradableInstrument_SimpleRiskModel) trmIntoProto() interface{} {
 	return t.IntoProto()
+}
+
+func (TradableInstrument_SimpleRiskModel) rmType() rmType {
+	return SIMPLE_RISK_MODEL
 }
 
 func (s SimpleRiskModel) IntoProto() *proto.SimpleRiskModel {
