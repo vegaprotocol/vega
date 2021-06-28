@@ -431,7 +431,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *types.OrderSu
 
 	defer func() {
 		timer.EngineTimeCounterAdd()
-		e.notifyFailureOnError(ctx, returnedErr, orderSubmission.IntoProto(), party)
+		e.notifyFailureOnError(ctx, returnedErr, orderSubmission, party)
 	}()
 
 	if e.log.IsDebug() {
@@ -465,7 +465,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *types.OrderSu
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
 	defer func() {
-		e.notifyFailureOnError(ctx, returnedErr, orderAmendment.IntoProto(), party)
+		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, party)
 	}()
 
 	mkt, ok := e.markets[orderAmendment.MarketId]
