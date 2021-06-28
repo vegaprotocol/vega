@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
@@ -49,7 +49,7 @@ func (mr *MockAuctionStateMockRecorder) ExpiresAt() *gomock.Call {
 }
 
 // ExtendAuctionLiquidity mocks base method
-func (m *MockAuctionState) ExtendAuctionLiquidity(arg0 proto.AuctionDuration) {
+func (m *MockAuctionState) ExtendAuctionLiquidity(arg0 types.AuctionDuration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ExtendAuctionLiquidity", arg0)
 }
@@ -101,7 +101,7 @@ func (mr *MockAuctionStateMockRecorder) SetReadyToLeave() *gomock.Call {
 }
 
 // StartLiquidityAuction mocks base method
-func (m *MockAuctionState) StartLiquidityAuction(arg0 time.Time, arg1 *proto.AuctionDuration) {
+func (m *MockAuctionState) StartLiquidityAuction(arg0 time.Time, arg1 *types.AuctionDuration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "StartLiquidityAuction", arg0, arg1)
 }
