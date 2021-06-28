@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockPositionsPlugin) EXPECT() *MockPositionsPluginMockRecorder {
 }
 
 // GetAllPositions mocks base method
-func (m *MockPositionsPlugin) GetAllPositions() ([]*proto.Position, error) {
+func (m *MockPositionsPlugin) GetAllPositions() ([]*types.Position, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllPositions")
-	ret0, _ := ret[0].([]*proto.Position)
+	ret0, _ := ret[0].([]*types.Position)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -49,10 +49,10 @@ func (mr *MockPositionsPluginMockRecorder) GetAllPositions() *gomock.Call {
 }
 
 // GetPositionsByMarket mocks base method
-func (m *MockPositionsPlugin) GetPositionsByMarket(arg0 string) ([]*proto.Position, error) {
+func (m *MockPositionsPlugin) GetPositionsByMarket(arg0 string) ([]*types.Position, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPositionsByMarket", arg0)
-	ret0, _ := ret[0].([]*proto.Position)
+	ret0, _ := ret[0].([]*types.Position)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockPositionsPluginMockRecorder) GetPositionsByMarket(arg0 interface{}
 }
 
 // GetPositionsByMarketAndParty mocks base method
-func (m *MockPositionsPlugin) GetPositionsByMarketAndParty(arg0, arg1 string) (*proto.Position, error) {
+func (m *MockPositionsPlugin) GetPositionsByMarketAndParty(arg0, arg1 string) (*types.Position, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPositionsByMarketAndParty", arg0, arg1)
-	ret0, _ := ret[0].(*proto.Position)
+	ret0, _ := ret[0].(*types.Position)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,10 +79,10 @@ func (mr *MockPositionsPluginMockRecorder) GetPositionsByMarketAndParty(arg0, ar
 }
 
 // GetPositionsByParty mocks base method
-func (m *MockPositionsPlugin) GetPositionsByParty(arg0 string) ([]*proto.Position, error) {
+func (m *MockPositionsPlugin) GetPositionsByParty(arg0 string) ([]*types.Position, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPositionsByParty", arg0)
-	ret0, _ := ret[0].([]*proto.Position)
+	ret0, _ := ret[0].([]*types.Position)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
