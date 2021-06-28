@@ -25,7 +25,7 @@ func TestEquityShares(t *testing.T) {
 func testAverageEntryValuation(t *testing.T) {
 	es := execution.NewEquityShares(num.DecimalFromFloat(100))
 
-	es.SetPartyStake("LP1", *num.NewUint(100))
+	es.SetPartyStake("LP1", num.NewUint(100))
 	require.EqualValues(t, num.DecimalFromFloat(100), es.AvgEntryValuation("LP1"))
 	es.OpeningAuctionEnded()
 
@@ -203,15 +203,15 @@ func testWithinMarket(t *testing.T) {
 		ctx = context.Background()
 		// as we will split fees in 1/3 and 2/3
 		// we use 900000 cause we need this number be divisible by 3
-		matchingPrice = num.NewUint(900000)
-		one           = num.NewUint(1)
+		matchingPrice = uint64(900000)
+		one           = uint64(1)
 	)
 
 	// Setup a market with a set of non-matching orders and Liquidity Provision
 	// Submissions from 2 parties.
 	esm := newEquityShareMarket(t).
-		WithSubmittedOrder("some-id-1", "party1", types.Side_SIDE_SELL, num.Sum(matchingPrice, one)).
-		WithSubmittedOrder("some-id-2", "party2", types.Side_SIDE_BUY, num.NewUint(0).Sub(matchingPrice, one)).
+		WithSubmittedOrder("some-id-1", "party1", types.Side_SIDE_SELL, matchingPrice+one).
+		WithSubmittedOrder("some-id-2", "party2", types.Side_SIDE_BUY, matchingPrice-one).
 		// party1 (commitment: 2000) should get 2/3 of the fee
 		WithSubmittedLiquidityProvision("party1", "lp-id-1", 2000, "0.5",
 			[]*types.LiquidityOrder{

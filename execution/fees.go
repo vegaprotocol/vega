@@ -13,6 +13,12 @@ type FeeSplitter struct {
 	tradeValue      *num.Uint
 }
 
+func NewFeeSplitter() *FeeSplitter {
+	return &FeeSplitter{
+		tradeValue: num.Zero(),
+	}
+}
+
 func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 	if t.Before(fs.timeWindowStart) {
 		return errors.New("current time can't be before current window time")

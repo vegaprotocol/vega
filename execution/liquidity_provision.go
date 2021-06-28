@@ -908,7 +908,7 @@ func (m *Market) amendLiquidityProvisionAuction(
 	price := m.matching.GetIndicativePrice()
 	if price.IsZero() {
 		// here it is 0 so we will use the mark price
-		price = m.markPrice.Clone()
+		price = m.getCurrentMarkPrice()
 	}
 
 	// now let's check if we are still at 0, if yes, it means we are in the

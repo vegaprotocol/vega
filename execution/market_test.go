@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
+	"code.vegaprotocol.io/vega/proto"
 	ptypes "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
@@ -1118,7 +1119,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	}
 	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
 	fmt.Printf("%#v\n", tm.market.GetMarketData())
-	assert.NotNil(t, confirmationBuy)
+	require.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
 	require.Equal(t, 1, len(confirmationBuy.Trades))
@@ -1357,7 +1358,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 		Reference:   "party1-buy-order-1",
 	}
 	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
-	assert.NotNil(t, confirmationBuy)
+	require.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
 	require.Equal(t, 1, len(confirmationBuy.Trades))
@@ -1572,7 +1573,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 		Reference:   "party1-buy-order-1",
 	}
 	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
-	assert.NotNil(t, confirmationBuy)
+	require.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
 	require.Equal(t, 1, len(confirmationBuy.Trades))
@@ -1706,7 +1707,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		Duration: extension,
 	})
 
-	inital := num.NewUint(initialPrice)
+	initial := num.NewUint(initialPrice)
 	expectedPmRange1 := types.PriceMonitoringBounds{
 		MinValidPrice:  num.Zero().Sub(initial, mmd),
 		MaxValidPrice:  num.Sum(initial, mmu),
@@ -1961,7 +1962,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 		Reference:   "party1-buy-order-1",
 	}
 	confirmationBuy, err := tm.market.SubmitOrder(context.Background(), orderBuy1)
-	assert.NotNil(t, confirmationBuy)
+	require.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
 	require.Equal(t, 1, len(confirmationBuy.Trades))
@@ -2514,7 +2515,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeOfferPrev = lpOrderVolumeOffer
 	mktDataPrev = mktData
 	// Partial fill of the limit order
-	auxOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux-order-1", types.Side_SIDE_BUY, auxParty, orderSell1.Size-1, orderSell1.Price)
+	auxOrder1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux-order-1", types.Side_SIDE_BUY, auxParty, orderSell1.Size-1, orderSell1.Price.Uint64())
 	confirmationAux, err := tm.market.SubmitOrder(ctx, auxOrder1)
 	assert.NoError(t, err)
 	require.Equal(t, 1, len(confirmationAux.Trades))
@@ -3683,7 +3684,7 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 
 	// then amend
 	// Amend the pegged order so that is has an expiry
-	offset := -6500
+	offset := int64(-6500)
 	amendment := &types.OrderAmendment{
 		OrderId:      o3.Id,
 		PeggedOffset: &offset,
@@ -3878,7 +3879,7 @@ func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
-	assert.Equal(t, int(o2.Price), 0)
+	assert.True(t, o2.Price.IsZero())
 	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
 }
 
@@ -4650,7 +4651,7 @@ func TestLPOrdersRollback(t *testing.T) {
 
 	t.Run("LiquidityProvision_REJECTED", func(t *testing.T) {
 		// Filter events until LP is found
-		var found types.LiquidityProvision
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -4658,6 +4659,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			}
 		}
 
+		require.NotNil(t, found)
 		assert.Equal(t, types.LiquidityProvision_STATUS_REJECTED.String(), found.Status.String())
 	})
 
@@ -5085,7 +5087,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 
 	t.Run("LiquidityProvision_CANCELLED", func(t *testing.T) {
 		// Filter events until LP is found
-		var found types.LiquidityProvision
+		var found *proto.LiquidityProvision
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -5094,6 +5096,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 				}
 			}
 		}
+		require.NotNil(t, found)
 		assert.Equal(t, types.LiquidityProvision_STATUS_CANCELLED.String(), found.Status.String())
 	})
 
@@ -5933,8 +5936,8 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	}
 	maxOrderSizeFp = maxOrderSizeFp.Sub(num.DecimalFromFloat(float64(sellConf2.Order.Size)))
 	// maxOrderSizeFp := currentStake/(c1*float64(matchingPrice)*math.Max(riskParams.FactorShort, riskParams.FactorLong)*tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor) - float64(sellConf2.Order.Size)
-	require.True(t, maxOrderSize.GreaterThan(num.DecimalFromFloat(1)))
-	maxOSize, _ := num.UintFromDecimal(maxOrderSizeFp.Floo())
+	require.True(t, maxOrderSizeFp.GreaterThan(num.DecimalFromFloat(1)))
+	maxOSize, _ := num.UintFromDecimal(maxOrderSizeFp.Floor())
 	maxOrderSize := maxOSize.Uint64()
 
 	//Add orders that will trade (no auction triggered yet)
@@ -5983,7 +5986,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY, md.Trigger)
 
 	// don't use AddSum, we need to keep the original amount somewhere
-	lp2sub.CommitmentAmount = num.Sum(lo2sub.CommitmentAmount, num.NewUint(25750))
+	lp2sub.CommitmentAmount = num.Sum(lp2sub.CommitmentAmount, num.NewUint(25750))
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(ctx, lp2sub, lp2, "id-lp-2"),
 	)
@@ -6051,7 +6054,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.True(t, supplied.GreaterThanOrEqual(target))
 
 	//Trading with best_ask so it disappears should start an auction
-	buyOrder6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder6", types.Side_SIDE_BUY, trader1, 1, sellOrder1.Price)
+	buyOrder6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "buyOrder6", types.Side_SIDE_BUY, trader1, 1, sellOrder1.Price.Uint64())
 	buyConf6, err := tm.market.SubmitOrder(ctx, buyOrder6)
 	require.NoError(t, err)
 	require.Equal(t, types.Order_STATUS_FILLED, buyConf6.Order.Status)

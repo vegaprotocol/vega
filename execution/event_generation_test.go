@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -66,7 +65,7 @@ func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.Mar
 	needToQuit := false
 	orders := mdb.GetAllOrders(tm.market.GetID())
 	for _, order := range orders {
-		if !tm.market.ValidateOrder(types.OrderFromProto(order)) {
+		if !tm.market.ValidateOrder(order) {
 			needToQuit = true
 		}
 	}
@@ -111,11 +110,11 @@ func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepth
 		correct = false
 	}
 	// Do we have the same best bid price?
-	if !assert.True(t, tm.market.GetMarketData().BestBidPrice.EQ(mdb.GetBestBidPrice(tm.market.GetID()))) {
+	if !assert.True(t, tm.market.GetMarketData().BestBidPrice.EQ(num.NewUint(mdb.GetBestBidPrice(tm.market.GetID())))) {
 		correct = false
 	}
 	// Do we have the same best ask price?
-	if !assert.True(t, tm.market.GetMarketData().BestOfferPrice.EQ(mdb.GetBestAskPrice(tm.market.GetID()))) {
+	if !assert.True(t, tm.market.GetMarketData().BestOfferPrice.EQ(num.NewUint(mdb.GetBestAskPrice(tm.market.GetID())))) {
 		correct = false
 	}
 
@@ -123,13 +122,13 @@ func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepth
 	bestBid := tm.market.GetMarketData().BestBidPrice.Clone()
 	bestAsk := tm.market.GetMarketData().BestOfferPrice.Clone()
 
-	if !assert.Equal(t, tm.market.GetMarketData().BestBidVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_BUY, bestBid)) {
+	if !assert.Equal(t, tm.market.GetMarketData().BestBidVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_BUY, bestBid.Uint64())) {
 		correct = false
 	}
 
-	if !assert.Equal(t, tm.market.GetMarketData().BestOfferVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, bestAsk)) {
+	if !assert.Equal(t, tm.market.GetMarketData().BestOfferVolume, mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, bestAsk.Uint64())) {
 		fmt.Println("BestAskVolume in OB:", tm.market.GetMarketData().BestOfferVolume)
-		fmt.Println("BestAskVolume in MD:", mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, bestAsk))
+		fmt.Println("BestAskVolume in MD:", mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, bestAsk.Uint64()))
 		correct = false
 	}
 
@@ -542,17 +541,17 @@ func TestEvents_Amending(t *testing.T) {
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	amendment := &commandspb.OrderAmendment{
+	amendment := &types.OrderAmendment{
 		OrderId:  o1.Id,
 		MarketId: o1.MarketId,
-		Price:    &types.Price{Value: 11},
+		Price:    num.NewUint(11),
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.PartyId)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
-	amendment.Price = &types.Price{Value: 9}
+	amendment.Price = num.NewUint(9)
 	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.PartyId)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
@@ -569,7 +568,7 @@ func TestEvents_Amending(t *testing.T) {
 	assert.NoError(t, err)
 
 	amendment.SizeDelta = 1
-	amendment.Price = &types.Price{Value: 10}
+	amendment.Price = num.NewUint(10)
 	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.PartyId)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
@@ -621,22 +620,22 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	amendment := &commandspb.OrderAmendment{
+	amendment := &types.OrderAmendment{
 		OrderId:  o2.Id,
 		MarketId: o2.MarketId,
-		Price:    &types.Price{Value: 8},
+		Price:    num.NewUint(8),
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, o2.PartyId)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
-	amendment.Price = &types.Price{Value: 18}
+	amendment.Price = num.NewUint(18)
 	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.PartyId)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
-	amendment.Price = &types.Price{Value: 22}
+	amendment.Price = num.NewUint(22)
 	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.PartyId)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
@@ -688,10 +687,10 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	amendment := &commandspb.OrderAmendment{
+	amendment := &types.OrderAmendment{
 		OrderId:  o1.Id,
 		MarketId: o1.MarketId,
-		Price:    &types.Price{Value: 9},
+		Price:    num.NewUint(9),
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.PartyId)
@@ -744,10 +743,10 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	amendment := &commandspb.OrderAmendment{
+	amendment := &types.OrderAmendment{
 		OrderId:  o3.Id,
 		MarketId: o3.MarketId,
-		Price:    &types.Price{Value: 10},
+		Price:    num.NewUint(10),
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.PartyId)
@@ -800,10 +799,10 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	amendment := &commandspb.OrderAmendment{
+	amendment := &types.OrderAmendment{
 		OrderId:   o3.Id,
 		MarketId:  o3.MarketId,
-		Price:     &types.Price{Value: 11},
+		Price:     num.NewUint(11),
 		SizeDelta: 5,
 	}
 
@@ -920,12 +919,13 @@ func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
 		{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50},
 	}
 
-	lps := &commandspb.LiquidityProvisionSubmission{
-		Fee:              "0.05",
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.05),
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 10,
+		CommitmentAmount: num.NewUint(10),
 		Buys:             buys,
-		Sells:            sells}
+		Sells:            sells,
+	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
 	require.NoError(t, err)

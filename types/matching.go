@@ -55,12 +55,16 @@ func (o *Order) IntoProto() *proto.Order {
 	if o.PeggedOrder != nil {
 		pegged = o.PeggedOrder.IntoProto()
 	}
+	var price uint64
+	if o.Price != nil {
+		price = o.Price.Uint64()
+	}
 	return &proto.Order{
 		Id:                   o.Id,
 		MarketId:             o.MarketId,
 		PartyId:              o.PartyId,
 		Side:                 o.Side,
-		Price:                o.Price.Uint64(),
+		Price:                price,
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,

@@ -183,5 +183,15 @@ func (m *Market) getMarkPrice(o *types.Order) *num.Uint {
 		// we don't have an indicative price yet, this must be the first order, so we use its price
 		return o.Price.Clone()
 	}
+	if m.markPrice == nil {
+		return num.Zero()
+	}
+	return m.markPrice.Clone()
+}
+
+func (m *Market) getCurrentMarkPrice() *num.Uint {
+	if m.markPrice == nil {
+		return num.Zero()
+	}
 	return m.markPrice.Clone()
 }

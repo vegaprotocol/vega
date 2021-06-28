@@ -164,7 +164,12 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		return newMarginLevels(marginMaintenanceSht, e.marginCalculator.ScalingFactors)
 	}
 
-	return &types.MarginLevels{}
+	return &types.MarginLevels{
+		MaintenanceMargin:      num.Zero(),
+		SearchLevel:            num.Zero(),
+		InitialMargin:          num.Zero(),
+		CollateralReleaseLevel: num.Zero(),
+	}
 }
 
 func max(a, b int64) int64 {

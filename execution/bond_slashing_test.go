@@ -475,7 +475,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	require.False(t, genAcc.Balance().IsZero())
+	require.False(t, genAcc.Balance.IsZero())
 	genAccBalanceBeforeMarketMove := genAcc.Balance.Clone()
 
 	marginAcc, err := tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
@@ -608,7 +608,6 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	marginAcc, err := tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
 	require.NoError(t, err)
 	require.NotNil(t, marginAcc)
-	marginAccBalanceBeforeMarketMove := marginAcc.Balance.Clone()
 	require.False(t, marginAcc.Balance.IsZero())
 
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
@@ -653,7 +652,6 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	require.Equal(t, 1, tm.market.GetLPSCount())
 
 	insurancePool, err = tm.collateralEngine.GetAccountByID(insurancePoolAccID)
-	insurancePoolBalanceAfterMarketMove := insurancePool.Balance.Clone()
 
 	require.NoError(t, err)
 	require.NotNil(t, insurancePool)
@@ -721,7 +719,6 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	genAccBalanceDuringAuction := genAcc.Balance.Clone()
 	require.False(t, genAcc.Balance.IsZero())
 	require.Equal(t, genAcc.Balance, num.Zero().Sub(genAccBalanceBeforeLPSubmission, lp.CommitmentAmount))
 
@@ -735,7 +732,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
 	insurancePoolDuringAuction := insurancePool.Balance.Clone()
-	require.True(t, insurancePoolBalance.IsZero())
+	require.True(t, insurancePool.Balance.IsZero())
 
 	//End auction
 	setMarkPrice(t, tm, openingAuctionDuration, now, initialMarkPrice)
@@ -747,20 +744,18 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
-	genAccBalanceAfterOpeniningAuction := genAcc.Balance.Clone()
 	require.True(t, genAcc.Balance.IsZero())
 
 	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
-	bondAccBalanceAfterOpeningAuction := bondAcc.Balance.Clone()
 	require.True(t, bondAcc.Balance.LT(bondAccBalanceDuringAuction))
 	require.False(t, bondAcc.Balance.IsZero())
-	require.True(bondAcc.Balance.LT(lp.CommitmentAmount))
+	require.True(t, bondAcc.Balance.LT(lp.CommitmentAmount))
 
 	insurancePool, err = tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NotNil(t, insurancePool)
 	require.NoError(t, err)
 	require.True(t, insurancePool.Balance.EQ(insurancePoolDuringAuction))
-	require.Tru(t, insurancePool.Balance.IsZero())
+	require.True(t, insurancePool.Balance.IsZero())
 }

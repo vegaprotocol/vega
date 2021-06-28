@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
@@ -114,7 +115,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	t.Run("expect commitment statuses", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
+		found := map[string]*proto.LiquidityProvision{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -205,7 +206,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	t.Run("expect commitment statuses", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
+		found := map[string]*proto.LiquidityProvision{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -298,7 +299,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	t.Run("expect commitment statuses", func(t *testing.T) {
 		// First collect all the orders events
-		found := map[string]types.LiquidityProvision{}
+		found := map[string]*proto.LiquidityProvision{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.LiquidityProvision:
@@ -733,7 +734,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		acc, err = tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, num.NewUint(368378), acc.Balance)
+		assert.True(t, acc.Balance.EQ(num.NewUint(368378)))
 	})
 
 	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
