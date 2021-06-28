@@ -72,6 +72,10 @@ func AssetFromProto(p *proto.Asset) *Asset {
 	}
 }
 
+func (a AssetDetails) String() string {
+	return a.IntoProto().String()
+}
+
 func (a AssetDetails) IntoProto() *proto.AssetDetails {
 	src := a.Source.adIntoProto()
 	r := &proto.AssetDetails{
