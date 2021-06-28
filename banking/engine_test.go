@@ -12,7 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/banking/mocks"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	typespb "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
@@ -22,7 +21,7 @@ import (
 )
 
 var (
-	testAsset = assets.NewAsset(builtin.New("VGT", &typespb.AssetDetails{
+	testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
 		Name:   "VEGA TOKEN",
 		Symbol: "VGT",
 	}))
