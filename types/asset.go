@@ -77,7 +77,6 @@ func (a AssetDetails) String() string {
 }
 
 func (a AssetDetails) IntoProto() *proto.AssetDetails {
-	src := a.Source.adIntoProto()
 	totalSupply := "0"
 	if a.TotalSupply != nil {
 		totalSupply = a.TotalSupply.String()
@@ -94,6 +93,10 @@ func (a AssetDetails) IntoProto() *proto.AssetDetails {
 		Decimals:    a.Decimals,
 		MinLpStake:  minLpStake,
 	}
+	if a.Source == nil {
+		return r
+	}
+	src := a.Source.adIntoProto()
 	switch s := src.(type) {
 	case *proto.AssetDetails_Erc20:
 		r.Source = s
@@ -124,11 +127,13 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 }
 
 func (a AssetDetailsBuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
-	return &proto.AssetDetails_BuiltinAsset{
-		BuiltinAsset: &proto.BuiltinAsset{
-			MaxFaucetAmountMint: a.BuiltinAsset.MaxFaucetAmountMint.String(),
-		},
+	p := &proto.AssetDetails_BuiltinAsset{
+		BuiltinAsset: &proto.BuiltinAsset{},
 	}
+	if a.BuiltinAsset != nil && a.BuiltinAsset.MaxFaucetAmountMint != nil {
+		p.BuiltinAsset.MaxFaucetAmountMint = a.BuiltinAsset.MaxFaucetAmountMint.String()
+	}
+	return p
 }
 
 func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDetailsBuiltinAsset {
@@ -225,7 +230,7 @@ func (a Asset) GetAssetTotalSupply() *num.Uint {
 
 func (a AssetDetails) GetErc20() *ERC20 {
 	switch s := a.Source.(type) {
-	case AssetDetailsErc20:
+	case *AssetDetailsErc20:
 		return s.Erc20
 	default:
 		return nil
