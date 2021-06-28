@@ -33,7 +33,7 @@ import (
 
 var (
 	MAXMOVEUP   = num.DecimalFromFloat(1000)
-	MINMOVEDOWN = num.DecimalFromFloat(500)
+	MINMOVEDOWN = num.DecimalFromFloat(-500)
 )
 
 var defaultCollateralAssets = []types.Asset{
@@ -5829,7 +5829,6 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 
 // @TODO foieiforweuhfweuihfi
 func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
-	t.Skip("this is a mess that needs cleaning up")
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	openingDuration := &types.AuctionDuration{
@@ -5951,12 +5950,13 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	riskParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
 	require.NotNil(t, riskParams)
 
-	maxOrderSizeFp := currentStake.Div(factor.Mul(num.DecimalFromFloat(float64(matchingPrice)))).Mul(tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor)
-	if riskParams.FactorLong.GreaterThan(riskParams.FactorLong) {
-		maxOrderSizeFp = maxOrderSizeFp.Mul(riskParams.FactorLong)
+	matchingPriceDec := num.DecimalFromFloat(float64(matchingPrice))
+	if riskParams.FactorLong.GreaterThan(riskParams.FactorShort) {
+		matchingPriceDec = matchingPriceDec.Mul(riskParams.FactorLong)
 	} else {
-		maxOrderSizeFp = maxOrderSizeFp.Mul(riskParams.FactorShort)
+		matchingPriceDec = matchingPriceDec.Mul(riskParams.FactorShort)
 	}
+	maxOrderSizeFp := currentStake.Div(factor.Mul(matchingPriceDec).Mul(tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor))
 	maxOrderSizeFp = maxOrderSizeFp.Sub(num.DecimalFromFloat(float64(sellConf2.Order.Size)))
 	// maxOrderSizeFp := currentStake/(c1*float64(matchingPrice)*math.Max(riskParams.FactorShort, riskParams.FactorLong)*tm.mktCfg.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor) - float64(sellConf2.Order.Size)
 	require.True(t, maxOrderSizeFp.GreaterThan(num.DecimalFromFloat(1)))
