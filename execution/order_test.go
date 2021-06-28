@@ -285,7 +285,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate that the mark price has been updated
-	assert.EqualValues(t, tm.market.GetMarketData().MarkPrice, 10)
+	assert.True(t, tm.market.GetMarketData().MarkPrice.EQ(num.NewUint(10)))
 }
 
 func TestExpireCancelGTCOrder(t *testing.T) {
@@ -1171,7 +1171,7 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
 
 	md := tm.market.GetMarketData()
-	assert.Equal(t, uint64(100), md.MidPrice)
+	assert.True(t, md.MidPrice.EQ(num.NewUint(100)))
 	// Place a valid pegged order which will be added to the order book
 	// This order will cause the MID price to move and thus a reprice multiple times until it settles
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
