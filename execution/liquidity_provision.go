@@ -690,7 +690,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// now this is the case where basePrice is < minPrice
 		// and minPrice is non-negative + inferior to bestBid
 		if !minPrice.IsZero() && minPrice.LT(price) {
-			off := num.Sum(price, minPrice)
+			off := num.Zero().Sub(price, minPrice)
 			po.Offset = -int64(off.Uint64())
 			return price.Sub(price, off), po, nil
 		}
