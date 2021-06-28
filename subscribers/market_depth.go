@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -91,7 +92,7 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch te := e.(type) {
 		case OE:
-			mdb.updateMarketDepth(te.Order())
+			mdb.updateMarketDepth(types.OrderFromProto(te.Order()))
 		}
 	}
 }
@@ -139,7 +140,7 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 	}
 
 	if order.Side == types.Side_SIDE_BUY {
-		index := sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price.LTE(Price) })
+		index := sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price.LTE(order.Price) })
 		if index < len(md.buySide) {
 			// We need to go midslice
 			md.buySide = append(md.buySide, nil)
@@ -320,8 +321,8 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 
 	marketDepthUpdate := &types.MarketDepthUpdate{
 		MarketId:       order.MarketId,
-		Buy:            buyPtr,
-		Sell:           sellPtr,
+		Buy:            types.PriceLevels(buyPtr).IntoProto(),
+		Sell:           types.PriceLevels(sellPtr).IntoProto(),
 		SequenceNumber: md.sequenceNumber,
 	}
 
@@ -351,8 +352,8 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 		// so we do not need to try and calculate the depth cumulative volumes etc
 		return &types.MarketDepth{
 			MarketId: market,
-			Buy:      []*types.PriceLevel{},
-			Sell:     []*types.PriceLevel{},
+			Buy:      []*ptypes.PriceLevel{},
+			Sell:     []*ptypes.PriceLevel{},
 		}, nil
 	}
 
@@ -383,8 +384,8 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 
 	return &types.MarketDepth{
 		MarketId:       market,
-		Buy:            buyPtr,
-		Sell:           sellPtr,
+		Buy:            types.PriceLevels(buyPtr).IntoProto(),
+		Sell:           types.PriceLevels(sellPtr).IntoProto(),
 		SequenceNumber: md.sequenceNumber,
 	}, nil
 }

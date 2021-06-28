@@ -5,8 +5,7 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (
@@ -31,7 +30,7 @@ func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission
 		if ext == nil {
 			return ErrMissingWithdrawERC20Ext
 		}
-		return app.banking.LockWithdrawalERC20(ctx, id, party, w.Asset, num.NewUint(w.Amount), ext)
+		return app.banking.LockWithdrawalERC20(ctx, id, party, w.Asset, w.Amount, ext)
 	}
 
 	return errors.New("unimplemented withdrawal")

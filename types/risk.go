@@ -41,10 +41,14 @@ func (l LogNormalModelParams) String() string {
 func (l LogNormalRiskModel) IntoProto() *proto.LogNormalRiskModel {
 	ra, _ := l.RiskAversionParameter.Float64()
 	t, _ := l.Tau.Float64()
+	var params *proto.LogNormalModelParams
+	if l.Params != nil {
+		params = l.Params.IntoProto()
+	}
 	return &proto.LogNormalRiskModel{
 		RiskAversionParameter: ra,
 		Tau:                   t,
-		Params:                l.Params.IntoProto(),
+		Params:                params,
 	}
 }
 

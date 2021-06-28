@@ -9,10 +9,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	protoapi "code.vegaprotocol.io/vega/proto/api"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
@@ -50,7 +51,7 @@ type AccountService interface {
 // GovernanceService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
 type GovernanceService interface {
-	PrepareProposal(ctx context.Context, reference string, terms *types.ProposalTerms) (*commandspb.ProposalSubmission, error)
+	PrepareProposal(ctx context.Context, reference string, terms *ptypes.ProposalTerms) (*commandspb.ProposalSubmission, error)
 	PrepareVote(vote *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error)
 }
 
@@ -258,6 +259,7 @@ func (s *tradingService) PrepareProposalSubmission(
 	if req.Submission == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing submission"))
 	}
+
 	proposal, err := s.governanceService.PrepareProposal(ctx, req.Submission.Reference, req.Submission.Terms)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrPrepareProposal, err)

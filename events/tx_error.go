@@ -5,6 +5,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type TxErr struct {
@@ -21,23 +22,23 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		},
 	}
 	switch tv := tx.(type) {
-	case *commandspb.ProposalSubmission:
-		cpy := *tv
+	case *types.ProposalSubmission:
+		ptv, _ := tv.IntoProto()
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
-			Proposal: &cpy,
+			Proposal: ptv,
 		}
-	case commandspb.ProposalSubmission:
+	case types.ProposalSubmission:
+		ptv, _ := (&tv).IntoProto()
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
-			Proposal: &tv,
+			Proposal: ptv,
 		}
-	case *commandspb.VoteSubmission:
-		cpy := *tv
+	case *types.VoteSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
-			VoteSubmission: &cpy,
+			VoteSubmission: tv.IntoProto(),
 		}
-	case commandspb.VoteSubmission:
+	case types.VoteSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{
-			VoteSubmission: &tv,
+			VoteSubmission: tv.IntoProto(),
 		}
 	case *commandspb.OrderSubmission:
 		cpy := *tv

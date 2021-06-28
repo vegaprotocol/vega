@@ -4,9 +4,12 @@ package types
 
 import (
 	"code.vegaprotocol.io/vega/proto"
+	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+type GovernanceData = proto.GovernanceData
 
 type Vote_Value = proto.Vote_Value
 
@@ -127,6 +130,63 @@ type Vote struct {
 	TotalGovernanceTokenWeight num.Decimal
 }
 
+type VoteSubmission struct {
+	// The ID of the proposal to vote for.
+	ProposalId string
+	// The actual value of the vote
+	Value Vote_Value
+}
+
+func NewVoteSubmissionFromProto(p *commandspb.VoteSubmission) *VoteSubmission {
+	vs := VoteSubmission{
+		ProposalId: p.ProposalId,
+		Value:      p.Value,
+	}
+	return &vs
+}
+
+func (v VoteSubmission) IntoProto() *commandspb.VoteSubmission {
+	vs := commandspb.VoteSubmission{
+		ProposalId: v.ProposalId,
+		Value:      v.Value,
+	}
+	return &vs
+}
+
+func (v VoteSubmission) String() string {
+	return v.IntoProto().String()
+}
+
+type ProposalSubmission struct {
+	// Proposal reference
+	Reference string
+	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted
+	Terms *ProposalTerms
+}
+
+func ProposalSubmissionFromProposal(p *Proposal) *ProposalSubmission {
+	return &ProposalSubmission{
+		Reference: p.Reference,
+		Terms:     p.Terms,
+	}
+}
+
+func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalSubmission {
+	ps := ProposalSubmission{
+		Reference: p.Reference,
+		Terms:     ProposalTermsFromProto(p.Terms),
+	}
+	return &ps
+}
+
+func (p ProposalSubmission) IntoProto() (*commandspb.ProposalSubmission, error) {
+	ps := commandspb.ProposalSubmission{
+		Reference: p.Reference,
+		Terms:     p.Terms.IntoProto(),
+	}
+	return &ps, nil
+}
+
 type Proposal struct {
 	Id           string
 	Reference    string
@@ -140,30 +200,41 @@ type Proposal struct {
 
 func (p Proposal) DeepClone() *Proposal {
 	cpy := p
-	cpy.Terms = p.Terms.DeepClone()
+	if p.Terms != nil {
+		cpy.Terms = p.Terms.DeepClone()
+	}
 	return &cpy
 }
 
 func (p Proposal) IntoProto() *proto.Proposal {
+	var terms *proto.ProposalTerms
+	if p.Terms != nil {
+		terms = p.Terms.IntoProto()
+	}
 	return &proto.Proposal{
 		Id:           p.Id,
 		Reference:    p.Reference,
 		PartyId:      p.PartyId,
 		State:        p.State,
 		Timestamp:    p.Timestamp,
-		Terms:        p.Terms.IntoProto(),
+		Terms:        terms,
 		Reason:       p.Reason,
 		ErrorDetails: p.ErrorDetails,
 	}
 }
 
 func (v Vote) IntoProto() *proto.Vote {
+	var totalGovernanceTokenBalance uint64
+	if v.TotalGovernanceTokenBalance != nil {
+		totalGovernanceTokenBalance = v.TotalGovernanceTokenBalance.Uint64()
+	}
+
 	return &proto.Vote{
 		PartyId:                     v.PartyID,
 		Value:                       v.Value,
 		ProposalId:                  v.ProposalID,
 		Timestamp:                   v.Timestamp,
-		TotalGovernanceTokenBalance: v.TotalGovernanceTokenBalance.Uint64(),
+		TotalGovernanceTokenBalance: totalGovernanceTokenBalance,
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
 	}
 }
@@ -174,6 +245,39 @@ type NewMarketCommitment struct {
 	Sells            []*LiquidityOrder
 	Buys             []*LiquidityOrder
 	Reference        string
+}
+
+func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommitment, error) {
+	var err error
+	l := NewMarketCommitment{}
+	l.CommitmentAmount = num.NewUint(p.CommitmentAmount)
+	l.Fee, err = num.DecimalFromString(p.Fee)
+	if err != nil {
+		return nil, err
+	}
+
+	l.Sells = make([]*LiquidityOrder, 0, len(p.Sells))
+	for _, sell := range p.Sells {
+		order := &LiquidityOrder{
+			Reference:  sell.Reference,
+			Proportion: sell.Proportion,
+			Offset:     sell.Offset,
+		}
+		l.Sells = append(l.Sells, order)
+	}
+
+	l.Buys = make([]*LiquidityOrder, 0, len(p.Buys))
+	for _, buy := range p.Buys {
+		order := &LiquidityOrder{
+			Reference:  buy.Reference,
+			Proportion: buy.Proportion,
+			Offset:     buy.Offset,
+		}
+		l.Buys = append(l.Buys, order)
+	}
+	l.Reference = p.Reference
+
+	return &l, nil
 }
 
 type ProposalTerms struct {
@@ -264,9 +368,17 @@ func (m *NewAsset) GetChanges() *AssetDetails {
 }
 
 func (n NewMarket) IntoProto() *proto.NewMarket {
+	var changes *proto.NewMarketConfiguration
+	if n.Changes != nil {
+		changes = n.Changes.IntoProto()
+	}
+	var commitment *proto.NewMarketCommitment
+	if n.LiquidityCommitment != nil {
+		commitment = n.LiquidityCommitment.IntoProto()
+	}
 	return &proto.NewMarket{
-		Changes:             n.Changes.IntoProto(),
-		LiquidityCommitment: n.LiquidityCommitment.IntoProto(),
+		Changes:             changes,
+		LiquidityCommitment: commitment,
 	}
 }
 
@@ -275,12 +387,26 @@ func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 	tradingMode := n.TradingMode.tmIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
+
+	var instrument *proto.InstrumentConfiguration
+	if n.Instrument != nil {
+		instrument = n.Instrument.IntoProto()
+	}
+	var priceMonitoring *proto.PriceMonitoringParameters
+	if n.PriceMonitoringParameters != nil {
+		priceMonitoring = n.PriceMonitoringParameters.IntoProto()
+	}
+	var liquidityMonitoring *proto.LiquidityMonitoringParameters
+	if n.LiquidityMonitoringParameters != nil {
+		liquidityMonitoring = n.LiquidityMonitoringParameters.IntoProto()
+	}
+
 	r := &proto.NewMarketConfiguration{
-		Instrument:                    n.Instrument.IntoProto(),
+		Instrument:                    instrument,
 		DecimalPlaces:                 n.DecimalPlaces,
 		Metadata:                      md,
-		PriceMonitoringParameters:     n.PriceMonitoringParameters.IntoProto(),
-		LiquidityMonitoringParameters: n.LiquidityMonitoringParameters.IntoProto(),
+		PriceMonitoringParameters:     priceMonitoring,
+		LiquidityMonitoringParameters: liquidityMonitoring,
 	}
 	switch rp := riskParams.(type) {
 	case *proto.NewMarketConfiguration_Simple:
@@ -297,13 +423,141 @@ func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 	return r
 }
 
+func NewMarketConfigurationFromProto(p *proto.NewMarketConfiguration) *NewMarketConfiguration {
+	md := make([]string, 0, len(p.Metadata))
+	md = append(md, p.Metadata...)
+
+	var instrument *InstrumentConfiguration
+	if p.Instrument != nil {
+		instrument = InstrumentConfigurationFromProto(p.Instrument)
+	}
+
+	var priceMonitoring *PriceMonitoringParameters
+	if p.PriceMonitoringParameters != nil {
+		priceMonitoring = PriceMonitoringParametersFromProto(p.PriceMonitoringParameters)
+	}
+	var liquidityMonitoring *LiquidityMonitoringParameters
+	if p.LiquidityMonitoringParameters != nil {
+		liquidityMonitoring = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
+	}
+
+	r := &NewMarketConfiguration{
+		Instrument:                    instrument,
+		DecimalPlaces:                 p.DecimalPlaces,
+		Metadata:                      md,
+		PriceMonitoringParameters:     priceMonitoring,
+		LiquidityMonitoringParameters: liquidityMonitoring,
+	}
+	if p.RiskParameters != nil {
+		switch rp := p.RiskParameters.(type) {
+		case *proto.NewMarketConfiguration_Simple:
+			r.RiskParameters = NewMarketConfiguration_SimpleFromProto(rp)
+		case *proto.NewMarketConfiguration_LogNormal:
+			r.RiskParameters = NewMarketConfiguration_LogNormalFromProto(rp)
+		}
+	}
+	if p.TradingMode != nil {
+		switch tm := p.TradingMode.(type) {
+		case *proto.NewMarketConfiguration_Continuous:
+			r.TradingMode = NewMarketConfiguration_ContinuousFromProto(tm)
+		case *proto.NewMarketConfiguration_Discrete:
+			r.TradingMode = NewMarketConfiguration_DiscreteFromProto(tm)
+		}
+	}
+
+	return r
+}
+
+func (m *NewMarketConfiguration) GetTradingMode() tradingMode {
+	if m != nil {
+		return m.TradingMode
+	}
+	return nil
+}
+
+func (m *NewMarketConfiguration) GetContinuous() *ContinuousTrading {
+	if x, ok := m.GetTradingMode().(*NewMarketConfiguration_Continuous); ok {
+		return x.Continuous
+	}
+	return nil
+}
+
 func ProposalTermsFromProto(p *proto.ProposalTerms) *ProposalTerms {
+	var change pterms
+	if p.Change != nil {
+		switch ch := p.Change.(type) {
+		case *proto.ProposalTerms_NewMarket:
+			change = NewNewMarketFromProto(ch)
+		case *proto.ProposalTerms_UpdateMarket:
+			change = NewUpdateMarketFromProto(ch)
+		case *proto.ProposalTerms_UpdateNetworkParameter:
+			change = NewUpdateNetworkParameterFromProto(ch)
+		case *proto.ProposalTerms_NewAsset:
+			change = NewNewAssetFromProto(ch)
+		}
+	}
+
 	r := &ProposalTerms{
 		ClosingTimestamp:    p.ClosingTimestamp,
 		EnactmentTimestamp:  p.EnactmentTimestamp,
 		ValidationTimestamp: p.ValidationTimestamp,
+		Change:              change,
 	}
 	return r
+}
+
+func NewNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms_NewMarket {
+	var newMarket *NewMarket
+	if p.NewMarket != nil {
+		newMarket = &NewMarket{}
+
+		if p.NewMarket.Changes != nil {
+			newMarket.Changes = NewMarketConfigurationFromProto(p.NewMarket.Changes)
+		}
+		if p.NewMarket.LiquidityCommitment != nil {
+			newMarket.LiquidityCommitment, _ = NewMarketCommitmentFromProto(p.NewMarket.LiquidityCommitment)
+		}
+	}
+
+	return &ProposalTerms_NewMarket{
+		NewMarket: newMarket, // @TODO
+	}
+}
+
+func NewUpdateMarketFromProto(p *proto.ProposalTerms_UpdateMarket) *ProposalTerms_UpdateMarket {
+	panic("unimplemented")
+}
+
+func NewUpdateNetworkParameterFromProto(
+	p *proto.ProposalTerms_UpdateNetworkParameter,
+) *ProposalTerms_UpdateNetworkParameter {
+	var updateNP *UpdateNetworkParameter
+	if p.UpdateNetworkParameter != nil {
+		updateNP = &UpdateNetworkParameter{}
+
+		if p.UpdateNetworkParameter.Changes != nil {
+			updateNP.Changes = NetworkParameterFromProto(p.UpdateNetworkParameter.Changes)
+		}
+	}
+
+	return &ProposalTerms_UpdateNetworkParameter{
+		UpdateNetworkParameter: updateNP,
+	}
+}
+
+func NewNewAssetFromProto(p *proto.ProposalTerms_NewAsset) *ProposalTerms_NewAsset {
+	var newAsset *NewAsset
+	if p.NewAsset != nil {
+		newAsset = &NewAsset{}
+
+		if p.NewAsset.Changes != nil {
+			newAsset.Changes = AssetDetailsFromProto(p.NewAsset.Changes)
+		}
+	}
+
+	return &ProposalTerms_NewAsset{
+		NewAsset: newAsset,
+	}
 }
 
 func (p ProposalTerms) IntoProto() *proto.ProposalTerms {
@@ -338,7 +592,7 @@ func (p ProposalTerms) String() string {
 
 func (m *ProposalTerms) GetNewAsset() *NewAsset {
 	switch c := m.Change.(type) {
-	case ProposalTerms_NewAsset:
+	case *ProposalTerms_NewAsset:
 		return c.NewAsset
 	default:
 		return nil
@@ -347,7 +601,7 @@ func (m *ProposalTerms) GetNewAsset() *NewAsset {
 
 func (m *ProposalTerms) GetNewMarket() *NewMarket {
 	switch c := m.Change.(type) {
-	case ProposalTerms_NewMarket:
+	case *ProposalTerms_NewMarket:
 		return c.NewMarket
 	default:
 		return nil
@@ -356,7 +610,7 @@ func (m *ProposalTerms) GetNewMarket() *NewMarket {
 
 func (m *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
 	switch c := m.Change.(type) {
-	case ProposalTerms_UpdateNetworkParameter:
+	case *ProposalTerms_UpdateNetworkParameter:
 		return c.UpdateNetworkParameter
 	default:
 		return nil
@@ -366,12 +620,6 @@ func (m *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
 func (a ProposalTerms_NewMarket) IntoProto() *proto.ProposalTerms_NewMarket {
 	return &proto.ProposalTerms_NewMarket{
 		NewMarket: a.NewMarket.IntoProto(),
-	}
-}
-
-func ProposalNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms_NewMarket {
-	return &ProposalTerms_NewMarket{
-		NewMarket: &NewMarket{}, // @TODO
 	}
 }
 
@@ -437,8 +685,12 @@ func (n UpdateNetworkParameter) String() string {
 }
 
 func (a ProposalTerms_NewAsset) IntoProto() *proto.ProposalTerms_NewAsset {
+	var newAsset *proto.NewAsset
+	if a.NewAsset != nil {
+		newAsset = a.NewAsset.IntoProto()
+	}
 	return &proto.ProposalTerms_NewAsset{
-		NewAsset: a.NewAsset.IntoProto(),
+		NewAsset: newAsset,
 	}
 }
 
@@ -456,8 +708,12 @@ func (a ProposalTerms_NewAsset) DeepClone() pterms {
 }
 
 func (n NewAsset) IntoProto() *proto.NewAsset {
+	var changes *proto.AssetDetails
+	if n.Changes != nil {
+		changes = n.Changes.IntoProto()
+	}
 	return &proto.NewAsset{
-		Changes: n.Changes.IntoProto(),
+		Changes: changes,
 	}
 }
 
@@ -466,8 +722,12 @@ func (n NewAsset) String() string {
 }
 
 func (n NewMarketCommitment) IntoProto() *proto.NewMarketCommitment {
+	var commitment uint64
+	if n.CommitmentAmount != nil {
+		commitment = n.CommitmentAmount.Uint64()
+	}
 	r := &proto.NewMarketCommitment{
-		CommitmentAmount: n.CommitmentAmount.Uint64(),
+		CommitmentAmount: commitment,
 		Fee:              n.Fee.String(),
 		Sells:            make([]*proto.LiquidityOrder, 0, len(n.Sells)),
 		Buys:             make([]*proto.LiquidityOrder, 0, len(n.Buys)),
@@ -500,6 +760,16 @@ func (n NewMarketConfiguration_LogNormal) IntoProto() *proto.NewMarketConfigurat
 	}
 }
 
+func NewMarketConfiguration_LogNormalFromProto(p *proto.NewMarketConfiguration_LogNormal) *NewMarketConfiguration_LogNormal {
+	return &NewMarketConfiguration_LogNormal{
+		LogNormal: &LogNormalRiskModel{
+			RiskAversionParameter: num.DecimalFromFloat(p.LogNormal.RiskAversionParameter),
+			Tau:                   num.DecimalFromFloat(p.LogNormal.Tau),
+			Params:                LogNormalParamsFromProto(p.LogNormal.Params),
+		},
+	}
+}
+
 func (*NewMarketConfiguration_LogNormal) isNMCRP() {}
 
 func (n NewMarketConfiguration_LogNormal) rpIntoProto() interface{} {
@@ -509,6 +779,12 @@ func (n NewMarketConfiguration_LogNormal) rpIntoProto() interface{} {
 func (n NewMarketConfiguration_Simple) IntoProto() *proto.NewMarketConfiguration_Simple {
 	return &proto.NewMarketConfiguration_Simple{
 		Simple: n.Simple.IntoProto(),
+	}
+}
+
+func NewMarketConfiguration_SimpleFromProto(p *proto.NewMarketConfiguration_Simple) *NewMarketConfiguration_Simple {
+	return &NewMarketConfiguration_Simple{
+		Simple: SimpleModelParamsFromProto(p.Simple),
 	}
 }
 
@@ -551,6 +827,30 @@ func (i InstrumentConfiguration) IntoProto() *proto.InstrumentConfiguration {
 	switch pr := p.(type) {
 	case *proto.InstrumentConfiguration_Future:
 		r.Product = pr
+	}
+	return r
+}
+
+func InstrumentConfigurationFromProto(
+	p *proto.InstrumentConfiguration,
+) *InstrumentConfiguration {
+	r := &InstrumentConfiguration{
+		Name: p.Name,
+		Code: p.Code,
+	}
+
+	switch pr := p.Product.(type) {
+	case *proto.InstrumentConfiguration_Future:
+		r.Product = InstrumentConfiguration_Future{
+			Future: &FutureProduct{
+				Maturity:        pr.Future.Maturity,
+				SettlementAsset: pr.Future.SettlementAsset,
+				QuoteName:       pr.Future.QuoteName,
+				OracleSpec:      pr.Future.OracleSpec.DeepClone(), // @TODO
+				OracleSpecBinding: OracleSpecToFutureBindingFromProto(
+					pr.Future.OracleSpecBinding),
+			},
+		}
 	}
 	return r
 }
@@ -611,6 +911,14 @@ func (n NewMarketConfiguration_Continuous) IntoProto() *proto.NewMarketConfigura
 	}
 }
 
+func NewMarketConfiguration_ContinuousFromProto(p *proto.NewMarketConfiguration_Continuous) *NewMarketConfiguration_Continuous {
+	return &NewMarketConfiguration_Continuous{
+		Continuous: &ContinuousTrading{
+			TickSize: p.Continuous.TickSize,
+		},
+	}
+}
+
 func (*NewMarketConfiguration_Continuous) isTradingMode() {}
 
 func (n NewMarketConfiguration_Continuous) tmIntoProto() interface{} {
@@ -624,6 +932,15 @@ type NewMarketConfiguration_Discrete struct {
 func (n NewMarketConfiguration_Discrete) IntoProto() *proto.NewMarketConfiguration_Discrete {
 	return &proto.NewMarketConfiguration_Discrete{
 		Discrete: n.Discrete.IntoProto(),
+	}
+}
+
+func NewMarketConfiguration_DiscreteFromProto(p *proto.NewMarketConfiguration_Discrete) *NewMarketConfiguration_Discrete {
+	return &NewMarketConfiguration_Discrete{
+		Discrete: &DiscreteTrading{
+			DurationNs: p.Discrete.DurationNs,
+			TickSize:   p.Discrete.TickSize,
+		},
 	}
 }
 
