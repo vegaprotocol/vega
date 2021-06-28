@@ -38,7 +38,7 @@ type TimeService interface {
 type ExecutionEngine interface {
 	// orders stuff
 	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string) (*types.OrderConfirmation, error)
 
 	// market stuff

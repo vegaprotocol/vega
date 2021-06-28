@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	types "code.vegaprotocol.io/vega/types"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -51,7 +50,7 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2 interface
 }
 
 // CancelOrder mocks base method
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *v1.OrderCancellation, arg2 string) ([]*types.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2 string) ([]*types.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*types.OrderCancellationConfirmation)
