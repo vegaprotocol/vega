@@ -33,7 +33,7 @@ import (
 
 var (
 	MAXMOVEUP   = num.DecimalFromFloat(1000)
-	MINMOVEDOWN = num.DecimalFromFloat(-500)
+	MINMOVEDOWN = num.DecimalFromFloat(500)
 )
 
 var defaultCollateralAssets = []types.Asset{
