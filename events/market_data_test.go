@@ -6,50 +6,52 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMarketDataDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	md := proto.MarketData{
-		MarkPrice:             1000,
-		BestBidPrice:          2000,
+	md := types.MarketData{
+		MarkPrice:             num.NewUint(1000),
+		BestBidPrice:          num.NewUint(2000),
 		BestBidVolume:         3000,
-		BestOfferPrice:        4000,
+		BestOfferPrice:        num.NewUint(4000),
 		BestOfferVolume:       5000,
-		BestStaticBidPrice:    6000,
+		BestStaticBidPrice:    num.NewUint(6000),
 		BestStaticBidVolume:   7000,
-		BestStaticOfferPrice:  8000,
+		BestStaticOfferPrice:  num.NewUint(8000),
 		BestStaticOfferVolume: 9000,
-		MidPrice:              10000,
-		StaticMidPrice:        11000,
+		MidPrice:              num.NewUint(10000),
+		StaticMidPrice:        num.NewUint(11000),
 		Market:                "Market",
 		Timestamp:             12000,
 		OpenInterest:          13000,
 		AuctionEnd:            14000,
 		AuctionStart:          15000,
-		IndicativePrice:       16000,
+		IndicativePrice:       num.NewUint(16000),
 		IndicativeVolume:      17000,
 		MarketTradingMode:     proto.Market_TRADING_MODE_CONTINUOUS,
 		Trigger:               proto.AuctionTrigger_AUCTION_TRIGGER_OPENING,
 		TargetStake:           "18000",
 		SuppliedStake:         "19000",
-		PriceMonitoringBounds: []*proto.PriceMonitoringBounds{
-			&proto.PriceMonitoringBounds{
-				MinValidPrice: 20000,
-				MaxValidPrice: 21000,
-				Trigger: &proto.PriceMonitoringTrigger{
+		PriceMonitoringBounds: []*types.PriceMonitoringBounds{
+			&types.PriceMonitoringBounds{
+				MinValidPrice: num.NewUint(20000),
+				MaxValidPrice: num.NewUint(21000),
+				Trigger: &types.PriceMonitoringTrigger{
 					Horizon:          22000,
-					Probability:      123.45,
+					Probability:      num.DecimalFromFloat(123.45),
 					AuctionExtension: 23000,
 				},
-				ReferencePrice: 24000,
+				ReferencePrice: num.DecimalFromFloat(24000.),
 			},
 		},
 		MarketValueProxy: "MVP",
-		LiquidityProviderFeeShare: []*proto.LiquidityProviderFeeShare{
-			&proto.LiquidityProviderFeeShare{
+		LiquidityProviderFeeShare: []*types.LiquidityProviderFeeShare{
+			&types.LiquidityProviderFeeShare{
 				Party:                 "Party",
 				EquityLikeShare:       "25000",
 				AverageEntryValuation: "26000",
@@ -61,34 +63,34 @@ func TestMarketDataDeepClone(t *testing.T) {
 	md2 := marketDataEvent.MarketData()
 
 	// Change the original and check we are not updating the wrapped event
-	md.MarkPrice = 999
-	md.BestBidPrice = 999
+	md.MarkPrice = num.NewUint(999)
+	md.BestBidPrice = num.NewUint(999)
 	md.BestBidVolume = 999
-	md.BestOfferPrice = 999
+	md.BestOfferPrice = num.NewUint(999)
 	md.BestOfferVolume = 999
-	md.BestStaticBidPrice = 999
+	md.BestStaticBidPrice = num.NewUint(999)
 	md.BestStaticBidVolume = 999
-	md.BestStaticOfferPrice = 999
+	md.BestStaticOfferPrice = num.NewUint(999)
 	md.BestStaticOfferVolume = 999
-	md.MidPrice = 999
-	md.StaticMidPrice = 999
+	md.MidPrice = num.NewUint(999)
+	md.StaticMidPrice = num.NewUint(999)
 	md.Market = "Changed"
 	md.Timestamp = 999
 	md.OpenInterest = 999
 	md.AuctionEnd = 999
 	md.AuctionStart = 999
-	md.IndicativePrice = 999
+	md.IndicativePrice = num.NewUint(999)
 	md.IndicativeVolume = 999
-	md.MarketTradingMode = proto.Market_TRADING_MODE_UNSPECIFIED
-	md.Trigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+	md.MarketTradingMode = types.Market_TRADING_MODE_UNSPECIFIED
+	md.Trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
 	md.TargetStake = "999"
 	md.SuppliedStake = "999"
-	md.PriceMonitoringBounds[0].MinValidPrice = 999
-	md.PriceMonitoringBounds[0].MaxValidPrice = 999
+	md.PriceMonitoringBounds[0].MinValidPrice = num.NewUint(999)
+	md.PriceMonitoringBounds[0].MaxValidPrice = num.NewUint(999)
 	md.PriceMonitoringBounds[0].Trigger.Horizon = 999
-	md.PriceMonitoringBounds[0].Trigger.Probability = 999
+	md.PriceMonitoringBounds[0].Trigger.Probability = num.DecimalFromFloat(999)
 	md.PriceMonitoringBounds[0].Trigger.AuctionExtension = 999
-	md.PriceMonitoringBounds[0].ReferencePrice = 999
+	md.PriceMonitoringBounds[0].ReferencePrice = num.DecimalFromFloat(999)
 	md.MarketValueProxy = "Changed"
 	md.LiquidityProviderFeeShare[0].Party = "Changed"
 	md.LiquidityProviderFeeShare[0].EquityLikeShare = "999"

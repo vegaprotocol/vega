@@ -6,27 +6,28 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	p := proto.Proposal{
+	p := types.Proposal{
 		Id:        "Id",
 		Reference: "Reference",
 		PartyId:   "PartyId",
 		State:     proto.Proposal_STATE_DECLINED,
 		Timestamp: 100000,
-		Terms: &proto.ProposalTerms{
+		Terms: &types.ProposalTerms{
 			ClosingTimestamp:    2000000,
 			EnactmentTimestamp:  3000000,
 			ValidationTimestamp: 4000000,
-			Change: &proto.ProposalTerms_NewAsset{
-				NewAsset: &proto.NewAsset{
-					Changes: &proto.AssetDetails{
-						Source: &proto.AssetDetails_Erc20{
-							Erc20: &proto.ERC20{
+			Change: &types.ProposalTerms_NewAsset{
+				NewAsset: &types.NewAsset{
+					Changes: &types.AssetDetails{
+						Source: &types.AssetDetailsErc20{
+							Erc20: &types.ERC20{
 								ContractAddress: "Address",
 							},
 						},
@@ -49,8 +50,8 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	p.Terms.EnactmentTimestamp = 888
 	p.Terms.ValidationTimestamp = 777
 
-	na := p.Terms.Change.(*proto.ProposalTerms_NewAsset)
-	erc := na.NewAsset.Changes.Source.(*proto.AssetDetails_Erc20)
+	na := p.Terms.Change.(*types.ProposalTerms_NewAsset)
+	erc := na.NewAsset.Changes.Source.(*types.AssetDetailsErc20)
 	erc.Erc20.ContractAddress = "Changed"
 
 	assert.NotEqual(t, p.Id, p2.Id)

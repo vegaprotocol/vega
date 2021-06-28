@@ -33,8 +33,8 @@ func (m MarketCreated) MarketID() string {
 	return m.m.Id
 }
 
-func (m MarketCreated) Market() types.Market {
-	return m.m
+func (m MarketCreated) Market() proto.Market {
+	return m.pm
 }
 
 func (m MarketCreated) Proto() proto.Market {

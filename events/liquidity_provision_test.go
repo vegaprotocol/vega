@@ -5,44 +5,45 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLiquidityProvisionDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	buyOrder := &proto.LiquidityOrderReference{
+	buyOrder := &types.LiquidityOrderReference{
 		OrderId: "OrderId1",
-		LiquidityOrder: &proto.LiquidityOrder{
-			Reference:  proto.PeggedReference_PEGGED_REFERENCE_MID,
+		LiquidityOrder: &types.LiquidityOrder{
+			Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
 			Proportion: 10,
 			Offset:     -5,
 		},
 	}
 
-	sellOrder := &proto.LiquidityOrderReference{
+	sellOrder := &types.LiquidityOrderReference{
 		OrderId: "OrderId1",
-		LiquidityOrder: &proto.LiquidityOrder{
-			Reference:  proto.PeggedReference_PEGGED_REFERENCE_MID,
+		LiquidityOrder: &types.LiquidityOrder{
+			Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
 			Proportion: 20,
 			Offset:     5,
 		},
 	}
 
-	lp := &proto.LiquidityProvision{
+	lp := &types.LiquidityProvision{
 		Id:               "Id",
 		PartyId:          "PartyId",
 		CreatedAt:        10000,
 		UpdatedAt:        20000,
 		MarketId:         "MarketId",
-		CommitmentAmount: 30000,
-		Fee:              "0.01",
+		CommitmentAmount: num.NewUint(30000),
+		Fee:              num.DecimalFromFloat(0.01),
 		Version:          "1",
-		Status:           proto.LiquidityProvision_STATUS_UNDEPLOYED,
+		Status:           types.LiquidityProvision_STATUS_UNDEPLOYED,
 		Reference:        "Reference",
-		Sells:            []*proto.LiquidityOrderReference{sellOrder},
-		Buys:             []*proto.LiquidityOrderReference{buyOrder},
+		Sells:            []*types.LiquidityOrderReference{sellOrder},
+		Buys:             []*types.LiquidityOrderReference{buyOrder},
 	}
 
 	// Create the event
@@ -55,19 +56,19 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 	lp.CreatedAt = 999
 	lp.UpdatedAt = 999
 	lp.MarketId = "Changed"
-	lp.CommitmentAmount = 999
-	lp.Fee = "99.9"
+	lp.CommitmentAmount = num.NewUint(999)
+	lp.Fee = num.DecimalFromFloat(99.9)
 	lp.Version = "999"
-	lp.Status = proto.LiquidityProvision_STATUS_UNSPECIFIED
+	lp.Status = types.LiquidityProvision_STATUS_UNSPECIFIED
 	lp.Reference = "Changed"
 	sellOrder.OrderId = "Changed"
 	sellOrder.LiquidityOrder.Offset = -999
 	sellOrder.LiquidityOrder.Proportion = 999
-	sellOrder.LiquidityOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+	sellOrder.LiquidityOrder.Reference = types.PeggedReference_PEGGED_REFERENCE_BEST_ASK
 	buyOrder.OrderId = "Changed"
 	buyOrder.LiquidityOrder.Offset = 999
 	buyOrder.LiquidityOrder.Proportion = 999
-	buyOrder.LiquidityOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_BEST_BID
+	buyOrder.LiquidityOrder.Reference = types.PeggedReference_PEGGED_REFERENCE_BEST_BID
 
 	// Check that values are different
 	assert.NotEqual(t, lp.Id, lp2.Id)

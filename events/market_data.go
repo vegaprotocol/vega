@@ -10,14 +10,13 @@ import (
 
 type MarketData struct {
 	*Base
-	md types.MarketData
+	md proto.MarketData
 }
 
 func NewMarketDataEvent(ctx context.Context, md types.MarketData) *MarketData {
-	cpy := md.DeepClone()
 	return &MarketData{
 		Base: newBase(ctx, MarketDataEvent),
-		md:   *cpy,
+		md:   *md.IntoProto(),
 	}
 }
 
@@ -25,13 +24,12 @@ func (m MarketData) MarketID() string {
 	return m.md.Market
 }
 
-func (m MarketData) MarketData() types.MarketData {
+func (m MarketData) MarketData() proto.MarketData {
 	return m.md
 }
 
 func (m MarketData) Proto() proto.MarketData {
-	md := m.md.IntoProto()
-	return *md
+	return m.md
 }
 
 func (m MarketData) StreamMessage() *eventspb.BusEvent {
@@ -40,7 +38,7 @@ func (m MarketData) StreamMessage() *eventspb.BusEvent {
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
 		Event: &eventspb.BusEvent_MarketData{
-			MarketData: m.md.IntoProto(),
+			MarketData: &m.md,
 		},
 	}
 }

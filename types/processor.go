@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type OrderCancellation = commandspb.OrderCancellation
 type OracleDataSubmission = commandspb.OracleDataSubmission
 type NodeRegistration = commandspb.NodeRegistration
 type NodeVote = commandspb.NodeVote
@@ -18,6 +17,25 @@ type ChainEvent = commandspb.ChainEvent
 type SignedBundle = proto.SignedBundle
 type Signature = proto.Signature
 type Transaction_PubKey = proto.Transaction_PubKey
+
+type OrderCancellation struct {
+	OrderId  string
+	MarketId string
+}
+
+func OrderCancellationFromProto(p *commandspb.OrderCancellation) *OrderCancellation {
+	return &OrderCancellation{
+		OrderId:  p.OrderId,
+		MarketId: p.MarketId,
+	}
+}
+
+func (o OrderCancellation) IntoProto() *commandspb.OrderCancellation {
+	return &commandspb.OrderCancellation{
+		OrderId:  o.OrderId,
+		MarketId: o.MarketId,
+	}
+}
 
 type OrderSubmission struct {
 	// Market identifier for the order, required field

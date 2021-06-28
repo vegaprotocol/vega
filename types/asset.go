@@ -78,12 +78,21 @@ func (a AssetDetails) String() string {
 
 func (a AssetDetails) IntoProto() *proto.AssetDetails {
 	src := a.Source.adIntoProto()
+	totalSupply := "0"
+	if a.TotalSupply != nil {
+		totalSupply = a.TotalSupply.String()
+	}
+	minLpStake := "0"
+	if a.MinLpStake != nil {
+		minLpStake = a.MinLpStake.String()
+	}
+
 	r := &proto.AssetDetails{
 		Name:        a.Name,
 		Symbol:      a.Symbol,
-		TotalSupply: a.TotalSupply.String(),
+		TotalSupply: totalSupply,
 		Decimals:    a.Decimals,
-		MinLpStake:  a.MinLpStake.String(),
+		MinLpStake:  minLpStake,
 	}
 	switch s := src.(type) {
 	case *proto.AssetDetails_Erc20:
