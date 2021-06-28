@@ -13,7 +13,6 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/products"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -214,7 +213,7 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
 // the usual governance process
-func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
@@ -240,12 +239,8 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	// TODO(): remove check once LiquidityProvision is required
 	// for now it is optional
 	if lp != nil {
-		lps, err := types.NewLiquidityProvisionSubmissionFromProto(lp)
-		if err != nil {
-			return err
-		}
 		// now we try to submit the liquidity
-		if err := mkt.SubmitLiquidityProvision(ctx, lps, party, lpID); err != nil {
+		if err := mkt.SubmitLiquidityProvision(ctx, lp, party, lpID); err != nil {
 			e.removeMarket(marketConfig.Id)
 			return err
 		}
@@ -436,7 +431,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *types.OrderSu
 
 	defer func() {
 		timer.EngineTimeCounterAdd()
-		e.notifyFailureOnError(ctx, returnedErr, orderSubmission, party)
+		e.notifyFailureOnError(ctx, returnedErr, orderSubmission.IntoProto(), party)
 	}()
 
 	if e.log.IsDebug() {
@@ -468,15 +463,10 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *types.OrderSu
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
 	defer func() {
-		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, party)
+		e.notifyFailureOnError(ctx, returnedErr, orderAmendment.IntoProto(), party)
 	}()
-
-	oa := types.NewOrderAmendmentFromProto(orderAmendment)
-	if e.log.IsDebug() {
-		e.log.Debug("amend order", logging.OrderAmendment(oa))
-	}
 
 	mkt, ok := e.markets[orderAmendment.MarketId]
 	if !ok {
@@ -485,7 +475,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 
 	// we're passing a pointer here, so we need the wasActive var to be certain we're checking the original
 	// order status. It's possible order.Status will reflect the new status value if we don't
-	conf, err := mkt.AmendOrder(ctx, oa, party)
+	conf, err := mkt.AmendOrder(ctx, orderAmendment, party)
 	if err != nil {
 		return nil, err
 	}
@@ -497,7 +487,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.IsDebug() {
 		e.log.Debug("cancel order", logging.OrderCancellation(order))
 	}
@@ -648,14 +638,10 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
-	lpSub, err := types.NewLiquidityProvisionSubmissionFromProto(sub)
-	if err != nil {
-		return err
-	}
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit liquidity provision",
-			logging.LiquidityProvisionSubmission(*lpSub),
+			logging.LiquidityProvisionSubmission(*sub),
 			logging.PartyID(party),
 			logging.LiquidityID(lpID),
 		)
@@ -666,7 +652,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.L
 		return types.ErrInvalidMarketID
 	}
 
-	return mkt.SubmitLiquidityProvision(ctx, lpSub, party, lpID)
+	return mkt.SubmitLiquidityProvision(ctx, sub, party, lpID)
 }
 
 func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
