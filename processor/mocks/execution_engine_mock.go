@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
 	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	types "code.vegaprotocol.io/vega/types"
 	context "context"
@@ -123,7 +122,7 @@ func (mr *MockExecutionEngineMockRecorder) SubmitLiquidityProvision(arg0, arg1, 
 }
 
 // SubmitMarket mocks base method
-func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Market) error {
+func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *types.Market) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitMarket", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -137,7 +136,7 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1 interface{}) 
 }
 
 // SubmitMarketWithLiquidityProvision mocks base method
-func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *proto.Market, arg2 *v1.LiquidityProvisionSubmission, arg3, arg4 string) error {
+func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *types.Market, arg2 *types.LiquidityProvisionSubmission, arg3, arg4 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitMarketWithLiquidityProvision", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)

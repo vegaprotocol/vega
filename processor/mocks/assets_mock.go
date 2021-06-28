@@ -5,11 +5,10 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	assets "code.vegaprotocol.io/vega/assets"
-	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockAssets is a mock of Assets interface
@@ -65,7 +64,7 @@ func (mr *MockAssetsMockRecorder) IsEnabled(arg0 interface{}) *gomock.Call {
 }
 
 // NewAsset mocks base method
-func (m *MockAssets) NewAsset(arg0 string, arg1 *proto.AssetDetails) (string, error) {
+func (m *MockAssets) NewAsset(arg0 string, arg1 *types.AssetDetails) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NewAsset", arg0, arg1)
 	ret0, _ := ret[0].(string)
