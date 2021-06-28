@@ -3,6 +3,7 @@
 package types
 
 import (
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -22,4 +23,31 @@ type Position struct {
 	AverageEntryPrice *num.Uint
 	// Timestamp for the latest time the position was updated
 	UpdatedAt int64
+}
+
+func (p *Position) IntoProto() *proto.Position {
+	var avg uint64
+	if p.AverageEntryPrice != nil {
+		avg = p.AverageEntryPrice.Uint64()
+	}
+
+	return &proto.Position{
+		MarketId:          p.MarketId,
+		PartyId:           p.PartyId,
+		OpenVolume:        p.OpenVolume,
+		RealisedPnl:       p.RealisedPnl.BigInt().Int64(),
+		UnrealisedPnl:     p.UnrealisedPnl.BigInt().Int64(),
+		AverageEntryPrice: avg,
+		UpdatedAt:         p.UpdatedAt,
+	}
+}
+
+type Positions []*Position
+
+func (p Positions) IntoProto() []*proto.Position {
+	out := make([]*proto.Position, 0, len(p))
+	for _, v := range p {
+		out = append(out, v.IntoProto())
+	}
+	return out
 }

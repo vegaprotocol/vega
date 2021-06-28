@@ -8,21 +8,22 @@ import (
 
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/vega/types"
 )
 
 // TradeStore represents an abstraction over a trade storage
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/trades TradeStore
 type TradeStore interface {
-	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*types.Trade, error)
-	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Trade, error)
-	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error)
-	GetByPartyAndID(ctx context.Context, party string, id string) (*types.Trade, error)
-	GetByOrderID(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*types.Trade, error)
+	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*ptypes.Trade, error)
+	GetByMarketAndID(ctx context.Context, market string, id string) (*ptypes.Trade, error)
+	GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) ([]*ptypes.Trade, error)
+	GetByPartyAndID(ctx context.Context, party string, id string) (*ptypes.Trade, error)
+	GetByOrderID(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*ptypes.Trade, error)
 	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*storage.MarketBucket
 	GetMarkPrice(ctx context.Context, market string) (uint64, error)
-	Subscribe(trades chan<- []types.Trade) uint64
+	Subscribe(trades chan<- []ptypes.Trade) uint64
 	Unsubscribe(id uint64) error
 }
 
@@ -87,7 +88,7 @@ func (s *Svc) checkPagination(limit *uint64) error {
 }
 
 //GetByMarket returns a list of trades for a given market
-func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*types.Trade, err error) {
+func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*ptypes.Trade, err error) {
 	if err = s.checkPagination(&limit); err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64
 }
 
 // GetByParty returns a list of trade for a given party
-func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*types.Trade, err error) {
+func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, descending bool, market *string) (trades []*ptypes.Trade, err error) {
 	if err = s.checkPagination(&limit); err != nil {
 		return nil, err
 	}
@@ -113,25 +114,25 @@ func (s *Svc) GetByParty(ctx context.Context, party string, skip, limit uint64, 
 }
 
 // GetByMarketAndID return a single trade per its ID and the market it was created in
-func (s *Svc) GetByMarketAndID(ctx context.Context, market string, id string) (trade *types.Trade, err error) {
+func (s *Svc) GetByMarketAndID(ctx context.Context, market string, id string) (trade *ptypes.Trade, err error) {
 	trade, err = s.tradeStore.GetByMarketAndID(ctx, market, id)
 	if err != nil {
-		return &types.Trade{}, err
+		return &ptypes.Trade{}, err
 	}
 	return trade, err
 }
 
 // GetByPartyAndID returns a single trade, filter through a party ID and the trade ID
-func (s *Svc) GetByPartyAndID(ctx context.Context, party string, id string) (trade *types.Trade, err error) {
+func (s *Svc) GetByPartyAndID(ctx context.Context, party string, id string) (trade *ptypes.Trade, err error) {
 	trade, err = s.tradeStore.GetByPartyAndID(ctx, party, id)
 	if err != nil {
-		return &types.Trade{}, err
+		return &ptypes.Trade{}, err
 	}
 	return trade, err
 }
 
 // GetByOrderID return a list of trades filter by order ID (even the buy or sell side of the trade)
-func (s *Svc) GetByOrderID(ctx context.Context, orderID string) (trades []*types.Trade, err error) {
+func (s *Svc) GetByOrderID(ctx context.Context, orderID string) (trades []*ptypes.Trade, err error) {
 	trades, err = s.tradeStore.GetByOrderID(ctx, orderID, 0, 0, false, nil)
 	if err != nil {
 		return nil, err
@@ -146,9 +147,9 @@ func (s *Svc) GetTradeSubscribersCount() int32 {
 
 // ObserveTrades return a channel to the caller through which it will receive notification
 // on all trades happening in the system.
-func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []types.Trade, uint64) {
-	trades := make(chan []types.Trade)
-	internal := make(chan []types.Trade)
+func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, party *string) (<-chan []ptypes.Trade, uint64) {
+	trades := make(chan []ptypes.Trade)
+	internal := make(chan []ptypes.Trade)
 	ref := s.tradeStore.Subscribe(internal)
 
 	var cancel func()
@@ -179,7 +180,7 @@ func (s *Svc) ObserveTrades(ctx context.Context, retries int, market *string, pa
 				return
 			case v := <-internal:
 				// max length of validated == length of data from channel
-				validatedTrades := make([]types.Trade, 0, len(v))
+				validatedTrades := make([]ptypes.Trade, 0, len(v))
 				for _, item := range v {
 					// if market is nil or matches item market and party was nil, or matches seller or buyer
 					if (market == nil || item.MarketId == *market) && (party == nil || item.Seller == *party || item.Buyer == *party) {
@@ -236,7 +237,7 @@ func (s *Svc) GetPositionsSubscribersCount() int32 {
 
 // ObservePositions return a channel through which all positions are streamed to the caller
 // when they get updated
-func (s *Svc) ObservePositions(ctx context.Context, retries int, party, market string) (<-chan *types.Position, uint64) {
+func (s *Svc) ObservePositions(ctx context.Context, retries int, party, market string) (<-chan *ptypes.Position, uint64) {
 	pBuf := 1
 	// all parties, increase channel buffer by 100
 	if party == "" {
@@ -246,8 +247,8 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party, market s
 	if market == "" {
 		pBuf *= 10
 	}
-	positions := make(chan *types.Position, pBuf)
-	internal := make(chan []types.Trade)
+	positions := make(chan *ptypes.Position, pBuf)
+	internal := make(chan []ptypes.Trade)
 	ref := s.tradeStore.Subscribe(internal)
 
 	var cancel func()
@@ -332,7 +333,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party, market s
 }
 
 // GetPositionsByParty returns a list of positions for a given party
-func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) ([]*types.Position, error) {
+func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) ([]*ptypes.Position, error) {
 
 	s.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
@@ -343,7 +344,7 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 			s.log.Error("Error getting all positions", logging.Error(err))
 			return nil, err
 		}
-		return pos, nil
+		return types.Positions(pos).IntoProto(), nil
 	}
 	var positions []*types.Position
 	if party != "" && marketID != "" {
@@ -380,5 +381,5 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 		}
 		positions = pos
 	}
-	return positions, nil
+	return types.Positions(positions).IntoProto(), nil
 }
