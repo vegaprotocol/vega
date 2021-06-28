@@ -484,8 +484,12 @@ func (m MarketData) DeepClone() *MarketData {
 }
 
 func (m MarketData) IntoProto() *proto.MarketData {
+	var mp uint64
+	if m.MarkPrice != nil {
+		mp = m.MarkPrice.Uint64()
+	}
 	r := &proto.MarketData{
-		MarkPrice:                 m.MarkPrice.Uint64(),
+		MarkPrice:                 mp,
 		BestBidPrice:              m.BestBidPrice.Uint64(),
 		BestBidVolume:             m.BestBidVolume,
 		BestOfferPrice:            m.BestOfferPrice.Uint64(),
