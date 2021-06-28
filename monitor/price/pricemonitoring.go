@@ -337,7 +337,7 @@ func (e *Engine) resetBounds() {
 // recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime
 func (e *Engine) recordPriceChange(price *num.Uint, volume uint64) {
 	if volume > 0 {
-		e.pricesNow = append(e.pricesNow, currentPrice{Price: price, Volume: volume})
+		e.pricesNow = append(e.pricesNow, currentPrice{Price: price.Clone(), Volume: volume})
 	}
 }
 
@@ -351,10 +351,10 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 			sumProduct, volSum := num.NewUint(0), num.NewUint(0)
 			for _, x := range e.pricesNow {
 				v := num.NewUint(x.Volume)
-				volSum = volSum.Add(volSum, v)
+				volSum.AddSum(v)
 				// yes, v is reassigned in the process of multiplying, but that's fine
 				// we're done with it
-				sumProduct = sumProduct.Add(sumProduct, v.Mul(v, x.Price))
+				sumProduct.AddSum(v.Mul(v, x.Price))
 			}
 			e.pricesPast = append(e.pricesPast,
 				pastPrice{

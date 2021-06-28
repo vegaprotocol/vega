@@ -925,6 +925,12 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), openEnd)
 	now = openEnd
 
+	md := tm.market.GetMarketData()
+	fmt.Printf("Market price: %s\nOpen interest: %v\n", md.MarkPrice, md.OpenInterest)
+	for _, b := range md.PriceMonitoringBounds {
+		fmt.Printf("Price bound: %s - %s\n", b.MinValidPrice.String(), b.MaxValidPrice.String())
+	}
+
 	orderBuy1 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -959,8 +965,8 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 		Reference:   "party2-sell-order-1",
 	}
 	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
+	require.NoError(t, err, err.Error())
 	require.NotNil(t, confirmationSell)
-	require.NoError(t, err)
 
 	require.Equal(t, 1, len(confirmationSell.Trades))
 
@@ -1041,7 +1047,8 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		UpdateFrequency: 600,
 	}
 	initialPrice := uint64(100)
-	delta, _ := num.UintFromDecimal(MAXMOVEUP.Add(MINMOVEDOWN).Div(num.DecimalFromFloat(2)))
+	deltaD := MAXMOVEUP
+	delta, _ := num.UintFromDecimal(deltaD.Add(MINMOVEDOWN).Div(num.DecimalFromFloat(2)))
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	validPrice := initialPrice + delta.Uint64()
 	auctionTriggeringPrice := initialPrice + mmu.Uint64() + 1

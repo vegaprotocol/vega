@@ -9,11 +9,16 @@ import (
 type Decimal = decimal.Decimal
 
 var (
-	dzero = decimal.Zero
+	dzero      = decimal.Zero
+	maxDecimal = decimal.NewFromBigInt(maxU256, 0)
 )
 
 func DecimalZero() Decimal {
 	return dzero
+}
+
+func MaxDecimal() Decimal {
+	return maxDecimal
 }
 
 func NewDecimalFromFloat(f float64) Decimal {
