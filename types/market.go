@@ -626,6 +626,9 @@ func (m Market) GetAsset() (string, error) {
 }
 
 func (m Market) GetContinuous() *Market_Continuous {
+	if m.tmc == MARKET_TRADING_CONFIG_UNDEFINED && m.TradingModeConfig != nil {
+		m.tmc = m.TradingModeConfig.tmcType()
+	}
 	if m.tmc != MARKET_TRADING_CONFIG_CONTINUOUS {
 		return nil
 	}
@@ -634,6 +637,9 @@ func (m Market) GetContinuous() *Market_Continuous {
 }
 
 func (m Market) GetDiscrete() *Market_Discrete {
+	if m.tmc == MARKET_TRADING_CONFIG_UNDEFINED && m.TradingModeConfig != nil {
+		m.tmc = m.TradingModeConfig.tmcType()
+	}
 	if m.tmc != MARKET_TRADING_CONFIG_DISCRETE {
 		return nil
 	}

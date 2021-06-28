@@ -282,14 +282,16 @@ func testWithinMarket(t *testing.T) {
 	oneThird := num.DecimalFromFloat(1. / 3)
 	twoThirds := oneThird.Add(oneThird)
 	exp, _ := num.UintFromDecimal(num.DecimalFromUint(originalBalance).Mul(twoThirds))
+	actual := num.Zero().Sub(esm.PartyMarginAccount("party1").Balance, party1Balance)
 	assert.True(t,
-		exp.EQ(num.Zero().Sub(esm.PartyMarginAccount("party1").Balance, party1Balance)),
-		"party1 should get 2/3 of the fees",
+		exp.EQ(actual),
+		"party1 should get 2/3 of the fees (got %s expected %s)", actual.String(), party1Balance.String(),
 	)
 
 	exp, _ = num.UintFromDecimal(num.DecimalFromUint(originalBalance).Mul(oneThird))
+	actual = num.Zero().Sub(esm.PartyMarginAccount("party2").Balance, party2Balance)
 	assert.True(t,
-		exp.EQ(num.Zero().Sub(esm.PartyMarginAccount("party2").Balance, party2Balance)),
-		"party2 should get 2/3 of the fees",
+		exp.EQ(actual),
+		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), party2Balance.String(),
 	)
 }
