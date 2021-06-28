@@ -216,6 +216,7 @@ func TestPartialFillMargins(t *testing.T) {
 		PartyId:     party3,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
+		Price:       num.Zero(),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party3-buy-order",
@@ -228,25 +229,6 @@ func TestPartialFillMargins(t *testing.T) {
 	if !assert.NotNil(t, confirmation) {
 		t.Fatal("SubmitOrder confirmation was nil, but no error.")
 	}
-
-	// Attempt to create a new order for party1 that will be margin blocked
-	// @TODO a limit order without a price??
-	orderBuy2 := &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
-		Size:        1000,
-		Remaining:   1000,
-		CreatedAt:   now.UnixNano(),
-		ExpiresAt:   now.UnixNano() + 10000000000,
-		Reference:   "party1-buy-order",
-	}
-
-	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy2)
-	assert.Error(t, err)
-	assert.Nil(t, confirmation)
 
 	// Create a valid smaller order
 	orderBuy3 := &types.Order{

@@ -381,7 +381,7 @@ func (m *Market) GetMarketData() types.MarketData {
 	bestStaticOfferPrice, bestStaticOfferVolume, _ := m.getBestStaticAskPriceAndVolume()
 
 	// Auction related values
-	indicativePrice := num.NewUint(0)
+	indicativePrice := num.Zero()
 	indicativeVolume := uint64(0)
 	var auctionStart, auctionEnd int64
 	if m.as.InAuction() {
@@ -418,7 +418,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		BestStaticOfferVolume:     bestStaticOfferVolume,
 		MidPrice:                  midPrice,
 		StaticMidPrice:            staticMidPrice,
-		MarkPrice:                 m.markPrice,
+		MarkPrice:                 m.getCurrentMarkPrice(),
 		Timestamp:                 m.currentTime.UnixNano(),
 		OpenInterest:              m.position.GetOpenInterest(),
 		IndicativePrice:           indicativePrice,
