@@ -37,6 +37,10 @@ func (o OrderCancellation) IntoProto() *commandspb.OrderCancellation {
 	}
 }
 
+func (o OrderCancellation) String() string {
+	return o.IntoProto().String()
+}
+
 type OrderSubmission struct {
 	// Market identifier for the order, required field
 	MarketId string

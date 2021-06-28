@@ -366,14 +366,15 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
-	order := &commandspb.OrderCancellation{}
-	if err := tx.Unmarshal(order); err != nil {
+	porder := &commandspb.OrderCancellation{}
+	if err := tx.Unmarshal(porder); err != nil {
 		return err
 	}
 
 	app.stats.IncTotalCancelOrder()
-	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderId))
+	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", porder.OrderId))
 
+	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
 	msg, err := app.exec.CancelOrder(ctx, order, tx.Party())
 	if err != nil {
