@@ -42,7 +42,7 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 
 	// Submitting a zero or smaller fee should cause a reject
 	lps := &types.LiquidityProvisionSubmission{
-		Fee:              num.DecimalFromFloat(0.50),
+		Fee:              num.DecimalFromFloat(-0.50),
 		MarketId:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000),
 		Buys:             buys,
@@ -479,7 +479,8 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	ctx := context.Background()
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 5000)
+	// addAccountWithAmount(tm, "trader-A", 5000)
+	addAccountWithAmount(tm, "trader-A", 3200)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -542,7 +543,8 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	// Check we have the right number of live orders
-	assert.Equal(t, int64(7), tm.market.GetOrdersOnBookCount())
+	// assert.Equal(t, int64(7), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 
 	// Check that the bond balance is untouched
 	assert.True(t, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset).EQ(num.NewUint(1000)))
@@ -2509,8 +2511,9 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 				status: types.LiquidityProvision_STATUS_CANCELLED,
 			},
 			"V0000000000-0000000002": {
-				size:   15,
-				status: types.LiquidityProvision_STATUS_ACTIVE,
+				size: 15,
+				// status: types.LiquidityProvision_STATUS_ACTIVE,
+				status: types.LiquidityProvision_STATUS_CANCELLED,
 			},
 			"V0000000000-0000000007": {
 				size:   19,

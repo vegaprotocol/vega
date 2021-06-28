@@ -22,6 +22,15 @@ type MarketPosition struct {
 	vwBuyPrice, vwSellPrice *num.Uint
 }
 
+func NewMarketPosition(party string) *MarketPosition {
+	return &MarketPosition{
+		partyID:     party,
+		price:       num.Zero(),
+		vwBuyPrice:  num.Zero(),
+		vwSellPrice: num.Zero(),
+	}
+}
+
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(order *types.Order) {
@@ -30,16 +39,13 @@ func (p *MarketPosition) RegisterOrder(order *types.Order) {
 		// calculate vwBuyPrice: total worth of orders divided by total size
 		if buyVol := uint64(p.buy) + order.Remaining; buyVol != 0 {
 			var a, b, c num.Uint
-			if p.vwBuyPrice == nil {
-				p.vwBuyPrice = num.NewUint(0)
-			}
 			// (p.vwBuyPrice*uint64(p.buy) + order.Price*order.Remaining) / buyVol
 			a.Mul(p.vwBuyPrice, num.NewUint(uint64(p.buy)))
 			b.Mul(order.Price, num.NewUint(order.Remaining))
 			c.Add(&a, &b)
 			p.vwBuyPrice.Div(&c, num.NewUint(buyVol))
 		} else {
-			p.vwBuyPrice = num.NewUint(0)
+			p.vwBuyPrice.SetUint64(0)
 		}
 		p.buy += int64(order.Remaining)
 		return
@@ -47,16 +53,13 @@ func (p *MarketPosition) RegisterOrder(order *types.Order) {
 	// calculate vwSellPrice: total worth of orders divided by total size
 	if sellVol := uint64(p.sell) + order.Remaining; sellVol != 0 {
 		var a, b, c num.Uint
-		if p.vwSellPrice == nil {
-			p.vwSellPrice = num.NewUint(0)
-		}
 		// (p.vwSellPrice*uint64(p.sell) + order.Price*order.Remaining) / sellVol
 		a.Mul(p.vwSellPrice, num.NewUint(uint64(p.sell)))
 		b.Mul(order.Price, num.NewUint(order.Remaining))
 		c.Add(&a, &b)
 		p.vwSellPrice.Div(&c, num.NewUint(sellVol))
 	} else {
-		p.vwSellPrice = num.NewUint(0)
+		p.vwSellPrice.SetUint64(0)
 	}
 	p.sell += int64(order.Remaining)
 }
@@ -78,7 +81,7 @@ func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order
 		if p.buy != 0 {
 			p.vwBuyPrice.Div(&vwap, num.NewUint(uint64(p.buy)))
 		} else {
-			p.vwBuyPrice = num.NewUint(0)
+			p.vwBuyPrice.SetUint64(0)
 		}
 		return
 	}
@@ -98,7 +101,7 @@ func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order
 	if p.sell != 0 {
 		p.vwSellPrice.Div(&vwap, num.NewUint(uint64(p.sell)))
 	} else {
-		p.vwSellPrice = num.NewUint(0)
+		p.vwSellPrice.SetUint64(0)
 	}
 }
 
@@ -121,7 +124,7 @@ func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder
 		if p.buy != 0 {
 			p.vwBuyPrice.Div(&vwap, num.NewUint(uint64(p.buy)))
 		} else {
-			p.vwBuyPrice = num.NewUint(0)
+			p.vwBuyPrice.SetUint64(0)
 		}
 		p.buy += int64(newOrder.Remaining)
 		return
@@ -142,7 +145,7 @@ func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder
 	if p.sell != 0 {
 		p.vwSellPrice.Div(&vwap, num.NewUint(uint64(p.sell)))
 	} else {
-		p.vwSellPrice = num.NewUint(0)
+		p.vwSellPrice.SetUint64(0)
 	}
 	p.sell += int64(newOrder.Remaining)
 }

@@ -103,7 +103,7 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
 	pos, found := e.positions[order.PartyId]
 	if !found {
-		pos = &MarketPosition{partyID: order.PartyId, price: num.Zero()}
+		pos = NewMarketPosition(order.PartyId)
 		e.positions[order.PartyId] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
