@@ -13,6 +13,7 @@ import (
 	apipb "code.vegaprotocol.io/vega/proto/api"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 const defaultTimout = 2 * time.Second
@@ -29,7 +30,7 @@ func TestGetPartyAccounts(t *testing.T) {
 		e := events.NewAccountEvent(ctx, types.Account{
 			Id:       acc.Id,
 			Owner:    acc.Owner,
-			Balance:  acc.Balance,
+			Balance:  num.NewUint(acc.Balance),
 			Asset:    acc.Asset,
 			MarketId: acc.MarketId,
 			Type:     acc.Type,
