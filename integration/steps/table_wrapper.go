@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/cucumber/godog/gherkin"
@@ -409,7 +410,7 @@ func (r RowWrapper) MustOrderType(name string) types.Order_Type {
 }
 
 func OrderType(rawValue string) (types.Order_Type, error) {
-	ty, ok := types.Order_Type_value[rawValue]
+	ty, ok := proto.Order_Type_value[rawValue]
 	if !ok {
 		return types.Order_Type(ty), fmt.Errorf("invalid order type: %v", rawValue)
 	}
@@ -423,7 +424,7 @@ func (r RowWrapper) MustOrderStatus(name string) types.Order_Status {
 }
 
 func OrderStatus(rawValue string) (types.Order_Status, error) {
-	ty, ok := types.Order_Status_value[rawValue]
+	ty, ok := proto.Order_Status_value[rawValue]
 	if !ok {
 		return types.Order_Status(ty), fmt.Errorf("invalid order status: %v", rawValue)
 	}
@@ -437,7 +438,7 @@ func (r RowWrapper) MustLiquidityStatus(name string) types.LiquidityProvision_St
 }
 
 func LiquidityStatus(rawValue string) (types.LiquidityProvision_Status, error) {
-	ty, ok := types.LiquidityProvision_Status_value[rawValue]
+	ty, ok := proto.LiquidityProvision_Status_value[rawValue]
 	if !ok {
 		return types.LiquidityProvision_Status(ty), fmt.Errorf("invalid liquidity provision status: %v", rawValue)
 	}
@@ -451,7 +452,7 @@ func (r RowWrapper) MustTIF(name string) types.Order_TimeInForce {
 }
 
 func TIF(rawValue string) (types.Order_TimeInForce, error) {
-	tif, ok := types.Order_TimeInForce_value[strings.ReplaceAll(rawValue, "TIF_", "TIME_IN_FORCE_")]
+	tif, ok := proto.Order_TimeInForce_value[strings.ReplaceAll(rawValue, "TIF_", "TIME_IN_FORCE_")]
 	if !ok {
 		return types.Order_TimeInForce(tif), fmt.Errorf("invalid time in force: %v", rawValue)
 	}
@@ -513,7 +514,7 @@ func (r RowWrapper) MustAuctionTrigger(name string) types.AuctionTrigger {
 }
 
 func AuctionTrigger(name string) (types.AuctionTrigger, error) {
-	at, ok := types.AuctionTrigger_value[name]
+	at, ok := proto.AuctionTrigger_value[name]
 	if !ok {
 		return types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, fmt.Errorf("couldn't find %s as auction trigger", name)
 	}
@@ -527,7 +528,7 @@ func (r RowWrapper) MustTradingMode(name string) types.Market_TradingMode {
 }
 
 func TradingMode(name string) (types.Market_TradingMode, error) {
-	ty, ok := types.Market_TradingMode_value[name]
+	ty, ok := proto.Market_TradingMode_value[name]
 
 	if !ok {
 		return types.Market_TRADING_MODE_UNSPECIFIED, fmt.Errorf("couldn't find %s as trading_mode", name)
@@ -542,7 +543,7 @@ func (r RowWrapper) MustAccount(name string) types.AccountType {
 }
 
 func Account(name string) (types.AccountType, error) {
-	value := types.AccountType(types.AccountType_value[name])
+	value := types.AccountType(proto.AccountType_value[name])
 
 	if value == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
 		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("invalid account type %s", name)
@@ -580,15 +581,15 @@ func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 }
 
 func (r RowWrapper) MustPrice(name string) *types.Price {
-	n := r.MustU64(name)
+	n := r.MustUint(name)
 	// nil instead of zero value of Price is expected by APIs
-	if n == 0 {
+	if n.IsZero() {
 		return nil
 	}
 	return Price(n)
 }
 
-func Price(n uint64) *types.Price {
+func Price(n *num.Uint) *types.Price {
 	return &types.Price{Value: n}
 }
 
