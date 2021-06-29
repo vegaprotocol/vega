@@ -141,7 +141,7 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 		for _, g := range got.PriceMonitoringBounds {
 			if g.Trigger.Horizon == pmb.Trigger.Horizon {
 				bounds = g
-				match = pmb.MaxValidPrice == g.MaxValidPrice && pmb.MinValidPrice == g.MinValidPrice
+				match = pmb.MaxValidPrice.EQ(g.MaxValidPrice) && pmb.MinValidPrice.EQ(g.MinValidPrice)
 				break
 			}
 		}

@@ -115,10 +115,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from    | to      | from account         | to account              | market id | amount  | asset |
       | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 1574328 | ETH   |
-      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2399217 | ETH   |
+      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1799229 | ETH   |
+      # value prior to uint changes
+      #| trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2399217 | ETH   |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin  | general   |
-      | trader3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
+      | trader3 | ETH   | ETH/DEC20 | 1799229 | 989150771 |
+      #| trader3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
 
     # Amend orders to set slippage to 180
     When the traders amend the following orders:
@@ -133,11 +136,16 @@ Feature: Set up a market, with an opening auction, then uncross the book
     # Check MTM Loss transfer happened
     Then the following transfers should happen:
       | from    | to      | from account         | to account              | market id | amount  | asset |
-      | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
-      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224903 | ETH   |
+      | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 1799229 | ETH   |
+      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2024132 | ETH   |
+      # Values prior to uint changes
+      #| trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
+      #| trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224903 | ETH   |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin  | general   |
-      | trader3 | ETH   | ETH/DEC20 | 2624120 | 986325880 |
+      | trader3 | ETH   | ETH/DEC20 | 2024132 | 986925868 |
+      # values before uint stuff
+      #| trader3 | ETH   | ETH/DEC20 | 2624120 | 986325880 |
 
     # Amend orders to set slippage to 140
     # Amending prices down, so amend buy order first, so it doesn't uncross with the lowered sell order
@@ -151,10 +159,13 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | trader2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-7    |
     # Check MTM Loss transfer happened
+    #  4449804
     Then the following transfers should happen:
       | from    | to      | from account            | to account           | market id | amount  | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 4000000 | ETH   |
-      | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 5049792 | ETH   |
+      | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 4449804 | ETH   |
+      # Before uint stuff
+      #| trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 5049792 | ETH   |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1574328 | 991375672 |
