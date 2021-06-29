@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/cucumber/godog/gherkin"
 )
 
@@ -56,8 +57,8 @@ func (r withdrawAssetRow) Asset() string {
 	return r.row.MustStr("asset")
 }
 
-func (r withdrawAssetRow) Amount() uint64 {
-	return r.row.MustU64("amount")
+func (r withdrawAssetRow) Amount() *num.Uint {
+	return r.row.MustUint("amount")
 }
 
 func (r withdrawAssetRow) Reference() string {

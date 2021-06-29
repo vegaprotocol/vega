@@ -177,6 +177,22 @@ func StrSlice(value string, sep string) []string {
 	return strings.Split(value, sep)
 }
 
+func (r RowWrapper) MustDecimal(name string) num.Decimal {
+	value, err := Decimal(r.mustColumn(name))
+	panicW(name, err)
+	return value
+}
+
+func (r RowWrapper) Decimal(name string) num.Decimal {
+	value, err := Decimal(r.values[name])
+	panicW(name, err)
+	return value
+}
+
+func Decimal(rawValue string) (num.Decimal, error) {
+	return num.DecimalFromString(rawValue)
+}
+
 func (r RowWrapper) MustU64(name string) uint64 {
 	value, err := U64(r.mustColumn(name))
 	panicW(name, err)
