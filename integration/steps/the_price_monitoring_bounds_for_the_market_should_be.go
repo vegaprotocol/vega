@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/cucumber/godog/gherkin"
 )
 
@@ -16,8 +16,8 @@ func ThePriceMonitoringBoundsForTheMarketShouldBe(engine *execution.Engine, mark
 
 	for _, row := range parsePriceMonitoringBoundsTable(table) {
 		expected := types.PriceMonitoringBounds{
-			MinValidPrice: row.MustU64("min bound"),
-			MaxValidPrice: row.MustU64("max bound"),
+			MinValidPrice: row.MustUint("min bound"),
+			MaxValidPrice: row.MustUint("max bound"),
 		}
 
 		var found bool
