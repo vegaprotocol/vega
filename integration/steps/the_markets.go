@@ -157,7 +157,9 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		},
 	}
 
-	err = config.RiskModels.LoadModel(row.riskModel(), m.TradableInstrument.IntoProto())
+	tip := m.TradableInstrument.IntoProto()
+	err = config.RiskModels.LoadModel(row.riskModel(), tip)
+	m.TradableInstrument = types.TradableInstrumentFromProto(tip)
 	if err != nil {
 		panic(err)
 	}

@@ -513,7 +513,7 @@ func (e *Engine) calculateAuctionModeFees(trade *types.Trade) *types.Fee {
 	inf, _ := num.UintFromDecimal(fee.InfrastructureFee.ToDecimal().Div(two).Ceil())
 	lf, _ := num.UintFromDecimal(fee.LiquidityFee.ToDecimal().Div(two).Ceil())
 	return &types.Fee{
-		MakerFee:          num.NewUint(0),
+		MakerFee:          num.Zero(),
 		InfrastructureFee: inf,
 		LiquidityFee:      lf,
 	}

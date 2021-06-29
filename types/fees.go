@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -16,15 +14,15 @@ type FeeFactors struct {
 func FeeFactorsFromProto(f *proto.FeeFactors) *FeeFactors {
 	mf, err := num.DecimalFromString(f.MakerFee)
 	if err != nil {
-		panic(fmt.Sprintf("Could not convert maker fee %s to float: %+v", f.MakerFee, err))
+		mf = num.DecimalZero()
 	}
 	inf, err := num.DecimalFromString(f.InfrastructureFee)
 	if err != nil {
-		panic(fmt.Sprintf("Could not convert infrastructure fee %s to float: %+v", f.InfrastructureFee, err))
+		inf = num.DecimalZero()
 	}
 	lf, err := num.DecimalFromString(f.LiquidityFee)
 	if err != nil {
-		panic(fmt.Sprintf("Could not convert liquidity fee %s to float: %+v", f.LiquidityFee, err))
+		lf = num.DecimalZero()
 	}
 	return &FeeFactors{
 		MakerFee:          mf,

@@ -69,6 +69,9 @@ func (TradableInstrument_LogNormalRiskModel) rmType() rmType {
 }
 
 func MarginCalculatorFromProto(p *proto.MarginCalculator) *MarginCalculator {
+	if p == nil {
+		return nil
+	}
 	return &MarginCalculator{
 		ScalingFactors: ScalingFactorsFromProto(p.ScalingFactors),
 	}
@@ -117,11 +120,26 @@ type RiskResult struct {
 }
 
 func (m MarginLevels) IntoProto() *proto.MarginLevels {
+	var (
+		ml, sl, im, cr uint64
+	)
+	if m.MaintenanceMargin != nil {
+		ml = m.MaintenanceMargin.Uint64()
+	}
+	if m.SearchLevel != nil {
+		sl = m.SearchLevel.Uint64()
+	}
+	if m.InitialMargin != nil {
+		im = m.InitialMargin.Uint64()
+	}
+	if m.CollateralReleaseLevel != nil {
+		cr = m.CollateralReleaseLevel.Uint64()
+	}
 	return &proto.MarginLevels{
-		MaintenanceMargin:      m.MaintenanceMargin.Uint64(),
-		SearchLevel:            m.SearchLevel.Uint64(),
-		InitialMargin:          m.InitialMargin.Uint64(),
-		CollateralReleaseLevel: m.CollateralReleaseLevel.Uint64(),
+		MaintenanceMargin:      ml,
+		SearchLevel:            sl,
+		InitialMargin:          im,
+		CollateralReleaseLevel: cr,
 		PartyId:                m.PartyId,
 		MarketId:               m.MarketId,
 		Asset:                  m.Asset,
@@ -217,12 +235,16 @@ func isTRMFromProto(p interface{}) isTRM {
 	case *proto.TradableInstrument_SimpleRiskModel:
 		return TradableInstrumentSimpleFromProto(tirm)
 	case *proto.TradableInstrument_LogNormalRiskModel:
-		return TradableInstrumentLogNoramlFromProto(tirm)
+		return TradableInstrumentLogNormalFromProto(tirm)
 	}
-	return nil
+	// default to nil simple params
+	return TradableInstrumentSimpleFromProto(nil)
 }
 
 func LogNormalParamsFromProto(p *proto.LogNormalModelParams) *LogNormalModelParams {
+	if p == nil {
+		return nil
+	}
 	return &LogNormalModelParams{
 		Mu:    num.DecimalFromFloat(p.Mu),
 		R:     num.DecimalFromFloat(p.R),
@@ -230,7 +252,10 @@ func LogNormalParamsFromProto(p *proto.LogNormalModelParams) *LogNormalModelPara
 	}
 }
 
-func TradableInstrumentLogNoramlFromProto(p *proto.TradableInstrument_LogNormalRiskModel) *TradableInstrument_LogNormalRiskModel {
+func TradableInstrumentLogNormalFromProto(p *proto.TradableInstrument_LogNormalRiskModel) *TradableInstrument_LogNormalRiskModel {
+	if p == nil {
+		return nil
+	}
 	return &TradableInstrument_LogNormalRiskModel{
 		LogNormalRiskModel: &LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(p.LogNormalRiskModel.RiskAversionParameter),
@@ -241,6 +266,9 @@ func TradableInstrumentLogNoramlFromProto(p *proto.TradableInstrument_LogNormalR
 }
 
 func TradableInstrumentSimpleFromProto(p *proto.TradableInstrument_SimpleRiskModel) *TradableInstrument_SimpleRiskModel {
+	if p == nil {
+		return nil
+	}
 	return &TradableInstrument_SimpleRiskModel{
 		SimpleRiskModel: &SimpleRiskModel{
 			Params: SimpleModelParamsFromProto(p.SimpleRiskModel.Params),

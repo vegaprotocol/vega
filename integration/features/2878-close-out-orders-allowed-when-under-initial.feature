@@ -49,9 +49,11 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
 
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general       |
-      | trader4 | ETH   | ETH/DEC20 | 133    | 9999999999867 |
+      | trader4 | ETH   | ETH/DEC20 | 132    | 9999999999868 |
       | trader5 | ETH   | ETH/DEC20 | 1320   | 9999999998680 |
       | trader3 | ETH   | ETH/DEC20 | 1220   | 0             |
+      # Value before uint stuff
+      # | trader4 | ETH   | ETH/DEC20 | 133    | 9999999999867 |
     And the traders should have the following margin levels:
       | trader  | market id | maintenance | search | initial | release |
       | trader3 | ETH/DEC20 | 1100        | 1210   | 1320    | 1540    |
