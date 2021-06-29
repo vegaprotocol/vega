@@ -217,12 +217,12 @@ func (b *BrokerStub) GetMarket(marketID string) *types.Market {
 			if mkt.MarketID() != marketID {
 				continue
 			}
-			return mkt.Market().DeepClone()
+			return mkt.Market().IntoProto()
 		case events.MarketUpdated:
 			if mkt.MarketID() != marketID {
 				continue
 			}
-			return mkt.Market().DeepClone()
+			return mkt.Market().IntoProto()
 		}
 	}
 
@@ -349,13 +349,13 @@ func (b *BrokerStub) GetMarginByPartyAndMarket(partyID, marketID string) (types.
 			if _, ok := mapped[ml.PartyId]; !ok {
 				mapped[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			mapped[ml.PartyId][ml.MarketId] = ml
+			mapped[ml.PartyId][ml.MarketId] = *ml.IntoProto()
 		case events.MarginLevels:
 			ml := et.MarginLevels()
 			if _, ok := mapped[ml.PartyId]; !ok {
 				mapped[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			mapped[ml.PartyId][ml.MarketId] = ml
+			mapped[ml.PartyId][ml.MarketId] = *ml.IntoProto()
 		}
 	}
 	mkts, ok := mapped[partyID]

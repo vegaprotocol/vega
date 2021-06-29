@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TheMarkPriceForTheMarketIs(
@@ -18,20 +19,20 @@ func TheMarkPriceForTheMarketIs(
 		return errMarkPriceNotFound(market, err)
 	}
 
-	if marketData.MarkPrice != markPrice {
+	if marketData.MarkPrice.NEQ(markPrice) {
 		return errWrongMarkPrice(market, markPrice, marketData)
 	}
 
 	return nil
 }
 
-func parseMarkPrice(markPriceStr string) uint64 {
+func parseMarkPrice(markPriceStr string) *num.Uint {
 	markPrice, err := U64(markPriceStr)
 	panicW("mark price", err)
-	return markPrice
+	return num.NewUint(markPrice)
 }
 
-func errWrongMarkPrice(market string, markPrice uint64, marketData types.MarketData) error {
+func errWrongMarkPrice(market string, markPrice *num.Uint, marketData types.MarketData) error {
 	return fmt.Errorf("wrong mark price for market(%v), expected(%v) got(%v)",
 		market, markPrice, marketData.MarkPrice,
 	)

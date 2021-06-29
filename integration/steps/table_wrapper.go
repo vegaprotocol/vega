@@ -9,6 +9,7 @@ import (
 
 	types "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/cucumber/godog/gherkin"
 )
@@ -179,6 +180,26 @@ func (r RowWrapper) MustU64(name string) uint64 {
 	value, err := U64(r.mustColumn(name))
 	panicW(name, err)
 	return value
+}
+
+func (r RowWrapper) MustUint(name string) *num.Uint {
+	value, err := Uint(r.mustColumn(name))
+	panicW(name, err)
+	return value
+}
+
+func (r RowWrapper) Uint(name string) *num.Uint {
+	value, err := Uint(r.values[name])
+	panicW(name, err)
+	return value
+}
+
+func Uint(value string) (*num.Uint, error) {
+	retVal, overflow := num.UintFromString(value, 10)
+	if overflow {
+		return nil, fmt.Errorf("invalid uint value: %v", value)
+	}
+	return retVal, nil
 }
 
 // U64B does the same as U64, but returns a bool indicating whether or not the
