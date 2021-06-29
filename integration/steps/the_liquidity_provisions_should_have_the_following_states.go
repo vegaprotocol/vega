@@ -15,7 +15,7 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 		found := &types.LiquidityProvision{}
 		for _, e := range evts {
 			if lp := e.LiquidityProvision(); lp.Id == id {
-				found = &lp
+				found = lp
 			}
 		}
 		return found
