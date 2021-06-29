@@ -83,18 +83,23 @@ Feature: Distressed traders should not have general balance left
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader5 | ETH/DEC20 | buy  | 20     | 165   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And the mark price should be "120" for the market "ETH/DEC20"
+    Then the mark price should be "120" for the market "ETH/DEC20"
 
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC20 | 15127  | 0       |
+      | trader3 | ETH   | ETH/DEC20 | 12606  | 1394    |
+      # values before uint stuff
+      #| trader3 | ETH   | ETH/DEC20 | 15127  | 0       |
 
     ## Now let's increase the mark price so trader3 gets distressed
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader4 | ETH/DEC20 | sell | 30     | 165   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader5 | ETH/DEC20 | buy  | 30     | 165   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And the mark price should be "130" for the market "ETH/DEC20"
 
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC20 | 16388  | 0       |
+      | trader3 | ETH   | ETH/DEC20 | 15027  | 0       |
+      # Values before uint changes
+      #| trader3 | ETH   | ETH/DEC20 | 16388  | 0       |
