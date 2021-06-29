@@ -76,8 +76,11 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 		ExpiresAt:   o.ExpiresAt,
 		Type:        o.Type,
 		Reference:   o.Reference,
-		PeggedOrder: o.PeggedOrder.IntoProto(),
 	}
+	if o.PeggedOrder == nil {
+		return p
+	}
+	p.PeggedOrder = o.PeggedOrder.IntoProto()
 	return p
 }
 

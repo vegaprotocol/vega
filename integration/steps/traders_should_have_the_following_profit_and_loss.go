@@ -74,8 +74,8 @@ func errNoPositionForMarket(trader string) error {
 func areSamePosition(pos []*types.Position, row pnlRow) bool {
 	return len(pos) == 1 &&
 		pos[0].OpenVolume == row.volume() &&
-		pos[0].RealisedPnl == row.realisedPNL() &&
-		pos[0].UnrealisedPnl == row.unrealisedPNL()
+		pos[0].RealisedPnl.Equals(row.realisedPNL()) &&
+		pos[0].UnrealisedPnl.Equals(row.unrealisedPNL())
 }
 
 func errCannotGetPositionForParty(trader string, err error) error {

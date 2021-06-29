@@ -352,6 +352,8 @@ func (f Future) IntoProto() *proto.Future {
 
 func iInstrumentFromProto(pi interface{}) iProto {
 	switch i := pi.(type) {
+	case proto.Instrument_Future:
+		return InstrumentFutureFromProto(&i)
 	case *proto.Instrument_Future:
 		return InstrumentFutureFromProto(i)
 	}
