@@ -654,3 +654,7 @@ func (m Market) GetDiscrete() *Market_Discrete {
 func (m Market) String() string {
 	return m.IntoProto().String()
 }
+
+func (m Market) DeepClone() *Market {
+	return nil
+}

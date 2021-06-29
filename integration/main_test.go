@@ -3,7 +3,6 @@ package core_test
 import (
 	"flag"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/cucumber/godog"
@@ -11,6 +10,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 
 	"code.vegaprotocol.io/vega/integration/steps"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -86,7 +86,8 @@ func FeatureContext(s *godog.Suite) {
 
 	// Other steps
 	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, func(amountstr string) error {
-		amount, _ := strconv.ParseUint(amountstr, 10, 0)
+		//		amount, _ := strconv.ParseUint(amountstr, 10, 0)
+		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
 			if err := execsetup.collateralEngine.TopUpInsurancePool(mkt.Id, asset, amount); err != nil {

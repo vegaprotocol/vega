@@ -5,7 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cucumber/godog/gherkin"
 )
@@ -25,7 +25,7 @@ func TradersCancelTheFollowingOrders(
 			return errOrderNotFound(party, row.Reference(), err)
 		}
 
-		cancel := commandspb.OrderCancellation{
+		cancel := types.OrderCancellation{
 			OrderId:  order.Id,
 			MarketId: order.MarketId,
 		}

@@ -9,7 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/steps/market"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TheMarkets(
@@ -76,10 +77,10 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 			Name:        "VOTE",
 			Symbol:      "VOTE",
 			Decimals:    5,
-			TotalSupply: "1000",
-			Source: &types.AssetDetails_BuiltinAsset{
+			TotalSupply: num.NewUint(1000),
+			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
-					MaxFaucetAmountMint: "10",
+					MaxFaucetAmountMint: num.NewUint(10),
 				},
 			},
 		},
@@ -118,7 +119,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		State:         types.Market_STATE_ACTIVE,
 		Id:            row.id(),
 		DecimalPlaces: 2,
-		Fees:          fees,
+		Fees:          types.FeesFromProto(fees),
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
 				Id:   fmt.Sprintf("Crypto/%s/Futures", row.id()),
@@ -136,27 +137,27 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 						SettlementAsset:   row.asset(),
 						QuoteName:         row.quoteName(),
 						OracleSpec:        oracleConfig.Spec,
-						OracleSpecBinding: oracleConfig.Binding,
+						OracleSpecBinding: types.OracleSpecToFutureBindingFromProto(oracleConfig.Binding),
 					},
 				},
 			},
-			MarginCalculator: marginCalculator,
+			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
 		},
 		OpeningAuction: openingAuction(row),
 		TradingModeConfig: &types.Market_Continuous{
 			Continuous: &types.ContinuousTrading{},
 		},
-		PriceMonitoringSettings: priceMonitoring,
+		PriceMonitoringSettings: types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
 				TimeWindow:    3600,
-				ScalingFactor: 10,
+				ScalingFactor: num.NewDecimalFromFloat(10),
 			},
-			TriggeringRatio: 0,
+			TriggeringRatio: num.NewDecimalFromFloat(0),
 		},
 	}
 
-	err = config.RiskModels.LoadModel(row.riskModel(), m.TradableInstrument)
+	err = config.RiskModels.LoadModel(row.riskModel(), m.TradableInstrument.IntoProto())
 	if err != nil {
 		panic(err)
 	}
