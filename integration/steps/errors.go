@@ -18,7 +18,7 @@ type ErroneousRow interface {
 }
 
 func DebugTxErrors(broker *stubs.BrokerStub, log *logging.Logger) error {
-	log.Info("DEBUGGING LP SUBMISSION ERRORS")
+	log.Info("DEBUGGING ALL TRANSACTION ERRORS")
 	data := broker.GetTxErrors()
 	for _, e := range data {
 		p := e.Proto()

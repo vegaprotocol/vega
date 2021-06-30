@@ -128,6 +128,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | -100   |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    |
     Then debug liquidity submission errors
+    And debug transaction errors
     And the traders place the following orders:
       | trader  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
