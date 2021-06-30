@@ -87,9 +87,7 @@ Feature: Distressed traders should not have general balance left
 
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC20 | 12606  | 1394    |
-      # values before uint stuff
-      #| trader3 | ETH   | ETH/DEC20 | 15127  | 0       |
+      | trader3 | ETH   | ETH/DEC20 | 15127  | 0       |
 
     ## Now let's increase the mark price so trader3 gets distressed
     When the traders place the following orders:
@@ -100,6 +98,4 @@ Feature: Distressed traders should not have general balance left
 
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC20 | 15027  | 0       |
-      # Values before uint changes
-      #| trader3 | ETH   | ETH/DEC20 | 16388  | 0       |
+      | trader3 | ETH   | ETH/DEC20 | 16388  | 0       |
