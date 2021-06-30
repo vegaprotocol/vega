@@ -113,12 +113,12 @@ func (u Uint) Uint64() uint64 {
 	return u.u.Uint64()
 }
 
-func (z Uint) BigInt() *big.Int {
-	return z.u.ToBig()
+func (u Uint) BigInt() *big.Int {
+	return u.u.ToBig()
 }
 
-func (z Uint) Float64() float64 {
-	d := DecimalFromUint(&z)
+func (u Uint) Float64() float64 {
+	d := DecimalFromUint(&u)
 	retVal, _ := d.Float64()
 	return retVal
 }
@@ -129,18 +129,18 @@ func (z Uint) Float64() float64 {
 // `u = x + y`
 // u is returned for convenience, no
 // new variable is created.
-func (z *Uint) Add(x, y *Uint) *Uint {
-	z.u.Add(&x.u, &y.u)
-	return z
+func (u *Uint) Add(x, y *Uint) *Uint {
+	u.u.Add(&x.u, &y.u)
+	return u
 }
 
 // AddSum adds multiple values at the same time to a given uint
 // so x.AddSum(y, z) is equivalent to x + y + z
-func (z *Uint) AddSum(vals ...*Uint) *Uint {
+func (u *Uint) AddSum(vals ...*Uint) *Uint {
 	for _, x := range vals {
-		z.u.Add(&z.u, &x.u)
+		u.u.Add(&u.u, &x.u)
 	}
-	return z
+	return u
 }
 
 // AddOverflow will subtract y to x then store the result

@@ -26,11 +26,11 @@ func TestGetOpenInterest(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
 	var (
-		buyer            = "buyer_id"
-		buyer2           = "buyer_id2"
-		seller           = "seller_id"
-		size   uint64    = 10
-		price  *num.Uint = num.NewUint(10000)
+		buyer         = "buyer_id"
+		buyer2        = "buyer_id2"
+		seller        = "seller_id"
+		size   uint64 = 10
+		price         = num.NewUint(10000)
 	)
 	engine.RegisterOrder(&types.Order{
 		PartyId:   buyer,
@@ -89,10 +89,10 @@ func testUpdatePositionRegular(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
 	var (
-		buyer            = "buyer_id"
-		seller           = "seller_id"
-		size   uint64    = 10
-		price  *num.Uint = num.NewUint(10000)
+		buyer         = "buyer_id"
+		seller        = "seller_id"
+		size   uint64 = 10
+		price         = num.NewUint(10000)
 	)
 	engine.RegisterOrder(&types.Order{
 		PartyId:   buyer,

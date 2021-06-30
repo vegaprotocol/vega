@@ -65,8 +65,8 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&keep)
 			}
 			var trades []*types.Trade = nil
-			var rf types.RiskFactor = types.RiskFactor{}
-			var markPrice *num.Uint = num.NewUint(100)
+			rf := types.RiskFactor{}
+			markPrice := num.NewUint(100)
 
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(test.target)
 			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice.Clone(), test.bestStaticBidVolume, test.bestStaticAskVolume)
@@ -107,8 +107,8 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 				h.AuctionState.EXPECT().StartLiquidityAuction(now, gomock.Any()).Times(1)
 			}
 			var trades []*types.Trade = nil
-			var rf types.RiskFactor = types.RiskFactor{}
-			var markPrice *num.Uint = num.NewUint(100)
+			rf := types.RiskFactor{}
+			markPrice := num.NewUint(100)
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(test.target)
 			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice.Clone(), test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})

@@ -346,7 +346,7 @@ func (r RowWrapper) F64(name string) float64 {
 }
 
 func F64(rawValue string) (float64, error) {
-	return strconv.ParseFloat(rawValue, 10)
+	return strconv.ParseFloat(rawValue, 64)
 }
 
 func (r RowWrapper) MustF64Slice(name, sep string) []float64 {
@@ -369,7 +369,7 @@ func F64Slice(rawValue string, sep string) ([]float64, error) {
 	valuesCount := len(rawValues)
 	array := make([]float64, 0, valuesCount)
 	for i := 0; i < valuesCount; i++ {
-		item, err := strconv.ParseFloat(rawValues[i], 10)
+		item, err := strconv.ParseFloat(rawValues[i], 64)
 		if err != nil {
 			return nil, err
 		}

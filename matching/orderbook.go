@@ -627,7 +627,7 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 
 	var (
 		reduceBy uint64
-		side     *OrderBookSide = b.sell
+		side     = b.sell
 		err      error
 	)
 	if amendedOrder.Side == types.Side_SIDE_BUY {

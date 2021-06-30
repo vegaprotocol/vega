@@ -21,7 +21,7 @@ func TheAverageBlockDurationWithVariance(block *helpers.Block, dur, variance str
 	if err := TheAverageBlockDurationIs(block, dur); err != nil {
 		return err
 	}
-	v, err := strconv.ParseFloat(variance, 10)
+	v, err := strconv.ParseFloat(variance, 64)
 	if err != nil {
 		return err
 	}

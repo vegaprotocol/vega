@@ -244,7 +244,7 @@ func ProtoAccount(a ptypes.Account) zap.Field {
 	return zap.String("account", a.String())
 }
 
-// OrderAmendment constructs a single string field to contain all the object information
+// OrderAmendmentProto constructs a single string field to contain all the object information
 func OrderAmendmentProto(oa *commandspb.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
