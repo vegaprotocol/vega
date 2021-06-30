@@ -54,10 +54,10 @@ type Engine struct {
 
 	cachedMin *num.Uint
 	cachedMax *num.Uint
-	// Buy side cache
+	// Bid cache
 	bCache map[num.Uint]num.Decimal
-	// Sell side cache
-	sCache map[num.Uint]num.Decimal
+	// Ask cache
+	aCache map[num.Uint]num.Decimal
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine
@@ -70,7 +70,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		probabilityOfTradingTauScaling: num.DecimalFromInt64(1), // this is the same as the default in the netparams
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
 		bCache:                         map[num.Uint]num.Decimal{},
-		sCache:                         map[num.Uint]num.Decimal{},
+		aCache:                         map[num.Uint]num.Decimal{},
 	}
 }
 
@@ -203,7 +203,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	// if min, max changed since caches were created then reset
 	if e.cachedMin != minPrice || e.cachedMax != maxPrice {
 		e.bCache = make(map[num.Uint]num.Decimal, len(e.bCache))
-		e.sCache = make(map[num.Uint]num.Decimal, len(e.sCache))
+		e.aCache = make(map[num.Uint]num.Decimal, len(e.aCache))
 		e.cachedMin, e.cachedMax = minPrice.Clone(), maxPrice.Clone()
 	}
 
@@ -214,20 +214,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 		return defaultInRangeProbabilityOfTrading
 	}
 
-	// Any part of shape that the peg puts at lower price
-	// than best bid will use probability of trading computed
-	// from best_static_bid to calculate volume.
-	// Any part of shape that the peg puts at price above
-	// best_static_ask will use probability of trading computed
-	// from best_static_ask.
-	var currentPrice *num.Uint
-	if orderPrice.LT(bestBidPrice) {
-		currentPrice = bestBidPrice.Clone()
-	} else {
-		currentPrice = bestAskPrice.Clone()
-	}
-
-	prob := e.calcProbabilityOfTrading(currentPrice, orderPrice, isBid, minPrice, maxPrice)
+	prob := e.calcProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice, isBid, minPrice, maxPrice)
 
 	// if prob of trading is > than the minimum
 	// we can return now.
@@ -240,19 +227,37 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	return e.minProbabilityOfTrading
 }
 
-func (e *Engine) calcProbabilityOfTrading(currentPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice *num.Uint) num.Decimal {
-	cache := e.sCache
+func (e *Engine) calcProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice *num.Uint) num.Decimal {
+	tauScaled := e.horizon.Mul(e.probabilityOfTradingTauScaling)
 	if isBid {
-		cache = e.bCache
+		return e.calcProbabilityOfTradingBid(bestBidPrice, orderPrice, minPrice, tauScaled)
 	}
+	return e.calcProbabilityOfTradingAsk(bestAskPrice, orderPrice, maxPrice, tauScaled)
+}
 
-	prob, ok := cache[*orderPrice]
+func (e *Engine) calcProbabilityOfTradingAsk(bestAskPrice, orderPrice, maxPrice *num.Uint, tauScaled num.Decimal) (f num.Decimal) {
+	prob, ok := e.aCache[*orderPrice]
 	if !ok {
-		tauScaled := e.horizon.Mul(e.probabilityOfTradingTauScaling)
-		prob = e.rm.ProbabilityOfTrading(currentPrice, orderPrice, minPrice, maxPrice, tauScaled, isBid, true)
-		cache[*orderPrice] = prob
+		prob = e.rm.ProbabilityOfTrading(bestAskPrice, orderPrice, bestAskPrice, maxPrice, tauScaled, false, true)
+		prob = rescaleProbability(prob)
+		e.aCache[*orderPrice] = prob
 	}
 	return prob
+}
+
+func (e *Engine) calcProbabilityOfTradingBid(bestBidPrice, orderPrice, minPrice *num.Uint, tauScaled num.Decimal) (f num.Decimal) {
+	prob, ok := e.bCache[*orderPrice]
+	if !ok {
+		prob = e.rm.ProbabilityOfTrading(bestBidPrice, orderPrice, minPrice, bestBidPrice, tauScaled, true, true)
+		prob = rescaleProbability(prob)
+		e.bCache[*orderPrice] = prob
+	}
+	return prob
+}
+
+//Rescale probability so that it's at most the value returned between bid and ask.
+func rescaleProbability(prob num.Decimal) num.Decimal {
+	return prob.Mul(defaultInRangeProbabilityOfTrading)
 }
 
 func setSizesTo0(orders []*LiquidityOrder) {
