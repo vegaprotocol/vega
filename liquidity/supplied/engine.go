@@ -193,8 +193,8 @@ func (e *Engine) updateSizes(
 		// uint64(math.Ceil(liquidityObligation * scaling / float64(o.Price.Uint64())))
 		d := num.DecimalFromUint(liquidityObligation)
 		d = d.Mul(scaling)
-		d = d.Div(num.DecimalFromUint(o.Price)).Ceil()
-		o.LiquidityImpliedVolume = uint64(d.IntPart())
+		liv, _ := num.UintFromDecimal(d.Div(num.DecimalFromUint(o.Price)).Ceil())
+		o.LiquidityImpliedVolume = liv.Uint64()
 	}
 	return nil
 }
@@ -204,7 +204,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	if e.cachedMin != minPrice || e.cachedMax != maxPrice {
 		e.bCache = make(map[num.Uint]num.Decimal, len(e.bCache))
 		e.sCache = make(map[num.Uint]num.Decimal, len(e.sCache))
-		e.cachedMin, e.cachedMax = minPrice, maxPrice
+		e.cachedMin, e.cachedMax = minPrice.Clone(), maxPrice.Clone()
 	}
 
 	// Any part of shape that's pegged between or equal to
