@@ -115,6 +115,10 @@ steps:
         from_secret: GITHUB_API_TOKEN
       SLACK_HOOK_URL:
         from_secret: SLACK_HOOK_URL
+      JENKINS_USERNAME:
+        from_secret: JENKINS_USERNAME
+      JENKINS_TOKEN:
+        from_secret: JENKINS_TOKEN
     commands:
       - failed=""
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
