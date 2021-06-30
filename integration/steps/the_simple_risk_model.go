@@ -8,12 +8,7 @@ import (
 )
 
 func TheSimpleRiskModel(config *market.Config, name string, table *gherkin.DataTable) error {
-	r, err := GetFirstRow(*table)
-	if err != nil {
-		return err
-	}
-
-	row := simpleRiskModelRow{row: r}
+	row := simpleRiskModelRow{row: parseSimpleRiskModelTable(table)}
 
 	return config.RiskModels.AddSimple(name, &types.TradableInstrument_SimpleRiskModel{
 		SimpleRiskModel: &types.SimpleRiskModel{
@@ -26,6 +21,16 @@ func TheSimpleRiskModel(config *market.Config, name string, table *gherkin.DataT
 			},
 		},
 	})
+}
+
+func parseSimpleRiskModelTable(table *gherkin.DataTable) RowWrapper {
+	return StrictParseFirstRow(table, []string{
+		"probability of trading",
+		"long",
+		"short",
+		"max move up",
+		"min move down",
+	}, []string{})
 }
 
 type simpleRiskModelRow struct {

@@ -10,9 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/wallet/crypto"
 )
 
-var (
-)
-
 type Wallet struct {
 	Owner    string
 	Keypairs KeyRing

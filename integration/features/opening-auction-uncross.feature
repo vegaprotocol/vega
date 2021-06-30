@@ -37,8 +37,10 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | asset | market id | margin | general  |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
       | trader2 | BTC   | ETH/DEC19 | 28679  | 99971321 |
-    And "trader1" withdraws "99969759" from the account "BTC"
-    And "trader2" withdraws "99971321" from the account "BTC"
+    When the traders withdraw the following assets:
+      | trader  | asset | amount   |
+      | trader1 | BTC   | 99969759 |
+      | trader2 | BTC   | 99971321 |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | BTC   | ETH/DEC19 | 30241  | 0       |
@@ -61,7 +63,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | t1-b-3    | STATUS_CANCELLED |
       | trader2 | t2-s-3    | STATUS_FILLED    |
     And the following transfers should happen:
-      | from    | to      | from account   | to account      | market id | amount | asset |
+      | from    | to      | from account        | to account           | market id | amount | asset |
       | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9479   | BTC   |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |

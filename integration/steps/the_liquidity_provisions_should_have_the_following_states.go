@@ -41,13 +41,13 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 }
 
 func parseLiquidityProvisionStatesTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse(
+	return StrictParseTable(table, []string{
 		"id",
 		"party",
 		"market",
 		"commitment amount",
 		"status",
-	)
+	}, []string{})
 }
 
 func errLiquidityProvisionEventNotFound() error {

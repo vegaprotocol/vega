@@ -6,13 +6,12 @@ import (
 
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/netparams"
 )
 
-func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netparams.Store, table *gherkin.DataTable) error {
+func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *gherkin.DataTable) error {
 	ctx := context.Background()
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseNetworkParametersTable(table) {
 		name := row.MustStr("name")
 
 		switch name {
@@ -50,4 +49,11 @@ func TheFollowingNetworkParametersAreSet(exec *execution.Engine, netParams *netp
 	netParams.DispatchChanges(ctx)
 
 	return nil
+}
+
+func parseNetworkParametersTable(table *gherkin.DataTable) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"name",
+		"value",
+	}, []string{})
 }

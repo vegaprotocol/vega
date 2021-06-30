@@ -1,9 +1,9 @@
 package v1
 
 import (
-	"crypto/rand"
 	"encoding/hex"
-	"math/big"
+
+	"code.vegaprotocol.io/vega/crypto"
 )
 
 func NewTransaction(pubKey, data []byte, signature *Signature) *Transaction {
@@ -23,7 +23,7 @@ func NewTransactionPubKey(pubKey []byte) *Transaction_PubKey {
 
 func NewInputData(height uint64) *InputData {
 	return &InputData{
-		Nonce:       makeNonce(),
+		Nonce:       crypto.NewNonce(),
 		BlockHeight: height,
 	}
 }
@@ -34,12 +34,4 @@ func NewSignature(sig []byte, algo string, version uint32) *Signature {
 		Algo:    algo,
 		Version: version,
 	}
-}
-
-func makeNonce() uint64 {
-	max := &big.Int{}
-	// set it to the max value of the uint64
-	max.SetUint64(^uint64(0))
-	nonce, _ := rand.Int(rand.Reader, max)
-	return nonce.Uint64()
 }

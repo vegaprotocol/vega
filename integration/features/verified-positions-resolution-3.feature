@@ -6,8 +6,8 @@ Feature: Position resolution case 3
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -59,8 +59,8 @@ Feature: Position resolution case 3
 # insurance pool generation - set new mark price (and trigger closeout)
     When the traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
 # check positions
     Then the traders should have the following profit and loss:
@@ -78,9 +78,9 @@ Feature: Position resolution case 3
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume  | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1       |     1 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1       |  1001 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC |
 
 # now we check what's left in the orderbook
 # we expect 10 orders at price of 40 to be left there on the buy side
@@ -89,6 +89,6 @@ Feature: Position resolution case 3
 # We expect no orders on the sell side: try to buy 1 for high price -> no trades -> sell side empty
     When the traders place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | sellSideProvider | ETH/DEC19 | sell | 10     | 40    | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
-      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
-      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
+      | sellSideProvider | ETH/DEC19 | sell | 10     | 40    | 2                | TYPE_LIMIT | TIF_FOK | ref-1     |
+      | sellSideProvider | ETH/DEC19 | sell | 1      | 2     | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | buySideProvider  | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_FOK | ref-3     |

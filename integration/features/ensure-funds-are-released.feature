@@ -15,13 +15,13 @@ Feature: Test margins releases on position = 0
       | traderGuy | BTC   | 1000000000 |
       | trader1   | BTC   | 1000000    |
       | trader2   | BTC   | 1000000    |
-      | aux       | BTC   | 100000    |
+      | aux       | BTC   | 100000     |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -50,13 +50,13 @@ Feature: Test margins releases on position = 0
       | traderGuy | BTC   | 1000000000 |
       | trader1   | BTC   | 1000000    |
       | trader2   | BTC   | 1000000    |
-      | aux       | BTC   | 100000    |
+      | aux       | BTC   | 100000     |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -95,13 +95,13 @@ Feature: Test margins releases on position = 0
       | traderGuy | BTC   | 1000000000 |
       | trader1   | BTC   | 1000000    |
       | trader2   | BTC   | 1000000    |
-      | aux       | BTC   | 100000    |
+      | aux       | BTC   | 100000     |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -139,13 +139,13 @@ Feature: Test margins releases on position = 0
       | traderGuy | BTC   | 1000000000 |
       | trader1   | BTC   | 1000000    |
       | trader2   | BTC   | 1000000    |
-      | aux       | BTC   | 100000    |
+      | aux       | BTC   | 100000     |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:

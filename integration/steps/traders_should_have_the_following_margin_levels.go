@@ -13,7 +13,7 @@ func TheTradersShouldHaveTheFollowingMarginLevels(
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseExpectedMarginsTable(table) {
 		partyID := row.MustStr("trader")
 		marketID := row.MustStr("market id")
 		maintenance := row.MustU64("maintenance")
@@ -55,7 +55,29 @@ func errInvalidMargins(
 	levels types.MarginLevels,
 	partyID string,
 ) error {
-	return fmt.Errorf(
-		"invalid margins, expected maintenance(%v), search(%v), initial(%v), release(%v) but got maintenance(%v), search(%v), initial(%v), release(%v) (trader=%v)",
-		maintenance, search, initial, release, levels.MaintenanceMargin, levels.SearchLevel, levels.InitialMargin, levels.CollateralReleaseLevel, partyID)
+	return formatDiff(fmt.Sprintf("invalid margins for party \"%s\"", partyID),
+		map[string]string{
+			"maintenance": u64ToS(maintenance),
+			"search":      u64ToS(search),
+			"initial":     u64ToS(initial),
+			"release":     u64ToS(release),
+		},
+		map[string]string{
+			"maintenance": u64ToS(levels.MaintenanceMargin),
+			"search":      u64ToS(levels.SearchLevel),
+			"initial":     u64ToS(levels.InitialMargin),
+			"release":     u64ToS(levels.CollateralReleaseLevel),
+		},
+	)
+}
+
+func parseExpectedMarginsTable(table *gherkin.DataTable) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"trader",
+		"market id",
+		"maintenance",
+		"search",
+		"initial",
+		"release",
+	}, []string{})
 }

@@ -6,8 +6,8 @@ Feature: Test market depth events for pegged orders
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -25,10 +25,10 @@ Feature: Test market depth events for pegged orders
       | aux2             | BTC   | 100000000 |
 # setup pegged orders
     Then the traders place the following pegged orders:
-      | trader  | market id | side | volume | reference | offset |
-      | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     |
-      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | -15    |
-      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | -10    |
+      | trader  | market id | side | volume | pegged reference | offset |
+      | pegged1 | ETH/DEC19 | sell | 1000   | MID              | 10     |
+      | pegged2 | ETH/DEC19 | buy  | 500    | MID              | -15    |
+      | pegged3 | ETH/DEC19 | buy  | 500    | MID              | -10    |
     Then the pegged orders should have the following states:
       | trader  | market id | side | volume | reference | offset | price | status        |
       | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     | 0     | STATUS_PARKED |

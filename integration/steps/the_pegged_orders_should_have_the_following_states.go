@@ -3,6 +3,7 @@ package steps
 import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/proto"
+
 	"github.com/cucumber/godog/gherkin"
 )
 
@@ -43,7 +44,7 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 }
 
 func parsePeggedOrdersStatesTable(table *gherkin.DataTable) []RowWrapper {
-	return TableWrapper(*table).StrictParse(
+	return StrictParseTable(table, []string{
 		"trader",
 		"market id",
 		"side",
@@ -52,7 +53,7 @@ func parsePeggedOrdersStatesTable(table *gherkin.DataTable) []RowWrapper {
 		"offset",
 		"price",
 		"status",
-	)
+	}, []string{})
 }
 
 type peggedOrdersStatusAssertionRow struct {

@@ -13,27 +13,27 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | id        | quote name | asset | maturity date        | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | my-log-normal-risk-model | default-margin-calculator | 3600             | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 3600   |
+      | name                           | value |
+      | market.auction.minimumDuration | 3600  |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
 
   Scenario: Auction triggered by 1st trigger (lower bound breached)
     Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
-      | trader3 | ETH   | 10000000000 |
-      | trader4 | ETH   | 10000000000 |
-      | aux     | ETH   | 100000000000|
-      | aux2    | ETH   | 100000000000|
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000000000  |
+      | trader2 | ETH   | 10000000000  |
+      | trader3 | ETH   | 10000000000  |
+      | trader4 | ETH   | 10000000000  |
+      | aux     | ETH   | 100000000000 |
+      | aux2    | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
@@ -103,18 +103,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by 1st trigger, upper bound
     Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
-      | trader3 | ETH   | 10000000000 |
-      | trader4 | ETH   | 10000000000 |
-      | aux     | ETH   | 100000000000|
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000000000  |
+      | trader2 | ETH   | 10000000000  |
+      | trader3 | ETH   | 10000000000  |
+      | trader4 | ETH   | 10000000000  |
+      | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
@@ -183,18 +183,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by 1 trigger (upper bound breached)
     Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
-      | trader3 | ETH   | 10000000000 |
-      | trader4 | ETH   | 10000000000 |
-      | aux     | ETH   | 100000000000|
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000000000  |
+      | trader2 | ETH   | 10000000000  |
+      | trader3 | ETH   | 10000000000  |
+      | trader4 | ETH   | 10000000000  |
+      | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
@@ -261,18 +261,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by both triggers (lower bound breached)
     Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
-      | trader3 | ETH   | 10000000000 |
-      | trader4 | ETH   | 10000000000 |
-      | aux     | ETH   | 100000000000|
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000000000  |
+      | trader2 | ETH   | 10000000000  |
+      | trader3 | ETH   | 10000000000  |
+      | trader4 | ETH   | 10000000000  |
+      | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
@@ -351,18 +351,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by both triggers, upper bound
     Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
-      | trader3 | ETH   | 10000000000 |
-      | trader4 | ETH   | 10000000000 |
-      | aux     | ETH   | 100000000000|
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000000000  |
+      | trader2 | ETH   | 10000000000  |
+      | trader3 | ETH   | 10000000000  |
+      | trader4 | ETH   | 10000000000  |
+      | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
@@ -441,18 +441,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by 1st trigger (lower bound breached), extended by second (upper bound)
     Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount      |
-      | trader1 | ETH   | 10000000000 |
-      | trader2 | ETH   | 10000000000 |
-      | trader3 | ETH   | 10000000000 |
-      | trader4 | ETH   | 10000000000 |
-      | aux     | ETH   | 100000000000|
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000000000  |
+      | trader2 | ETH   | 10000000000  |
+      | trader3 | ETH   | 10000000000  |
+      | trader4 | ETH   | 10000000000  |
+      | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     | 
-      | aux     | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux     | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"

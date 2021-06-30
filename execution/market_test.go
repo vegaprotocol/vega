@@ -2335,7 +2335,6 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	var zero uint64 = 0
 	require.Greater(t, lpOrderVolumeBid, zero)
 	require.Greater(t, lpOrderVolumeOffer, zero)
-
 }
 
 func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
@@ -3992,7 +3991,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 
 	// 6 live orders, 2 normal and 4 pegged
 	require.Equal(t, int64(6), tm.market.GetOrdersOnBookCount())
-	require.Equal(t, 4, tm.market.GetPeggedOrderCount())
+	require.Equal(t, 0, tm.market.GetPeggedOrderCount())
 	require.Equal(t, 0, tm.market.GetParkedOrderCount())
 
 	// Remove an order to invalidate reference prices and force pegged orders to park
@@ -5049,7 +5048,9 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				if evt.Order().PartyId == "trader-2-bis" {
+					found = append(found, types.OrderFromProto(evt.Order()))
+				}
 			}
 		}
 

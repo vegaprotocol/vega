@@ -6,8 +6,8 @@ Feature: Test mark to market settlement
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -23,11 +23,11 @@ Feature: Test mark to market settlement
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 49    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -39,8 +39,8 @@ Feature: Test mark to market settlement
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   4921 |    5079 |
-      | trader2 | ETH   | ETH/DEC19 |   1273 |    8727 |
+      | trader1 | ETH   | ETH/DEC19 | 4921   | 5079    |
+      | trader2 | ETH   | ETH/DEC19 | 1273   | 8727    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the traders place the following orders:
@@ -48,20 +48,20 @@ Feature: Test mark to market settlement
       | trader1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   5041 |    4959 |
+      | trader1 | ETH   | ETH/DEC19 | 5041   | 4959    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   7682 |    1318 |
-      | trader3 | ETH   | ETH/DEC19 |   2605 |    7395 |
-      | trader2 | ETH   | ETH/DEC19 |   2605 |    8395 |
+      | trader1 | ETH   | ETH/DEC19 | 7682   | 1318    |
+      | trader3 | ETH   | ETH/DEC19 | 2605   | 7395    |
+      | trader2 | ETH   | ETH/DEC19 | 2605   | 8395    |
 
     Then the following transfers should happen:
       | from    | to     | from account        | to account              | market id | amount | asset |
-      | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |   1000 | ETH   |
+      | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000   | ETH   |
     And the cumulated balance for all accounts should be worth "230000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
@@ -76,11 +76,11 @@ Feature: Test mark to market settlement
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -92,8 +92,8 @@ Feature: Test mark to market settlement
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   4921 |    5079 |
-      | trader2 | ETH   | ETH/DEC19 |   132  |    9868 |
+      | trader1 | ETH   | ETH/DEC19 | 4921   | 5079    |
+      | trader2 | ETH   | ETH/DEC19 | 132    | 9868    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the traders place the following orders:
@@ -101,19 +101,19 @@ Feature: Test mark to market settlement
       | trader1 | ETH/DEC19 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   5041 |    4959 |
+      | trader1 | ETH   | ETH/DEC19 | 5041   | 4959    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC19 | buy  | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   1202 |    4798 |
-      | trader3 | ETH   | ETH/DEC19 |   5461 |    4539 |
-      | trader2 | ETH   | ETH/DEC19 |   5461 |    8539 |
+      | trader1 | ETH   | ETH/DEC19 | 1202   | 4798    |
+      | trader3 | ETH   | ETH/DEC19 | 5461   | 4539    |
+      | trader2 | ETH   | ETH/DEC19 | 5461   | 8539    |
     Then the following transfers should happen:
       | from    | to     | from account        | to account              | market id | amount | asset |
-      | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |   4000 | ETH   |
+      | trader1 | market | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4000   | ETH   |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
 
 # this part show that funds are moved from margin account general account for trader 3 as he does not have
@@ -125,14 +125,14 @@ Feature: Test mark to market settlement
       | trader1 | ETH/DEC19 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |  14002 |       0 |
-      | trader3 | ETH   | ETH/DEC19 |   1402 |    4597 |
-      | trader2 | ETH   | ETH/DEC19 |   1460 |    8539 |
+      | trader1 | ETH   | ETH/DEC19 | 14002  | 0       |
+      | trader3 | ETH   | ETH/DEC19 | 1402   | 4597    |
+      | trader2 | ETH   | ETH/DEC19 | 1460   | 8539    |
 
     Then the following transfers should happen:
       | from    | to      | from account         | to account              | market id | amount | asset |
-      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 |    660 | ETH   |
-      | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 |   4001 | ETH   |
+      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 660    | ETH   |
+      | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4001   | ETH   |
     And the cumulated balance for all accounts should be worth "230000"
 
   @ignore
@@ -147,11 +147,11 @@ Feature: Test mark to market settlement
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 5001  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -163,15 +163,15 @@ Feature: Test mark to market settlement
       | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   4921 |    5079 |
-      | trader2 | ETH   | ETH/DEC19 |    132 |    9868 |
+      | trader1 | ETH   | ETH/DEC19 | 4921   | 5079    |
+      | trader2 | ETH   | ETH/DEC19 | 132    | 9868    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   5041 |    4959 |
+      | trader1 | ETH   | ETH/DEC19 | 5041   | 4959    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -180,8 +180,8 @@ Feature: Test mark to market settlement
 # here we expect trader 2 to still have the same margin as the previous trade did not change the markprice
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 |   9842 |     158 |
-      | trader3 | ETH   | ETH/DEC19 |    132 |    9868 |
-      | trader2 | ETH   | ETH/DEC19 |    132 |    9868 |
+      | trader1 | ETH   | ETH/DEC19 | 9842   | 158     |
+      | trader3 | ETH   | ETH/DEC19 | 132    | 9868    |
+      | trader2 | ETH   | ETH/DEC19 | 132    | 9868    |
     And the cumulated balance for all accounts should be worth "230000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"

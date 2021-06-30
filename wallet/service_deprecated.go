@@ -5,41 +5,12 @@ import (
 	"encoding/hex"
 	"net/http"
 
-	types "code.vegaprotocol.io/vega/proto"
+	typespb "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/proto/api"
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"google.golang.org/grpc/status"
 )
-
-func (s *Service) SignAny(t string, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	req := SignAnyRequest{}
-	if err := unmarshalBody(r, &req); err != nil {
-		writeError(w, newError(err.Error()), http.StatusBadRequest)
-		return
-	}
-	if len(req.InputData) <= 0 {
-		writeError(w, newError("missing inputData field"), http.StatusBadRequest)
-		return
-	}
-	if len(req.PubKey) <= 0 {
-		writeError(w, newError("missing pubKey field"), http.StatusBadRequest)
-		return
-	}
-
-	signature, err := s.handler.SignAny(t, req.InputData, req.PubKey)
-	if err != nil {
-		writeError(w, newError(err.Error()), http.StatusForbidden)
-		return
-	}
-
-	res := SignAnyResponse{
-		HexSignature:    hex.EncodeToString(signature),
-		Base64Signature: base64.StdEncoding.EncodeToString(signature),
-	}
-
-	writeSuccess(w, res, http.StatusOK)
-}
 
 func (s *Service) SignTxSync(t string, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	s.signTx(t, w, r, p, api.SubmitTransactionRequest_TYPE_SYNC)
@@ -85,7 +56,7 @@ func (s *Service) signTx(t string, w http.ResponseWriter, r *http.Request, _ htt
 			if s, ok := status.FromError(err); ok {
 				details := []string{}
 				for _, v := range s.Details() {
-					v := v.(*types.ErrorDetail)
+					v := v.(*typespb.ErrorDetail)
 					details = append(details, v.Message)
 				}
 				writeError(w, newErrorWithDetails(err.Error(), details), http.StatusInternalServerError)

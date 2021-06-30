@@ -74,7 +74,7 @@ func LoadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg := Config{}
+	cfg := NewDefaultConfig()
 	if _, err := toml.Decode(string(buf), &cfg); err != nil {
 		return nil, err
 	}

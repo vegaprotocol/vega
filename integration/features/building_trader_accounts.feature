@@ -1,8 +1,7 @@
 Feature: Test trader accounts
 
   Background:
-
-    And the markets:
+    Given the markets:
       | id           | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19    | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 0                | default-none | default-none     | default-eth-for-future |
       | GBPUSD/DEC19 | USD        | VUSD  | default-simple-risk-model-3 | default-margin-calculator | 0                | default-none | default-none     | default-usd-for-future |
@@ -15,7 +14,7 @@ Feature: Test trader accounts
       | trader  | asset | amount |
       | trader1 | ETH   | 100    |
       | trader1 | VUSD  | 100    |
-    And "trader1" should have one account per asset
+    Then "trader1" should have one account per asset
     And "trader1" should have one margin account per market
 
   Scenario: a trader deposit collateral onto Vega. The general account for this asset increase
@@ -34,6 +33,8 @@ Feature: Test trader accounts
       | trader  | asset | amount |
       | trader1 | ETH   | 100    |
       | trader1 | VUSD  | 100    |
-    And "trader1" should have one account per asset
-    Then "trader1" withdraws "70" from the account "VUSD"
-    And "trader1" should have general account balance of "30" for asset "VUSD"
+    Then "trader1" should have one account per asset
+    When the traders withdraw the following assets:
+      | trader  | asset | amount |
+      | trader1 | VUSD  | 70     |
+    Then "trader1" should have general account balance of "30" for asset "VUSD"

@@ -19,7 +19,7 @@ func TheMarkets(
 	table *gherkin.DataTable,
 ) ([]types.Market, error) {
 	var markets []types.Market
-	for _, row := range TableWrapper(*table).Parse() {
+	for _, row := range parseMarketsTable(table) {
 		mkt := newMarket(config, marketRow{row: row})
 		markets = append(markets, mkt)
 	}
@@ -176,6 +176,22 @@ func openingAuction(row marketRow) *types.AuctionDuration {
 	return auction
 }
 
+func parseMarketsTable(table *gherkin.DataTable) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"id",
+		"quote name",
+		"asset",
+		"risk model",
+		"fees",
+		"oracle config",
+		"price monitoring",
+		"margin calculator",
+		"auction duration",
+	}, []string{
+		"maturity date",
+	})
+}
+
 type marketRow struct {
 	row RowWrapper
 }
@@ -217,15 +233,15 @@ func (r marketRow) auctionDuration() int64 {
 }
 
 func (r marketRow) maturityDate() string {
-	date := r.row.Str("maturity date")
-	if len(date) == 0 {
+	if !r.row.HasColumn("maturity date") {
 		return "2019-12-31T23:59:59Z"
 	}
 
-	timeNano := r.row.MustTime("maturity date").UnixNano()
+	time := r.row.MustTime("maturity date")
+	timeNano := time.UnixNano()
 	if timeNano == 0 {
 		panic(fmt.Errorf("maturity date is required"))
 	}
 
-	return date
+	return r.row.Str("maturity date")
 }

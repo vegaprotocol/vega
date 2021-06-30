@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.39.0
+*2021-06-30*
+
+### Improvements
+- [#3642](https://github.com/vegaprotocol/vega/pull/3642) - Refactor integration tests
+- [#3637](https://github.com/vegaprotocol/vega/pull/3637) - Rewrite pegged / liquidity order control flow
+- [#3635](https://github.com/vegaprotocol/vega/pull/3635) - Unified error system and strict parsing in feature tests
+- [#3632](https://github.com/vegaprotocol/vega/pull/3632) - Add documentation on market instantiation in feature tests
+- [#3599](https://github.com/vegaprotocol/vega/pull/3599) - Return better errors when replay protection happen
+
+### Fixes
+- [#3640](https://github.com/vegaprotocol/vega/pull/3640) - Fix send on closed channel using timer (event bus)
+- [#3638](https://github.com/vegaprotocol/vega/pull/3638) - Fix decimal instantiation in bond slashing
+- [#3621](https://github.com/vegaprotocol/vega/pull/3621) - Remove pegged order from pegged list if order is aggressive and trade
+- [#3612](https://github.com/vegaprotocol/vega/pull/3612) - Clean code in the wallet package
+
+
+## 0.38.0
 *2021-06-11*
 
 ### Improvements

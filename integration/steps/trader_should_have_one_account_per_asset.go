@@ -13,7 +13,7 @@ func TraderShouldHaveOneAccountPerAsset(
 ) error {
 	assets := map[string]struct{}{}
 
-	accounts := getAccounts(broker)
+	accounts := broker.GetAccounts()
 
 	for _, acc := range accounts {
 		if acc.Owner == owner && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {

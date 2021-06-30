@@ -3,7 +3,7 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
   Background:
     Given time is updated to "2020-10-16T00:00:00Z"
     And the markets:
-      | id      | quote name | asset | maturity date        | auction duration | risk model                  | margin calculator         | fees         | price monitoring | oracle config          |
+      | id        | quote name | asset | maturity date        | auction duration | risk model                  | margin calculator         | fees         | price monitoring | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | 1                | default-simple-risk-model-3 | default-margin-calculator | default-none | default-none     | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
@@ -25,11 +25,11 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type        | tif     | 
-      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | auxiliary  | ETH/DEC20 | sell | 1      | 200      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | aux2       | ETH/DEC20 | buy  | 1      | 100      | 0                | TYPE_LIMIT  | TIF_GTC | 
-      | auxiliary  | ETH/DEC20 | sell | 1      | 100      | 0                | TYPE_LIMIT  | TIF_GTC | 
+      | trader    | market id | side | volume | price | resulting trades | type       | tif     |
+      | auxiliary | ETH/DEC20 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2      | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
@@ -38,8 +38,8 @@ Feature: Trader below initial margin, but above maintenance can submit an order 
     Then time is updated to "2020-10-16T00:01:00Z"
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif      | reference |
-      | trader3 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC  | ref-1     |
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader3 | ETH/DEC20 | sell | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |

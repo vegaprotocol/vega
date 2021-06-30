@@ -9,8 +9,8 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees           | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 1      |
+      | name                           | value |
+      | market.auction.minimumDuration | 1     |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
@@ -28,9 +28,9 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | t2_aux    | BTC   | 100000000 |
       | trader-lp | BTC   | 100000000 |
     And the traders submit the following liquidity provision:
-      | id  | party     | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | buy        | BID             | 50               | -10          |
-      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | sell       | ASK             | 50               | 10           |
+      | id  | party     | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | buy  | BID              | 50         | -10    |
+      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0.001 | sell | ASK              | 50         | 10     |
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -46,7 +46,7 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | tt_12  | ETH/DEC19 | buy  | 5      | 20    | 0                | TYPE_LIMIT | TIF_GTT | tt_12-1   | 3600       |
       | tt_13  | ETH/DEC19 | sell | 5      | 20    | 1                | TYPE_LIMIT | TIF_GTT | tt_13-1   | 3600       |
       | tt_14  | ETH/DEC19 | sell | 2      | 50    | 0                | TYPE_LIMIT | TIF_GTC | tt_14-1   |            |
-      | tt_14  | ETH/DEC19 | sell | 2      | 50    | 100              | TYPE_LIMIT | TIF_GTC | tt_14-2   |            |
+      | tt_14  | ETH/DEC19 | sell | 2      | 50    | 0                | TYPE_LIMIT | TIF_GTC | tt_14-2   |            |
       | tt_15  | ETH/DEC19 | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | tt_15-1   |            |
       | tt_16  | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-1   |            |
 

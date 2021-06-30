@@ -23,9 +23,9 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | auxiliary | ETH   | 100000000000 |
       | trader-lp | ETH   | 100000000000 |
     And the traders submit the following liquidity provision:
-      | id  | party     | market id | commitment amount | fee | order side | order reference | order proportion | order offset |
-      | lp1 | trader-lp | ETH/DEC20 | 30000000          | 0.3 | buy        | BID             | 50               | -10          |
-      | lp1 | trader-lp | ETH/DEC20 | 30000000          | 0.3 | sell       | ASK             | 50               | 10           |
+      | id  | party     | market id | commitment amount | fee | side | pegged reference | proportion | offset |
+      | lp1 | trader-lp | ETH/DEC20 | 30000000          | 0.3 | buy  | BID              | 50         | -10    |
+      | lp1 | trader-lp | ETH/DEC20 | 30000000          | 0.3 | sell | ASK              | 50         | 10     |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the traders place the following orders:
@@ -68,10 +68,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader1 | t1-s-1    | 12500000 | 0          | TIF_GTC |
       | trader2 | t2-b-1    | 10500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -91,10 +87,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader1 | t1-s-1    | 14500000 | 0          | TIF_GTC |
       | trader2 | t2-b-1    | 13500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -103,7 +95,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     # Check MTM Loss transfer happened
     Then the following transfers should happen:
       | from    | to     | from account         | to account              | market id | amount | asset |
-      | trader3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 650575  | ETH   |
+      | trader3 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 650575 | ETH   |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1574328 | 991375672 |
@@ -114,10 +106,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader1 | t1-s-1    | 16500000 | 0          | TIF_GTC |
       | trader2 | t2-b-1    | 15500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -127,20 +115,16 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from    | to      | from account         | to account              | market id | amount  | asset |
       | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 1574328 | ETH   |
-      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1799229 | ETH   |
+      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2399217 | ETH   |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin  | general   |
-      | trader3 | ETH   | ETH/DEC20 | 1799229 | 989150771 |
+      | trader3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
 
     # Amend orders to set slippage to 180
     When the traders amend the following orders:
       | trader  | reference | price    | size delta | tif     |
       | trader1 | t1-s-1    | 18500000 | 0          | TIF_GTC |
       | trader2 | t2-b-1    | 17500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -149,11 +133,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
     # Check MTM Loss transfer happened
     Then the following transfers should happen:
       | from    | to      | from account         | to account              | market id | amount  | asset |
-      | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 1799229 | ETH   |
-      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2024132 | ETH   |
+      | trader3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
+      | trader3 | trader3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224903 | ETH   |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin  | general   |
-      | trader3 | ETH   | ETH/DEC20 | 2024132 | 986925868 |
+      | trader3 | ETH   | ETH/DEC20 | 2624120 | 986325880 |
 
     # Amend orders to set slippage to 140
     # Amending prices down, so amend buy order first, so it doesn't uncross with the lowered sell order
@@ -161,10 +145,6 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader2 | t2-b-1    | 13500000 | 0          | TIF_GTC |
       | trader1 | t1-s-1    | 14500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
 
     When the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -174,7 +154,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from    | to      | from account            | to account           | market id | amount  | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 4000000 | ETH   |
-      | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 4449804 | ETH   |
+      | trader3 | trader3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 5049792 | ETH   |
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin  | general   |
       | trader3 | ETH   | ETH/DEC20 | 1574328 | 991375672 |
@@ -185,12 +165,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader2 | t2-b-1    | 11500000 | 0          | TIF_GTC |
       | trader1 | t1-s-1    | 12500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
-
-    When the traders place the following orders:
+    And the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 12000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
       | trader2 | ETH/DEC20 | buy  | 1      | 12000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-8    |
@@ -210,12 +185,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader2 | t2-b-1    | 10500000 | 0          | TIF_GTC |
       | trader1 | t1-s-1    | 11500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
-
-    When the traders place the following orders:
+    And the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 11000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-6    |
       | trader2 | ETH/DEC20 | buy  | 1      | 11000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-9    |
@@ -234,12 +204,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader  | reference | price    | size delta | tif     |
       | trader2 | t2-b-1    | 9500000  | 0          | TIF_GTC |
       | trader1 | t1-s-1    | 10500000 | 0          | TIF_GTC |
-    Then the following amendments should be accepted:
-      | trader  | reference |
-      | trader1 | t1-s-1    |
-      | trader2 | t2-s-1    |
-
-    When the traders place the following orders:
+    And the traders place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-7    |
       | trader2 | ETH/DEC20 | buy  | 1      | 10000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-10   |

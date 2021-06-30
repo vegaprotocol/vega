@@ -8,12 +8,7 @@ import (
 )
 
 func TheFeesConfiguration(config *market.Config, name string, table *gherkin.DataTable) error {
-	r, err := GetFirstRow(*table)
-	if err != nil {
-		return err
-	}
-
-	row := feesConfigRow{row: r}
+	row := feesConfigRow{row: parseFeesConfigTable(table)}
 
 	return config.FeesConfig.Add(name, &types.Fees{
 		Factors: &types.FeeFactors{
@@ -21,6 +16,13 @@ func TheFeesConfiguration(config *market.Config, name string, table *gherkin.Dat
 			MakerFee:          row.makerFee(),
 		},
 	})
+}
+
+func parseFeesConfigTable(table *gherkin.DataTable) RowWrapper {
+	return StrictParseFirstRow(table, []string{
+		"maker fee",
+		"infrastructure fee",
+	}, []string{})
 }
 
 type feesConfigRow struct {

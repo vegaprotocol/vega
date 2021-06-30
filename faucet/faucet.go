@@ -2,15 +2,14 @@ package faucet
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"net/http"
 	"strconv"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/fsutil"
 	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
@@ -18,7 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/proto/api"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/wallet"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
@@ -154,7 +153,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 
 	ce := &commandspb.ChainEvent{
-		Nonce: makeNonce(),
+		Nonce: crypto.NewNonce(),
 		Event: &commandspb.ChainEvent_Builtin{
 			Builtin: &types.BuiltinAssetEvent{
 				Action: &types.BuiltinAssetEvent_Deposit{
@@ -174,7 +173,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
-	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	alg, err := wcrypto.NewSignatureAlgorithm(wcrypto.Ed25519)
 	if err != nil {
 		f.log.Error("unable to instantiate new algorithm", logging.Error(err))
 		writeError(w, newError("unable to instantiate crypto"), http.StatusInternalServerError)
@@ -284,7 +283,7 @@ func Init(path, passphrase string) (string, error) {
 	}
 
 	// gen the keypair
-	algo := crypto.NewEd25519()
+	algo := wcrypto.NewEd25519()
 	kp, err := wallet.GenKeypair(algo.Name())
 	if err != nil {
 		return "", fmt.Errorf("unable to generate new key pair: %v", err)
@@ -338,12 +337,4 @@ func newError(e string) HTTPError {
 	return HTTPError{
 		ErrorStr: e,
 	}
-}
-
-func makeNonce() uint64 {
-	max := &big.Int{}
-	// set it to the max value of the uint64
-	max.SetUint64(^uint64(0))
-	nonce, _ := rand.Int(rand.Reader, max)
-	return nonce.Uint64()
 }

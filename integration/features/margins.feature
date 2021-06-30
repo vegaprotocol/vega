@@ -20,9 +20,9 @@ Feature: Test trader accounts
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     |
-      | aux     | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC19 | buy  | 1      | 9     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     When the traders place the following orders:
@@ -71,9 +71,8 @@ Feature: Test trader accounts
       | trader2 | trader2-1 |
 
     When the traders place the following orders:
-      | trader    | market id | side | volume | price |  type       | tif     |reference |
-      | traderGuy | ETH/DEC19 | sell | 1      | 1000  |  TYPE_LIMIT |  TIF_GTC | trader1-1 |
-    Then the system should return error "margin check failed"
+      | trader    | market id | side | volume | price | type       | tif     | reference | error               |
+      | traderGuy | ETH/DEC19 | sell | 1      | 1000  | TYPE_LIMIT | TIF_GTC | trader1-1 | margin check failed |
     Then the following orders should be rejected:
       | trader    | market id | reason                          |
       | traderGuy | ETH/DEC19 | ORDER_ERROR_MARGIN_CHECK_FAILED |

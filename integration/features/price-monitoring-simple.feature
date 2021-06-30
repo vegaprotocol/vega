@@ -13,27 +13,27 @@ Feature: Price monitoring test using simple risk model
       | id        | quote name | asset | auction duration | maturity date        | risk model           | margin calculator         | fees         | price monitoring    | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | 240              | 2020-12-31T23:59:59Z | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 240    |
+      | name                           | value |
+      | market.auction.minimumDuration | 240   |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
 
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
     Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount        |
-      | trader1 | ETH   | 10000         |
-      | trader2 | ETH   | 10000         |
-      | aux     | ETH   | 100000000000  |
-      | aux2    | ETH   | 100000000000  |
+      | trader  | asset | amount       |
+      | trader1 | ETH   | 10000        |
+      | trader2 | ETH   | 10000        |
+      | aux     | ETH   | 100000000000 |
+      | aux2    | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC20 | buy  | 1      | 100    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 100    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
@@ -77,11 +77,11 @@ Feature: Price monitoring test using simple risk model
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC20 | buy  | 1      | 100    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 100    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
@@ -98,9 +98,8 @@ Feature: Price monitoring test using simple risk model
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | type       | tif     | reference |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111   | TYPE_LIMIT | TIF_GFN | ref-1     |
-    Then the system should return error "OrderError: non-persistent order trades out of price bounds"
+      | trader  | market id | side | volume | price | type       | tif     | reference | error                                                       |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111   | TYPE_LIMIT | TIF_GFN | ref-1     | OrderError: non-persistent order trades out of price bounds |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order don't result in an auction (both triggers breached)
@@ -113,11 +112,11 @@ Feature: Price monitoring test using simple risk model
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC20 | buy  | 1      | 100    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 100    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
@@ -132,7 +131,7 @@ Feature: Price monitoring test using simple risk model
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 111   | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
+      | trader2 | ETH/DEC20 | buy  | 1      | 111   | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
 
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
@@ -150,12 +149,10 @@ Feature: Price monitoring test using simple risk model
     And the mark price should be "111" for the market "ETH/DEC20"
 
     When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 211   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 211   | 0                | TYPE_LIMIT | TIF_FOK | ref-4     |
-
-    Then the system should return error "OrderError: non-persistent order trades out of price bounds"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
+      | trader1 | ETH/DEC20 | sell | 1      | 211   | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |                                                             |
+      | trader2 | ETH/DEC20 | buy  | 1      | 211   | 0                | TYPE_LIMIT | TIF_FOK | ref-4     | OrderError: non-persistent order trades out of price bounds |
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "111" for the market "ETH/DEC20"
 
   Scenario: Non-persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes.
@@ -169,11 +166,11 @@ Feature: Price monitoring test using simple risk model
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC20 | buy  | 1      | 100    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 100    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100" for the market "ETH/DEC20"
@@ -224,11 +221,11 @@ Feature: Price monitoring test using simple risk model
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC20 | buy  | 1      | 110    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 110    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110" for the market "ETH/DEC20"
@@ -315,11 +312,11 @@ Feature: Price monitoring test using simple risk model
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC20 | buy  | 1      | 110    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 110    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110" for the market "ETH/DEC20"
@@ -392,11 +389,11 @@ Feature: Price monitoring test using simple risk model
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC20 | buy  | 1      | 110    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 110    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110" for the market "ETH/DEC20"
@@ -488,11 +485,11 @@ Feature: Price monitoring test using simple risk model
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type        | tif     |
-      | aux     | ETH/DEC20 | buy  | 1      | 99     | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 134    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2    | ETH/DEC20 | buy  | 1      | 110    | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux     | ETH/DEC20 | sell | 1      | 110    | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 134   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux    | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "110" for the market "ETH/DEC20"

@@ -20,11 +20,11 @@ import (
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/crypto"
 	"code.vegaprotocol.io/vega/wallet/mocks"
-	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testService struct {
@@ -85,6 +85,7 @@ func TestService(t *testing.T) {
 	t.Run("Signing transaction with invalid payload fails", testSigningTransactionWithInvalidPayloadFails)
 	t.Run("Signing transaction without pub-key fails", testSigningTransactionWithoutPubKeyFails)
 	t.Run("Signing transaction without command fails", testSigningTransactionWithoutCommandFails)
+	t.Run("Signing anything succeeds", testSigningAnythingSucceeds)
 }
 
 func testServiceCreateWalletOK(t *testing.T) {
@@ -789,6 +790,24 @@ func testSigningTransactionWithoutCommandFails(t *testing.T) {
 	// then
 	result := response.Result()
 	require.Equal(t, http.StatusBadRequest, result.StatusCode)
+}
+
+func testSigningAnythingSucceeds(t *testing.T) {
+	s := getTestService(t)
+	defer s.ctrl.Finish()
+
+	s.handler.EXPECT().SignAny(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).Return([]byte("some sig"), nil)
+	payload := `{"inputData": "some data", "pubKey": "asdasasdasd"}`
+	r := httptest.NewRequest("POST", "scheme://host/path", bytes.NewBufferString(payload))
+	r.Header.Set("Authorization", "Bearer eyXXzA")
+
+	w := httptest.NewRecorder()
+
+	wallet.ExtractToken(s.SignAny)(w, r, nil)
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func newAuthenticatedRequest(payload string) *http.Request {

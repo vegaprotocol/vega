@@ -12,8 +12,8 @@ Feature: Price monitoring test for issue 2668
       | id        | quote name | asset | maturity date        | risk model               | margin calculator         | auction duration | fees         | price monitoring    | oracle config          |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
-      | name                           | value  |
-      | market.auction.minimumDuration | 300    |
+      | name                           | value |
+      | market.auction.minimumDuration | 300   |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
@@ -28,11 +28,11 @@ Feature: Price monitoring test for issue 2668
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type        | tif     |
-      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2       | ETH/DEC20 | buy  | 1      | 5670000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
+      | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2      | ETH/DEC20 | buy  | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -88,20 +88,20 @@ Feature: Price monitoring test for issue 2668
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
   Scenario: Lower bound breached
-   Given the traders deposit on asset's general account the following amount:
+    Given the traders deposit on asset's general account the following amount:
       | trader    | asset | amount       |
       | trader1   | ETH   | 10000000000  |
-      | trader2   | ETH   | 10000000000  | 
+      | trader2   | ETH   | 10000000000  |
       | auxiliary | ETH   | 100000000000 |
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type        | tif     |
-      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2       | ETH/DEC20 | buy  | 1      | 5670000  | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
+      | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2      | ETH/DEC20 | buy  | 1      | 5670000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
@@ -156,20 +156,20 @@ Feature: Price monitoring test for issue 2668
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
   Scenario: Upper bound breached (scale prices down by 10000)
-  Given the traders deposit on asset's general account the following amount:
+    Given the traders deposit on asset's general account the following amount:
       | trader    | asset | amount       |
       | trader1   | ETH   | 10000000000  |
-      | trader2   | ETH   | 10000000000  | 
+      | trader2   | ETH   | 10000000000  |
       | auxiliary | ETH   | 100000000000 |
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type        | tif     |
-      | auxiliary  | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT  | TIF_GTC |
-      | auxiliary  | ETH/DEC20 | sell | 1      | 567      | 0                | TYPE_LIMIT  | TIF_GTC |
-      | aux2       | ETH/DEC20 | buy  | 1      | 567      | 0                | TYPE_LIMIT  | TIF_GTC |
+      | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
+      | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | auxiliary | ETH/DEC20 | sell | 1      | 567      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2      | ETH/DEC20 | buy  | 1      | 567      | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 

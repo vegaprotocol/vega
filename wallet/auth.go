@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"encoding/hex"
 	"errors"
-	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
@@ -164,15 +163,5 @@ func ExtractToken(f func(string, http.ResponseWriter, *http.Request, httprouter.
 }
 
 func genSession() string {
-	return hex.EncodeToString(crypto.Hash([]byte(randSeq(10))))
-}
-
-var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = chars[rand.Intn(len(chars))]
-	}
-	return string(b)
+	return hex.EncodeToString(crypto.Hash(crypto.RandomBytes(10)))
 }

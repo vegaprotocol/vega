@@ -5,9 +5,9 @@ Feature: Target stake
 
   Background:
     Given the following network parameters are set:
-      | name                              | value   |
-      | market.stake.target.timeWindow    | 168h    |
-      | market.stake.target.scalingFactor | 1.5     |
+      | name                              | value |
+      | market.stake.target.timeWindow    | 168h  |
+      | market.stake.target.scalingFactor | 1.5   |
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 10          | -10           | 0.1                    |
@@ -15,8 +15,8 @@ Feature: Target stake
       | risk aversion | tau                    | mu | r  | sigma |
       | 0.000001      | 0.00011407711613050422 | -1 | -1 | -1    |
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.00025   | 0.0005             | 0.001         |
+      | maker fee | infrastructure fee |
+      | 0.00025   | 0.0005             |
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
       | 1.1           | 1.2            | 1.4            |
@@ -56,9 +56,9 @@ Feature: Target stake
     # Traders 1, 2, 3 go long
     When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_1   | ETH/DEC21 | buy  | 10     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
-      | tt_2   | ETH/DEC21 | buy  | 20     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
-      | tt_3   | ETH/DEC21 | buy  | 30     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+      | tt_1   | ETH/DEC21 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
+      | tt_2   | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
+      | tt_3   | ETH/DEC21 | buy  | 30     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
@@ -76,7 +76,7 @@ Feature: Target stake
     # Trader 3 closes out 20
     When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | tt_3 | ETH/DEC21 | sell | 20 | 90 | 1 | TYPE_LIMIT | TIF_GTC | tt_2_1 |
+      | tt_3   | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
     Then the mark price should be "90" for the market "ETH/DEC21"
 

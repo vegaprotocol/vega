@@ -1,15 +1,15 @@
 package wallet_test
 
 import (
-	"crypto/rand"
 	"io/ioutil"
-	"math/big"
 	"os"
 	"path/filepath"
+
+	"code.vegaprotocol.io/vega/crypto"
 )
 
 func rootDir() string {
-	path := filepath.Join(rootDirPath, randSeq(10))
+	path := filepath.Join(rootDirPath, crypto.RandomStr(10))
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		panic(err)
@@ -22,7 +22,7 @@ type configDir struct {
 }
 
 func newConfigDir() configDir {
-	path := filepath.Join("/tmp/vegatests/wallet/", randSeq(10))
+	path := filepath.Join("/tmp/vegatests/wallet/", crypto.RandomStr(10))
 
 	return configDir{
 		path: path,
@@ -61,16 +61,5 @@ func (d configDir) Remove() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		v, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
-		b[i] = chars[v.Int64()]
-	}
-	return string(b)
 }
 
