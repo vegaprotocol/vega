@@ -398,8 +398,8 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 				continue
 			}
 			ref := e.getRefPrice(b.Trigger.Horizon)
-			min, _ := num.UintFromDecimal(ref.Mul(b.DownFactor).Floor())
-			max, _ := num.UintFromDecimal(ref.Mul(b.UpFactor).Round(0))
+			min, _ := num.UintFromDecimal(ref.Mul(b.DownFactor).Ceil())
+			max, _ := num.UintFromDecimal(ref.Mul(b.UpFactor).Floor())
 			e.priceRangesCache[b] = priceRange{
 				MinPrice:       min,
 				MaxPrice:       max,

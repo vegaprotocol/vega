@@ -172,8 +172,8 @@ func (e *Engine) updateSizes(
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
 		prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskprice.Clone(), o.Price.Clone(), isBid, minPrice.Clone(), maxPrice.Clone())
-		if prob.LessThanOrEqual(num.DecimalFromFloat(0.0)) {
-			proportion = num.DecimalFromFloat(0.0)
+		if prob.IsZero() || prob.IsNegative() {
+			proportion = num.DecimalZero()
 		}
 
 		sum = sum.Add(proportion)
@@ -185,9 +185,8 @@ func (e *Engine) updateSizes(
 	}
 
 	for i, o := range orders {
-		scaling := num.DecimalFromFloat(0.0)
-		prob := probs[i]
-		if prob.GreaterThan(num.DecimalFromFloat(0.0)) {
+		scaling := num.DecimalZero()
+		if prob := probs[i]; !prob.IsZero() {
 			fraction := validatedProportions[i].Div(sum)
 			scaling = fraction.Div(prob)
 		}
