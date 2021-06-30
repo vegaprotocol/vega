@@ -17,6 +17,8 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 	parties := map[string]string{}
 	keys := []string{}
 
+	// var clp *types.LiquidityProvisionSubmission
+	// checkAmt := num.NewUint(50000000)
 	for _, r := range parseSubmitLiquidityProvisionTable(table) {
 		row := submitLiquidityProvisionRow{row: r}
 
@@ -46,8 +48,18 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 		} else {
 			lp.Sells = append(lp.Sells, lo)
 		}
+		// if lp.CommitmentAmount.EQ(checkAmt) {
+		// clp = lp
+		// }
 	}
-
+	/*
+		if clp != nil {
+			return fmt.Errorf(
+				"Offset buy: %d\nOffset sell: %d\n",
+				clp.Buys[0].Offset,
+				clp.Sells[0].Offset,
+			)
+		}*/
 	// ensure we always submit in the same order
 	sort.Strings(keys)
 	for _, id := range keys {

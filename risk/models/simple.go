@@ -21,7 +21,7 @@ func NewSimple(ps *types.SimpleRiskModel, asset string) (*Simple, error) {
 		factorLong:  ps.Params.FactorLong,
 		factorShort: ps.Params.FactorShort,
 		maxMoveUp:   ps.Params.MaxMoveUp,
-		minMoveDown: ps.Params.MinMoveDown,
+		minMoveDown: ps.Params.MinMoveDown.Abs(), // use Abs in case the value is negative
 		asset:       asset,
 		prob:        ps.Params.ProbabilityOfTrading,
 	}, nil

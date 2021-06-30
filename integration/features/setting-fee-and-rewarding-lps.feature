@@ -5,7 +5,7 @@ Feature: Test liquidity provider reward distribution
   Background:
     Given the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
-      | 0.1  | 0.1   | 500         | -500          | 0.1                    |
+      | 0.1  | 0.1   | 500         | 500           | 0.1                    |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.0004    | 0.001              |

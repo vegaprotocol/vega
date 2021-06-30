@@ -22,8 +22,8 @@ func ThePriceMonitoringBoundsForTheMarketShouldBe(engine *execution.Engine, mark
 
 		var found bool
 		for _, v := range marketData.PriceMonitoringBounds {
-			if v.MinValidPrice == expected.MinValidPrice &&
-				v.MaxValidPrice == expected.MaxValidPrice {
+			if v.MinValidPrice.EQ(expected.MinValidPrice) &&
+				v.MaxValidPrice.EQ(expected.MaxValidPrice) {
 				found = true
 			}
 		}
