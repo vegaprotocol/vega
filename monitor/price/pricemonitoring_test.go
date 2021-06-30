@@ -194,7 +194,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
-	cPrice = cPrice.Sub(currentPrice, maxDown1)
+	cPrice = num.Sum(one, cPrice.Sub(currentPrice, maxDown1)) // add one bc price bounds are now using Ceil for min price
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
@@ -230,7 +230,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err, currentPrice.String())
 
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
-	cPrice = num.Sum(currentPrice, maxUp2)
+	cPrice = num.Sum(currentPrice, num.Zero().Sub(maxUp2, one)) // max price bound is now floored, so sub 1 to stay below second price bound
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
@@ -242,7 +242,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
-	cPrice = cPrice.Sub(currentPrice, maxDown2)
+	cPrice = num.Sum(cPrice.Sub(currentPrice, maxDown2), one) // add 1 back, avoid breaching both down limits
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
@@ -659,9 +659,13 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	prob1 := num.DecimalFromFloat(t1.Probability)
 	prob2 := num.DecimalFromFloat(t2.Probability)
 
+	one := num.NewUint(1)
 	t1lb1, _ := num.UintFromDecimal(pMin1)
+	t1lb1.AddSum(one) // account for value being ceil'ed
 	t1ub1, _ := num.UintFromDecimal(pMax1)
+	t1ub1.Sub(t1ub1, one) // floor
 	t2lb1, _ := num.UintFromDecimal(pMin2)
+	t2lb1.AddSum(one) // again: ceil
 	t2ub1, _ := num.UintFromDecimal(pMax2)
 
 	riskModel.EXPECT().PriceRange(decPrice, h1, prob1).Times(1).Return(pMin1, pMax1)
@@ -730,9 +734,13 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	_, pMin2, pMax2, _, _ = getPriceBounds(cPrice, 1*4, 2*4)
 
 	t1lb1, _ = num.UintFromDecimal(pMin1)
+	t1lb1.AddSum(one) // again ceil
 	t1ub1, _ = num.UintFromDecimal(pMax1)
+	t1ub1.Sub(t1ub1, one) // floor...
 	t2lb1, _ = num.UintFromDecimal(pMin2)
+	t2lb1.AddSum(one) // ceil...
 	t2ub1, _ = num.UintFromDecimal(pMax2)
+	t2ub1.Sub(t2ub1, one) // floor...
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
@@ -810,6 +818,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	settings.FromProto(pSet)
 
 	decPrice, pMin, pMax, maxDown, maxUp := getPriceBounds(currentPrice, 5, 10)
+	one := num.NewUint(1)
 	ctx := context.Background()
 
 	riskModel.EXPECT().PriceRange(decPrice, gomock.Any(), gomock.Any()).Times(1).Return(pMin, pMax)
@@ -831,10 +840,11 @@ func TestMarketInGenericAuction(t *testing.T) {
 	require.NoError(t, err)
 
 	cPrice := num.Sum(currentPrice, maxUp)
+	cPrice.Sub(cPrice, one)
 	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
-	cPrice.Sub(currentPrice, maxDown)
+	cPrice.Sub(num.Sum(currentPrice, one), maxDown)
 	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
@@ -947,12 +957,14 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	_, _ = pm.GetValidPriceRange()
 	now = now.Add(time.Hour)
 	cPrice = num.Sum(currentPrice, maxUp1)
+	cPrice.Sub(cPrice, one)
 	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
 	_, _ = pm.GetValidPriceRange()
 	now = now.Add(time.Minute)
 	cPrice.Sub(currentPrice, maxDown1)
+	cPrice.AddSum(one)
 	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
