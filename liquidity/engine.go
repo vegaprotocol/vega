@@ -471,7 +471,7 @@ func (e *Engine) Update(
 	}
 
 	for _, lp := range e.provisions.Slice() {
-		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.PartyId, repriceFn)
+		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), lp.PartyId, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}

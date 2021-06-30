@@ -102,7 +102,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
   Scenario: second scenario for volume at near price monitoring bounds with log-normal
 
-    And the log normal risk model named "log-normal-risk-model-1":
+    Given the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau     | mu | r | sigma |
       | 0.000001      | 0.00273 | 0  | 0 | 1.2   |
     And the fees configuration named "fees-config-1":
@@ -123,13 +123,10 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader1 | ETH2  | 10000000  |
       | trader2 | ETH2  | 10000000  |
 
-    Given the traders submit the following liquidity provision:
+    And the traders submit the following liquidity provision:
       | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | -100   |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    |
-    Then debug liquidity submission errors
-    And debug transaction errors
-    And debug liquidity provision events
     And the traders place the following orders:
       | trader  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -139,9 +136,6 @@ Feature: Test margin for lp near price monitoring boundaries
 
     When the opening auction period ends for market "ETH2/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "1000"
-    Then debug liquidity submission errors
-    And debug transaction errors
-    And debug liquidity provision events
 
     And the traders should have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
@@ -174,10 +168,18 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader | asset | market id  | margin   | general  | bond     |
       | lp1    | ETH2  | ETH2/MAR22 | 39083413 | 10916587 | 50000000 |
 
+    And clear order events
     Then the traders place the following orders:
       | trader  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
 
+    And the market data for the market "ETH2/MAR22" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
+    Then debug liquidity submission errors
+    And debug transaction errors
+    And debug liquidity provision events
+    And debug orders
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
       | sell | 1109  | 90173  |
