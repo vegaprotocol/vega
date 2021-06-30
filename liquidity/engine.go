@@ -688,7 +688,7 @@ func (e *Engine) createOrdersFromShape(
 			ref = lp.Sells[i]
 		}
 
-		if order != nil && (order.HasTraded() || order.Size != o.LiquidityImpliedVolume || order.Price != o.Price) {
+		if order != nil && (order.HasTraded() || order.Size != o.LiquidityImpliedVolume || order.Price.NEQ(o.Price)) {
 			// we always remove the order from our store, and add it to the amendment
 
 			// only amend if order remaining > 0
