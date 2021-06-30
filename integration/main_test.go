@@ -257,6 +257,12 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^debug auction events$`, func() error {
 		return steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
 	})
+	s.Step(`^debug transaction errors$`, func() error {
+		return steps.DebugTxErrors(execsetup.broker, execsetup.log)
+	})
+	s.Step(`^debug liquidity submission errors$`, func() error {
+		return steps.DebugLPSTxErrors(execsetup.broker, execsetup.log)
+	})
 
 	// Event steps
 	s.Step(`^clear order events by reference:$`, func(table *gherkin.DataTable) error {

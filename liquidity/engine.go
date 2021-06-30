@@ -485,7 +485,7 @@ func (e *Engine) Update(
 
 // CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers
 func (e *Engine) CalculateSuppliedStake() *num.Uint {
-	ss := num.NewUint(0)
+	ss := num.Zero()
 	for _, v := range e.provisions {
 		ss.AddSum(v.CommitmentAmount)
 	}

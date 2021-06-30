@@ -70,8 +70,10 @@ Feature: Position resolution case 4
 #check positions
     Then the traders should have the following profit and loss:
       | trader           | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 0      | 0              | -10000       |
+      | designatedLooser | 0      | 0              | -11500       |
       | buySideProvider  | 101    | 11500          | -1363        |
+      # value before uint stuff
+      #| designatedLooser | 0      | 0              | -10000       |
 
 # checking margins
     Then the traders should have the following account balances:

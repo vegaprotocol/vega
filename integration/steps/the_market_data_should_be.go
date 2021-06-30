@@ -303,14 +303,14 @@ func mappedMD(md types.MarketData) *MappedMD {
 		md: md,
 	}
 	r.uintMap = map[string]*num.Uint{
-		"mark price":              r.md.MarkPrice,
-		"best bid price":          r.md.BestBidPrice,
-		"best offer price":        r.md.BestOfferPrice,
-		"best static bid price":   r.md.BestStaticBidPrice,
-		"best static offer price": r.md.BestStaticOfferPrice,
-		"mid price":               r.md.MidPrice,
-		"static mid price":        r.md.StaticMidPrice,
-		"indicative price":        r.md.IndicativePrice,
+		"mark price":              r.md.MarkPrice.Clone(),
+		"best bid price":          r.md.BestBidPrice.Clone(),
+		"best offer price":        r.md.BestOfferPrice.Clone(),
+		"best static bid price":   r.md.BestStaticBidPrice.Clone(),
+		"best static offer price": r.md.BestStaticOfferPrice.Clone(),
+		"mid price":               r.md.MidPrice.Clone(),
+		"static mid price":        r.md.StaticMidPrice.Clone(),
+		"indicative price":        r.md.IndicativePrice.Clone(),
 	}
 	r.u64Map = map[string]*uint64{
 		"best bid volume":          &r.md.BestBidVolume,
