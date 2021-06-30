@@ -489,7 +489,7 @@ func TestCheckBoundViolationsAcrossTimeWith1HorizonProbabilityPair(t *testing.T)
 }
 /**/
 
-func testAuctionStartedAndEndendBy1Trigger(t *testing.T) {
+func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	riskModel := mocks.NewMockRangeProvider(ctrl)
@@ -1103,26 +1103,4 @@ func (d *decMatcher) Matches(x interface{}) bool {
 
 func (d *decMatcher) String() string {
 	return "a decimal equal to " + d.v.String()
-}
-
-type uintMatcher struct {
-	v *num.Uint
-}
-
-func UintMatcher(v *num.Uint) gomock.Matcher {
-	return &uintMatcher{
-		v: v.Clone(),
-	}
-}
-
-func (u *uintMatcher) Matches(x interface{}) bool {
-	i, ok := x.(*num.Uint)
-	if !ok {
-		return false
-	}
-	return u.v.EQ(i)
-}
-
-func (u *uintMatcher) String() string {
-	return "num.Uint == " + u.String()
 }

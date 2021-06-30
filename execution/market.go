@@ -2698,12 +2698,16 @@ func (m *Market) getBestStaticBidPriceAndVolume() (*num.Uint, uint64, error) {
 }
 
 func (m *Market) getBestStaticPrices() (bid, ask *num.Uint, err error) {
-	bid, ask = num.Zero(), num.Zero()
+	ask = num.Zero()
 	bid, err = m.getBestStaticBidPrice()
 	if err != nil {
+		bid = num.Zero()
 		return
 	}
 	ask, err = m.getBestStaticAskPrice()
+	if err != nil {
+		ask = num.Zero()
+	}
 	return
 }
 

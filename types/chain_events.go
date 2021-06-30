@@ -270,7 +270,7 @@ func NewBuiltinAssetEventFromProto(p *proto.BuiltinAssetEvent) (*BuiltinAssetEve
 		}
 		return ae, nil
 	default:
-		return nil, errors.New("Unknown asset event type")
+		return nil, errors.New("unknown asset event type")
 	}
 }
 
@@ -393,7 +393,7 @@ func NewERC20Event(p *proto.ERC20Event) (*ERC20Event, error) {
 		}
 		return &e, nil
 	default:
-		return nil, errors.New("Unknown erc20 event type")
+		return nil, errors.New("unknown erc20 event type")
 	}
 }
 
@@ -628,7 +628,7 @@ func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
 	var failed bool
 	e.Amount, failed = num.UintFromString(p.Amount, 10)
 	if failed {
-		return nil, fmt.Errorf("Failed to convert numerical string to Uint: %v", p.Amount)
+		return nil, fmt.Errorf("failed to convert numerical string to Uint: %v", p.Amount)
 	}
 	return &e, nil
 }

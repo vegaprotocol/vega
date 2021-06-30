@@ -59,7 +59,7 @@ func Max(a, b *Uint) *Uint {
 	return b.Clone()
 }
 
-// FromBig construct a new Uint with a big.Int
+// UintFromBig construct a new Uint with a big.Int
 // returns true if overflow happened
 func UintFromBig(b *big.Int) (*Uint, bool) {
 	u, ok := uint256.FromBig(b)
@@ -75,6 +75,7 @@ func UintFromDecimal(d Decimal) (*Uint, bool) {
 	return UintFromBig(d.BigInt())
 }
 
+// ToDecimal returns the value of the Uint as a Decimal
 func (u *Uint) ToDecimal() Decimal {
 	return DecimalFromUint(u)
 }
@@ -128,18 +129,18 @@ func (z Uint) Float64() float64 {
 // `u = x + y`
 // u is returned for convenience, no
 // new variable is created.
-func (u *Uint) Add(x, y *Uint) *Uint {
-	u.u.Add(&x.u, &y.u)
-	return u
+func (z *Uint) Add(x, y *Uint) *Uint {
+	z.u.Add(&x.u, &y.u)
+	return z
 }
 
 // AddSum adds multiple values at the same time to a given uint
 // so x.AddSum(y, z) is equivalent to x + y + z
-func (u *Uint) AddSum(vals ...*Uint) *Uint {
+func (z *Uint) AddSum(vals ...*Uint) *Uint {
 	for _, x := range vals {
-		u.u.Add(&u.u, &x.u)
+		z.u.Add(&z.u, &x.u)
 	}
-	return u
+	return z
 }
 
 // AddOverflow will subtract y to x then store the result
