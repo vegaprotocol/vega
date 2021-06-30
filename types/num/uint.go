@@ -155,7 +155,7 @@ func (u *Uint) AddOverflow(x, y *Uint) (*Uint, bool) {
 	return u, ok
 }
 
-// Sub will substract y from x then store the result
+// Sub will subtract y from x then store the result
 // into u
 // this is equivalent to:
 // `u = x - y`
