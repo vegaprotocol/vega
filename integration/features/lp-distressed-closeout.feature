@@ -10,7 +10,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
-      | 0.1  | 0.1   | 10          | -10           | 0.1                    |
+      | 0.1  | 0.1   | 10          | -10           | 0.2                    |
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
