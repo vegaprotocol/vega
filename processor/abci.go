@@ -489,7 +489,6 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 	vote := &commandspb.VoteSubmission{}
-	fmt.Printf("DELIVER VOTE\n\n\n\n")
 
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
