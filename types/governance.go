@@ -468,9 +468,9 @@ func NewMarketConfigurationFromProto(p *proto.NewMarketConfiguration) *NewMarket
 	return r
 }
 
-func (m *NewMarketConfiguration) GetTradingMode() tradingMode {
-	if m != nil {
-		return m.TradingMode
+func (n *NewMarketConfiguration) GetTradingMode() tradingMode {
+	if n != nil {
+		return n.TradingMode
 	}
 	return nil
 }

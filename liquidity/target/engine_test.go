@@ -57,7 +57,7 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	rfLong := num.DecimalFromFloat(0.3)
 	rfShort := num.DecimalFromFloat(0.1)
 	var oi uint64 = 23
-	var markPrice *num.Uint = num.NewUint(123)
+	markPrice := num.NewUint(123)
 
 	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
 	expectedTargetStake := num.DecimalFromUint(markPrice)
@@ -93,7 +93,7 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: int64(tWindow.Seconds()), ScalingFactor: scalingFactor}
 	rfLong := num.DecimalFromFloat(0.3)
 	rfShort := num.DecimalFromFloat(0.1)
-	var markPrice *num.Uint = num.NewUint(123)
+	markPrice := num.NewUint(123)
 	expectedTargetStake := func(oi uint64) num.Decimal {
 		// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
 		mp := num.DecimalFromUint(markPrice)
@@ -161,7 +161,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	rfLong := num.DecimalFromFloat(0.3)
 	rfShort := num.DecimalFromFloat(0.1)
 	var oi uint64 = 23
-	var markPrice *num.Uint = num.NewUint(123)
+	markPrice := num.NewUint(123)
 
 	// float64(markPrice.Uint64()*oi) * math.Max(rfLong, rfShort) * scalingFactor
 	expectedTargetStake := num.DecimalFromUint(markPrice)
