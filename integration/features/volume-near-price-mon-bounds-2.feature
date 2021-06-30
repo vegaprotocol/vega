@@ -18,8 +18,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | risk aversion | tau     | mu | r   | sigma  |
       | 0.000001      | 0.00273 | 0  | 0   |  1.2   |
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.004     | 0.001              | 0.003           |
+      | maker fee | infrastructure fee |
+      | 0.004     | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-2":
       | horizon | probability  | auction extension |
       | 43200   | 0.982        | 300                 |
@@ -36,9 +36,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader2 | ETH2   |  1000000000   |
     
     Given the traders submit the following liquidity provision:
-      | id          | party   | market id | commitment amount | fee   | order side | order reference | order proportion | order offset |
-      | commitment1 | lp1     | ETH2/MAR22 | 3000000         | 0.001 | buy        | BID             | 500              | -100         |
-      | commitment1 | lp1     | ETH2/MAR22 | 3000000         | 0.001 | sell       | ASK             | 500              | 100          |
+      | id          | party   | market id | commitment amount | fee  | side | pegged reference | proportion | offset |
+      | commitment1 | lp1     | ETH2/MAR22 | 3000000         | 0.001 | buy  | BID              | 500        | -100   |
+      | commitment1 | lp1     | ETH2/MAR22 | 3000000         | 0.001 | sell | ASK              | 500        |  100   |
  
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |

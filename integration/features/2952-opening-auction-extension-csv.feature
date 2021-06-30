@@ -3,7 +3,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
   Background:
     And the simple risk model named "my-simple-risk-model":
       | long                   | short                  | max move up | min move down | probability of trading |
-      | 0.08628781058136630000 | 0.09370922348428490000 | -1          | -1            | 0.1                    |
+      | 0.08628781058136630000 | 0.09370922348428490000 | -1          | -1            | 0.2                    |
     And the fees configuration named "my-fees-config":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
