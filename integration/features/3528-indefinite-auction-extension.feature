@@ -131,9 +131,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     When the network moves ahead "290" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 1030       | TRADING_MODE_CONTINUOUS | 1       | 1019      | 1040      | 3090         | 10000          | 30            | 0           |
-      # before uint stuff values
-      #| 1030       | TRADING_MODE_CONTINUOUS | 1       | 1020      | 1040      | 3090         | 10000          | 30            | 0           |
+      | 1030       | TRADING_MODE_CONTINUOUS | 1       | 1020      | 1040      | 3090         | 10000          | 30            | 0           |
 
   Scenario: Enter liquidity auction, extended by trades at liq. auction end, multiple trades -> still a single extension
 
@@ -237,9 +235,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     When the network moves ahead "290" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 1030       | TRADING_MODE_CONTINUOUS | 1       | 1019      | 1040      | 3090         | 10000          | 30            | 0           |
-      # before uint stuff values
-      #| 1030       | TRADING_MODE_CONTINUOUS | 1       | 1020      | 1040      | 3090         | 10000          | 30            | 0           |
+      | 1030       | TRADING_MODE_CONTINUOUS | 1       | 1020      | 1040      | 3090         | 10000          | 30            | 0           |
 
   Scenario: When in liquidity auction, we should only trigger price extension once
 
@@ -325,4 +321,4 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     When the network moves ahead "150" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 1040       | TRADING_MODE_CONTINUOUS | 1       | 1030      | 1050      | 2080         | 10000          | 20            | 0           |
+      | 1040       | TRADING_MODE_CONTINUOUS | 1       | 1031      | 1049      | 2080         | 10000          | 20            | 0           |

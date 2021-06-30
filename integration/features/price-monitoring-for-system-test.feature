@@ -55,8 +55,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound |
-      | 100000     | TRADING_MODE_CONTINUOUS | 5       | 99844     | 100156    |
-      | 100000     | TRADING_MODE_CONTINUOUS | 10      | 99710     | 100290    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 5       | 99845     | 100156    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 10      | 99711     | 100290    |
 
     # We've left opening auction, cancel the orders we had to place on the book to allow for this to happen
     And the traders cancel the following orders:

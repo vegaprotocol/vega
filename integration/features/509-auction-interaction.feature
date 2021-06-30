@@ -229,7 +229,7 @@ Feature: Test interactions between different auction types
       | trader1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1020      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1001      | 1019      | 1000         | 1000           | 10            |
 
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode
@@ -305,9 +305,7 @@ Feature: Test interactions between different auction types
     When the network moves ahead "301" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1009      | 1030      | 3060         | 4080           | 30            |
-      # Values before uint stuff
-      #| 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 3060         | 4080           | 30            |
+      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 3060         | 4080           | 30            |
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode
     Given the following network parameters are set:
@@ -400,9 +398,7 @@ Feature: Test interactions between different auction types
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1009      | 1030      | 4080         | 5100           | 40            |
-      # Values before uint stuff
-      #| 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 4080         | 5100           | 40            |
+      | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 4080         | 5100           | 40            |
 
 
       #Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode
