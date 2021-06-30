@@ -1707,25 +1707,27 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	// we don't have to add both anymore, the first auction period is determined by network parameter
 	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
-	mmd, _ := num.UintFromDecimal(MINMOVEDOWN)
 	initialPrice := uint64(600)
 	auctionTriggeringPrice := initialPrice + mmu.Uint64() + 1
 	tm := getTestMarket(t, now, closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: extension,
 	})
 
-	initial := num.NewUint(initialPrice)
+	initDec := num.DecimalFromFloat(float64(initialPrice))
+	// add 1 for the ceil
+	min, _ := num.UintFromDecimal(initDec.Sub(MINMOVEDOWN).Add(num.DecimalFromFloat(1)))
+	max, _ := num.UintFromDecimal(initDec.Add(MAXMOVEUP).Floor())
 	expectedPmRange1 := types.PriceMonitoringBounds{
-		MinValidPrice:  num.Zero().Sub(initial, mmd),
-		MaxValidPrice:  num.Sum(initial, mmu),
+		MinValidPrice:  min,
+		MaxValidPrice:  max,
 		Trigger:        t1,
-		ReferencePrice: num.DecimalFromFloat(float64(initialPrice)),
+		ReferencePrice: initDec,
 	}
 	expectedPmRange2 := types.PriceMonitoringBounds{
-		MinValidPrice:  num.Zero().Sub(initial, mmd),
-		MaxValidPrice:  num.Sum(initial, mmu),
+		MinValidPrice:  min.Clone(),
+		MaxValidPrice:  max.Clone(),
 		Trigger:        t2,
-		ReferencePrice: num.DecimalFromFloat(float64(initialPrice)),
+		ReferencePrice: initDec,
 	}
 
 	addAccount(tm, party1)
@@ -1808,7 +1810,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 
 	pmBounds := md.PriceMonitoringBounds
 	require.Equal(t, 2, len(pmBounds))
-	require.True(t, expectedPmRange1.MinValidPrice.EQ(pmBounds[0].MinValidPrice))
+	require.True(t, expectedPmRange1.MinValidPrice.EQ(pmBounds[0].MinValidPrice), "%s != %s", expectedPmRange1.MinValidPrice, pmBounds[0].MinValidPrice)
 	require.True(t, expectedPmRange1.MaxValidPrice.EQ(pmBounds[0].MaxValidPrice))
 	require.True(t, expectedPmRange1.ReferencePrice.Equals(pmBounds[0].ReferencePrice))
 	require.Equal(t, *expectedPmRange1.Trigger, *pmBounds[0].Trigger)
