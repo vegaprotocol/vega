@@ -19,7 +19,6 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/proto"
-	ptypes "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
@@ -5179,7 +5178,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
 
 	t.Run("Fee are distribute to trader-2 only", func(t *testing.T) {
-		var found []*ptypes.TransferResponse
+		var found []*proto.TransferResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:
@@ -5615,7 +5614,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10021*time.Second))
 
 	t.Run("Fee are distributed", func(t *testing.T) {
-		var found []*ptypes.TransferResponse
+		var found []*proto.TransferResponse
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.TransferResponse:

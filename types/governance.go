@@ -360,9 +360,9 @@ type pterms interface {
 	GetTermType() Proposal_Terms_TYPE
 }
 
-func (m *NewAsset) GetChanges() *AssetDetails {
-	if m != nil {
-		return m.Changes
+func (n *NewAsset) GetChanges() *AssetDetails {
+	if n != nil {
+		return n.Changes
 	}
 	return nil
 }
@@ -475,8 +475,8 @@ func (m *NewMarketConfiguration) GetTradingMode() tradingMode {
 	return nil
 }
 
-func (m *NewMarketConfiguration) GetContinuous() *ContinuousTrading {
-	if x, ok := m.GetTradingMode().(*NewMarketConfiguration_Continuous); ok {
+func (n *NewMarketConfiguration) GetContinuous() *ContinuousTrading {
+	if x, ok := n.GetTradingMode().(*NewMarketConfiguration_Continuous); ok {
 		return x.Continuous
 	}
 	return nil
@@ -590,8 +590,8 @@ func (p ProposalTerms) String() string {
 	return p.IntoProto().String()
 }
 
-func (m *ProposalTerms) GetNewAsset() *NewAsset {
-	switch c := m.Change.(type) {
+func (p *ProposalTerms) GetNewAsset() *NewAsset {
+	switch c := p.Change.(type) {
 	case *ProposalTerms_NewAsset:
 		return c.NewAsset
 	default:
@@ -599,8 +599,8 @@ func (m *ProposalTerms) GetNewAsset() *NewAsset {
 	}
 }
 
-func (m *ProposalTerms) GetNewMarket() *NewMarket {
-	switch c := m.Change.(type) {
+func (p *ProposalTerms) GetNewMarket() *NewMarket {
+	switch c := p.Change.(type) {
 	case *ProposalTerms_NewMarket:
 		return c.NewMarket
 	default:
@@ -608,8 +608,8 @@ func (m *ProposalTerms) GetNewMarket() *NewMarket {
 	}
 }
 
-func (m *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
-	switch c := m.Change.(type) {
+func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
+	switch c := p.Change.(type) {
 	case *ProposalTerms_UpdateNetworkParameter:
 		return c.UpdateNetworkParameter
 	default:

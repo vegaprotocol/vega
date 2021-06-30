@@ -265,19 +265,15 @@ func mtm(p *Position, markPrice *num.Uint) {
 }
 
 func updateSettlePosition(p *Position, e SPE) {
-	var overflow bool
 	for _, t := range e.Trades() {
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
-		_ = closeV(p, closedVolume, t.Price().Clone())
+		_ = closeV(p, closedVolume, t.Price())
 		openV(p, openedVolume, t.Price().Clone())
-		p.AverageEntryPrice, overflow = num.UintFromDecimal(p.AverageEntryPriceFP.Round(0))
-		if overflow {
-			// We need to report the error somehow
-		}
+		p.AverageEntryPrice, _ = num.UintFromDecimal(p.AverageEntryPriceFP.Round(0))
 
 		p.RealisedPnl = p.RealisedPnlFP.Round(0)
 	}
-	mtm(p, e.Price().Clone())
+	mtm(p, e.Price())
 	p.UnrealisedPnl = p.UnrealisedPnlFP.Round(0)
 }
 
