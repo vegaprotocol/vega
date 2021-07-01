@@ -841,7 +841,7 @@ func InstrumentConfigurationFromProto(
 
 	switch pr := p.Product.(type) {
 	case *proto.InstrumentConfiguration_Future:
-		r.Product = InstrumentConfiguration_Future{
+		r.Product = &InstrumentConfiguration_Future{
 			Future: &FutureProduct{
 				Maturity:        pr.Future.Maturity,
 				SettlementAsset: pr.Future.SettlementAsset,
