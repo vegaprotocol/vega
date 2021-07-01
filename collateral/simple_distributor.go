@@ -77,21 +77,3 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	}
 	return evts
 }
-
-type lossSocializationEvt struct {
-	market     string
-	party      string
-	amountLost *num.Uint
-}
-
-func (e *lossSocializationEvt) MarketID() string {
-	return e.market
-}
-
-func (e *lossSocializationEvt) PartyID() string {
-	return e.party
-}
-
-func (e *lossSocializationEvt) AmountLost() *num.Uint {
-	return e.amountLost.Clone()
-}
