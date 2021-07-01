@@ -33,8 +33,8 @@ func (p LiquidityProvision) MarketID() string {
 	return p.p.MarketId
 }
 
-func (p LiquidityProvision) LiquidityProvision() proto.LiquidityProvision {
-	return *p.p
+func (p LiquidityProvision) LiquidityProvision() *proto.LiquidityProvision {
+	return p.p
 }
 
 func (p LiquidityProvision) Proto() *proto.LiquidityProvision {
