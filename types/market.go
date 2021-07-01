@@ -26,12 +26,16 @@ type MarketTimestamps struct {
 }
 
 func MarketTimestampsFromProto(p *proto.MarketTimestamps) *MarketTimestamps {
-	return &MarketTimestamps{
-		Proposed: p.Proposed,
-		Pending:  p.Pending,
-		Open:     p.Open,
-		Close:    p.Close,
+	var ts MarketTimestamps
+	if p != nil {
+		ts = MarketTimestamps{
+			Proposed: p.Proposed,
+			Pending:  p.Pending,
+			Open:     p.Open,
+			Close:    p.Close,
+		}
 	}
+	return &ts
 }
 
 func (m MarketTimestamps) IntoProto() *proto.MarketTimestamps {
