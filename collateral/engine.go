@@ -580,20 +580,14 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		// here we check if we were able to collect all monies,
 		// if not send an event to notify the plugins
 		if totalInAccount := num.Sum(marginAcc.Balance, generalAcc.Balance); totalInAccount.LT(req.Amount) {
-			lsevt := &lossSocializationEvt{
-				market:     settle.MarketId,
-				party:      evt.Party(),
-				amountLost: num.NewUint(0).Sub(req.Amount, totalInAccount),
-			}
-
+			delta := req.Amount.Sub(req.Amount, totalInAccount)
 			e.log.Warn("loss socialization missing amount to be collected or used from insurance pool",
-				logging.String("party-id", lsevt.party),
-				logging.BigUint("amount", lsevt.amountLost),
-				logging.String("market-id", lsevt.market))
+				logging.String("party-id", evt.Party()),
+				logging.BigUint("amount", delta),
+				logging.String("market-id", settle.MarketId))
 
-			delta, neg := req.Amount.Delta(req.Amount, totalInAccount)
 			brokerEvts = append(brokerEvts,
-				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketId, delta, neg, e.currentTime))
+				events.NewLossSocializationEvent(ctx, evt.Party(), settle.MarketId, delta, false, e.currentTime))
 		}
 
 		// updating the accounts stored in the marginEvt
