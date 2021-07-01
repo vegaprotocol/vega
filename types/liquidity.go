@@ -177,6 +177,10 @@ type LiquidityProvision struct {
 	Reference string
 }
 
+func (l LiquidityProvision) String() string {
+	return l.IntoProto().String()
+}
+
 func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 	lp := &proto.LiquidityProvision{
 		Id:               l.Id,
