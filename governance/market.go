@@ -153,14 +153,14 @@ func createMarket(
 	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
 	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
 	// get the margin scaling factors
-	scalingFactors := types.ScalingFactors{}
+	scalingFactors := proto.ScalingFactors{}
 	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
 	// get price monitoring parameters
 	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
 	if definition.Changes.PriceMonitoringParameters == nil {
-		pmParams := &types.PriceMonitoringParameters{}
+		pmParams := &proto.PriceMonitoringParameters{}
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
-		definition.Changes.PriceMonitoringParameters = pmParams
+		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
 	}
 
 	if definition.Changes.LiquidityMonitoringParameters == nil ||
@@ -203,11 +203,7 @@ func createMarket(
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: instrument,
 			MarginCalculator: &types.MarginCalculator{
-				ScalingFactors: &types.ScalingFactors{
-					CollateralRelease: scalingFactors.CollateralRelease,
-					InitialMargin:     scalingFactors.InitialMargin,
-					SearchLevel:       scalingFactors.SearchLevel,
-				},
+				ScalingFactors: types.ScalingFactorsFromProto(&scalingFactors),
 			},
 		},
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
