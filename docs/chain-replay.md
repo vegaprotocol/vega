@@ -4,8 +4,7 @@ This is a guide to replay a chain using the backup of an existing chain (e.g. Te
 
 ## How it works
 
-Tendermint persist all its data to directory
-
+A Tendermint Core and Vega Core node store their config and data to disk by default at `$HOME/.tendermint` and `$HOME/.vega`. When you start new instances of those nodes using a copy of these directories as their home, Tendermint re-submits (replays) historical blocks/transactions from the genesis height to Vega Core.
 
 ## Prerequisites
 
@@ -16,6 +15,8 @@ Tendermint persist all its data to directory
 
 ## Chain backups
 
+Note you need to first authenticate `gcloud`.
+
 You can find backups for the Vega networks stored in Google Cloud Storage, e.g. For Testnet Node 01
 
 ```
@@ -24,14 +25,19 @@ $ gsutil ls gs://vega-chaindata-n01-testnet/chain_stores
 
 ## Steps
 
-- Copy backups locally  to <path>
+- Copy backups locally to `<path>`
 
-- Overwrite Vega node config with your own wallet
-
-On macOS
+- Overwrite Vega node wallet with your own development [node wallet][wallet]. 
 
 ```
-$ cp  ~/.vega/nodewalletstore <path>/.vega
+$ cp -rp ~/.vega/node_wallets_dev <path>/.vega
+$ cp ~/.vega/nodewalletstore <path>/.vega
+```
+
+- Update Vega node config
+
+```
+$ sed -i 's/\/home\/vega/<path>' <path>/.vega/config.toml
 ```
 
 - Start Vega and Tendermint using backups
@@ -52,14 +58,15 @@ blockchain/abci/abci.go#BeginBlock
 
 ## Alternatives
 
-Instead of a backup, you can also use a snapshot of the chain at a given height and restore to bootstrap the Tendermint node. This however requires extra tooling.
+Instead of a backup, which effectively replays the full chain from genesis, you can also use a snapshot of the chain at a given height to bootstrap the Tendermint node. Which only replays blocks/transactions from the given height. This however requires extra tooling.
 
 ## References
 
 - https://github.com/tendermint/tendermint/blob/master/docs/introduction/quick-start.md
 - https://docs.tendermint.com/master/spec/abci/apps.html
 - https://github.com/tendermint/spec/blob/master/spec/abci/README.md
+- https://docs.tendermint.com/master/spec/abci/apps.html#state-sync
 
-
+[wallet]: https://github.com/vegaprotocol/vega#configuration
 [gcloud]: https://cloud.google.com/sdk/docs/install
 [tendermint]: https://github.com/tendermint/tendermint/blob/master/docs/introduction/install.md
