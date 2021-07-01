@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/products"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -694,11 +695,11 @@ func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v inter
 		)
 	}
 
-	scalingFactors, ok := v.(*types.ScalingFactors)
+	pscalingFactors, ok := v.(*proto.ScalingFactors)
 	if !ok {
 		return errors.New("invalid types for Margin ScalingFactors")
 	}
-
+	scalingFactors := types.ScalingFactorsFromProto(pscalingFactors)
 	for _, mkt := range e.marketsCpy {
 		if err := mkt.OnMarginScalingFactorsUpdate(ctx, scalingFactors); err != nil {
 			return err
