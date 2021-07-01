@@ -130,15 +130,16 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	calc.RealisedPnl = calc.RealisedPnl.Add(calc.UnrealisedPnl)
 	calc.RealisedPnlFP = calc.RealisedPnlFP.Add(calc.UnrealisedPnlFP)
 	calc.OpenVolume = 0
-	calc.UnrealisedPnl = num.NewDecimalFromFloat(0)
-	calc.AverageEntryPrice = num.NewUint(0)
+	calc.UnrealisedPnl = num.DecimalZero()
+	calc.AverageEntryPrice = num.Zero()
 	// realised P&L includes whatever we had in margin account at this point
-	calc.RealisedPnl = calc.RealisedPnl.Sub(num.DecimalFromUint(margin))
-	calc.RealisedPnlFP = calc.RealisedPnlFP.Sub(num.DecimalFromUint(margin))
+	dMargin := num.DecimalFromUint(margin)
+	calc.RealisedPnl = calc.RealisedPnl.Sub(dMargin)
+	calc.RealisedPnlFP = calc.RealisedPnlFP.Sub(dMargin)
 	// @TODO average entry price shouldn't be affected(?)
 	// the volume now is zero, though, so we'll end up moving this position to storage
-	calc.UnrealisedPnlFP = num.DecimalFromFloat(0.0)
-	calc.AverageEntryPriceFP = num.DecimalFromFloat(0.0)
+	calc.UnrealisedPnlFP = num.DecimalZero()
+	calc.AverageEntryPriceFP = num.DecimalZero()
 	calc.Position.UpdatedAt = e.Timestamp()
 	p.data[mID][tID] = calc
 }
