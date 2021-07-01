@@ -5,13 +5,9 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/governance EventBus
@@ -319,33 +315,4 @@ func (s *Svc) GetNewAssetProposals(inState *proto.Proposal_State) []*proto.Gover
 		filters = append(filters, subscribers.ProposalByState(*inState))
 	}
 	return s.gov.Filter(true, filters...)
-}
-
-// PrepareProposal performs basic validation and bundles together fields required for a proposal
-func (s *Svc) PrepareProposal(
-	_ context.Context, reference string, terms *proto.ProposalTerms,
-) (*commandspb.ProposalSubmission, error) {
-	if len(reference) <= 0 {
-		reference = uuid.NewV4().String()
-	}
-
-	cmd := &commandspb.ProposalSubmission{
-		Reference: reference,
-		Terms:     terms,
-	}
-
-	if err := commands.CheckProposalSubmission(cmd); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
-}
-
-// PrepareVote - some additional validation on the vote message we're preparing
-func (s *Svc) PrepareVote(cmd *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error) {
-	if err := commands.CheckVoteSubmission(cmd); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
 }

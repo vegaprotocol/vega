@@ -5,14 +5,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -76,30 +73,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
-}
-
-func (s *Svc) PrepareSubmitOrder(_ context.Context, cmd *commandspb.OrderSubmission) error {
-	if cmd == nil {
-		return ErrEmptyPrepareRequest
-	}
-
-	if cmd.Reference == "" {
-		cmd.Reference = uuid.NewV4().String()
-	}
-
-	return commands.CheckOrderSubmission(cmd)
-}
-
-func (s *Svc) PrepareCancelOrder(_ context.Context, cmd *commandspb.OrderCancellation) error {
-	return nil
-}
-
-func (s *Svc) PrepareAmendOrder(_ context.Context, cmd *commandspb.OrderAmendment) error {
-	if cmd == nil {
-		return ErrEmptyPrepareRequest
-	}
-
-	return commands.CheckOrderAmendment(cmd)
 }
 
 // GetByOrderID find an order using its orderID

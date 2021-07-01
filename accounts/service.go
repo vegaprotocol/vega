@@ -2,20 +2,12 @@ package accounts
 
 import (
 	"context"
-	"errors"
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-)
-
-var (
-	// ErrEmptyPrepareRequest empty prepare request
-	ErrEmptyPrepareRequest = errors.New("empty prepare request")
 )
 
 // AccountStore represents a store for the accounts
@@ -59,18 +51,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
-}
-
-func (s *Svc) PrepareWithdraw(_ context.Context, cmd *commandspb.WithdrawSubmission) error {
-	if cmd == nil {
-		return ErrEmptyPrepareRequest
-	}
-
-	if err := commands.CheckWithdrawSubmission(cmd); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.AccountType) ([]*types.Account, error) {

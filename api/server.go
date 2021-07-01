@@ -224,16 +224,11 @@ func (g *GRPCServer) Start() {
 	g.srv = grpc.NewServer(intercept)
 
 	tradingSvc := &tradingService{
-		log:               g.log,
-		conf:              g.Config,
-		blockchain:        g.client,
-		tradeOrderService: g.orderService,
-		liquidityService:  g.liquidityService,
-		accountService:    g.accountsService,
-		marketService:     g.marketService,
-		governanceService: g.governanceService,
-		evtForwarder:      g.evtfwd,
-		statusChecker:     g.statusChecker,
+		log:           g.log,
+		conf:          g.Config,
+		blockchain:    g.client,
+		evtForwarder:  g.evtfwd,
+		statusChecker: g.statusChecker,
 	}
 	g.tradingService = tradingSvc
 	protoapi.RegisterTradingServiceServer(g.srv, tradingSvc)

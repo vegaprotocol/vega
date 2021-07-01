@@ -54,50 +54,6 @@ func (this *SubmitTransactionV2Request) Validate() error {
 func (this *SubmitTransactionV2Response) Validate() error {
 	return nil
 }
-func (this *PrepareWithdrawRequest) Validate() error {
-	if this.Withdraw != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Withdraw); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Withdraw", err)
-		}
-	}
-	return nil
-}
-func (this *PrepareWithdrawResponse) Validate() error {
-	return nil
-}
-func (this *PrepareSubmitOrderResponse) Validate() error {
-	return nil
-}
-func (this *PrepareCancelOrderResponse) Validate() error {
-	return nil
-}
-func (this *PrepareAmendOrderResponse) Validate() error {
-	return nil
-}
-func (this *PrepareSubmitOrderRequest) Validate() error {
-	if this.Submission != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
-		}
-	}
-	return nil
-}
-func (this *PrepareCancelOrderRequest) Validate() error {
-	if this.Cancellation != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Cancellation); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Cancellation", err)
-		}
-	}
-	return nil
-}
-func (this *PrepareAmendOrderRequest) Validate() error {
-	if this.Amendment != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Amendment); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Amendment", err)
-		}
-	}
-	return nil
-}
 func (this *AssetsRequest) Validate() error {
 	return nil
 }
@@ -826,55 +782,6 @@ func (this *FeeInfrastructureAccountsResponse) Validate() error {
 			}
 		}
 	}
-	return nil
-}
-func (this *PrepareProposalSubmissionRequest) Validate() error {
-	if this.Submission != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
-		}
-	}
-	return nil
-}
-func (this *PrepareProposalSubmissionResponse) Validate() error {
-	if this.Submission != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
-		}
-	}
-	return nil
-}
-func (this *PrepareVoteSubmissionRequest) Validate() error {
-	if nil == this.Submission {
-		return github_com_mwitkow_go_proto_validators.FieldError("Submission", fmt.Errorf("message must exist"))
-	}
-	if this.Submission != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
-		}
-	}
-	return nil
-}
-func (this *PrepareVoteSubmissionResponse) Validate() error {
-	if this.Submission != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
-		}
-	}
-	return nil
-}
-func (this *PrepareLiquidityProvisionRequest) Validate() error {
-	if nil == this.Submission {
-		return github_com_mwitkow_go_proto_validators.FieldError("Submission", fmt.Errorf("message must exist"))
-	}
-	if this.Submission != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Submission); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Submission", err)
-		}
-	}
-	return nil
-}
-func (this *PrepareLiquidityProvisionResponse) Validate() error {
 	return nil
 }
 func (this *OrderByIDRequest) Validate() error {
