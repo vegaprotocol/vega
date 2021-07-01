@@ -64,10 +64,14 @@ func (l LossSoc) Timestamp() int64 {
 }
 
 func (l LossSoc) Proto() eventspb.LossSocialization {
+	amt := int64(l.amount.Uint64())
+	if l.neg {
+		amt *= -1
+	}
 	return eventspb.LossSocialization{
 		MarketId: l.marketID,
 		PartyId:  l.partyID,
-		Amount:   int64(l.amount.Uint64()),
+		Amount:   amt,
 	}
 }
 
