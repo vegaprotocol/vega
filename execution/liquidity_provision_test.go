@@ -400,7 +400,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 	ctx := context.Background()
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 3000)
+	addAccountWithAmount(tm, "trader-A", 5000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -470,7 +470,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	ctx := context.Background()
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 5000)
+	addAccountWithAmount(tm, "trader-A", 7000)
 	addAccountWithAmount(tm, "trader-B", 10000000)
 	addAccountWithAmount(tm, "trader-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -521,7 +521,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	require.NoError(t, err)
 
 	// Check we have the right amount of bond balance
-	assert.Equal(t, uint64(1000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+	assert.Equal(t, lps.CommitmentAmount, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
 
 	// Leave auction
 	now = now.Add(time.Second * 40)
@@ -535,7 +535,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	assert.Equal(t, int64(7), tm.market.GetOrdersOnBookCount())
 
 	// Check that the bond balance is untouched
-	assert.Equal(t, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset), uint64(1000))
+	assert.Equal(t, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset), lps.CommitmentAmount)
 
 	tm.events = nil
 	// Now move the mark price to force MTM settlement
@@ -1591,17 +1591,17 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 		}
 
 		expect := map[string]uint64{
-			"V0000000000-0000000001": 123,
+			"V0000000000-0000000001": 124,
 			"V0000000000-0000000002": 2,
 			"V0000000000-0000000003": 2,
 			"V0000000000-0000000004": 3,
-			"V0000000000-0000000005": 115,
+			"V0000000000-0000000005": 114,
 		}
 
 		for id, v := range found {
 			size, ok := expect[id]
 			assert.True(t, ok, "unexpected order id")
-			assert.Equal(t, v.Size, size, id)
+			assert.Equal(t, size, v.Size, id)
 		}
 	})
 
