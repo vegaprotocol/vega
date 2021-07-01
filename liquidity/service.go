@@ -22,7 +22,7 @@ var (
 
 type LiquidityProvisionEvent interface {
 	events.Event
-	LiquidityProvision() types.LiquidityProvision
+	LiquidityProvision() *types.LiquidityProvision
 }
 
 type Svc struct {
@@ -84,7 +84,7 @@ func (s *Svc) Push(evts ...events.Event) {
 			return
 		default:
 			if lpe, ok := e.(LiquidityProvisionEvent); ok {
-				s.ch <- lpe.LiquidityProvision()
+				s.ch <- *lpe.LiquidityProvision()
 			}
 		}
 	}
