@@ -254,8 +254,8 @@ func openV(p *Position, openedVolume int64, tradedPrice *num.Uint) {
 
 func mtm(p *Position, markPrice *num.Uint) {
 	if p.OpenVolume == 0 {
-		p.UnrealisedPnlFP = num.DecimalFromFloat(0.0)
-		p.UnrealisedPnl = num.DecimalFromFloat(0.0)
+		p.UnrealisedPnlFP = num.DecimalZero()
+		p.UnrealisedPnl = num.DecimalZero()
 		return
 	}
 	markPriceDec := num.DecimalFromUint(markPrice)
@@ -269,7 +269,7 @@ func updateSettlePosition(p *Position, e SPE) {
 	for _, t := range e.Trades() {
 		openedVolume, closedVolume := calculateOpenClosedVolume(p.OpenVolume, t.Size())
 		_ = closeV(p, closedVolume, t.Price())
-		openV(p, openedVolume, t.Price().Clone())
+		openV(p, openedVolume, t.Price())
 		p.AverageEntryPrice, _ = num.UintFromDecimal(p.AverageEntryPriceFP.Round(0))
 
 		p.RealisedPnl = p.RealisedPnlFP.Round(0)
@@ -296,9 +296,9 @@ func seToProto(e SE) Position {
 			MarketId: e.MarketID(),
 			PartyId:  e.PartyID(),
 		},
-		AverageEntryPriceFP: num.NewDecimalFromFloat(0.0),
-		RealisedPnlFP:       num.NewDecimalFromFloat(0.0),
-		UnrealisedPnlFP:     num.NewDecimalFromFloat(0.0),
+		AverageEntryPriceFP: num.DecimalZero(),
+		RealisedPnlFP:       num.DecimalZero(),
+		UnrealisedPnlFP:     num.DecimalZero(),
 	}
 }
 
