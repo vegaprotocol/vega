@@ -9,7 +9,7 @@ import (
 
 // NEE - MarketUpdatedEvent
 type MEE interface {
-	Market() types.Market
+	Proto() types.Market
 }
 
 type MarketUpdated struct {
@@ -46,7 +46,7 @@ func (m *MarketUpdated) Push(evts ...events.Event) {
 	batch := make([]types.Market, 0, len(evts))
 	for _, e := range evts {
 		if te, ok := e.(MEE); ok {
-			batch = append(batch, te.Market())
+			batch = append(batch, te.Proto())
 		}
 	}
 	if len(batch) > 0 {

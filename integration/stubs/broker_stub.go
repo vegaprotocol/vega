@@ -217,12 +217,14 @@ func (b *BrokerStub) GetMarket(marketID string) *types.Market {
 			if mkt.MarketID() != marketID {
 				continue
 			}
-			return mkt.Market().IntoProto()
+			m := mkt.Proto()
+			return &m
 		case events.MarketUpdated:
 			if mkt.MarketID() != marketID {
 				continue
 			}
-			return mkt.Market().IntoProto()
+			m := mkt.Proto()
+			return &m
 		}
 	}
 

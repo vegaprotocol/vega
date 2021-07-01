@@ -310,7 +310,7 @@ func NewMarket(
 	}
 
 	if mkt.OpeningAuction != nil {
-		ts.Open = now.Add(time.Duration(mkt.OpeningAuction.Duration) * time.Second).UnixNano()
+		ts.Open = now.Add(time.Duration(mkt.OpeningAuction.Duration)).UnixNano()
 	} else {
 		ts.Open = now.UnixNano()
 	}

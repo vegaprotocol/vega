@@ -254,7 +254,7 @@ func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *proto
 	out := make([]*types.LiquidityProvision, 0, len(lps))
 	for _, v := range lps {
 		v := v
-		out = append(out, v.IntoProto())
+		out = append(out, &v)
 	}
 	return &protoapi.LiquidityProvisionsResponse{
 		LiquidityProvisions: out,
