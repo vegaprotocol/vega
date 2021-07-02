@@ -39,12 +39,10 @@ require (
 	github.com/spf13/afero v1.1.2
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.11
-	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.uber.org/zap v1.13.0
-	google.golang.org/genproto v0.0.0-20201119123407-9b1e624d6bc4 // indirect
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.26.0-rc.1
