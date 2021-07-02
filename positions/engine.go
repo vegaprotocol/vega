@@ -70,9 +70,11 @@ func (e *Engine) Hash() []byte {
 
 		// Add bytes for VWBuy and VWSell here
 		b := p.VWBuy().Bytes()
-		output = append(output, b[:]...)
+		copy(output[i:], b[:])
+		i += 32
 		s := p.VWBuy().Bytes()
-		output = append(output, s[:]...)
+		copy(output[i:], s[:])
+		i += 32
 	}
 
 	return crypto.Hash(output)
