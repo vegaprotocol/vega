@@ -66,10 +66,8 @@ Feature: Test loss socialization case 1
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     Then the traders should have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
-      | trader1 | 0      | 0              | -8000        |
+      | trader1 | 0      | 0              | -5000        |
       | trader2 | 200    | 8000           | -2970        |
       | trader3 | -100   | 0              | 0            |
-      # value before uint stuff
-      #| trader1 | 0      | 0              | -5000        |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "400105000"

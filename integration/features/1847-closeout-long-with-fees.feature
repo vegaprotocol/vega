@@ -69,9 +69,7 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     Then the traders should have the following profit and loss:
       | trader | volume | unrealised pnl | realised pnl |
       | tt_4   | 4      | -200           | 0            |
-      | tt_5   | 0      | 0              | -200         |
+      | tt_5   | 0      | 0              | -102         |
       | tt_6   | -4     | 200            | -28          |
       | tt_10  | 30     | 0              | 0            |
       | tt_11  | -30    | 200            | -63          |
-      # This is after uint changes...
-      # | tt_5   | 0      | 0              | -102         |

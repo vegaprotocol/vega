@@ -552,6 +552,9 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		// accumulate the expected transfer size
 		expCollected.AddSum(req.Amount)
 		expectCollected = expectCollected.Add(num.DecimalFromUint(req.Amount))
+		// doing a copy of the amount here, as the request is send to getLedgerEntries, which actually
+		// modifies it
+		requestAmount := req.Amount.Clone()
 
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
 		res, err := e.getLedgerEntries(ctx, req)
@@ -579,8 +582,8 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 
 		// here we check if we were able to collect all monies,
 		// if not send an event to notify the plugins
-		if totalInAccount := num.Sum(marginAcc.Balance, generalAcc.Balance); totalInAccount.LT(req.Amount) {
-			delta := req.Amount.Sub(req.Amount, totalInAccount)
+		if totalInAccount := num.Sum(marginAcc.Balance, generalAcc.Balance); totalInAccount.LT(requestAmount) {
+			delta := req.Amount.Sub(requestAmount, totalInAccount)
 			e.log.Warn("loss socialization missing amount to be collected or used from insurance pool",
 				logging.String("party-id", evt.Party()),
 				logging.BigUint("amount", delta),

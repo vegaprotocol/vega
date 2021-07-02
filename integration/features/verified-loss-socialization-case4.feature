@@ -81,11 +81,8 @@ Feature: Test loss socialization case 4
 # check positions
     Then the traders should have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
-      | trader1 | 0      | 0              | -2400        |
+      | trader1 | 0      | 0              | -2000        |
       | trader2 | 100    | 7200           | -90          |
-      | trader3 | 0      | 0              | -5600        |
+      | trader3 | 0      | 0              | -3000        |
       | trader4 | 0      | 0              | 791          |
-      # value before uint stuff
-      #| trader1 | 0      | 0              | -2000        |
-      #| trader3 | 0      | 0              | -3000        |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
