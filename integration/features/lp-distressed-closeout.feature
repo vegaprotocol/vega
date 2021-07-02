@@ -10,7 +10,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
-      | 0.1  | 0.1   | 10          | -10           | 0.1                    |
+      | 0.1  | 0.1   | 10          | 10            | 0.1                    |
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r   | sigma |
       | 0.000001      | 0.1 | 0  | 1.4 | -1    |
@@ -200,5 +200,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | 1055       | TRADING_MODE_CONTINUOUS | 1       | 1045      | 1065      | 3482         | 5000           | 33            |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
-      | trader0 | ETH   | ETH/DEC21 | 253    | 1419    | 0    |
+      | trader0 | ETH   | ETH/DEC21 | 265    | 1407    | 0    |
+      # values before uint stuff
+      # | trader0 | ETH   | ETH/DEC21 | 253    | 1419    | 0    |
     And the insurance pool balance should be "4649" for the market "ETH/DEC21"

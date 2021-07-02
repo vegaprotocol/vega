@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +18,7 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -31,7 +32,7 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -45,7 +46,7 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -58,22 +59,22 @@ func TestOrderBook_closeOutPriceBuy(t *testing.T) {
 	// Normal case
 	price, err := book.GetCloseoutPrice(10, types.Side_SIDE_BUY)
 	assert.NoError(t, err)
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Incorrect size
 	price, err = book.GetCloseoutPrice(0, types.Side_SIDE_BUY)
 	assert.Error(t, err, ErrInvalidVolume)
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Not enough on the book
 	price, err = book.GetCloseoutPrice(200, types.Side_SIDE_BUY)
 	assert.Error(t, err, ErrNotEnoughOrders)
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Wrong side
 	price, err = book.GetCloseoutPrice(10, types.Side_SIDE_SELL)
 	assert.Error(t, err, ErrNotEnoughOrders)
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 }
 
 func TestOrderBook_closeOutPriceSell(t *testing.T) {
@@ -85,7 +86,7 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -99,7 +100,7 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -113,7 +114,7 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -126,22 +127,22 @@ func TestOrderBook_closeOutPriceSell(t *testing.T) {
 	// Normal case
 	price, err := book.GetCloseoutPrice(10, types.Side_SIDE_SELL)
 	assert.NoError(t, err)
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Incorrect size
 	price, err = book.GetCloseoutPrice(0, types.Side_SIDE_SELL)
 	assert.Error(t, err, ErrInvalidVolume)
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Not enough on the book
 	price, err = book.GetCloseoutPrice(200, types.Side_SIDE_SELL)
 	assert.Error(t, err, ErrNotEnoughOrders)
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Wrong side
 	price, err = book.GetCloseoutPrice(10, types.Side_SIDE_BUY)
 	assert.Error(t, err, ErrNotEnoughOrders)
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 }
 
 func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
@@ -152,7 +153,7 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -166,7 +167,7 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       90,
+		Price:       num.NewUint(90),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -180,7 +181,7 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       80,
+		Price:       num.NewUint(80),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -193,17 +194,17 @@ func TestOrderBook_closeOutPriceBuy2(t *testing.T) {
 	// Normal case
 	price, err := book.GetCloseoutPrice(100, types.Side_SIDE_BUY)
 	assert.NoError(t, err)
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Normal case
 	price, err = book.GetCloseoutPrice(200, types.Side_SIDE_BUY)
 	assert.NoError(t, err)
-	assert.Equal(t, price, uint64(95))
+	assert.Equal(t, price.Uint64(), uint64(95))
 
 	// Normal case
 	price, err = book.GetCloseoutPrice(300, types.Side_SIDE_BUY)
 	assert.NoError(t, err)
-	assert.Equal(t, price, uint64(90))
+	assert.Equal(t, price.Uint64(), uint64(90))
 }
 
 func TestOrderBook_closeOutPriceSell2(t *testing.T) {
@@ -214,7 +215,7 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -228,7 +229,7 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       110,
+		Price:       num.NewUint(110),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -242,7 +243,7 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       120,
+		Price:       num.NewUint(120),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -255,15 +256,15 @@ func TestOrderBook_closeOutPriceSell2(t *testing.T) {
 	// Normal case
 	price, err := book.GetCloseoutPrice(100, types.Side_SIDE_SELL)
 	assert.NoError(t, err)
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Normal case
 	price, err = book.GetCloseoutPrice(200, types.Side_SIDE_SELL)
 	assert.NoError(t, err)
-	assert.Equal(t, price, uint64(105))
+	assert.Equal(t, price.Uint64(), uint64(105))
 
 	// Normal case
 	price, err = book.GetCloseoutPrice(300, types.Side_SIDE_SELL)
 	assert.NoError(t, err)
-	assert.Equal(t, price, uint64(110))
+	assert.Equal(t, price.Uint64(), uint64(110))
 }

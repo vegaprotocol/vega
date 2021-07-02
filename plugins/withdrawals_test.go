@@ -7,7 +7,8 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/plugins"
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -48,26 +49,26 @@ func testGetWithdrawalByID(t *testing.T) {
 
 	w1 := events.NewWithdrawalEvent(
 		wit.ctx,
-		proto.Withdrawal{
-			PartyId: "party1",
-			Id:      "wid1",
-			Amount:  200,
+		types.Withdrawal{
+			PartyID: "party1",
+			ID:      "wid1",
+			Amount:  num.NewUint(200),
 		},
 	)
 	w2 := events.NewWithdrawalEvent(
 		wit.ctx,
-		proto.Withdrawal{
-			PartyId: "party2",
-			Id:      "wid2",
-			Amount:  300,
+		types.Withdrawal{
+			PartyID: "party2",
+			ID:      "wid2",
+			Amount:  num.NewUint(300),
 		},
 	)
 	w3 := events.NewWithdrawalEvent(
 		wit.ctx,
-		proto.Withdrawal{
-			PartyId: "party1",
-			Id:      "wid3",
-			Amount:  500,
+		types.Withdrawal{
+			PartyID: "party1",
+			ID:      "wid3",
+			Amount:  num.NewUint(500),
 		},
 	)
 
@@ -105,26 +106,26 @@ func testGetWithdrawalByParty(t *testing.T) {
 
 	w1 := events.NewWithdrawalEvent(
 		wit.ctx,
-		proto.Withdrawal{
-			PartyId: "party1",
-			Id:      "wid1",
-			Amount:  200,
+		types.Withdrawal{
+			PartyID: "party1",
+			ID:      "wid1",
+			Amount:  num.NewUint(200),
 		},
 	)
 	w2 := events.NewWithdrawalEvent(
 		wit.ctx,
-		proto.Withdrawal{
-			PartyId: "party2",
-			Id:      "wid2",
-			Amount:  300,
+		types.Withdrawal{
+			PartyID: "party2",
+			ID:      "wid2",
+			Amount:  num.NewUint(300),
 		},
 	)
 	w3 := events.NewWithdrawalEvent(
 		wit.ctx,
-		proto.Withdrawal{
-			PartyId: "party1",
-			Id:      "wid3",
-			Amount:  500,
+		types.Withdrawal{
+			PartyID: "party1",
+			ID:      "wid3",
+			Amount:  num.NewUint(500),
 		},
 	)
 

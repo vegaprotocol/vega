@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
 	types "code.vegaprotocol.io/vega/types"
+	num "code.vegaprotocol.io/vega/types/num"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -36,7 +36,7 @@ func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 }
 
 // Deposit mocks base method
-func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 uint64) (*types.TransferResponse, error) {
+func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Deposit", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types.TransferResponse)
@@ -51,7 +51,7 @@ func (mr *MockCollateralMockRecorder) Deposit(arg0, arg1, arg2, arg3 interface{}
 }
 
 // EnableAsset mocks base method
-func (m *MockCollateral) EnableAsset(arg0 context.Context, arg1 proto.Asset) error {
+func (m *MockCollateral) EnableAsset(arg0 context.Context, arg1 types.Asset) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnableAsset", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -79,7 +79,7 @@ func (mr *MockCollateralMockRecorder) HasBalance(arg0 interface{}) *gomock.Call 
 }
 
 // LockFundsForWithdraw mocks base method
-func (m *MockCollateral) LockFundsForWithdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) (*types.TransferResponse, error) {
+func (m *MockCollateral) LockFundsForWithdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LockFundsForWithdraw", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types.TransferResponse)
@@ -94,7 +94,7 @@ func (mr *MockCollateralMockRecorder) LockFundsForWithdraw(arg0, arg1, arg2, arg
 }
 
 // Withdraw mocks base method
-func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 uint64) (*types.TransferResponse, error) {
+func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types.TransferResponse)

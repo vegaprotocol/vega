@@ -2,12 +2,15 @@
 
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import (
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types/num"
+)
 
 type Account struct {
 	Id       string
 	Owner    string
-	Balance  uint64
+	Balance  *num.Uint
 	Asset    string
 	MarketId string
 	Type     AccountType
@@ -18,10 +21,14 @@ func (a Account) String() string {
 }
 
 func (a *Account) IntoProto() *proto.Account {
+	var balance uint64
+	if a.Balance != nil {
+		balance = a.Balance.Uint64()
+	}
 	return &proto.Account{
 		Id:       a.Id,
 		Owner:    a.Owner,
-		Balance:  a.Balance,
+		Balance:  balance,
 		Asset:    a.Asset,
 		MarketId: a.MarketId,
 		Type:     a.Type,
@@ -41,8 +48,8 @@ func (a Accounts) IntoProto() []*proto.Account {
 type TransferRequest struct {
 	FromAccount []*Account
 	ToAccount   []*Account
-	Amount      uint64
-	MinAmount   uint64
+	Amount      *num.Uint
+	MinAmount   *num.Uint
 	Asset       string
 	Reference   string
 }
@@ -51,8 +58,8 @@ func (t *TransferRequest) IntoProto() *proto.TransferRequest {
 	return &proto.TransferRequest{
 		FromAccount: Accounts(t.FromAccount).IntoProto(),
 		ToAccount:   Accounts(t.ToAccount).IntoProto(),
-		Amount:      t.Amount,
-		MinAmount:   t.MinAmount,
+		Amount:      t.Amount.Uint64(),
+		MinAmount:   t.MinAmount.Uint64(),
 		Asset:       t.Asset,
 		Reference:   t.Reference,
 	}
@@ -82,7 +89,7 @@ func (a TransferResponses) IntoProto() []*proto.TransferResponse {
 
 type TransferBalance struct {
 	Account *Account
-	Balance uint64
+	Balance *num.Uint
 }
 
 func (t *TransferBalance) IntoProto() *proto.TransferBalance {
@@ -92,7 +99,7 @@ func (t *TransferBalance) IntoProto() *proto.TransferBalance {
 	}
 	return &proto.TransferBalance{
 		Account: acc,
-		Balance: t.Balance,
+		Balance: t.Balance.Uint64(),
 	}
 }
 
@@ -109,7 +116,7 @@ func (a TransferBalances) IntoProto() []*proto.TransferBalance {
 type LedgerEntry struct {
 	FromAccount string
 	ToAccount   string
-	Amount      uint64
+	Amount      *num.Uint
 	Reference   string
 	Type        string
 	Timestamp   int64
@@ -119,7 +126,7 @@ func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
 	return &proto.LedgerEntry{
 		FromAccount: l.FromAccount,
 		ToAccount:   l.ToAccount,
-		Amount:      l.Amount,
+		Amount:      l.Amount.Uint64(),
 		Reference:   l.Reference,
 		Type:        l.Type,
 		Timestamp:   l.Timestamp,
@@ -137,8 +144,6 @@ func (a LedgerEntries) IntoProto() []*proto.LedgerEntry {
 }
 
 type Party = proto.Party
-type Transfer = proto.Transfer
-type FinancialAmount = proto.FinancialAmount
 
 type AccountType = proto.AccountType
 
@@ -175,51 +180,4 @@ const (
 	AccountType_ACCOUNT_TYPE_BOND AccountType = 9
 	// External account represents an external source (deposit/withdrawal)
 	AccountType_ACCOUNT_TYPE_EXTERNAL AccountType = 10
-)
-
-type TransferType = proto.TransferType
-
-const (
-	// Default value, always invalid
-	TransferType_TRANSFER_TYPE_UNSPECIFIED TransferType = 0
-	// Loss
-	TransferType_TRANSFER_TYPE_LOSS TransferType = 1
-	// Win
-	TransferType_TRANSFER_TYPE_WIN TransferType = 2
-	// Close
-	TransferType_TRANSFER_TYPE_CLOSE TransferType = 3
-	// Mark to market loss
-	TransferType_TRANSFER_TYPE_MTM_LOSS TransferType = 4
-	// Mark to market win
-	TransferType_TRANSFER_TYPE_MTM_WIN TransferType = 5
-	// Margin too low
-	TransferType_TRANSFER_TYPE_MARGIN_LOW TransferType = 6
-	// Margin too high
-	TransferType_TRANSFER_TYPE_MARGIN_HIGH TransferType = 7
-	// Margin was confiscated
-	TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED TransferType = 8
-	// Pay maker fee
-	TransferType_TRANSFER_TYPE_MAKER_FEE_PAY TransferType = 9
-	// Receive maker fee
-	TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE TransferType = 10
-	// Pay infrastructure fee
-	TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY TransferType = 11
-	// Receive infrastructure fee
-	TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE TransferType = 12
-	// Pay liquidity fee
-	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY TransferType = 13
-	// Receive liquidity fee
-	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE TransferType = 14
-	// Bond too low
-	TransferType_TRANSFER_TYPE_BOND_LOW TransferType = 15
-	// Bond too high
-	TransferType_TRANSFER_TYPE_BOND_HIGH TransferType = 16
-	// Lock amount for withdraw
-	TransferType_TRANSFER_TYPE_WITHDRAW_LOCK TransferType = 17
-	// Actual withdraw from system
-	TransferType_TRANSFER_TYPE_WITHDRAW TransferType = 18
-	// Deposit funds
-	TransferType_TRANSFER_TYPE_DEPOSIT TransferType = 19
-	// Bond slashing
-	TransferType_TRANSFER_TYPE_BOND_SLASHING TransferType = 20
 )

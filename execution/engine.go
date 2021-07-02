@@ -13,7 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/products"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -214,7 +214,7 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
 // the usual governance process
-func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
 			logging.Market(*marketConfig),
@@ -427,7 +427,7 @@ func (e *Engine) removeMarket(mktID string) {
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
-func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.OrderSubmission, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(orderSubmission.MarketId, "execution", "SubmitOrder")
 
 	defer func() {
@@ -439,7 +439,7 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 		e.log.Debug("submit order", logging.OrderSubmission(orderSubmission))
 	}
 
-	order := types.OrderFromProto(orderSubmission.IntoOrder(party))
+	order := orderSubmission.IntoOrder(party)
 
 	mkt, ok := e.markets[orderSubmission.MarketId]
 	if !ok {
@@ -464,14 +464,10 @@ func (e *Engine) SubmitOrder(ctx context.Context, orderSubmission *commandspb.Or
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
 	defer func() {
 		e.notifyFailureOnError(ctx, returnedErr, orderAmendment, party)
 	}()
-
-	if e.log.IsDebug() {
-		e.log.Debug("amend order", logging.OrderAmendment(orderAmendment))
-	}
 
 	mkt, ok := e.markets[orderAmendment.MarketId]
 	if !ok {
@@ -492,7 +488,7 @@ func (e *Engine) AmendOrder(ctx context.Context, orderAmendment *commandspb.Orde
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
 	if e.log.IsDebug() {
 		e.log.Debug("cancel order", logging.OrderCancellation(order))
 	}
@@ -643,7 +639,7 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, lpID string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit liquidity provision",
 			logging.LiquidityProvisionSubmission(*sub),
@@ -699,11 +695,11 @@ func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v inter
 		)
 	}
 
-	scalingFactors, ok := v.(*types.ScalingFactors)
+	pscalingFactors, ok := v.(*proto.ScalingFactors)
 	if !ok {
 		return errors.New("invalid types for Margin ScalingFactors")
 	}
-
+	scalingFactors := types.ScalingFactorsFromProto(pscalingFactors)
 	for _, mkt := range e.marketsCpy {
 		if err := mkt.OnMarginScalingFactorsUpdate(ctx, scalingFactors); err != nil {
 			return err

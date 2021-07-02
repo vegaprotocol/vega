@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/plugins"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 )
@@ -57,7 +57,7 @@ type executionTestSetup struct {
 	// save trader accounts state
 	markets []types.Market
 
-	block        *helpers.Block
+	block *helpers.Block
 
 	netParams *netparams.Store
 }

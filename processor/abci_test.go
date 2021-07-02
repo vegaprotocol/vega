@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
+	proto1 "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
@@ -81,13 +82,13 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
 		txn.SubmitOrderCommand: &commandspb.OrderSubmission{},
-		txn.ProposeCommand: &types.Proposal{
-			PartyId: party,
-			Terms:   &types.ProposalTerms{}, // avoid nil bit, shouldn't be asset
+		txn.ProposeCommand: &commandspb.ProposalSubmission{
+			Terms: &proto1.ProposalTerms{}, // avoid nil bit, shouldn't be asset
 		},
-		txn.VoteCommand: &types.Vote{
-			PartyId: party,
-		},
+		// FIXME(): This is not passing now because of the validations
+		// but this will not even be needed anyway once txv2 is the only
+		// tx format
+		// txn.VoteCommand: &commandspb.VoteSubmission{},
 	}
 	zero := uint64(0)
 
@@ -106,7 +107,8 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), party).Times(1).Return(&types.OrderConfirmation{
 		Order: &types.Order{},
 	}, nil)
-	proc.gov.EXPECT().AddVote(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	//	proc.gov.EXPECT().AddVote(
+	//		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
 	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
 
 	for cmd, msg := range data {

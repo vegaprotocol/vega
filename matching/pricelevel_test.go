@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -12,24 +13,24 @@ import (
 func TestGetPriceLevel(t *testing.T) {
 	side := &OrderBookSide{side: types.Side_SIDE_SELL}
 	assert.Equal(t, 0, len(side.levels))
-	side.getPriceLevel(100)
+	side.getPriceLevel(num.NewUint(100))
 	assert.Equal(t, 1, len(side.levels))
 
-	side.getPriceLevel(110)
+	side.getPriceLevel(num.NewUint(110))
 	assert.Equal(t, 2, len(side.levels))
 
-	side.getPriceLevel(100)
+	side.getPriceLevel(num.NewUint(100))
 	assert.Equal(t, 2, len(side.levels))
 }
 
 func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 	side := &OrderBookSide{side: types.Side_SIDE_SELL}
-	l := side.getPriceLevel(100)
+	l := side.getPriceLevel(num.NewUint(100))
 	order := &types.Order{
 		MarketId:    "testOrderBook",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -55,12 +56,12 @@ func TestUncross(t *testing.T) {
 	defer logger.Sync()
 
 	side := &OrderBookSide{side: types.Side_SIDE_SELL}
-	l := side.getPriceLevel(100)
+	l := side.getPriceLevel(num.NewUint(100))
 	passiveOrder := &types.Order{
 		MarketId:    "testOrderBook",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -72,7 +73,7 @@ func TestUncross(t *testing.T) {
 		MarketId:    "testOrderBook",
 		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,

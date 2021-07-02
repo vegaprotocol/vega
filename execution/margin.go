@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
@@ -21,7 +22,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 		return err
 	}
 
-	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.markPrice)
+	_, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, e, m.getCurrentMarkPrice())
 	if err != nil {
 		return err
 	}
@@ -41,7 +42,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 }
 
 func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
-	ctx context.Context, pos *positions.MarketPosition, price uint64,
+	ctx context.Context, pos *positions.MarketPosition, price *num.Uint,
 ) (events.Risk, error) {
 	asset, _ := m.mkt.GetAsset()
 	market := m.GetID()
@@ -73,7 +74,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
 	// then we check if the required top-up is greated that the amound in
 	// the GeneralBalance, if yes it means we would have to use the bond
 	// account which is not acceptable at this point, we return an error as well
-	if risk[0].Amount() > (risk[0].GeneralBalance() - risk[0].BondBalance()) {
+	if risk[0].Amount().GT(num.Zero().Sub(risk[0].GeneralBalance(), risk[0].BondBalance())) {
 		return nil, fmt.Errorf("margin would require bond: %w", ErrMarginCheckInsufficient)
 	}
 
@@ -102,7 +103,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 		if err != nil {
 			return nil, nil, err
 		}
-		_, closed, err := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price)
+		_, closed, err := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price.Clone())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -125,7 +126,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 		posEvts = append(posEvts, e)
 	}
 	// 5. Get all the risk events
-	risk, closed, err := m.risk.UpdateMarginAuction(ctx, posEvts, price)
+	risk, closed, err := m.risk.UpdateMarginAuction(ctx, posEvts, price.Clone())
 	if err != nil {
 		// @TODO handle this properly
 		return nil, nil, err
@@ -156,7 +157,7 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	if err != nil {
 		return nil, nil, err
 	}
-	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price)
+	risk, evt, err := m.risk.UpdateMarginOnNewOrder(ctx, pos, price.Clone())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -172,15 +173,25 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 	return []events.Risk{risk}, nil, nil
 }
 
-func (m *Market) getMarkPrice(o *types.Order) uint64 {
+func (m *Market) getMarkPrice(o *types.Order) *num.Uint {
 	// during opening auction we don't have a prior mark price, so we use the indicative price instead
 	if m.as.IsOpeningAuction() {
 		// we have no last known mark price
-		if ip := m.matching.GetIndicativePrice(); ip != 0 {
+		if ip := m.matching.GetIndicativePrice(); !ip.IsZero() {
 			return ip
 		}
 		// we don't have an indicative price yet, this must be the first order, so we use its price
-		return o.Price
+		return o.Price.Clone()
 	}
-	return m.markPrice
+	if m.markPrice == nil {
+		return num.Zero()
+	}
+	return m.markPrice.Clone()
+}
+
+func (m *Market) getCurrentMarkPrice() *num.Uint {
+	if m.markPrice == nil {
+		return num.Zero()
+	}
+	return m.markPrice.Clone()
 }

@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
@@ -63,10 +64,10 @@ func (mr *MockAuctionStateMockRecorder) CanLeave() *gomock.Call {
 }
 
 // Duration mocks base method
-func (m *MockAuctionState) Duration() proto.AuctionDuration {
+func (m *MockAuctionState) Duration() types.AuctionDuration {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Duration")
-	ret0, _ := ret[0].(proto.AuctionDuration)
+	ret0, _ := ret[0].(types.AuctionDuration)
 	return ret0
 }
 
@@ -91,7 +92,7 @@ func (mr *MockAuctionStateMockRecorder) ExpiresAt() *gomock.Call {
 }
 
 // ExtendAuctionPrice mocks base method
-func (m *MockAuctionState) ExtendAuctionPrice(arg0 proto.AuctionDuration) {
+func (m *MockAuctionState) ExtendAuctionPrice(arg0 types.AuctionDuration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ExtendAuctionPrice", arg0)
 }
@@ -213,7 +214,7 @@ func (mr *MockAuctionStateMockRecorder) Start() *gomock.Call {
 }
 
 // StartPriceAuction mocks base method
-func (m *MockAuctionState) StartPriceAuction(arg0 time.Time, arg1 *proto.AuctionDuration) {
+func (m *MockAuctionState) StartPriceAuction(arg0 time.Time, arg1 *types.AuctionDuration) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "StartPriceAuction", arg0, arg1)
 }

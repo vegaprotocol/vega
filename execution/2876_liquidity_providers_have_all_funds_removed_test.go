@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -59,10 +59,10 @@ func TestIssue2876(t *testing.T) {
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
-	lporder := commandspb.LiquidityProvisionSubmission{
+	lporder := types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1000000,
-		Fee:              "0.01",
+		CommitmentAmount: num.NewUint(1000000),
+		Fee:              num.DecimalFromFloat(0.01),
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
@@ -95,17 +95,17 @@ func TestIssue2876(t *testing.T) {
 	bondAccount, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
 	assert.NoError(t, err)
 	// we expect the whole commitment to be there
-	assert.Equal(t, 1000000, int(bondAccount.Balance))
+	assert.True(t, bondAccount.Balance.EQ(num.NewUint(1000000)))
 
 	// but also some margin to cover the orders
 	marginAccount, err := tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 27000, int(marginAccount.Balance))
+	assert.True(t, marginAccount.Balance.EQ(num.NewUint(27000)))
 
 	// but also some funds left in the genearal
 	generalAccount, err := tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 98973000, int(generalAccount.Balance))
+	assert.True(t, generalAccount.Balance.EQ(num.NewUint(98973000)))
 
 	// now let's move time and see
 	// this should end the opening auction
@@ -116,15 +116,19 @@ func TestIssue2876(t *testing.T) {
 	bondAccount, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "trader-2", tm.market.GetID(), tm.asset)
 	assert.NoError(t, err)
 	// we expect the whole commitment to be there
-	assert.Equal(t, 1000000, int(bondAccount.Balance))
+	assert.True(t, bondAccount.Balance.EQ(num.NewUint(1000000)))
 
 	// but also some margin to cover the orders
 	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 15318240, int(marginAccount.Balance))
+	expMargin := num.NewUint(15318240)
+	// expMargin := num.NewUint(13200)
+	assert.True(t, marginAccount.Balance.EQ(expMargin), "Expected: "+expMargin.String()+" got "+marginAccount.Balance.String())
 
+	expGeneral := num.NewUint(83681760)
+	// expGeneral := num.NewUint(98986800)
 	// but also some funds left in the genearal
 	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("trader-2", tm.asset)
 	assert.NoError(t, err)
-	assert.Equal(t, 83681760, int(generalAccount.Balance))
+	assert.True(t, generalAccount.Balance.EQ(expGeneral), "Expected: "+expGeneral.String()+" got "+generalAccount.Balance.String())
 }

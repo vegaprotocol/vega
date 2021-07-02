@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -32,14 +31,15 @@ type Broker interface {
 
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
-	ProbabilityOfTrading(currentPrice, yearFraction, orderPrice float64, isBid bool, applyMinMax bool, minPrice float64, maxPrice float64) float64
-	GetProjectionHorizon() float64
+	ProbabilityOfTrading(currentPrice, orderPrice, minPrice, maxPrice *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
+
+	GetProjectionHorizon() num.Decimal
 }
 
 // PriceMonitor provides the range of valid prices, that is prices that
 // wouldn't trade the current trading mode
 type PriceMonitor interface {
-	GetValidPriceRange() (float64, float64)
+	GetValidPriceRange() (*num.Uint, *num.Uint)
 }
 
 // IDGen is an id generator for orders.
@@ -51,7 +51,7 @@ type IDGen interface {
 // This function should be injected by the market.
 type RepricePeggedOrder func(
 	order *types.PeggedOrder, side types.Side,
-) (uint64, *types.PeggedOrder, error)
+) (*num.Uint, *types.PeggedOrder, error)
 
 // Engine handles Liquidity provision
 type Engine struct {
@@ -62,7 +62,7 @@ type Engine struct {
 	suppliedEngine *supplied.Engine
 
 	currentTime             time.Time
-	stakeToObligationFactor float64
+	stakeToObligationFactor num.Decimal
 
 	// state
 	provisions ProvisionsPerParty
@@ -84,7 +84,7 @@ type Engine struct {
 	maxShapesSize int64
 
 	// this is the max fee that can be specified
-	maxFee float64
+	maxFee num.Decimal
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -103,13 +103,13 @@ func NewEngine(config Config,
 		broker:                  broker,
 		idGen:                   idGen,
 		suppliedEngine:          supplied.NewEngine(riskModel, priceMonitor),
-		stakeToObligationFactor: 1,
+		stakeToObligationFactor: num.DecimalFromFloat(1),
 		provisions:              map[string]*types.LiquidityProvision{},
 		orders:                  map[string]map[string]*types.Order{},
 		liquidityOrders:         map[string]map[string]*types.Order{},
 		pendings:                map[string]struct{}{},
 		maxShapesSize:           100, // set it to the same default than the netparams
-		maxFee:                  1.0,
+		maxFee:                  num.DecimalFromFloat(1.0),
 	}
 }
 
@@ -118,20 +118,20 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
 	e.currentTime = now
 }
 
-func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v float64) {
+func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v num.Decimal) {
 	e.suppliedEngine.OnMinProbabilityOfTradingLPOrdersUpdate(v)
 }
 
-func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v float64) {
+func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 	e.suppliedEngine.OnProbabilityOfTradingTauScalingUpdate(v)
 }
 
 // OnSuppliedStakeToObligationFactorUpdate updates the stake factor
-func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v float64) {
+func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v num.Decimal) {
 	e.stakeToObligationFactor = v
 }
 
-func (e *Engine) OnMaximumLiquidityFeeFactorLevelUpdate(f float64) {
+func (e *Engine) OnMaximumLiquidityFeeFactorLevelUpdate(f num.Decimal) {
 	e.maxFee = f
 }
 
@@ -256,19 +256,22 @@ func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
 }
 
 func (e *Engine) ValidateLiquidityProvisionSubmission(
-	lp *commandspb.LiquidityProvisionSubmission,
+	lp *types.LiquidityProvisionSubmission,
 	zeroCommitmentIsValid bool,
 ) (err error) {
 	// we check if the commitment is 0 which would mean this is a cancel
 	// a cancel does not need validations
-	if lp.CommitmentAmount == 0 {
+	if lp.CommitmentAmount.IsZero() {
 		if zeroCommitmentIsValid {
 			return nil
 		}
 		return ErrCommitmentAmountIsZero
 	}
 
-	if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee < 0 || len(lp.Fee) <= 0 || fee > e.maxFee {
+	// not sure how to check for a missing fee, 0 could be valid
+	// then again, that validation should've happened before reaching this point
+	// if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee < 0 || len(lp.Fee) <= 0 || fee > e.maxFee {
+	if lp.Fee.IsNegative() || lp.Fee.GreaterThan(e.maxFee) {
 		return errors.New("invalid liquidity provision fee")
 	}
 
@@ -278,7 +281,7 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(
 	return validateShape(lp.Sells, types.Side_SIDE_SELL, e.maxShapesSize)
 }
 
-func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *commandspb.LiquidityProvisionSubmission, party, id string) {
+func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
 	lp := &types.LiquidityProvision{
@@ -288,7 +291,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *co
 		PartyId:          party,
 		Status:           types.LiquidityProvision_STATUS_REJECTED,
 		CreatedAt:        e.currentTime.UnixNano(),
-		CommitmentAmount: lps.CommitmentAmount,
+		CommitmentAmount: lps.CommitmentAmount.Clone(),
 		Reference:        lps.Reference,
 	}
 
@@ -314,7 +317,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *co
 // The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *commandspb.LiquidityProvisionSubmission, party, id string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
 		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
 		return err
@@ -358,7 +361,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *commandspb.L
 
 func (e *Engine) buildLiquidityProvisionShapesReferences(
 	lp *types.LiquidityProvision,
-	lps *commandspb.LiquidityProvisionSubmission,
+	lps *types.LiquidityProvisionSubmission,
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
@@ -430,7 +433,7 @@ func (e *Engine) IsLiquidityOrder(party, order string) bool {
 // created and the other for orders to be updated.
 func (e *Engine) CreateInitialOrders(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice uint64,
+	bestBidPrice, bestAskPrice *num.Uint,
 	party string,
 	orders []*types.Order,
 	repriceFn RepricePeggedOrder,
@@ -448,7 +451,7 @@ func (e *Engine) CreateInitialOrders(
 // It keeps track of all LP orders.
 func (e *Engine) Update(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice uint64,
+	bestBidPrice, bestAskPrice *num.Uint,
 	repriceFn RepricePeggedOrder,
 	orders []*types.Order,
 ) ([]*types.Order, []*ToCancel, error) {
@@ -468,7 +471,7 @@ func (e *Engine) Update(
 	}
 
 	for _, lp := range e.provisions.Slice() {
-		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice, bestAskPrice, lp.PartyId, repriceFn)
+		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), lp.PartyId, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -481,17 +484,17 @@ func (e *Engine) Update(
 }
 
 // CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers
-func (e *Engine) CalculateSuppliedStake() uint64 {
-	var ss uint64 = 0
+func (e *Engine) CalculateSuppliedStake() *num.Uint {
+	ss := num.Zero()
 	for _, v := range e.provisions {
-		ss += v.CommitmentAmount
+		ss.AddSum(v.CommitmentAmount)
 	}
 	return ss
 }
 
 func (e *Engine) createOrUpdateForParty(
 	ctx context.Context,
-	bestBidPrice, bestAskPrice uint64,
+	bestBidPrice, bestAskPrice *num.Uint,
 	party string,
 	repriceFn RepricePeggedOrder,
 ) (ordres []*types.Order, _ *ToCancel, errr error) {
@@ -501,7 +504,8 @@ func (e *Engine) createOrUpdateForParty(
 	}
 
 	var (
-		obligation     = float64(lp.CommitmentAmount) * e.stakeToObligationFactor
+		obligation, _ = num.UintFromDecimal(lp.CommitmentAmount.ToDecimal().Mul(e.stakeToObligationFactor).Round(0))
+		// Fix this after we update the commentamount to use Uint TODO UINT
 		buysShape      = make([]*supplied.LiquidityOrder, 0, len(lp.Buys))
 		sellsShape     = make([]*supplied.LiquidityOrder, 0, len(lp.Sells))
 		repriceFailure bool
@@ -593,12 +597,11 @@ func (e *Engine) createOrUpdateForParty(
 		nil
 }
 
-func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price uint64, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
+func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	order := &types.Order{
-		// PeggedOrder:          pegged,
 		MarketId:             marketID,
 		Side:                 side,
-		Price:                price,
+		Price:                price.Clone(),
 		PartyId:              partyID,
 		Size:                 size,
 		Remaining:            size,
@@ -685,7 +688,7 @@ func (e *Engine) createOrdersFromShape(
 			ref = lp.Sells[i]
 		}
 
-		if order != nil && (order.HasTraded() || order.Size != o.LiquidityImpliedVolume || order.Price != o.Price) {
+		if order != nil && (order.HasTraded() || order.Size != o.LiquidityImpliedVolume || order.Price.NEQ(o.Price)) {
 			// we always remove the order from our store, and add it to the amendment
 
 			// only amend if order remaining > 0
@@ -702,14 +705,14 @@ func (e *Engine) createOrdersFromShape(
 		// We either don't need this order anymore or
 		// we have just nothing to do about it.
 		if o.LiquidityImpliedVolume == 0 ||
-			// we check if the order was not nil, which mean we alread had a deployed order
+			// we check if the order was not nil, which mean we already had a deployed order
 			// if the order as not traded, and the size haven't changed, then we have nothing
 			// to do about it. If the size has changed, then we will want to recreate one.
 			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume)) ||
 			// we check o.Price == 0 just to make sure we are able to price
 			// the order, in which case the size will have been calculated
 			// properly by the engine.
-			o.Price == 0 {
+			o.Price.IsZero() {
 			continue
 		}
 

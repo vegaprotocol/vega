@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/cucumber/godog/gherkin"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TradersPlaceTheFollowingOrders(
@@ -19,7 +19,7 @@ func TradersPlaceTheFollowingOrders(
 	for _, r := range parseSubmitOrderTable(table) {
 		row := newSubmitOrderRow(r)
 
-		orderSubmission := commandspb.OrderSubmission{
+		orderSubmission := types.OrderSubmission{
 			MarketId:    row.MarketID(),
 			Side:        row.Side(),
 			Price:       row.Price(),
@@ -103,8 +103,8 @@ func (r submitOrderRow) Volume() uint64 {
 	return r.row.MustU64("volume")
 }
 
-func (r submitOrderRow) Price() uint64 {
-	return r.row.MustU64("price")
+func (r submitOrderRow) Price() *num.Uint {
+	return r.row.MustUint("price")
 }
 
 func (r submitOrderRow) OrderType() types.Order_Type {

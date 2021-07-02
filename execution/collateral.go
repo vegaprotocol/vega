@@ -3,12 +3,10 @@ package execution
 import (
 	"context"
 	"errors"
-	"math/big"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
-
-	"github.com/shopspring/decimal"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -88,7 +86,7 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 		responses = append(responses, tr)
 	}
 	// margin shortfall && liquidity provider -> bond slashing
-	if closed != nil && closed.MarginShortFall() > 0 {
+	if closed != nil && !closed.MarginShortFall().IsZero() {
 		// we pay the bond penalty if the order was not pending
 		if !m.liquidity.IsPending(closed.Party()) {
 			// get bond penalty
@@ -106,18 +104,19 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*types.TransferResponse, error) {
 	mID := m.GetID()
 	asset, _ := m.mkt.GetAsset()
-	factor := decimal.NewFromFloat(m.bondPenaltyFactor)
 	ret := make([]*types.TransferResponse, 0, len(closed))
 	for _, c := range closed {
-		shortfall := decimal.NewFromBigInt(new(big.Int).SetUint64(c.MarginShortFall()), 0)
-		penalty := shortfall.Mul(factor).Floor().BigInt().Uint64()
+		penalty, _ := num.UintFromDecimal(
+			num.DecimalFromUint(c.MarginShortFall()).Mul(m.bondPenaltyFactor).Floor(),
+		)
 		resp, err := m.collateral.BondUpdate(ctx, mID, c.Party(), &types.Transfer{
 			Owner: c.Party(),
 			Amount: &types.FinancialAmount{
 				Amount: penalty,
 				Asset:  asset,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+			Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+			MinAmount: num.Zero(),
 		})
 		if err != nil {
 			return nil, err

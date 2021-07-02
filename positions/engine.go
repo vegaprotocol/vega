@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // Errors
@@ -51,21 +52,27 @@ func New(log *logging.Logger, config Config) *Engine {
 }
 
 func (e *Engine) Hash() []byte {
-	output := make([]byte, len(e.positionsCpy)*8*5)
+	// Fields * FieldSize = (8 * 3)
+	// Prices = 32 * 2
+	output := make([]byte, len(e.positionsCpy)*((8*3)+(32*2)))
 	var i int
 	for _, p := range e.positionsCpy {
 		values := []uint64{
 			uint64(p.Size()),
 			uint64(p.Buy()),
 			uint64(p.Sell()),
-			p.VWBuy(),
-			p.VWSell(),
 		}
 
 		for _, v := range values {
 			binary.BigEndian.PutUint64(output[i:], v)
 			i += 8
 		}
+
+		// Add bytes for VWBuy and VWSell here
+		b := p.VWBuy().Bytes()
+		output = append(output, b[:]...)
+		s := p.VWBuy().Bytes()
+		output = append(output, s[:]...)
 	}
 
 	return crypto.Hash(output)
@@ -96,7 +103,7 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
 	pos, found := e.positions[order.PartyId]
 	if !found {
-		pos = &MarketPosition{partyID: order.PartyId}
+		pos = NewMarketPosition(order.PartyId)
 		e.positions[order.PartyId] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
@@ -184,6 +191,10 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 		size = -size
 	}
 	pos.size += size
+	cpy := *pos
+	cpy.price = pos.price.Clone()
+	cpy.vwBuyPrice = pos.vwBuyPrice.Clone()
+	cpy.vwSellPrice = pos.vwSellPrice.Clone()
 	return []events.MarketPosition{*pos}
 }
 
@@ -269,9 +280,9 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 
 // UpdateMarkPrice update the mark price on all positions and return a slice
 // of the updated positions
-func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
+func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
 	for _, pos := range e.positions {
-		pos.price = markPrice
+		pos.price.Set(markPrice)
 	}
 	return e.positionsCpy
 }

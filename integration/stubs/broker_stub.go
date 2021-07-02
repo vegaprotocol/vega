@@ -217,12 +217,14 @@ func (b *BrokerStub) GetMarket(marketID string) *types.Market {
 			if mkt.MarketID() != marketID {
 				continue
 			}
-			return mkt.Market().DeepClone()
+			m := mkt.Proto()
+			return &m
 		case events.MarketUpdated:
 			if mkt.MarketID() != marketID {
 				continue
 			}
-			return mkt.Market().DeepClone()
+			m := mkt.Proto()
+			return &m
 		}
 	}
 
@@ -349,13 +351,13 @@ func (b *BrokerStub) GetMarginByPartyAndMarket(partyID, marketID string) (types.
 			if _, ok := mapped[ml.PartyId]; !ok {
 				mapped[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			mapped[ml.PartyId][ml.MarketId] = ml
+			mapped[ml.PartyId][ml.MarketId] = *ml.IntoProto()
 		case events.MarginLevels:
 			ml := et.MarginLevels()
 			if _, ok := mapped[ml.PartyId]; !ok {
 				mapped[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			mapped[ml.PartyId][ml.MarketId] = ml
+			mapped[ml.PartyId][ml.MarketId] = *ml.IntoProto()
 		}
 	}
 	mkts, ok := mapped[partyID]
@@ -492,6 +494,37 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 		return last, nil
 	}
 	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
+}
+
+func (b *BrokerStub) GetTxErrors() []events.TxErr {
+	batch := b.GetBatch(events.TxErrEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.TxErr, 0, len(batch))
+	for _, e := range batch {
+		switch te := e.(type) {
+		case *events.TxErr:
+			ret = append(ret, *te)
+		case events.TxErr:
+			ret = append(ret, te)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetLPSErrors() []events.TxErr {
+	errs := b.GetTxErrors()
+	if len(errs) == 0 {
+		return nil
+	}
+	ret := make([]events.TxErr, 0, len(errs)/2)
+	for _, e := range errs {
+		if p := e.Proto(); p.GetLiquidityProvisionSubmission() != nil {
+			ret = append(ret, e)
+		}
+	}
+	return ret
 }
 
 func (b *BrokerStub) GetTrades() []types.Trade {

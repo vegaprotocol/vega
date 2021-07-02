@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
@@ -143,7 +144,7 @@ func NewApp(
 	return app, nil
 }
 
-// addDeteremisticID will build the command id and .
+// addDeterministicID will build the command id and .
 // the command id is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
 // the hash is the hex string encoded
@@ -211,7 +212,6 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	}
 
 	return tmtypes.ResponseInitChain{}
-
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block
@@ -327,12 +327,22 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 	app.stats.IncTotalCreateOrder()
 
+	// Convert from proto to domain type
+	os, err := types.NewOrderSubmissionFromProto(s)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert OrderSubmission protobuf message to domain type",
+				logging.OrderSubmissionProto(s), logging.Error(err))
+		}
+		return err
+	}
+
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, s, tx.Party())
+	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
-				logging.OrderSubmission(s),
+				logging.OrderSubmission(os),
 				logging.OrderWithTag(*conf.Order, "aggressive-order"),
 				logging.String("passive-trades", fmt.Sprintf("%+v", conf.Trades)),
 				logging.String("passive-orders", fmt.Sprintf("%+v", conf.PassiveOrdersAffected)))
@@ -348,7 +358,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 
 	if err != nil && app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("error message on creating order",
-			logging.OrderSubmission(s),
+			logging.OrderSubmission(os),
 			logging.Error(err))
 	}
 
@@ -356,14 +366,15 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
-	order := &commandspb.OrderCancellation{}
-	if err := tx.Unmarshal(order); err != nil {
+	porder := &commandspb.OrderCancellation{}
+	if err := tx.Unmarshal(porder); err != nil {
 		return err
 	}
 
 	app.stats.IncTotalCancelOrder()
-	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", order.OrderId))
+	app.log.Debug("Blockchain service received a CANCEL ORDER request", logging.String("order-id", porder.OrderId))
 
+	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
 	msg, err := app.exec.CancelOrder(ctx, order, tx.Party())
 	if err != nil {
@@ -388,8 +399,11 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	app.stats.IncTotalAmendOrder()
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
+	// Convert protobuf into local domain type
+	oa := types.NewOrderAmendmentFromProto(order)
+
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, order, tx.Party())
+	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -408,7 +422,17 @@ func (app *App) DeliverWithdraw(
 		return err
 	}
 
-	return app.processWithdraw(ctx, w, id, tx.Party())
+	// Convert protobuf to local domain type
+	ws, err := types.NewWithdrawSubmissionFromProto(w)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert WithdrawSubmission protobuf message to domain type",
+				logging.WithdrawSubmissionProto(w), logging.Error(err))
+		}
+		return err
+	}
+
+	return app.processWithdraw(ctx, ws, id, tx.Party())
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
@@ -427,7 +451,8 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
-	toSubmit, err := app.gov.SubmitProposal(ctx, *prop, id, party)
+	propSubmission := types.NewProposalSubmissionFromProto(prop)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, id, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
 			logging.ProposalID(id),
@@ -464,6 +489,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 	vote := &commandspb.VoteSubmission{}
+
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
 	}
@@ -474,7 +500,13 @@ func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 		logging.String("vote-party", party),
 		logging.String("vote-value", vote.Value.String()))
 
-	return app.gov.AddVote(ctx, *vote, party)
+	if err := commands.CheckVoteSubmission(vote); err != nil {
+		return err
+	}
+
+	v := types.NewVoteSubmissionFromProto(vote)
+
+	return app.gov.AddVote(ctx, *v, party)
 }
 
 func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
@@ -492,8 +524,18 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 		return err
 	}
 
+	// Convert protobuf message to local domain type
+	lps, err := types.NewLiquidityProvisionSubmissionFromProto(sub)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert LiquidityProvisionSubmission protobuf message to domain type",
+				logging.LiquidityProvisionSubmissionProto(sub), logging.Error(err))
+		}
+		return err
+	}
+
 	partyID := tx.Party()
-	return app.exec.SubmitLiquidityProvision(ctx, sub, partyID, id)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
@@ -601,7 +643,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	// if this is a builtin asset nothing needs to be done, just start the asset
 	// straight away
 	if asset.IsBuiltinAsset() {
-		err = app.banking.EnableBuiltinAsset(ctx, asset.ProtoAsset().Id)
+		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().Id)
 		if err != nil {
 			// this should not happen
 			app.log.Error("unable to get builtin asset enabled",

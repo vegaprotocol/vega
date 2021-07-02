@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,11 +34,11 @@ func (m *MockPriceMonitor) EXPECT() *MockPriceMonitorMockRecorder {
 }
 
 // GetValidPriceRange mocks base method
-func (m *MockPriceMonitor) GetValidPriceRange() (float64, float64) {
+func (m *MockPriceMonitor) GetValidPriceRange() (*num.Uint, *num.Uint) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidPriceRange")
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(float64)
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(*num.Uint)
 	return ret0, ret1
 }
 

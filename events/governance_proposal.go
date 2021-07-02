@@ -3,8 +3,9 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Proposal struct {
@@ -20,8 +21,8 @@ func NewProposalEvent(ctx context.Context, p types.Proposal) *Proposal {
 	}
 }
 
-func (p *Proposal) Proposal() types.Proposal {
-	return p.p
+func (p *Proposal) Proposal() proto.Proposal {
+	return *p.p.IntoProto()
 }
 
 // ProposalID - for combined subscriber, communal interface
@@ -38,8 +39,9 @@ func (p *Proposal) PartyID() string {
 	return p.p.PartyId
 }
 
-func (p Proposal) Proto() types.Proposal {
-	return p.p
+func (p Proposal) Proto() proto.Proposal {
+	pr := p.p.IntoProto()
+	return *pr
 }
 
 func (p Proposal) StreamMessage() *eventspb.BusEvent {
@@ -48,7 +50,7 @@ func (p Proposal) StreamMessage() *eventspb.BusEvent {
 		Block: p.TraceID(),
 		Type:  p.et.ToProto(),
 		Event: &eventspb.BusEvent_Proposal{
-			Proposal: &p.p,
+			Proposal: p.p.IntoProto(),
 		},
 	}
 }

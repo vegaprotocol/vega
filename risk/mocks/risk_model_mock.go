@@ -5,8 +5,10 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
+	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 	reflect "reflect"
 	time "time"
 )
@@ -35,11 +37,11 @@ func (m *MockModel) EXPECT() *MockModelMockRecorder {
 }
 
 // CalculateRiskFactors mocks base method
-func (m *MockModel) CalculateRiskFactors(arg0 *proto.RiskResult) (bool, *proto.RiskResult) {
+func (m *MockModel) CalculateRiskFactors(arg0 *types.RiskResult) (bool, *types.RiskResult) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CalculateRiskFactors", arg0)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(*proto.RiskResult)
+	ret1, _ := ret[1].(*types.RiskResult)
 	return ret0, ret1
 }
 
@@ -64,10 +66,10 @@ func (mr *MockModelMockRecorder) CalculationInterval() *gomock.Call {
 }
 
 // GetProjectionHorizon mocks base method
-func (m *MockModel) GetProjectionHorizon() float64 {
+func (m *MockModel) GetProjectionHorizon() decimal.Decimal {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProjectionHorizon")
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(decimal.Decimal)
 	return ret0
 }
 
@@ -78,11 +80,11 @@ func (mr *MockModelMockRecorder) GetProjectionHorizon() *gomock.Call {
 }
 
 // PriceRange mocks base method
-func (m *MockModel) PriceRange(arg0, arg1, arg2 float64) (float64, float64) {
+func (m *MockModel) PriceRange(arg0, arg1, arg2 decimal.Decimal) (decimal.Decimal, decimal.Decimal) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PriceRange", arg0, arg1, arg2)
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(float64)
+	ret0, _ := ret[0].(decimal.Decimal)
+	ret1, _ := ret[1].(decimal.Decimal)
 	return ret0, ret1
 }
 
@@ -93,10 +95,10 @@ func (mr *MockModelMockRecorder) PriceRange(arg0, arg1, arg2 interface{}) *gomoc
 }
 
 // ProbabilityOfTrading mocks base method
-func (m *MockModel) ProbabilityOfTrading(arg0, arg1, arg2 float64, arg3, arg4 bool, arg5, arg6 float64) float64 {
+func (m *MockModel) ProbabilityOfTrading(arg0, arg1, arg2, arg3 *num.Uint, arg4 decimal.Decimal, arg5, arg6 bool) decimal.Decimal {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProbabilityOfTrading", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
-	ret0, _ := ret[0].(float64)
+	ret0, _ := ret[0].(decimal.Decimal)
 	return ret0
 }
 

@@ -1,14 +1,30 @@
 package matching
 
-import "code.vegaprotocol.io/vega/types"
+import (
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
+)
 
 type BookCache struct {
 	indicativePrice          cachedUint
-	indicativeVolume         cachedUint
+	indicativeVolume         cachedUint64
 	indicativeUncrossingSide cachedSide
 }
 
+func NewBookCache() BookCache {
+	return BookCache{
+		indicativePrice: cachedUint{
+			value: num.NewUint(0),
+		},
+	}
+}
+
 type cachedUint struct {
+	valid bool
+	value *num.Uint
+}
+
+type cachedUint64 struct {
 	valid bool
 	value uint64
 }
@@ -18,7 +34,7 @@ type cachedSide struct {
 	value types.Side
 }
 
-func (c *cachedUint) Set(u uint64) {
+func (c *cachedUint) Set(u *num.Uint) {
 	c.value = u
 	c.valid = true
 }
@@ -27,7 +43,20 @@ func (c *cachedUint) Invalidate() {
 	c.valid = false
 }
 
-func (c *cachedUint) Get() (uint64, bool) {
+func (c *cachedUint) Get() (*num.Uint, bool) {
+	return c.value.Clone(), c.valid
+}
+
+func (c *cachedUint64) Set(u uint64) {
+	c.value = u
+	c.valid = true
+}
+
+func (c *cachedUint64) Invalidate() {
+	c.valid = false
+}
+
+func (c *cachedUint64) Get() (uint64, bool) {
 	return c.value, c.valid
 }
 
@@ -50,11 +79,11 @@ func (c *BookCache) Invalidate() {
 	c.indicativeUncrossingSide.Invalidate()
 }
 
-func (c *BookCache) SetIndicativePrice(v uint64) {
+func (c *BookCache) SetIndicativePrice(v *num.Uint) {
 	c.indicativePrice.Set(v)
 }
 
-func (c *BookCache) GetIndicativePrice() (uint64, bool) {
+func (c *BookCache) GetIndicativePrice() (*num.Uint, bool) {
 	return c.indicativePrice.Get()
 }
 

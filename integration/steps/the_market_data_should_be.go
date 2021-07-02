@@ -6,20 +6,22 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/cucumber/godog/gherkin"
 )
 
 type MappedMD struct {
-	md     types.MarketData
-	u64Map map[string]*uint64
-	strMap map[string]*string
-	tMap   map[string]*int64
-	i64Map map[string]*int64
-	tm     *types.Market_TradingMode
-	tr     *types.AuctionTrigger
-	et     *types.AuctionTrigger
+	md      types.MarketData
+	uintMap map[string]*num.Uint
+	u64Map  map[string]*uint64
+	strMap  map[string]*string
+	tMap    map[string]*int64
+	i64Map  map[string]*int64
+	tm      *types.Market_TradingMode
+	tr      *types.AuctionTrigger
+	et      *types.AuctionTrigger
 }
 
 type ErrStack []error
@@ -139,7 +141,7 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 		for _, g := range got.PriceMonitoringBounds {
 			if g.Trigger.Horizon == pmb.Trigger.Horizon {
 				bounds = g
-				match = pmb.MaxValidPrice == g.MaxValidPrice && pmb.MinValidPrice == g.MinValidPrice
+				match = pmb.MaxValidPrice.EQ(g.MaxValidPrice) && pmb.MinValidPrice.EQ(g.MinValidPrice)
 				break
 			}
 		}
@@ -171,8 +173,8 @@ func getPriceBounds(data *gherkin.DataTable) (ret []*types.PriceMonitoringBounds
 			return nil
 		}
 		expected := &types.PriceMonitoringBounds{
-			MinValidPrice: row.MustU64("min bound"),
-			MaxValidPrice: row.MustU64("max bound"),
+			MinValidPrice: row.MustUint("min bound"),
+			MaxValidPrice: row.MustUint("max bound"),
 			Trigger: &types.PriceMonitoringTrigger{
 				Horizon: h,
 			},
@@ -300,20 +302,22 @@ func mappedMD(md types.MarketData) *MappedMD {
 	r := &MappedMD{
 		md: md,
 	}
+	r.uintMap = map[string]*num.Uint{
+		"mark price":              r.md.MarkPrice.Clone(),
+		"best bid price":          r.md.BestBidPrice.Clone(),
+		"best offer price":        r.md.BestOfferPrice.Clone(),
+		"best static bid price":   r.md.BestStaticBidPrice.Clone(),
+		"best static offer price": r.md.BestStaticOfferPrice.Clone(),
+		"mid price":               r.md.MidPrice.Clone(),
+		"static mid price":        r.md.StaticMidPrice.Clone(),
+		"indicative price":        r.md.IndicativePrice.Clone(),
+	}
 	r.u64Map = map[string]*uint64{
-		"mark price":               &r.md.MarkPrice,
-		"best bid price":           &r.md.BestBidPrice,
 		"best bid volume":          &r.md.BestBidVolume,
-		"best offer price":         &r.md.BestOfferPrice,
 		"best offer volume":        &r.md.BestOfferVolume,
-		"best static bid price":    &r.md.BestStaticBidPrice,
 		"best static bid volume":   &r.md.BestStaticBidVolume,
-		"best static offer price":  &r.md.BestStaticOfferPrice,
 		"best static offer volume": &r.md.BestStaticOfferVolume,
-		"mid price":                &r.md.MidPrice,
-		"static mid price":         &r.md.StaticMidPrice,
 		"open interest":            &r.md.OpenInterest,
-		"indicative price":         &r.md.IndicativePrice,
 		"indicative volume":        &r.md.IndicativeVolume,
 	}
 	r.strMap = map[string]*string{

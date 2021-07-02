@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
@@ -13,6 +15,26 @@ type ErroneousRow interface {
 	ExpectError() bool
 	Error() string
 	Reference() string
+}
+
+func DebugTxErrors(broker *stubs.BrokerStub, log *logging.Logger) error {
+	log.Info("DEBUGGING ALL TRANSACTION ERRORS")
+	data := broker.GetTxErrors()
+	for _, e := range data {
+		p := e.Proto()
+		log.Infof("TxError: %s\n", p.String())
+	}
+	return nil
+}
+
+func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) error {
+	log.Info("DEBUGGING LP SUBMISSION ERRORS")
+	data := broker.GetLPSErrors()
+	for _, e := range data {
+		p := e.Proto()
+		log.Infof("LP Submission error: %s - LP: %#v\n", p.String(), p.GetLiquidityProvisionSubmission)
+	}
+	return nil
 }
 
 func checkExpectedError(row ErroneousRow, returnedErr error) error {

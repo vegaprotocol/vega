@@ -7,7 +7,8 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 )
@@ -36,14 +37,14 @@ type oracle struct {
 
 type oracleData struct {
 	updated         bool
-	settlementPrice int64
+	settlementPrice *num.Uint
 }
 
-func (d *oracleData) SettlementPrice() (int64, error) {
+func (d *oracleData) SettlementPrice() (*num.Uint, error) {
 	if !d.updated {
-		return 0, errors.New("settlement price is not set")
+		return nil, errors.New("settlement price is not set")
 	}
-	return d.settlementPrice, nil
+	return d.settlementPrice.Clone(), nil
 }
 
 type oracleBinding struct {
@@ -51,7 +52,7 @@ type oracleBinding struct {
 }
 
 // Settle a position against the future
-func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialAmount, error) {
+func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error) {
 	settlementPrice, err := f.oracle.data.SettlementPrice()
 	if err != nil {
 		return nil, err
@@ -59,16 +60,11 @@ func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialA
 
 	// Make sure net position is positive
 	if netPosition < 0 {
-		netPosition = 0 - netPosition
+		netPosition = -netPosition
 	}
 
-	sPrice := uint64(settlementPrice)
-	var amount uint64
-	if sPrice > entryPrice {
-		amount = (sPrice - entryPrice) * uint64(netPosition)
-	} else {
-		amount = (entryPrice - sPrice) * uint64(netPosition)
-	}
+	amount, _ := settlementPrice.Delta(settlementPrice, entryPrice)
+	amount = amount.Mul(amount, num.NewUint(uint64(netPosition)))
 
 	return &types.FinancialAmount{
 		Asset:  f.SettlementAsset,
@@ -77,8 +73,8 @@ func (f *Future) Settle(entryPrice uint64, netPosition int64) (*types.FinancialA
 }
 
 // Value - returns the nominal value of a unit given a current mark price
-func (f *Future) Value(markPrice uint64) (uint64, error) {
-	return markPrice, nil
+func (f *Future) Value(markPrice *num.Uint) (*num.Uint, error) {
+	return markPrice.Clone(), nil
 }
 
 // GetAsset return the asset used by the future
@@ -91,7 +87,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
 
-	settlementPrice, err := data.GetInteger(f.oracle.binding.settlementPriceProperty)
+	settlementPrice, err := data.GetUint(f.oracle.binding.settlementPriceProperty)
 	if err != nil {
 		f.log.Error(
 			"could not parse the property acting as settlement price",
@@ -106,7 +102,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug(
 			"future settlement price updated",
-			logging.Int64("settlementPrice", settlementPrice),
+			logging.BigUint("settlementPrice", settlementPrice),
 		)
 	}
 

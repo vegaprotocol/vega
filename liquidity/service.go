@@ -8,9 +8,9 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	types "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
-	"code.vegaprotocol.io/vega/types"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -22,7 +22,7 @@ var (
 
 type LiquidityProvisionEvent interface {
 	events.Event
-	LiquidityProvision() types.LiquidityProvision
+	LiquidityProvision() *types.LiquidityProvision
 }
 
 type Svc struct {
@@ -84,7 +84,7 @@ func (s *Svc) Push(evts ...events.Event) {
 			return
 		default:
 			if lpe, ok := e.(LiquidityProvisionEvent); ok {
-				s.ch <- lpe.LiquidityProvision()
+				s.ch <- *lpe.LiquidityProvision()
 			}
 		}
 	}

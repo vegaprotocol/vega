@@ -65,7 +65,9 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
     # then we make sure the insurance pool collected the funds
     #    Note the insurance pool is 96 as tt_15 balance first covers the fees on position resolution order
     #    and only what's left (100+2-6=96) goes into the insurance pool.
-    And the insurance pool balance should be "96" for the market "ETH/DEC19"
+    # And the insurance pool balance should be "96" for the market "ETH/DEC19"
+    # Used to be 96 prior to Uint stuff
+    And the insurance pool balance should be "98" for the market "ETH/DEC19"
 
     #check positions
     #   Note that the realised pnl for tt_15 is -102 as additional 2 was made

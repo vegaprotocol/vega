@@ -151,6 +151,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | trader2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-7    |
     # Check MTM Loss transfer happened
+    #  4449804
     Then the following transfers should happen:
       | from    | to      | from account            | to account           | market id | amount  | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 4000000 | ETH   |

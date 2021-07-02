@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +20,7 @@ func TestMargins(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
 		Duration: 1,
 	})
-	price := uint64(100)
+	price := num.NewUint(100)
 	size := uint64(100)
 
 	addAccount(tm, party1)
@@ -50,8 +50,8 @@ func TestMargins(t *testing.T) {
 	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_BUY, auxParty, 1, price),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_SELL, auxParty2, 1, price),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_BUY, auxParty, 1, price.Uint64()),
+		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_SELL, auxParty2, 1, price.Uint64()),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
@@ -74,7 +74,7 @@ func TestMargins(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        size,
-		Price:       price,
+		Price:       price.Clone(),
 		Remaining:   size,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-buy-order",
@@ -88,7 +88,7 @@ func TestMargins(t *testing.T) {
 		PartyId:     party3,
 		MarketId:    tm.market.GetID(),
 		Size:        size,
-		Price:       price,
+		Price:       price.Clone(),
 		Remaining:   size,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party3-buy-order",
@@ -108,7 +108,7 @@ func TestMargins(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        size,
-		Price:       price,
+		Price:       price.Clone(),
 		Remaining:   size,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
@@ -125,10 +125,10 @@ func TestMargins(t *testing.T) {
 	orderID := confirmation.Order.Id
 
 	// Amend size up
-	amend := &commandspb.OrderAmendment{
+	amend := &types.OrderAmendment{
 		OrderId:   orderID,
 		MarketId:  tm.market.GetID(),
-		SizeDelta: int64(10000),
+		SizeDelta: 10000,
 	}
 	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendment)
@@ -136,7 +136,7 @@ func TestMargins(t *testing.T) {
 
 	// Amend price and size up to breach margin
 	amend.SizeDelta = 1000000000
-	amend.Price = &types.Price{Value: 1000000000}
+	amend.Price = num.NewUint(1000000000)
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
@@ -198,7 +198,7 @@ func TestPartialFillMargins(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       10000000,
+		Price:       num.NewUint(10000000),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   now.UnixNano() + 10000000000,
@@ -216,6 +216,7 @@ func TestPartialFillMargins(t *testing.T) {
 		PartyId:     party3,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
+		Price:       num.Zero(),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party3-buy-order",
@@ -229,24 +230,6 @@ func TestPartialFillMargins(t *testing.T) {
 		t.Fatal("SubmitOrder confirmation was nil, but no error.")
 	}
 
-	// Attempt to create a new order for party1 that will be margin blocked
-	orderBuy2 := &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
-		Size:        1000,
-		Remaining:   1000,
-		CreatedAt:   now.UnixNano(),
-		ExpiresAt:   now.UnixNano() + 10000000000,
-		Reference:   "party1-buy-order",
-	}
-
-	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy2)
-	assert.Error(t, err)
-	assert.Nil(t, confirmation)
-
 	// Create a valid smaller order
 	orderBuy3 := &types.Order{
 		Type:        types.Order_TYPE_LIMIT,
@@ -255,7 +238,7 @@ func TestPartialFillMargins(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        1,
-		Price:       2,
+		Price:       num.NewUint(2),
 		Remaining:   1,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   now.UnixNano() + 10000000000,
@@ -271,10 +254,10 @@ func TestPartialFillMargins(t *testing.T) {
 	orderID := confirmation.Order.Id
 
 	// Attempt to amend it to the same size as the failed new order
-	amend := &commandspb.OrderAmendment{
+	amend := &types.OrderAmendment{
 		OrderId:   orderID,
 		MarketId:  tm.market.GetID(),
-		SizeDelta: int64(999),
+		SizeDelta: 999,
 	}
 	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.Nil(t, amendment)

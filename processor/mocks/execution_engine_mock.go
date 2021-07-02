@@ -5,8 +5,6 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
-	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	types "code.vegaprotocol.io/vega/types"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -37,7 +35,7 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 }
 
 // AmendOrder mocks base method
-func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *v1.OrderAmendment, arg2 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
@@ -52,7 +50,7 @@ func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2 interface
 }
 
 // CancelOrder mocks base method
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *v1.OrderCancellation, arg2 string) ([]*types.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2 string) ([]*types.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*types.OrderCancellationConfirmation)
@@ -109,7 +107,7 @@ func (mr *MockExecutionEngineMockRecorder) StartOpeningAuction(arg0, arg1 interf
 }
 
 // SubmitLiquidityProvision mocks base method
-func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *v1.LiquidityProvisionSubmission, arg2, arg3 string) error {
+func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionSubmission, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitLiquidityProvision", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -123,7 +121,7 @@ func (mr *MockExecutionEngineMockRecorder) SubmitLiquidityProvision(arg0, arg1, 
 }
 
 // SubmitMarket mocks base method
-func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *proto.Market) error {
+func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *types.Market) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitMarket", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -137,7 +135,7 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1 interface{}) 
 }
 
 // SubmitMarketWithLiquidityProvision mocks base method
-func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *proto.Market, arg2 *v1.LiquidityProvisionSubmission, arg3, arg4 string) error {
+func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *types.Market, arg2 *types.LiquidityProvisionSubmission, arg3, arg4 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitMarketWithLiquidityProvision", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
@@ -151,7 +149,7 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarketWithLiquidityProvision(ar
 }
 
 // SubmitOrder mocks base method
-func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *v1.OrderSubmission, arg2 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.OrderConfirmation)

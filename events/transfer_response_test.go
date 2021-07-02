@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +20,7 @@ func TestTransferResponseDeepClone(t *testing.T) {
 				&types.LedgerEntry{
 					FromAccount: "FromAccount",
 					ToAccount:   "ToAccount",
-					Amount:      1000,
+					Amount:      num.NewUint(1000),
 					Reference:   "Reference",
 					Type:        "Type",
 					Timestamp:   2000,
@@ -30,12 +31,12 @@ func TestTransferResponseDeepClone(t *testing.T) {
 					Account: &types.Account{
 						Id:       "Id",
 						Owner:    "Owner",
-						Balance:  3000,
+						Balance:  num.NewUint(3000),
 						Asset:    "Asset",
 						MarketId: "MarketId",
 						Type:     types.AccountType_ACCOUNT_TYPE_BOND,
 					},
-					Balance: 4000,
+					Balance: num.NewUint(4000),
 				},
 			},
 		},
@@ -45,19 +46,19 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	tr2 := trEvent.TransferResponses()
 
 	// Change the original values
-	tr[0].Transfers[0].Amount = 999
+	tr[0].Transfers[0].Amount = num.NewUint(999)
 	tr[0].Transfers[0].FromAccount = "Changed"
 	tr[0].Transfers[0].Reference = "Changed"
 	tr[0].Transfers[0].Timestamp = 999
 	tr[0].Transfers[0].ToAccount = "Changed"
 	tr[0].Transfers[0].Type = "Changed"
 	tr[0].Balances[0].Account.Asset = "Changed"
-	tr[0].Balances[0].Account.Balance = 999
+	tr[0].Balances[0].Account.Balance = num.NewUint(999)
 	tr[0].Balances[0].Account.Id = "Changed"
 	tr[0].Balances[0].Account.MarketId = "Changed"
 	tr[0].Balances[0].Account.Owner = "Changed"
 	tr[0].Balances[0].Account.Type = proto.AccountType_ACCOUNT_TYPE_UNSPECIFIED
-	tr[0].Balances[0].Balance = 999
+	tr[0].Balances[0].Balance = num.NewUint(999)
 
 	// Check things have changed
 	assert.NotEqual(t, tr[0].Transfers[0].Amount, tr2[0].Transfers[0].Amount)

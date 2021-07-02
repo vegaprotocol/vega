@@ -7,13 +7,15 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/proto"
 	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMarketDeepClone(t *testing.T) {
 	ctx := context.Background()
 
-	me := proto.Market{
+	pme := proto.Market{
 		Id: "Id",
 		TradableInstrument: &proto.TradableInstrument{
 			Instrument: &proto.Instrument{
@@ -77,9 +79,9 @@ func TestMarketDeepClone(t *testing.T) {
 		DecimalPlaces: 5,
 		Fees: &proto.Fees{
 			Factors: &proto.FeeFactors{
-				MakerFee:          "MakerFee",
-				InfrastructureFee: "InfraFee",
-				LiquidityFee:      "LiquidityFee",
+				MakerFee:          "0.1",
+				InfrastructureFee: "0.2",
+				LiquidityFee:      "0.3",
 			},
 		},
 		OpeningAuction: &proto.AuctionDuration{
@@ -121,7 +123,8 @@ func TestMarketDeepClone(t *testing.T) {
 		},
 	}
 
-	marketEvent := events.NewMarketCreatedEvent(ctx, me)
+	me := types.MarketFromProto(&pme)
+	marketEvent := events.NewMarketCreatedEvent(ctx, *me)
 	me2 := marketEvent.Market()
 
 	// Change the original and check we are not updating the wrapped event
@@ -131,7 +134,7 @@ func TestMarketDeepClone(t *testing.T) {
 	me.TradableInstrument.Instrument.Name = "Changed"
 	me.TradableInstrument.Instrument.Metadata.Tags[0] = "Changed1"
 	me.TradableInstrument.Instrument.Metadata.Tags[1] = "Changed2"
-	future := me.TradableInstrument.Instrument.Product.(*proto.Instrument_Future)
+	future := me.TradableInstrument.Instrument.Product.(*types.Instrument_Future)
 	future.Future.Maturity = "Changed"
 	future.Future.SettlementAsset = "Changed"
 	future.Future.QuoteName = "Changed"
@@ -145,36 +148,36 @@ func TestMarketDeepClone(t *testing.T) {
 	future.Future.OracleSpec.Filters[0].Conditions[0].Value = "Changed"
 	future.Future.OracleSpec.Status = v1.OracleSpec_STATUS_UNSPECIFIED
 	future.Future.OracleSpecBinding.SettlementPriceProperty = "Changed"
-	me.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel = 99.9
-	me.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin = 99.9
-	me.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease = 99.9
+	me.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel = num.DecimalFromFloat(99.9)
+	me.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin = num.DecimalFromFloat(99.9)
+	me.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease = num.DecimalFromFloat(99.9)
 
-	risk := me.TradableInstrument.RiskModel.(*proto.TradableInstrument_SimpleRiskModel)
-	risk.SimpleRiskModel.Params.FactorLong = 99.9
-	risk.SimpleRiskModel.Params.FactorShort = 99.9
-	risk.SimpleRiskModel.Params.MaxMoveUp = 99.9
-	risk.SimpleRiskModel.Params.MinMoveDown = 99.9
-	risk.SimpleRiskModel.Params.ProbabilityOfTrading = 99.9
+	risk := me.TradableInstrument.RiskModel.(*types.TradableInstrument_SimpleRiskModel)
+	risk.SimpleRiskModel.Params.FactorLong = num.DecimalFromFloat(99.9)
+	risk.SimpleRiskModel.Params.FactorShort = num.DecimalFromFloat(99.9)
+	risk.SimpleRiskModel.Params.MaxMoveUp = num.DecimalFromFloat(99.9)
+	risk.SimpleRiskModel.Params.MinMoveDown = num.DecimalFromFloat(99.9)
+	risk.SimpleRiskModel.Params.ProbabilityOfTrading = num.DecimalFromFloat(99.9)
 
 	me.DecimalPlaces = 999
-	me.Fees.Factors.MakerFee = "Changed"
-	me.Fees.Factors.InfrastructureFee = "Changed"
-	me.Fees.Factors.LiquidityFee = "Changed"
+	me.Fees.Factors.MakerFee = num.DecimalFromFloat(1999.)
+	me.Fees.Factors.InfrastructureFee = num.DecimalFromFloat(1999.)
+	me.Fees.Factors.LiquidityFee = num.DecimalFromFloat(1999.)
 
 	me.OpeningAuction.Duration = 999
 	me.OpeningAuction.Volume = 999
 
-	tmc := me.TradingModeConfig.(*proto.Market_Continuous)
+	tmc := me.TradingModeConfig.(*types.Market_Continuous)
 	tmc.Continuous.TickSize = "999"
 
 	me.PriceMonitoringSettings.Parameters.Triggers[0].Horizon = 999
-	me.PriceMonitoringSettings.Parameters.Triggers[0].Probability = 99.9
+	me.PriceMonitoringSettings.Parameters.Triggers[0].Probability = num.DecimalFromFloat(99.9)
 	me.PriceMonitoringSettings.Parameters.Triggers[0].AuctionExtension = 999
 	me.PriceMonitoringSettings.UpdateFrequency = 999
 
 	me.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow = 999
-	me.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor = 99.9
-	me.LiquidityMonitoringParameters.TriggeringRatio = 99.9
+	me.LiquidityMonitoringParameters.TargetStakeParameters.ScalingFactor = num.DecimalFromFloat(99.9)
+	me.LiquidityMonitoringParameters.TriggeringRatio = num.DecimalFromFloat(99.9)
 	me.LiquidityMonitoringParameters.AuctionExtension = 999
 
 	me.TradingMode = proto.Market_TRADING_MODE_UNSPECIFIED

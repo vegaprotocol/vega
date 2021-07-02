@@ -3,17 +3,15 @@ package governance
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	dtypes "code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/pkg/errors"
@@ -37,13 +35,13 @@ type Broker interface {
 // Accounts ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
 type Accounts interface {
-	GetPartyGeneralAccount(party, asset string) (*dtypes.Account, error)
-	GetAssetTotalSupply(asset string) (uint64, error)
+	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetAssetTotalSupply(asset string) (*num.Uint, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
 type Assets interface {
-	NewAsset(ref string, assetSrc *types.AssetDetails) (string, error)
+	NewAsset(ref string, assetDetails *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
 }
@@ -138,21 +136,25 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	}
 	defer func() {
 		if err != nil {
-			p.State = types.Proposal_STATE_FAILED
+			p.State = proto.Proposal_STATE_FAILED
 			p.Reason = perr
 		}
 	}()
-	switch change := p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+
+	switch p.Terms.Change.GetTermType() {
+	case types.ProposalTerms_NEW_MARKET:
 		te.m = &ToEnactMarket{}
-	case *types.ProposalTerms_UpdateNetworkParameter:
-		te.n = change.UpdateNetworkParameter.Changes
-	case *types.ProposalTerms_NewAsset:
-		asset, err := e.assets.Get(p.GetId())
-		if err != nil {
-			return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
+		unp := p.Terms.GetUpdateNetworkParameter()
+		if unp != nil {
+			te.n = unp.Changes
 		}
-		te.a = asset.ProtoAsset()
+	case types.ProposalTerms_NEW_ASSET:
+		asset, err := e.assets.Get(p.Id)
+		if err != nil {
+			return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		}
+		te.a = asset.Type()
 	}
 	return
 }
@@ -161,10 +163,10 @@ func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
 	vc := &VoteClosed{
 		p: p,
 	}
-	switch p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	switch p.Terms.Change.GetTermType() {
+	case types.ProposalTerms_NEW_MARKET:
 		startAuction := true
-		if p.State != types.Proposal_STATE_PASSED {
+		if p.State != proto.Proposal_STATE_PASSED {
 			startAuction = false
 		}
 		vc.m = &NewMarketVoteClosed{
@@ -201,14 +203,14 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		for _, proposal := range e.activeProposals {
 			// only enter this if the proposal state is OPEN
 			// or we would return many times the voteClosed eventually
-			if proposal.State == types.Proposal_STATE_OPEN && proposal.Terms.ClosingTimestamp < now {
+			if proposal.State == proto.Proposal_STATE_OPEN && proposal.Terms.ClosingTimestamp < now {
 				e.closeProposal(ctx, proposal)
 				voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal.Proposal))
 			}
 
-			if proposal.State != types.Proposal_STATE_OPEN && proposal.State != types.Proposal_STATE_PASSED {
+			if proposal.State != proto.Proposal_STATE_OPEN && proposal.State != proto.Proposal_STATE_PASSED {
 				toBeRemoved = append(toBeRemoved, proposal.Id)
-			} else if proposal.State == types.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
+			} else if proposal.State == proto.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
 				enact, _, err := e.preEnactProposal(proposal.Proposal)
 				if err != nil {
 					e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
@@ -233,15 +235,15 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 	for _, p := range accepted {
 		e.log.Info("proposal has been validated by nodes, starting now",
 			logging.String("proposal-id", p.Id))
-		p.State = types.Proposal_STATE_OPEN
+		p.State = proto.Proposal_STATE_OPEN
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 		e.startProposal(p) // can't fail, and proposal has been validated at an ulterior time
 	}
 	for _, p := range rejected {
 		e.log.Info("proposal has not been validated by nodes",
 			logging.String("proposal-id", p.Id))
-		p.State = types.Proposal_STATE_REJECTED
-		p.Reason = types.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED
+		p.State = proto.Proposal_STATE_REJECTED
+		p.Reason = proto.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
 	}
 
@@ -262,7 +264,7 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 // Only open can be submitted and validated at this point. No further validation happens.
 func (e *Engine) SubmitProposal(
 	ctx context.Context,
-	psub commandspb.ProposalSubmission,
+	psub types.ProposalSubmission,
 	id, party string,
 ) (ts *ToSubmit, err error) {
 
@@ -274,7 +276,7 @@ func (e *Engine) SubmitProposal(
 		Id:        id,
 		Timestamp: e.currentTime.UnixNano(),
 		PartyId:   party,
-		State:     types.Proposal_STATE_OPEN,
+		State:     proto.Proposal_STATE_OPEN,
 		Terms:     psub.Terms,
 		Reference: psub.Reference,
 	}
@@ -288,7 +290,7 @@ func (e *Engine) SubmitProposal(
 	}()
 	perr, err := e.validateOpenProposal(p)
 	if err != nil {
-		p.State = types.Proposal_STATE_REJECTED
+		p.State = proto.Proposal_STATE_REJECTED
 		p.Reason = perr
 		if e.log.GetLevel() == logging.DebugLevel {
 			e.log.Debug("Proposal rejected", logging.String("proposal-id", p.Id))
@@ -298,7 +300,7 @@ func (e *Engine) SubmitProposal(
 
 	// now if it's a 2 steps proposal, start the node votes
 	if e.isTwoStepsProposal(&p) {
-		p.State = types.Proposal_STATE_WAITING_FOR_NODE_VOTE
+		p.State = proto.Proposal_STATE_WAITING_FOR_NODE_VOTE
 		err = e.startTwoStepsProposal(&p)
 	} else {
 		e.startProposal(&p)
@@ -333,17 +335,17 @@ func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorD
 func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
-	switch change := p.Terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	switch p.Terms.Change.GetTermType() {
+	case types.ProposalTerms_NEW_MARKET:
 		// use to calculate the auction duration
 		// which is basically enacttime - closetime
 		// FIXME(): normally we should use the closetime
-		// but this would not play well with the MarketAcutionState stuff
+		// but this would not play well with the MarketAuctionState stuff
 		// for now we start the auction as of now.
 		closeTime := e.currentTime
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
-
-		mkt, perr, err := createMarket(p.Id, change.NewMarket, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
+		newMarket := p.Terms.GetNewMarket()
+		mkt, perr, err := createMarket(p.Id, newMarket, e.netp, e.currentTime, e.assets, enactTime.Sub(closeTime))
 		if err != nil {
 			e.rejectProposal(p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -351,9 +353,9 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		tsb.m = &ToSubmitNewMarket{
 			m: mkt,
 		}
-		if change.NewMarket.LiquidityCommitment != nil {
-			tsb.m.l = commandspb.LiquidityProvisionSubmissionFromMarketCommitment(
-				change.NewMarket.LiquidityCommitment, p.Id)
+		if newMarket.LiquidityCommitment != nil {
+			tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
+				newMarket.LiquidityCommitment, p.Id)
 		}
 	}
 
@@ -377,12 +379,12 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 }
 
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
-	switch terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	switch terms.Change.GetTermType() {
+	case types.ProposalTerms_NEW_MARKET:
 		return e.getNewMarketProposalParameters()
-	case *types.ProposalTerms_NewAsset:
+	case types.ProposalTerms_NEW_ASSET:
 		return e.getNewAssetProposalParameters()
-	case *types.ProposalTerms_UpdateNetworkParameter:
+	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
 		return e.getUpdateNetworkParameterProposalParameters()
 	default:
 		return nil, ErrUnsupportedProposalType
@@ -473,16 +475,16 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 	proposerTokens, err := getGovernanceTokens(e.accs, proposal.PartyId, voteAsset)
 	if err != nil {
 		e.log.Debug("proposer have no governance token",
-			logging.String("party-id", proposal.PartyId),
-			logging.String("id", proposal.Id))
+			logging.PartyID(proposal.PartyId),
+			logging.ProposalID(proposal.Id))
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS, err
 	}
-	if proposerTokens < params.MinProposerBalance {
+	if proposerTokens.LT(params.MinProposerBalance) {
 		e.log.Debug("proposer have insufficient governance token",
-			logging.Uint64("expect-balance", params.MinProposerBalance),
-			logging.Uint64("proposer-balance", proposerTokens),
-			logging.String("party-id", proposal.PartyId),
-			logging.String("id", proposal.Id))
+			logging.BigUint("expect-balance", params.MinProposerBalance),
+			logging.String("proposer-balance", proposerTokens.String()),
+			logging.PartyID(proposal.PartyId),
+			logging.ProposalID(proposal.Id))
 		return types.ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS,
 			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", params.MinProposerBalance, proposerTokens)
 	}
@@ -491,30 +493,26 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 
 // validates proposed change
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
-	switch change := terms.Change.(type) {
-	case *types.ProposalTerms_NewMarket:
+	switch terms.Change.GetTermType() {
+	case types.ProposalTerms_NEW_MARKET:
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(terms.EnactmentTimestamp, 0)
 
-		perr, err := validateNewMarket(e.currentTime, change.NewMarket, e.assets, true, e.netp, enactTime.Sub(closeTime))
+		perr, err := validateNewMarket(e.currentTime, terms.GetNewMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime))
 		if err != nil {
 			return perr, err
 		}
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
-	case *types.ProposalTerms_NewAsset:
-		return validateNewAsset(change.NewAsset.Changes)
-	case *types.ProposalTerms_UpdateNetworkParameter:
-		return validateNetworkParameterUpdate(e.netp, change.UpdateNetworkParameter.Changes)
+	case types.ProposalTerms_NEW_ASSET:
+		return validateNewAsset(terms.GetNewAsset().Changes)
+	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
+		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 // AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
-func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, party string) error {
-	if err := commands.CheckVoteSubmission(&cmd); err != nil {
-		return err
-	}
-
+func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
 	proposal, err := e.validateVote(cmd, party)
 	if err != nil {
 		// vote was not created/accepted, send TxErrEvent
@@ -523,28 +521,28 @@ func (e *Engine) AddVote(ctx context.Context, cmd commandspb.VoteSubmission, par
 	}
 
 	vote := types.Vote{
-		PartyId:    party,
-		ProposalId: cmd.ProposalId,
-		Value:      cmd.Value,
-		Timestamp:  e.currentTime.UnixNano(),
-		// set the weight at 0 initially
-		TotalGovernanceTokenWeight: "0",
+		PartyID:                     party,
+		ProposalID:                  cmd.ProposalId,
+		Value:                       cmd.Value,
+		Timestamp:                   e.currentTime.UnixNano(),
+		TotalGovernanceTokenBalance: num.NewUint(0),
+		TotalGovernanceTokenWeight:  num.DecimalFromFloat(0),
 	}
 
 	// we only want to count the last vote, so add to yes/no map, delete from the other
 	// if the party hasn't cast a vote yet, the delete is just a noop
-	if vote.Value == types.Vote_VALUE_YES {
-		delete(proposal.no, vote.PartyId)
-		proposal.yes[vote.PartyId] = &vote
+	if vote.Value == proto.Vote_VALUE_YES {
+		delete(proposal.no, vote.PartyID)
+		proposal.yes[vote.PartyID] = &vote
 	} else {
-		delete(proposal.yes, vote.PartyId)
-		proposal.no[vote.PartyId] = &vote
+		delete(proposal.yes, vote.PartyID)
+		proposal.no[vote.PartyID] = &vote
 	}
 	e.broker.Send(events.NewVoteEvent(ctx, vote))
 	return nil
 }
 
-func (e *Engine) validateVote(vote commandspb.VoteSubmission, party string) (*proposal, error) {
+func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposal, error) {
 	proposal, found := e.getProposal(vote.ProposalId)
 	if !found {
 		return nil, ErrProposalNotFound
@@ -569,7 +567,7 @@ func (e *Engine) validateVote(vote commandspb.VoteSubmission, party string) (*pr
 	if err != nil {
 		return nil, err
 	}
-	if voterTokens < params.MinVoterBalance {
+	if voterTokens.LT(params.MinVoterBalance) {
 		return nil, ErrVoterInsufficientTokens
 	}
 
@@ -646,61 +644,65 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 		return p.State
 	}
 
-	totalStake, err := accounts.GetAssetTotalSupply(asset)
+	totalStake, err := getAssetTotalSupply(accounts, asset)
 	if err != nil {
 		return p.State
 	}
 
 	yes := p.countVotes(p.yes, accounts, asset)
+	yesDec := num.DecimalFromUint(yes)
 	no := p.countVotes(p.no, accounts, asset)
-	totalVotes := float64(yes + no)
-	p.weightVotes(p.yes, totalVotes)
-	p.weightVotes(p.no, totalVotes)
+	totalVotes := num.Sum(yes, no)
+	totalVotesDec := num.DecimalFromUint(totalVotes)
+	p.weightVotes(p.yes, totalVotesDec)
+	p.weightVotes(p.no, totalVotesDec)
+	majorityThreshold := totalVotesDec.Mul(params.RequiredMajority)
+	totalStakeDec := num.DecimalFromUint(totalStake)
+	participationThreshold := totalStakeDec.Mul(params.RequiredParticipation)
 
-	majorityThreshold := totalVotes * params.RequiredMajority
-	participationThreshold := float64(totalStake) * params.RequiredParticipation
-
-	if float64(yes) > majorityThreshold && totalVotes >= participationThreshold {
-		p.State = types.Proposal_STATE_PASSED
+	if yesDec.GreaterThan(majorityThreshold) && totalVotesDec.GreaterThanOrEqual(participationThreshold) {
+		p.State = proto.Proposal_STATE_PASSED
 	} else {
-		p.Reason = types.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
-		if totalVotes < participationThreshold {
-			p.Reason = types.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
+		p.Reason = proto.ProposalError_PROPOSAL_ERROR_MAJORITY_THRESHOLD_NOT_REACHED
+		if totalVotesDec.LessThan(participationThreshold) {
+			p.Reason = proto.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED
 		}
-		p.State = types.Proposal_STATE_DECLINED
+		p.State = proto.Proposal_STATE_DECLINED
 	}
 
 	return p.State
 }
 
-func (p *proposal) countVotes(votes map[string]*types.Vote, accounts Accounts, voteAsset string) uint64 {
-	var tally uint64
+func (p *proposal) countVotes(votes map[string]*types.Vote, accounts Accounts, voteAsset string) *num.Uint {
+	tally := num.NewUint(0)
 	for _, v := range votes {
-		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyId, voteAsset)
-		tally += v.TotalGovernanceTokenBalance
+		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID, voteAsset)
+		tally.AddSum(v.TotalGovernanceTokenBalance)
 	}
 	return tally
 }
 
-func (p *proposal) weightVotes(votes map[string]*types.Vote, totalVotes float64) {
+func (p *proposal) weightVotes(votes map[string]*types.Vote, totalVotes num.Decimal) {
 	for _, v := range votes {
-		weight := float64(v.TotalGovernanceTokenBalance) / totalVotes
-		v.TotalGovernanceTokenWeight = strconv.FormatFloat(weight, 'f', -1, 64)
+		balanceDec := num.DecimalFromUint(v.TotalGovernanceTokenBalance)
+		v.TotalGovernanceTokenWeight = balanceDec.Div(totalVotes)
 	}
 }
 
-func getTokensBalance(accounts Accounts, partyID, voteAsset string) uint64 {
-	balance, err := getGovernanceTokens(accounts, partyID, voteAsset)
-	if err != nil {
-		return 0
-	}
+func getTokensBalance(accounts Accounts, partyID, voteAsset string) *num.Uint {
+	balance, _ := getGovernanceTokens(accounts, partyID, voteAsset)
 	return balance
 }
 
-func getGovernanceTokens(accounts Accounts, party, voteAsset string) (uint64, error) {
+func getGovernanceTokens(accounts Accounts, party, voteAsset string) (*num.Uint, error) {
 	account, err := accounts.GetPartyGeneralAccount(party, voteAsset)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return account.Balance, nil
+	// no need to clone here, as GetPartyGeneralAccount already returns a copy with cloned balance
+	return account.Balance.Clone(), err
+}
+
+func getAssetTotalSupply(accounts Accounts, asset string) (*num.Uint, error) {
+	return accounts.GetAssetTotalSupply(asset)
 }

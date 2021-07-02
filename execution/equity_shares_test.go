@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TestEquityShares(t *testing.T) {
@@ -23,59 +23,61 @@ func TestEquityShares(t *testing.T) {
 // TestEquitySharesAverageEntryValuation is based on the spec example:
 // https://github.com/vegaprotocol/product/blob/02af55e048a92a204e9ee7b7ae6b4475a198c7ff/specs/0042-setting-fees-and-rewarding-lps.md#calculating-liquidity-provider-equity-like-share
 func testAverageEntryValuation(t *testing.T) {
-	es := execution.NewEquityShares(decimal.NewFromFloat(100.))
+	es := execution.NewEquityShares(num.DecimalFromFloat(100))
 
-	es.SetPartyStake("LP1", uint64(100))
-	require.EqualValues(t, decimal.NewFromFloat(100.), es.AvgEntryValuation("LP1"))
+	es.SetPartyStake("LP1", num.NewUint(100))
+	require.EqualValues(t, num.DecimalFromFloat(100), es.AvgEntryValuation("LP1"))
 	es.OpeningAuctionEnded()
 
-	es.SetPartyStake("LP1", uint64(200))
-	require.True(t, decimal.NewFromFloat(100.).Equal(es.AvgEntryValuation("LP1")))
+	es.SetPartyStake("LP1", num.NewUint(200))
+	require.True(t, num.DecimalFromFloat(100).Equal(es.AvgEntryValuation("LP1")))
 
-	es.WithMVP(decimal.NewFromFloat(200.)).SetPartyStake("LP2", uint64(200))
-	require.True(t, decimal.NewFromFloat(200.).Equal(es.AvgEntryValuation("LP2")))
-	require.True(t, decimal.NewFromFloat(100.).Equal(es.AvgEntryValuation("LP1")))
+	es.WithMVP(num.DecimalFromFloat(200)).SetPartyStake("LP2", num.NewUint(200))
+	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP2")))
+	require.True(t, num.DecimalFromFloat(100).Equal(es.AvgEntryValuation("LP1")))
 
-	es.WithMVP(decimal.NewFromFloat(400.)).SetPartyStake("LP1", uint64(300))
-	require.True(t, decimal.NewFromFloat(120.).Equal(es.AvgEntryValuation("LP1")))
+	es.WithMVP(num.DecimalFromFloat(400)).SetPartyStake("LP1", num.NewUint(300))
+	require.True(t, num.DecimalFromFloat(120).Equal(es.AvgEntryValuation("LP1")))
 
-	es.SetPartyStake("LP1", uint64(1))
-	require.True(t, decimal.NewFromFloat(120.).Equal(es.AvgEntryValuation("LP1")))
-	require.True(t, decimal.NewFromFloat(200.).Equal(es.AvgEntryValuation("LP2")))
+	es.SetPartyStake("LP1", num.NewUint(1))
+	require.True(t, num.DecimalFromFloat(120).Equal(es.AvgEntryValuation("LP1")))
+	require.True(t, num.DecimalFromFloat(200).Equal(es.AvgEntryValuation("LP2")))
 }
 
 func testShares(t *testing.T) {
+	one, two, three := num.DecimalFromFloat(1), num.DecimalFromFloat(2), num.DecimalFromFloat(3)
+	four, six := two.Mul(two), three.Mul(two)
 	var (
-		oneSixth    = decimal.NewFromFloat(1.0).Div(decimal.NewFromFloat(6.))
-		oneThird    = decimal.NewFromFloat(1.0).Div(decimal.NewFromFloat(3.))
-		oneFourth   = decimal.NewFromFloat(1.0).Div(decimal.NewFromFloat(4.))
-		threeFourth = decimal.NewFromFloat(3.0).Div(decimal.NewFromFloat(4.))
-		twoThirds   = decimal.NewFromFloat(2.0).Div(decimal.NewFromFloat(3.))
-		half        = decimal.NewFromFloat(1.0).Div(decimal.NewFromFloat(2.))
+		oneSixth    = one.Div(six)
+		oneThird    = one.Div(three)
+		oneFourth   = one.Div(four)
+		threeFourth = three.Div(four)
+		twoThirds   = two.Div(three)
+		half        = one.Div(two)
 	)
 
-	es := execution.NewEquityShares(decimal.NewFromFloat(100.))
+	es := execution.NewEquityShares(num.DecimalFromFloat(100))
 
 	// Set LP1
-	es.SetPartyStake("LP1", 100)
+	es.SetPartyStake("LP1", num.NewUint(100))
 	t.Run("LP1", func(t *testing.T) {
 		s := es.Shares(map[string]struct{}{})
-		assert.True(t, decimal.NewFromFloat(1.0).Equal(s["LP1"]))
+		assert.True(t, one.Equal(s["LP1"]))
 	})
 
 	// Set LP2
-	es.SetPartyStake("LP2", 200)
+	es.SetPartyStake("LP2", num.NewUint(200))
 	t.Run("LP2", func(t *testing.T) {
 		s := es.Shares(map[string]struct{}{})
 		lp1, lp2 := s["LP1"], s["LP2"]
 
 		assert.Equal(t, oneThird, lp1)
 		assert.Equal(t, twoThirds, lp2)
-		assert.True(t, decimal.NewFromFloat(1.0).Equal(lp1.Add(lp2)))
+		assert.True(t, one.Equal(lp1.Add(lp2)))
 	})
 
 	// Set LP3
-	es.SetPartyStake("LP3", 300)
+	es.SetPartyStake("LP3", num.NewUint(300))
 	t.Run("LP3", func(t *testing.T) {
 		s := es.Shares(map[string]struct{}{})
 
@@ -84,7 +86,7 @@ func testShares(t *testing.T) {
 		assert.Equal(t, oneSixth, lp1)
 		assert.Equal(t, oneThird, lp2)
 		assert.Equal(t, half, lp3)
-		assert.True(t, decimal.NewFromFloat(1.0).Equal(lp1.Add(lp2).Add(lp3)))
+		assert.True(t, one.Equal(lp1.Add(lp2).Add(lp3)))
 	})
 
 	// LP2 is undeployed
@@ -99,7 +101,7 @@ func testShares(t *testing.T) {
 		assert.Equal(t, oneFourth, lp1)
 		// assert.Equal(t, oneThird, lp2)
 		assert.Equal(t, threeFourth, lp3)
-		assert.True(t, decimal.NewFromFloat(1.0).Equal(lp1.Add(lp3)))
+		assert.True(t, one.Equal(lp1.Add(lp3)))
 	})
 }
 
@@ -137,7 +139,7 @@ func (esm *equityShareMarket) BuildOrder(id, party string, side types.Side, pric
 		PartyId:     party,
 		MarketId:    esm.tm.market.GetID(),
 		Size:        1,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   1,
 		CreatedAt:   esm.Now.UnixNano(),
 		ExpiresAt:   esm.ClosingAt.UnixNano(),
@@ -200,15 +202,16 @@ func testWithinMarket(t *testing.T) {
 	var (
 		ctx = context.Background()
 		// as we will split fees in 1/3 and 2/3
-		// we use 900000 cause we need this number be divisible by 3
-		matchingPrice uint64 = 900000
+		// we use 900000 cause we need this number to be divisible by 3
+		matchingPrice = uint64(900000)
+		one           = uint64(1)
 	)
 
 	// Setup a market with a set of non-matching orders and Liquidity Provision
 	// Submissions from 2 parties.
 	esm := newEquityShareMarket(t).
-		WithSubmittedOrder("some-id-1", "party1", types.Side_SIDE_SELL, matchingPrice+1).
-		WithSubmittedOrder("some-id-2", "party2", types.Side_SIDE_BUY, matchingPrice-1).
+		WithSubmittedOrder("some-id-1", "party1", types.Side_SIDE_SELL, matchingPrice+one).
+		WithSubmittedOrder("some-id-2", "party2", types.Side_SIDE_BUY, matchingPrice-one).
 		// party1 (commitment: 2000) should get 2/3 of the fee
 		WithSubmittedLiquidityProvision("party1", "lp-id-1", 2000, "0.5",
 			[]*types.LiquidityOrder{
@@ -265,26 +268,31 @@ func testWithinMarket(t *testing.T) {
 	// Retrieve both MarketLiquidityFee account balance and Party Balance
 	// before the fee distribution.
 	var (
-		originalBalance = esm.LiquidityFeeAccount().Balance
-		party1Balance   = esm.PartyMarginAccount("party1").Balance
-		party2Balance   = esm.PartyMarginAccount("party2").Balance
+		originalBalance = esm.LiquidityFeeAccount().Balance.Clone()
+		party1Balance   = esm.PartyMarginAccount("party1").Balance.Clone()
+		party2Balance   = esm.PartyMarginAccount("party2").Balance.Clone()
 	)
 
 	curTime = curTime.Add(1 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, curTime)
 
-	assert.Zero(t, esm.LiquidityFeeAccount().Balance,
+	assert.True(t, esm.LiquidityFeeAccount().Balance.IsZero(),
 		"LiquidityFeeAccount should be empty after a fee distribution")
 
-	assert.EqualValues(t,
-		int(float64(originalBalance)*(2./3)),
-		int(esm.PartyMarginAccount("party1").Balance-party1Balance),
-		"party1 should get 2/3 of the fees",
+	// exp = originalBalance*(2/3)
+	exp := num.Zero().Mul(num.NewUint(2), originalBalance)
+	exp = exp.Div(exp, num.NewUint(3))
+	actual := num.Zero().Sub(esm.PartyMarginAccount("party1").Balance, party1Balance)
+	assert.True(t,
+		exp.EQ(actual),
+		"party1 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
 	)
 
-	assert.EqualValues(t,
-		int(float64(originalBalance)*(1./3)),
-		int(esm.PartyMarginAccount("party2").Balance-party2Balance),
-		"party2 should get 2/3 of the fees",
+	// exp = originalBalance*(1/3)
+	exp = num.Zero().Div(originalBalance, num.NewUint(3))
+	actual = num.Zero().Sub(esm.PartyMarginAccount("party2").Balance, party2Balance)
+	assert.True(t,
+		exp.EQ(actual),
+		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
 	)
 }

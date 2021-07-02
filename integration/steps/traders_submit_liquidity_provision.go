@@ -7,16 +7,18 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/cucumber/godog/gherkin"
 )
 
 func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.DataTable) error {
-	lps := map[string]*commandspb.LiquidityProvisionSubmission{}
+	lps := map[string]*types.LiquidityProvisionSubmission{}
 	parties := map[string]string{}
 	keys := []string{}
 
+	// var clp *types.LiquidityProvisionSubmission
+	// checkAmt := num.NewUint(50000000)
 	for _, r := range parseSubmitLiquidityProvisionTable(table) {
 		row := submitLiquidityProvisionRow{row: r}
 
@@ -24,7 +26,7 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 
 		lp, ok := lps[id]
 		if !ok {
-			lp = &commandspb.LiquidityProvisionSubmission{
+			lp = &types.LiquidityProvisionSubmission{
 				MarketId:         row.MarketID(),
 				CommitmentAmount: row.CommitmentAmount(),
 				Fee:              row.Fee(),
@@ -46,8 +48,18 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 		} else {
 			lp.Sells = append(lp.Sells, lo)
 		}
+		// if lp.CommitmentAmount.EQ(checkAmt) {
+		// clp = lp
+		// }
 	}
-
+	/*
+		if clp != nil {
+			return fmt.Errorf(
+				"Offset buy: %d\nOffset sell: %d\n",
+				clp.Buys[0].Offset,
+				clp.Sells[0].Offset,
+			)
+		}*/
 	// ensure we always submit in the same order
 	sort.Strings(keys)
 	for _, id := range keys {
@@ -63,7 +75,7 @@ func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 	return nil
 }
 
-func errSubmittingLiquidityProvision(lp *commandspb.LiquidityProvisionSubmission, party, id string, err error) error {
+func errSubmittingLiquidityProvision(lp *types.LiquidityProvisionSubmission, party, id string, err error) error {
 	return fmt.Errorf("failed to submit [%v] for party %s and id %s: %v", lp, party, id, err)
 }
 
@@ -103,12 +115,12 @@ func (r submitLiquidityProvisionRow) Side() types.Side {
 	return r.row.MustSide("side")
 }
 
-func (r submitLiquidityProvisionRow) CommitmentAmount() uint64 {
-	return r.row.MustU64("commitment amount")
+func (r submitLiquidityProvisionRow) CommitmentAmount() *num.Uint {
+	return r.row.MustUint("commitment amount")
 }
 
-func (r submitLiquidityProvisionRow) Fee() string {
-	return r.row.MustStr("fee")
+func (r submitLiquidityProvisionRow) Fee() num.Decimal {
+	return r.row.MustDecimal("fee")
 }
 
 func (r submitLiquidityProvisionRow) Offset() int64 {

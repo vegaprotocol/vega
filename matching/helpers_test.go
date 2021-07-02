@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type tstOB struct {
@@ -50,12 +51,12 @@ func (b *OrderBook) getTotalBuyVolume() uint64 {
 
 func (b *OrderBook) getVolumeAtLevel(price uint64, side types.Side) uint64 {
 	if side == types.Side_SIDE_BUY {
-		priceLevel := b.buy.getPriceLevel(price)
+		priceLevel := b.buy.getPriceLevel(num.NewUint(price))
 		if priceLevel != nil {
 			return priceLevel.volume
 		}
 	} else {
-		priceLevel := b.sell.getPriceLevel(price)
+		priceLevel := b.sell.getPriceLevel(num.NewUint(price))
 		if priceLevel != nil {
 			return priceLevel.volume
 		}

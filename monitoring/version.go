@@ -44,8 +44,5 @@ func (c ChainVersion) Check(vstr string) error {
 }
 
 func stripVPrefix(vstr string) string {
-	if strings.HasPrefix(vstr, "v") {
-		vstr = strings.TrimPrefix(vstr, "v")
-	}
-	return vstr
+	return strings.TrimPrefix(vstr, "v")
 }

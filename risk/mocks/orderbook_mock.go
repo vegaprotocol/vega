@@ -6,6 +6,7 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +35,10 @@ func (m *MockOrderbook) EXPECT() *MockOrderbookMockRecorder {
 }
 
 // GetCloseoutPrice mocks base method
-func (m *MockOrderbook) GetCloseoutPrice(arg0 uint64, arg1 proto.Side) (uint64, error) {
+func (m *MockOrderbook) GetCloseoutPrice(arg0 uint64, arg1 proto.Side) (*num.Uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCloseoutPrice", arg0, arg1)
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(*num.Uint)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -49,10 +50,10 @@ func (mr *MockOrderbookMockRecorder) GetCloseoutPrice(arg0, arg1 interface{}) *g
 }
 
 // GetIndicativePrice mocks base method
-func (m *MockOrderbook) GetIndicativePrice() uint64 {
+func (m *MockOrderbook) GetIndicativePrice() *num.Uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIndicativePrice")
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(*num.Uint)
 	return ret0
 }
 
