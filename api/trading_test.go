@@ -126,7 +126,7 @@ func getTestGRPCServer(
 	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
 	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
 	blockchainClient.EXPECT().GetStatus(gomock.Any()).AnyTimes().Return(&tmctypes.ResultStatus{
-		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.8"},
+		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.34.11"},
 		SyncInfo:      tmctypes.SyncInfo{},
 		ValidatorInfo: tmctypes.ValidatorInfo{},
 	}, nil)
