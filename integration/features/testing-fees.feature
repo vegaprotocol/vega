@@ -14,12 +14,12 @@ Feature: Fees Calculations
       | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees          | price monitoring | oracle config          | maturity date        |
       | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2019-12-31T23:59:59Z |
 
-     And the following network parameters are set:
+    #  And the following network parameters are set:
     #   | name                                                | value   |
     #   | market.value.windowLength                           | 1h      |
     #   | market.stake.target.timeWindow                      | 24h     |
     #   | market.stake.target.scalingFactor                   | 1       |
-        # | market.liquidity.targetstake.triggering.ratio       | 1       |
+    #   | market.liquidity.targetstake.triggering.ratio       | 1       |
     #   | market.liquidity.providers.fee.distributionTimeStep | 10m     |
 
     # setup accounts
@@ -40,9 +40,10 @@ Feature: Fees Calculations
       | sell | 1000     | 10     |
       | buy  | 1000     | 10     |
 
-    Then debug orders
+    Then debug transfers
 
     Then the opening auction period ends for market "ETH/DEC21"
+
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
