@@ -4,11 +4,20 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/vega/proto"
+	"github.com/jessevdk/go-flags"
 )
 
-type AssetCmd struct{}
+type AssetCmd struct {
+	Help bool `short:"h" long:"help" description:"Show this help message"`
+}
 
 func (opts *AssetCmd) Execute(params []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega verify passet subcommand help",
+		}
+	}
 	return verifier(params, verifyAsset)
 }
 

@@ -18,8 +18,9 @@ type NodeWalletCmd struct {
 	config.PassphraseFlag
 
 	// Subcommands
-	Import nodeWalletImport `command:"import"`
-	Verify nodeWalletVerify `command:"verify"`
+	Import nodeWalletImport `command:"import" description:"Import the configuration of a wallet required by the vega node"`
+	Verify nodeWalletVerify `command:"verify" description:"Verify the configuration imported in the nodewallet"`
+	Help   bool             `short:"h" long:"help" description:"Show this help message"`
 }
 
 var nodeWalletCmd NodeWalletCmd
@@ -54,12 +55,19 @@ type nodeWalletImport struct {
 
 	WalletPassphrase config.Passphrase `short:"w" long:"wallet-passphrase"`
 
-	Chain      string `short:"c" long:"chain" required:"true"`
-	WalletPath string `long:"wallet-path" required:"true"`
-	Force      bool   `long:"force"`
+	Chain      string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
+	WalletPath string `long:"wallet-path" required:"true" description:"The path to the wallet file to import"`
+	Force      bool   `long:"force" description:"Should the command re-write an existing nodewallet file if it exists"`
+	Help       bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *nodeWalletImport) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega nodewallet import subcommand help",
+		}
+	}
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
@@ -116,9 +124,17 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 
 type nodeWalletVerify struct {
 	Config nodewallet.Config
+	Help   bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *nodeWalletVerify) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega nodewallet verify subcommand help",
+		}
+	}
+
 	if ok, err := fsutil.PathExists(nodeWalletCmd.RootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %w", err)
 	}

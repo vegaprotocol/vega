@@ -29,9 +29,16 @@ type genesisCmd struct {
 
 	InPlace bool   `short:"i" long:"in-place" description:"Edit the genesis file in-place"`
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
+	Help    bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *genesisCmd) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega genesis subcommand help",
+		}
+	}
 	tmCfg := tmconfig.DefaultConfig()
 	tmCfg.SetRoot(os.ExpandEnv(opts.TmRoot))
 
