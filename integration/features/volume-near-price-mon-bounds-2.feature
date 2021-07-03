@@ -1,3 +1,4 @@
+@skip
 # Test volume and margin when LP volume is pushed inside price monitoring bounds
 # and the price monitoring bounds happen to be best bid/ask
 Feature: Test margin for lp near price monitoring boundaries
@@ -9,7 +10,7 @@ Feature: Test margin for lp near price monitoring boundaries
       | market.stake.target.scalingFactor                   | 1     |
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
-    
+
     And the average block duration is "1"
 
   Scenario: second scenario for volume at near price monitoring bounds with log-normal
@@ -34,19 +35,19 @@ Feature: Test margin for lp near price monitoring boundaries
       | lp1     | ETH2   | 10000000000   |
       | trader1 | ETH2   |  1000000000   |
       | trader2 | ETH2   |  1000000000   |
-    
+
     Given the traders submit the following liquidity provision:
       | id          | party   | market id | commitment amount | fee  | side | pegged reference | proportion | offset |
       | commitment1 | lp1     | ETH2/MAR22 | 3000000         | 0.001 | buy  | BID              | 500        | -100   |
       | commitment1 | lp1     | ETH2/MAR22 | 3000000         | 0.001 | sell | ASK              | 500        |  100   |
- 
+
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH2/MAR22 | buy  | 1      | 89942   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | trader1 | ETH2/MAR22 | buy  | 10     | 100000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
       | trader2 | ETH2/MAR22 | sell | 1      | 110965  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | trader2 | ETH2/MAR22 | sell | 10     | 100000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
-      
+
     When the opening auction period ends for market "ETH2/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "100000"
 
@@ -58,7 +59,7 @@ Feature: Test margin for lp near price monitoring boundaries
     And the market data for the market "ETH2/MAR22" should be:
        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
        | 100000     | TRADING_MODE_CONTINUOUS | 43200   | 89942     | 110965    | 361194       | 3000000        | 10            |
-    
+
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
       | sell | 110965     | 56   |
@@ -70,8 +71,8 @@ Feature: Test margin for lp near price monitoring boundaries
     # # so the best bid/ask coincides with the price monitoring bounds.
     # # Since the lp1 offset is +/- 100 the lp1 volume "should" go to 89842 and 111065
     # # but because the price monitoring bounds are 89942 and 110965 the volume gets pushed to these
-    # # i.e. it's placed at 89942 / 110965. 
-    # # As these are the best bid / best ask the probability of trading used is 1/2.  
+    # # i.e. it's placed at 89942 / 110965.
+    # # As these are the best bid / best ask the probability of trading used is 1/2.
 
     And the traders should have the following margin levels:
       | trader    | market id  | maintenance | search   | initial  | release  |
@@ -84,7 +85,7 @@ Feature: Test margin for lp near price monitoring boundaries
     Then the traders place the following orders:
        | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference  |
        | trader1 | ETH2/MAR22 | buy  | 1      | 89942   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
-    
+
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
       | sell | 110965     | 56   |
@@ -96,15 +97,15 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader    | market id  | maintenance | search   | initial  | release  |
       | lp1       | ETH2/MAR22 | 1986563     | 2185219  | 2383875  | 2781188  |
 
-    # # now we place an order which makes the best bid 89943. 
+    # # now we place an order which makes the best bid 89943.
     Then the traders place the following orders:
         | trader  | market id  | side  | volume | price   | resulting trades   | type       | tif     | reference  |
         | trader1 | ETH2/MAR22 | buy   | 1      | 89943   | 0                 | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
-    
+
     And the market data for the market "ETH2/MAR22" should be:
        | mark price   | trading mode            | horizon | min bound   | max bound   | target stake   | supplied stake | open interest  |
        | 100000       | TRADING_MODE_CONTINUOUS | 43200   | 89942       | 110965      | 361194         | 3000000        | 10             |
-    
+
 
     # # the lp1 one volume on this side should go to 89843 but because price monitoring bound is still 89942 it gets pushed to 89942.
     # # but 89942 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
@@ -120,6 +121,3 @@ Feature: Test margin for lp near price monitoring boundaries
     And the traders should have the following margin levels:
       | trader    | market id  | maintenance | search   | initial  | release |
       | lp1       | ETH2/MAR22 | 3592950     | 3952245  | 4311540  | 5030130 |
-
-
-    
