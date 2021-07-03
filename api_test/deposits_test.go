@@ -9,9 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/events"
-	pb "code.vegaprotocol.io/vega/proto"
 	apipb "code.vegaprotocol.io/vega/proto/api"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TestDeposits(t *testing.T) {
@@ -23,15 +24,16 @@ func TestDeposits(t *testing.T) {
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		deposit := be.GetDeposit()
 		require.NotNil(t, deposit)
-		e := events.NewDepositEvent(ctx, pb.Deposit{
-			Id:                deposit.Id,
-			Status:            deposit.Status,
-			PartyId:           deposit.PartyId,
-			Asset:             deposit.Asset,
-			Amount:            deposit.Amount,
-			TxHash:            deposit.TxHash,
-			CreditedTimestamp: deposit.CreditedTimestamp,
-			CreatedTimestamp:  deposit.CreatedTimestamp,
+		amt, _ := num.UintFromString(deposit.Amount, 10)
+		e := events.NewDepositEvent(ctx, types.Deposit{
+			ID:           deposit.Id,
+			Status:       deposit.Status,
+			PartyID:      deposit.PartyId,
+			Asset:        deposit.Asset,
+			Amount:       amt,
+			TxHash:       deposit.TxHash,
+			CreditDate:   deposit.CreditedTimestamp,
+			CreationDate: deposit.CreatedTimestamp,
 		})
 		return e, nil
 	}, "deposit-events.golden")

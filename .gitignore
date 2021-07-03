@@ -6,6 +6,7 @@ data/
 .DS_Store
 .envrc
 .idea/
+.run
 *.iws
 .mypy_cache
 proto/*-re

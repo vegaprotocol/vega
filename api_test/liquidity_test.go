@@ -9,9 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/events"
-	pb "code.vegaprotocol.io/vega/proto"
 	apipb "code.vegaprotocol.io/vega/proto/api"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TestLiquidity_Get(t *testing.T) {
@@ -23,16 +24,30 @@ func TestLiquidity_Get(t *testing.T) {
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		lp := be.GetLiquidityProvision()
 		require.NotNil(t, lp)
-		e := events.NewLiquidityProvisionEvent(ctx, &pb.LiquidityProvision{
+		fee, _ := num.DecimalFromString(lp.Fee)
+
+		var sells []*types.LiquidityOrderReference
+		for _, v := range lp.Sells {
+			s := types.LiquidityOrderReferenceFromProto(v)
+			sells = append(sells, s)
+		}
+
+		var buys []*types.LiquidityOrderReference
+		for _, v := range lp.Buys {
+			b := types.LiquidityOrderReferenceFromProto(v)
+			sells = append(buys, b)
+		}
+
+		e := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 			Id:               lp.Id,
 			PartyId:          lp.PartyId,
 			CreatedAt:        lp.CreatedAt,
 			UpdatedAt:        lp.UpdatedAt,
 			MarketId:         lp.MarketId,
-			CommitmentAmount: lp.CommitmentAmount,
-			Fee:              lp.Fee,
-			Sells:            lp.Sells,
-			Buys:             lp.Buys,
+			CommitmentAmount: num.NewUint(lp.CommitmentAmount),
+			Fee:              fee,
+			Sells:            sells,
+			Buys:             buys,
 			Version:          lp.Version,
 			Status:           lp.Status,
 			Reference:        lp.Reference,

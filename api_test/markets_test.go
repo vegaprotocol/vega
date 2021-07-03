@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/events"
-	pb "code.vegaprotocol.io/vega/proto"
 	apipb "code.vegaprotocol.io/vega/proto/api"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TestMarkets_GetAll(t *testing.T) {
@@ -23,7 +23,7 @@ func TestMarkets_GetAll(t *testing.T) {
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		market := be.GetMarket()
 		require.NotNil(t, market)
-		e := events.NewMarketCreatedEvent(ctx, pb.Market{
+		e := events.NewMarketCreatedEvent(ctx, types.Market{
 			Id: market.MarketId,
 		})
 		return e, nil

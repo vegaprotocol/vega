@@ -49,7 +49,7 @@ func AccountFromProto(a *proto.Account) *Account {
 	return &Account{
 		Id:       a.Id,
 		Owner:    a.Owner,
-		Balance:  a.Balance,
+		Balance:  num.NewUint(a.Balance),
 		Asset:    a.Asset,
 		MarketId: a.MarketId,
 		Type:     a.Type,
@@ -146,7 +146,7 @@ func TransferBalanceFromProto(t *proto.TransferBalance) *TransferBalance {
 	}
 	return &TransferBalance{
 		Account: acc,
-		Balance: t.Balance,
+		Balance: num.NewUint(t.Balance),
 	}
 }
 
@@ -192,7 +192,7 @@ func LedgerEntryFromProto(l *proto.LedgerEntry) *LedgerEntry {
 	return &LedgerEntry{
 		FromAccount: l.FromAccount,
 		ToAccount:   l.ToAccount,
-		Amount:      l.Amount,
+		Amount:      num.NewUint(l.Amount),
 		Reference:   l.Reference,
 		Type:        l.Type,
 		Timestamp:   l.Timestamp,

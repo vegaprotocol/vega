@@ -296,6 +296,26 @@ func (t *Trade) IntoProto() *proto.Trade {
 	}
 }
 
+func TradeFromProto(t *proto.Trade) *Trade {
+	return &Trade{
+		Id:                t.Id,
+		MarketId:           t.MarketId,
+		Price:              num.NewUint(t.Price),
+		Size:               t.Size,
+		Buyer:              t.Buyer,
+		Seller:             t.Seller,
+		Aggressor:          t.Aggressor,
+		BuyOrder:           t.BuyOrder,
+		SellOrder:          t.SellOrder,
+		Timestamp:          t.Timestamp,
+		Type:               t.Type,
+		BuyerFee:           FeeFromProto(t.BuyerFee),
+		SellerFee:          FeeFromProto(t.SellerFee),
+		BuyerAuctionBatch:  t.BuyerAuctionBatch,
+		SellerAuctionBatch: t.SellerAuctionBatch,
+	}
+}
+
 func (t *Trade) String() string {
 	return t.IntoProto().String()
 }

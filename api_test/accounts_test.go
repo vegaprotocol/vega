@@ -25,7 +25,7 @@ func TestGetPartyAccounts(t *testing.T) {
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		acc := be.GetAccount()
 		require.NotNil(t, acc)
-		e := events.NewAccountEvent(ctx, pb.Account{
+		e := events.NewAccountEvent(ctx, types.Account{
 			Id:       acc.Id,
 			Owner:    acc.Owner,
 			Balance:  num.NewUint(acc.Balance),

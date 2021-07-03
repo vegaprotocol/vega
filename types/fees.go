@@ -69,6 +69,14 @@ func (f Fee) IntoProto() *proto.Fee {
 	}
 }
 
+func FeeFromProto(f *proto.Fee) *Fee {
+	return &Fee{
+		MakerFee:          num.NewUint(f.MakerFee),
+		InfrastructureFee: num.NewUint(f.InfrastructureFee),
+		LiquidityFee:      num.NewUint(f.LiquidityFee),
+	}
+}
+
 func (f Fee) Clone() *Fee {
 	return &Fee{
 		MakerFee:          f.MakerFee.Clone(),
