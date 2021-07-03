@@ -52,8 +52,8 @@ type Engine struct {
 	probabilityOfTradingTauScaling num.Decimal
 	minProbabilityOfTrading        num.Decimal
 
-	cachedMin num.Uint
-	cachedMax num.Uint
+	cachedMin *num.Uint
+	cachedMax *num.Uint
 	// Bid cache
 	bCache map[num.Uint]num.Decimal
 	// Ask cache
@@ -66,6 +66,8 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		rm: riskModel,
 		pm: priceMonitor,
 
+		cachedMin:                      num.Zero(),
+		cachedMax:                      num.Zero(),
 		horizon:                        riskModel.GetProjectionHorizon(),
 		probabilityOfTradingTauScaling: num.DecimalFromInt64(1), // this is the same as the default in the netparams
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
@@ -201,10 +203,10 @@ func (e *Engine) updateSizes(
 
 func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice *num.Uint, maxPrice *num.Uint) num.Decimal {
 	// if min, max changed since caches were created then reset
-	if e.cachedMin != *minPrice || e.cachedMax != *maxPrice {
+	if e.cachedMin.NEQ(minPrice) || e.cachedMax.NEQ(maxPrice) {
 		e.bCache = make(map[num.Uint]num.Decimal, len(e.bCache))
 		e.aCache = make(map[num.Uint]num.Decimal, len(e.aCache))
-		e.cachedMin, e.cachedMax = *minPrice, *maxPrice
+		e.cachedMin, e.cachedMax = minPrice.Clone(), maxPrice.Clone()
 	}
 
 	// Any part of shape that's pegged between or equal to
