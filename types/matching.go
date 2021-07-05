@@ -36,6 +36,8 @@ func (o Order) Clone() *Order {
 	cpy := o
 	if o.Price != nil {
 		cpy.Price = o.Price.Clone()
+	} else {
+		cpy.Price = num.Zero()
 	}
 	if o.PeggedOrder != nil {
 		cpy.PeggedOrder = o.PeggedOrder.Clone()

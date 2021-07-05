@@ -27,26 +27,3 @@ func TestTimeEvent(t *testing.T) {
 	assert.Equal(t, trace, e.TraceID())
 	assert.Zero(t, e.Sequence())
 }
-
-func TestGenericEvent(t *testing.T) {
-	now := time.Now()
-	ctx := getCtx()
-	ge, err := events.New(ctx, now)
-	assert.NoError(t, err)
-	e, ok := ge.(*events.Time)
-	assert.True(t, ok)
-	assert.Equal(t, now, e.Time())
-	assert.Equal(t, events.TimeUpdate, e.Type())
-	// try same with time pointer
-	ge, err = events.New(ctx, &now)
-	assert.NoError(t, err)
-	e2, ok := ge.(*events.Time)
-	assert.True(t, ok)
-	assert.Equal(t, e.Time(), e2.Time())
-}
-
-func TestInvalidEvent(t *testing.T) {
-	_, err := events.New(context.Background(), events.TimeUpdate)
-	assert.Error(t, err)
-	assert.Equal(t, events.ErrUnsupportedEvent, err)
-}
