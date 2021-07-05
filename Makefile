@@ -23,10 +23,10 @@ test: ## Run unit tests
 integrationtest: ## run integration tests, showing ledger movements and full scenario output
 	@./script/build.sh -a integrationtest
 
-.PHONY: qatest
-qatest: ## run integration tests in the specs internal repo
+.PHONY: spec_feature_test
+spec_feature_test: ## run integration tests in the specs internal repo
 	@specsrepo="$(PWD)/../specs-internal" \
-	./script/build.sh -a qatest
+	./script/build.sh -a spec_feature_test
 
 .PHONY: race
 race: ## Run data race detector

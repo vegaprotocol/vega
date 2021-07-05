@@ -276,7 +276,7 @@ run() {
 		go test -v ./integration/... -godog.format=pretty
 		return "$?"
 		;;
-	qatest) ## Run qa integration tests (godog)
+	spec_feature_test) ## Run qa integration tests (godog)
 		local repo="${specsrepo:?}"
 		if test -z "$repo"; then
 			echo "specsrepo not specified"
