@@ -32,6 +32,17 @@ type Order struct {
 	LiquidityProvisionId string
 }
 
+func (o Order) Clone() *Order {
+	cpy := o
+	if o.Price != nil {
+		cpy.Price = o.Price.Clone()
+	}
+	if o.PeggedOrder != nil {
+		cpy.PeggedOrder = o.PeggedOrder.Clone()
+	}
+	return &cpy
+}
+
 func (o Order) String() string {
 	return o.IntoProto().String()
 }
@@ -158,6 +169,11 @@ func (o *Order) HasTraded() bool {
 type PeggedOrder struct {
 	Reference PeggedReference
 	Offset    int64
+}
+
+func (p PeggedOrder) Clone() *PeggedOrder {
+	cpy := p
+	return &cpy
 }
 
 func NewPeggedOrderFromProto(p *proto.PeggedOrder) *PeggedOrder {

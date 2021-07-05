@@ -2542,7 +2542,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 			}
 		}
 
-		assert.Len(t, found, 2)
+		assert.Len(t, found, 3)
 
 		expected := map[string]struct {
 			size   uint64
@@ -2552,13 +2552,14 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 			// no event sent for expired orders
 			// this is done by the excution engine, we may want to do
 			// that from the market someday
+			"V0000000000-0000000007": {19, types.Order_STATUS_EXPIRED},
 			"V0000000000-0000000002": {15, types.Order_STATUS_ACTIVE},
 		}
 
 		// no ensure that the orders in the map matches the size we have
 		for k, v := range found {
-			assert.Equal(t, expected[k].status, v.Status)
-			assert.Equal(t, expected[k].size, v.Size)
+			assert.Equal(t, expected[k].status.String(), v.Status.String(), k)
+			assert.Equal(t, expected[k].size, v.Size, k)
 		}
 	})
 
