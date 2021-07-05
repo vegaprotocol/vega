@@ -237,8 +237,8 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	seller.sell -= int64(trade.Size)
 
 	ret := []events.MarketPosition{
-		*buyer,
-		*seller,
+		*buyer.Clone(),
+		*seller.Clone(),
 	}
 
 	if e.log.GetLevel() == logging.DebugLevel {
