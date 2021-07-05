@@ -61,7 +61,7 @@ func (l LogNormalRiskModel) IntoProto() *proto.LogNormalRiskModel {
 }
 
 func (l LogNormalRiskModel) DeepClone() *LogNormalRiskModel {
-	cpy = LogNormalRiskModel{
+	cpy := LogNormalRiskModel{
 		RiskAversionParameter: l.RiskAversionParameter,
 		Tau:                   l.Tau,
 	}

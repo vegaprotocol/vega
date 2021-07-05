@@ -878,7 +878,7 @@ func (n NewMarketConfiguration_LogNormal) rpIntoProto() interface{} {
 
 func (n NewMarketConfiguration_Simple) IntoProto() *proto.NewMarketConfiguration_Simple {
 	return &proto.NewMarketConfiguration_Simple{
-		imple: n.Simple.IntoProto(),
+		Simple: n.Simple.IntoProto(),
 	}
 }
 
@@ -942,7 +942,7 @@ func (i InstrumentConfiguration) DeepClone() *InstrumentConfiguration {
 		Code: i.Code,
 	}
 	if i.Product != nil {
-		cpy.Product = i.DeepClone()
+		cpy.Product = i.Product.DeepClone()
 	}
 	return &cpy
 }
