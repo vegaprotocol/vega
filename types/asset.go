@@ -242,12 +242,21 @@ func (a AssetDetails) DeepClone() *AssetDetails {
 	if a.Source != nil {
 		src = a.Source.DeepClone()
 	}
-	return &AssetDetails{
-		Name:        a.Name,
-		Symbol:      a.Symbol,
-		TotalSupply: a.TotalSupply.Clone(),
-		Decimals:    a.Decimals,
-		MinLpStake:  a.MinLpStake.Clone(),
-		Source:      src,
+	cpy := &AssetDetails{
+		Name:     a.Name,
+		Symbol:   a.Symbol,
+		Decimals: a.Decimals,
+		Source:   src,
 	}
+	if a.TotalSupply != nil {
+		cpy.TotalSupply = a.TotalSupply.Clone()
+	} else {
+		cpy.TotalSupply = num.Zero()
+	}
+	if a.MinLpStake != nil {
+		cpy.MinLpStake = a.MinLpStake.Clone()
+	} else {
+		cpy.MinLpStake = num.Zero()
+	}
+	return cpy
 }
