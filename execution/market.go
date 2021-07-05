@@ -630,9 +630,8 @@ func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, er
 }
 
 func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
-	zero := num.NewUint(0)
 	if m.as.InAuction() {
-		return zero, ErrCannotRepriceDuringAuction
+		return num.Zero(), ErrCannotRepriceDuringAuction
 	}
 
 	var (
@@ -649,7 +648,7 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
-		return zero, ErrUnableToReprice
+		return num.Zero(), ErrUnableToReprice
 	}
 
 	if order.PeggedOrder.Offset >= 0 {
@@ -660,10 +659,10 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	// unsigned type
 	offset := num.NewUint(uint64(-order.PeggedOrder.Offset))
 	if price.LTE(offset) {
-		return zero, ErrUnableToReprice
+		return num.Zero(), ErrUnableToReprice
 	}
 
-	return zero.Sub(price, offset), nil
+	return num.Zero().Sub(price, offset), nil
 }
 
 // Reprice a pegged order. This only updates the price on the order

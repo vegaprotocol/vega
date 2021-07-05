@@ -193,11 +193,8 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 		size = -size
 	}
 	pos.size += size
-	cpy := *pos
-	cpy.price = pos.price.Clone()
-	cpy.vwBuyPrice = pos.vwBuyPrice.Clone()
-	cpy.vwSellPrice = pos.vwSellPrice.Clone()
-	return []events.MarketPosition{*pos}
+	cpy := pos.Clone()
+	return []events.MarketPosition{*cpy}
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
@@ -240,8 +237,8 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	seller.sell -= int64(trade.Size)
 
 	ret := []events.MarketPosition{
-		*buyer,
-		*seller,
+		*buyer.Clone(),
+		*seller.Clone(),
 	}
 
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -342,9 +339,9 @@ func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
 	if !ok {
 		return nil, false
 	}
-	cpy := *pos
+	cpy := pos.Clone()
 	// return a copy
-	return &cpy, true
+	return cpy, true
 }
 
 // Parties returns a list of all the parties in the position engine

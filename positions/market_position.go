@@ -31,6 +31,14 @@ func NewMarketPosition(party string) *MarketPosition {
 	}
 }
 
+func (p MarketPosition) Clone() *MarketPosition {
+	cpy := p
+	cpy.price = p.price.Clone()
+	cpy.vwBuyPrice = p.vwBuyPrice.Clone()
+	cpy.vwSellPrice = p.vwSellPrice.Clone()
+	return &cpy
+}
+
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(order *types.Order) {
