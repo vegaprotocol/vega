@@ -3,7 +3,6 @@ package core_test
 import (
 	"flag"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 

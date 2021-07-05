@@ -277,7 +277,6 @@ run() {
 		return "$?"
 		;;
 	qatest) ## Run qa integration tests (godog)
-		local specsrepo
 	  if test -z "$specsrepo" ; then
 	    echo "specsrepo not specified"
 	    exit 1
