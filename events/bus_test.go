@@ -11,10 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getCtx() context.Context {
-	return contextutil.WithTraceID(context.Background(), "test-trace-id")
-}
-
 func TestTimeEvent(t *testing.T) {
 	now := time.Now()
 	ctx := context.Background()
