@@ -15,11 +15,19 @@ var (
 	ErrNegativeScalingFactor = errors.New("scaling factor can't be negative")
 )
 
+var (
+	exp     = num.Zero().Exp(num.NewUint(10), num.NewUint(5))
+	exp2    = num.Zero().Exp(num.NewUint(10), num.NewUint(10))
+	expDec  = num.DecimalFromUint(exp)
+	exp2Dec = num.DecimalFromUint(exp2)
+)
+
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
-	tWindow time.Duration
-	sFactor num.Decimal
-	oiCalc  OpenInterestCalculator
+	tWindow     time.Duration
+	sFactor     num.Decimal
+	sFactorUint *num.Uint
+	oiCalc      OpenInterestCalculator
 
 	now               time.Time
 	scheduledTruncate time.Time
@@ -40,10 +48,12 @@ type OpenInterestCalculator interface {
 
 // NewEngine returns a new instance of target stake calculation Engine
 func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
+	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
 	return &Engine{
-		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
-		sFactor: parameters.ScalingFactor,
-		oiCalc:  oiCalc,
+		tWindow:     time.Duration(parameters.TimeWindow) * time.Second,
+		sFactor:     parameters.ScalingFactor,
+		sFactorUint: factor,
+		oiCalc:      oiCalc,
 	}
 }
 
@@ -58,6 +68,8 @@ func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
 	if sFactor.IsNegative() {
 		return ErrNegativeScalingFactor
 	}
+	factor, _ := num.UintFromDecimal(sFactor.Mul(expDec))
+	e.sFactorUint = factor
 	e.sFactor = sFactor
 	return nil
 }
@@ -121,14 +133,24 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	if factor.LessThan(rf.Short) {
 		factor = rf.Short
 	}
-	// float64(markPrice.Uint64()*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
-	mp := num.DecimalFromUint(markPrice).Mul(
-		num.NewUint(maxOI).ToDecimal(),
-	).Mul(
-		factor.Mul(e.sFactor),
+
+	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
+	retVal := num.Zero().Div(
+		num.Zero().Mul(
+			num.Zero().Mul(markPrice, num.NewUint(maxOI)),
+			factorUint.Mul(factorUint, e.sFactorUint),
+		),
+		exp2,
 	)
+	// float64(markPrice.Uint64()*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	// mp := num.DecimalFromUint(markPrice).Mul(
+	// 	num.NewUint(maxOI).ToDecimal(),
+	// ).Mul(
+	// 	factor.Mul(e.sFactor),
+	// )
 	// return the decimal as uint
-	retVal, _ := num.UintFromDecimal(mp)
+	// retVal, _ := num.UintFromDecimal(mp)
+
 	return retVal
 }
 

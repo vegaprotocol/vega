@@ -191,7 +191,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	theoreticalOI := oi
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
 	expectedTheoreticalTargetStake, _ := num.UintFromDecimal(expectedTargetStake)
-	theoreticalTargetStake := engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+	theoreticalTargetStake := engine.GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
 
