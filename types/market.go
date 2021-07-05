@@ -3,6 +3,8 @@
 package types
 
 import (
+	"errors"
+
 	"code.vegaprotocol.io/vega/proto"
 	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -16,6 +18,13 @@ const (
 	MARKET_TRADING_CONFIG_UNDEFINED MarketTradingConfigType = iota
 	MARKET_TRADING_CONFIG_CONTINUOUS
 	MARKET_TRADING_CONFIG_DISCRETE
+)
+
+var (
+	ErrNilTradableInstrument = errors.New("nil tradable instrument")
+	ErrNilInstrument         = errors.New("nil instrument")
+	ErrNilProduct            = errors.New("nil product")
+	ErrUnknownAsset          = errors.New("unknown asset")
 )
 
 type MarketTimestamps struct {
@@ -376,12 +385,20 @@ func (i Instrument_Future) IntoProto() *proto.Instrument_Future {
 	}
 }
 
+func (i Instrument_Future) getAsset() (string, error) {
+	if i.Future == nil {
+		return "", ErrUnknownAsset
+	}
+	return i.Future.SettlementAsset, nil
+}
+
 func (i Instrument_Future) iIntoProto() interface{} {
 	return i.IntoProto()
 }
 
 type iProto interface {
 	iIntoProto() interface{}
+	getAsset() (string, error)
 }
 
 type Instrument struct {
@@ -554,9 +571,11 @@ type Market struct {
 	State                         Market_State
 	MarketTimestamps              *MarketTimestamps
 	tmc                           MarketTradingConfigType
+	asset                         string
 }
 
 func MarketFromProto(mkt *proto.Market) *Market {
+	asset, _ := mkt.GetAsset()
 	m := &Market{
 		Id:                            mkt.Id,
 		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
@@ -569,6 +588,7 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		TradingMode:                   mkt.TradingMode,
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
+		asset:                         asset,
 	}
 	m.tmc = m.TradingModeConfig.tmcType()
 	return m
@@ -630,9 +650,29 @@ func (m Market) GetId() string {
 	return m.Id
 }
 
-func (m Market) GetAsset() (string, error) {
-	// @TODO implement this in a better way
-	return m.IntoProto().GetAsset()
+func (m *Market) getAsset() (string, error) {
+	if m.TradableInstrument == nil {
+		return "", ErrNilTradableInstrument
+	}
+	if m.TradableInstrument.Instrument == nil {
+		return "", ErrNilInstrument
+	}
+	if m.TradableInstrument.Instrument.Product == nil {
+		return "", ErrNilProduct
+	}
+
+	return m.TradableInstrument.Instrument.Product.getAsset()
+}
+
+func (m *Market) GetAsset() (string, error) {
+	if m.asset == "" {
+		asset, err := m.getAsset()
+		if err != nil {
+			return asset, err
+		}
+		m.asset = asset
+	}
+	return m.asset, nil
 }
 
 func (m Market) GetContinuous() *Market_Continuous {
