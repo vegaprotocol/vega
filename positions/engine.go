@@ -193,11 +193,8 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 		size = -size
 	}
 	pos.size += size
-	cpy := *pos
-	cpy.price = pos.price.Clone()
-	cpy.vwBuyPrice = pos.vwBuyPrice.Clone()
-	cpy.vwSellPrice = pos.vwSellPrice.Clone()
-	return []events.MarketPosition{*pos}
+	cpy := pos.Clone()
+	return []events.MarketPosition{*cpy}
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
@@ -284,7 +281,7 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 // of the updated positions
 func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
 	for _, pos := range e.positions {
-		pos.price.Set(markPrice)
+		pos.price.Set(markPrice.Clone())
 	}
 	return e.positionsCpy
 }
@@ -342,9 +339,9 @@ func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
 	if !ok {
 		return nil, false
 	}
-	cpy := *pos
+	cpy := pos.Clone()
 	// return a copy
-	return &cpy, true
+	return cpy, true
 }
 
 // Parties returns a list of all the parties in the position engine
