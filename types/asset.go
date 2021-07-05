@@ -236,3 +236,18 @@ func (a AssetDetails) GetErc20() *ERC20 {
 		return nil
 	}
 }
+
+func (a AssetDetails) DeepClone() *AssetDetails {
+	var src isAssetDetails
+	if a.Source != nil {
+		src = a.Source.DeepClone()
+	}
+	return &AssetDetails{
+		Name:        a.Name,
+		Symbol:      a.Symbol,
+		TotalSupply: a.TotalSupply.Clone(),
+		Decimals:    a.Decimals,
+		MinLpStake:  a.MinLpStake.Clone(),
+		Source:      src,
+	}
+}

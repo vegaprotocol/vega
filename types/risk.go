@@ -38,6 +38,14 @@ func (l LogNormalModelParams) String() string {
 	return l.IntoProto().String()
 }
 
+func (l LogNormalModelParams) DeepClone() *LogNormalModelParams {
+	return &LogNormalModelParams{
+		Mu:    l.Mu,
+		R:     l.R,
+		Sigma: l.Sigma,
+	}
+}
+
 func (l LogNormalRiskModel) IntoProto() *proto.LogNormalRiskModel {
 	ra, _ := l.RiskAversionParameter.Float64()
 	t, _ := l.Tau.Float64()
@@ -50,6 +58,17 @@ func (l LogNormalRiskModel) IntoProto() *proto.LogNormalRiskModel {
 		Tau:                   t,
 		Params:                params,
 	}
+}
+
+func (l LogNormalRiskModel) DeepClone() *LogNormalRiskModel {
+	cpy = LogNormalRiskModel{
+		RiskAversionParameter: l.RiskAversionParameter,
+		Tau:                   l.Tau,
+	}
+	if l.Params != nil {
+		cpy.Params = l.Params.DeepClone()
+	}
+	return &cpy
 }
 
 func (t TradableInstrument_LogNormalRiskModel) IntoProto() *proto.TradableInstrument_LogNormalRiskModel {
@@ -329,4 +348,14 @@ func (s SimpleModelParams) IntoProto() *proto.SimpleModelParams {
 
 func (s SimpleModelParams) String() string {
 	return s.IntoProto().String()
+}
+
+func (s SimpleModelParams) DeepClone() *SimpleModelParams {
+	return &SimpleModelParams{
+		FactorLong:           s.FactorLong,
+		FactorShort:          s.FactorShort,
+		MaxMoveUp:            s.MaxMoveUp,
+		MinMoveDown:          s.MinMoveDown,
+		ProbabilityOfTrading: s.ProbabilityOfTrading,
+	}
 }

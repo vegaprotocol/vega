@@ -21,3 +21,9 @@ func (o OracleSpecToFutureBinding) IntoProto() *proto.OracleSpecToFutureBinding 
 func (o OracleSpecToFutureBinding) String() string {
 	return o.IntoProto().String()
 }
+
+func (o OracleSpecToFutureBinding) DeepClone() *OracleSpecToFutureBinding {
+	return &OracleSpecToFutureBinding{
+		SettlementPriceProperty: o.SettlementPriceProperty,
+	}
+}
