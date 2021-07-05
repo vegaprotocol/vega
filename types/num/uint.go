@@ -72,7 +72,8 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 
 // UintFromDecimal returns a decimal version of the Uint, setting the bool to true if overflow occurred
 func UintFromDecimal(d Decimal) (*Uint, bool) {
-	return UintFromBig(d.BigInt())
+	u, ok := d.Uint()
+	return &Uint{*u}, ok
 }
 
 // ToDecimal returns the value of the Uint as a Decimal

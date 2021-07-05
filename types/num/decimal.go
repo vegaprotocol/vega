@@ -30,7 +30,7 @@ func NewDecimalFromBigInt(value *big.Int, exp int32) Decimal {
 }
 
 func DecimalFromUint(u *Uint) Decimal {
-	return decimal.NewFromBigInt(u.BigInt(), 0)
+	return decimal.NewFromUint(&u.u)
 }
 
 func DecimalFromFloat(v float64) Decimal {
