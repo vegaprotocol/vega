@@ -277,12 +277,13 @@ run() {
 		return "$?"
 		;;
 	qatest) ## Run qa integration tests (godog)
-		if test -z "$specsrepo" ; then
+		local repo="${specsrepo:?}"
+		if test -z "$repo"; then
 			echo "specsrepo not specified"
 			exit 1
 		fi
 		local features
-		features="${specsrepo}/qa-scenarios"
+		features="${repo}/qa-scenarios"
 		echo "features = $features"
 		go test -v ./integration/... --features="$features" -godog.format=pretty
 		return "$?"
