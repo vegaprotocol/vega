@@ -829,15 +829,15 @@ func (m *Market) amendOrCancelLiquidityProvision(
 	// rejected.
 	if sub.CommitmentAmount.LT(lp.CommitmentAmount) {
 		// first - does the market have enough stake
-		supplied := num.DecimalFromUint(m.getSuppliedStake())
-		if m.getTargetStake().GreaterThanOrEqual(supplied) {
+		supplied := m.getSuppliedStake()
+		if m.getTargetStake().GTE(supplied) {
 			return ErrNotEnoughStake
 		}
 
 		// now if the stake surplus is > than the change we are OK
-		surplus := supplied.Sub(m.getTargetStake())
-		diff := num.DecimalFromUint(num.Zero().Sub(lp.CommitmentAmount, sub.CommitmentAmount))
-		if surplus.LessThan(diff) {
+		surplus := supplied.Sub(supplied, m.getTargetStake())
+		diff := num.Zero().Sub(lp.CommitmentAmount, sub.CommitmentAmount)
+		if surplus.LT(diff) {
 			return ErrNotEnoughStake
 		}
 	}

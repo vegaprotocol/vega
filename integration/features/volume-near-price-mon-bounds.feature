@@ -64,7 +64,7 @@ Feature: Test margin for lp near price monitoring boundaries
     # so the best bid/ask coincides with the price monitoring bounds.
     # Since the lp1 offset is +/- 100 the lp1 volume "should" go to 800 and 1200
     # but because the price monitoring bounds are 900 and 1100 the volume gets pushed to these
-    # i.e. it's placed at 900 / 1100. 
+    # i.e. it's placed at 900 / 1100.
     # As these are the best bid / best ask the probability of trading used is 1/2.
 
     And the traders should have the following margin levels:
@@ -88,9 +88,9 @@ Feature: Test margin for lp near price monitoring boundaries
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC21 | buy  | 1      | 901   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4 |
-    
+
     # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
-    # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This is 0.1 (see above). 
+    # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This is 0.1 (see above).
     # Hence a lot more volume is required to meet commitment and thus the margin requirement jumps substantially.
 
     And the traders should have the following margin levels:
@@ -144,7 +144,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
@@ -157,7 +157,7 @@ Feature: Test margin for lp near price monitoring boundaries
     # so the best bid/ask coincides with the price monitoring bounds.
     # Since the lp1 offset is +/- 100 the lp1 volume "should" go to 800 and 1209
     # but because the price monitoring bounds are 900 and 1109 the volume gets pushed to these
-    # i.e. it's placed at 900 / 1109. 
+    # i.e. it's placed at 900 / 1109.
     # As these are the best bid / best ask the probability of trading used is 1/2.
 
     And the traders should have the following margin levels:
@@ -175,7 +175,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 50000000       | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
     Then debug liquidity submission errors
     And debug transaction errors
     And debug liquidity provision events
@@ -198,8 +198,8 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3612         | 0              | 10            |
-    
+      | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 0              | 10            |
+
 
     # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
     # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
@@ -216,6 +216,3 @@ Feature: Test margin for lp near price monitoring boundaries
     And the traders should have the following margin levels:
       | trader | market id  | maintenance | search   | initial  | release  |
       | lp1    | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
-
-
-    

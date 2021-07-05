@@ -106,7 +106,7 @@ type LiquidityMonitor interface {
 // TargetStakeCalculator interface
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
-	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) num.Decimal
+	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint
 	UpdateScalingFactor(sFactor num.Decimal) error
 	UpdateTimeWindow(tWindow time.Duration)
 }
@@ -428,7 +428,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketTradingMode:         m.as.Mode(),
 		Trigger:                   m.as.Trigger(),
 		ExtensionTrigger:          m.as.ExtensionTrigger(),
-		TargetStake:               m.getTargetStake().Ceil().String(),
+		TargetStake:               m.getTargetStake().String(),
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
 		MarketValueProxy:          m.lastMarketValueProxy.String(),
@@ -1417,7 +1417,7 @@ func (m *Market) confirmMTM(
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
 // the fee engine.
 func (m *Market) updateLiquidityFee(ctx context.Context) {
-	stake, _ := num.UintFromDecimal(m.getTargetStake())
+	stake := m.getTargetStake()
 	fee := m.liquidity.ProvisionsPerParty().FeeForTarget(stake)
 	if !fee.Equals(m.getLiquidityFee()) {
 		m.fee.SetLiquidityFee(fee)
@@ -2791,12 +2791,12 @@ func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 	return rf, nil
 }
 
-func (m *Market) getTargetStake() num.Decimal {
+func (m *Market) getTargetStake() *num.Uint {
 	rf, err := m.getRiskFactors()
 	if err != nil {
 		logging.Error(err)
 		m.log.Debug("unable to get risk factors, can't calculate target")
-		return num.DecimalZero()
+		return num.Zero()
 	}
 	return m.tsCalc.GetTargetStake(*rf, m.currentTime, m.getCurrentMarkPrice())
 }
