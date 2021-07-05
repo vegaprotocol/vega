@@ -192,8 +192,12 @@ func (a AssetDetailsErc20) adIntoProto() interface{} {
 func (AssetDetailsErc20) isAssetDetails() {}
 
 func (a AssetDetailsErc20) DeepClone() isAssetDetails {
-	cpy := a
-	return &cpy
+	if a.Erc20 == nil {
+		return &AssetDetailsErc20{}
+	}
+	return &AssetDetailsErc20{
+		Erc20: a.Erc20.DeepClone(),
+	}
 }
 
 func (a AssetDetailsErc20) ValidateAssetSource() (ProposalError, error) {
@@ -234,5 +238,35 @@ func (a AssetDetails) GetErc20() *ERC20 {
 		return s.Erc20
 	default:
 		return nil
+	}
+}
+
+func (a AssetDetails) DeepClone() *AssetDetails {
+	var src isAssetDetails
+	if a.Source != nil {
+		src = a.Source.DeepClone()
+	}
+	cpy := &AssetDetails{
+		Name:     a.Name,
+		Symbol:   a.Symbol,
+		Decimals: a.Decimals,
+		Source:   src,
+	}
+	if a.TotalSupply != nil {
+		cpy.TotalSupply = a.TotalSupply.Clone()
+	} else {
+		cpy.TotalSupply = num.Zero()
+	}
+	if a.MinLpStake != nil {
+		cpy.MinLpStake = a.MinLpStake.Clone()
+	} else {
+		cpy.MinLpStake = num.Zero()
+	}
+	return cpy
+}
+
+func (e ERC20) DeepClone() *ERC20 {
+	return &ERC20{
+		ContractAddress: e.ContractAddress,
 	}
 }

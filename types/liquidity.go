@@ -57,6 +57,13 @@ func (t TargetStakeParameters) String() string {
 	return t.IntoProto().String()
 }
 
+func (t TargetStakeParameters) DeepClone() *TargetStakeParameters {
+	return &TargetStakeParameters{
+		TimeWindow:    t.TimeWindow,
+		ScalingFactor: t.ScalingFactor,
+	}
+}
+
 type LiquidityProvisionSubmission struct {
 	// Market identifier for the order, required field
 	MarketId string
@@ -295,6 +302,14 @@ type LiquidityOrder struct {
 	Offset int64
 }
 
+func (l LiquidityOrder) DeepClone() *LiquidityOrder {
+	return &LiquidityOrder{
+		Reference:  l.Reference,
+		Proportion: l.Proportion,
+		Offset:     l.Offset,
+	}
+}
+
 func (l LiquidityOrder) IntoProto() *proto.LiquidityOrder {
 	lo := &proto.LiquidityOrder{
 		Reference:  l.Reference,
@@ -333,6 +348,17 @@ func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringPar
 		AuctionExtension:      l.AuctionExtension,
 	}
 	return lmp
+}
+
+func (l LiquidityMonitoringParameters) DeepClone() *LiquidityMonitoringParameters {
+	cpy := LiquidityMonitoringParameters{
+		TriggeringRatio:  l.TriggeringRatio,
+		AuctionExtension: l.AuctionExtension,
+	}
+	if l.TargetStakeParameters != nil {
+		cpy.TargetStakeParameters = l.TargetStakeParameters.DeepClone()
+	}
+	return &cpy
 }
 
 func (l *LiquidityMonitoringParameters) FromProto(p *proto.LiquidityMonitoringParameters) {

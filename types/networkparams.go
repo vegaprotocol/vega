@@ -23,3 +23,10 @@ func (n NetworkParameter) IntoProto() *proto.NetworkParameter {
 func (n NetworkParameter) String() string {
 	return n.IntoProto().String()
 }
+
+func (n NetworkParameter) DeepClone() *NetworkParameter {
+	return &NetworkParameter{
+		Key:   n.Key,
+		Value: n.Value,
+	}
+}

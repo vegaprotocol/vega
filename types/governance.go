@@ -280,6 +280,27 @@ func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommi
 	return &l, nil
 }
 
+func (n NewMarketCommitment) DeepClone() *NewMarketCommitment {
+	cpy := &NewMarketCommitment{
+		Fee:       n.Fee,
+		Sells:     make([]*LiquidityOrder, 0, len(n.Sells)),
+		Buys:      make([]*LiquidityOrder, 0, len(n.Buys)),
+		Reference: n.Reference,
+	}
+	if n.CommitmentAmount != nil {
+		cpy.CommitmentAmount = n.CommitmentAmount.Clone()
+	} else {
+		cpy.CommitmentAmount = num.Zero()
+	}
+	for _, s := range n.Sells {
+		cpy.Sells = append(cpy.Sells, s.DeepClone())
+	}
+	for _, b := range n.Buys {
+		cpy.Buys = append(cpy.Buys, b.DeepClone())
+	}
+	return cpy
+}
+
 type ProposalTerms struct {
 	ClosingTimestamp    int64
 	EnactmentTimestamp  int64
@@ -321,11 +342,13 @@ type NewMarketConfiguration struct {
 type riskParams interface {
 	isNMCRP()
 	rpIntoProto() interface{}
+	DeepClone() riskParams
 }
 
 type tradingMode interface {
 	isTradingMode()
 	tmIntoProto() interface{}
+	DeepClone() tradingMode
 }
 
 type ProposalTerms_NewMarket struct {
@@ -382,6 +405,17 @@ func (n NewMarket) IntoProto() *proto.NewMarket {
 	}
 }
 
+func (n NewMarket) DeepClone() *NewMarket {
+	cpy := NewMarket{}
+	if n.LiquidityCommitment != nil {
+		cpy.LiquidityCommitment = n.LiquidityCommitment.DeepClone()
+	}
+	if n.Changes != nil {
+		cpy.Changes = n.Changes.DeepClone()
+	}
+	return &cpy
+}
+
 func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 	riskParams := n.RiskParameters.rpIntoProto()
 	tradingMode := n.TradingMode.tmIntoProto()
@@ -421,6 +455,30 @@ func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 		r.TradingMode = tm
 	}
 	return r
+}
+
+func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
+	cpy := &NewMarketConfiguration{
+		DecimalPlaces: n.DecimalPlaces,
+		Metadata:      make([]string, len(n.Metadata)),
+	}
+	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
+	if n.Instrument != nil {
+		cpy.Instrument = n.Instrument.DeepClone()
+	}
+	if n.PriceMonitoringParameters != nil {
+		cpy.PriceMonitoringParameters = n.PriceMonitoringParameters.DeepClone()
+	}
+	if n.LiquidityMonitoringParameters != nil {
+		cpy.LiquidityMonitoringParameters = n.LiquidityMonitoringParameters.DeepClone()
+	}
+	if n.RiskParameters != nil {
+		cpy.RiskParameters = n.RiskParameters.DeepClone()
+	}
+	if n.TradingMode != nil {
+		cpy.TradingMode = n.TradingMode.DeepClone()
+	}
+	return cpy
 }
 
 func NewMarketConfigurationFromProto(p *proto.NewMarketConfiguration) *NewMarketConfiguration {
@@ -520,7 +578,7 @@ func NewNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms_NewM
 	}
 
 	return &ProposalTerms_NewMarket{
-		NewMarket: newMarket, // @TODO
+		NewMarket: newMarket,
 	}
 }
 
@@ -631,9 +689,13 @@ func (a ProposalTerms_NewMarket) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_NEW_MARKET
 }
 
-// DeepClone @TODO
 func (a ProposalTerms_NewMarket) DeepClone() pterms {
-	return a
+	if a.NewMarket == nil {
+		return &ProposalTerms_NewMarket{}
+	}
+	return &ProposalTerms_NewMarket{
+		NewMarket: a.NewMarket.DeepClone(),
+	}
 }
 
 func (a ProposalTerms_UpdateMarket) IntoProto() *proto.ProposalTerms_UpdateMarket {
@@ -650,9 +712,13 @@ func (a ProposalTerms_UpdateMarket) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_UPDATE_MARKET
 }
 
-// DeepClone @TODO
 func (a ProposalTerms_UpdateMarket) DeepClone() pterms {
-	return a
+	if a.UpdateMarket == nil {
+		return &ProposalTerms_UpdateMarket{}
+	}
+	return &ProposalTerms_UpdateMarket{
+		UpdateMarket: a.UpdateMarket.DeepClone(),
+	}
 }
 
 func (a ProposalTerms_UpdateNetworkParameter) IntoProto() *proto.ProposalTerms_UpdateNetworkParameter {
@@ -669,9 +735,13 @@ func (a ProposalTerms_UpdateNetworkParameter) GetTermType() Proposal_Terms_TYPE 
 	return ProposalTerms_UPDATE_NETWORK_PARAMETER
 }
 
-// DeepClone @TODO
 func (a ProposalTerms_UpdateNetworkParameter) DeepClone() pterms {
-	return a
+	if a.UpdateNetworkParameter == nil {
+		return &ProposalTerms_UpdateNetworkParameter{}
+	}
+	return &ProposalTerms_UpdateNetworkParameter{
+		UpdateNetworkParameter: a.UpdateNetworkParameter.DeepClone(),
+	}
 }
 
 func (n UpdateNetworkParameter) IntoProto() *proto.UpdateNetworkParameter {
@@ -682,6 +752,15 @@ func (n UpdateNetworkParameter) IntoProto() *proto.UpdateNetworkParameter {
 
 func (n UpdateNetworkParameter) String() string {
 	return n.IntoProto().String()
+}
+
+func (n UpdateNetworkParameter) DeepClone() *UpdateNetworkParameter {
+	if n.Changes == nil {
+		return &UpdateNetworkParameter{}
+	}
+	return &UpdateNetworkParameter{
+		Changes: n.Changes.DeepClone(),
+	}
 }
 
 func (a ProposalTerms_NewAsset) IntoProto() *proto.ProposalTerms_NewAsset {
@@ -702,9 +781,13 @@ func (a ProposalTerms_NewAsset) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_NEW_ASSET
 }
 
-// DeepClone @TODO
 func (a ProposalTerms_NewAsset) DeepClone() pterms {
-	return a
+	if a.NewAsset == nil {
+		return &ProposalTerms_NewAsset{}
+	}
+	return &ProposalTerms_NewAsset{
+		NewAsset: a.NewAsset.DeepClone(),
+	}
 }
 
 func (n NewAsset) IntoProto() *proto.NewAsset {
@@ -719,6 +802,15 @@ func (n NewAsset) IntoProto() *proto.NewAsset {
 
 func (n NewAsset) String() string {
 	return n.IntoProto().String()
+}
+
+func (n NewAsset) DeepClone() *NewAsset {
+	if n.Changes == nil {
+		return &NewAsset{}
+	}
+	return &NewAsset{
+		Changes: n.Changes.DeepClone(),
+	}
 }
 
 func (n NewMarketCommitment) IntoProto() *proto.NewMarketCommitment {
@@ -770,6 +862,15 @@ func NewMarketConfiguration_LogNormalFromProto(p *proto.NewMarketConfiguration_L
 	}
 }
 
+func (n NewMarketConfiguration_LogNormal) DeepClone() riskParams {
+	if n.LogNormal == nil {
+		return &NewMarketConfiguration_LogNormal{}
+	}
+	return &NewMarketConfiguration_LogNormal{
+		LogNormal: n.LogNormal.DeepClone(),
+	}
+}
+
 func (*NewMarketConfiguration_LogNormal) isNMCRP() {}
 
 func (n NewMarketConfiguration_LogNormal) rpIntoProto() interface{} {
@@ -790,6 +891,14 @@ func NewMarketConfiguration_SimpleFromProto(p *proto.NewMarketConfiguration_Simp
 
 func (*NewMarketConfiguration_Simple) isNMCRP() {}
 
+func (n NewMarketConfiguration_Simple) DeepClone() riskParams {
+	if n.Simple == nil {
+		return &NewMarketConfiguration_Simple{}
+	}
+	return &NewMarketConfiguration_Simple{
+		Simple: n.Simple.DeepClone(),
+	}
+}
 func (n NewMarketConfiguration_Simple) rpIntoProto() interface{} {
 	return n.IntoProto()
 }
@@ -804,6 +913,7 @@ type InstrumentConfiguration struct {
 type icProd interface {
 	isInstrumentConfiguration_Product()
 	icpIntoProto() interface{}
+	DeepClone() icProd
 }
 
 type InstrumentConfiguration_Future struct {
@@ -816,6 +926,26 @@ type FutureProduct struct {
 	QuoteName         string
 	OracleSpec        *v1.OracleSpecConfiguration
 	OracleSpecBinding *OracleSpecToFutureBinding
+}
+
+func (i InstrumentConfiguration_Future) DeepClone() icProd {
+	if i.Future == nil {
+		return &InstrumentConfiguration_Future{}
+	}
+	return &InstrumentConfiguration_Future{
+		Future: i.Future.DeepClone(),
+	}
+}
+
+func (i InstrumentConfiguration) DeepClone() *InstrumentConfiguration {
+	cpy := InstrumentConfiguration{
+		Name: i.Name,
+		Code: i.Code,
+	}
+	if i.Product != nil {
+		cpy.Product = i.Product.DeepClone()
+	}
+	return &cpy
 }
 
 func (i InstrumentConfiguration) IntoProto() *proto.InstrumentConfiguration {
@@ -846,7 +976,7 @@ func InstrumentConfigurationFromProto(
 				Maturity:        pr.Future.Maturity,
 				SettlementAsset: pr.Future.SettlementAsset,
 				QuoteName:       pr.Future.QuoteName,
-				OracleSpec:      pr.Future.OracleSpec.DeepClone(), // @TODO
+				OracleSpec:      pr.Future.OracleSpec.DeepClone(),
 				OracleSpecBinding: OracleSpecToFutureBindingFromProto(
 					pr.Future.OracleSpecBinding),
 			},
@@ -872,8 +1002,18 @@ func (f FutureProduct) IntoProto() *proto.FutureProduct {
 		Maturity:          f.Maturity,
 		SettlementAsset:   f.SettlementAsset,
 		QuoteName:         f.QuoteName,
-		OracleSpec:        f.OracleSpec.DeepClone(), // @TODO
+		OracleSpec:        f.OracleSpec.DeepClone(),
 		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
+	}
+}
+
+func (f FutureProduct) DeepClone() *FutureProduct {
+	return &FutureProduct{
+		Maturity:          f.Maturity,
+		SettlementAsset:   f.SettlementAsset,
+		QuoteName:         f.QuoteName,
+		OracleSpec:        f.OracleSpec.DeepClone(),
+		OracleSpecBinding: f.OracleSpecBinding.DeepClone(),
 	}
 }
 
@@ -893,6 +1033,12 @@ func ContinuousTradingFromProto(c *proto.ContinuousTrading) *ContinuousTrading {
 
 func (c ContinuousTrading) IntoProto() *proto.ContinuousTrading {
 	return &proto.ContinuousTrading{
+		TickSize: c.TickSize,
+	}
+}
+
+func (c ContinuousTrading) DeepClone() *ContinuousTrading {
+	return &ContinuousTrading{
 		TickSize: c.TickSize,
 	}
 }
@@ -925,6 +1071,15 @@ func (n NewMarketConfiguration_Continuous) tmIntoProto() interface{} {
 	return n.IntoProto()
 }
 
+func (n NewMarketConfiguration_Continuous) DeepClone() tradingMode {
+	if n.Continuous == nil {
+		return &NewMarketConfiguration_Continuous{}
+	}
+	return &NewMarketConfiguration_Continuous{
+		Continuous: n.Continuous.DeepClone(),
+	}
+}
+
 type NewMarketConfiguration_Discrete struct {
 	Discrete *DiscreteTrading
 }
@@ -950,12 +1105,28 @@ func (n NewMarketConfiguration_Discrete) tmIntoProto() interface{} {
 	return n.IntoProto()
 }
 
+func (n NewMarketConfiguration_Discrete) DeepClone() tradingMode {
+	if n.Discrete == nil {
+		return &NewMarketConfiguration_Discrete{}
+	}
+	return &NewMarketConfiguration_Discrete{
+		Discrete: n.Discrete.DeepClone(),
+	}
+}
+
 type DiscreteTrading struct {
 	DurationNs int64
 	TickSize   string
 }
 
 func DiscreteTradingFromProto(d *proto.DiscreteTrading) *DiscreteTrading {
+	return &DiscreteTrading{
+		DurationNs: d.DurationNs,
+		TickSize:   d.TickSize,
+	}
+}
+
+func (d DiscreteTrading) DeepClone() *DiscreteTrading {
 	return &DiscreteTrading{
 		DurationNs: d.DurationNs,
 		TickSize:   d.TickSize,

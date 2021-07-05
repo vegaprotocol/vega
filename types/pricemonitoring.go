@@ -83,6 +83,16 @@ func (p *PriceMonitoringParameters) FromProto(pr *proto.PriceMonitoringParameter
 	p.Triggers = triggers
 }
 
+func (p PriceMonitoringParameters) DeepClone() *PriceMonitoringParameters {
+	cpy := PriceMonitoringParameters{
+		Triggers: make([]*PriceMonitoringTrigger, 0, len(p.Triggers)),
+	}
+	for _, t := range p.Triggers {
+		cpy.Triggers = append(cpy.Triggers, t.DeepClone())
+	}
+	return &cpy
+}
+
 func (p *PriceMonitoringParameters) Reset() {
 	*p = PriceMonitoringParameters{}
 }
@@ -135,6 +145,15 @@ func (p PriceMonitoringTrigger) IntoProto() *proto.PriceMonitoringTrigger {
 	return &proto.PriceMonitoringTrigger{
 		Horizon:          horizon,
 		Probability:      prob,
+		AuctionExtension: p.AuctionExtension,
+	}
+}
+
+func (p PriceMonitoringTrigger) DeepClone() *PriceMonitoringTrigger {
+	return &PriceMonitoringTrigger{
+		Horizon:          p.Horizon,
+		HDec:             p.HDec,
+		Probability:      p.Probability,
 		AuctionExtension: p.AuctionExtension,
 	}
 }
