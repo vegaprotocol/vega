@@ -2250,8 +2250,6 @@ func (m *Market) amendOrder(
 		expiresAt = existingOrder.ExpiresAt
 	}
 
-	fmt.Printf("removeExpiry(%v) - addExpiry(%v)\n", needToRemoveExpiry, needToAddExpiry)
-
 	// if expiration has changed and is before the original creation time, reject this amend
 	if amendedOrder.ExpiresAt != 0 && amendedOrder.ExpiresAt < existingOrder.CreatedAt {
 		if m.log.GetLevel() == logging.DebugLevel {
