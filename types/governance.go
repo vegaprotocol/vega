@@ -462,6 +462,7 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 		DecimalPlaces: n.DecimalPlaces,
 		Metadata:      make([]string, len(n.Metadata)),
 	}
+	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
 		cpy.Instrument = n.Instrument.DeepClone()
 	}
@@ -577,7 +578,7 @@ func NewNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms_NewM
 	}
 
 	return &ProposalTerms_NewMarket{
-		NewMarket: newMarket, // @TODO
+		NewMarket: newMarket,
 	}
 }
 
@@ -932,7 +933,7 @@ func (i InstrumentConfiguration_Future) DeepClone() icProd {
 		return &InstrumentConfiguration_Future{}
 	}
 	return &InstrumentConfiguration_Future{
-		Future: i.Future.DeepClone(), // @TODO clone this
+		Future: i.Future.DeepClone(),
 	}
 }
 
@@ -975,7 +976,7 @@ func InstrumentConfigurationFromProto(
 				Maturity:        pr.Future.Maturity,
 				SettlementAsset: pr.Future.SettlementAsset,
 				QuoteName:       pr.Future.QuoteName,
-				OracleSpec:      pr.Future.OracleSpec.DeepClone(), // @TODO
+				OracleSpec:      pr.Future.OracleSpec.DeepClone(),
 				OracleSpecBinding: OracleSpecToFutureBindingFromProto(
 					pr.Future.OracleSpecBinding),
 			},
@@ -1001,7 +1002,7 @@ func (f FutureProduct) IntoProto() *proto.FutureProduct {
 		Maturity:          f.Maturity,
 		SettlementAsset:   f.SettlementAsset,
 		QuoteName:         f.QuoteName,
-		OracleSpec:        f.OracleSpec.DeepClone(), // @TODO
+		OracleSpec:        f.OracleSpec.DeepClone(),
 		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
 	}
 }
