@@ -560,7 +560,7 @@ func (m testMargin) GeneralBalance() *num.Uint {
 }
 
 func (m testMargin) BondBalance() *num.Uint {
-	return num.NewUint(0)
+	return num.Zero()
 }
 
 func (m testMargin) Price() *num.Uint {

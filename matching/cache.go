@@ -14,7 +14,7 @@ type BookCache struct {
 func NewBookCache() BookCache {
 	return BookCache{
 		indicativePrice: cachedUint{
-			value: num.NewUint(0),
+			value: num.Zero(),
 		},
 	}
 }

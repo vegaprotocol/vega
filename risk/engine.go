@@ -195,11 +195,11 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		if curMargin.GTE(levels.InitialMargin) {
 			continue
 		}
-		minAmount := num.NewUint(0)
+		minAmount := num.Zero()
 		if levels.MaintenanceMargin.GT(curMargin) {
 			minAmount.Sub(levels.MaintenanceMargin, curMargin)
 		}
-		amt := num.NewUint(0).Sub(levels.InitialMargin, curMargin) // we know curBalace is less than initial
+		amt := num.Zero().Sub(levels.InitialMargin, curMargin) // we know curBalace is less than initial
 		t := &types.Transfer{
 			Owner: evt.Party(),
 			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
@@ -260,7 +260,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		return nil, nil, nil
 	}
 
-	minAmount := num.NewUint(0)
+	minAmount := num.Zero()
 	if margins.MaintenanceMargin.GT(curMarginBalance) {
 		minAmount.Sub(margins.MaintenanceMargin, curMarginBalance)
 	}
@@ -271,7 +271,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
-			Amount: num.NewUint(0).Sub(margins.InitialMargin, curMarginBalance),
+			Amount: num.Zero().Sub(margins.InitialMargin, curMarginBalance),
 		},
 		MinAmount: minAmount, // minimal amount == maintenance
 	}
@@ -343,7 +343,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		}
 
 		var trnsfr *types.Transfer
-		minAmount := num.NewUint(0)
+		minAmount := num.Zero()
 		// case 2 -> not enough margin
 		if curMargin.LT(margins.SearchLevel) {
 
@@ -360,7 +360,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
-					Amount: num.NewUint(0).Sub(margins.InitialMargin, curMargin),
+					Amount: num.Zero().Sub(margins.InitialMargin, curMargin),
 				},
 				MinAmount: minAmount,
 			}
@@ -371,7 +371,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
-					Amount: num.NewUint(0).Sub(curMargin, margins.InitialMargin),
+					Amount: num.Zero().Sub(curMargin, margins.InitialMargin),
 				},
 				MinAmount: minAmount,
 			}

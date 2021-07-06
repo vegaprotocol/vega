@@ -84,7 +84,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	if riskiestLng > 0 {
 		var (
 			slippageVolume  = num.DecimalFromFloat(float64(max(openVolume, 0)))
-			slippagePerUnit = num.NewUint(0)
+			slippagePerUnit = num.Zero()
 			negSlippage     bool
 		)
 		if slippageVolume.GreaterThan(zeroD) {
@@ -102,7 +102,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 						logging.Error(err))
 				}
 			}
-			slippagePerUnit, negSlippage = num.NewUint(0).Delta(markPrice, exitPrice)
+			slippagePerUnit, negSlippage = num.Zero().Delta(markPrice, exitPrice)
 		}
 
 		bDec := num.DecimalFromFloat(float64(m.Buy()))
@@ -125,7 +125,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	if riskiestSht < 0 {
 		var (
 			slippageVolume  = num.DecimalFromFloat(float64(min(openVolume, 0)))
-			slippagePerUnit = num.NewUint(0)
+			slippagePerUnit = num.Zero()
 		)
 		// slippageVolume would be negative we abs it in the next phase
 		if slippageVolume.LessThan(zeroD) {
@@ -144,7 +144,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				}
 			}
 			// exitPrice - markPrice == -1*(markPrice - exitPrice)
-			slippagePerUnit, _ = num.NewUint(0).Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
+			slippagePerUnit, _ = num.Zero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
 			// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
 

@@ -683,21 +683,21 @@ func (m MarketPos) Price() *num.Uint {
 	if m.price != nil {
 		return m.price
 	}
-	return num.NewUint(0)
+	return num.Zero()
 }
 
 func (m MarketPos) VWBuy() *num.Uint {
 	if m.vwBuy != nil {
 		return m.vwBuy
 	}
-	return num.NewUint(0)
+	return num.Zero()
 }
 
 func (m MarketPos) VWSell() *num.Uint {
 	if m.vwSell != nil {
 		return m.vwSell
 	}
-	return num.NewUint(0)
+	return num.Zero()
 }
 
 func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {

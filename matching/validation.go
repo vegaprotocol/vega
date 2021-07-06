@@ -13,7 +13,7 @@ const maxOrderIDLen = 22
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	timer := metrics.NewTimeCounter(b.marketID, "matching", "validateOrder")
 	if orderMessage.Price == nil {
-		orderMessage.Price = num.NewUint(0)
+		orderMessage.Price = num.Zero()
 	}
 	if orderMessage.MarketId != b.marketID {
 		b.log.Error("Market ID mismatch",

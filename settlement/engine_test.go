@@ -106,7 +106,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 		if size < 0 {
 			size *= -1
 		}
-		amt := num.NewUint(0).Sub(oraclePrice, price)
+		amt := num.Zero().Sub(oraclePrice, price)
 		amt = amt.Mul(amt, num.NewUint(uint64(size)))
 		return &types.FinancialAmount{
 			Amount: amt,
@@ -120,7 +120,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now(), num.NewUint(0))
+	got, err := engine.Settle(time.Now(), num.Zero())
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -224,7 +224,7 @@ func testSettleExpiryFail(t *testing.T) {
 	positions := engine.getExpiryPositions(data...)
 	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now(), num.NewUint(0))
+	empty, err := engine.Settle(time.Now(), num.Zero())
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -480,7 +480,7 @@ func TestConcurrent(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size int64) (*types.FinancialAmount, error) {
-		return &types.FinancialAmount{Amount: num.NewUint(0)}, nil
+		return &types.FinancialAmount{Amount: num.Zero()}, nil
 	})
 
 	cfg := engine.Config
@@ -528,7 +528,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now, num.NewUint(0))
+			_, err := engine.Settle(now, num.Zero())
 			assert.NoError(t, err)
 		}()
 	}
@@ -568,7 +568,7 @@ func (t testPos) Sell() int64 {
 
 func (t testPos) Price() *num.Uint {
 	if t.price == nil {
-		return num.NewUint(0)
+		return num.Zero()
 	}
 	return t.price
 }
@@ -618,7 +618,7 @@ func (m marginVal) GeneralBalance() *num.Uint {
 }
 
 func (m marginVal) BondBalance() *num.Uint {
-	return num.NewUint(0)
+	return num.Zero()
 }
 
 func (m marginVal) MarginShortFall() *num.Uint {

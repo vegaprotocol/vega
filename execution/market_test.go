@@ -49,7 +49,7 @@ var defaultCollateralAssets = []types.Asset{
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
-			MinLpStake:  num.NewUint(0),
+			MinLpStake:  num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -4155,7 +4155,7 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 	// Remove the LPSubmission by setting the commitment to 0
 	lp2 := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(0),
+		CommitmentAmount: num.Zero(),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 10, Offset: 2000},
@@ -5097,7 +5097,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	// now we do a cancellation
 	lpCancel := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(0),
+		CommitmentAmount: num.Zero(),
 	}
 
 	// cleanup the events before we continue

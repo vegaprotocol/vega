@@ -504,7 +504,7 @@ func (f fakeMktPos) Party() string    { return f.party }
 func (f fakeMktPos) Size() int64      { return f.size }
 func (f fakeMktPos) Buy() int64       { return 0 }
 func (f fakeMktPos) Sell() int64      { return 0 }
-func (f fakeMktPos) Price() *num.Uint { return num.NewUint(0) }
+func (f fakeMktPos) Price() *num.Uint { return num.Zero() }
 
 func (f fakeMktPos) VWBuy() *num.Uint {
 	return num.NewUint(f.vwBuy)

@@ -418,7 +418,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// untouched
 	lpCancelCommitment := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(0), // required commitment is 50000
+		CommitmentAmount: num.Zero(), // required commitment is 50000
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-6",
 		Buys:             []*types.LiquidityOrder{},
@@ -508,7 +508,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	// the required stake for the market
 	lpSubmissionCancel := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(0),
+		CommitmentAmount: num.Zero(),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
 		Buys:             []*types.LiquidityOrder{},
@@ -524,7 +524,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, num.NewUint(0), acc.Balance)
+		assert.Equal(t, num.Zero(), acc.Balance)
 	})
 }
 

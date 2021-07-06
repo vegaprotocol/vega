@@ -226,7 +226,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Id:       infraFeeID,
 			Asset:    asset.Id,
 			Owner:    systemOwner,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			MarketId: noMarket,
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
 		}
@@ -240,7 +240,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Id:       externalID,
 			Asset:    asset.Id,
 			Owner:    systemOwner,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			MarketId: noMarket,
 			Type:     types.AccountType_ACCOUNT_TYPE_EXTERNAL,
 		}
@@ -494,7 +494,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	var (
 		winidx          int
 		expectCollected num.Decimal
-		expCollected    = num.NewUint(0)
+		expCollected    = num.Zero()
 	)
 
 	// create batch of events
@@ -566,7 +566,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			return nil, nil, err
 		}
 
-		amountCollected := num.NewUint(0)
+		amountCollected := num.Zero()
 		// // update the to accounts now
 		for _, bal := range res.Balances {
 			amountCollected.AddSum(bal.Balance)
@@ -776,7 +776,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		bond:            bondAcc,
 		asset:           asset,
 		marketID:        marketID,
-		marginShortFall: num.NewUint(0),
+		marginShortFall: num.Zero(),
 	}, nil
 }
 
@@ -798,7 +798,7 @@ func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []ev
 			MarketPosition:  update,
 			asset:           update.Asset(),
 			marketID:        update.MarketID(),
-			marginShortFall: num.NewUint(0),
+			marginShortFall: num.Zero(),
 		}
 
 		req, err := e.getTransferRequest(ctx, transfer, settle, nil, mevt)
@@ -882,7 +882,7 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 			general,
 		},
 		Amount:    transfer.Amount.Amount.Clone(),
-		MinAmount: num.NewUint(0),
+		MinAmount: num.Zero(),
 		Asset:     assetID,
 		Reference: transfer.Type.String(),
 	}
@@ -951,7 +951,7 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		MarketPosition:  update,
 		asset:           update.Asset(),
 		marketID:        update.MarketID(),
-		marginShortFall: num.NewUint(0),
+		marginShortFall: num.Zero(),
 	}
 
 	req, err := e.getTransferRequest(ctx, transfer, settle, nil, &mevt)
@@ -1229,7 +1229,7 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 			settle,
 		}
 		req.Amount = p.Amount.Amount.Clone()
-		req.MinAmount = num.NewUint(0) // default value, but keep it here explicitly
+		req.MinAmount = num.Zero() // default value, but keep it here explicitly
 	case types.TransferType_TRANSFER_TYPE_WIN, types.TransferType_TRANSFER_TYPE_MTM_WIN:
 		// the insurance pool in the Req.FromAccountAccount is not used ATM (losses should fully cover wins
 		// or the insurance pool has already been drained).
@@ -1241,7 +1241,7 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 			mEvt.margin,
 		}
 		req.Amount = p.Amount.Amount.Clone()
-		req.MinAmount = num.NewUint(0) // default value, but keep it here explicitly
+		req.MinAmount = num.Zero() // default value, but keep it here explicitly
 	case types.TransferType_TRANSFER_TYPE_MARGIN_LOW:
 		if mEvt.bond != nil {
 			req.FromAccount = []*types.Account{
@@ -1312,16 +1312,16 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 	for _, t := range req.ToAccount {
 		ret.Balances = append(ret.Balances, &types.TransferBalance{
 			Account: t,
-			Balance: num.NewUint(0),
+			Balance: num.Zero(),
 		})
 	}
 	amount := req.Amount
 	for _, acc := range req.FromAccount {
 		// give each to account an equal share
 		nToAccounts := num.NewUint(uint64(len(req.ToAccount)))
-		parts := num.NewUint(0).Div(amount, nToAccounts)
+		parts := num.Zero().Div(amount, nToAccounts)
 		// add remaining pennies to last ledger movement
-		remainder := num.NewUint(0).Mod(amount, nToAccounts)
+		remainder := num.Zero().Mod(amount, nToAccounts)
 		var (
 			to *types.TransferBalance
 			lm *types.LedgerEntry
@@ -1535,7 +1535,7 @@ func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) boo
 		noMarket, party, asset, types.AccountType_ACCOUNT_TYPE_GENERAL,
 	)
 
-	availableBalance := num.NewUint(0)
+	availableBalance := num.Zero()
 
 	bondAcc, ok := e.accs[bondID]
 	if ok {
@@ -1588,7 +1588,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 			Id:       bondID,
 			Asset:    asset,
 			MarketId: marketID,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			Owner:    partyID,
 			Type:     types.AccountType_ACCOUNT_TYPE_BOND,
 		}
@@ -1625,7 +1625,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 			Id:       marginID,
 			Asset:    asset,
 			MarketId: marketID,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			Owner:    partyID,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 		}
@@ -1668,7 +1668,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Id:       generalID,
 			Asset:    asset,
 			MarketId: noMarket,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			Owner:    partyID,
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 		}
@@ -1698,7 +1698,7 @@ func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyI
 			Id:       id,
 			Asset:    asset,
 			MarketId: noMarket,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			Owner:    partyID,
 			Type:     types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW,
 		}
@@ -1849,7 +1849,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Id:       insuranceID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_INSURANCE,
 		}
@@ -1865,7 +1865,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Id:       settleID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_SETTLEMENT,
 		}
@@ -1882,7 +1882,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Id:       liquidityFeeID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
 		}
@@ -1897,7 +1897,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Id:       makerFeeID,
 			Asset:    asset,
 			Owner:    systemOwner,
-			Balance:  num.NewUint(0),
+			Balance:  num.Zero(),
 			MarketId: marketID,
 			Type:     types.AccountType_ACCOUNT_TYPE_FEES_MAKER,
 		}

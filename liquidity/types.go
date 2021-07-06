@@ -43,7 +43,7 @@ func (l LiquidityProvisions) feeForTarget(t *num.Uint) num.Decimal {
 		return num.DecimalFromFloat(0)
 	}
 
-	n := num.NewUint(0)
+	n := num.Zero()
 	for _, i := range l {
 		n.AddSum(i.CommitmentAmount)
 		if n.GTE(t) {
@@ -89,7 +89,7 @@ func (l ProvisionsPerParty) FeeForTarget(v *num.Uint) num.Decimal {
 // TotalStake returns the sum of all CommitmentAmount, which corresponds to the
 // total stake of a market.
 func (l ProvisionsPerParty) TotalStake() *num.Uint {
-	n := num.NewUint(0)
+	n := num.Zero()
 	for _, p := range l {
 		n.AddSum(p.CommitmentAmount)
 	}

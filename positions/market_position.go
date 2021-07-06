@@ -189,7 +189,7 @@ func (p MarketPosition) Price() *num.Uint {
 	if p.price != nil {
 		return p.price.Clone()
 	}
-	return num.NewUint(0)
+	return num.Zero()
 }
 
 // VWBuy - get volume weighted buy price for unmatched buy orders
@@ -197,7 +197,7 @@ func (p MarketPosition) VWBuy() *num.Uint {
 	if p.vwBuyPrice != nil {
 		return p.vwBuyPrice.Clone()
 	}
-	return num.NewUint(0)
+	return num.Zero()
 }
 
 // VWSell - get volume weighted sell price for unmatched sell orders
@@ -205,5 +205,5 @@ func (p MarketPosition) VWSell() *num.Uint {
 	if p.vwSellPrice != nil {
 		return p.vwSellPrice.Clone()
 	}
-	return num.NewUint(0)
+	return num.Zero()
 }

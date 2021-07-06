@@ -45,13 +45,13 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	}
 
 	var (
-		total = num.NewUint(0)
+		total = num.Zero()
 		evts  = make([]events.Event, 0, len(s.requests))
 		evt   *events.LossSoc
 	)
 	for _, v := range s.requests {
 		total.AddSum(v.amt)
-		loss, _ := num.NewUint(0).Delta(v.amt, v.request.Amount.Amount)
+		loss, _ := num.Zero().Delta(v.amt, v.request.Amount.Amount)
 		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
 		v.request.Amount.Amount = v.amt.Clone()
 		s.log.Warn("loss socialization missing funds to be distributed",

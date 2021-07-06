@@ -74,7 +74,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 		auction:         auction,
 		batchID:         0,
 		ordersPerParty:  map[string]map[string]struct{}{},
-		lastTradedPrice: num.NewUint(0),
+		lastTradedPrice: num.Zero(),
 	}
 }
 
@@ -104,11 +104,11 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint,
 	}
 
 	if volume == 0 {
-		return num.NewUint(0), ErrInvalidVolume
+		return num.Zero(), ErrInvalidVolume
 	}
 
 	var (
-		price  = num.NewUint(0)
+		price  = num.Zero()
 		vol    = volume
 		levels []*PriceLevel
 	)
@@ -122,11 +122,11 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint,
 		lvl := levels[i]
 		if lvl.volume >= vol {
 			// price += lvl.price * vol
-			price.Add(price, num.NewUint(0).Mul(lvl.price, num.NewUint(vol)))
+			price.Add(price, num.Zero().Mul(lvl.price, num.NewUint(vol)))
 			// return price / volume, nil
 			return price.Div(price, num.NewUint(volume)), nil
 		}
-		price.Add(price, num.NewUint(0).Mul(lvl.price, num.NewUint(lvl.volume)))
+		price.Add(price, num.Zero().Mul(lvl.price, num.NewUint(lvl.volume)))
 		vol -= lvl.volume
 	}
 	// at this point, we should check vol, make sure it's 0, if not return an error to indicate something is wrong
@@ -350,7 +350,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 		if b.log.GetLevel() <= logging.DebugLevel {
 			b.log.Debug("could not get cumulative price levels", logging.Error(err))
 		}
-		return num.NewUint(0), 0, types.Side_SIDE_UNSPECIFIED
+		return num.Zero(), 0, types.Side_SIDE_UNSPECIFIED
 	}
 
 	// Pull out all prices that match that volume
@@ -363,13 +363,13 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 
 	// get the maximum volume price from the average of the maximum and minimum tradable price levels
 	var (
-		uncrossPrice = num.NewUint(0)
+		uncrossPrice = num.Zero()
 		uncrossSide  types.Side
 	)
 	if len(prices) > 0 {
 		// uncrossPrice = (prices[len(prices)-1] + prices[0]) / 2
 		uncrossPrice.Div(
-			num.NewUint(0).Add(prices[len(prices)-1], prices[0]),
+			num.Zero().Add(prices[len(prices)-1], prices[0]),
 			num.NewUint(2),
 		)
 	}
@@ -399,7 +399,7 @@ func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 		if b.log.GetLevel() <= logging.DebugLevel {
 			b.log.Debug("could not get cumulative price levels", logging.Error(err))
 		}
-		return num.NewUint(0)
+		return num.Zero()
 	}
 
 	// Pull out all prices that match that volume
@@ -413,12 +413,12 @@ func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 	// get the maximum volume price from the average of the minimum and maximum tradable price levels
 	if len(prices) > 0 {
 		// return (prices[len(prices)-1] + prices[0]) / 2
-		return num.NewUint(0).Div(
-			num.NewUint(0).Add(prices[len(prices)-1], prices[0]),
+		return num.Zero().Div(
+			num.Zero().Add(prices[len(prices)-1], prices[0]),
 			num.NewUint(2),
 		)
 	}
-	return num.NewUint(0)
+	return num.Zero()
 }
 
 // buildCumulativePriceLevels this returns a slice of all the price levels with the
