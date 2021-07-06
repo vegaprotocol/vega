@@ -45,18 +45,20 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	}
 
 	var (
-		total = num.Zero()
-		evts  = make([]events.Event, 0, len(s.requests))
-		evt   *events.LossSoc
+		total  = num.Zero()
+		evts   = make([]events.Event, 0, len(s.requests))
+		evt    *events.LossSoc
+		netReq *request
 	)
 	for _, v := range s.requests {
 		total.AddSum(v.amt)
+		loss, _ := num.Zero().Delta(v.amt, v.request.Amount.Amount)
+		v.request.Amount.Amount = v.amt.Clone()
 		if v.request.Owner == types.NetworkParty {
+			netReq = &v
 			continue // network events are to be ignored
 		}
-		loss, _ := num.Zero().Delta(v.amt, v.request.Amount.Amount)
 		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
-		v.request.Amount.Amount = v.amt.Clone()
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
 			logging.Int64("amount", evt.AmountLost()),
@@ -64,9 +66,13 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		evts = append(evts, evt)
 	}
 
-	if total.NEQ(s.collected) && len(evts) > 0 {
-		// last one get the remaining bits
+	if total.NEQ(s.collected) {
 		mismatch, _ := total.Delta(s.collected, total)
+		if len(evts) == 0 {
+			netReq.request.Amount.Amount.AddSum(mismatch)
+			return evts
+		}
+		// last one get the remaining bits
 		s.requests[len(s.requests)-1].request.Amount.Amount.AddSum(mismatch)
 		// decAmt is negative
 		loss := mismatch.Sub(evt.AmountUint(), mismatch)
