@@ -617,25 +617,18 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 // e.g. removing expired orders from matching engine.
 func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "removeExpiredOrders")
-	expiringOrders := []types.Order{}
 	timeNow := t.UnixNano()
 	for _, mkt := range e.marketsCpy {
-		orders, err := mkt.RemoveExpiredOrders(ctx, timeNow)
+		expired, err := mkt.RemoveExpiredOrders(ctx, timeNow)
 		if err != nil {
 			e.log.Error("unable to get remove expired orders",
 				logging.MarketID(mkt.GetID()),
 				logging.Error(err))
 		}
-		expiringOrders = append(
-			expiringOrders, orders...)
+
+		metrics.OrderGaugeAdd(-len(expired), mkt.GetID())
 	}
-	evts := make([]events.Event, 0, len(expiringOrders))
-	for _, order := range expiringOrders {
-		order := order
-		evts = append(evts, events.NewOrderEvent(ctx, &order))
-		metrics.OrderGaugeAdd(-1, order.MarketId) // decrement gauge
-	}
-	e.broker.SendBatch(evts)
+
 	timer.EngineTimeCounterAdd()
 }
 

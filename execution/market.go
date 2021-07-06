@@ -1071,7 +1071,7 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 	// insert an expiring order if it's either in the book
 	// or in the parked list
 	if order.IsExpireable() && !order.IsFinished() {
-		m.expiringOrders.Insert(*order)
+		m.expiringOrders.Insert(order.Id, order.ExpiresAt)
 	}
 
 	return orderConf, orderUpdates, err
@@ -2203,7 +2203,7 @@ func (m *Market) amendOrder(
 				m.expiringOrders.RemoveOrder(expiresAt, existingOrder.Id)
 			}
 			if needToAddExpiry {
-				m.expiringOrders.Insert(*amendedOrder)
+				m.expiringOrders.Insert(amendedOrder.Id, amendedOrder.ExpiresAt)
 			}
 		}
 	}()
@@ -2478,28 +2478,10 @@ func (m *Market) applyOrderAmendment(
 	existingOrder *types.Order,
 	amendment *types.OrderAmendment,
 ) (order *types.Order, err error) {
-	m.mu.Lock()
-	currentTime := m.currentTime
-	m.mu.Unlock()
+	order = existingOrder.Clone()
+	order.UpdatedAt = m.currentTime.UnixNano()
+	order.Version += 1
 
-	// initialize order with the existing order data
-	order = &types.Order{
-		Type:        existingOrder.Type,
-		Id:          existingOrder.Id,
-		MarketId:    existingOrder.MarketId,
-		PartyId:     existingOrder.PartyId,
-		Side:        existingOrder.Side,
-		Price:       existingOrder.Price.Clone(),
-		Size:        existingOrder.Size,
-		Remaining:   existingOrder.Remaining,
-		TimeInForce: existingOrder.TimeInForce,
-		CreatedAt:   existingOrder.CreatedAt,
-		Status:      existingOrder.Status,
-		ExpiresAt:   existingOrder.ExpiresAt,
-		Reference:   existingOrder.Reference,
-		Version:     existingOrder.Version + 1,
-		UpdatedAt:   currentTime.UnixNano(),
-	}
 	if existingOrder.PeggedOrder != nil {
 		order.PeggedOrder = &types.PeggedOrder{
 			Reference: existingOrder.PeggedOrder.Reference,
@@ -2623,7 +2605,7 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 // RemoveExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked
 func (m *Market) RemoveExpiredOrders(
-	ctx context.Context, timestamp int64) ([]types.Order, error) {
+	ctx context.Context, timestamp int64) ([]*types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2631,48 +2613,47 @@ func (m *Market) RemoveExpiredOrders(
 		return nil, ErrMarketClosed
 	}
 
-	expired := []types.Order{}
-	for _, order := range m.expiringOrders.Expire(timestamp) {
+	expired := []*types.Order{}
+	evts := []events.Event{}
+	for _, orderID := range m.expiringOrders.Expire(timestamp) {
+		var order *types.Order
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
-		originalOrder, foundOnBook, err := m.getOrderByID(order.Id)
+		originalOrder, foundOnBook, err := m.getOrderByID(orderID)
 		if err == nil {
 			// assign to the order the order from the book
 			// so we get the most recent version from the book
 			// to continue with
-			order = *originalOrder
+			order = originalOrder
 
 			// if the order was on the book basically
 			// either a pegged + non parked
 			// or a non-pegged order
 			if foundOnBook {
-				m.position.UnregisterOrder(&order)
-				m.matching.DeleteOrder(&order)
+				m.position.UnregisterOrder(order)
+				m.matching.DeleteOrder(order)
 			}
-		}
 
-		// if this was a pegged order
-		// remove from the pegged / parked list
-		if order.PeggedOrder != nil {
-			m.removePeggedOrder(&order)
-		}
+			// if this was a pegged order
+			// remove from the pegged / parked list
+			if order.PeggedOrder != nil {
+				m.removePeggedOrder(order)
+			}
 
-		// now we add to the list of expired orders
-		// and assign the appropriate status
-		order.UpdatedAt = m.currentTime.UnixNano()
-		order.Status = types.Order_STATUS_EXPIRED
-		expired = append(expired, order)
+			// now we add to the list of expired orders
+			// and assign the appropriate status
+			order.UpdatedAt = m.currentTime.UnixNano()
+			order.Status = types.Order_STATUS_EXPIRED
+			expired = append(expired, order)
+			evts = append(evts, events.NewOrderEvent(ctx, order))
+		}
 	}
+	m.broker.SendBatch(evts)
 
 	// If we have removed an expired order, do we need to reprice any
 	// or maybe notify the liquidity engine
 	if len(expired) > 0 {
-		expiredPtrs := make([]*types.Order, len(expired))
-		for i := range expired {
-			expiredPtrs[i] = &expired[i]
-		}
-
-		m.checkForReferenceMoves(ctx, expiredPtrs, false)
+		m.checkForReferenceMoves(ctx, expired, false)
 		m.checkLiquidity(ctx, nil)
 		m.commandLiquidityAuction(ctx)
 	}

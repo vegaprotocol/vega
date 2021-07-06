@@ -646,6 +646,9 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		return err
 	}
 
+	// update the order by ids mapping
+	b.ordersByID[amendedOrder.Id] = amendedOrder
+
 	if b.auction && reduceBy != 0 {
 		// reduce volume at price level
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
@@ -702,7 +705,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	var trades []*types.Trade
 	var impactedOrders []*types.Order
-	var lastTradedPrice = num.NewUint(0)
+	var lastTradedPrice = num.Zero()
 	var err error
 
 	order.BatchId = b.batchID

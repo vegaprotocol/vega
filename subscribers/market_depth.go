@@ -167,8 +167,8 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 
 func (md *MarketDepth) addOrder(order *types.Order) {
 	// Cache the orderID
-	orderCopy := *order
-	md.liveOrders[order.Id] = &orderCopy
+	orderCopy := order.Clone()
+	md.liveOrders[order.Id] = orderCopy
 
 	// Update the price level
 	pl := md.getPriceLevel(order.Side, order.Price)

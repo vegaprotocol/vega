@@ -68,7 +68,7 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 // returns an error if the book is empty
 func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {
 	if len(s.levels) <= 0 {
-		return num.NewUint(0), 0, errors.New("no orders on the book")
+		return num.Zero(), 0, errors.New("no orders on the book")
 	}
 	last := len(s.levels) - 1
 	return s.levels[last].price.Clone(), s.levels[last].volume, nil
@@ -79,7 +79,7 @@ func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {
 // returns an error if the book is empty
 func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 	if len(s.levels) <= 0 {
-		return num.NewUint(0), errors.New("no orders on the book")
+		return num.Zero(), errors.New("no orders on the book")
 	}
 
 	for i := len(s.levels) - 1; i >= 0; i-- {
@@ -90,18 +90,18 @@ func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 			}
 		}
 	}
-	return num.NewUint(0), errors.New("no non pegged orders found on the book")
+	return num.Zero(), errors.New("no non pegged orders found on the book")
 }
 
 // BestStaticPriceAndVolume returns the top of book price for non pegged orders
 // returns an error if the book is empty
 func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	if len(s.levels) <= 0 {
-		return num.NewUint(0), 0, errors.New("no orders on the book")
+		return num.Zero(), 0, errors.New("no orders on the book")
 	}
 
 	var (
-		bestPrice  = num.NewUint(0)
+		bestPrice  = num.Zero()
 		bestVolume uint64
 	)
 	for i := len(s.levels) - 1; i >= 0; i-- {
@@ -113,11 +113,11 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 			}
 		}
 		// If we found a price, return it
-		if bestPrice.GT(num.NewUint(0)) {
+		if bestPrice.GT(num.Zero()) {
 			return bestPrice.Clone(), bestVolume, nil
 		}
 	}
-	return num.NewUint(0), 0, errors.New("no non pegged orders found on the book")
+	return num.Zero(), 0, errors.New("no non pegged orders found on the book")
 }
 
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
@@ -156,7 +156,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	}
 
 	reduceBy := oldOrder.Remaining - orderAmend.Size
-	*s.levels[priceLevelIndex].orders[orderIndex] = *orderAmend
+	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend.Clone()
 	s.levels[priceLevelIndex].reduceVolume(reduceBy)
 	return reduceBy, nil
 }
@@ -362,8 +362,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 	}
 
 	// get a copy of the order passed in, so we can rely on fakeUncross to do its job
-	cpy := *agg
-	fake := &cpy
+	fake := agg.Clone()
 
 	var (
 		idx        = len(s.levels) - 1
@@ -405,7 +404,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	var (
 		trades            []*types.Trade
 		impactedOrders    []*types.Order
-		lastTradedPrice   = num.NewUint(0)
+		lastTradedPrice   = num.Zero()
 		totalVolumeToFill uint64
 		checkPrice        func(*num.Uint) bool
 	)
@@ -495,12 +494,12 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	}
 
 	if agg.Type == types.Order_TYPE_NETWORK {
-		var totalPrice = num.NewUint(0)
+		var totalPrice = num.Zero()
 		for _, t := range trades {
 			// totalPrice += t.Price * t.Size
 			totalPrice.Add(
 				totalPrice,
-				num.NewUint(0).Mul(t.Price, num.NewUint(t.Size)),
+				num.Zero().Mul(t.Price, num.NewUint(t.Size)),
 			)
 
 		}
