@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -688,10 +687,7 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 
 // SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
-	timer := metrics.NewTimeCounter(b.marketID, "matching", "SubmitOrder")
-
 	if err := b.validateOrder(order); err != nil {
-		timer.EngineTimeCounterAdd()
 		return nil, err
 	}
 
@@ -796,7 +792,6 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	orderConfirmation := makeResponse(order, trades, impactedOrders)
-	timer.EngineTimeCounterAdd()
 	return orderConfirmation, nil
 }
 

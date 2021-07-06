@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -102,7 +101,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
-	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
 	pos, found := e.positions[order.PartyId]
 	if !found {
 		pos = NewMarketPosition(order.PartyId)
@@ -111,15 +109,12 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	pos.RegisterOrder(order)
-	timer.EngineTimeCounterAdd()
 	return pos
 }
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
 func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
-	defer metrics.NewTimeCounter("-", "positions", "UnregisterOrder").EngineTimeCounterAdd()
-
 	pos, found := e.positions[order.PartyId]
 	if !found {
 		e.log.Panic("could not find position in engine when unregistering order",
@@ -133,8 +128,6 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
-	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
-
 	pos, found := e.positions[originalOrder.PartyId]
 	if !found {
 		e.log.Panic("could not find position in engine when amending order",
@@ -142,7 +135,6 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPositio
 			logging.Order(*newOrder))
 	}
 	pos.AmendOrder(e.log, originalOrder, newOrder)
-	timer.EngineTimeCounterAdd()
 	return pos
 }
 

@@ -7,7 +7,6 @@ import (
 
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -399,8 +398,6 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 }
 
 func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, []*types.Order, *num.Uint, error) {
-	timer := metrics.NewTimeCounter("-", "matching", "OrderBookSide.uncross")
-
 	var (
 		trades            []*types.Trade
 		impactedOrders    []*types.Order
@@ -446,7 +443,6 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		}
 
 		if totalVolumeToFill < agg.Remaining {
-			timer.EngineTimeCounterAdd()
 			return trades, impactedOrders, lastTradedPrice, nil
 		}
 	}
@@ -513,7 +509,6 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	if len(trades) > 0 {
 		lastTradedPrice = trades[len(trades)-1].Price.Clone()
 	}
-	timer.EngineTimeCounterAdd()
 	return trades, impactedOrders, lastTradedPrice, err
 }
 
