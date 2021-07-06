@@ -15,11 +15,6 @@ import (
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
-	defer func() {
-		if err != nil {
-			m.broker.Send(events.NewTxErrEvent(ctx, err, party, sub))
-		}
-	}()
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}

@@ -64,10 +64,25 @@ var defaultPriceMonitorSettings = &types.PriceMonitoringSettings{
 	UpdateFrequency: 0,
 }
 
+type marketW struct {
+	*execution.Market
+}
+
+func (m *marketW) SubmitOrder(
+	ctx context.Context,
+	order *types.Order,
+) (*types.OrderConfirmation, error) {
+	conf, err := m.Market.SubmitOrder(ctx, order.IntoSubmission(), order.PartyId)
+	if err == nil {
+		*order = *conf.Order.Clone()
+	}
+	return conf, err
+}
+
 type testMarket struct {
 	t *testing.T
 
-	market           *execution.Market
+	market           *marketW
 	log              *logging.Logger
 	ctrl             *gomock.Controller
 	collateralEngine *collateral.Engine
@@ -155,7 +170,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	_, _, err = collateralEngine.CreateMarketAccounts(ctx, mktEngine.GetID(), asset)
 	require.NoError(tm.t, err)
 
-	tm.market = mktEngine
+	tm.market = &marketW{mktEngine}
 	tm.collateralEngine = collateralEngine
 	tm.asset = asset
 	tm.mas = mas
@@ -166,6 +181,20 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	tm.orderEventCount = 0
 
 	return tm
+}
+
+func (tm *testMarket) lastOrderUpdate(id string) *types.Order {
+	var order *types.Order
+	for _, e := range tm.events {
+		switch evt := e.(type) {
+		case *events.Order:
+			ord := evt.Order()
+			if ord.Id == id {
+				order = types.OrderFromProto(ord)
+			}
+		}
+	}
+	return order
 }
 
 func (tm *testMarket) StartOpeningAuction() *testMarket {
@@ -306,7 +335,7 @@ func getTestMarket2(
 	_, _, err = collateralEngine.CreateMarketAccounts(context.Background(), mktEngine.GetID(), asset)
 	assert.NoError(t, err)
 
-	tm.market = mktEngine
+	tm.market = &marketW{mktEngine}
 	tm.collateralEngine = collateralEngine
 	tm.asset = asset
 	tm.mas = mas
@@ -559,11 +588,14 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	// tm.transferResponseStore.EXPECT().Add(gomock.Any()).AnyTimes()
 
+	fmt.Printf("%s\n", orderBuy.String())
 	_, err := tm.market.SubmitOrder(context.Background(), orderBuy)
 	assert.Nil(t, err)
 	if err != nil {
 		t.Fail()
 	}
+	fmt.Printf("%s\n", orderBuy.String())
+
 	_, err = tm.market.SubmitOrder(context.Background(), orderSell)
 	assert.Nil(t, err)
 	if err != nil {
@@ -3158,20 +3190,24 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
 	tm.market.OnChainTimeUpdate(context.Background(), now)
-	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
-	assert.Equal(t, num.NewUint(100), o2.Price)
+
+	o2Update := tm.lastOrderUpdate(o2.Id)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, o2Update.Status)
+	assert.Equal(t, num.NewUint(100), o2Update.Price)
 
 	// Flip to auction so the pegged order will be parked
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
 	tm.mas.AuctionStarted(ctx)
 	tm.market.EnterAuction(ctx)
-	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
-	assert.True(t, o2.Price.IsZero())
+	o2Update = tm.lastOrderUpdate(o2.Id)
+	assert.Equal(t, types.Order_STATUS_PARKED, o2Update.Status)
+	assert.True(t, o2Update.Price.IsZero())
 
 	// Flip out of auction to un-park it
 	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
-	assert.Equal(t, types.Order_STATUS_ACTIVE, o2.Status)
-	assert.Equal(t, num.NewUint(100), o2.Price)
+	o2Update = tm.lastOrderUpdate(o2.Id)
+	assert.Equal(t, types.Order_STATUS_ACTIVE, o2Update.Status)
+	assert.Equal(t, num.NewUint(100), o2Update.Price)
 }
 
 func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
@@ -3649,7 +3685,8 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, "trader-B")
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_STATUS_FILLED, o2.Status)
+	o2Update := tm.lastOrderUpdate(o2.Id)
+	assert.Equal(t, types.Order_STATUS_FILLED, o2Update.Status)
 }
 
 func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
@@ -3867,8 +3904,10 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, "trader-A")
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
+
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
-	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
+	o1Update := tm.lastOrderUpdate(o1.Id)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, o1Update.Status)
 }
 
 func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
@@ -3902,7 +3941,8 @@ func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_PARKED, o2.Status)
 	assert.True(t, o2.Price.IsZero())
-	assert.Equal(t, types.Order_STATUS_CANCELLED, o1.Status)
+	o1Update := tm.lastOrderUpdate(o1.Id)
+	assert.Equal(t, types.Order_STATUS_CANCELLED, o1Update.Status)
 }
 
 // This test is to make sure when we move into a price monitoring auction that we

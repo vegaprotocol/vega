@@ -353,10 +353,8 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 		tsb.m = &ToSubmitNewMarket{
 			m: mkt,
 		}
-		if newMarket.LiquidityCommitment != nil {
-			tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
-				newMarket.LiquidityCommitment, p.Id)
-		}
+		tsb.m.l = types.LiquidityProvisionSubmissionFromMarketCommitment(
+			newMarket.LiquidityCommitment, p.Id)
 	}
 
 	return tsb, nil
