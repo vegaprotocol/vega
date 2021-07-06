@@ -341,7 +341,7 @@ func validateCommitment(
 		return proto.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT,
 			fmt.Errorf("proposal commitment amount is 0 or missing")
 	}
-	if commitment.Fee.LessThanOrEqual(num.DecimalFromFloat(0)) || commitment.Fee.GreaterThan(maxFeeDec) {
+	if commitment.Fee.LessThanOrEqual(num.DecimalZero()) || commitment.Fee.GreaterThan(maxFeeDec) {
 		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT,
 			errors.New("invalid liquidity provision fee")
 	}

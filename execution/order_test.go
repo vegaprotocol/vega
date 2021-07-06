@@ -2672,7 +2672,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},

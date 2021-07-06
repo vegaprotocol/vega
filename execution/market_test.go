@@ -863,7 +863,7 @@ func TestSetMarketID(t *testing.T) {
 						RiskAversionParameter: num.DecimalFromFloat(0.01),
 						Tau:                   num.DecimalFromFloat(1.0 / 365.25 / 24),
 						Params: &types.LogNormalModelParams{
-							Mu:    num.DecimalFromFloat(0),
+							Mu:    num.DecimalZero(),
 							R:     num.DecimalFromFloat(0.016),
 							Sigma: num.DecimalFromFloat(0.09),
 						},
@@ -4559,7 +4559,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -4779,7 +4779,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -4944,7 +4944,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -5255,7 +5255,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -5442,7 +5442,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -5692,7 +5692,7 @@ func TestAverageEntryValuation(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -5800,7 +5800,7 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},

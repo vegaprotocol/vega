@@ -1011,7 +1011,7 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 						RiskAversionParameter: num.DecimalFromFloat(0.01),
 						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 						Params: &types.LogNormalModelParams{
-							Mu:    num.DecimalFromFloat(0),
+							Mu:    num.DecimalZero(),
 							R:     num.DecimalFromFloat(0.016),
 							Sigma: num.DecimalFromFloat(0.09),
 						},

@@ -319,7 +319,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	// no we accumulated all the absolute position, we
 	// will get the share of each party
 	for _, v := range partiesShare {
-		v.share = num.DecimalFromFloat(float64(v.pos)).Div(num.DecimalFromFloat(float64(totalAbsolutePos)))
+		v.share = num.DecimalFromInt64(int64(v.pos)).Div(num.DecimalFromInt64(int64(totalAbsolutePos)))
 	}
 
 	// now we have the share of each distressed parties
@@ -509,7 +509,7 @@ func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
 
 func (e *Engine) calculateAuctionModeFees(trade *types.Trade) *types.Fee {
 	fee := e.calculateContinuousModeFees(trade)
-	two := num.DecimalFromFloat(2)
+	two := num.DecimalFromInt64(2)
 	inf, _ := num.UintFromDecimal(fee.InfrastructureFee.ToDecimal().Div(two).Ceil())
 	lf, _ := num.UintFromDecimal(fee.LiquidityFee.ToDecimal().Div(two).Ceil())
 	return &types.Fee{
