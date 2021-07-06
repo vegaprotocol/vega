@@ -173,12 +173,58 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	trades := e.trades
 	e.trades = map[string][]*pos{} // remove here, once we've processed it all here, we're done
 	evts := make([]events.Event, 0, len(positions))
+
+	// Process any network trades first
+	traded, hasTraded := trades["network"]
+	if hasTraded {
+		tradeset := make([]events.TradeSettlement, 0, len(traded))
+		for _, t := range traded {
+			tradeset = append(tradeset, t)
+		}
+		// create (and add position to buffer)
+		evts = append(evts, events.NewSettlePositionEvent(ctx, "network", e.market, markPrice, tradeset, e.currentTime.UnixNano()))
+
+		mtmShare, neg := calcMTM(markPrice, markPrice, 0, traded)
+
+		// Need to create a MarketPosition item here (TODO ELIAS)
+
+		if mtmShare.IsZero() {
+			wins = append(wins, &mtmTransfer{
+				MarketPosition: nil,
+				transfer:       nil,
+			})
+		} else {
+			settle := &types.Transfer{
+				Owner: "network",
+				Amount: &types.FinancialAmount{
+					Amount: mtmShare, // current delta -> mark price minus current position average
+					Asset:  e.product.GetAsset(),
+				},
+			}
+
+			if !neg {
+				settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
+				wins = append(wins, &mtmTransfer{
+					MarketPosition: nil,
+					transfer:       settle,
+				})
+			} else {
+				// losses are prepended
+				settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
+				transfers = append(transfers, &mtmTransfer{
+					MarketPosition: nil,
+					transfer:       settle,
+				})
+			}
+		}
+	}
+
 	for _, evt := range positions {
 		party := evt.Party()
 		// get the current position, and all (if any) position changes because of trades
 		current := e.getCurrentPosition(party, evt)
 		// we don't care if this is a nil value
-		traded, hasTraded := trades[party]
+		traded, hasTraded = trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
 		for _, t := range traded {
 			tradeset = append(tradeset, t)
