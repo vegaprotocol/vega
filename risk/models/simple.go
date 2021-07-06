@@ -63,12 +63,12 @@ func (f *Simple) ProbabilityOfTrading(currentP, orderP, minP, maxP *num.Uint, yF
 		return f.prob
 	}
 	if orderP.LT(minP) || orderP.GT(maxP) {
-		return num.DecimalFromFloat(0)
+		return num.DecimalZero()
 	}
 	return f.prob
 }
 
 // GetProjectionHorizon returns 0 and the simple model doesn't rely on any proabilistic calculations
 func (f *Simple) GetProjectionHorizon() num.Decimal {
-	return num.DecimalFromFloat(0)
+	return num.DecimalZero()
 }

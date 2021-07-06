@@ -132,7 +132,7 @@ func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {
 func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMonitoringTrigger {
 	return &PriceMonitoringTrigger{
 		Horizon:          p.Horizon,
-		HDec:             num.DecimalFromFloat(float64(p.Horizon)),
+		HDec:             num.DecimalFromInt64(p.Horizon),
 		Probability:      num.DecimalFromFloat(p.Probability),
 		AuctionExtension: p.AuctionExtension,
 	}
@@ -160,7 +160,7 @@ func (p PriceMonitoringTrigger) DeepClone() *PriceMonitoringTrigger {
 
 func (p *PriceMonitoringTrigger) FromProto(pr *proto.PriceMonitoringTrigger) {
 	p.Horizon = pr.Horizon
-	p.HDec = num.DecimalFromFloat(float64(pr.Horizon))
+	p.HDec = num.DecimalFromInt64(pr.Horizon)
 	p.Probability = num.DecimalFromFloat(pr.Probability)
 	p.AuctionExtension = pr.AuctionExtension
 }

@@ -103,13 +103,13 @@ func NewEngine(config Config,
 		broker:                  broker,
 		idGen:                   idGen,
 		suppliedEngine:          supplied.NewEngine(riskModel, priceMonitor),
-		stakeToObligationFactor: num.DecimalFromFloat(1),
+		stakeToObligationFactor: num.DecimalFromInt64(1),
 		provisions:              map[string]*types.LiquidityProvision{},
 		orders:                  map[string]map[string]*types.Order{},
 		liquidityOrders:         map[string]map[string]*types.Order{},
 		pendings:                map[string]struct{}{},
 		maxShapesSize:           100, // set it to the same default than the netparams
-		maxFee:                  num.DecimalFromFloat(1.0),
+		maxFee:                  num.DecimalFromInt64(1),
 	}
 }
 
