@@ -7,29 +7,45 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-func newMarginLevels(maintenance num.Decimal, scalingFactors *types.ScalingFactors) *types.MarginLevels {
-	maintenance = maintenance.Ceil()
-	mUint, _ := num.UintFromDecimal(maintenance)
-	sl, _ := num.UintFromDecimal(maintenance.Mul(scalingFactors.SearchLevel))
-	im, _ := num.UintFromDecimal(maintenance.Mul(scalingFactors.InitialMargin))
-	cr, _ := num.UintFromDecimal(maintenance.Mul(scalingFactors.CollateralRelease))
-	return &types.MarginLevels{
-		MaintenanceMargin:      mUint,
-		SearchLevel:            sl,
-		InitialMargin:          im,
-		CollateralReleaseLevel: cr,
+var (
+	exp    = num.Zero().Exp(num.NewUint(10), num.NewUint(5))
+	expDec = num.DecimalFromUint(exp)
+)
+
+type scalingFactorsUint struct {
+	search  *num.Uint
+	initial *num.Uint
+	release *num.Uint
+}
+
+func scalingFactorsUintFromDecimals(sf *types.ScalingFactors) *scalingFactorsUint {
+	search, _ := num.UintFromDecimal(sf.SearchLevel.Mul(expDec))
+	initial, _ := num.UintFromDecimal(sf.InitialMargin.Mul(expDec))
+	release, _ := num.UintFromDecimal(sf.CollateralRelease.Mul(expDec))
+
+	return &scalingFactorsUint{
+		search:  search,
+		initial: initial,
+		release: release,
 	}
 }
 
-func addMarginLevels(ml *types.MarginLevels, maintenance num.Decimal, scalingFactors *types.ScalingFactors) {
-	mtl, _ := num.UintFromDecimal(maintenance)
-	sl, _ := num.UintFromDecimal(maintenance.Mul(scalingFactors.SearchLevel))
-	im, _ := num.UintFromDecimal(maintenance.Mul(scalingFactors.InitialMargin))
-	cr, _ := num.UintFromDecimal(maintenance.Mul(scalingFactors.CollateralRelease))
+func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint) *types.MarginLevels {
+	umaintenance, _ := num.UintFromDecimal(maintenance.Ceil())
+	return &types.MarginLevels{
+		MaintenanceMargin:      umaintenance,
+		SearchLevel:            num.Zero().Div(num.Zero().Mul(scalingFactors.search, umaintenance), exp),
+		InitialMargin:          num.Zero().Div(num.Zero().Mul(scalingFactors.initial, umaintenance), exp),
+		CollateralReleaseLevel: num.Zero().Div(num.Zero().Mul(scalingFactors.release, umaintenance), exp),
+	}
+}
+
+func addMarginLevels(ml *types.MarginLevels, maintenance num.Decimal, scalingFactors *scalingFactorsUint) {
+	mtl, _ := num.UintFromDecimal(maintenance.Ceil())
 	ml.MaintenanceMargin.AddSum(mtl)
-	ml.SearchLevel.AddSum(sl)
-	ml.InitialMargin.AddSum(im)
-	ml.CollateralReleaseLevel.AddSum(cr)
+	ml.SearchLevel.AddSum(num.Zero().Div(num.Zero().Mul(scalingFactors.search, mtl), exp))
+	ml.InitialMargin.AddSum(num.Zero().Div(num.Zero().Mul(scalingFactors.initial, mtl), exp))
+	ml.CollateralReleaseLevel.AddSum(num.Zero().Div(num.Zero().Mul(scalingFactors.release, mtl), exp))
 }
 
 func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor) *types.MarginLevels {
@@ -49,9 +65,9 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, r
 	}
 	// add buy/sell order margins to the margin requirements
 	if lMargin.GreaterThan(sMargin) {
-		addMarginLevels(ml, lMargin, e.marginCalculator.ScalingFactors)
+		addMarginLevels(ml, lMargin, e.scalingFactorsUint)
 	} else {
-		addMarginLevels(ml, sMargin, e.marginCalculator.ScalingFactors)
+		addMarginLevels(ml, sMargin, e.scalingFactorsUint)
 	}
 	// this is a bit of a hack, perhaps, but it keeps the remaining flow in the core simple:
 	// artificially increase the release level so we never release the margin balance during auction
@@ -158,10 +174,10 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 
 	// the greatest liability is the most positive number
 	if marginMaintenanceLng.GreaterThan(marginMaintenanceSht) && marginMaintenanceLng.GreaterThan(zeroD) {
-		return newMarginLevels(marginMaintenanceLng, e.marginCalculator.ScalingFactors)
+		return newMarginLevels(marginMaintenanceLng, e.scalingFactorsUint)
 	}
 	if marginMaintenanceSht.GreaterThan(zeroD) {
-		return newMarginLevels(marginMaintenanceSht, e.marginCalculator.ScalingFactors)
+		return newMarginLevels(marginMaintenanceSht, e.scalingFactorsUint)
 	}
 
 	return &types.MarginLevels{
