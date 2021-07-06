@@ -54,16 +54,15 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 
-	settings := types.PriceMonitoringSettings{}
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
-	pm, err := price.NewMonitor(nil, settings)
+	pm, err := price.NewMonitor(nil, *settings)
 	require.Error(t, err)
 	require.Nil(t, pm)
 }
@@ -74,16 +73,15 @@ func TestGetHorizonYearFractions(t *testing.T) {
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 
-	settings := types.PriceMonitoringSettings{}
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -103,14 +101,13 @@ func TestRecordPriceChange(t *testing.T) {
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 
-	settings := types.PriceMonitoringSettings{}
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	cpDec := num.DecimalFromUint(currentPrice)
 	min, max := cpDec.Sub(num.DecimalFromFloat(10)), cpDec.Add(num.DecimalFromFloat(10))
@@ -118,7 +115,7 @@ func TestRecordPriceChange(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -151,8 +148,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 		},
 		UpdateFrequency: 600,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	maxDown1, maxUp1, maxDown2, maxUp2 := num.NewUint(1), num.NewUint(2), num.NewUint(3), num.NewUint(4)
 
@@ -174,7 +170,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(16)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(16)
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -209,7 +205,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, settings)
+	pm, err = price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now, true)
@@ -222,7 +218,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, settings)
+	pm, err = price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -235,7 +231,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, settings)
+	pm, err = price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now, true)
@@ -247,7 +243,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, settings)
+	pm, err = price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now, true)
@@ -260,7 +256,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, settings)
+	pm, err = price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now, true)
@@ -506,8 +502,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	maxDown1, maxUp1 := num.NewUint(1), num.NewUint(2)
 	maxDown2 := num.Sum(maxUp1, maxUp1)   // yes, maxUp -> maxUp == maxDown*2, down2 == down1*4
@@ -528,7 +523,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).AnyTimes()
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(ctx, auctionStateMock, price1, 1, now, true)
@@ -581,8 +576,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	decPrice, pMin1, pMax1, _, maxUp1 := getPriceBounds(price1, 1, 2)
 	_, pMin2, pMax2, _, maxUp2 := getPriceBounds(price1, 1*4, 2*4)
@@ -596,7 +590,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -648,8 +642,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	ctx := context.Background()
 	decPrice, pMin1, pMax1, _, maxUp1 := getPriceBounds(price1, 1, 2)
 	_, pMin2, pMax2, _, maxUp2 := getPriceBounds(price1, 1*4, 2*4)
@@ -673,7 +666,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -780,8 +773,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 		},
 		UpdateFrequency: 1,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	decPrice, pMin1, pMax1, _, _ := getPriceBounds(currentPrice, 10, 10)
 	ctx := context.Background()
@@ -791,7 +783,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(true).Times(1)
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -814,8 +806,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 		},
 		UpdateFrequency: 1,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	decPrice, pMin, pMax, maxDown, maxUp := getPriceBounds(currentPrice, 5, 10)
 	one := num.NewUint(1)
@@ -832,7 +823,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().CanLeave().Return(false).AnyTimes()
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -913,8 +904,7 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 		},
 		UpdateFrequency: 600,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	ctx := context.Background()
 	decPr, pMin1, pMax1, maxDown1, maxUp1 := getPriceBounds(currentPrice, 1, 2)
@@ -933,7 +923,7 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(12)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(12)
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor(riskModel, *settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
