@@ -396,12 +396,12 @@ func (m *Market) GetMarketData() types.MarketData {
 
 	// If we do not have one of the best_* prices, leave the mid price as zero
 	two := num.NewUint(2)
-	midPrice := num.NewUint(0)
+	midPrice := num.Zero()
 	if !bestBidPrice.IsZero() && !bestOfferPrice.IsZero() {
 		midPrice = midPrice.Div(num.Sum(bestBidPrice, bestOfferPrice), two)
 	}
 
-	staticMidPrice := num.NewUint(0)
+	staticMidPrice := num.Zero()
 	if !bestStaticBidPrice.IsZero() && !bestStaticOfferPrice.IsZero() {
 		staticMidPrice = staticMidPrice.Div(num.Sum(bestStaticBidPrice, bestStaticOfferPrice), two)
 	}

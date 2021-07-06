@@ -23,7 +23,7 @@ func TestFeeSplitter(t *testing.T) {
 		expectedValueProxy num.Decimal
 	}{
 		{
-			tradedValue:        num.NewUint(0),
+			tradedValue:        num.Zero(),
 			currentTime:        timeWindowStart,
 			expectedValueProxy: num.DecimalFromFloat(100),
 		},

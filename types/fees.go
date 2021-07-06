@@ -85,7 +85,7 @@ func NewFee() *Fee {
 }
 
 func (f *Fee) Init() {
-	f.MakerFee = num.NewUint(0)
-	f.InfrastructureFee = num.NewUint(0)
-	f.LiquidityFee = num.NewUint(0)
+	f.MakerFee = num.Zero()
+	f.InfrastructureFee = num.Zero()
+	f.LiquidityFee = num.Zero()
 }

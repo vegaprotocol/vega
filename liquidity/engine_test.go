@@ -206,7 +206,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	}
 
 	// Expectations
-	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewUint(0), num.NewUint(100)).AnyTimes()
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.Zero(), num.NewUint(100)).AnyTimes()
 	any := gomock.Any()
 	tng.riskModel.EXPECT().ProbabilityOfTrading(
 		any, any, any, any, any, any, any,
@@ -395,7 +395,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	// Expectations
-	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.NewUint(0), num.NewUint(100)).AnyTimes()
+	tng.priceMonitor.EXPECT().GetValidPriceRange().Return(num.Zero(), num.NewUint(100)).AnyTimes()
 	any := gomock.Any()
 	tng.riskModel.EXPECT().ProbabilityOfTrading(
 		any, any, any, any, any, any, any,

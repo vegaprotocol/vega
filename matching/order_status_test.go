@@ -749,6 +749,6 @@ func (m marketPositionFake) Party() string     { return m.party }
 func (m marketPositionFake) Size() int64       { return 0 }
 func (m marketPositionFake) Buy() int64        { return 0 }
 func (m marketPositionFake) Sell() int64       { return 0 }
-func (m marketPositionFake) Price() *num.Uint  { return num.NewUint(0) }
-func (m marketPositionFake) VWBuy() *num.Uint  { return num.NewUint(0) }
-func (m marketPositionFake) VWSell() *num.Uint { return num.NewUint(0) }
+func (m marketPositionFake) Price() *num.Uint  { return num.Zero() }
+func (m marketPositionFake) VWBuy() *num.Uint  { return num.Zero() }
+func (m marketPositionFake) VWSell() *num.Uint { return num.Zero() }

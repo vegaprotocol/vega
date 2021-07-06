@@ -31,7 +31,7 @@ func (fs *FeeSplitter) SetCurrentTime(t time.Time) error {
 // This sets the internal timers to `t` and resets the accumulated trade values.
 func (fs *FeeSplitter) TimeWindowStart(t time.Time) {
 	// reset the trade value for this window
-	fs.tradeValue = num.NewUint(0)
+	fs.tradeValue = num.Zero()
 
 	// reset both timers
 	fs.timeWindowStart = t

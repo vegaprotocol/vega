@@ -366,7 +366,7 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 // given that the new trades price will equal new mark price,  the sum(trades) bit will probably == 0 for nicenet
 // the size here is the _new_ position size, the price is the OLD price!!
 func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, bool) {
-	delta, sign := num.NewUint(0).Delta(markPrice, price)
+	delta, sign := num.Zero().Delta(markPrice, price)
 	// this shouldn't be possible I don't think, but just in case
 	if size < 0 {
 		size = -size
@@ -375,7 +375,7 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, 
 	}
 	mtmShare := delta.Mul(delta, num.NewUint(uint64(size)))
 	for _, c := range trades {
-		delta, neg := num.NewUint(0).Delta(markPrice, c.price)
+		delta, neg := num.Zero().Delta(markPrice, c.price)
 		size := num.NewUint(uint64(c.size))
 		if c.size < 0 {
 			size = size.SetUint64(uint64(-c.size))
@@ -410,7 +410,7 @@ func (l *lastMarkPriceSettlement) Settle(entryPrice *num.Uint, netPosition int64
 	if netPosition < 0 {
 		netPosition *= -1
 	}
-	amt := num.NewUint(0).Sub(l.markPrice, entryPrice)
+	amt := num.Zero().Sub(l.markPrice, entryPrice)
 	amt = amt.Mul(amt, num.NewUint(uint64(netPosition)))
 	return &types.FinancialAmount{
 		Asset:  l.asset,

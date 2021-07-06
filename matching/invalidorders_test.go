@@ -74,7 +74,7 @@ func TestOrderBookInvalid_ZeroPrice(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       num.NewUint(0),
+		Price:       num.Zero(),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,

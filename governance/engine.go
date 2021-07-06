@@ -525,7 +525,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		ProposalID:                  cmd.ProposalId,
 		Value:                       cmd.Value,
 		Timestamp:                   e.currentTime.UnixNano(),
-		TotalGovernanceTokenBalance: num.NewUint(0),
+		TotalGovernanceTokenBalance: num.Zero(),
 		TotalGovernanceTokenWeight:  num.DecimalFromFloat(0),
 	}
 
@@ -674,7 +674,7 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 }
 
 func (p *proposal) countVotes(votes map[string]*types.Vote, accounts Accounts, voteAsset string) *num.Uint {
-	tally := num.NewUint(0)
+	tally := num.Zero()
 	for _, v := range votes {
 		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID, voteAsset)
 		tally.AddSum(v.TotalGovernanceTokenBalance)

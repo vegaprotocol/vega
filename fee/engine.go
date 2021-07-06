@@ -93,9 +93,9 @@ func (e *Engine) CalculateForContinuousMode(
 
 	var (
 		aggressor, maker             string
-		totalFeeAmount               = num.NewUint(0)
-		totalInfrastructureFeeAmount = num.NewUint(0)
-		totalLiquidityFeeAmount      = num.NewUint(0)
+		totalFeeAmount               = num.Zero()
+		totalInfrastructureFeeAmount = num.Zero()
+		totalLiquidityFeeAmount      = num.Zero()
 		// we allocate the len of the trades + 2
 		// len(trade) = number of makerFee + 1 infra fee + 1 liquidity fee
 		transfers     = make([]*types.Transfer, 0, (len(trades)*2)+2)
@@ -161,7 +161,7 @@ func (e *Engine) CalculateForContinuousMode(
 	})
 
 	return &feesTransfer{
-		totalFeesAmountsPerParty: map[string]*num.Uint{aggressor: totalFeeAmount, maker: num.NewUint(0)},
+		totalFeesAmountsPerParty: map[string]*num.Uint{aggressor: totalFeeAmount, maker: num.Zero()},
 		transfers:                append(transfers, transfersRecv...),
 	}, nil
 }
@@ -399,7 +399,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 
 	for key := range shares {
 		keys = append(keys, key)
-		ft.totalFeesAmountsPerParty[key] = num.NewUint(0)
+		ft.totalFeesAmountsPerParty[key] = num.Zero()
 	}
 	sort.Strings(keys)
 

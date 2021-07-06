@@ -227,7 +227,7 @@ func (a Asset) DeepClone() *Asset {
 
 func (a Asset) GetAssetTotalSupply() *num.Uint {
 	if a.Details == nil || a.Details.TotalSupply == nil {
-		return num.NewUint(0)
+		return num.Zero()
 	}
 	return a.Details.TotalSupply.Clone()
 }
