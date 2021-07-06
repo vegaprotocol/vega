@@ -60,6 +60,7 @@ type Engine struct {
 
 	currTime int64
 	mktID    string
+	asset    string
 }
 
 // NewEngine instantiate a new risk engine
@@ -68,12 +69,12 @@ func NewEngine(
 	config Config,
 	marginCalculator *types.MarginCalculator,
 	model Model,
-	initialFactors *types.RiskResult,
 	ob Orderbook,
 	as AuctionState,
 	broker Broker,
 	initialTime int64,
 	mktID string,
+	asset string,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -85,7 +86,7 @@ func NewEngine(
 		Config:             config,
 		marginCalculator:   marginCalculator,
 		scalingFactorsUint: sfUint,
-		factors:            initialFactors,
+		factors:            getInitialFactors(model, asset),
 		model:              model,
 		waiting:            false,
 		ob:                 ob,
@@ -93,6 +94,7 @@ func NewEngine(
 		broker:             broker,
 		currTime:           initialTime,
 		mktID:              mktID,
+		asset:              asset,
 	}
 }
 
@@ -446,4 +448,19 @@ func (m marginChange) Transfer() *types.Transfer {
 
 func (m marginChange) MarginLevels() *types.MarginLevels {
 	return m.margins
+}
+
+func getInitialFactors(rm Model, asset string) *types.RiskResult {
+	if ok, fact := rm.CalculateRiskFactors(nil); ok {
+		return fact
+	}
+	// default to hard-coded risk factors
+	return &types.RiskResult{
+		RiskFactors: map[string]*types.RiskFactor{
+			asset: {Long: num.DecimalFromFloat(0.15), Short: num.DecimalFromFloat(0.25)},
+		},
+		PredictedNextRiskFactors: map[string]*types.RiskFactor{
+			asset: {Long: num.DecimalFromFloat(0.15), Short: num.DecimalFromFloat(0.25)},
+		},
+	}
 }

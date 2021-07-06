@@ -355,8 +355,9 @@ func testMarginWithOrderInBook(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
+	model.EXPECT().CalculateRiskFactors(gomock.Any()).Return(true, r).Times(1)
 	as.EXPECT().InAuction().AnyTimes().Return(false)
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, as, broker, 0, "mktid")
+	testE := risk.NewEngine(log, conf.Risk, mc, model, book, as, broker, 0, "mktid", "ETH")
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -403,6 +404,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 			},
 		},
 	}
+	_ = r
 	// custom scaling factor
 	mc := &types.MarginCalculator{
 		ScalingFactors: &types.ScalingFactors{
@@ -440,6 +442,8 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	as := mocks.NewMockAuctionState(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
+	model.EXPECT().CalculateRiskFactors(gomock.Any()).Return(true, r).Times(1)
+
 	as.EXPECT().InAuction().AnyTimes().Return(false)
 	// instantiate the book then fill it with the orders
 
@@ -463,7 +467,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	testE := risk.NewEngine(log, conf.Risk, mc, model, r, book, as, broker, 0, "mktid")
+	testE := risk.NewEngine(log, conf.Risk, mc, model, book, as, broker, 0, "mktid", "ETH")
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
@@ -507,17 +511,19 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
 	broker := bmock.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
 
+	model.EXPECT().CalculateRiskFactors(gomock.Any()).Return(true, initialRisk).Times(1)
+
 	engine := risk.NewEngine(
 		logging.NewTestLogger(),
 		conf,
 		getMarginCalculator(),
 		model,
-		initialRisk,
 		ob,
 		as,
 		broker,
 		0,
 		"mktid",
+		"ETH",
 	)
 	return &testEngine{
 		Engine:    engine,
