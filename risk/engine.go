@@ -47,15 +47,16 @@ type marginChange struct {
 // Engine is the risk engine
 type Engine struct {
 	Config
-	marginCalculator *types.MarginCalculator
-	log              *logging.Logger
-	cfgMu            sync.Mutex
-	model            Model
-	factors          *types.RiskResult
-	waiting          bool
-	ob               Orderbook
-	as               AuctionState
-	broker           Broker
+	marginCalculator   *types.MarginCalculator
+	scalingFactorsUint *scalingFactorsUint
+	log                *logging.Logger
+	cfgMu              sync.Mutex
+	model              Model
+	factors            *types.RiskResult
+	waiting            bool
+	ob                 Orderbook
+	as                 AuctionState
+	broker             Broker
 
 	currTime int64
 	mktID    string
@@ -78,18 +79,20 @@ func NewEngine(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
+	sfUint := scalingFactorsUintFromDecimals(marginCalculator.ScalingFactors)
 	return &Engine{
-		log:              log,
-		Config:           config,
-		marginCalculator: marginCalculator,
-		factors:          initialFactors,
-		model:            model,
-		waiting:          false,
-		ob:               ob,
-		as:               as,
-		broker:           broker,
-		currTime:         initialTime,
-		mktID:            mktID,
+		log:                log,
+		Config:             config,
+		marginCalculator:   marginCalculator,
+		scalingFactorsUint: sfUint,
+		factors:            initialFactors,
+		model:              model,
+		waiting:            false,
+		ob:                 ob,
+		as:                 as,
+		broker:             broker,
+		currTime:           initialTime,
+		mktID:              mktID,
 	}
 }
 
@@ -99,6 +102,7 @@ func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
 	}
 
 	e.marginCalculator.ScalingFactors = sf
+	e.scalingFactorsUint = scalingFactorsUintFromDecimals(sf)
 	return nil
 }
 
