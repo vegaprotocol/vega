@@ -329,8 +329,8 @@ func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
 func (e *Engine) resetBounds() {
 	for _, b := range e.bounds {
 		b.Active = true
-		b.DownFactor = num.DecimalFromFloat(0)
-		b.UpFactor = num.DecimalFromFloat(0)
+		b.DownFactor = num.DecimalZero()
+		b.UpFactor = num.DecimalZero()
 	}
 }
 

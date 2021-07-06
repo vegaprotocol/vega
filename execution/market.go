@@ -2625,33 +2625,36 @@ func (m *Market) RemoveExpiredOrders(
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
 		originalOrder, foundOnBook, err := m.getOrderByID(orderID)
-		if err == nil {
-			// assign to the order the order from the book
-			// so we get the most recent version from the book
-			// to continue with
-			order = originalOrder
-
-			// if the order was on the book basically
-			// either a pegged + non parked
-			// or a non-pegged order
-			if foundOnBook {
-				m.position.UnregisterOrder(order)
-				m.matching.DeleteOrder(order)
-			}
-
-			// if this was a pegged order
-			// remove from the pegged / parked list
-			if order.PeggedOrder != nil {
-				m.removePeggedOrder(order)
-			}
-
-			// now we add to the list of expired orders
-			// and assign the appropriate status
-			order.UpdatedAt = m.currentTime.UnixNano()
-			order.Status = types.Order_STATUS_EXPIRED
-			expired = append(expired, order)
-			evts = append(evts, events.NewOrderEvent(ctx, order))
+		if err != nil {
+			// nothing to do there.
+			continue
 		}
+		// assign to the order the order from the book
+		// so we get the most recent version from the book
+		// to continue with
+		order = originalOrder
+
+		// if the order was on the book basically
+		// either a pegged + non parked
+		// or a non-pegged order
+		if foundOnBook {
+			m.position.UnregisterOrder(order)
+			m.matching.DeleteOrder(order)
+		}
+
+		// if this was a pegged order
+		// remove from the pegged / parked list
+		if order.PeggedOrder != nil {
+			m.removePeggedOrder(order)
+		}
+
+		// now we add to the list of expired orders
+		// and assign the appropriate status
+		order.UpdatedAt = m.currentTime.UnixNano()
+		order.Status = types.Order_STATUS_EXPIRED
+		expired = append(expired, order)
+		evts = append(evts, events.NewOrderEvent(ctx, order))
+
 	}
 	m.broker.SendBatch(evts)
 

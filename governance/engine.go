@@ -524,7 +524,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		Value:                       cmd.Value,
 		Timestamp:                   e.currentTime.UnixNano(),
 		TotalGovernanceTokenBalance: num.Zero(),
-		TotalGovernanceTokenWeight:  num.DecimalFromFloat(0),
+		TotalGovernanceTokenWeight:  num.DecimalZero(),
 	}
 
 	// we only want to count the last vote, so add to yes/no map, delete from the other

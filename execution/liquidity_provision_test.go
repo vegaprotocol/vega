@@ -258,7 +258,7 @@ func TestLiquidityProvisionFeeValidation(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -309,7 +309,7 @@ func TestLiquidityProvisionFeeValidation(t *testing.T) {
 		"invalid liquidity provision fee",
 	)
 
-	lpSubmission.Fee = num.DecimalFromFloat(0)
+	lpSubmission.Fee = num.DecimalZero()
 
 	// submit our lp
 	require.NoError(t,
@@ -1045,7 +1045,7 @@ func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -1140,7 +1140,7 @@ func TestCloseOutLPTraderContIssue3086(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -1345,7 +1345,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(20),
 			},
@@ -1488,7 +1488,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(2),
 			},
@@ -1679,7 +1679,7 @@ func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(2),
 			},
@@ -1772,7 +1772,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(10),
 			},
@@ -1962,7 +1962,7 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(2),
 			},
@@ -2143,7 +2143,7 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(2),
 			},
@@ -2282,7 +2282,7 @@ func TestFeesNotPaidToUndeployedLPs(t *testing.T) {
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(2),
 			},
@@ -2417,7 +2417,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalFromFloat(0),
+				Mu:    num.DecimalZero(),
 				R:     num.DecimalFromFloat(0.016),
 				Sigma: num.DecimalFromFloat(5),
 			},

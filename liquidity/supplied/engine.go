@@ -67,7 +67,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		pm: priceMonitor,
 
 		horizon:                        riskModel.GetProjectionHorizon(),
-		probabilityOfTradingTauScaling: num.DecimalFromFloat(1.0), // this is the same as the default in the netparams
+		probabilityOfTradingTauScaling: num.DecimalFromInt64(1), // this is the same as the default in the netparams
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
 		bCache:                         map[num.Uint]num.Decimal{},
 		sCache:                         map[num.Uint]num.Decimal{},
@@ -130,8 +130,8 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	orders []*types.Order,
 	minPrice, maxPrice *num.Uint,
 ) (*num.Uint, *num.Uint) {
-	bLiq := num.DecimalFromFloat(0.0)
-	sLiq := num.DecimalFromFloat(0.0)
+	bLiq := num.DecimalZero()
+	sLiq := num.DecimalZero()
 	for _, o := range orders {
 		if o.Side == types.Side_SIDE_BUY {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
@@ -165,7 +165,7 @@ func (e *Engine) updateSizes(
 		return nil
 	}
 
-	sum := num.DecimalFromFloat(0.0)
+	sum := num.DecimalZero()
 	probs := make([]num.Decimal, 0, len(orders))
 	validatedProportions := make([]num.Decimal, 0, len(orders))
 	for _, o := range orders {

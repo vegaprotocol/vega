@@ -40,7 +40,7 @@ type LiquidityProvisions []*types.LiquidityProvision
 // that's required. If no such k exists we set k=N.
 func (l LiquidityProvisions) feeForTarget(t *num.Uint) num.Decimal {
 	if len(l) == 0 {
-		return num.DecimalFromFloat(0)
+		return num.DecimalZero()
 	}
 
 	n := num.Zero()
