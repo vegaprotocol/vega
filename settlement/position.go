@@ -12,6 +12,11 @@ var (
 	ErrPartyDoesNotMatch = errors.New("event party and position party do not match")
 )
 
+// MarketPosition stub event for network position (used in MTM stuff)
+type npos struct {
+	price *num.Uint
+}
+
 // See positions.MarketPosition
 type pos struct {
 	// embed the type, we will copy the three main fields because those should be immutable
@@ -71,4 +76,32 @@ func (m mtmTransfer) Transfer() *types.Transfer {
 		return nil
 	}
 	return m.transfer
+}
+
+func (npos) Party() string {
+	return types.NetworkParty
+}
+
+func (npos) Size() int64 {
+	return 0
+}
+
+func (npos) Buy() int64 {
+	return 0
+}
+
+func (npos) Sell() int64 {
+	return 0
+}
+
+func (n npos) Price() *num.Uint {
+	return n.price.Clone()
+}
+
+func (npos) VWBuy() *num.Uint {
+	return num.Zero()
+}
+
+func (npos) VWSell() *num.Uint {
+	return num.Zero()
 }

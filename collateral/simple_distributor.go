@@ -51,6 +51,9 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 	)
 	for _, v := range s.requests {
 		total.AddSum(v.amt)
+		if v.request.Owner == types.NetworkParty {
+			continue // network events are to be ignored
+		}
 		loss, _ := num.Zero().Delta(v.amt, v.request.Amount.Amount)
 		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
 		v.request.Amount.Amount = v.amt.Clone()
@@ -61,7 +64,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		evts = append(evts, evt)
 	}
 
-	if total.NEQ(s.collected) {
+	if total.NEQ(s.collected) && len(evts) > 0 {
 		// last one get the remaining bits
 		mismatch, _ := total.Delta(s.collected, total)
 		s.requests[len(s.requests)-1].request.Amount.Amount.AddSum(mismatch)

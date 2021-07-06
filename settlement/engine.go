@@ -175,27 +175,28 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	evts := make([]events.Event, 0, len(positions))
 
 	// Process any network trades first
-	traded, hasTraded := trades["network"]
+	traded, hasTraded := trades[types.NetworkParty]
 	if hasTraded {
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
 		for _, t := range traded {
 			tradeset = append(tradeset, t)
 		}
-		// create (and add position to buffer)
-		evts = append(evts, events.NewSettlePositionEvent(ctx, "network", e.market, markPrice, tradeset, e.currentTime.UnixNano()))
+		// don't create an event for the network. Its position is irrelevant
 
 		mtmShare, neg := calcMTM(markPrice, markPrice, 0, traded)
-
-		// Need to create a MarketPosition item here (TODO ELIAS)
+		// MarketPosition stub for network
+		netMPos := &npos{
+			price: markPrice.Clone(),
+		}
 
 		if mtmShare.IsZero() {
 			wins = append(wins, &mtmTransfer{
-				MarketPosition: nil,
+				MarketPosition: netMPos,
 				transfer:       nil,
 			})
 		} else {
 			settle := &types.Transfer{
-				Owner: "network",
+				Owner: types.NetworkParty,
 				Amount: &types.FinancialAmount{
 					Amount: mtmShare, // current delta -> mark price minus current position average
 					Asset:  e.product.GetAsset(),
@@ -205,14 +206,14 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			if !neg {
 				settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
 				wins = append(wins, &mtmTransfer{
-					MarketPosition: nil,
+					MarketPosition: netMPos,
 					transfer:       settle,
 				})
 			} else {
 				// losses are prepended
 				settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
 				transfers = append(transfers, &mtmTransfer{
-					MarketPosition: nil,
+					MarketPosition: netMPos,
 					transfer:       settle,
 				})
 			}
@@ -243,7 +244,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// at their exact trade price, so we can MTM that volume correctly, too
 		mtmShare, neg := calcMTM(markPrice, current.price, current.size, traded)
 		// we've marked this trader to market, their position can now reflect this
-		current.update(evt)
+		_ = current.update(evt)
 		current.price = markPrice
 		// we don't want to accidentally MTM a trader who closed out completely when they open
 		// a new position at a later point, so remove if size == 0
@@ -429,7 +430,7 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, 
 		}
 		add := delta.Mul(delta, size)
 		if mtmShare.IsZero() {
-			mtmShare = mtmShare.Set(add)
+			mtmShare.Set(add)
 			sign = neg
 		} else if neg == sign {
 			// both mtmShare and add are the same sign
