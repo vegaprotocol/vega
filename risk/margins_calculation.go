@@ -56,10 +56,10 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, r
 	var (
 		lMargin, sMargin num.Decimal
 	)
-	if long.GreaterThan(num.DecimalZero()) {
+	if long.IsPositive() {
 		lMargin = long.Mul(rf.Long.Mul(m.VWBuy().ToDecimal()))
 	}
-	if short.GreaterThan(num.DecimalZero()) {
+	if short.IsPositive() {
 		sMargin = short.Mul(rf.Short.Mul(m.VWSell().ToDecimal()))
 	}
 	// add buy/sell order margins to the margin requirements
@@ -101,7 +101,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			slippagePerUnit = num.Zero()
 			negSlippage     bool
 		)
-		if slippageVolume.GreaterThan(num.DecimalZero()) {
+		if slippageVolume.IsPositive() {
 			var (
 				exitPrice *num.Uint
 				err       error
@@ -129,7 +129,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				slip = slip.Mul(num.DecimalFromInt64(-1))
 			}
 			marginMaintenanceLng = slippageVolume.Mul(rf.Long.Mul(mPriceDec)).Add(bDec.Mul(rf.Long).Mul(mPriceDec))
-			if slip.GreaterThan(num.DecimalZero()) {
+			if slip.IsPositive() {
 				marginMaintenanceLng = marginMaintenanceLng.Add(slip)
 			}
 		}
@@ -142,7 +142,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			slippagePerUnit = num.Zero()
 		)
 		// slippageVolume would be negative we abs it in the next phase
-		if slippageVolume.LessThan(num.DecimalZero()) {
+		if slippageVolume.IsNegative() {
 			var (
 				exitPrice *num.Uint
 				err       error
@@ -171,10 +171,10 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	}
 
 	// the greatest liability is the most positive number
-	if marginMaintenanceLng.GreaterThan(marginMaintenanceSht) && marginMaintenanceLng.GreaterThan(num.DecimalZero()) {
+	if marginMaintenanceLng.GreaterThan(marginMaintenanceSht) && marginMaintenanceLng.IsPositive() {
 		return newMarginLevels(marginMaintenanceLng, e.scalingFactorsUint)
 	}
-	if marginMaintenanceSht.GreaterThan(num.DecimalZero()) {
+	if marginMaintenanceSht.IsPositive() {
 		return newMarginLevels(marginMaintenanceSht, e.scalingFactorsUint)
 	}
 
