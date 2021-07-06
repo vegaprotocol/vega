@@ -15,10 +15,16 @@ var (
 	ErrNegativeScalingFactor = errors.New("scaling factor can't be negative")
 )
 
+var (
+	exp    = num.Zero().Exp(num.NewUint(10), num.NewUint(5))
+	exp2   = num.Zero().Exp(num.NewUint(10), num.NewUint(10))
+	expDec = num.DecimalFromUint(exp)
+)
+
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
 	tWindow time.Duration
-	sFactor num.Decimal
+	sFactor *num.Uint
 	oiCalc  OpenInterestCalculator
 
 	now               time.Time
@@ -40,9 +46,10 @@ type OpenInterestCalculator interface {
 
 // NewEngine returns a new instance of target stake calculation Engine
 func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
+	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
 	return &Engine{
 		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
-		sFactor: parameters.ScalingFactor,
+		sFactor: factor,
 		oiCalc:  oiCalc,
 	}
 }
@@ -58,7 +65,8 @@ func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
 	if sFactor.IsNegative() {
 		return ErrNegativeScalingFactor
 	}
-	e.sFactor = sFactor
+	factor, _ := num.UintFromDecimal(sFactor.Mul(expDec))
+	e.sFactor = factor
 	return nil
 }
 
@@ -89,7 +97,7 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 
 // GetTargetStake returns target stake based current time, risk factors
 // and the open interest time series constructed by calls to RecordOpenInterest
-func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) num.Decimal {
+func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
 		e.computeMaxOI(now, minTime)
@@ -100,8 +108,15 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 	if factor.LessThan(rf.Short) {
 		factor = rf.Short
 	}
-	mp := num.DecimalFromUint(markPrice)
-	return mp.Mul(num.NewUint(e.max.OI).ToDecimal()).Mul(factor.Mul(e.sFactor))
+	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
+
+	return num.Zero().Div(
+		num.Zero().Mul(
+			markPrice.Mul(markPrice, num.NewUint(e.max.OI)),
+			factorUint.Mul(factorUint, e.sFactor),
+		),
+		exp2,
+	)
 }
 
 //GetTheoreticalTargetStake returns target stake based current time, risk factors
@@ -121,15 +136,15 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	if factor.LessThan(rf.Short) {
 		factor = rf.Short
 	}
-	// float64(markPrice.Uint64()*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
-	mp := num.DecimalFromUint(markPrice).Mul(
-		num.NewUint(maxOI).ToDecimal(),
-	).Mul(
-		factor.Mul(e.sFactor),
+
+	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
+	return num.Zero().Div(
+		num.Zero().Mul(
+			num.Zero().Mul(markPrice, num.NewUint(maxOI)),
+			factorUint.Mul(factorUint, e.sFactor),
+		),
+		exp2,
 	)
-	// return the decimal as uint
-	retVal, _ := num.UintFromDecimal(mp)
-	return retVal
 }
 
 func (e *Engine) getMaxFromCurrent() uint64 {
