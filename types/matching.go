@@ -32,6 +32,26 @@ type Order struct {
 	LiquidityProvisionId string
 }
 
+func (o Order) IntoSubmission() *OrderSubmission {
+	sub := &OrderSubmission{
+		MarketId:    o.MarketId,
+		Size:        o.Size,
+		Side:        o.Side,
+		TimeInForce: o.TimeInForce,
+		ExpiresAt:   o.ExpiresAt,
+		Type:        o.Type,
+		Reference:   o.Reference,
+	}
+	if o.Price != nil {
+		sub.Price = o.Price.Clone()
+	}
+	if o.PeggedOrder != nil {
+		sub.PeggedOrder = o.PeggedOrder.Clone()
+	}
+
+	return sub
+}
+
 func (o Order) Clone() *Order {
 	cpy := o
 	if o.Price != nil {
