@@ -912,7 +912,7 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 
 // BondUpdate is to be used for any bond account transfers.
 // Update on new orders, updates on commitment changes, or on slashing
-func (e *Engine) BondUpdate(ctx context.Context, market, party string, transfer *types.Transfer) (*types.TransferResponse, error) {
+func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.TransferResponse, error) {
 	req, err := e.getBondTransferRequest(transfer, market)
 	if err != nil {
 		return nil, err
@@ -1422,9 +1422,7 @@ func (e *Engine) clearAccount(
 	}
 
 	// we remove the margin account
-	if err := e.removeAccount(req.FromAccount[0].Id); err != nil {
-		return nil, err
-	}
+	e.removeAccount(req.FromAccount[0].Id)
 	// remove account from balances tracking
 	e.rmPartyAccount(party, req.FromAccount[0].Id)
 
@@ -1793,9 +1791,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 		}
 
 		// we remove the margin account
-		if err := e.removeAccount(marginAcc.Id); err != nil {
-			return nil, err
-		}
+		e.removeAccount(marginAcc.Id)
 		// remove account from balances tracking
 		e.rmPartyAccount(trader.Party(), marginAcc.Id)
 
@@ -2112,10 +2108,9 @@ func (e *Engine) GetAssetTotalSupply(asset string) (*num.Uint, error) {
 	return asst.GetAssetTotalSupply(), nil
 }
 
-func (e *Engine) removeAccount(id string) error {
+func (e *Engine) removeAccount(id string) {
 	delete(e.accs, id)
 	e.removeAccountFromHashableSlice(id)
-	return nil
 }
 
 // @TODO this function uses a single slice for each call. This is fine now, as we're processing

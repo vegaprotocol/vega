@@ -167,9 +167,9 @@ func (e *Engine) GetRiskFactors(asset string) (*types.RiskFactor, error) {
 	return rf, nil
 }
 
-func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint) ([]events.Risk, []events.Margin, error) {
+func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint) ([]events.Risk, []events.Margin) {
 	if len(evts) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 	revts := make([]events.Risk, 0, len(evts))
 	// traders with insufficient margin to meet required level, return the event passed as arg
@@ -220,7 +220,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		})
 	}
 	e.broker.SendBatch(eventBatch)
-	return revts, low, nil
+	return revts, low
 }
 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order

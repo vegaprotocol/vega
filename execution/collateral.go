@@ -109,7 +109,7 @@ func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*
 		penalty, _ := num.UintFromDecimal(
 			num.DecimalFromUint(c.MarginShortFall()).Mul(m.bondPenaltyFactor).Floor(),
 		)
-		resp, err := m.collateral.BondUpdate(ctx, mID, c.Party(), &types.Transfer{
+		resp, err := m.collateral.BondUpdate(ctx, mID, &types.Transfer{
 			Owner: c.Party(),
 			Amount: &types.FinancialAmount{
 				Amount: penalty,

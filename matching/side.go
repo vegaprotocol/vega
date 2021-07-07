@@ -44,7 +44,7 @@ func (s *OrderBookSide) Hash() []byte {
 }
 
 // When we leave an auction we need to remove any orders marked as GFA
-func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) {
+func (s *OrderBookSide) getOrdersToCancel(auction bool) []*types.Order {
 	ordersToCancel := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
@@ -56,7 +56,7 @@ func (s *OrderBookSide) getOrdersToCancel(auction bool) ([]*types.Order, error) 
 			}
 		}
 	}
-	return ordersToCancel, nil
+	return ordersToCancel
 }
 
 func (s *OrderBookSide) addOrder(o *types.Order) {
@@ -162,7 +162,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 }
 
 // ExtractOrders removes the orders from the top of the book until the volume amount is hit
-func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) ([]*types.Order, error) {
+func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.Order {
 	extractedOrders := []*types.Order{}
 
 	var (
@@ -222,7 +222,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) ([]*types.
 			logging.BigUint("Price", price), logging.Uint64("volume", volume))
 	}
 
-	return extractedOrders, nil
+	return extractedOrders
 }
 
 // RemoveOrder will remove an order from the book

@@ -31,9 +31,7 @@ func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.Sca
 
 func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
 	mf := num.DecimalFromFloat(f)
-	if err := m.fee.OnFeeFactorsMakerFeeUpdate(ctx, mf); err != nil {
-		return err
-	}
+	m.fee.OnFeeFactorsMakerFeeUpdate(mf)
 	m.mkt.Fees.Factors.MakerFee = mf
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
@@ -42,9 +40,7 @@ func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) erro
 
 func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
 	inf := num.DecimalFromFloat(f)
-	if err := m.fee.OnFeeFactorsInfrastructureFeeUpdate(ctx, inf); err != nil {
-		return err
-	}
+	m.fee.OnFeeFactorsInfrastructureFeeUpdate(inf)
 	m.mkt.Fees.Factors.InfrastructureFee = inf
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 

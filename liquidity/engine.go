@@ -597,7 +597,7 @@ func (e *Engine) createOrUpdateForParty(
 		nil
 }
 
-func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
+func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	order := &types.Order{
 		MarketId:             marketID,
 		Side:                 side,
@@ -723,7 +723,7 @@ func (e *Engine) createOrdersFromShape(
 		// 	Reference: ref.LiquidityOrder.Reference,
 		// 	Offset:    ref.LiquidityOrder.Offset,
 		// }
-		order = e.buildOrder(side, o.Peg, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
+		order = e.buildOrder(side, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
 		order.Id = ref.OrderId
 		newOrders = append(newOrders, order)
 		lm[order.Id] = order

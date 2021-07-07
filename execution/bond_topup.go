@@ -41,7 +41,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 			},
 			MinAmount: amt.Clone(),
 		}
-		resp, err := m.collateral.BondUpdate(ctx, mID, party, t)
+		resp, err := m.collateral.BondUpdate(ctx, mID, t)
 		if err != nil {
 			m.log.Panic("Failed to top up bond balance",
 				logging.String("market-id", mID),

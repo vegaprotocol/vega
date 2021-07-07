@@ -15,8 +15,7 @@ func TestBidAndAskPresentAfterAuction(t *testing.T) {
 	defer book.Finish()
 
 	// start an auction
-	_, err := book.EnterAuction()
-	assert.NoError(t, err)
+	_ = book.EnterAuction()
 
 	orders := []types.Order{
 		{
@@ -79,8 +78,7 @@ func TestBidAndAskPresentAfterAuctionInverse(t *testing.T) {
 	defer book.Finish()
 
 	// start an auction
-	_, err := book.EnterAuction()
-	assert.NoError(t, err)
+	_ = book.EnterAuction()
 
 	orders := []types.Order{
 		{

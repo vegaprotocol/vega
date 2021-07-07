@@ -54,11 +54,7 @@ func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
 	}
 
 	// then we calculated margins for this party
-	risk, closed, err := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price)
-	if err != nil {
-		return nil, err
-	}
-
+	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price)
 	if len(closed) > 0 {
 		// this order would take party below maintenance -> stop here
 		return nil, fmt.Errorf(
@@ -103,10 +99,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 		if err != nil {
 			return nil, nil, err
 		}
-		_, closed, err := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price.Clone())
-		if err != nil {
-			return nil, nil, err
-		}
+		_, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, price.Clone())
 		if len(closed) > 0 {
 			// this order would take party below maintenance -> stop here
 			return nil, nil, ErrMarginCheckInsufficient
@@ -126,11 +119,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 		posEvts = append(posEvts, e)
 	}
 	// 5. Get all the risk events
-	risk, closed, err := m.risk.UpdateMarginAuction(ctx, posEvts, price.Clone())
-	if err != nil {
-		// @TODO handle this properly
-		return nil, nil, err
-	}
+	risk, closed := m.risk.UpdateMarginAuction(ctx, posEvts, price.Clone())
 	distressed := make(map[string]struct{}, len(closed))
 	mposEvts := make([]events.MarketPosition, 0, len(closed))
 	for _, e := range closed {
