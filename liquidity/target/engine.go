@@ -81,7 +81,7 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	}
 
 	if now.After(e.now) {
-		toi := timestampedOI{Time: e.now, OI: e.getMaxFromCurrent()}
+		toi := e.getMaxFromCurrent()
 		e.previous = append(e.previous, toi)
 		e.current = make([]uint64, 0, len(e.current))
 		e.now = now
@@ -100,7 +100,7 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
-		e.computeMaxOI(now, minTime)
+		e.computeMaxOI(minTime)
 	}
 
 	// float64(markPrice.Uint64()*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
@@ -125,7 +125,7 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
-		e.computeMaxOI(now, minTime)
+		e.computeMaxOI(minTime)
 	}
 	maxOI := e.max.OI
 	if theoreticalOI > maxOI {
@@ -147,9 +147,9 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	)
 }
 
-func (e *Engine) getMaxFromCurrent() uint64 {
+func (e *Engine) getMaxFromCurrent() timestampedOI {
 	if len(e.current) == 0 {
-		return 0
+		return timestampedOI{Time: e.now, OI: 0}
 	}
 	m := e.current[0]
 	for i := 1; i < len(e.current); i++ {
@@ -157,11 +157,11 @@ func (e *Engine) getMaxFromCurrent() uint64 {
 			m = e.current[i]
 		}
 	}
-	return m
+	return timestampedOI{Time: e.now, OI: m}
 }
 
-func (e *Engine) computeMaxOI(now, minTime time.Time) {
-	m := timestampedOI{Time: e.now, OI: e.getMaxFromCurrent()}
+func (e *Engine) computeMaxOI(minTime time.Time) {
+	m := e.getMaxFromCurrent()
 	e.truncateHistory(minTime)
 	var j int
 	for i := 0; i < len(e.previous); i++ {
