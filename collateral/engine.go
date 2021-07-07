@@ -590,6 +590,9 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		}
 		responses = append(responses, res)
 
+		// Update to see how much we still need
+		requestAmount = requestAmount.Sub(requestAmount, amountCollected)
+
 		// here we check if we were able to collect all monies,
 		// if not send an event to notify the plugins
 		if party != types.NetworkParty {

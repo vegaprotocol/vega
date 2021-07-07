@@ -90,7 +90,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Then the traders should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
-    And the insurance pool balance should be "6390" for the market "ETH/DEC21"
+    And the insurance pool balance should be "6250" for the market "ETH/DEC21"
 
     # Then the traders should have the following account balances:
     #   | trader  | asset | market id | margin | general | bond |

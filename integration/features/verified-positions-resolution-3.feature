@@ -73,7 +73,7 @@ Feature: Position resolution case 3
       | designatedLooser | BTC   | ETH/DEC19 | 0      | 0       |
 
 # then we make sure the insurance pool collected the funds
-    And the insurance pool balance should be "9100" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction

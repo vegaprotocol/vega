@@ -1,4 +1,4 @@
-Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTests.py & https://github.com/vegaprotocol/scenario-runner/tree/develop/scenarios/QA/issues/86)
+Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTests.py & https://github.com/vegaprotocol/scenario-runner/tree/develop/scenarios/QA/issues/86)
 
   Background:
 
@@ -33,6 +33,8 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | tt_aux | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
     Then the opening auction period ends for market "ETH/DEC19"
 
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+
     # place orders and generate trades
     When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference | expires in |
@@ -53,14 +55,15 @@ Feature: Long close-out test (see ln 449 of system-tests/grpc/trading/tradesTest
       | trader | asset | market id | margin | general |
       | tt_15  | BTC   | ETH/DEC19 | 0      | 0       |
 
-    # then we make sure the insurance pool collected the funds
-    And the insurance pool balance should be "100" for the market "ETH/DEC19"
+    # the insurance pool will have received the distressed trader collateral but will have 
+    # paid it straight out to the trader who matched the closing out network trade.
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
     #check positions
     Then the traders should have the following profit and loss:
       | trader | volume | unrealised pnl | realised pnl |
       | tt_12  | 5      | 0              | 0            |
       | tt_13  | -5     | 0              | 0            |
-      | tt_14  | -4     | 120            | 0            |
+      | tt_14  | -4     | 120            | -20          |
       | tt_15  | 0      | 0              | -100         |
       | tt_16  | 4      | 0              | 0            |
