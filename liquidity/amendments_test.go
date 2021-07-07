@@ -86,6 +86,6 @@ func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: 15},
 		},
 	}
-	t, _ := types.NewLiquidityProvisionSubmissionFromProto(pb)
+	t, _ := types.LiquidityProvisionSubmissionFromProto(pb)
 	return t
 }

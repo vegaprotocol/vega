@@ -111,15 +111,6 @@ func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvision
 	return lps
 }
 
-func NewLiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmission) (*LiquidityProvisionSubmission, error) {
-	var lps *LiquidityProvisionSubmission
-	var err error
-	if lps, err = LiquidityProvisionSubmissionFromProto(p); err != nil {
-		return nil, err
-	}
-	return lps, nil
-}
-
 func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmission) (*LiquidityProvisionSubmission, error) {
 	fee, err := num.DecimalFromString(p.Fee)
 	if err != nil {

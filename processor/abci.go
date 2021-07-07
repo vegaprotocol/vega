@@ -525,7 +525,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 	}
 
 	// Convert protobuf message to local domain type
-	lps, err := types.NewLiquidityProvisionSubmissionFromProto(sub)
+	lps, err := types.LiquidityProvisionSubmissionFromProto(sub)
 	if err != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Unable to convert LiquidityProvisionSubmission protobuf message to domain type",
