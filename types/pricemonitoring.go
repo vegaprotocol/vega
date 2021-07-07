@@ -97,12 +97,14 @@ func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
 }
 
 func PriceMonitoringBoundsFromProto(pr *proto.PriceMonitoringBounds) *PriceMonitoringBounds {
-	return &PriceMonitoringBounds{
-		MinValidPrice:  num.NewUint(pr.MinValidPrice),
-		MaxValidPrice:  num.NewUint(pr.MaxValidPrice),
-		Trigger:        PriceMonitoringTriggerFromProto(pr.Trigger),
-		ReferencePrice: num.DecimalFromFloat(pr.ReferencePrice),
+	p := PriceMonitoringBounds{}
+	p.MinValidPrice = num.NewUint(pr.MinValidPrice)
+	p.MaxValidPrice = num.NewUint(pr.MaxValidPrice)
+	if pr.Trigger != nil {
+		p.Trigger = PriceMonitoringTriggerFromProto(pr.Trigger)
 	}
+	p.ReferencePrice = num.DecimalFromFloat(pr.ReferencePrice)
+	return &p
 }
 
 func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {
