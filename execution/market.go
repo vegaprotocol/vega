@@ -1886,8 +1886,6 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 }
 
 func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "checkMarginForOrder")
-	defer timer.EngineTimeCounterAdd()
 	risk, closed, err := m.calcMargins(ctx, pos, order)
 	// margin error
 	if err != nil {
