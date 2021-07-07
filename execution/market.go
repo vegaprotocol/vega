@@ -287,7 +287,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
 
-	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, *mkt.PriceMonitoringSettings)
+	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, mkt.PriceMonitoringSettings)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
@@ -687,10 +687,7 @@ func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	// Change market type to auction
-	ordersToCancel, err := m.matching.EnterAuction()
-	if err != nil {
-		m.log.Error("Error entering auction: ", logging.Error(err))
-	}
+	ordersToCancel := m.matching.EnterAuction()
 
 	// Move into auction mode to prevent pegged order repricing
 	event := m.as.AuctionStarted(ctx)
@@ -1002,7 +999,12 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 }
 
 // SubmitOrder submits the given order
-func (m *Market) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
+func (m *Market) SubmitOrder(
+	ctx context.Context,
+	orderSubmission *types.OrderSubmission,
+	party string,
+) (*types.OrderConfirmation, error) {
+	order := orderSubmission.IntoOrder(party)
 	order.CreatedAt = m.currentTime.UnixNano()
 
 	if !m.canTrade() {
@@ -1632,15 +1634,8 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	asset, _ := m.mkt.GetAsset()
 
 	// pay the fees now
-	fees, distressedPartiesFees, err := m.fee.CalculateFeeForPositionResolution(
+	fees, distressedPartiesFees := m.fee.CalculateFeeForPositionResolution(
 		confirmation.Trades, closedMPs)
-	if err != nil {
-		// this cannot fail, so we shall just panic for now, maybe remove
-		// the error later on
-		m.log.Panic("unable to calculate fees for positions resolutions",
-			logging.Error(err),
-			logging.String("market-id", m.GetID()))
-	}
 
 	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
 	if err != nil {
@@ -1683,14 +1678,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		m.broker.SendBatch(tradeEvts)
 	}
 
-	if err = m.zeroOutNetwork(ctx, closedMPs, &no, o, distressedPartiesFees); err != nil {
-		// FIXME(): the method always returns nil,
-		// no change we get an error here.
-		m.log.Panic(
-			"Failed to create closing order with distressed traders",
-			logging.Error(err),
-		)
-	}
+	m.zeroOutNetwork(ctx, closedMPs, &no, o, distressedPartiesFees)
 
 	// swipe all accounts and stuff
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
@@ -1770,7 +1758,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 		Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
 		MinAmount: bacc.Balance.Clone(),
 	}
-	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, partyID, transfer)
+	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, transfer)
 	if err != nil {
 		return err
 	}
@@ -1779,7 +1767,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 	return nil
 }
 
-func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) error {
+func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1887,7 +1875,6 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	if len(tradeEvts) > 0 {
 		m.broker.SendBatch(tradeEvts)
 	}
-	return nil
 }
 
 func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
@@ -2620,33 +2607,36 @@ func (m *Market) RemoveExpiredOrders(
 		// The pegged expiry orders are copies and do not reflect the
 		// current state of the order, therefore we look it up
 		originalOrder, foundOnBook, err := m.getOrderByID(orderID)
-		if err == nil {
-			// assign to the order the order from the book
-			// so we get the most recent version from the book
-			// to continue with
-			order = originalOrder
-
-			// if the order was on the book basically
-			// either a pegged + non parked
-			// or a non-pegged order
-			if foundOnBook {
-				m.position.UnregisterOrder(order)
-				m.matching.DeleteOrder(order)
-			}
-
-			// if this was a pegged order
-			// remove from the pegged / parked list
-			if order.PeggedOrder != nil {
-				m.removePeggedOrder(order)
-			}
-
-			// now we add to the list of expired orders
-			// and assign the appropriate status
-			order.UpdatedAt = m.currentTime.UnixNano()
-			order.Status = types.Order_STATUS_EXPIRED
-			expired = append(expired, order)
-			evts = append(evts, events.NewOrderEvent(ctx, order))
+		if err != nil {
+			// nothing to do there.
+			continue
 		}
+		// assign to the order the order from the book
+		// so we get the most recent version from the book
+		// to continue with
+		order = originalOrder
+
+		// if the order was on the book basically
+		// either a pegged + non parked
+		// or a non-pegged order
+		if foundOnBook {
+			m.position.UnregisterOrder(order)
+			m.matching.DeleteOrder(order)
+		}
+
+		// if this was a pegged order
+		// remove from the pegged / parked list
+		if order.PeggedOrder != nil {
+			m.removePeggedOrder(order)
+		}
+
+		// now we add to the list of expired orders
+		// and assign the appropriate status
+		order.UpdatedAt = m.currentTime.UnixNano()
+		order.Status = types.Order_STATUS_EXPIRED
+		expired = append(expired, order)
+		evts = append(evts, events.NewOrderEvent(ctx, order))
+
 	}
 	m.broker.SendBatch(evts)
 
@@ -2741,7 +2731,7 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 // create an actual risk model, and calculate the risk factors
 // if something goes wrong, return the hard-coded values of old
 func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *types.RiskResult {
-	rm, err := risk.NewModel(log, mkt.TradableInstrument.RiskModel, asset)
+	rm, err := risk.NewModel(mkt.TradableInstrument.RiskModel, asset)
 	// @TODO log this error
 	if err != nil {
 		return nil
@@ -2784,95 +2774,6 @@ func (m *Market) getTargetStake() *num.Uint {
 
 func (m *Market) getSuppliedStake() *num.Uint {
 	return m.liquidity.CalculateSuppliedStake()
-}
-
-func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context, f float64) {
-	m.liquidity.OnMinProbabilityOfTradingLPOrdersUpdate(num.DecimalFromFloat(f))
-}
-
-func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, v float64) {
-	m.bondPenaltyFactor = num.DecimalFromFloat(v)
-}
-
-func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
-	if err := m.risk.OnMarginScalingFactorsUpdate(sf); err != nil {
-		return err
-	}
-
-	// update our market definition, and dispatch update through the event bus
-	m.mkt.TradableInstrument.MarginCalculator.ScalingFactors = sf
-	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	return nil
-}
-
-func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
-	mf := num.DecimalFromFloat(f)
-	if err := m.fee.OnFeeFactorsMakerFeeUpdate(ctx, mf); err != nil {
-		return err
-	}
-	m.mkt.Fees.Factors.MakerFee = mf
-	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	return nil
-}
-
-func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
-	inf := num.DecimalFromFloat(f)
-	if err := m.fee.OnFeeFactorsInfrastructureFeeUpdate(ctx, inf); err != nil {
-		return err
-	}
-	m.mkt.Fees.Factors.InfrastructureFee = inf
-	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
-	return nil
-}
-
-func (m *Market) OnSuppliedStakeToObligationFactorUpdate(v float64) {
-	m.liquidity.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(v))
-}
-
-func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
-	m.marketValueWindowLength = d
-}
-
-func (m *Market) OnMarketLiquidityProvidersFeeDistribitionTimeStep(d time.Duration) {
-	m.lpFeeDistributionTimeStep = d
-}
-
-func (m *Market) OnMarketTargetStakeTimeWindowUpdate(d time.Duration) {
-	m.tsCalc.UpdateTimeWindow(d)
-}
-
-func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
-	return m.tsCalc.UpdateScalingFactor(num.DecimalFromFloat(v))
-}
-
-func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
-	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
-}
-
-func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64) {
-	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(num.DecimalFromFloat(v))
-}
-
-func (m *Market) OnMarketProbabilityOfTradingTauScalingUpdate(_ context.Context, v float64) {
-	m.liquidity.OnProbabilityOfTradingTauScalingUpdate(num.DecimalFromFloat(v))
-}
-
-func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
-	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, num.DecimalFromFloat(v))
-	//TODO: Send an event containing updated parameter
-}
-
-func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) {
-	m.pMonitor.SetMinDuration(d)
-	m.lMonitor.SetMinDuration(d)
-	evt := m.as.UpdateMinDuration(ctx, d)
-	// we were in an auction, and the duration of the auction was updated
-	if evt != nil {
-		m.broker.Send(evt)
-	}
 }
 
 func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {

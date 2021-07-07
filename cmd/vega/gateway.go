@@ -19,7 +19,7 @@ type gatewayCmd struct {
 	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
-func (opts *gatewayCmd) Execute(args []string) error {
+func (opts *gatewayCmd) Execute(_ []string) error {
 	if opts.Help {
 		return &flags.Error{
 			Type:    flags.ErrHelp,

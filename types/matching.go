@@ -32,6 +32,26 @@ type Order struct {
 	LiquidityProvisionId string
 }
 
+func (o Order) IntoSubmission() *OrderSubmission {
+	sub := &OrderSubmission{
+		MarketId:    o.MarketId,
+		Size:        o.Size,
+		Side:        o.Side,
+		TimeInForce: o.TimeInForce,
+		ExpiresAt:   o.ExpiresAt,
+		Type:        o.Type,
+		Reference:   o.Reference,
+	}
+	if o.Price != nil {
+		sub.Price = o.Price.Clone()
+	}
+	if o.PeggedOrder != nil {
+		sub.PeggedOrder = o.PeggedOrder.Clone()
+	}
+
+	return sub
+}
+
 func (o Order) Clone() *Order {
 	cpy := o
 	if o.Price != nil {
@@ -68,16 +88,12 @@ func (o *Order) IntoProto() *proto.Order {
 	if o.PeggedOrder != nil {
 		pegged = o.PeggedOrder.IntoProto()
 	}
-	var price uint64
-	if o.Price != nil {
-		price = o.Price.Uint64()
-	}
 	return &proto.Order{
 		Id:                   o.Id,
 		MarketId:             o.MarketId,
 		PartyId:              o.PartyId,
 		Side:                 o.Side,
-		Price:                price,
+		Price:                num.UintToUint64(o.Price),
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,
@@ -260,7 +276,7 @@ func (t *Trade) IntoProto() *proto.Trade {
 	return &proto.Trade{
 		Id:                 t.Id,
 		MarketId:           t.MarketId,
-		Price:              t.Price.Uint64(),
+		Price:              num.UintToUint64(t.Price),
 		Size:               t.Size,
 		Buyer:              t.Buyer,
 		Seller:             t.Seller,

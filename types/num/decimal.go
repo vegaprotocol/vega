@@ -33,6 +33,10 @@ func DecimalFromUint(u *Uint) Decimal {
 	return decimal.NewFromUint(&u.u)
 }
 
+func DecimalFromInt64(i int64) Decimal {
+	return decimal.NewFromInt(i)
+}
+
 func DecimalFromFloat(v float64) Decimal {
 	return decimal.NewFromFloat(v)
 }

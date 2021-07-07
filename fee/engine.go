@@ -1,7 +1,6 @@
 package fee
 
 import (
-	"context"
 	"errors"
 	"sort"
 
@@ -74,9 +73,8 @@ func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
 	return nil
 }
 
-func (e *Engine) SetLiquidityFee(v num.Decimal) error {
+func (e *Engine) SetLiquidityFee(v num.Decimal) {
 	e.f.liquidityFee = v
-	return nil
 }
 
 // CalculateForContinuousMode calculate the fee for
@@ -293,7 +291,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	trades []*types.Trade,
 	// the positions of the traders being closed out.
 	closedMPs []events.MarketPosition,
-) (events.FeesTransfer, map[string]*types.Fee, error) {
+) (events.FeesTransfer, map[string]*types.Fee) {
 	var (
 		totalFeesAmounts = map[string]*num.Uint{}
 		partiesFees      = map[string]*types.Fee{}
@@ -319,7 +317,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	// no we accumulated all the absolute position, we
 	// will get the share of each party
 	for _, v := range partiesShare {
-		v.share = num.DecimalFromFloat(float64(v.pos)).Div(num.DecimalFromFloat(float64(totalAbsolutePos)))
+		v.share = num.DecimalFromInt64(int64(v.pos)).Div(num.DecimalFromInt64(int64(totalAbsolutePos)))
 	}
 
 	// now we have the share of each distressed parties
@@ -376,7 +374,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	return &feesTransfer{
 		totalFeesAmountsPerParty: totalFeesAmounts,
 		transfers:                transfers,
-	}, partiesFees, nil
+	}, partiesFees
 }
 
 // BuildLiquidityFeeDistributionTransfer returns the set of transfers that will
@@ -509,7 +507,7 @@ func (e *Engine) calculateContinuousModeFees(trade *types.Trade) *types.Fee {
 
 func (e *Engine) calculateAuctionModeFees(trade *types.Trade) *types.Fee {
 	fee := e.calculateContinuousModeFees(trade)
-	two := num.DecimalFromFloat(2)
+	two := num.DecimalFromInt64(2)
 	inf, _ := num.UintFromDecimal(fee.InfrastructureFee.ToDecimal().Div(two).Ceil())
 	lf, _ := num.UintFromDecimal(fee.LiquidityFee.ToDecimal().Div(two).Ceil())
 	return &types.Fee{
@@ -556,16 +554,14 @@ func (f *feesTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
 }
 func (f *feesTransfer) Transfers() []*types.Transfer { return f.transfers }
 
-func (e *Engine) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f num.Decimal) error {
+func (e *Engine) OnFeeFactorsMakerFeeUpdate(f num.Decimal) {
 	e.feeCfg.Factors.MakerFee = f
 	e.f.makerFee = f
-	return nil
 }
 
-func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f num.Decimal) error {
+func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(f num.Decimal) {
 	e.feeCfg.Factors.InfrastructureFee = f
 	e.f.infrastructureFee = f
-	return nil
 }
 
 func (e *Engine) GetLiquidityFee() num.Decimal {

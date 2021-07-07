@@ -227,7 +227,7 @@ func closeV(p *Position, closedVolume int64, tradedPrice *num.Uint) num.Decimal 
 	if closedVolume == 0 {
 		return num.DecimalZero()
 	}
-	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromFloat(float64(closedVolume)))
+	realisedPnlDelta := num.DecimalFromUint(tradedPrice).Sub(p.AverageEntryPriceFP).Mul(num.DecimalFromInt64(closedVolume))
 	p.RealisedPnlFP = p.RealisedPnlFP.Add(realisedPnlDelta)
 	p.OpenVolume -= closedVolume
 	return realisedPnlDelta
@@ -238,8 +238,8 @@ func updateVWAP(vwap num.Decimal, volume int64, addVolume int64, addPrice *num.U
 		return num.DecimalZero()
 	}
 
-	volumeDec := num.DecimalFromFloat(float64(volume))
-	addVolumeDec := num.DecimalFromFloat(float64(addVolume))
+	volumeDec := num.DecimalFromInt64(volume)
+	addVolumeDec := num.DecimalFromInt64(addVolume)
 	addPriceDec := num.DecimalFromUint(addPrice)
 
 	//	return ((vwap * float64(volume)) + (float64(addPrice) * float64(addVolume))) / (float64(volume) + float64(addVolume))
@@ -259,7 +259,7 @@ func mtm(p *Position, markPrice *num.Uint) {
 		return
 	}
 	markPriceDec := num.DecimalFromUint(markPrice)
-	openVolumeDec := num.DecimalFromFloat(float64(p.OpenVolume))
+	openVolumeDec := num.DecimalFromInt64(p.OpenVolume)
 
 	//	p.UnrealisedPnlFP = float64(p.OpenVolume) * (float64(markPrice) - p.AverageEntryPriceFP)
 	p.UnrealisedPnlFP = openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPriceFP))

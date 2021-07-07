@@ -8,12 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-//type LiquidityMonitoringParameters = proto.LiquidityMonitoringParameters
-//type LiquidityProvisionSubmission = commandspb.LiquidityProvisionSubmission
-//type LiquidityProvision = proto.LiquidityProvision
-//type LiquidityOrder = proto.LiquidityOrder
-//type LiquidityOrderReference = proto.LiquidityOrderReference
-
 type LiquidityProvision_Status = proto.LiquidityProvision_Status
 
 const (
@@ -48,9 +42,11 @@ func (t TargetStakeParameters) IntoProto() *proto.TargetStakeParameters {
 	}
 }
 
-func (t *TargetStakeParameters) FromProto(p *proto.TargetStakeParameters) {
-	t.ScalingFactor = num.DecimalFromFloat(p.ScalingFactor)
-	t.TimeWindow = p.TimeWindow
+func TargetStakeParametersFromProto(p *proto.TargetStakeParameters) *TargetStakeParameters {
+	return &TargetStakeParameters{
+		TimeWindow:    p.TimeWindow,
+		ScalingFactor: num.DecimalFromFloat(p.ScalingFactor),
+	}
 }
 
 func (t TargetStakeParameters) String() string {
@@ -109,26 +105,21 @@ func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvision
 	return lps
 }
 
-func NewLiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmission) (*LiquidityProvisionSubmission, error) {
-	lps := &LiquidityProvisionSubmission{}
-	if err := lps.FromProto(p); err != nil {
-		return nil, err
-	}
-	return lps, nil
-}
-
-func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisionSubmission) error {
+func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmission) (*LiquidityProvisionSubmission, error) {
 	fee, err := num.DecimalFromString(p.Fee)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	*l = LiquidityProvisionSubmission{}
-	l.MarketId = p.MarketId
-	// TODO UINT after proto is updated
-	l.CommitmentAmount = num.NewUint(p.CommitmentAmount)
-	l.Fee = fee
 
-	l.Sells = make([]*LiquidityOrder, 0, len(p.Sells))
+	l := LiquidityProvisionSubmission{
+		Fee:              fee,
+		MarketId:         p.MarketId,
+		CommitmentAmount: num.NewUint(p.CommitmentAmount),
+		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
+		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
+		Reference:        p.Reference,
+	}
+
 	for _, sell := range p.Sells {
 		order := &LiquidityOrder{
 			Reference:  sell.Reference,
@@ -138,7 +129,6 @@ func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisio
 		l.Sells = append(l.Sells, order)
 	}
 
-	l.Buys = make([]*LiquidityOrder, 0, len(p.Buys))
 	for _, buy := range p.Buys {
 		order := &LiquidityOrder{
 			Reference:  buy.Reference,
@@ -147,8 +137,7 @@ func (l *LiquidityProvisionSubmission) FromProto(p *commandspb.LiquidityProvisio
 		}
 		l.Buys = append(l.Buys, order)
 	}
-	l.Reference = p.Reference
-	return nil
+	return &l, nil
 }
 
 func (l LiquidityProvisionSubmission) String() string {
@@ -200,9 +189,10 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 		Version:          l.Version,
 		Status:           l.Status,
 		Reference:        l.Reference,
+		Sells:            make([]*proto.LiquidityOrderReference, 0, len(l.Sells)),
+		Buys:             make([]*proto.LiquidityOrderReference, 0, len(l.Buys)),
 	}
 
-	lp.Sells = make([]*proto.LiquidityOrderReference, 0)
 	for _, sell := range l.Sells {
 		lor := &proto.LiquidityOrderReference{
 			OrderId: sell.OrderId,
@@ -215,7 +205,6 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 		lp.Sells = append(lp.Sells, lor)
 	}
 
-	lp.Buys = make([]*proto.LiquidityOrderReference, 0)
 	for _, buy := range l.Buys {
 		lor := &proto.LiquidityOrderReference{
 			OrderId: buy.OrderId,
@@ -230,19 +219,23 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 	return lp
 }
 
-func (l *LiquidityProvision) FromProto(p *proto.LiquidityProvision) {
-	l.CommitmentAmount = num.NewUint(p.CommitmentAmount)
-	l.CreatedAt = p.CreatedAt
-	l.Fee, _ = num.DecimalFromString(p.Fee)
-	l.Id = p.Id
-	l.MarketId = p.MarketId
-	l.PartyId = p.PartyId
-	l.Reference = p.Reference
-	l.Status = p.Status
-	l.UpdatedAt = p.UpdatedAt
-	l.Version = p.Version
+func LiquidityProvisionFromProto(p *proto.LiquidityProvision) *LiquidityProvision {
+	fee, _ := num.DecimalFromString(p.Fee)
+	l := LiquidityProvision{
+		CommitmentAmount: num.NewUint(p.CommitmentAmount),
+		CreatedAt:        p.CreatedAt,
+		Id:               p.Id,
+		MarketId:         p.MarketId,
+		PartyId:          p.PartyId,
+		Fee:              fee,
+		Reference:        p.Reference,
+		Status:           p.Status,
+		UpdatedAt:        p.UpdatedAt,
+		Version:          p.Version,
+		Sells:            make([]*LiquidityOrderReference, 0, len(p.Sells)),
+		Buys:             make([]*LiquidityOrderReference, 0, len(p.Buys)),
+	}
 
-	l.Sells = make([]*LiquidityOrderReference, 0, len(p.Sells))
 	for _, sell := range p.Sells {
 		lor := &LiquidityOrderReference{
 			OrderId: sell.OrderId,
@@ -255,7 +248,6 @@ func (l *LiquidityProvision) FromProto(p *proto.LiquidityProvision) {
 		l.Sells = append(l.Sells, lor)
 	}
 
-	l.Buys = make([]*LiquidityOrderReference, 0, len(p.Buys))
 	for _, buy := range p.Buys {
 		lor := &LiquidityOrderReference{
 			OrderId: buy.OrderId,
@@ -267,6 +259,8 @@ func (l *LiquidityProvision) FromProto(p *proto.LiquidityProvision) {
 		}
 		l.Buys = append(l.Buys, lor)
 	}
+
+	return &l
 }
 
 type LiquidityOrderReference struct {
@@ -277,19 +271,24 @@ type LiquidityOrderReference struct {
 }
 
 func (l LiquidityOrderReference) IntoProto() *proto.LiquidityOrderReference {
-	lor := &proto.LiquidityOrderReference{
-		OrderId:        l.OrderId,
-		LiquidityOrder: l.LiquidityOrder.IntoProto(),
+	var order *proto.LiquidityOrder
+	if l.LiquidityOrder != nil {
+		order = l.LiquidityOrder.IntoProto()
 	}
-	return lor
+	return &proto.LiquidityOrderReference{
+		OrderId:        l.OrderId,
+		LiquidityOrder: order,
+	}
 }
 
-func (l *LiquidityOrderReference) FromProto(p *proto.LiquidityOrderReference) {
-	l.OrderId = p.OrderId
-	l.LiquidityOrder = &LiquidityOrder{
-		Reference:  p.LiquidityOrder.Reference,
-		Proportion: p.LiquidityOrder.Proportion,
-		Offset:     p.LiquidityOrder.Offset,
+func LiquidityOrderReferenceFromProto(p *proto.LiquidityOrderReference) *LiquidityOrderReference {
+	return &LiquidityOrderReference{
+		OrderId: p.OrderId,
+		LiquidityOrder: &LiquidityOrder{
+			Reference:  p.LiquidityOrder.Reference,
+			Proportion: p.LiquidityOrder.Proportion,
+			Offset:     p.LiquidityOrder.Offset,
+		},
 	}
 }
 
@@ -311,18 +310,19 @@ func (l LiquidityOrder) DeepClone() *LiquidityOrder {
 }
 
 func (l LiquidityOrder) IntoProto() *proto.LiquidityOrder {
-	lo := &proto.LiquidityOrder{
+	return &proto.LiquidityOrder{
 		Reference:  l.Reference,
 		Proportion: l.Proportion,
 		Offset:     l.Offset,
 	}
-	return lo
 }
 
-func (l *LiquidityOrder) FromProto(p *proto.LiquidityOrder) {
-	l.Offset = p.Offset
-	l.Proportion = p.Proportion
-	l.Reference = p.Reference
+func LiquidityOrderFromProto(p *proto.LiquidityOrder) *LiquidityOrder {
+	return &LiquidityOrder{
+		Offset:     p.Offset,
+		Proportion: p.Proportion,
+		Reference:  p.Reference,
+	}
 }
 
 type LiquidityMonitoringParameters struct {
@@ -334,38 +334,41 @@ type LiquidityMonitoringParameters struct {
 	AuctionExtension int64
 }
 
-func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParameters) *LiquidityMonitoringParameters {
-	l := &LiquidityMonitoringParameters{}
-	l.FromProto(p)
-	return l
-}
-
 func (l LiquidityMonitoringParameters) IntoProto() *proto.LiquidityMonitoringParameters {
 	tr, _ := l.TriggeringRatio.Float64()
-	lmp := &proto.LiquidityMonitoringParameters{
-		TargetStakeParameters: l.TargetStakeParameters.IntoProto(),
+	var params *proto.TargetStakeParameters
+	if l.TargetStakeParameters != nil {
+		params = l.TargetStakeParameters.IntoProto()
+	}
+	return &proto.LiquidityMonitoringParameters{
+		TargetStakeParameters: params,
 		TriggeringRatio:       tr,
 		AuctionExtension:      l.AuctionExtension,
 	}
-	return lmp
 }
 
 func (l LiquidityMonitoringParameters) DeepClone() *LiquidityMonitoringParameters {
-	cpy := LiquidityMonitoringParameters{
-		TriggeringRatio:  l.TriggeringRatio,
-		AuctionExtension: l.AuctionExtension,
-	}
+	var params *TargetStakeParameters
 	if l.TargetStakeParameters != nil {
-		cpy.TargetStakeParameters = l.TargetStakeParameters.DeepClone()
+		params = l.TargetStakeParameters.DeepClone()
 	}
-	return &cpy
+	return &LiquidityMonitoringParameters{
+		TriggeringRatio:       l.TriggeringRatio,
+		AuctionExtension:      l.AuctionExtension,
+		TargetStakeParameters: params,
+	}
 }
 
-func (l *LiquidityMonitoringParameters) FromProto(p *proto.LiquidityMonitoringParameters) {
-	l.AuctionExtension = p.AuctionExtension
-	l.TriggeringRatio = num.DecimalFromFloat(p.TriggeringRatio)
-	l.TargetStakeParameters = &TargetStakeParameters{}
-	l.TargetStakeParameters.FromProto(p.TargetStakeParameters)
+func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParameters) *LiquidityMonitoringParameters {
+	var params *TargetStakeParameters
+	if p.TargetStakeParameters != nil {
+		params = TargetStakeParametersFromProto(p.TargetStakeParameters)
+	}
+	return &LiquidityMonitoringParameters{
+		TargetStakeParameters: params,
+		AuctionExtension:      p.AuctionExtension,
+		TriggeringRatio:       num.DecimalFromFloat(p.TriggeringRatio),
+	}
 }
 
 func LiquidityProvisionSubmissionFromMarketCommitment(

@@ -173,10 +173,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
 	}
 
-	w, ref, err := e.newWithdrawal(id, party, assetID, amount, time.Time{}, nil)
-	if err != nil {
-		return err
-	}
+	w, ref := e.newWithdrawal(id, party, assetID, amount, time.Time{}, nil)
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}
 	res, err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount)
@@ -202,10 +199,7 @@ func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID 
 func (e *Engine) DepositBuiltinAsset(
 	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64) error {
 	now := e.currentTime
-	dep, err := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount, "") // no hash
-	if err != nil {
-		return err
-	}
+	dep := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount, "") // no hash
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
 	asset, err := e.assets.Get(d.VegaAssetID)
 	if err != nil {
@@ -251,10 +245,7 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 
 func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id string, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
-	dep, err := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, d.Amount, txHash)
-	if err != nil {
-		return err
-	}
+	dep := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, d.Amount, txHash)
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
 	asset, err := e.assets.Get(d.VegaAssetID)
 	if err != nil {
@@ -344,10 +335,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 			Erc20: ext,
 		},
 	}
-	w, ref, err := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
-	if err != nil {
-		return err
-	}
+	w, ref := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}
 	// try to lock the funds
@@ -548,7 +536,7 @@ func (e *Engine) newWithdrawal(
 	amount *num.Uint,
 	expirationDate time.Time,
 	wext *types.WithdrawExt,
-) (w *types.Withdrawal, ref *big.Int, err error) {
+) (w *types.Withdrawal, ref *big.Int) {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
 	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(e.currentTime.Unix()))
@@ -569,7 +557,7 @@ func (e *Engine) newWithdrawal(
 
 func (e *Engine) newDeposit(
 	id, partyID, asset string, amount *num.Uint, txHash string,
-) (*types.Deposit, error) {
+) *types.Deposit {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
 	return &types.Deposit{
@@ -580,7 +568,7 @@ func (e *Engine) newDeposit(
 		Amount:       amount,
 		CreationDate: e.currentTime.UnixNano(),
 		TxHash:       txHash,
-	}, nil
+	}
 }
 
 type HasVegaAssetID interface {

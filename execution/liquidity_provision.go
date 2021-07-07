@@ -15,11 +15,6 @@ import (
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
-	defer func() {
-		if err != nil {
-			m.broker.Send(events.NewTxErrEvent(ctx, err, party, sub))
-		}
-	}()
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
@@ -96,7 +91,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		MinAmount: amount.Clone(),
 	}
 
-	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
+	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), transfer)
 	if err != nil {
 		// error happen, we cannot move the funds in the bond account
 		// this mean there's either an error in the collateral engine,
@@ -123,7 +118,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_HIGH
 		}
 
-		tresp, newerr := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
+		tresp, newerr := m.collateral.BondUpdate(ctx, m.GetID(), transfer)
 		if newerr != nil {
 			m.log.Debug("unable to rollback bon account topup",
 				logging.String("party", party),
@@ -793,7 +788,7 @@ func (m *Market) cancelLiquidityProvision(
 			MinAmount: bondAcc.Balance.Clone(),
 		}
 
-		tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
+		tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), transfer)
 		if err != nil {
 			m.log.Debug("bond update error", logging.Error(err))
 			return err
@@ -872,7 +867,7 @@ func (m *Market) amendLiquidityProvision(
 	defer func() {
 		if err != nil {
 			tresp, newerr := m.collateral.BondUpdate(
-				ctx, m.GetID(), party, bondRollback)
+				ctx, m.GetID(), bondRollback)
 			if newerr != nil {
 				m.log.Debug("unable to rollback bond account topup",
 					logging.String("party", party),
@@ -1150,7 +1145,7 @@ func (m *Market) ensureLiquidityProvisionBond(
 	}
 
 	// move our bond
-	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), party, transfer)
+	tresp, err := m.collateral.BondUpdate(ctx, m.GetID(), transfer)
 	if err != nil {
 		return nil, err
 	}

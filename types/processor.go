@@ -66,37 +66,37 @@ type OrderSubmission struct {
 }
 
 func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
-	p := &commandspb.OrderSubmission{
+	var pegged *proto.PeggedOrder
+	if o.PeggedOrder != nil {
+		pegged = o.PeggedOrder.IntoProto()
+	}
+	return &commandspb.OrderSubmission{
 		MarketId: o.MarketId,
 		// Need to update protobuf to use string TODO UINT
-		Price:       o.Price.Uint64(),
+		Price:       num.UintToUint64(o.Price),
 		Size:        o.Size,
 		Side:        o.Side,
 		TimeInForce: o.TimeInForce,
 		ExpiresAt:   o.ExpiresAt,
 		Type:        o.Type,
 		Reference:   o.Reference,
+		PeggedOrder: pegged,
 	}
-	if o.PeggedOrder == nil {
-		return p
-	}
-	p.PeggedOrder = o.PeggedOrder.IntoProto()
-	return p
 }
 
-func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmission, error) {
-	o := OrderSubmission{}
-	o.MarketId = p.MarketId
-	// Need to update protobuf to use string TODO UINT
-	o.Price = num.NewUint(p.Price)
-	o.Size = p.Size
-	o.Side = p.Side
-	o.TimeInForce = p.TimeInForce
-	o.ExpiresAt = p.ExpiresAt
-	o.Type = p.Type
-	o.Reference = p.Reference
-	o.PeggedOrder = NewPeggedOrderFromProto(p.PeggedOrder)
-	return &o, nil
+func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) *OrderSubmission {
+	return &OrderSubmission{
+		MarketId: p.MarketId,
+		// Need to update protobuf to use string TODO UINT
+		Price:       num.NewUint(p.Price),
+		Size:        p.Size,
+		Side:        p.Side,
+		TimeInForce: p.TimeInForce,
+		ExpiresAt:   p.ExpiresAt,
+		Type:        p.Type,
+		Reference:   p.Reference,
+		PeggedOrder: NewPeggedOrderFromProto(p.PeggedOrder),
+	}
 }
 
 func (o OrderSubmission) String() string {
@@ -104,7 +104,7 @@ func (o OrderSubmission) String() string {
 }
 
 func (o OrderSubmission) IntoOrder(party string) *Order {
-	order := &Order{
+	return &Order{
 		MarketId:    o.MarketId,
 		PartyId:     party,
 		Side:        o.Side,
@@ -118,7 +118,6 @@ func (o OrderSubmission) IntoOrder(party string) *Order {
 		Reference:   o.Reference,
 		PeggedOrder: o.PeggedOrder,
 	}
-	return order
 }
 
 type WithdrawSubmission struct {
@@ -130,23 +129,21 @@ type WithdrawSubmission struct {
 	Ext *WithdrawExt
 }
 
-func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*WithdrawSubmission, error) {
-	w := WithdrawSubmission{
+func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) *WithdrawSubmission {
+	return &WithdrawSubmission{
 		Amount: num.NewUint(p.Amount),
 		Asset:  p.Asset,
 		Ext:    p.Ext,
 	}
-	return &w, nil
 }
 
 func (w WithdrawSubmission) IntoProto() *commandspb.WithdrawSubmission {
-	ws := &commandspb.WithdrawSubmission{
+	return &commandspb.WithdrawSubmission{
 		// Update once the protobuf changes TODO UINT
-		Amount: w.Amount.Uint64(),
+		Amount: num.UintToUint64(w.Amount),
 		Asset:  w.Asset,
 		Ext:    w.Ext,
 	}
-	return ws
 }
 
 func (w WithdrawSubmission) String() string {

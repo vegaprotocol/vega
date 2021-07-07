@@ -103,13 +103,13 @@ func NewEngine(config Config,
 		broker:                  broker,
 		idGen:                   idGen,
 		suppliedEngine:          supplied.NewEngine(riskModel, priceMonitor),
-		stakeToObligationFactor: num.DecimalFromFloat(1),
+		stakeToObligationFactor: num.DecimalFromInt64(1),
 		provisions:              map[string]*types.LiquidityProvision{},
 		orders:                  map[string]map[string]*types.Order{},
 		liquidityOrders:         map[string]map[string]*types.Order{},
 		pendings:                map[string]struct{}{},
 		maxShapesSize:           100, // set it to the same default than the netparams
-		maxFee:                  num.DecimalFromFloat(1.0),
+		maxFee:                  num.DecimalFromInt64(1),
 	}
 }
 
@@ -597,7 +597,7 @@ func (e *Engine) createOrUpdateForParty(
 		nil
 }
 
-func (e *Engine) buildOrder(side types.Side, pegged *types.PeggedOrder, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
+func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	order := &types.Order{
 		MarketId:             marketID,
 		Side:                 side,
@@ -723,7 +723,7 @@ func (e *Engine) createOrdersFromShape(
 		// 	Reference: ref.LiquidityOrder.Reference,
 		// 	Offset:    ref.LiquidityOrder.Offset,
 		// }
-		order = e.buildOrder(side, o.Peg, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
+		order = e.buildOrder(side, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
 		order.Id = ref.OrderId
 		newOrders = append(newOrders, order)
 		lm[order.Id] = order

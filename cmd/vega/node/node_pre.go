@@ -337,7 +337,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 }
 
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
-	app, err := processor.NewApp(
+	app := processor.NewApp(
 		l.Log,
 		l.conf.Processor,
 		l.cancel,
@@ -354,16 +354,12 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.stats.Blockchain,
 		l.timeService,
 		l.topology,
-		l.nodeWallet,
 		l.netParams,
 		&processor.Oracle{
 			Engine:   l.oracle,
 			Adaptors: l.oracleAdaptors,
 		},
 	)
-	if err != nil {
-		return nil, err
-	}
 
 	var abciApp tmtypes.Application
 	tmCfg := l.conf.Blockchain.Tendermint
@@ -457,13 +453,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	//  create collateral
-	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
-	if err != nil {
-		log.Error("unable to initialise collateral", logging.Error(err))
-		return err
-	}
-
+	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
 	l.oracleAdaptors = oracleAdaptors.New()

@@ -142,26 +142,19 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint,
 }
 
 // EnterAuction Moves the order book into an auction state
-func (b *OrderBook) EnterAuction() ([]*types.Order, error) {
+func (b *OrderBook) EnterAuction() []*types.Order {
 	// Scan existing orders to see which ones can be kept or cancelled
-	buyCancelledOrders, err := b.buy.getOrdersToCancel(true)
-	if err != nil {
-		return nil, err
-	}
-
-	sellCancelledOrders, err := b.sell.getOrdersToCancel(true)
-	if err != nil {
-		return nil, err
-	}
+	ordersToCancel := append(
+		b.buy.getOrdersToCancel(true),
+		b.sell.getOrdersToCancel(true)...,
+	)
 
 	// Set the market state
 	b.auction = true
 	b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
 
 	// Return all the orders that have been removed from the book and need to be cancelled
-	ordersToCancel := buyCancelledOrders
-	ordersToCancel = append(ordersToCancel, sellCancelledOrders...)
-	return ordersToCancel, nil
+	return ordersToCancel
 }
 
 // LeaveAuction Moves the order book back into continuous trading state
@@ -203,17 +196,11 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	}
 
 	// Remove any orders that will not be valid in continuous trading
-	buyOrdersToCancel, err := b.buy.getOrdersToCancel(false)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	sellOrdersToCancel, err := b.sell.getOrdersToCancel(false)
-	if err != nil {
-		return nil, nil, err
-	}
 	// Return all the orders that have been cancelled from the book
-	ordersToCancel := append(buyOrdersToCancel, sellOrdersToCancel...)
+	ordersToCancel := append(
+		b.buy.getOrdersToCancel(false),
+		b.sell.getOrdersToCancel(false)...,
+	)
 
 	for _, oc := range ordersToCancel {
 		oc.UpdatedAt = ts
@@ -453,7 +440,6 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	}
 
 	var (
-		err            error
 		uncrossOrders  []*types.Order
 		uncrossingSide *OrderBookSide
 	)
@@ -465,14 +451,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	}
 
 	// Remove all the orders from that side of the book up to the given volume
-	uncrossOrders, err = uncrossingSide.ExtractOrders(price, volume)
-	if err != nil {
-		b.log.Panic("Failed to extract side orders for uncrossing",
-			logging.String("side", uncrossSide.String()),
-			logging.BigUint("price", price),
-			logging.Uint64("volume", volume))
-	}
-
+	uncrossOrders = uncrossingSide.ExtractOrders(price, volume)
 	return b.uncrossBookSide(uncrossOrders, b.getOppositeSide(uncrossSide), price.Clone())
 }
 

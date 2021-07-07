@@ -28,12 +28,6 @@ type PriceMonitoringBounds struct {
 	ReferencePrice num.Decimal
 }
 
-func PriceMonitoringSettingsFromProto(p *proto.PriceMonitoringSettings) *PriceMonitoringSettings {
-	pms := &PriceMonitoringSettings{}
-	pms.FromProto(p)
-	return pms
-}
-
 func (p PriceMonitoringSettings) IntoProto() *proto.PriceMonitoringSettings {
 	var parameters *proto.PriceMonitoringParameters
 	if p.Parameters != nil {
@@ -45,12 +39,14 @@ func (p PriceMonitoringSettings) IntoProto() *proto.PriceMonitoringSettings {
 	}
 }
 
-func (p *PriceMonitoringSettings) FromProto(pr *proto.PriceMonitoringSettings) {
-	p.UpdateFrequency = pr.UpdateFrequency
-	if pr.Parameters != nil {
-		p.Parameters = &PriceMonitoringParameters{}
-		p.Parameters.FromProto(pr.Parameters)
+func PriceMonitoringSettingsFromProto(pr *proto.PriceMonitoringSettings) *PriceMonitoringSettings {
+	p := PriceMonitoringSettings{
+		UpdateFrequency: pr.UpdateFrequency,
 	}
+	if pr.Parameters != nil {
+		p.Parameters = PriceMonitoringParametersFromProto(pr.Parameters)
+	}
+	return &p
 }
 
 func PriceMonitoringParametersFromProto(p *proto.PriceMonitoringParameters) *PriceMonitoringParameters {
@@ -71,16 +67,6 @@ func (p PriceMonitoringParameters) IntoProto() *proto.PriceMonitoringParameters 
 	return &proto.PriceMonitoringParameters{
 		Triggers: triggers,
 	}
-}
-
-func (p *PriceMonitoringParameters) FromProto(pr *proto.PriceMonitoringParameters) {
-	triggers := make([]*PriceMonitoringTrigger, 0, len(pr.Triggers))
-	for _, pt := range pr.Triggers {
-		t := &PriceMonitoringTrigger{}
-		t.FromProto(pt)
-		triggers = append(triggers, t)
-	}
-	p.Triggers = triggers
 }
 
 func (p PriceMonitoringParameters) DeepClone() *PriceMonitoringParameters {
@@ -104,18 +90,23 @@ func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
 		trigger = p.Trigger.IntoProto()
 	}
 	return &proto.PriceMonitoringBounds{
-		MinValidPrice:  p.MinValidPrice.Uint64(),
-		MaxValidPrice:  p.MaxValidPrice.Uint64(),
+		MinValidPrice:  num.UintToUint64(p.MinValidPrice),
+		MaxValidPrice:  num.UintToUint64(p.MaxValidPrice),
 		Trigger:        trigger,
 		ReferencePrice: ref,
 	}
 }
 
-func (p *PriceMonitoringBounds) FromProto(pr *proto.PriceMonitoringBounds) {
-	p.MinValidPrice = num.NewUint(pr.MinValidPrice)
-	p.MaxValidPrice = num.NewUint(pr.MaxValidPrice)
-	p.Trigger.FromProto(pr.Trigger)
-	p.ReferencePrice = num.DecimalFromFloat(pr.ReferencePrice)
+func PriceMonitoringBoundsFromProto(pr *proto.PriceMonitoringBounds) *PriceMonitoringBounds {
+	p := PriceMonitoringBounds{
+		MinValidPrice:  num.NewUint(pr.MinValidPrice),
+		MaxValidPrice:  num.NewUint(pr.MaxValidPrice),
+		ReferencePrice: num.DecimalFromFloat(pr.ReferencePrice),
+	}
+	if pr.Trigger != nil {
+		p.Trigger = PriceMonitoringTriggerFromProto(pr.Trigger)
+	}
+	return &p
 }
 
 func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {
@@ -132,7 +123,7 @@ func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {
 func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMonitoringTrigger {
 	return &PriceMonitoringTrigger{
 		Horizon:          p.Horizon,
-		HDec:             num.DecimalFromFloat(float64(p.Horizon)),
+		HDec:             num.DecimalFromInt64(p.Horizon),
 		Probability:      num.DecimalFromFloat(p.Probability),
 		AuctionExtension: p.AuctionExtension,
 	}
@@ -140,10 +131,9 @@ func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMoni
 
 // IntoProto return proto version of the PriceMonitoringTrigger
 func (p PriceMonitoringTrigger) IntoProto() *proto.PriceMonitoringTrigger {
-	horizon := p.Horizon
 	prob, _ := p.Probability.Float64()
 	return &proto.PriceMonitoringTrigger{
-		Horizon:          horizon,
+		Horizon:          p.Horizon,
 		Probability:      prob,
 		AuctionExtension: p.AuctionExtension,
 	}
@@ -156,11 +146,4 @@ func (p PriceMonitoringTrigger) DeepClone() *PriceMonitoringTrigger {
 		Probability:      p.Probability,
 		AuctionExtension: p.AuctionExtension,
 	}
-}
-
-func (p *PriceMonitoringTrigger) FromProto(pr *proto.PriceMonitoringTrigger) {
-	p.Horizon = pr.Horizon
-	p.HDec = num.DecimalFromFloat(float64(pr.Horizon))
-	p.Probability = num.DecimalFromFloat(pr.Probability)
-	p.AuctionExtension = pr.AuctionExtension
 }

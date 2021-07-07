@@ -139,26 +139,11 @@ type RiskResult struct {
 }
 
 func (m MarginLevels) IntoProto() *proto.MarginLevels {
-	var (
-		ml, sl, im, cr uint64
-	)
-	if m.MaintenanceMargin != nil {
-		ml = m.MaintenanceMargin.Uint64()
-	}
-	if m.SearchLevel != nil {
-		sl = m.SearchLevel.Uint64()
-	}
-	if m.InitialMargin != nil {
-		im = m.InitialMargin.Uint64()
-	}
-	if m.CollateralReleaseLevel != nil {
-		cr = m.CollateralReleaseLevel.Uint64()
-	}
 	return &proto.MarginLevels{
-		MaintenanceMargin:      ml,
-		SearchLevel:            sl,
-		InitialMargin:          im,
-		CollateralReleaseLevel: cr,
+		MaintenanceMargin:      num.UintToUint64(m.MaintenanceMargin),
+		SearchLevel:            num.UintToUint64(m.SearchLevel),
+		InitialMargin:          num.UintToUint64(m.InitialMargin),
+		CollateralReleaseLevel: num.UintToUint64(m.CollateralReleaseLevel),
 		PartyId:                m.PartyId,
 		MarketId:               m.MarketId,
 		Asset:                  m.Asset,

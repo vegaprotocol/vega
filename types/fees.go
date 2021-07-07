@@ -63,9 +63,9 @@ type Fee struct {
 
 func (f Fee) IntoProto() *proto.Fee {
 	return &proto.Fee{
-		MakerFee:          f.MakerFee.Uint64(),
-		InfrastructureFee: f.InfrastructureFee.Uint64(),
-		LiquidityFee:      f.LiquidityFee.Uint64(),
+		MakerFee:          num.UintToUint64(f.MakerFee),
+		InfrastructureFee: num.UintToUint64(f.InfrastructureFee),
+		LiquidityFee:      num.UintToUint64(f.LiquidityFee),
 	}
 }
 
@@ -79,13 +79,9 @@ func (f Fee) Clone() *Fee {
 
 // NewFee returns a new fee object, with all fields initialised
 func NewFee() *Fee {
-	f := &Fee{}
-	f.Init()
-	return f
-}
-
-func (f *Fee) Init() {
-	f.MakerFee = num.Zero()
-	f.InfrastructureFee = num.Zero()
-	f.LiquidityFee = num.Zero()
+	return &Fee{
+		MakerFee:          num.Zero(),
+		InfrastructureFee: num.Zero(),
+		LiquidityFee:      num.Zero(),
+	}
 }

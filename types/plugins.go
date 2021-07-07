@@ -26,18 +26,13 @@ type Position struct {
 }
 
 func (p *Position) IntoProto() *proto.Position {
-	var avg uint64
-	if p.AverageEntryPrice != nil {
-		avg = p.AverageEntryPrice.Uint64()
-	}
-
 	return &proto.Position{
 		MarketId:          p.MarketId,
 		PartyId:           p.PartyId,
 		OpenVolume:        p.OpenVolume,
 		RealisedPnl:       p.RealisedPnl.BigInt().Int64(),
 		UnrealisedPnl:     p.UnrealisedPnl.BigInt().Int64(),
-		AverageEntryPrice: avg,
+		AverageEntryPrice: num.UintToUint64(p.AverageEntryPrice),
 		UpdatedAt:         p.UpdatedAt,
 	}
 }

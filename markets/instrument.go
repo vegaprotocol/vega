@@ -44,7 +44,7 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 		return nil, err
 	}
 	asset := instrument.Product.GetAsset()
-	riskModel, err := risk.NewModel(log, pti.RiskModel, asset)
+	riskModel, err := risk.NewModel(pti.RiskModel, asset)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate risk model")
 	}

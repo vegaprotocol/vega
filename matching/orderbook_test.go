@@ -2268,8 +2268,7 @@ func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
 	assert.NotNil(t, orderConf)
 
 	// Switch to auction and makes sure the order is cancelled
-	orders, err := book.ob.EnterAuction()
-	assert.NoError(t, err)
+	orders := book.ob.EnterAuction()
 	assert.Equal(t, len(orders), 1)
 	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(1))
 }
@@ -2283,8 +2282,7 @@ func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
 	defer logger.Sync()
 
 	// Flip straight to auction mode
-	_, err := book.ob.EnterAuction()
-	assert.NoError(t, err)
+	_ = book.ob.EnterAuction()
 	assert.True(t, book.ob.InAuction())
 
 	// Add a GFA order
@@ -2915,10 +2913,8 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
 
-	orders, err := book.ob.EnterAuction()
-
+	orders := book.ob.EnterAuction()
 	assert.Equal(t, 0, len(orders))
-	assert.Nil(t, err)
 	order1Id := "1000000000000000000000" //Must be 22 characters
 	order2Id := "1000000000000000000001" //Must be 22 characters
 
@@ -3119,8 +3115,7 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	book.ob.SubmitOrder(bp1)
 
 	// Leave auction and uncross the book
-	cancels, err := book.ob.EnterAuction()
-	assert.Nil(t, err)
+	cancels := book.ob.EnterAuction()
 	assert.Equal(t, len(cancels), 0)
 }
 
