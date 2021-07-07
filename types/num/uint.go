@@ -380,7 +380,7 @@ func UintToUint64(u *Uint) uint64 {
 	return 0
 }
 
-// UintToUint64 convert a uint to uint64
+// UintToString convert a uint to uint64
 // return "0" if nil
 func UintToString(u *Uint) string {
 	if u != nil {

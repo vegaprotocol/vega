@@ -28,13 +28,6 @@ type procTest struct {
 	oracles *stubOracles
 }
 
-type stubWallet struct {
-	key    []byte
-	chain  string
-	signed []byte
-	err    error
-}
-
 type stubOracles struct {
 	Engine   *mocks.MockOraclesEngine
 	Adaptors *mocks.MockOracleAdaptors
