@@ -359,7 +359,9 @@ func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParamete
 	l := LiquidityMonitoringParameters{}
 	l.AuctionExtension = p.AuctionExtension
 	l.TriggeringRatio = num.DecimalFromFloat(p.TriggeringRatio)
-	l.TargetStakeParameters = TargetStakeParametersFromProto(p.TargetStakeParameters)
+	if p.TargetStakeParameters != nil {
+		l.TargetStakeParameters = TargetStakeParametersFromProto(p.TargetStakeParameters)
+	}
 	return &l
 }
 
