@@ -327,15 +327,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	app.stats.IncTotalCreateOrder()
 
 	// Convert from proto to domain type
-	os, err := types.NewOrderSubmissionFromProto(s)
-	if err != nil {
-		if app.log.GetLevel() <= logging.DebugLevel {
-			app.log.Debug("Unable to convert OrderSubmission protobuf message to domain type",
-				logging.OrderSubmissionProto(s), logging.Error(err))
-		}
-		return err
-	}
-
+	os := types.NewOrderSubmissionFromProto(s)
 	// Submit the create order request to the execution engine
 	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
 	if conf != nil {
@@ -422,15 +414,7 @@ func (app *App) DeliverWithdraw(
 	}
 
 	// Convert protobuf to local domain type
-	ws, err := types.NewWithdrawSubmissionFromProto(w)
-	if err != nil {
-		if app.log.GetLevel() <= logging.DebugLevel {
-			app.log.Debug("Unable to convert WithdrawSubmission protobuf message to domain type",
-				logging.WithdrawSubmissionProto(w), logging.Error(err))
-		}
-		return err
-	}
-
+	ws := types.NewWithdrawSubmissionFromProto(w)
 	return app.processWithdraw(ctx, ws, id, tx.Party())
 }
 

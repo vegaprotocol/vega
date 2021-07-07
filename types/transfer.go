@@ -31,15 +31,12 @@ func (f *FinancialAmount) IntoProto() *proto.FinancialAmount {
 }
 
 func (t *Transfer) IntoProto() *proto.Transfer {
-	p := &proto.Transfer{
-		Owner:  t.Owner,
-		Amount: t.Amount.IntoProto(),
-		Type:   t.Type,
+	return &proto.Transfer{
+		Owner:     t.Owner,
+		Amount:    t.Amount.IntoProto(),
+		Type:      t.Type,
+		MinAmount: num.UintToUint64(t.MinAmount),
 	}
-	if t.MinAmount != nil {
-		p.MinAmount = t.MinAmount.Uint64()
-	}
-	return p
 }
 
 func (t *Transfer) String() string {
