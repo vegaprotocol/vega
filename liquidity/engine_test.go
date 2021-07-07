@@ -121,8 +121,8 @@ func testSubmissionCRUD(t *testing.T) {
 		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
 		Buys: pbBuys, Sells: pbSells,
 	}
-	lps := &types.LiquidityProvisionSubmission{}
-	lps.FromProto(lps1)
+	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
+	require.NoError(t, err)
 
 	expected := &types.LiquidityProvision{
 		Id:               "some-id-1",
@@ -156,7 +156,7 @@ func testSubmissionCRUD(t *testing.T) {
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 
-	_, err := tng.engine.CancelLiquidityProvision(ctx, party)
+	_, err = tng.engine.CancelLiquidityProvision(ctx, party)
 	require.NoError(t, err)
 	require.Nil(t, tng.engine.LiquidityProvisionByPartyID(party),
 		"Party '%s' should not be a LiquidityProvider after Committing 0 amount", party)
@@ -186,8 +186,9 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
 		},
 	}
-	lps := &types.LiquidityProvisionSubmission{}
-	lps.FromProto(lpspb)
+	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
+	require.NoError(t, err)
+
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
 	)
@@ -254,8 +255,8 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 			},
 		},
 	}
-	lps := &types.LiquidityProvisionSubmission{}
-	lps.FromProto(lpspb)
+	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
+	require.NoError(t, err)
 
 	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 		Id:               id,
@@ -295,8 +296,8 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 			},
 		},
 	}
-	lps = &types.LiquidityProvisionSubmission{}
-	lps.FromProto(lpspb)
+	lps, err = types.LiquidityProvisionSubmissionFromProto(lpspb)
+	require.NoError(t, err)
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 		Id:               id,
@@ -329,8 +330,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		CommitmentAmount: 10,
 		MarketId:         tng.marketID,
 	}
-	lps = &types.LiquidityProvisionSubmission{}
-	lps.FromProto(lpspb)
+	lps, _ = types.LiquidityProvisionSubmissionFromProto(lpspb)
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 		Id:               id,
@@ -376,8 +376,9 @@ func TestUpdate(t *testing.T) {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
 		},
 	}
-	lps := &types.LiquidityProvisionSubmission{}
-	lps.FromProto(lpspb)
+	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
+	require.NoError(t, err)
+
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
 	)
@@ -449,8 +450,8 @@ func TestCalculateSuppliedStake(t *testing.T) {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 1},
 		},
 	}
-	lp1 := &types.LiquidityProvisionSubmission{}
-	lp1.FromProto(lp1pb)
+	lp1, err := types.LiquidityProvisionSubmissionFromProto(lp1pb)
+	require.NoError(t, err)
 
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1"),
@@ -467,8 +468,8 @@ func TestCalculateSuppliedStake(t *testing.T) {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 3},
 		},
 	}
-	lp2 := &types.LiquidityProvisionSubmission{}
-	lp2.FromProto(lp2pb)
+	lp2, err := types.LiquidityProvisionSubmissionFromProto(lp2pb)
+	require.NoError(t, err)
 
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id2"),
@@ -486,8 +487,8 @@ func TestCalculateSuppliedStake(t *testing.T) {
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 1, Offset: 10},
 		},
 	}
-	lp3 := &types.LiquidityProvisionSubmission{}
-	lp3.FromProto(lp3pb)
+	lp3, err := types.LiquidityProvisionSubmissionFromProto(lp3pb)
+	require.NoError(t, err)
 
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id3"),
@@ -495,7 +496,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)
 
-	_, err := tng.engine.CancelLiquidityProvision(ctx, party1)
+	_, err = tng.engine.CancelLiquidityProvision(ctx, party1)
 	require.NoError(t, err)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)

@@ -18,6 +18,8 @@ var (
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
 	// ErrExpiresAtNotSet indicates price monitoring auction is endless somehow
 	ErrExpiresAtNotSet = errors.New("price monitoring auction with no end time")
+	// ErrNilPriceMonitoringSettings signals that nil was supplied in place of PriceMonitoringSettings
+	ErrNilPriceMonitoringSettings = errors.New("nil PriceMonitoringSettings")
 )
 
 // can't make this one constant...
@@ -100,9 +102,12 @@ type Engine struct {
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
-func NewMonitor(riskModel RangeProvider, settings types.PriceMonitoringSettings) (*Engine, error) {
+func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings) (*Engine, error) {
 	if riskModel == nil {
 		return nil, ErrNilRangeProvider
+	}
+	if settings == nil {
+		return nil, ErrNilPriceMonitoringSettings
 	}
 
 	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))

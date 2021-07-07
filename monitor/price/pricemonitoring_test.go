@@ -24,7 +24,7 @@ func TestEmptyParametersList(t *testing.T) {
 	currentPrice := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 
-	settings := types.PriceMonitoringSettings{
+	settings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
@@ -54,14 +54,13 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 
-	settings := types.PriceMonitoringSettings{}
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	pm, err := price.NewMonitor(nil, settings)
 	require.Error(t, err)
@@ -74,14 +73,13 @@ func TestGetHorizonYearFractions(t *testing.T) {
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 
-	settings := types.PriceMonitoringSettings{}
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
@@ -103,14 +101,13 @@ func TestRecordPriceChange(t *testing.T) {
 	t1 := proto.PriceMonitoringTrigger{Horizon: 7200, Probability: 0.95, AuctionExtension: 300}
 	t2 := proto.PriceMonitoringTrigger{Horizon: 3600, Probability: 0.99, AuctionExtension: 60}
 
-	settings := types.PriceMonitoringSettings{}
 	pSet := &proto.PriceMonitoringSettings{
 		Parameters: &proto.PriceMonitoringParameters{
 			Triggers: []*proto.PriceMonitoringTrigger{&t1, &t2},
 		},
 		UpdateFrequency: 600,
 	}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	cpDec := num.DecimalFromUint(currentPrice)
 	min, max := cpDec.Sub(num.DecimalFromFloat(10)), cpDec.Add(num.DecimalFromFloat(10))
@@ -151,8 +148,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 		},
 		UpdateFrequency: 600,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	maxDown1, maxUp1, maxDown2, maxUp2 := num.NewUint(1), num.NewUint(2), num.NewUint(3), num.NewUint(4)
 
@@ -506,8 +502,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	maxDown1, maxUp1 := num.NewUint(1), num.NewUint(2)
 	maxDown2 := num.Sum(maxUp1, maxUp1)   // yes, maxUp -> maxUp == maxDown*2, down2 == down1*4
@@ -581,8 +576,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	decPrice, pMin1, pMax1, _, maxUp1 := getPriceBounds(price1, 1, 2)
 	_, pMin2, pMax2, _, maxUp2 := getPriceBounds(price1, 1*4, 2*4)
@@ -648,8 +642,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 		},
 		UpdateFrequency: boundUpdateFrequency,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	ctx := context.Background()
 	decPrice, pMin1, pMax1, _, maxUp1 := getPriceBounds(price1, 1, 2)
 	_, pMin2, pMax2, _, maxUp2 := getPriceBounds(price1, 1*4, 2*4)
@@ -780,8 +773,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 		},
 		UpdateFrequency: 1,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	decPrice, pMin1, pMax1, _, _ := getPriceBounds(currentPrice, 10, 10)
 	ctx := context.Background()
@@ -814,8 +806,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 		},
 		UpdateFrequency: 1,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	decPrice, pMin, pMax, maxDown, maxUp := getPriceBounds(currentPrice, 5, 10)
 	one := num.NewUint(1)
@@ -870,7 +861,7 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	ctx := context.Background()
 
-	settings := types.PriceMonitoringSettings{
+	settings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
@@ -913,8 +904,7 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 		},
 		UpdateFrequency: 600,
 	}
-	settings := types.PriceMonitoringSettings{}
-	settings.FromProto(pSet)
+	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
 	ctx := context.Background()
 	decPr, pMin1, pMax1, maxDown1, maxUp1 := getPriceBounds(currentPrice, 1, 2)
