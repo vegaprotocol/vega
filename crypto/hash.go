@@ -25,10 +25,6 @@ func RandomStr(length int) string {
 	return string(b)
 }
 
-func RandomBytes(n int) []byte {
-	return []byte(RandomStr(n))
-}
-
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }

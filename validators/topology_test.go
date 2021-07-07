@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/validators"
@@ -13,7 +14,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/tendermint/tendermint/crypto"
+	tcrypto "github.com/tendermint/tendermint/crypto"
 )
 
 const (
@@ -34,8 +35,8 @@ func getTestTop(t *testing.T) *testTop {
 	ctrl := gomock.NewController(t)
 	wallet := mocks.NewMockWallet(ctrl)
 
-	hexkey, _ := hex.DecodeString(pubkey)
-	wallet.EXPECT().PubKeyOrAddress().Times(1).Return(hexkey)
+	bytesKey, _ := hex.DecodeString(pubkey)
+	wallet.EXPECT().PubKeyOrAddress().Times(1).Return(crypto.NewPublicKeyOrAddress(pubkey, bytesKey))
 
 	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet)
 
@@ -146,13 +147,13 @@ func testExists(t *testing.T) {
 }
 
 type testPubKey struct {
-	addr  crypto.Address
+	addr  tcrypto.Address
 	bytes []byte
 }
 
-func (t testPubKey) Address() crypto.Address { return t.addr }
+func (t testPubKey) Address() tcrypto.Address { return t.addr }
 
 func (t testPubKey) Bytes() []byte                           { return t.bytes }
 func (t testPubKey) VerifyBytes(msg []byte, sig []byte) bool { return true }
-func (t testPubKey) Equals(crypto.PubKey) bool               { return false }
+func (t testPubKey) Equals(tcrypto.PubKey) bool              { return false }
 func (t testPubKey) Type() string                            { return "test-pk" }

@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	crypto "code.vegaprotocol.io/vega/crypto"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,10 +34,10 @@ func (m *MockWallet) EXPECT() *MockWalletMockRecorder {
 }
 
 // PubKeyOrAddress mocks base method
-func (m *MockWallet) PubKeyOrAddress() []byte {
+func (m *MockWallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PubKeyOrAddress")
-	ret0, _ := ret[0].([]byte)
+	ret0, _ := ret[0].(crypto.PublicKeyOrAddress)
 	return ret0
 }
 
