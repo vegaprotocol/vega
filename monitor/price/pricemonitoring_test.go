@@ -24,7 +24,7 @@ func TestEmptyParametersList(t *testing.T) {
 	currentPrice := num.NewUint(123)
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 
-	settings := types.PriceMonitoringSettings{
+	settings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
@@ -62,7 +62,7 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
-	pm, err := price.NewMonitor(nil, *settings)
+	pm, err := price.NewMonitor(nil, settings)
 	require.Error(t, err)
 	require.Nil(t, pm)
 }
@@ -81,7 +81,7 @@ func TestGetHorizonYearFractions(t *testing.T) {
 	}
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -115,7 +115,7 @@ func TestRecordPriceChange(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -170,7 +170,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(16)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(16)
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -205,7 +205,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, *settings)
+	pm, err = price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now, true)
@@ -218,7 +218,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, *settings)
+	pm, err = price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -231,7 +231,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, *settings)
+	pm, err = price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now, true)
@@ -243,7 +243,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, *settings)
+	pm, err = price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now, true)
@@ -256,7 +256,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor(riskModel, *settings)
+	pm, err = price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(context.TODO(), auctionStateMock, currentPrice, 1, now, true)
@@ -523,7 +523,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 	auctionStateMock.EXPECT().IsPriceAuction().Return(true).AnyTimes()
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	err = pm.CheckPrice(ctx, auctionStateMock, price1, 1, now, true)
@@ -590,7 +590,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -666,7 +666,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(2)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(2)
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -783,7 +783,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	auctionStateMock.EXPECT().InAuction().Return(true).Times(1)
 	auctionStateMock.EXPECT().IsOpeningAuction().Return(true).Times(1)
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -823,7 +823,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	auctionStateMock.EXPECT().IsPriceAuction().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().CanLeave().Return(false).AnyTimes()
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -861,7 +861,7 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 	now := time.Date(1993, 2, 2, 6, 0, 0, 1, time.UTC)
 	ctx := context.Background()
 
-	settings := types.PriceMonitoringSettings{
+	settings := &types.PriceMonitoringSettings{
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
@@ -923,7 +923,7 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(12)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(12)
 
-	pm, err := price.NewMonitor(riskModel, *settings)
+	pm, err := price.NewMonitor(riskModel, settings)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
