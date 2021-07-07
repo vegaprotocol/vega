@@ -169,24 +169,24 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 			MarketPosition: mpos,
 			transfer:       nil,
 		}
-	} else {
-		settle := &types.Transfer{
-			Owner: owner,
-			Amount: &types.FinancialAmount{
-				Amount: mtmShare,
-				Asset:  e.product.GetAsset(),
-			},
-		}
+	}
 
-		if !neg {
-			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
-		} else {
-			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
-		}
-		return &mtmTransfer{
-			MarketPosition: mpos,
-			transfer:       settle,
-		}
+	settle := &types.Transfer{
+		Owner: owner,
+		Amount: &types.FinancialAmount{
+			Amount: mtmShare,
+			Asset:  e.product.GetAsset(),
+		},
+	}
+
+	if !neg {
+		settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
+	} else {
+		settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
+	}
+	return &mtmTransfer{
+		MarketPosition: mpos,
+		transfer:       settle,
 	}
 }
 
