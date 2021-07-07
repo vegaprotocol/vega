@@ -163,6 +163,33 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Unlock()
 }
 
+func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.MarketPosition, owner string) *mtmTransfer {
+	if mtmShare.IsZero() {
+		return &mtmTransfer{
+			MarketPosition: mpos,
+			transfer:       nil,
+		}
+	} else {
+		settle := &types.Transfer{
+			Owner: owner,
+			Amount: &types.FinancialAmount{
+				Amount: mtmShare,
+				Asset:  e.product.GetAsset(),
+			},
+		}
+
+		if !neg {
+			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
+		} else {
+			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
+		}
+		return &mtmTransfer{
+			MarketPosition: mpos,
+			transfer:       settle,
+		}
+	}
+}
+
 func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions []events.MarketPosition) []events.Transfer {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
 	e.mu.Lock()
@@ -189,34 +216,12 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			price: markPrice.Clone(),
 		}
 
-		if mtmShare.IsZero() {
-			wins = append(wins, &mtmTransfer{
-				MarketPosition: netMPos,
-				transfer:       nil,
-			})
-		} else {
-			settle := &types.Transfer{
-				Owner: types.NetworkParty,
-				Amount: &types.FinancialAmount{
-					Amount: mtmShare, // current delta -> mark price minus current position average
-					Asset:  e.product.GetAsset(),
-				},
-			}
+		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, netMPos, types.NetworkParty)
 
-			if !neg {
-				settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
-				wins = append(wins, &mtmTransfer{
-					MarketPosition: netMPos,
-					transfer:       settle,
-				})
-			} else {
-				// losses are prepended
-				settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
-				transfers = append(transfers, &mtmTransfer{
-					MarketPosition: netMPos,
-					transfer:       settle,
-				})
-			}
+		if mtmShare.IsZero() || !neg {
+			wins = append(wins, mtmTransfer)
+		} else {
+			transfers = append(transfers, mtmTransfer)
 		}
 	}
 
@@ -252,36 +257,13 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			// broke this up into its own func for symmetry
 			e.rmPosition(party)
 		}
-		// we don't need to create a transfer if there's no changes to the balance...
-		if mtmShare.IsZero() {
-			wins = append(wins, &mtmTransfer{
-				MarketPosition: current,
-				transfer:       nil,
-			})
 
-			continue
-		}
-		settle := &types.Transfer{
-			Owner: party,
-			Amount: &types.FinancialAmount{
-				Amount: mtmShare, // current delta -> mark price minus current position average
-				Asset:  e.product.GetAsset(),
-			},
-		}
+		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, current, current.Party())
 
-		if !neg {
-			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
-			wins = append(wins, &mtmTransfer{
-				MarketPosition: current,
-				transfer:       settle,
-			})
+		if mtmShare.IsZero() || !neg {
+			wins = append(wins, mtmTransfer)
 		} else {
-			// losses are prepended
-			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
-			transfers = append(transfers, &mtmTransfer{
-				MarketPosition: current,
-				transfer:       settle,
-			})
+			transfers = append(transfers, mtmTransfer)
 		}
 	}
 	// append wins after loss transfers
