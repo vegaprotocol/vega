@@ -138,19 +138,17 @@ type VoteSubmission struct {
 }
 
 func NewVoteSubmissionFromProto(p *commandspb.VoteSubmission) *VoteSubmission {
-	vs := VoteSubmission{
+	return &VoteSubmission{
 		ProposalId: p.ProposalId,
 		Value:      p.Value,
 	}
-	return &vs
 }
 
 func (v VoteSubmission) IntoProto() *commandspb.VoteSubmission {
-	vs := commandspb.VoteSubmission{
+	return &commandspb.VoteSubmission{
 		ProposalId: v.ProposalId,
 		Value:      v.Value,
 	}
-	return &vs
 }
 
 func (v VoteSubmission) String() string {
@@ -172,19 +170,21 @@ func ProposalSubmissionFromProposal(p *Proposal) *ProposalSubmission {
 }
 
 func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalSubmission {
-	ps := ProposalSubmission{
+	return &ProposalSubmission{
 		Reference: p.Reference,
 		Terms:     ProposalTermsFromProto(p.Terms),
 	}
-	return &ps
 }
 
-func (p ProposalSubmission) IntoProto() (*commandspb.ProposalSubmission, error) {
-	ps := commandspb.ProposalSubmission{
-		Reference: p.Reference,
-		Terms:     p.Terms.IntoProto(),
+func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
+	var terms *proto.ProposalTerms
+	if p.Terms != nil {
+		terms = p.Terms.IntoProto()
 	}
-	return &ps, nil
+	return &commandspb.ProposalSubmission{
+		Reference: p.Reference,
+		Terms:     terms,
+	}
 }
 
 type Proposal struct {
@@ -224,17 +224,12 @@ func (p Proposal) IntoProto() *proto.Proposal {
 }
 
 func (v Vote) IntoProto() *proto.Vote {
-	var totalGovernanceTokenBalance uint64
-	if v.TotalGovernanceTokenBalance != nil {
-		totalGovernanceTokenBalance = v.TotalGovernanceTokenBalance.Uint64()
-	}
-
 	return &proto.Vote{
 		PartyId:                     v.PartyID,
 		Value:                       v.Value,
 		ProposalId:                  v.ProposalID,
 		Timestamp:                   v.Timestamp,
-		TotalGovernanceTokenBalance: totalGovernanceTokenBalance,
+		TotalGovernanceTokenBalance: num.UintToUint64(v.TotalGovernanceTokenBalance),
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
 	}
 }
@@ -248,15 +243,18 @@ type NewMarketCommitment struct {
 }
 
 func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommitment, error) {
-	var err error
-	l := NewMarketCommitment{}
-	l.CommitmentAmount = num.NewUint(p.CommitmentAmount)
-	l.Fee, err = num.DecimalFromString(p.Fee)
+	fee, err := num.DecimalFromString(p.Fee)
 	if err != nil {
 		return nil, err
 	}
+	l := NewMarketCommitment{
+		CommitmentAmount: num.NewUint(p.CommitmentAmount),
+		Fee:              fee,
+		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
+		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
+		Reference:        p.Reference,
+	}
 
-	l.Sells = make([]*LiquidityOrder, 0, len(p.Sells))
 	for _, sell := range p.Sells {
 		order := &LiquidityOrder{
 			Reference:  sell.Reference,
@@ -266,7 +264,6 @@ func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommi
 		l.Sells = append(l.Sells, order)
 	}
 
-	l.Buys = make([]*LiquidityOrder, 0, len(p.Buys))
 	for _, buy := range p.Buys {
 		order := &LiquidityOrder{
 			Reference:  buy.Reference,
@@ -275,7 +272,6 @@ func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommi
 		}
 		l.Buys = append(l.Buys, order)
 	}
-	l.Reference = p.Reference
 
 	return &l, nil
 }
@@ -555,13 +551,12 @@ func ProposalTermsFromProto(p *proto.ProposalTerms) *ProposalTerms {
 		}
 	}
 
-	r := &ProposalTerms{
+	return &ProposalTerms{
 		ClosingTimestamp:    p.ClosingTimestamp,
 		EnactmentTimestamp:  p.EnactmentTimestamp,
 		ValidationTimestamp: p.ValidationTimestamp,
 		Change:              change,
 	}
-	return r
 }
 
 func NewNewMarketFromProto(p *proto.ProposalTerms_NewMarket) *ProposalTerms_NewMarket {
@@ -814,12 +809,8 @@ func (n NewAsset) DeepClone() *NewAsset {
 }
 
 func (n NewMarketCommitment) IntoProto() *proto.NewMarketCommitment {
-	var commitment uint64
-	if n.CommitmentAmount != nil {
-		commitment = n.CommitmentAmount.Uint64()
-	}
 	r := &proto.NewMarketCommitment{
-		CommitmentAmount: commitment,
+		CommitmentAmount: num.UintToUint64(n.CommitmentAmount),
 		Fee:              n.Fee.String(),
 		Sells:            make([]*proto.LiquidityOrder, 0, len(n.Sells)),
 		Buys:             make([]*proto.LiquidityOrder, 0, len(n.Buys)),

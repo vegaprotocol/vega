@@ -1,7 +1,6 @@
 package fee
 
 import (
-	"context"
 	"errors"
 	"sort"
 
@@ -74,9 +73,8 @@ func (e *Engine) UpdateFeeFactors(fees types.Fees) error {
 	return nil
 }
 
-func (e *Engine) SetLiquidityFee(v num.Decimal) error {
+func (e *Engine) SetLiquidityFee(v num.Decimal) {
 	e.f.liquidityFee = v
-	return nil
 }
 
 // CalculateForContinuousMode calculate the fee for
@@ -293,7 +291,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	trades []*types.Trade,
 	// the positions of the traders being closed out.
 	closedMPs []events.MarketPosition,
-) (events.FeesTransfer, map[string]*types.Fee, error) {
+) (events.FeesTransfer, map[string]*types.Fee) {
 	var (
 		totalFeesAmounts = map[string]*num.Uint{}
 		partiesFees      = map[string]*types.Fee{}
@@ -376,7 +374,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	return &feesTransfer{
 		totalFeesAmountsPerParty: totalFeesAmounts,
 		transfers:                transfers,
-	}, partiesFees, nil
+	}, partiesFees
 }
 
 // BuildLiquidityFeeDistributionTransfer returns the set of transfers that will
@@ -556,16 +554,14 @@ func (f *feesTransfer) TotalFeesAmountPerParty() map[string]*num.Uint {
 }
 func (f *feesTransfer) Transfers() []*types.Transfer { return f.transfers }
 
-func (e *Engine) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f num.Decimal) error {
+func (e *Engine) OnFeeFactorsMakerFeeUpdate(f num.Decimal) {
 	e.feeCfg.Factors.MakerFee = f
 	e.f.makerFee = f
-	return nil
 }
 
-func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f num.Decimal) error {
+func (e *Engine) OnFeeFactorsInfrastructureFeeUpdate(f num.Decimal) {
 	e.feeCfg.Factors.InfrastructureFee = f
 	e.f.infrastructureFee = f
-	return nil
 }
 
 func (e *Engine) GetLiquidityFee() num.Decimal {

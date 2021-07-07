@@ -22,14 +22,12 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 	}
 	switch tv := tx.(type) {
 	case *types.ProposalSubmission:
-		ptv, _ := tv.IntoProto()
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
-			Proposal: ptv,
+			Proposal: tv.IntoProto(),
 		}
 	case types.ProposalSubmission:
-		ptv, _ := (&tv).IntoProto()
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Proposal{
-			Proposal: ptv,
+			Proposal: tv.IntoProto(),
 		}
 	case *types.VoteSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_VoteSubmission{

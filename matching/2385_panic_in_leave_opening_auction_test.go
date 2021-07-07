@@ -105,8 +105,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 	}
 
 	// enter auction, should return no error and no orders
-	cnlorders, err := book.EnterAuction()
-	assert.NoError(t, err)
+	cnlorders := book.EnterAuction()
 	assert.Len(t, cnlorders, 0)
 
 	for _, o := range orders {

@@ -135,8 +135,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 }
 
 func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket {
-	collateralEngine, err := collateral.New(tm.log, collateral.NewDefaultConfig(), tm.broker, tm.now)
-	require.NoError(tm.t, err)
+	collateralEngine := collateral.New(tm.log, collateral.NewDefaultConfig(), tm.broker, tm.now)
 	var assets = tm.Assets
 	if len(assets) == 0 {
 		assets = defaultCollateralAssets
@@ -271,8 +270,7 @@ func getTestMarket2(
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(handleEvent)
 
-	collateralEngine, err := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
-	assert.Nil(t, err)
+	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	collateralEngine.EnableAsset(context.Background(), types.Asset{
 		Id: "ETH",
 		Details: &types.AssetDetails{

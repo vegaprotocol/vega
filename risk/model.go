@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/risk/models"
 	"code.vegaprotocol.io/vega/types/num"
 
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -29,7 +28,7 @@ type Model interface {
 }
 
 // NewModel instantiate a new risk model from a market framework configuration
-func NewModel(log *logging.Logger, prm interface{}, asset string) (Model, error) {
+func NewModel(prm interface{}, asset string) (Model, error) {
 	if prm == nil {
 		return nil, ErrNilRiskModel
 	}

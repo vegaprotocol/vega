@@ -21,14 +21,10 @@ func (a Account) String() string {
 }
 
 func (a *Account) IntoProto() *proto.Account {
-	var balance uint64
-	if a.Balance != nil {
-		balance = a.Balance.Uint64()
-	}
 	return &proto.Account{
 		Id:       a.Id,
 		Owner:    a.Owner,
-		Balance:  balance,
+		Balance:  num.UintToUint64(a.Balance),
 		Asset:    a.Asset,
 		MarketId: a.MarketId,
 		Type:     a.Type,
@@ -58,8 +54,8 @@ func (t *TransferRequest) IntoProto() *proto.TransferRequest {
 	return &proto.TransferRequest{
 		FromAccount: Accounts(t.FromAccount).IntoProto(),
 		ToAccount:   Accounts(t.ToAccount).IntoProto(),
-		Amount:      t.Amount.Uint64(),
-		MinAmount:   t.MinAmount.Uint64(),
+		Amount:      num.UintToUint64(t.Amount),
+		MinAmount:   num.UintToUint64(t.MinAmount),
 		Asset:       t.Asset,
 		Reference:   t.Reference,
 	}
@@ -126,7 +122,7 @@ func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
 	return &proto.LedgerEntry{
 		FromAccount: l.FromAccount,
 		ToAccount:   l.ToAccount,
-		Amount:      l.Amount.Uint64(),
+		Amount:      num.UintToUint64(l.Amount),
 		Reference:   l.Reference,
 		Type:        l.Type,
 		Timestamp:   l.Timestamp,

@@ -59,16 +59,24 @@ type ERC20 struct {
 }
 
 func (a Asset) IntoProto() *proto.Asset {
+	var details *proto.AssetDetails
+	if a.Details != nil {
+		details = a.Details.IntoProto()
+	}
 	return &proto.Asset{
 		Id:      a.Id,
-		Details: a.Details.IntoProto(),
+		Details: details,
 	}
 }
 
 func AssetFromProto(p *proto.Asset) *Asset {
+	var details *AssetDetails
+	if p.Details != nil {
+		details = AssetDetailsFromProto(p.Details)
+	}
 	return &Asset{
 		Id:      p.Id,
-		Details: AssetDetailsFromProto(p.Details),
+		Details: details,
 	}
 }
 
@@ -77,21 +85,12 @@ func (a AssetDetails) String() string {
 }
 
 func (a AssetDetails) IntoProto() *proto.AssetDetails {
-	totalSupply := "0"
-	if a.TotalSupply != nil {
-		totalSupply = a.TotalSupply.String()
-	}
-	minLpStake := "0"
-	if a.MinLpStake != nil {
-		minLpStake = a.MinLpStake.String()
-	}
-
 	r := &proto.AssetDetails{
 		Name:        a.Name,
 		Symbol:      a.Symbol,
-		TotalSupply: totalSupply,
+		TotalSupply: num.UintToString(a.TotalSupply),
 		Decimals:    a.Decimals,
-		MinLpStake:  minLpStake,
+		MinLpStake:  num.UintToString(a.MinLpStake),
 	}
 	if a.Source == nil {
 		return r

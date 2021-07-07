@@ -442,10 +442,9 @@ func testCalcPositionResolution(t *testing.T) {
 		fakeMktPos{party: "bad-party4", size: 10},
 	}
 
-	ft, partiesFee, err := eng.CalculateFeeForPositionResolution(trades, positions)
+	ft, partiesFee := eng.CalculateFeeForPositionResolution(trades, positions)
 	assert.NotNil(t, ft)
 	assert.NotNil(t, partiesFee)
-	assert.Nil(t, err)
 
 	// get the amounts map
 	feeAmounts := ft.TotalFeesAmountPerParty()

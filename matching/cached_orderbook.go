@@ -23,7 +23,7 @@ func NewCachedOrderBook(
 	}
 }
 
-func (b *CachedOrderBook) EnterAuction() ([]*types.Order, error) {
+func (b *CachedOrderBook) EnterAuction() []*types.Order {
 	b.cache.Invalidate()
 	return b.OrderBook.EnterAuction()
 }

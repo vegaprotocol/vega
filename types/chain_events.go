@@ -155,22 +155,24 @@ type BuiltinAssetDeposit struct {
 	Amount *num.Uint
 }
 
-func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
-	b := BuiltinAssetDeposit{
+func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) *BuiltinAssetDeposit {
+	return &BuiltinAssetDeposit{
 		VegaAssetID: p.VegaAssetId,
 		PartyID:     p.PartyId,
 		Amount:      num.NewUint(p.Amount),
 	}
-	return &b, nil
 }
 
 func (b BuiltinAssetDeposit) IntoProto() *proto.BuiltinAssetDeposit {
-	bd := &proto.BuiltinAssetDeposit{
+	var amount uint64
+	if b.Amount != nil {
+		amount = b.Amount.Uint64()
+	}
+	return &proto.BuiltinAssetDeposit{
 		VegaAssetId: b.VegaAssetID,
 		PartyId:     b.PartyID,
-		Amount:      b.Amount.Uint64(),
+		Amount:      amount,
 	}
-	return bd
 }
 
 func (b BuiltinAssetDeposit) String() string {
@@ -190,22 +192,20 @@ type BuiltinAssetWithdrawal struct {
 	Amount *num.Uint
 }
 
-func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
-	b := BuiltinAssetWithdrawal{
+func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) *BuiltinAssetWithdrawal {
+	return &BuiltinAssetWithdrawal{
 		VegaAssetId: p.VegaAssetId,
 		PartyId:     p.PartyId,
 		Amount:      num.NewUint(p.Amount),
 	}
-	return &b, nil
 }
 
 func (b BuiltinAssetWithdrawal) IntoProto() *proto.BuiltinAssetWithdrawal {
-	bd := &proto.BuiltinAssetWithdrawal{
+	return &proto.BuiltinAssetWithdrawal{
 		VegaAssetId: b.VegaAssetId,
 		PartyId:     b.PartyId,
-		Amount:      b.Amount.Uint64(),
+		Amount:      num.UintToUint64(b.Amount),
 	}
-	return bd
 }
 
 func (b BuiltinAssetWithdrawal) String() string {
@@ -255,19 +255,12 @@ type builtinAssetEventAction interface {
 
 func NewBuiltinAssetEventFromProto(p *proto.BuiltinAssetEvent) (*BuiltinAssetEvent, error) {
 	ae := &BuiltinAssetEvent{}
-	var err error
 	switch e := p.Action.(type) {
 	case *proto.BuiltinAssetEvent_Deposit:
-		ae.Action, err = NewBuiltinAssetEventDeposit(e)
-		if err != nil {
-			return nil, err
-		}
+		ae.Action = NewBuiltinAssetEventDeposit(e)
 		return ae, nil
 	case *proto.BuiltinAssetEvent_Withdrawal:
-		ae.Action, err = NewBuiltinAssetEventWithdrawal(e)
-		if err != nil {
-			return nil, err
-		}
+		ae.Action = NewBuiltinAssetEventWithdrawal(e)
 		return ae, nil
 	default:
 		return nil, errors.New("unknown asset event type")
@@ -290,14 +283,10 @@ type BuiltinAssetEventDeposit struct {
 	Deposit *BuiltinAssetDeposit
 }
 
-func NewBuiltinAssetEventDeposit(p *proto.BuiltinAssetEvent_Deposit) (*BuiltinAssetEventDeposit, error) {
-	bd := BuiltinAssetEventDeposit{}
-	var err error
-	bd.Deposit, err = NewBuiltinAssetDepositFromProto(p.Deposit)
-	if err != nil {
-		return nil, err
+func NewBuiltinAssetEventDeposit(p *proto.BuiltinAssetEvent_Deposit) *BuiltinAssetEventDeposit {
+	return &BuiltinAssetEventDeposit{
+		Deposit: NewBuiltinAssetDepositFromProto(p.Deposit),
 	}
-	return &bd, nil
 }
 
 func (b BuiltinAssetEventDeposit) IntoProto() *proto.BuiltinAssetEvent_Deposit {
@@ -317,14 +306,10 @@ type BuiltinAssetEventWithdrawal struct {
 	Withdrawal *BuiltinAssetWithdrawal
 }
 
-func NewBuiltinAssetEventWithdrawal(p *proto.BuiltinAssetEvent_Withdrawal) (*BuiltinAssetEventWithdrawal, error) {
-	bd := BuiltinAssetEventWithdrawal{}
-	var err error
-	bd.Withdrawal, err = NewBuiltinAssetWithdrawalFromProto(p.Withdrawal)
-	if err != nil {
-		return nil, err
+func NewBuiltinAssetEventWithdrawal(p *proto.BuiltinAssetEvent_Withdrawal) *BuiltinAssetEventWithdrawal {
+	return &BuiltinAssetEventWithdrawal{
+		Withdrawal: NewBuiltinAssetWithdrawalFromProto(p.Withdrawal),
 	}
-	return &bd, nil
 }
 
 func (b BuiltinAssetEventWithdrawal) IntoProto() *proto.BuiltinAssetEvent_Withdrawal {
@@ -369,16 +354,10 @@ func NewERC20Event(p *proto.ERC20Event) (*ERC20Event, error) {
 	var err error
 	switch a := p.Action.(type) {
 	case *proto.ERC20Event_AssetDelist:
-		e.Action, err = NewERC20EventAssetDelist(a)
-		if err != nil {
-			return nil, err
-		}
+		e.Action = NewERC20EventAssetDelist(a)
 		return &e, nil
 	case *proto.ERC20Event_AssetList:
-		e.Action, err = NewERC20EventAssetList(a)
-		if err != nil {
-			return nil, err
-		}
+		e.Action = NewERC20EventAssetList(a)
 		return &e, nil
 	case *proto.ERC20Event_Deposit:
 		e.Action, err = NewERC20EventDeposit(a)
@@ -387,10 +366,7 @@ func NewERC20Event(p *proto.ERC20Event) (*ERC20Event, error) {
 		}
 		return &e, nil
 	case *proto.ERC20Event_Withdrawal:
-		e.Action, err = NewERC20EventWithdrawal(a)
-		if err != nil {
-			return nil, err
-		}
+		e.Action = NewERC20EventWithdrawal(a)
 		return &e, nil
 	default:
 		return nil, errors.New("unknown erc20 event type")
@@ -428,21 +404,16 @@ func (e ERC20EventAssetDelist) oneOfProto() interface{} {
 	return e.AssetDelist.IntoProto()
 }
 
-func NewERC20EventAssetDelist(p *proto.ERC20Event_AssetDelist) (*ERC20EventAssetDelist, error) {
-	e := ERC20EventAssetDelist{}
-	var err error
-	e.AssetDelist, err = NewERC20AssetDelistFromProto(p.AssetDelist)
-	if err != nil {
-		return nil, err
+func NewERC20EventAssetDelist(p *proto.ERC20Event_AssetDelist) *ERC20EventAssetDelist {
+	return &ERC20EventAssetDelist{
+		AssetDelist: NewERC20AssetDelistFromProto(p.AssetDelist),
 	}
-	return &e, nil
 }
 
 func (e ERC20EventAssetDelist) IntoProto() *proto.ERC20Event_AssetDelist {
-	p := proto.ERC20Event_AssetDelist{
+	return &proto.ERC20Event_AssetDelist{
 		AssetDelist: e.AssetDelist.IntoProto(),
 	}
-	return &p
 }
 
 type ERC20AssetDelist struct {
@@ -450,18 +421,16 @@ type ERC20AssetDelist struct {
 	VegaAssetId string
 }
 
-func NewERC20AssetDelistFromProto(p *proto.ERC20AssetDelist) (*ERC20AssetDelist, error) {
-	e := ERC20AssetDelist{
+func NewERC20AssetDelistFromProto(p *proto.ERC20AssetDelist) *ERC20AssetDelist {
+	return &ERC20AssetDelist{
 		VegaAssetId: p.VegaAssetId,
 	}
-	return &e, nil
 }
 
 func (e ERC20AssetDelist) IntoProto() *proto.ERC20AssetDelist {
-	erc := &proto.ERC20AssetDelist{
+	return &proto.ERC20AssetDelist{
 		VegaAssetId: e.VegaAssetId,
 	}
-	return erc
 }
 
 func (e ERC20AssetDelist) String() string {
@@ -477,21 +446,16 @@ func (e ERC20EventAssetList) oneOfProto() interface{} {
 	return e.AssetList.IntoProto()
 }
 
-func NewERC20EventAssetList(p *proto.ERC20Event_AssetList) (*ERC20EventAssetList, error) {
-	e := ERC20EventAssetList{}
-	var err error
-	e.AssetList, err = NewERC20AssetListFromProto(p.AssetList)
-	if err != nil {
-		return nil, err
+func NewERC20EventAssetList(p *proto.ERC20Event_AssetList) *ERC20EventAssetList {
+	return &ERC20EventAssetList{
+		AssetList: NewERC20AssetListFromProto(p.AssetList),
 	}
-	return &e, nil
 }
 
 func (e ERC20EventAssetList) IntoProto() *proto.ERC20Event_AssetList {
-	p := proto.ERC20Event_AssetList{
+	return &proto.ERC20Event_AssetList{
 		AssetList: e.AssetList.IntoProto(),
 	}
-	return &p
 }
 
 type ERC20AssetList struct {
@@ -499,18 +463,16 @@ type ERC20AssetList struct {
 	VegaAssetId string
 }
 
-func NewERC20AssetListFromProto(p *proto.ERC20AssetList) (*ERC20AssetList, error) {
-	e := ERC20AssetList{
+func NewERC20AssetListFromProto(p *proto.ERC20AssetList) *ERC20AssetList {
+	return &ERC20AssetList{
 		VegaAssetId: p.VegaAssetId,
 	}
-	return &e, nil
 }
 
 func (e ERC20AssetList) IntoProto() *proto.ERC20AssetList {
-	erc := &proto.ERC20AssetList{
+	return &proto.ERC20AssetList{
 		VegaAssetId: e.VegaAssetId,
 	}
-	return erc
 }
 
 func (e ERC20AssetList) String() string {
@@ -530,21 +492,16 @@ func (e ERC20EventWithdrawal) oneOfProto() interface{} {
 	return e.Withdrawal.IntoProto()
 }
 
-func NewERC20EventWithdrawal(p *proto.ERC20Event_Withdrawal) (*ERC20EventWithdrawal, error) {
-	e := ERC20EventWithdrawal{}
-	var err error
-	e.Withdrawal, err = NewERC20WithdrawalFromProto(p.Withdrawal)
-	if err != nil {
-		return nil, err
+func NewERC20EventWithdrawal(p *proto.ERC20Event_Withdrawal) *ERC20EventWithdrawal {
+	return &ERC20EventWithdrawal{
+		Withdrawal: NewERC20WithdrawalFromProto(p.Withdrawal),
 	}
-	return &e, nil
 }
 
 func (e ERC20EventWithdrawal) IntoProto() *proto.ERC20Event_Withdrawal {
-	p := proto.ERC20Event_Withdrawal{
+	return &proto.ERC20Event_Withdrawal{
 		Withdrawal: e.Withdrawal.IntoProto(),
 	}
-	return &p
 }
 
 type ERC20Withdrawal struct {
@@ -556,22 +513,20 @@ type ERC20Withdrawal struct {
 	ReferenceNonce string
 }
 
-func NewERC20WithdrawalFromProto(p *proto.ERC20Withdrawal) (*ERC20Withdrawal, error) {
-	e := ERC20Withdrawal{
+func NewERC20WithdrawalFromProto(p *proto.ERC20Withdrawal) *ERC20Withdrawal {
+	return &ERC20Withdrawal{
 		VegaAssetId:           p.VegaAssetId,
 		TargetEthereumAddress: p.TargetEthereumAddress,
 		ReferenceNonce:        p.ReferenceNonce,
 	}
-	return &e, nil
 }
 
 func (e ERC20Withdrawal) IntoProto() *proto.ERC20Withdrawal {
-	erc := &proto.ERC20Withdrawal{
+	return &proto.ERC20Withdrawal{
 		VegaAssetId:           e.VegaAssetId,
 		TargetEthereumAddress: e.TargetEthereumAddress,
 		ReferenceNonce:        e.ReferenceNonce,
 	}
-	return erc
 }
 
 func (e ERC20Withdrawal) String() string {
@@ -634,13 +589,12 @@ func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
 }
 
 func (e ERC20Deposit) IntoProto() *proto.ERC20Deposit {
-	erc := &proto.ERC20Deposit{
+	return &proto.ERC20Deposit{
 		VegaAssetId:           e.VegaAssetID,
 		SourceEthereumAddress: e.SourceEthereumAddress,
 		TargetPartyId:         e.TargetPartyID,
-		Amount:                e.Amount.String(),
+		Amount:                num.UintToString(e.Amount),
 	}
-	return erc
 }
 
 func (e ERC20Deposit) String() string {

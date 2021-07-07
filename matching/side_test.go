@@ -287,8 +287,7 @@ func TestExtractOrdersFullLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders, err := side.ExtractOrders(num.NewUint(100), 3)
-	assert.NoError(t, err)
+	orders := side.ExtractOrders(num.NewUint(100), 3)
 	assert.Len(t, side.levels, 1)
 	assert.Len(t, orders, 3)
 	assert.EqualValues(t, 3, side.getOrderCount())
@@ -299,8 +298,7 @@ func TestExtractOrdersPartialLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders, err := side.ExtractOrders(num.NewUint(100), 2)
-	assert.NoError(t, err)
+	orders := side.ExtractOrders(num.NewUint(100), 2)
 	assert.Len(t, side.levels, 2)
 	assert.Len(t, orders, 2)
 	assert.EqualValues(t, 4, side.getOrderCount())
@@ -311,8 +309,7 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 
 	assert.Len(t, side.levels, 2)
 
-	orders, err := side.ExtractOrders(num.NewUint(101), 5)
-	assert.NoError(t, err)
+	orders := side.ExtractOrders(num.NewUint(101), 5)
 	assert.Len(t, side.levels, 1)
 	assert.Len(t, orders, 5)
 	assert.EqualValues(t, 1, side.getOrderCount())

@@ -76,7 +76,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()
 	currentTime, _ := execsetup.timeService.GetTimeNow()
-	execsetup.collateralEngine, _ = collateral.New(
+	execsetup.collateralEngine = collateral.New(
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
 	execsetup.oracleEngine = oracles.NewEngine(

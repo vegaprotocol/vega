@@ -687,10 +687,7 @@ func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
 // EnterAuction : Prepare the order book to be run as an auction
 func (m *Market) EnterAuction(ctx context.Context) {
 	// Change market type to auction
-	ordersToCancel, err := m.matching.EnterAuction()
-	if err != nil {
-		m.log.Error("Error entering auction: ", logging.Error(err))
-	}
+	ordersToCancel := m.matching.EnterAuction()
 
 	// Move into auction mode to prevent pegged order repricing
 	event := m.as.AuctionStarted(ctx)
@@ -1637,15 +1634,8 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 	asset, _ := m.mkt.GetAsset()
 
 	// pay the fees now
-	fees, distressedPartiesFees, err := m.fee.CalculateFeeForPositionResolution(
+	fees, distressedPartiesFees := m.fee.CalculateFeeForPositionResolution(
 		confirmation.Trades, closedMPs)
-	if err != nil {
-		// this cannot fail, so we shall just panic for now, maybe remove
-		// the error later on
-		m.log.Panic("unable to calculate fees for positions resolutions",
-			logging.Error(err),
-			logging.String("market-id", m.GetID()))
-	}
 
 	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
 	if err != nil {
@@ -1688,14 +1678,7 @@ func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEv
 		m.broker.SendBatch(tradeEvts)
 	}
 
-	if err = m.zeroOutNetwork(ctx, closedMPs, &no, o, distressedPartiesFees); err != nil {
-		// FIXME(): the method always returns nil,
-		// no change we get an error here.
-		m.log.Panic(
-			"Failed to create closing order with distressed traders",
-			logging.Error(err),
-		)
-	}
+	m.zeroOutNetwork(ctx, closedMPs, &no, o, distressedPartiesFees)
 
 	// swipe all accounts and stuff
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
@@ -1775,7 +1758,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 		Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
 		MinAmount: bacc.Balance.Clone(),
 	}
-	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, partyID, transfer)
+	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, transfer)
 	if err != nil {
 		return err
 	}
@@ -1784,7 +1767,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 	return nil
 }
 
-func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) error {
+func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1892,7 +1875,6 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 	if len(tradeEvts) > 0 {
 		m.broker.SendBatch(tradeEvts)
 	}
-	return nil
 }
 
 func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketPosition, order *types.Order) error {
@@ -2749,7 +2731,7 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 // create an actual risk model, and calculate the risk factors
 // if something goes wrong, return the hard-coded values of old
 func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *types.RiskResult {
-	rm, err := risk.NewModel(log, mkt.TradableInstrument.RiskModel, asset)
+	rm, err := risk.NewModel(mkt.TradableInstrument.RiskModel, asset)
 	// @TODO log this error
 	if err != nil {
 		return nil
