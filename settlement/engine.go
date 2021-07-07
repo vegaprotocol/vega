@@ -174,7 +174,7 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 	if neg {
 		typ = types.TransferType_TRANSFER_TYPE_MTM_LOSS
 	}
-	return &mtmTansfer{
+	return &mtmTransfer{
 		MarketPosition: mpos,
 		transfer: &types.Transfer{
 			Type:  typ,
