@@ -204,10 +204,6 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	// Process any network trades first
 	traded, hasTraded := trades[types.NetworkParty]
 	if hasTraded {
-		tradeset := make([]events.TradeSettlement, 0, len(traded))
-		for _, t := range traded {
-			tradeset = append(tradeset, t)
-		}
 		// don't create an event for the network. Its position is irrelevant
 
 		mtmShare, neg := calcMTM(markPrice, markPrice, 0, traded)
