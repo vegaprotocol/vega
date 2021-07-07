@@ -3,8 +3,8 @@ Feature: Fees Calculations
 Scenario: Fees Calculations
     
     And the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee | liquidity fee |
-      | 0.005     | 0.002              | 0.003         |
+      | maker fee | infrastructure fee |
+      | 0.005     | 0.002              |
     And the price monitoring updated every "1000" seconds named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
@@ -30,8 +30,8 @@ Scenario: Fees Calculations
       | trader  | asset | amount     |
       | aux1    | ETH   | 100000000  |
       | aux2    | ETH   | 100000000  |
-      | trader3 | ETH   | 100000000  |
-      | trader4 | ETH   | 100000000  |
+      | trader3 | ETH   | 10000  |
+      | trader4 | ETH   | 10000  |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -56,7 +56,7 @@ Scenario: Fees Calculations
 
     Then the traders should have the following account balances:
       | trader     | asset | market id | margin | general  |
-      | trader3    | ETH   | ETH/DEC21 | 721    | 99999279 |
+      | trader3    | ETH   | ETH/DEC21 | 720    | 9280 |
   
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
   # TODO to be implemented by Core Team
@@ -71,9 +71,22 @@ Scenario: Fees Calculations
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
-      | buyer   | price | size | seller  | maker   | taker   |
-      | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
+      # | buyer   | price | size | seller  | maker   | taker   |
+      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
+      # TODO to be implemented by Core Team
+      | buyer   | price | size | seller  |
+      | trader3 | 1002  | 3    | trader4 |
+
+    Then the traders should have the following account balances:
+      | trader     | asset | market id | margin | general |
+      | trader3    | ETH   | ETH/DEC21 | 1089   | 8927 | 
+      | trader4    | ETH   | ETH/DEC21 | 657    | 9320 | 
         
+    # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
+    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 3006 = 6.012 = 7 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 3006 = 15.030 = 16 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0 * 3006 = 0
+    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
       
 # Scenario: Fees Calculations
 
@@ -84,4 +97,4 @@ Scenario: Fees Calculations
 #   maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes
 #   liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes
 #   total_fee = infrastructure_fee + maker_fee + liquidity_fee
-#   trade_value_for_fee_purposes = = size_of_trade * price_of_trade
+#   trade_value_for_fee_purposes = size_of_trade * price_of_trade
