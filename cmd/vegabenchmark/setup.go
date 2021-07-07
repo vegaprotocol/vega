@@ -63,16 +63,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
 
-	collateral, err := collateral.New(
+	collateral := collateral.New(
 		log,
 		collateral.NewDefaultConfig(),
 		broker,
 		time.Time{},
 	)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	assets, err := assets.New(
 		log,
 		assets.NewDefaultConfig(),
@@ -131,7 +127,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	bstats := stats.NewBlockchain()
 
-	app, err := processor.NewApp(
+	app := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
 		func() {},
@@ -148,16 +144,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		bstats,
 		timeService,
 		topology,
-		nodeWallet,
 		netparams,
 		&processor.Oracle{
 			Engine:   oraclesM,
 			Adaptors: oraclesAdaptors,
 		},
 	)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)
 	if err != nil {

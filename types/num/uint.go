@@ -370,3 +370,21 @@ func (u Uint) Format(s fmt.State, ch rune) {
 func (u Uint) Bytes() [32]byte {
 	return u.u.Bytes32()
 }
+
+// UintToUint64 convert a uint to uint64
+// return 0 if nil
+func UintToUint64(u *Uint) uint64 {
+	if u != nil {
+		return u.Uint64()
+	}
+	return 0
+}
+
+// UintToUint64 convert a uint to uint64
+// return "0" if nil
+func UintToString(u *Uint) string {
+	if u != nil {
+		return u.String()
+	}
+	return "0"
+}

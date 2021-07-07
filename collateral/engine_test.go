@@ -2328,8 +2328,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	broker.EXPECT().Send(gomock.Any()).Times(10)
 	// system accounts created
 
-	eng, err := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
-	assert.Nil(t, err)
+	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
 
 	// add the token asset
 	tokAsset := types.Asset{
@@ -2344,7 +2343,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			},
 		},
 	}
-	err = eng.EnableAsset(context.Background(), tokAsset)
+	err := eng.EnableAsset(context.Background(), tokAsset)
 	assert.NoError(t, err)
 
 	// enable the assert for the tests

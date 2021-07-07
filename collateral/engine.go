@@ -82,7 +82,7 @@ type Engine struct {
 }
 
 // New instantiates a new collateral engine
-func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engine, error) {
+func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -96,7 +96,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) (*Engin
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
-	}, nil
+	}
 }
 
 // OnChainTimeUpdate is used to be specified as a callback in over services

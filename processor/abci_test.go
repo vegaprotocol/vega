@@ -48,7 +48,7 @@ func (s *AbciTestSuite) signedTx(t *testing.T, tx *types.Transaction, key crypto
 	return stx
 }
 
-func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
+func (s *AbciTestSuite) newApp(proc *procTest) *processor.App {
 	return processor.NewApp(
 		logging.NewTestLogger(),
 		processor.NewDefaultConfig(),
@@ -66,7 +66,6 @@ func (s *AbciTestSuite) newApp(proc *procTest) (*processor.App, error) {
 		proc.stat,
 		proc.ts,
 		proc.top,
-		proc.wallet,
 		proc.netp,
 		&processor.Oracle{
 			Engine:   proc.oracles.Engine,
@@ -331,9 +330,7 @@ func TestAbci(t *testing.T) {
 			proc := getTestProcessor(t)
 			defer proc.ctrl.Finish()
 
-			app, err := s.newApp(proc)
-			require.NoError(t, err)
-
+			app := s.newApp(proc)
 			test.fn(t, app, proc)
 		})
 	}

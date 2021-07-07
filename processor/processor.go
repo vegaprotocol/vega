@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
-	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
@@ -91,11 +90,6 @@ type Stats interface {
 	SetTotalTxCurrentBatch(i uint64)
 	TotalTxCurrentBatch() uint64
 	TotalTxLastBatch() uint64
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/processor Wallet
-type Wallet interface {
-	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets

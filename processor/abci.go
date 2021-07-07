@@ -76,10 +76,9 @@ func NewApp(
 	stats Stats,
 	time TimeService,
 	top ValidatorTopology,
-	wallet Wallet,
 	netp NetworkParameters,
 	oracles *Oracle,
-) (*App, error) {
+) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
@@ -141,7 +140,7 @@ func NewApp(
 
 	app.time.NotifyOnTick(app.onTick)
 
-	return app, nil
+	return app
 }
 
 // addDeterministicID will build the command id and .

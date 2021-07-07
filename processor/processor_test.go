@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/processor/mocks"
 
 	"github.com/golang/mock/gomock"
@@ -18,7 +17,6 @@ type procTest struct {
 	tickCB  func(context.Context, time.Time)
 	ctrl    *gomock.Controller
 	cmd     *mocks.MockCommander
-	wallet  *mocks.MockWallet
 	assets  *mocks.MockAssets
 	top     *mocks.MockValidatorTopology
 	gov     *mocks.MockGovernanceEngine
@@ -48,7 +46,6 @@ func getTestProcessor(t *testing.T) *procTest {
 	ts := mocks.NewMockTimeService(ctrl)
 	stat := mocks.NewMockStats(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
-	wallet := mocks.NewMockWallet(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	gov := mocks.NewMockGovernanceEngine(ctrl)
@@ -66,9 +63,6 @@ func getTestProcessor(t *testing.T) *procTest {
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(context.Context, time.Time)) {
 		cb = c
 	})
-	wal := getTestStubWallet()
-	wallet.EXPECT().Get(nodewallet.Vega).AnyTimes().Return(wal, true)
-	top.EXPECT().IsValidator().AnyTimes().Return(true)
 
 	return &procTest{
 		eng:     eng,
@@ -77,7 +71,6 @@ func getTestProcessor(t *testing.T) *procTest {
 		tickCB:  cb,
 		ctrl:    ctrl,
 		cmd:     cmd,
-		wallet:  wallet,
 		assets:  assets,
 		top:     top,
 		gov:     gov,
@@ -88,31 +81,4 @@ func getTestProcessor(t *testing.T) *procTest {
 		netp:    netp,
 		oracles: oracles,
 	}
-}
-
-func getTestStubWallet() *stubWallet {
-	return &stubWallet{
-		key:   []byte("test key"),
-		chain: string(nodewallet.Vega),
-	}
-}
-
-func (s stubWallet) Chain() string {
-	return s.chain
-}
-
-func (s stubWallet) Algo() string {
-	return "vega/ed25519"
-}
-
-func (s stubWallet) Version() uint32 {
-	return 1
-}
-
-func (s stubWallet) PubKeyOrAddress() []byte {
-	return s.key
-}
-
-func (s stubWallet) Sign(_ []byte) ([]byte, error) {
-	return s.signed, s.err
 }
