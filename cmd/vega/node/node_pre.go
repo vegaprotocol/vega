@@ -3,14 +3,10 @@ package node
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
 
 	"code.vegaprotocol.io/vega/rewards"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	oraclepb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -56,8 +52,6 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -108,10 +102,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
 
-	if err = l.loadMarketsConfig(); err != nil {
-		return err
-	}
-
 	// Set ulimits
 	if err = l.SetUlimits(); err != nil {
 		l.Log.Warn("Unable to set ulimits",
@@ -147,33 +137,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}
 
 	return l.nodeWallet.Verify()
-}
-
-func (l *NodeCommand) loadMarketsConfig() error {
-	pmkts := []proto.Market{}
-	mktsCfg := l.conf.Execution.Markets
-	// loads markets from configuration
-	for _, v := range mktsCfg.Configs {
-		path := filepath.Join(mktsCfg.Path, v)
-		buf, err := ioutil.ReadFile(path)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to read market configuration at %s", path))
-		}
-
-		mkt := proto.Market{}
-		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to unmarshal market configuration at %s", path))
-		}
-
-		l.Log.Info("New market loaded from configuation",
-			logging.String("market-config", path),
-			logging.String("market-id", mkt.Id))
-		pmkts = append(pmkts, mkt)
-	}
-	l.mktscfg = pmkts
-
-	return nil
 }
 
 func (l *NodeCommand) setupSubscibers() {
@@ -266,30 +229,6 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 		}
 	}
 
-	// then we load the markets
-	if len(l.mktscfg) > 0 {
-		for _, mkt := range l.mktscfg {
-			mkt := mkt
-
-			// hot fix: attribute an ID to oracle spec to avoid blank ID
-			specForSettlementPrice := mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice
-			specForSettlementPriceWithID := oraclepb.NewOracleSpec(specForSettlementPrice.PubKeys, specForSettlementPrice.Filters)
-
-			specForTradingTermination := mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination
-			specForTradingTerminationWithID := oraclepb.NewOracleSpec(specForTradingTermination.PubKeys, specForTradingTermination.Filters)
-
-			mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice = specForSettlementPriceWithID
-			mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination = specForTradingTerminationWithID
-			// end of hot fix
-
-			err = l.executionEngine.SubmitMarket(l.ctx, types.MarketFromProto(&mkt))
-			if err != nil {
-				l.Log.Panic("Unable to submit market",
-					logging.Error(err))
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -332,15 +271,6 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 
 	l.Log.Info("new asset added successfully",
 		logging.String("asset", asset.String()))
-
-	// FIXME: this will be remove once we stop loading market from config
-	// here we replace the mkts assets symbols with ids
-	for _, v := range l.mktscfg {
-		sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
-		if sym == assetD.Details.Symbol {
-			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.ID
-		}
-	}
 
 	return nil
 }

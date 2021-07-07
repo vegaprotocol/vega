@@ -155,8 +155,6 @@ type NodeCommand struct {
 	limits          *limits.Engine
 	rewards         *rewards.Engine
 
-	mktscfg []types.Market
-
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
 
