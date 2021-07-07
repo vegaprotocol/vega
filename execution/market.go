@@ -107,6 +107,7 @@ type LiquidityMonitor interface {
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint
+	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint
 	UpdateScalingFactor(sFactor num.Decimal) error
 	UpdateTimeWindow(tWindow time.Duration)
 }
@@ -264,12 +265,12 @@ func NewMarket(
 		riskConfig,
 		tradableInstrument.MarginCalculator,
 		tradableInstrument.RiskModel,
-		getInitialFactors(log, mkt, asset),
 		book,
 		as,
 		broker,
 		now.UnixNano(),
 		mkt.GetId(),
+		asset,
 	)
 	settleEngine := settlement.New(
 		log,
@@ -406,6 +407,13 @@ func (m *Market) GetMarketData() types.MarketData {
 		staticMidPrice = staticMidPrice.Div(num.Sum(bestStaticBidPrice, bestStaticOfferPrice), two)
 	}
 
+	var targetStake string
+	if m.as.InAuction() {
+		targetStake = m.getTheoreticalTargetStake().String()
+	} else {
+		targetStake = m.getTargetStake().String()
+	}
+
 	return types.MarketData{
 		Market:                    m.GetID(),
 		BestBidPrice:              bestBidPrice,
@@ -428,7 +436,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketTradingMode:         m.as.Mode(),
 		Trigger:                   m.as.Trigger(),
 		ExtensionTrigger:          m.as.ExtensionTrigger(),
-		TargetStake:               m.getTargetStake().String(),
+		TargetStake:               targetStake,
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
 		MarketValueProxy:          m.lastMarketValueProxy.String(),
@@ -2728,28 +2736,6 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 	return nil, false, ErrOrderNotFound
 }
 
-// create an actual risk model, and calculate the risk factors
-// if something goes wrong, return the hard-coded values of old
-func getInitialFactors(log *logging.Logger, mkt *types.Market, asset string) *types.RiskResult {
-	rm, err := risk.NewModel(mkt.TradableInstrument.RiskModel, asset)
-	// @TODO log this error
-	if err != nil {
-		return nil
-	}
-	if ok, fact := rm.CalculateRiskFactors(nil); ok {
-		return fact
-	}
-	// default to hard-coded risk factors
-	return &types.RiskResult{
-		RiskFactors: map[string]*types.RiskFactor{
-			asset: {Long: num.DecimalFromFloat(0.15), Short: num.DecimalFromFloat(0.25)},
-		},
-		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			asset: {Long: num.DecimalFromFloat(0.15), Short: num.DecimalFromFloat(0.25)},
-		},
-	}
-}
-
 func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 	a, err := m.mkt.GetAsset()
 	if err != nil {
@@ -2760,6 +2746,17 @@ func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
 		return nil, err
 	}
 	return rf, nil
+}
+
+func (m *Market) getTheoreticalTargetStake() *num.Uint {
+	rf, err := m.getRiskFactors()
+	if err != nil {
+		logging.Error(err)
+		m.log.Debug("unable to get risk factors, can't calculate target")
+		return num.Zero()
+	}
+	return m.tsCalc.GetTheoreticalTargetStake(
+		*rf, m.currentTime, m.getCurrentMarkPrice(), nil)
 }
 
 func (m *Market) getTargetStake() *num.Uint {
