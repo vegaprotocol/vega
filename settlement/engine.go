@@ -170,7 +170,6 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 			transfer:       nil,
 		}
 	}
-
 	settle := &types.Transfer{
 		Owner: owner,
 		Amount: &types.FinancialAmount{
