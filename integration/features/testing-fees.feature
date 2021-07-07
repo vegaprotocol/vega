@@ -1,6 +1,6 @@
 Feature: Fees Calculations
 
-Scenario: Fees Calculations
+Scenario: Testing fees in continuous trading with one trade and no liquidity providers
     
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -50,7 +50,7 @@ Scenario: Fees Calculations
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
       | 1000       | TRADING_MODE_CONTINUOUS |  
-    Then the traders place the following orders:
+    When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -76,25 +76,27 @@ Scenario: Fees Calculations
       # TODO to be implemented by Core Team
       | buyer   | price | size | seller  |
       | trader3 | 1002  | 3    | trader4 |
-
-    Then the traders should have the following account balances:
-      | trader     | asset | market id | margin | general |
-      | trader3    | ETH   | ETH/DEC21 | 1089   | 8927 | 
-      | trader4    | ETH   | ETH/DEC21 | 657    | 9320 | 
         
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 3006 = 6.012 = 7 (rounded up to nearest whole value)
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 3006 = 15.030 = 16 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0 * 3006 = 0
-    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
-      
-# Scenario: Fees Calculations
 
-# Given I have open orders on my account during cont. & auction sessions
-# When the order gets matched resulting in one or multple trades 
-# Then each fee is correctly calculated in settlement currency of the market as below
-#   infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes
-#   maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes
-#   liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes
-#   total_fee = infrastructure_fee + maker_fee + liquidity_fee
-#   trade_value_for_fee_purposes = size_of_trade * price_of_trade
+    And the following transfers should happen:
+      | from    | to      | from account            | to account                       | market id | amount | asset |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 16     | ETH   |
+      | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 0      | ETH   |
+      | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 16     | ETH   |  
+    
+    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 7 + 16 + 0 = 23
+    # Trader3 margin + general account balance = 10000 + 16 ( Maker fees) = 10016
+    # Trader4 margin + general account balance = 10000 - 16 ( Maker fees) - 7 (Infra fee) = 99977
+
+    Then the traders should have the following account balances:
+      | trader     | asset | market id | margin | general |
+      | trader3    | ETH   | ETH/DEC21 | 1089   | 8927 | 
+      | trader4    | ETH   | ETH/DEC21 | 657    | 9320 | 
+      
+    # And the accumulated infrastructure fee should be "7" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
