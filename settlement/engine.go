@@ -426,10 +426,11 @@ type lastMarkPriceSettlement struct {
 }
 
 func (l *lastMarkPriceSettlement) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, bool, error) {
+	amt, neg := num.Zero().Delta(l.markPrice, entryPrice)
 	if netPosition < 0 {
 		netPosition *= -1
+		neg = !neg
 	}
-	amt, neg := num.Zero().Delta(l.markPrice, entryPrice)
 	amt = amt.Mul(amt, num.NewUint(uint64(netPosition)))
 	return &types.FinancialAmount{
 		Asset:  l.asset,

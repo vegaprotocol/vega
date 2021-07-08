@@ -58,18 +58,19 @@ func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (amt *types.Fin
 		return nil, false, err
 	}
 
+	amount, neg := settlementPrice.Delta(settlementPrice, entryPrice)
 	// Make sure net position is positive
 	if netPosition < 0 {
 		netPosition = -netPosition
+		neg = !neg
 	}
 
-	amount, _ := settlementPrice.Delta(settlementPrice, entryPrice)
 	amount = amount.Mul(amount, num.NewUint(uint64(netPosition)))
 
 	return &types.FinancialAmount{
 		Asset:  f.SettlementAsset,
 		Amount: amount,
-	}, false, nil
+	}, neg, nil
 }
 
 // Value - returns the nominal value of a unit given a current mark price
