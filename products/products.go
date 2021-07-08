@@ -27,7 +27,7 @@ type OracleEngine interface {
 
 // Product is the interface provided by all product in vega
 type Product interface {
-	Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error)
+	Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error)
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 }

@@ -52,10 +52,10 @@ type oracleBinding struct {
 }
 
 // Settle a position against the future
-func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error) {
+func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error) {
 	settlementPrice, err := f.oracle.data.SettlementPrice()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// Make sure net position is positive
@@ -69,7 +69,7 @@ func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (*types.Financi
 	return &types.FinancialAmount{
 		Asset:  f.SettlementAsset,
 		Amount: amount,
-	}, nil
+	}, false, nil
 }
 
 // Value - returns the nominal value of a unit given a current mark price
