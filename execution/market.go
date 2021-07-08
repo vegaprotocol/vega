@@ -84,7 +84,7 @@ var (
 	// ErrCannotRepriceDuringAuction
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
 
-	networkPartyID = "network"
+	networkPartyID = types.NetworkParty
 )
 
 // PriceMonitor interface to handle price monitoring/auction triggers

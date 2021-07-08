@@ -17,6 +17,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testEngine struct {
@@ -53,6 +54,7 @@ func TestMarkToMarket(t *testing.T) {
 	t.Run("Trade adds new trader to market, no MTM settlement because markPrice is the same", testAddNewTrader)
 	// add this test case because we had a runtime panic on the trades map earlier
 	t.Run("Trade adds new trader, immediately closing out with themselves", testAddNewTraderSelfTrade)
+	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
 }
 
 func testSettleExpiredSuccess(t *testing.T) {
@@ -443,6 +445,92 @@ func testMarkToMarketOrdered(t *testing.T) {
 		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
 		assert.Equal(t, "trader2", transfers[0].Party()) // we expect trader2 to have a loss
 	}
+}
+
+func testMTMNetworkZero(t *testing.T) {
+	t.Skip("not implemented yet")
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	markPrice := num.NewUint(1000)
+	init := []events.MarketPosition{
+		testPos{
+			price: markPrice.Clone(),
+			party: "trader1",
+			size:  5,
+		},
+		testPos{
+			price: markPrice.Clone(),
+			party: "trader2",
+			size:  -5,
+		},
+		testPos{
+			price: markPrice.Clone(),
+			party: "trader3",
+			size:  10,
+		},
+		testPos{
+			price: markPrice.Clone(),
+			party: "trader4",
+			size:  -10,
+		},
+	}
+	// initialise the engine with the positions above
+	engine.Update(init)
+	// assume trader 4 is distressed, network has to trade and buy 10
+	// ensure the network loses in this scenario: the price has gone up
+	cPrice := num.Sum(markPrice, num.NewUint(1))
+	trade := &types.Trade{
+		Buyer:  types.NetworkParty,
+		Seller: "trader1",
+		Size:   5, // trader 1 only has 5 on the book, let's pretend we can close him our
+		Price:  cPrice.Clone(),
+	}
+	engine.AddTrade(trade)
+	engine.AddTrade(&types.Trade{
+		Buyer:  types.NetworkParty,
+		Seller: "trader3",
+		Size:   2,
+		Price:  cPrice.Clone(),
+	})
+	engine.AddTrade(&types.Trade{
+		Buyer:  types.NetworkParty,
+		Seller: "trader2",
+		Size:   3,
+		Price:  cPrice.Clone(), // trader 2 is going from -5 to -8
+	})
+	// the new positions of the traders who have traded with the network...
+	positions := []events.MarketPosition{
+		testPos{
+			party: "trader1", // trader 1 was 5 long, sold 5 to network, so closed out
+			price: markPrice.Clone(),
+			size:  0,
+		},
+		testPos{
+			party: "trader3",
+			size:  8, // long 10, sold 2
+			price: markPrice.Clone(),
+		},
+		testPos{
+			party: "trader2",
+			size:  -8,
+			price: markPrice.Clone(), // trader 2 was -5, shorted an additional 3 => -8
+		},
+	}
+	// new markprice is cPrice
+	noTransfers := engine.SettleMTM(context.Background(), cPrice, positions)
+	assert.Len(t, noTransfers, 3)
+	hasNetwork := false
+	for i, v := range noTransfers {
+		assert.NotNil(t, v.Transfer())
+		if v.Party() == types.NetworkParty {
+			// network hás to lose
+			require.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_LOSS, v.Transfer().Type)
+			// network loss should be at the start of the slice
+			require.Equal(t, 0, i)
+			hasNetwork = true
+		}
+	}
+	require.True(t, hasNetwork)
 }
 
 // {{{

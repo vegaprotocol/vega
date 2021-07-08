@@ -50,5 +50,5 @@ Feature: Regression test for issue 630
       | trader           | asset | market id | margin | general |
       | traderGuy        | BTC   | ETH/DEC19 | 0      | 0       |
       | sellSideProvider | BTC   | ETH/DEC19 | 240000 | 760000  |
-    And the insurance pool balance should be "240000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "4340000"
