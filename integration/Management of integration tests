@@ -2,3 +2,4 @@ Topics to better manage integration tests -
 
 Following Given - When - Then Format while writing tests
 Caching mechanism for management of events or transactions 
+Make sure calling a statement on a non-existent market results in a failure (e.g. 'And the order book should have the following volumes for market "asfasfasf":' works fine, but it shouldn't.
