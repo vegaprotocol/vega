@@ -537,10 +537,9 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 		if transfer == nil {
 			// no error when getting MTM accounts, and no margin account == network position
 			// we are not interested in this event, continue here
-			if party == types.NetworkParty {
-				continue
+			if party != types.NetworkParty {
+			              marginEvts = append(marginEvts, marginEvt)
 			}
-			marginEvts = append(marginEvts, marginEvt)
 			continue
 		}
 
