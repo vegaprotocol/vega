@@ -163,6 +163,29 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Unlock()
 }
 
+func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.MarketPosition, owner string) *mtmTransfer {
+	if mtmShare.IsZero() {
+		return &mtmTransfer{
+			MarketPosition: mpos,
+			transfer:       nil,
+		}
+	}
+	typ := types.TransferType_TRANSFER_TYPE_MTM_WIN
+	if neg {
+		typ = types.TransferType_TRANSFER_TYPE_MTM_LOSS
+	}
+	return &mtmTransfer{
+		MarketPosition: mpos,
+		transfer: &types.Transfer{
+			Type:  typ,
+			Owner: owner,
+			Amount: &types.FinancialAmount{
+				Amount: mtmShare,
+				Asset:  e.product.GetAsset()},
+		},
+	}
+}
+
 func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions []events.MarketPosition) []events.Transfer {
 	timer := metrics.NewTimeCounter("-", "settlement", "SettleOrder")
 	e.mu.Lock()
@@ -173,12 +196,33 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	trades := e.trades
 	e.trades = map[string][]*pos{} // remove here, once we've processed it all here, we're done
 	evts := make([]events.Event, 0, len(positions))
+
+	// Process any network trades first
+	traded, hasTraded := trades[types.NetworkParty]
+	if hasTraded {
+		// don't create an event for the network. Its position is irrelevant
+
+		mtmShare, neg := calcMTM(markPrice, markPrice, 0, traded)
+		// MarketPosition stub for network
+		netMPos := &npos{
+			price: markPrice.Clone(),
+		}
+
+		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, netMPos, types.NetworkParty)
+
+		if mtmShare.IsZero() || !neg {
+			wins = append(wins, mtmTransfer)
+		} else {
+			transfers = append(transfers, mtmTransfer)
+		}
+	}
+
 	for _, evt := range positions {
 		party := evt.Party()
 		// get the current position, and all (if any) position changes because of trades
 		current := e.getCurrentPosition(party, evt)
 		// we don't care if this is a nil value
-		traded, hasTraded := trades[party]
+		traded, hasTraded = trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
 		for _, t := range traded {
 			tradeset = append(tradeset, t)
@@ -197,7 +241,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// at their exact trade price, so we can MTM that volume correctly, too
 		mtmShare, neg := calcMTM(markPrice, current.price, current.size, traded)
 		// we've marked this trader to market, their position can now reflect this
-		current.update(evt)
+		_ = current.update(evt)
 		current.price = markPrice
 		// we don't want to accidentally MTM a trader who closed out completely when they open
 		// a new position at a later point, so remove if size == 0
@@ -205,36 +249,13 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 			// broke this up into its own func for symmetry
 			e.rmPosition(party)
 		}
-		// we don't need to create a transfer if there's no changes to the balance...
-		if mtmShare.IsZero() {
-			wins = append(wins, &mtmTransfer{
-				MarketPosition: current,
-				transfer:       nil,
-			})
 
-			continue
-		}
-		settle := &types.Transfer{
-			Owner: party,
-			Amount: &types.FinancialAmount{
-				Amount: mtmShare, // current delta -> mark price minus current position average
-				Asset:  e.product.GetAsset(),
-			},
-		}
+		mtmTransfer := e.getMtmTransfer(mtmShare.Clone(), neg, current, current.Party())
 
-		if !neg {
-			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_WIN
-			wins = append(wins, &mtmTransfer{
-				MarketPosition: current,
-				transfer:       settle,
-			})
+		if mtmShare.IsZero() || !neg {
+			wins = append(wins, mtmTransfer)
 		} else {
-			// losses are prepended
-			settle.Type = types.TransferType_TRANSFER_TYPE_MTM_LOSS
-			transfers = append(transfers, &mtmTransfer{
-				MarketPosition: current,
-				transfer:       settle,
-			})
+			transfers = append(transfers, mtmTransfer)
 		}
 	}
 	// append wins after loss transfers
@@ -381,7 +402,7 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, 
 		}
 		add := delta.Mul(delta, size)
 		if mtmShare.IsZero() {
-			mtmShare = mtmShare.Set(add)
+			mtmShare.Set(add)
 			sign = neg
 		} else if neg == sign {
 			// both mtmShare and add are the same sign
