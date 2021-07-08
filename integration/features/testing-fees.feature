@@ -224,19 +224,32 @@ Scenario: WIP - Testing fees in continuous trading with two trades and one liqui
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1    | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2    | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1    | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1    | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2    | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
-    Given the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    |
+  #  TODO: Remove liquidity orders, add limit orders for same price and volume so that checks on lines 250-1 pass and update margin/general account figures.
+    # Given the traders submit the following liquidity provision:
+    #   | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+    #   | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
+    #   | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    |
 
    # Then debug transfers
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
       | 1000       | TRADING_MODE_CONTINUOUS |  
+
+    Then debug liquidity provision events
+   
+    # Then debug orders
+
+    And the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | sell | 1080  | 1      |
+      | buy  | 920   | 1      |
+      | buy  | 910   | 105    |
+      | sell | 1090  | 92     |
+   
     When the traders place the following orders:
       | trader   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -247,7 +260,7 @@ Scenario: WIP - Testing fees in continuous trading with two trades and one liqui
       | trader3a    | ETH   | ETH/DEC21 | 480    | 9520 |
       | trader3b    | ETH   | ETH/DEC21 | 240    | 9760 |
     
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    #And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
   # TODO to be implemented by Core Team
   # And the accumulated infrastructure fees should be "0" for the market "ETH/DEC21"
@@ -255,6 +268,8 @@ Scenario: WIP - Testing fees in continuous trading with two trades and one liqui
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell  | 4     | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
+
+    Then debug trades
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |  
@@ -288,7 +303,7 @@ Scenario: WIP - Testing fees in continuous trading with two trades and one liqui
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |8     | ETH   |
       #| trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 2      | ETH   | - taking one IF
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 5      | ETH   |
+      # | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 5      | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |  
       | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 |  6     | ETH   |  
       #| market  | aux1     | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 5      | ETH   |
