@@ -12,6 +12,7 @@ name: VerifyIssue
 
 jobs:
   verify_linked_issue:
+    if: startsWith(github.head_ref, 'renovate/') != true
     runs-on: ubuntu-latest
     name: Ensure Pull Request has a linked issue.
     steps:
