@@ -68,7 +68,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 
 	if total.NEQ(s.collected) {
 		mismatch, _ := total.Delta(s.collected, total)
-		if len(evts) == 0 {
+		if netReq != nil {
 			netReq.request.Amount.Amount.AddSum(mismatch)
 			return evts
 		}
