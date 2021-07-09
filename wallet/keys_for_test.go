@@ -1,6 +1,6 @@
 package wallet
 
-import "code.vegaprotocol.io/vega/wallet/crypto"
+import "code.vegaprotocol.io/data-node/wallet/crypto"
 
 func NewKeypair(algo crypto.SignatureAlgorithm, pub, priv []byte) Keypair {
 	return Keypair{

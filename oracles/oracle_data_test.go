@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/oracles"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 func TestOracleData(t *testing.T) {

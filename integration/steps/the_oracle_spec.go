@@ -3,9 +3,9 @@ package steps
 import (
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/integration/steps/market"
-	types "code.vegaprotocol.io/vega/proto"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	"code.vegaprotocol.io/data-node/integration/steps/market"
+	types "code.vegaprotocol.io/data-node/proto"
+	oraclesv1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
 )
 
 func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table *gherkin.DataTable) error {

@@ -6,11 +6,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/contextutil"
-	"code.vegaprotocol.io/vega/logging"
-	ptypes "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/storage"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/logging"
+	ptypes "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/storage"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 // TradeStore represents an abstraction over a trade storage

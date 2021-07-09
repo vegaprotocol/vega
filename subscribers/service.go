@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/events"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/data-node/broker"
+	"code.vegaprotocol.io/data-node/events"
+	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 )
 
 type Broker interface {

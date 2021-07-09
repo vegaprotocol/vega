@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/proto"
 )
 
 // One of the possible asset sources

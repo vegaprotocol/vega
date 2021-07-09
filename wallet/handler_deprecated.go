@@ -3,8 +3,8 @@ package wallet
 import (
 	"encoding/base64"
 
-	"code.vegaprotocol.io/vega/crypto"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/crypto"
+	types "code.vegaprotocol.io/data-node/proto"
 	"github.com/golang/protobuf/proto"
 )
 

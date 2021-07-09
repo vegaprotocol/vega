@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/gateway"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/data-node/gateway"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
+	protoapi "code.vegaprotocol.io/data-node/proto/api"
 	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"

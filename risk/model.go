@@ -4,10 +4,10 @@ import (
 	"errors"
 	"time"
 
-	"code.vegaprotocol.io/vega/risk/models"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/risk/models"
+	"code.vegaprotocol.io/data-node/types/num"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 var (

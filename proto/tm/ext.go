@@ -1,7 +1,7 @@
 package tm
 
 import (
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/vegatime"
 
 	"github.com/tendermint/tendermint/abci/types"
 )

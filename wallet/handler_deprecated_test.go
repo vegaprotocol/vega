@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"code.vegaprotocol.io/vega/wallet"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	"code.vegaprotocol.io/data-node/wallet"
+	"code.vegaprotocol.io/data-node/wallet/crypto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

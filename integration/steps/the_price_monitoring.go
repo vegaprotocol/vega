@@ -3,8 +3,8 @@ package steps
 import (
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/integration/steps/market"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/integration/steps/market"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency string, table *gherkin.DataTable) error {

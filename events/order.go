@@ -3,9 +3,9 @@ package events
 import (
 	"context"
 
-	ptypes "code.vegaprotocol.io/vega/proto"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	"code.vegaprotocol.io/vega/types"
+	ptypes "code.vegaprotocol.io/data-node/proto"
+	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 type Order struct {

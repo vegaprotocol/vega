@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/vegatime"
 
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"

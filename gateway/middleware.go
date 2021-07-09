@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/contextutil"
-	vhttp "code.vegaprotocol.io/vega/http"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/data-node/contextutil"
+	vhttp "code.vegaprotocol.io/data-node/http"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
 )
 
 // RemoteAddrMiddleware is a middleware adding to the current request context the

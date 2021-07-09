@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/processor/mocks"
+	"code.vegaprotocol.io/data-node/processor/mocks"
 
 	"github.com/golang/mock/gomock"
 )

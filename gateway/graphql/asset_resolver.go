@@ -3,8 +3,8 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	types "code.vegaprotocol.io/data-node/proto"
+	protoapi "code.vegaprotocol.io/data-node/proto/api"
 )
 
 type myAssetResolver VegaResolverRoot

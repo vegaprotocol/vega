@@ -3,9 +3,9 @@ package commands_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/commands"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	"code.vegaprotocol.io/data-node/commands"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/wallet/crypto"
 	"github.com/stretchr/testify/assert"
 )
 

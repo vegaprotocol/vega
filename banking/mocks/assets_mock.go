@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	assets "code.vegaprotocol.io/vega/assets"
+	assets "code.vegaprotocol.io/data-node/assets"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )

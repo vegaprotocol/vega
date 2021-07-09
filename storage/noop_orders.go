@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 // NoopOrder is a package internal data struct that implements the OrderStore interface.

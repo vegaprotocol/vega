@@ -3,7 +3,7 @@ package vegatime
 import (
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 var now func() time.Time

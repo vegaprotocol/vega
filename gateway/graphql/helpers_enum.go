@@ -3,9 +3,9 @@ package gql
 import (
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	types "code.vegaprotocol.io/data-node/proto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	oraclesv1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
 )
 
 func convertOracleSpecStatusFromProto(s oraclesv1.OracleSpec_Status) (OracleSpecStatus, error) {

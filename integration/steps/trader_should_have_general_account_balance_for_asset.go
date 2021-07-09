@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/data-node/integration/stubs"
 )
 
 func TraderShouldHaveGeneralAccountBalanceForAsset(

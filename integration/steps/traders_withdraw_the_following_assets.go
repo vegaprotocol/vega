@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/collateral"
+	"code.vegaprotocol.io/data-node/types/num"
 	"github.com/cucumber/godog/gherkin"
 )
 

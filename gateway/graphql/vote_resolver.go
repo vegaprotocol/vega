@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/vegatime"
 )
 
 type voteResolver VegaResolverRoot

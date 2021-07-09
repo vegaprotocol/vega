@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/execution"
+	"code.vegaprotocol.io/data-node/integration/stubs"
+	"code.vegaprotocol.io/data-node/types"
 
 	"github.com/cucumber/godog/gherkin"
 )

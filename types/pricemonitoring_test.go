@@ -3,8 +3,8 @@ package types_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/types"
 	"github.com/stretchr/testify/require"
 )
 

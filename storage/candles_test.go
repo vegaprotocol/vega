@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/storage"
-	"code.vegaprotocol.io/vega/subscribers"
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/storage"
+	"code.vegaprotocol.io/data-node/subscribers"
+	"code.vegaprotocol.io/data-node/vegatime"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/data-node/assets"
+	"code.vegaprotocol.io/data-node/blockchain/abci"
+	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/validators"
 )
 
 type GenesisState struct {

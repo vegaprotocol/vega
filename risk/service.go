@@ -6,11 +6,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/contextutil"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/storage"
 
-	ptypes "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/data-node/proto"
 )
 
 var (

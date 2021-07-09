@@ -5,10 +5,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/contextutil"
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/storage"
 
 	"github.com/pkg/errors"
 )

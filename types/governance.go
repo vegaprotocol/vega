@@ -3,10 +3,10 @@
 package types
 
 import (
-	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/proto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	v1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 type GovernanceData = proto.GovernanceData

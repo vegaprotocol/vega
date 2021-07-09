@@ -3,8 +3,8 @@ package governance
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 // ProposalParameters stores proposal specific parameters

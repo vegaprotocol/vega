@@ -5,11 +5,11 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	"code.vegaprotocol.io/vega/subscribers"
-	dtypes "code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/events"
+	types "code.vegaprotocol.io/data-node/proto"
+	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	"code.vegaprotocol.io/data-node/subscribers"
+	dtypes "code.vegaprotocol.io/data-node/types"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
+	types "code.vegaprotocol.io/data-node/proto"
 
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )

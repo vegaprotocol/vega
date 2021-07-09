@@ -3,10 +3,10 @@ package supplied_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/liquidity/supplied"
-	"code.vegaprotocol.io/vega/liquidity/supplied/mocks"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/liquidity/supplied"
+	"code.vegaprotocol.io/data-node/liquidity/supplied/mocks"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"

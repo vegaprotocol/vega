@@ -3,8 +3,8 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/integration/stubs"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 func DebugTransfers(broker *stubs.BrokerStub, log *logging.Logger) error {

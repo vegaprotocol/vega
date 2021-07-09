@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/commands"
-	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/commands"
+	"code.vegaprotocol.io/data-node/proto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/vegatime"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -6,15 +6,15 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/monitor"
-	"code.vegaprotocol.io/vega/products"
-	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/collateral"
+	"code.vegaprotocol.io/data-node/crypto"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/monitor"
+	"code.vegaprotocol.io/data-node/products"
+	"code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 var (

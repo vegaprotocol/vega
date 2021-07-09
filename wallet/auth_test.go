@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/wallet"
+	"code.vegaprotocol.io/data-node/fsutil"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/wallet"
 
 	"github.com/stretchr/testify/assert"
 )

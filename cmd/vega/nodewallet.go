@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/fsutil"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/nodewallet"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
 )

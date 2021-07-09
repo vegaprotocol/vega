@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/wallet"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/fsutil"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/wallet"
+	"code.vegaprotocol.io/data-node/wallet/crypto"
 	"github.com/jessevdk/go-flags"
 )
 

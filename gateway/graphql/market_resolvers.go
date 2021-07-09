@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	"code.vegaprotocol.io/data-node/vegatime"
 )
 
 type myMarketResolver VegaResolverRoot

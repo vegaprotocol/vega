@@ -3,11 +3,11 @@ package accounts_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/accounts"
-	"code.vegaprotocol.io/vega/accounts/mocks"
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/data-node/accounts"
+	"code.vegaprotocol.io/data-node/accounts/mocks"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/storage"
 
 	"github.com/golang/mock/gomock"
 	uuid "github.com/satori/go.uuid"

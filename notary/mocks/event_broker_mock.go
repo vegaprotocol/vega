@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	events "code.vegaprotocol.io/vega/events"
+	events "code.vegaprotocol.io/data-node/events"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )

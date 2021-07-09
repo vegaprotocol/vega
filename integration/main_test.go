@@ -10,8 +10,8 @@ import (
 	"github.com/cucumber/godog/colors"
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/integration/steps"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/integration/steps"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 var (

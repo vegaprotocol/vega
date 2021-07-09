@@ -3,9 +3,9 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	"code.vegaprotocol.io/vega/vegatime"
+	types "code.vegaprotocol.io/data-node/proto"
+	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	"code.vegaprotocol.io/data-node/vegatime"
 )
 
 type auctionEventResolver VegaResolverRoot

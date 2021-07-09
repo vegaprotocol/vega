@@ -5,9 +5,9 @@
 package mocks
 
 import (
-	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
-	v10 "code.vegaprotocol.io/vega/proto/wallet/v1"
-	wallet "code.vegaprotocol.io/vega/wallet"
+	v1 "code.vegaprotocol.io/data-node/proto/commands/v1"
+	v10 "code.vegaprotocol.io/data-node/proto/wallet/v1"
+	wallet "code.vegaprotocol.io/data-node/wallet"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )

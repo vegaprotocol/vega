@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"code.vegaprotocol.io/vega/processor"
-	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/processor"
+	"code.vegaprotocol.io/data-node/txn"
+	"code.vegaprotocol.io/data-node/types"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"

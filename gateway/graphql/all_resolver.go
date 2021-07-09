@@ -3,9 +3,9 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	protoapi "code.vegaprotocol.io/data-node/proto/api"
 )
 
 type allResolver struct {

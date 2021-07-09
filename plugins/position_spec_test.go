@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/plugins"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/plugins"
+	"code.vegaprotocol.io/data-node/types/num"
 	"github.com/stretchr/testify/assert"
 )
 

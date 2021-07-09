@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/monitoring"
-	"code.vegaprotocol.io/vega/monitoring/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/monitoring"
+	"code.vegaprotocol.io/data-node/monitoring/mocks"
+	types "code.vegaprotocol.io/data-node/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

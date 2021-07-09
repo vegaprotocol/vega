@@ -3,8 +3,8 @@ package supplied
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 // ErrNoValidOrders informs that there weren't any valid orders to cover the liquidity obligation with.

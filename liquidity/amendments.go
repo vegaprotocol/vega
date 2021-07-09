@@ -5,10 +5,10 @@ import (
 	"errors"
 	"sort"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/liquidity/supplied"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/liquidity/supplied"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 var (

@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/validators"
-	"code.vegaprotocol.io/vega/validators/mocks"
+	"code.vegaprotocol.io/data-node/logging"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/validators"
+	"code.vegaprotocol.io/data-node/validators/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

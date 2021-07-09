@@ -1,6 +1,6 @@
 package types
 
-import "code.vegaprotocol.io/vega/proto"
+import "code.vegaprotocol.io/data-node/proto"
 
 type NetworkParameter struct {
 	Key, Value string

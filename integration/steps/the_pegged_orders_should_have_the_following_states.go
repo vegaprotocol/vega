@@ -1,8 +1,8 @@
 package steps
 
 import (
-	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/integration/stubs"
+	"code.vegaprotocol.io/data-node/proto"
 
 	"github.com/cucumber/godog/gherkin"
 )

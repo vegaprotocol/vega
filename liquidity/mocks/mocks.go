@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	types "code.vegaprotocol.io/vega/types"
-	num "code.vegaprotocol.io/vega/types/num"
+	types "code.vegaprotocol.io/data-node/types"
+	num "code.vegaprotocol.io/data-node/types/num"
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
 	reflect "reflect"

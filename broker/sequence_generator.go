@@ -3,7 +3,7 @@ package broker
 import (
 	"sync"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/data-node/events"
 )
 
 type gen struct {

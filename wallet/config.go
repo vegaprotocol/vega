@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/fsutil"
-	vhttp "code.vegaprotocol.io/vega/http"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/fsutil"
+	vhttp "code.vegaprotocol.io/data-node/http"
+	"code.vegaprotocol.io/data-node/logging"
 
 	"github.com/zannen/toml"
 )

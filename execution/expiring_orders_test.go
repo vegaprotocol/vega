@@ -3,7 +3,7 @@ package execution_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/data-node/execution"
 
 	"github.com/stretchr/testify/assert"
 )

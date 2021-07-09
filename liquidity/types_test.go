@@ -3,8 +3,8 @@ package liquidity_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/liquidity"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/liquidity"
+	"code.vegaprotocol.io/data-node/types/num"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

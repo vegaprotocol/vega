@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	"code.vegaprotocol.io/vega/types/num"
+	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 type SettleDistressed struct {

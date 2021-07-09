@@ -4,7 +4,7 @@ import (
 	"crypto"
 	"errors"
 
-	vcrypto "code.vegaprotocol.io/vega/crypto"
+	vcrypto "code.vegaprotocol.io/data-node/crypto"
 
 	"github.com/oasisprotocol/curve25519-voi/primitives/ed25519"
 )

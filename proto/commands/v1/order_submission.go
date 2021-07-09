@@ -1,7 +1,7 @@
 package v1
 
 import (
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 func (s *OrderSubmission) IntoOrder(party string) *types.Order {

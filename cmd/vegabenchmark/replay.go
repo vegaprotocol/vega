@@ -1,7 +1,7 @@
 package main
 
 import (
-	"code.vegaprotocol.io/vega/blockchain/recorder"
+	"code.vegaprotocol.io/data-node/blockchain/recorder"
 
 	"github.com/spf13/afero"
 )

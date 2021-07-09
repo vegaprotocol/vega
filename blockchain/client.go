@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/commands"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/data-node/commands"
+	types "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/proto/api"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/txn"
 	"github.com/golang/protobuf/proto"
 
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"

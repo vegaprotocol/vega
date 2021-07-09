@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 // NoopCandle is a package internal data struct that implements the CandleStore interface.

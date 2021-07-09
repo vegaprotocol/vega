@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"errors"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
 )

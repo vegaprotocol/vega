@@ -1,4 +1,4 @@
-module code.vegaprotocol.io/vega
+module code.vegaprotocol.io/data-node
 
 go 1.16
 

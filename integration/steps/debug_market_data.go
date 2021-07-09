@@ -3,8 +3,8 @@ package steps
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/execution"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 func DebugMarketData(

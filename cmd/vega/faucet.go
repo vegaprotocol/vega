@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/faucet"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/faucet"
+	"code.vegaprotocol.io/data-node/logging"
 	"github.com/jessevdk/go-flags"
 )
 

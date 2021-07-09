@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/gateway"
-	"code.vegaprotocol.io/vega/gateway/server"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/gateway"
+	"code.vegaprotocol.io/data-node/gateway/server"
+	"code.vegaprotocol.io/data-node/logging"
 
 	"github.com/jessevdk/go-flags"
 )

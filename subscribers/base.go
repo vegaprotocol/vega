@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/data-node/events"
 )
 
 type Base struct {

@@ -1,8 +1,8 @@
 package governance
 
 import (
-	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 func validateNewAsset(ad *types.AssetDetails) (types.ProposalError, error) {

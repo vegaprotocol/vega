@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/execution"
+	types "code.vegaprotocol.io/data-node/proto"
 	"github.com/cucumber/godog/gherkin"
 )
 

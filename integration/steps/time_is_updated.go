@@ -1,7 +1,7 @@
 package steps
 
 import (
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/data-node/integration/stubs"
 )
 
 func TimeIsUpdatedTo(timeService *stubs.TimeStub, newTime string) error {

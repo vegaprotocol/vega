@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/proto/api"
 
 	"google.golang.org/grpc"
 )

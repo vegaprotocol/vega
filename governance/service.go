@@ -4,12 +4,12 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/commands"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/data-node/broker"
+	"code.vegaprotocol.io/data-node/commands"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/proto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/subscribers"
 
 	uuid "github.com/satori/go.uuid"
 )

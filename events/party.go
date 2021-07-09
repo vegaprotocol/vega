@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	types "code.vegaprotocol.io/data-node/proto"
+	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 )
 
 type Party struct {

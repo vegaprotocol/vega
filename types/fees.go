@@ -1,8 +1,8 @@
 package types
 
 import (
-	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 type FeeFactors struct {

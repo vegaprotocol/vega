@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/data-node/broker"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/netparams"
 	"github.com/jessevdk/go-flags"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 type GenesisCmd struct {

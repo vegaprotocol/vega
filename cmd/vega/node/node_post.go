@@ -3,7 +3,7 @@ package node
 import (
 	"strings"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/logging"
 
 	"github.com/pkg/errors"
 )

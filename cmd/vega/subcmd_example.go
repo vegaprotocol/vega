@@ -5,7 +5,7 @@ package main
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/data-node/config"
 	"github.com/jessevdk/go-flags"
 )
 

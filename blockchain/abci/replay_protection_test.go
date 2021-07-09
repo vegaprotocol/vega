@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/data-node/blockchain/abci"
 	"github.com/stretchr/testify/require"
 )
 

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	broker "code.vegaprotocol.io/vega/broker"
+	broker "code.vegaprotocol.io/data-node/broker"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )

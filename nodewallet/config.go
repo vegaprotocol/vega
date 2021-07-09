@@ -3,9 +3,9 @@ package nodewallet
 import (
 	"path/filepath"
 
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet/eth"
+	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/nodewallet/eth"
 )
 
 const (

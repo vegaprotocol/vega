@@ -5,9 +5,9 @@
 package mocks
 
 import (
-	governance "code.vegaprotocol.io/vega/governance"
-	proto "code.vegaprotocol.io/vega/proto"
-	types "code.vegaprotocol.io/vega/types"
+	governance "code.vegaprotocol.io/data-node/governance"
+	proto "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/types"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"

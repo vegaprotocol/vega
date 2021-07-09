@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/orders"
-	"code.vegaprotocol.io/vega/orders/mocks"
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/execution"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/orders"
+	"code.vegaprotocol.io/data-node/orders/mocks"
+	types "code.vegaprotocol.io/data-node/proto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 	"github.com/golang/mock/gomock"
 
 	"github.com/stretchr/testify/assert"

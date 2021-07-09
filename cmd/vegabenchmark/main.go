@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/data-node/processor"
 )
 
 var (

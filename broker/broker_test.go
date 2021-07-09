@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/contextutil"
-	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/broker"
+	"code.vegaprotocol.io/data-node/broker/mocks"
+	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/events"
+	types "code.vegaprotocol.io/data-node/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

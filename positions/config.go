@@ -1,8 +1,8 @@
 package positions
 
 import (
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 // namedLogger is the identifier for package and should ideally match the package name

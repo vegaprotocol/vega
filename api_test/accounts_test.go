@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/vega/events"
-	pb "code.vegaprotocol.io/vega/proto"
-	apipb "code.vegaprotocol.io/vega/proto/api"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/events"
+	pb "code.vegaprotocol.io/data-node/proto"
+	apipb "code.vegaprotocol.io/data-node/proto/api"
+	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 const defaultTimout = 2 * time.Second

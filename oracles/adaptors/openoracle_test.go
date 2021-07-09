@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/oracles/adaptors"
+	"code.vegaprotocol.io/data-node/oracles"
+	"code.vegaprotocol.io/data-node/oracles/adaptors"
 
 	"code.vegaprotocol.io/oracles-relay/openoracle"
 	"github.com/stretchr/testify/assert"

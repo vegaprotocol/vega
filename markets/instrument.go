@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/products"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/products"
+	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/types"
 
 	"github.com/pkg/errors"
 )

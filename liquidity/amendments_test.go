@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/liquidity"
-	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/liquidity"
+	"code.vegaprotocol.io/data-node/proto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

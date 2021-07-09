@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/crypto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/crypto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/txn"
+	"code.vegaprotocol.io/data-node/types"
 
 	"github.com/golang/protobuf/proto"
 )

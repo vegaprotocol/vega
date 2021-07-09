@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/vegatime"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/golang/protobuf/proto"
