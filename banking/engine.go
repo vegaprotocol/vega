@@ -18,7 +18,6 @@ import (
 	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/types/num"
-	"code.vegaprotocol.io/data-node/validators"
 )
 
 var (
@@ -54,10 +53,15 @@ type Collateral interface {
 	HasBalance(party string) bool
 }
 
+type Resource interface {
+	GetID() string
+	Check() error
+}
+
 // Witness provide foreign chain resources validations
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/banking Witness
 type Witness interface {
-	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
+	StartCheck(Resource, func(interface{}, bool), time.Time) error
 }
 
 // TimeService provide the time of the vega node using the tm time
@@ -256,11 +260,6 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 			logging.Error(err))
 		return err
 	}
-	if !asset.IsERC20() {
-		dep.Status = types.Deposit_STATUS_CANCELLED
-		e.broker.Send(events.NewDepositEvent(ctx, *dep))
-		return ErrWrongAssetTypeUsedInERC20ChainEvent
-	}
 	aa := &assetAction{
 		id:          dep.ID,
 		state:       pendingState,
@@ -314,91 +313,6 @@ func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, 
 	}
 	e.assetActs[aa.id] = aa
 	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
-}
-
-func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID string, amount *num.Uint, ext *types.Erc20WithdrawExt) error {
-	asset, err := e.assets.Get(assetID)
-	if err != nil {
-		e.log.Debug("unable to get asset by id",
-			logging.AssetID(assetID),
-			logging.Error(err))
-		return err
-	}
-	if !asset.IsERC20() {
-		return ErrWrongAssetUsedForERC20Withdraw
-	}
-
-	now := e.currentTime
-	expiry := now.Add(e.cfg.WithdrawalExpiry.Duration)
-	wext := &types.WithdrawExt{
-		Ext: &types.WithdrawExt_Erc20{
-			Erc20: ext,
-		},
-	}
-	w, ref := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
-	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-	e.withdrawals[w.ID] = withdrawalRef{w, ref}
-	// try to lock the funds
-	res, err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount)
-	if err != nil {
-		w.Status = types.Withdrawal_STATUS_CANCELLED
-		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-		e.withdrawals[w.ID] = withdrawalRef{w, ref}
-		e.log.Debug("cannot withdraw asset for party",
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
-
-	// we were able to lock the funds, then we can send the vote through the network
-	if err := e.notary.StartAggregate(w.ID, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL); err != nil {
-		w.Status = types.Withdrawal_STATUS_CANCELLED
-		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-		e.withdrawals[w.ID] = withdrawalRef{w, ref}
-		e.log.Error("unable to start aggregating signature for the withdrawal",
-			logging.WithdrawalID(w.ID),
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-
-	// then get the signature for the withdrawal and send it
-	erc20asset, _ := asset.ERC20() // no check error as we checked earlier we had an erc20 asset.
-	_, sig, err := erc20asset.SignWithdrawal(amount.Uint64(), w.ExpirationDate, ext.GetReceiverAddress(), ref)
-	if err != nil {
-		// we don't cancel it here
-		// we may not be able to sign for some reason, but other may be able
-		// and we would aggregate enough signature
-		e.log.Error("unable to sign withdrawal",
-			logging.WithdrawalID(w.ID),
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-
-	err = e.notary.SendSignature(
-		ctx, w.ID, sig, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL)
-	if err != nil {
-		// we don't cancel it here
-		// we may not be able to sign for some reason, but other may be able
-		// and we would aggregate enough signature
-		e.log.Error("unable to send node signature",
-			logging.WithdrawalID(w.ID),
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-
-	return nil
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
