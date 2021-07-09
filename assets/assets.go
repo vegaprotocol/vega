@@ -7,9 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/assets/builtin"
-	"code.vegaprotocol.io/data-node/assets/erc20"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/nodewallet"
 	"code.vegaprotocol.io/data-node/types"
 )
 
@@ -23,10 +21,6 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/assets TimeService
 type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
-}
-
-type NodeWallet interface {
-	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
 }
 
 type Service struct {
@@ -43,11 +37,9 @@ type Service struct {
 	// the proposal is accepted by both the nodes and the users
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
-
-	nw NodeWallet
 }
 
-func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Service, error) {
+func New(log *logging.Logger, cfg Config, _, ts TimeService) (*Service, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -56,7 +48,6 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 		cfg:           cfg,
 		assets:        map[string]*Asset{},
 		pendingAssets: map[string]*Asset{},
-		nw:            nw,
 	}
 	ts.NotifyOnTick(s.onTick)
 	return s, nil
@@ -114,16 +105,6 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 		s.pendingAssets[assetID] = &Asset{
 			builtin.New(assetID, assetDetails),
 		}
-	case *types.AssetDetailsErc20:
-		wal, ok := s.nw.Get(nodewallet.Ethereum)
-		if !ok {
-			return "", errors.New("missing wallet for ETH")
-		}
-		asset, err := erc20.New(assetID, assetDetails, wal)
-		if err != nil {
-			return "", err
-		}
-		s.pendingAssets[assetID] = &Asset{asset}
 	default:
 		return "", ErrUnknownAssetSource
 	}
