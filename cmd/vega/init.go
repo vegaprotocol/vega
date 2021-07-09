@@ -15,7 +15,6 @@ import (
 	"code.vegaprotocol.io/data-node/faucet"
 	"code.vegaprotocol.io/data-node/fsutil"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/nodewallet"
 	"code.vegaprotocol.io/data-node/proto"
 	oraclesv1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	"code.vegaprotocol.io/data-node/storage"
@@ -142,28 +141,9 @@ func (opts *InitCmd) Execute(_ []string) error {
 		return err
 	}
 
-	// init the nodewallet
-	if err := nodeWalletInit(cfg, pass, opts.GenDev); err != nil {
-		return err
-	}
-
 	logger.Info("configuration generated successfully", logging.String("path", opts.RootPath))
 
 	return nil
-}
-
-func nodeWalletInit(cfg config.Config, nodeWalletPassphrase string, genDevNodeWallet bool) error {
-	if genDevNodeWallet {
-		return nodewallet.DevInit(
-			cfg.NodeWallet.StorePath,
-			cfg.NodeWallet.DevWalletsPath,
-			nodeWalletPassphrase,
-		)
-	}
-	return nodewallet.Init(
-		cfg.NodeWallet.StorePath,
-		nodeWalletPassphrase,
-	)
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {

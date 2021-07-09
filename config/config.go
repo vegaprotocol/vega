@@ -10,30 +10,25 @@ import (
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/banking"
-	"code.vegaprotocol.io/data-node/blockchain"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/evtforward"
 	"code.vegaprotocol.io/data-node/execution"
 	"code.vegaprotocol.io/data-node/gateway"
-	"code.vegaprotocol.io/data-node/genesis"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/matching"
 	"code.vegaprotocol.io/data-node/metrics"
-	"code.vegaprotocol.io/data-node/monitoring"
 	"code.vegaprotocol.io/data-node/netparams"
-	"code.vegaprotocol.io/data-node/nodewallet"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/positions"
 	"code.vegaprotocol.io/data-node/pprof"
-	"code.vegaprotocol.io/data-node/processor"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/settlement"
 	"code.vegaprotocol.io/data-node/stats"
@@ -41,7 +36,6 @@ import (
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
-	"code.vegaprotocol.io/data-node/validators"
 	"code.vegaprotocol.io/data-node/vegatime"
 
 	"github.com/zannen/toml"
@@ -51,11 +45,9 @@ import (
 type Config struct {
 	API               api.Config         `group:"API" namespace:"api"`
 	Accounts          accounts.Config    `group:"Accounts" namespace:"accounts"`
-	Blockchain        blockchain.Config  `group:"Blockchain" namespace:"blockchain"`
 	Candles           candles.Config     `group:"Candles" namespace:"candles"`
 	Collateral        collateral.Config  `group:"Collateral" namespace:"collateral"`
 	Execution         execution.Config   `group:"Execution" namespace:"execution"`
-	Processor         processor.Config   `group:"Processor" namespace:"processor"`
 	Logging           logging.Config     `group:"Logging" namespace:"logging"`
 	Matching          matching.Config    `group:"Matching" namespace:"matching"`
 	Markets           markets.Config     `group:"Markets" namespace:"markets"`
@@ -69,18 +61,14 @@ type Config struct {
 	Storage           storage.Config     `group:"Storage" namespace:"storage"`
 	Trades            trades.Config      `group:"Trades" namespace:"trades"`
 	Time              vegatime.Config    `group:"Time" namespace:"time"`
-	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
 	Gateway           gateway.Config     `group:"Gateway" namespace:"gateway"`
 	Metrics           metrics.Config     `group:"Metrics" namespace:"metrics"`
 	Transfers         transfers.Config   `group:"Transfers" namespace:"transfers"`
 	Governance        governance.Config  `group:"Governance" namespace:"governance"`
-	NodeWallet        nodewallet.Config  `group:"NodeWallet" namespace:"nodewallet"`
 	Assets            assets.Config      `group:"Assets" namespace:"assets"`
 	Notary            notary.Config      `group:"Notary" namespace:"notary"`
 	EvtForward        evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
 	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
-	Genesis           genesis.Config     `group:"Genesis" namespace:"genesis"`
-	Validators        validators.Config  `group:"Validators" namespace:"validators"`
 	Banking           banking.Config     `group:"Banking" namespace:"banking"`
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	NetworkParameters netparams.Config
@@ -96,9 +84,7 @@ type Config struct {
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
 		Trades:            trades.NewDefaultConfig(),
-		Blockchain:        blockchain.NewDefaultConfig(),
 		Execution:         execution.NewDefaultConfig(defaultStoreDirPath),
-		Processor:         processor.NewDefaultConfig(),
 		API:               api.NewDefaultConfig(),
 		Accounts:          accounts.NewDefaultConfig(),
 		Oracles:           oracles.NewDefaultConfig(),
@@ -112,7 +98,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Risk:              risk.NewDefaultConfig(),
 		Storage:           storage.NewDefaultConfig(defaultStoreDirPath),
 		Pprof:             pprof.NewDefaultConfig(),
-		Monitoring:        monitoring.NewDefaultConfig(),
 		Logging:           logging.NewDefaultConfig(),
 		Gateway:           gateway.NewDefaultConfig(),
 		Position:          positions.NewDefaultConfig(),
@@ -121,12 +106,9 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Metrics:           metrics.NewDefaultConfig(),
 		Transfers:         transfers.NewDefaultConfig(),
 		Governance:        governance.NewDefaultConfig(),
-		NodeWallet:        nodewallet.NewDefaultConfig(defaultStoreDirPath),
 		Assets:            assets.NewDefaultConfig(),
 		Notary:            notary.NewDefaultConfig(),
 		EvtForward:        evtforward.NewDefaultConfig(),
-		Genesis:           genesis.NewDefaultConfig(),
-		Validators:        validators.NewDefaultConfig(),
 		Banking:           banking.NewDefaultConfig(),
 		Stats:             stats.NewDefaultConfig(),
 		Subscribers:       subscribers.NewDefaultConfig(),

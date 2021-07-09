@@ -2,7 +2,6 @@ package node
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,8 +11,6 @@ import (
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/banking"
-	"code.vegaprotocol.io/data-node/blockchain"
-	"code.vegaprotocol.io/data-node/blockchain/abci"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/collateral"
@@ -22,15 +19,12 @@ import (
 	"code.vegaprotocol.io/data-node/execution"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway/server"
-	"code.vegaprotocol.io/data-node/genesis"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/metrics"
-	"code.vegaprotocol.io/data-node/monitoring"
 	"code.vegaprotocol.io/data-node/netparams"
-	"code.vegaprotocol.io/data-node/nodewallet"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/oracles/adaptors"
@@ -38,7 +32,6 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	"code.vegaprotocol.io/data-node/processor"
 	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
@@ -46,7 +39,6 @@ import (
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
-	"code.vegaprotocol.io/data-node/validators"
 	"code.vegaprotocol.io/data-node/vegatime"
 )
 
@@ -130,9 +122,6 @@ type NodeCommand struct {
 	netParamsService  *netparams.Service
 	oracleService     *oracles.Service
 
-	abciServer       *abci.Server
-	blockchainClient *blockchain.Client
-
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
 	conf         config.Config
@@ -149,16 +138,10 @@ type NodeCommand struct {
 
 	mktscfg []types.Market
 
-	nodeWallet           *nodewallet.Service
-	nodeWalletPassphrase string
-
-	assets         *assets.Service
-	topology       *validators.Topology
-	notary         *notary.Notary
-	evtfwd         *evtforward.EvtForwarder
-	erc            *validators.Witness
-	banking        *banking.Engine
-	genesisHandler *genesis.Handler
+	assets  *assets.Service
+	notary  *notary.Notary
+	evtfwd  *evtforward.EvtForwarder
+	banking *banking.Engine
 
 	// plugins
 	settlePlugin     *plugins.Positions
@@ -167,22 +150,14 @@ type NodeCommand struct {
 	withdrawalPlugin *plugins.Withdrawal
 	depositPlugin    *plugins.Deposit
 
-	app *processor.App
-
 	Version     string
 	VersionHash string
 }
 
 func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWalletPassphrase string, args []string) error {
 	l.cfgwatchr = cfgwatchr
-	l.nodeWalletPassphrase = nodeWalletPassphrase
 
 	l.conf, l.configPath = cfgwatchr.Get(), rootPath
-
-	tmCfg := l.conf.Blockchain.Tendermint
-	if tmCfg.ABCIRecordDir != "" && tmCfg.ABCIReplayFile != "" {
-		return errors.New("you can't specify both abci-record and abci-replay flags")
-	}
 
 	stages := []func([]string) error{
 		l.persistentPre,
@@ -203,24 +178,12 @@ func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWallet
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
-	defer func() {
-		if err := l.nodeWallet.Cleanup(); err != nil {
-			l.Log.Error("error cleaning up nodewallet", logging.Error(err))
-		}
-	}()
-
-	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
-	statusChecker.OnChainDisconnect(l.cancel)
-	statusChecker.OnChainVersionObtained(
-		func(v string) { l.stats.SetChainVersion(v) },
-	)
 
 	// gRPC server
 	grpcServer := api.NewGRPCServer(
 		l.Log,
 		l.conf.API,
 		l.stats,
-		l.blockchainClient,
 		l.timeService,
 		l.marketService,
 		l.partyService,
@@ -242,13 +205,11 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.depositPlugin,
 		l.marketDepthSub,
 		l.netParamsService,
-		statusChecker,
 	)
 
 	// watch configs
 	l.cfgwatchr.OnConfigUpdate(
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
-		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
 	)
 
 	// start the grpc server
@@ -271,8 +232,6 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	l.abciServer.Stop()
-	statusChecker.Stop()
 
 	// cleanup gateway
 	if l.conf.GatewayEnabled {

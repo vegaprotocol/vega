@@ -39,7 +39,7 @@ type Service struct {
 	pendingAssets map[string]*Asset
 }
 
-func New(log *logging.Logger, cfg Config, _, ts TimeService) (*Service, error) {
+func New(log *logging.Logger, cfg Config, ts TimeService) (*Service, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
