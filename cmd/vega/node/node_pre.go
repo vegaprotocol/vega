@@ -9,18 +9,12 @@ import (
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
-	"code.vegaprotocol.io/data-node/banking"
-	"code.vegaprotocol.io/data-node/blockchain"
-	"code.vegaprotocol.io/data-node/blockchain/abci"
-	"code.vegaprotocol.io/data-node/blockchain/recorder"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/evtforward"
 	"code.vegaprotocol.io/data-node/execution"
 	"code.vegaprotocol.io/data-node/fee"
-	"code.vegaprotocol.io/data-node/genesis"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
@@ -28,7 +22,6 @@ import (
 	"code.vegaprotocol.io/data-node/netparams"
 	"code.vegaprotocol.io/data-node/netparams/checks"
 	"code.vegaprotocol.io/data-node/netparams/dispatch"
-	"code.vegaprotocol.io/data-node/nodewallet"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	oracleAdaptors "code.vegaprotocol.io/data-node/oracles/adaptors"
@@ -36,7 +29,6 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	"code.vegaprotocol.io/data-node/processor"
 	"code.vegaprotocol.io/data-node/proto"
 	oraclepb "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	"code.vegaprotocol.io/data-node/risk"
@@ -46,16 +38,11 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/validators"
 	"code.vegaprotocol.io/data-node/vegatime"
-
 	"github.com/cenkalti/backoff"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
-	"github.com/spf13/afero"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
@@ -72,10 +59,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 
 	conf := l.cfgwatchr.Get()
-
-	if flagProvided("--no-chain") {
-		conf.Blockchain.ChainProvider = "noop"
-	}
 
 	if flagProvided("--no-stores") {
 		conf.StoresEnabled = false
@@ -130,19 +113,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		l.Log.Info("node setted up with badger store support")
 	}
 
-	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return err
-	}
-
-	// nodewallet
-	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethclt); err != nil {
-		return err
-	}
-
-	// ensure all require wallet are available
-	return l.nodeWallet.EnsureRequireWallets()
+	return nil
 }
 
 func (l *NodeCommand) loadMarketsConfig() error {
@@ -336,85 +307,6 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	return nil
 }
 
-func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
-	app := processor.NewApp(
-		l.Log,
-		l.conf.Processor,
-		l.cancel,
-		l.assets,
-		l.banking,
-		l.broker,
-		l.erc,
-		l.evtfwd,
-		l.executionEngine,
-		commander,
-		l.genesisHandler,
-		l.governance,
-		l.notary,
-		l.stats.Blockchain,
-		l.timeService,
-		l.topology,
-		l.netParams,
-		&processor.Oracle{
-			Engine:   l.oracle,
-			Adaptors: l.oracleAdaptors,
-		},
-	)
-
-	var abciApp tmtypes.Application
-	tmCfg := l.conf.Blockchain.Tendermint
-	if path := tmCfg.ABCIRecordDir; path != "" {
-		rec, err := recorder.NewRecord(path, afero.NewOsFs())
-		if err != nil {
-			return nil, err
-		}
-
-		// closer
-		go func() {
-			<-ctx.Done()
-			rec.Stop()
-		}()
-
-		abciApp = recorder.NewApp(app.Abci(), rec)
-	} else {
-		abciApp = app.Abci()
-	}
-
-	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
-	if err := srv.Start(); err != nil {
-		return nil, err
-	}
-	l.abciServer = srv
-
-	if path := tmCfg.ABCIReplayFile; path != "" {
-		rec, err := recorder.NewReplay(path, afero.NewOsFs())
-		if err != nil {
-			return nil, err
-		}
-
-		// closer
-		go func() {
-			<-ctx.Done()
-			rec.Stop()
-		}()
-
-		go func() {
-			if err := rec.Replay(abciApp); err != nil {
-				log.Fatalf("replay: %v", err)
-			}
-		}()
-	}
-
-	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
-	if err != nil {
-		return nil, err
-	}
-	l.blockchainClient = blockchain.NewClient(abciClt)
-	commander.SetChain(l.blockchainClient)
-
-	return app, nil
-}
-
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -434,9 +326,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 	l.oracleService = oracles.NewService(l.ctx)
 
-	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
-	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
-
 	l.broker = broker.New(l.ctx)
 	l.broker.SubscribeBatch(
 		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
@@ -448,7 +337,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	now, _ := l.timeService.GetTimeNow()
 
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
+	l.assets, err = assets.New(l.Log, l.conf.Assets, l.timeService)
 	if err != nil {
 		return err
 	}
@@ -467,50 +356,13 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.oracle,
 		l.broker,
 	)
-	// we cannot pass the Chain dependency here (that's set by the blockchain)
-	wal, _ := l.nodeWallet.Get(nodewallet.Vega)
-	commander, err := nodewallet.NewCommander(nil, wal, l.stats)
-	if err != nil {
-		return err
-	}
-
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
-
-	l.erc = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
+	// TODO Remove governance engine
+	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, nil, l.netParams, now)
 	if err != nil {
 		log.Error("unable to initialise governance", logging.Error(err))
-		return err
-	}
-
-	l.genesisHandler.OnGenesisAppStateLoaded(
-		// be sure to keep this in order.
-		// the node upon genesis will load all asset first in the node
-		// state. This is important to happened first as we will load the
-		// asset which will be considered as the governance token.
-		l.UponGenesis,
-		// This needs to happen always after, as it defined the network
-		// parameters, one of them is  the Governance Token asset ID.
-		// which if not loaded in the previous state, then will make the node
-		// panic at startup.
-		l.netParams.UponGenesis,
-		l.topology.LoadValidatorsOnGenesis,
-	)
-
-	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
-
-	l.evtfwd, err = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
-	if err != nil {
-		return err
-	}
-
-	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
-
-	// now instantiate the blockchain layer
-	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
 		return err
 	}
 
@@ -598,10 +450,6 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.BlockchainsEthereumConfig,
-			Watcher: l.nodeWallet.OnEthereumConfigUpdate,
-		},
-		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
 			Watcher: l.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
 		},
@@ -641,14 +489,9 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
-		func(cfg config.Config) { l.abciServer.ReloadConf(cfg.Blockchain) },
-		func(cfg config.Config) { l.topology.ReloadConf(cfg.Validators) },
-		func(cfg config.Config) { l.erc.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
-		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
-		func(cfg config.Config) { l.app.ReloadConf(cfg.Processor) },
 
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },

@@ -14,7 +14,6 @@ import (
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/monitoring"
 	"code.vegaprotocol.io/data-node/netparams"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
@@ -69,8 +68,6 @@ type GRPCServer struct {
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
-	statusChecker *monitoring.Status
-
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -81,7 +78,6 @@ func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
 	stats *stats.Stats,
-	client BlockchainClient,
 	timeService *vegatime.Svc,
 	marketService MarketService,
 	partyService *parties.Svc,
@@ -103,7 +99,6 @@ func NewGRPCServer(
 	depositService *plugins.Deposit,
 	marketDepthService *subscribers.MarketDepthBuilder,
 	netParamsService *netparams.Service,
-	statusChecker *monitoring.Status,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -114,7 +109,6 @@ func NewGRPCServer(
 		log:                     log,
 		Config:                  config,
 		stats:                   stats,
-		client:                  client,
 		orderService:            orderService,
 		liquidityService:        liquidityService,
 		tradeService:            tradeService,
@@ -134,7 +128,6 @@ func NewGRPCServer(
 		withdrawalService:       withdrawalService,
 		depositService:          depositService,
 		marketDepthService:      marketDepthService,
-		statusChecker:           statusChecker,
 		netParamsService:        netParamsService,
 		oracleService:           oracleService,
 		ctx:                     ctx,
@@ -233,7 +226,6 @@ func (g *GRPCServer) Start() {
 		marketService:     g.marketService,
 		governanceService: g.governanceService,
 		evtForwarder:      g.evtfwd,
-		statusChecker:     g.statusChecker,
 	}
 	g.tradingService = tradingSvc
 	protoapi.RegisterTradingServiceServer(g.srv, tradingSvc)
@@ -257,7 +249,6 @@ func (g *GRPCServer) Start() {
 		AssetService:            g.assetService,
 		FeeService:              g.feeService,
 		eventService:            g.eventService,
-		statusChecker:           g.statusChecker,
 		WithdrawalService:       g.withdrawalService,
 		DepositService:          g.depositService,
 		MarketDepthService:      g.marketDepthService,

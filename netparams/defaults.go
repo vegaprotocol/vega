@@ -78,8 +78,5 @@ func defaultNetParams() map[string]value {
 		// validation will be added at node startup, so we can use dynamic stuff
 		// e.g: assets and collateral when setting up a new ID.
 		GovernanceVoteAsset: NewString().Mutable(true).MustUpdate("VOTE"),
-
-		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true).
-			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"bridge_address\": \"0xXXX\", \"confirmations\": 3}"),
 	}
 }

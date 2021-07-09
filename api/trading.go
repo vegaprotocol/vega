@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/data-node/evtforward"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	"code.vegaprotocol.io/data-node/monitoring"
 	ptypes "code.vegaprotocol.io/data-node/proto"
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
 	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
@@ -79,8 +78,6 @@ type tradingService struct {
 	marketService     MarketService
 	governanceService GovernanceService
 	evtForwarder      EvtForwarder
-
-	statusChecker *monitoring.Status
 }
 
 // no need for a mutext - we only access the config through a value receiver

@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	validators "code.vegaprotocol.io/data-node/validators"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
@@ -34,8 +33,13 @@ func (m *MockWitness) EXPECT() *MockWitnessMockRecorder {
 	return m.recorder
 }
 
+type Resource interface {
+	GetID() string
+	Check() error
+}
+
 // StartCheck mocks base method
-func (m *MockWitness) StartCheck(arg0 validators.Resource, arg1 func(interface{}, bool), arg2 time.Time) error {
+func (m *MockWitness) StartCheck(arg0 Resource, arg1 func(interface{}, bool), arg2 time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StartCheck", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

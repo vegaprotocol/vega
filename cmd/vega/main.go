@@ -51,14 +51,11 @@ func Main(ctx context.Context) error {
 	if err := Register(ctx, parser,
 		Faucet,
 		Gateway,
-		Genesis,
 		Init,
 		Node,
-		NodeWallet,
 		Verify,
 		Version,
 		Wallet,
-		Watch,
 		Tm,
 	); err != nil {
 		fmt.Printf("%+v\n", err)

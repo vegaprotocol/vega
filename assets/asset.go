@@ -3,7 +3,6 @@ package assets
 import (
 	"code.vegaprotocol.io/data-node/assets/builtin"
 	"code.vegaprotocol.io/data-node/assets/common"
-	"code.vegaprotocol.io/data-node/assets/erc20"
 	"code.vegaprotocol.io/data-node/types"
 )
 
@@ -28,19 +27,9 @@ func NewAsset(a isAsset) *Asset {
 	return &Asset{a}
 }
 
-func (a *Asset) IsERC20() bool {
-	_, ok := a.isAsset.(*erc20.ERC20)
-	return ok
-}
-
 func (a *Asset) IsBuiltinAsset() bool {
 	_, ok := a.isAsset.(*builtin.Builtin)
 	return ok
-}
-
-func (a *Asset) ERC20() (*erc20.ERC20, bool) {
-	asset, ok := a.isAsset.(*erc20.ERC20)
-	return asset, ok
 }
 
 func (a *Asset) BuiltinAsset() (*builtin.Builtin, bool) {

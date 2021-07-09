@@ -62,9 +62,6 @@ const (
 	GovernanceProposalUpdateNetParamRequiredMajority      = "governance.proposal.updateNetParam.requiredMajority"
 	GovernanceProposalUpdateNetParamMinProposerBalance    = "governance.proposal.updateNetParam.minProposerBalance"
 	GovernanceProposalUpdateNetParamMinVoterBalance       = "governance.proposal.updateNetParam.minVoterBalance"
-
-	// blockchain specifics?
-	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 )
 
 var AllKeys = map[string]struct{}{
@@ -115,7 +112,6 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalUpdateNetParamRequiredMajority:      {},
 	GovernanceProposalUpdateNetParamMinProposerBalance:    {},
 	GovernanceProposalUpdateNetParamMinVoterBalance:       {},
-	BlockchainsEthereumConfig:                             {},
 	MarketLiquidityProvisionShapesMaxSize:                 {},
 	MarketProbabilityOfTradingTauScaling:                  {},
 	MarketMinProbabilityOfTradingForLPOrders:              {},

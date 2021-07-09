@@ -102,12 +102,6 @@ func (t *assetAction) Check() error {
 	switch {
 	case t.IsBuiltinAssetDeposit():
 		return t.checkBuiltinAssetDeposit()
-	case t.IsERC20Deposit():
-		return t.checkERC20Deposit()
-	case t.IsERC20AssetList():
-		return t.checkERC20AssetList()
-	case t.IsERC20Withdrawal():
-		return t.checkERC20Withdrawal()
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -115,30 +109,6 @@ func (t *assetAction) Check() error {
 
 func (t *assetAction) checkBuiltinAssetDeposit() error {
 	return nil
-}
-
-func (t *assetAction) checkERC20Deposit() error {
-	asset, _ := t.asset.ERC20()
-	_, _, _, _, _, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
-	return err
-}
-
-func (t *assetAction) checkERC20Withdrawal() error {
-	asset, _ := t.asset.ERC20()
-	nonce, _, _, err := asset.ValidateWithdrawal(t.erc20W, t.blockNumber, t.txIndex)
-	if err != nil {
-		return err
-	}
-	t.withdrawal = &withdrawal{
-		nonce: nonce,
-	}
-	return nil
-}
-
-func (t *assetAction) checkERC20AssetList() error {
-	asset, _ := t.asset.ERC20()
-	_, _, err := asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
-	return err
 }
 
 func (t *assetAction) getRef() txRef {
