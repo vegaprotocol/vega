@@ -54,6 +54,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+var logger = logging.NewTestLogger()
+
+const defaultTimout = 30 * time.Second
+
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
 // Any error will fail and terminate the test.
 func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc.ClientConn, eventBroker *broker.Broker) {
@@ -70,8 +74,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	conf.API.IP = "127.0.0.1"
 	conf.API.Port = port
 
-	logger := logging.NewTestLogger()
-
 	mockCtrl := gomock.NewController(t)
 	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
 	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
@@ -81,6 +83,10 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		ValidatorInfo: tmctypes.ValidatorInfo{},
 	}, nil)
 	blockchainClient.EXPECT().GetUnconfirmedTxCount(gomock.Any()).AnyTimes().Return(0, nil)
+	blockchainClient.EXPECT().GetNetworkInfo(gomock.Any()).AnyTimes().Return(&tmctypes.ResultNetInfo{
+		Listening: true,
+		NPeers:    1,
+	}, nil)
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -113,6 +119,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create order service: %v", err)
 	}
+	orderSub := subscribers.NewOrderEvent(ctx, conf.Subscribers, logger, orderStore, true)
 
 	marketStore, err := storage.NewMarkets(logger, conf.Storage, cancel)
 	if err != nil {
@@ -130,6 +137,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatalf("failed to create market service: %v", err)
 		return
 	}
+	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, true)
 
 	partyStore, err := storage.NewParties(conf.Storage)
 	if err != nil {
@@ -140,6 +148,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create party service: %v", err)
 	}
+	partySub := subscribers.NewPartySub(ctx, partyStore, true)
 
 	riskStore := storage.NewRisks(logger, conf.Storage)
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
@@ -148,11 +157,11 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create risk store: %v", err)
 	}
-
 	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore)
 	if err != nil {
 		t.Fatalf("failed to create trade service: %v", err)
 	}
+	transferSub := subscribers.NewTransferResponse(ctx, transferResponseStore, true)
 
 	tradeStore, err := storage.NewTrades(logger, conf.Storage, cancel)
 	if err != nil {
@@ -163,11 +172,9 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create trade service: %v", err)
 	}
+	tradeSub := subscribers.NewTradeSub(ctx, tradeStore, true)
 
 	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
-
-	eventBroker = broker.New(ctx)
-	eventBroker.SubscribeBatch(accountSub)
 
 	gov, vote := govStub{}, voteStub{}
 
@@ -186,6 +193,19 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	deposit := plugins.NewDeposit(ctx)
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
+
+	eventBroker = broker.New(ctx)
+	eventBroker.SubscribeBatch(
+		accountSub,
+		transferSub,
+		orderSub,
+		tradeSub,
+		partySub,
+		newMarketSub,
+		oracleService,
+		liquidityService,
+		deposit,
+		withdrawal)
 
 	srv := api.NewGRPCServer(
 		logger,
@@ -217,6 +237,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatal("failed to create gRPC server")
 	}
 
+	go srv.Start()
+
 	t.Cleanup(func() {
 		srv.Stop()
 		cleanTempDir()
@@ -224,8 +246,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	})
 
 	if blocking {
-		go srv.Start()
-
 		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
 		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
 		if err != nil {
@@ -240,11 +260,17 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	return
 }
 
-// PublishEvents reads JSON encoded BusEvents from golden file testdata/events.golden and publishes the
+// PublishEvents reads JSON encoded BusEvents from golden file testdata/<type>-events.golden and publishes the
 // corresponding core Event to the broker. It uses the given converter func to perform the conversion.
-func PublishEvents(t *testing.T, ctx context.Context, b *broker.Broker, convertEvt func(be *eventspb.BusEvent) (events.Event, error)) {
+func PublishEvents(
+	t *testing.T,
+	ctx context.Context,
+	b *broker.Broker,
+	convertEvt func(be *eventspb.BusEvent) (events.Event, error),
+	goldenFile string) {
+
 	t.Helper()
-	path := filepath.Join("testdata", "events.golden")
+	path := filepath.Join("testdata", goldenFile)
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("failed to open golden file %s: %v", path, err)
@@ -277,6 +303,8 @@ func PublishEvents(t *testing.T, ctx context.Context, b *broker.Broker, convertE
 		b.SendBatch(e)
 	}
 
+	t.Logf("%d events sent", len(evts))
+
 	// add time event subscriber so we can verify the time event was received at the end
 	sCtx, cfunc := context.WithCancel(ctx)
 	tmConf := NewTimeSub(sCtx)
@@ -290,6 +318,9 @@ func PublishEvents(t *testing.T, ctx context.Context, b *broker.Broker, convertE
 	if !waitForTime(tmConf, now) {
 		t.Fatal("Did not receive the expected time event within reasonable time")
 	}
+
+	t.Log("time event received")
+
 	// halt the subscriber
 	tmConf.Halt()
 	// cancel the subscriber ctx

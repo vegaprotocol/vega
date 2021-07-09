@@ -9,39 +9,30 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/data-node/events"
-	pb "code.vegaprotocol.io/data-node/proto"
 	apipb "code.vegaprotocol.io/data-node/proto/api"
 	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
 )
 
-func TestGetPartyAccounts(t *testing.T) {
+func TestGetByOrderID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
 	conn, broker := NewTestServer(t, ctx, true)
 
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
-		acc := be.GetAccount()
-		require.NotNil(t, acc)
-		e := events.NewAccountEvent(ctx, types.Account{
-			Id:       acc.Id,
-			Owner:    acc.Owner,
-			Balance:  num.NewUint(acc.Balance),
-			Asset:    acc.Asset,
-			MarketId: acc.MarketId,
-			Type:     acc.Type,
-		})
+		order := be.GetOrder()
+		require.NotNil(t, order)
+		e := events.NewOrderEvent(ctx, types.OrderFromProto(order))
 		return e, nil
-	}, "account-events.golden")
+	}, "orders-events.golden")
 
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
-	partyID := "6fb72005cde8e239f8d3b08c5fbcec06f93bfb45e9013208f662954923343fba"
+	orderID := "V0000000567-0000005166"
 
-	var resp *apipb.PartyAccountsResponse
+	var resp *apipb.OrderByIDResponse
 	var err error
 
 loop:
@@ -50,17 +41,16 @@ loop:
 		case <-ctx.Done():
 			t.Fatalf("test timeout")
 		case <-time.Tick(50 * time.Millisecond):
-			resp, err = client.PartyAccounts(ctx, &apipb.PartyAccountsRequest{
-				PartyId: partyID,
-				Type:    pb.AccountType_ACCOUNT_TYPE_GENERAL,
+			resp, err = client.OrderByID(ctx, &apipb.OrderByIDRequest{
+				OrderId: orderID,
+				Version: 1,
 			})
-			if err == nil && len(resp.Accounts) > 0 {
+			if err == nil && resp.Order != nil {
 				break loop
 			}
 		}
 	}
 
 	assert.NoError(t, err)
-	assert.Len(t, resp.Accounts, 1)
-	assert.Equal(t, partyID, resp.Accounts[0].Owner)
+	assert.Equal(t, orderID, resp.Order.Id)
 }
