@@ -30,7 +30,6 @@ import (
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
-	"code.vegaprotocol.io/data-node/monitoring"
 	"code.vegaprotocol.io/data-node/netparams"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
@@ -192,7 +191,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		logger,
 		conf.API,
 		stats.New(logger, conf.Stats, "ver", "hash"),
-		blockchainClient,
 		timeService,
 		marketService,
 		partyService,
@@ -214,7 +212,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		deposit,
 		marketDepth,
 		netparams,
-		monitoring.New(logger, monitoring.NewDefaultConfig(), blockchainClient),
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")
