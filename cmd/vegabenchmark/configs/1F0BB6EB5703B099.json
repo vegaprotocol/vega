@@ -1,0 +1,92 @@
+{
+  "id": "1F0BB6EB5703B099",
+  "tradableInstrument": {
+    "instrument": {
+      "id": "unused-id",
+      "code": "ETHBTC.QM21",
+      "name": "ETHBTC Quarterly (30 Jun 2021)",
+      "metadata": {
+        "tags": [
+          "base:ETH",
+          "quote:BTC",
+          "class:fx/crypto",
+          "quarterly",
+          "sector:crypto"
+        ]
+      },
+      "future": {
+        "maturity": "2021-06-30T23:59:59Z",
+        "settlementAsset": "fBTC",
+        "quoteName": "BTC",
+        "oracleSpec": {
+          "pubKeys": [
+            "0x51a3a77554709b5db7b769d4376560ad6398c7b08380b5a3e49bda1236697f4f"
+          ],
+          "filters": [
+            {
+              "key": {
+                "name": "prices.ETH.value",
+                "type": "TYPE_INTEGER"
+              },
+              "conditions": [
+              ]
+            }
+          ]
+        },
+        "oracleSpecBinding": {
+          "settlementPriceProperty": "prices.ETH.value"
+        }
+      }
+    },
+    "marginCalculator": {
+      "scalingFactors": {
+        "searchLevel": 1.025,
+        "initialMargin": 1.05,
+        "collateralRelease": 1.1
+      }
+    },
+    "logNormalRiskModel": {
+      "riskAversionParameter": 0.01,
+      "tau": 0.0001140771161,
+      "params": {
+        "mu": 0,
+        "r": 0.016,
+        "sigma": 0.3
+      }
+    }
+  },
+  "decimalPlaces": "5",
+  "fees": {
+    "factors": {
+      "makerFee": "0.00075",
+      "infrastructureFee": "0.00175",
+      "liquidityFee": "0.0025"
+    }
+  },
+  "openingAuction": {
+    "duration": "10",
+    "volume": "0"
+  },
+  "priceMonitoringSettings": {
+    "parameters": {
+      "triggers": [
+        {
+          "horizon": 43200,
+          "probability": 0.9999999,
+          "auctionExtension": 600
+        }
+      ]
+    },
+    "updateFrequency": "1"
+  },
+  "continuous": {
+    "tickSize": "0.00001"
+  },
+  "liquidityMonitoringParameters": {
+    "targetStakeParameters": {
+      "timeWindow": "3600",
+      "scalingFactor": 10
+    },
+    "triggeringRatio": 0
+  }
+}

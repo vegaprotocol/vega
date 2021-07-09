@@ -1,0 +1,359 @@
+---
+
+kind: pipeline
+name: default
+type: docker
+
+platform:
+  arch: amd64
+  os: linux
+
+steps:
+
+  # https://docker-runner.docs.drone.io/configuration/cloning/
+  - name: fetch
+    image: alpine/git
+    commands:
+      - git fetch --tags  # necessary for generation of VERSION var
+
+  # ====== Pipeline for pull requests ======
+
+  - name: build-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
+    pull: always
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      GO111MODULE: "on"
+      GOCACHE: /go/cache
+      GITHUB_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
+    commands:
+      # The following git+ssh config enables accessing private github repos.
+      - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
+      - mkdir -p -m 0700 ~/.ssh
+      - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
+      - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      # Get a list of files that changed in this PR, in order to limit CI to only test things that
+      # changed in this PR.
+      - git diff --name-only "$$DRONE_COMMIT_BEFORE...$$DRONE_COMMIT_AFTER" >git_diff.txt
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go|\.feature)$$' git_diff.txt)" -gt 0 ; then
+          echo "Building executable" ;
+          ./script/build-multiarch-no-cgo.sh default || exit 1 ;
+        else
+          echo "No Go files changed. Skipping building of binary." ;
+          rm -f cmd/vega/vega-* cmd/vegabenchmark/vegabenchmark-* ;
+        fi
+    depends_on:
+      - fetch
+    when:
+      event:
+        - pull_request
+
+  - name: markdownspellcheck-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/markdownspellcheck:latest
+    pull: always
+    environment:
+      FORCE_COLOR: 1  # show colour in CI
+    commands:
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -c '\.md$$' git_diff.txt)" -gt 0 ; then
+          mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report '*.md' 'docs/**/*.md' || exit 1 ;
+        else
+          echo "No md files changed. Skipping mdspell." ;
+        fi
+    depends_on:
+      - build-PR
+    when:
+      event:
+        - pull_request
+
+  - name: build_docker_image-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:18.09.9
+    volumes:
+      - name: dockersock
+        path: /run/docker.sock
+    environment:
+      DOCKER_HOST: unix:///run/docker.sock
+      DOCKER_CONFIG_JSON:
+        from_secret: dockerconfig
+    commands:
+      - mkdir -p docker/bin
+      - find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
+          if test -f "cmd/$$app/$$app-linux-amd64" ; then
+            cp -a "cmd/$$app/$$app-linux-amd64" "docker/bin/$$app" || exit 1 ;
+          else
+            echo "dummy_noop" >"docker/bin/$$app" ;
+          fi ;
+        done
+      - tmptag="$$(openssl rand -hex 10)"
+      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" docker/
+      - rm -rf docker/bin
+      - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
+      - docker rmi "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag"
+    depends_on:
+      - build-PR
+    when:
+      event:
+        - pull_request
+
+  - name: test-PR
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      GOCACHE: /go/cache
+      GITHUB_API_TOKEN:
+        from_secret: GITHUB_API_TOKEN
+      SLACK_HOOK_URL:
+        from_secret: SLACK_HOOK_URL
+      JENKINS_USERNAME:
+        from_secret: JENKINS_USERNAME
+      JENKINS_TOKEN:
+        from_secret: JENKINS_TOKEN
+    commands:
+      - failed=""
+      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
+          make retest || exit 1 ;
+          for target in gqlgen_check print_check proto_check race vet ;
+          do
+            echo "$$COL_CYAN$$target$$COL_RESET" ;
+            make "$$target" || failed="$$failed $$target" ;
+          done ;
+        else
+          echo "No Go files changed. Skipping go tests" ;
+        fi
+      - for target in codeowners_check buflint misspell staticcheck; do
+          echo "$$COL_CYAN$$target$$COL_RESET" ;
+          make "$$target" || failed="$$failed $$target" ;
+        done
+      - /usr/local/bin/check-rest-endpoints.py
+          --bindings gateway/rest/grpc-rest-bindings.yml
+          --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
+      - difflint "$$DRONE_COMMIT_BEFORE" "$$DRONE_COMMIT_AFTER" || failed="$$failed multilint"
+      - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
+    depends_on:
+      - build-PR
+    when:
+      event:
+        - pull_request
+
+  - name: Trigger systemtests for PR
+    image: alpine
+    pull: always
+    environment:
+      # Jenkins trigger url with token
+      JENKINS_SYSTEMTESTS_WEBHOOK_URL:
+        from_secret: JENKINS_SYSTEMTESTS_WEBHOOK_URL
+    commands:
+      - if ! test -x cmd/vega/vega-linux-amd64 ; then
+          echo "No vega binary. Skipping system-tests." ; exit 0 ;
+        fi
+      - apk add curl
+      # https://docs.github.com/en/rest/reference/repos#create-a-commit-status
+      - export STATUSES_URL="https://api.github.com/repos/$${DRONE_REPO}/statuses/$${DRONE_COMMIT_SHA}"
+      - |
+        curl \\
+          --request POST \\
+          --header "Content-Type: application/json" \\
+          --data "{\"pull_request\":{\"head\":{\"ref\":\"$${DRONE_SOURCE_BRANCH}\"},\"statuses_url\":\"$${STATUSES_URL}\"}}" \\
+          "$${JENKINS_SYSTEMTESTS_WEBHOOK_URL}"
+    depends_on:
+      - test-PR
+    when:
+      event:
+        - pull_request
+
+  # ====== Pipeline for main branches (master, develop) and tags ======
+
+  - name: build-branch
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
+    pull: always
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      GO111MODULE: "on"
+      GOCACHE: /go/cache
+      GITHUB_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
+    commands:
+      # The following git+ssh config enables accessing private github repos.
+      - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
+      - mkdir -p -m 0700 ~/.ssh
+      - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
+      - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - ./script/build-multiarch-no-cgo.sh default
+    depends_on:
+      - fetch
+    when:
+      ref:
+        - refs/heads/master
+        - refs/heads/develop
+        - refs/tags/*
+
+  - name: deploy_devnet
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
+    volumes:
+      - name: gopkg
+        path: /go/pkg
+      - name: mutex
+        path: /mutex
+    environment:
+      DEVNET_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: DEVNET_DEPLOY_SSH_PRIVATE_KEY
+      DEVNET_DEPLOY_HOSTS:
+        from_secret: DEVNET_DEPLOY_HOSTS
+      DEVNET_DEPLOY_HOSTS_VALIDATORS:
+        from_secret: DEVNET_DEPLOY_HOSTS_VALIDATORS
+      DEVNET_DEPLOY_HOSTS_NONVALIDATORS:
+        from_secret: DEVNET_DEPLOY_HOSTS_NONVALIDATORS
+      DEVNET_DEPLOY_SSH_KNOWN_HOSTS:
+        from_secret: DEVNET_DEPLOY_SSH_KNOWN_HOSTS
+      SLACK_HOOK_URL:
+        from_secret: SLACK_HOOK_URL
+    commands:
+      # Fix Drone commit message. By default, it uses the oldest commit possible, not the most recent.
+      - export DRONE_COMMIT_MESSAGE="$$(git log -n1 --pretty=oneline | cut -d ' ' -f 2-)"
+      # The deploy script requires vars:
+      # - DEVNET_DEPLOY_HOSTS
+      # - DEVNET_DEPLOY_HOSTS_VALIDATORS
+      # - DEVNET_DEPLOY_HOSTS_NONVALIDATORS
+      # - DEVNET_DEPLOY_SSH_KNOWN_HOSTS
+      # - DEVNET_DEPLOY_SSH_PRIVATE_KEY
+      # - SLACK_HOOK_URL
+      - (
+          if ! flock -n 9 ; then
+            echo "Another devnet deployment is in progress." ;
+            exit 1 ;
+          fi ;
+          cp -a cmd/vega/vega-linux-amd64 cmd/vega/vega &&
+          /usr/local/bin/deploy-trading-core.sh devnet vega
+       ) 9>/mutex/devnet_deploy
+    depends_on:
+      - build-branch
+    when:
+      branch:
+        - develop
+      event:
+        - push
+
+  - name: build_docker_image
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:18.09.9
+    volumes:
+      - name: dockersock
+        path: /run/docker.sock
+    environment:
+      DOCKER_HOST: unix:///run/docker.sock
+      DOCKER_CONFIG_JSON:
+        from_secret: dockerconfig
+    commands:
+      - mkdir -p docker/bin
+      - find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
+          cp -a "cmd/$$app/$$app-linux-amd64" "docker/bin/$$app" || exit 1 ;
+        done
+      - tmptag="$$(openssl rand -hex 10)"
+      - docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" docker/
+      - rm -rf docker/bin
+      - mkdir -p "$$HOME/.docker" ; echo "$$DOCKER_CONFIG_JSON" >"$$HOME/.docker/config.json" ; unset DOCKER_CONFIG_JSON
+      - if test -n "$$DRONE_TAG" ; then
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$DRONE_TAG" ;
+        fi
+      - if test -n "$$DRONE_BRANCH" ; then
+          sanitised_branch="$$(echo -n "$$DRONE_BRANCH" | tr -c 'A-Za-z0-9._' '-')" ;
+          docker tag "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag" "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
+          docker push "docker.pkg.github.com/vegaprotocol/vega/vega:$$sanitised_branch" ;
+        fi
+      - docker rmi "docker.pkg.github.com/vegaprotocol/vega/vega:$$tmptag"
+    depends_on:
+      - build-branch
+    when:
+      ref:
+        - refs/heads/master
+        - refs/heads/develop
+        - refs/tags/*
+
+  - name: build-multiarch
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
+    pull: always
+    volumes:
+      - name: gocache
+        path: /go/cache
+      - name: gopkg
+        path: /go/pkg
+    environment:
+      GO111MODULE: "on"
+      GOCACHE: /go/cache
+      GITHUB_DEPLOY_SSH_PRIVATE_KEY:
+        from_secret: GITHUB_DEPLOY_SSH_PRIVATE_KEY
+    commands:
+      # The following git+ssh config enables accessing private github repos.
+      - git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
+      - mkdir -p -m 0700 ~/.ssh
+      - if ! echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" | grep -q "BEGIN [A-Z]* PRIVATE KEY" ; then
+          echo "Need env var GITHUB_DEPLOY_SSH_PRIVATE_KEY to have a private key" ; exit 1 ; fi
+      - echo "$${GITHUB_DEPLOY_SSH_PRIVATE_KEY}" >~/.ssh/id_rsa ; chmod 0600 ~/.ssh/id_rsa
+      - ssh-keyscan github.com 1>~/.ssh/known_hosts 2>/dev/null ; chmod 0644 ~/.ssh/known_hosts
+      - unset GITHUB_DEPLOY_SSH_PRIVATE_KEY
+      - ./script/build-multiarch-no-cgo.sh all
+    depends_on:
+      - build_docker_image
+    when:
+      event: tag
+
+  # http://plugins.drone.io/drone-plugins/drone-github-release/
+  - name: publish_artefacts
+    image: plugins/github-release
+    pull: always
+    settings:
+      api_key:
+        from_secret: GITHUB_API_TOKEN
+      files:
+        - cmd/vega/vega-*
+    when:
+      event: tag
+    depends_on:
+      - build-multiarch
+
+  - name: changelog_slack
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
+    environment:
+      SLACK_HOOK_URL:
+        from_secret: SLACK_HOOK_URL
+    commands:
+      - /usr/local/bin/changelog-slack.sh "$$DRONE_TAG" "$$SLACK_HOOK_URL" "#engineering"
+    when:
+      event: tag
+    depends_on:
+      - publish_artefacts
+
+volumes:
+  - name: dockersock
+    host:
+      path: /run/docker.sock
+  - name: gocache
+    host:
+      path: /var/lib/drone/volumes/vega/gocache
+  - name: gopkg
+    host:
+      path: /var/lib/drone/volumes/vega/gopkg
+  - name: mutex
+    host:
+      path: /var/lib/drone/volumes/vega/mutex
+
+image_pull_secrets:
+  - dockerconfig

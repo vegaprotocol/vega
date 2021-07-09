@@ -1,0 +1,157 @@
+---
+schema: schema.graphql
+exec:
+  filename: generated.go
+model:
+  filename: models.go
+
+models:
+  Order:
+    model: code.vegaprotocol.io/vega/proto.Order
+  Trade:
+    model: code.vegaprotocol.io/vega/proto.Trade
+  PriceLevel:
+    model: code.vegaprotocol.io/vega/proto.PriceLevel
+  MarketDepth:
+    model: code.vegaprotocol.io/vega/proto.MarketDepth
+  MarketDepthUpdate:
+    model: code.vegaprotocol.io/vega/proto.MarketDepthUpdate
+  Candle:
+    model: code.vegaprotocol.io/vega/proto.Candle
+  Position:
+    model: code.vegaprotocol.io/vega/proto.Position
+  Account:
+    model: code.vegaprotocol.io/vega/proto.Account
+  Statistics:
+    model: code.vegaprotocol.io/vega/proto.Statistics
+  MarketData:
+    model: code.vegaprotocol.io/vega/proto.MarketData
+  MarginLevels:
+    model: code.vegaprotocol.io/vega/proto.MarginLevels
+  NodeSignature:
+    model: code.vegaprotocol.io/vega/proto/commands/v1.NodeSignature
+  ProposalEvent:
+    model: code.vegaprotocol.io/vega/proto.Proposal
+  RiskFactor:
+    model: code.vegaprotocol.io/vega/proto.RiskFactor
+  NetworkParameter:
+    model: code.vegaprotocol.io/vega/proto.NetworkParameter
+  LiquidityOrder:
+    model: code.vegaprotocol.io/vega/proto.LiquidityOrder
+  LiquidityProvision:
+    model: code.vegaprotocol.io/vega/proto.LiquidityProvision
+  LiquidityOrderReference:
+    model: code.vegaprotocol.io/vega/proto.LiquidityOrderReference
+  Future:
+    model: code.vegaprotocol.io/vega/proto.Future
+  TradableInstrument:
+    model: code.vegaprotocol.io/vega/proto.TradableInstrument
+  SimpleRiskModel:
+    model: code.vegaprotocol.io/vega/proto.SimpleRiskModel
+  SimpleRiskModelParams:
+    model: code.vegaprotocol.io/vega/proto.SimpleModelParams
+  LogNormalRiskModel:
+    model: code.vegaprotocol.io/vega/proto.LogNormalRiskModel
+  LogNormalModelParams:
+    model: code.vegaprotocol.io/vega/proto.LogNormalModelParams
+  Instrument:
+    model: code.vegaprotocol.io/vega/proto.Instrument
+  InstrumentMetadata:
+    model: code.vegaprotocol.io/vega/proto.InstrumentMetadata
+  Market:
+    model: code.vegaprotocol.io/vega/proto.Market
+    fields:
+      orders:
+        resolver: true
+      trades:
+        resolver: true
+      depth:
+        resolver: true
+      data:
+        resolver: true
+      candles:
+        resolver: true
+      accounts:
+        resolver: true
+      orderByReference:
+        resolver: true
+      liquidityProvisions:
+        resolver: true
+  Party:
+    model: code.vegaprotocol.io/vega/proto.Party
+    fields:
+      orders:
+        resolver: true
+      trades:
+        resolver: true
+      positions:
+        resolver: true
+      accounts:
+        resolver: true
+      margins:
+        resolver: true
+  Proposal:
+    model: code.vegaprotocol.io/vega/proto.GovernanceData
+    fields:
+      votes:
+        resolver: true
+  ProposalTerms:
+    model: code.vegaprotocol.io/vega/proto.ProposalTerms
+  NewMarket:
+    model: code.vegaprotocol.io/vega/proto.NewMarket
+  NewMarketCommitment:
+    model: code.vegaprotocol.io/vega/proto.NewMarketCommitment
+  NewAsset:
+    model: code.vegaprotocol.io/vega/proto.NewAsset
+  UpdateMarket:
+    model: code.vegaprotocol.io/vega/proto.UpdateMarket
+  UpdateNetworkParameter:
+    model: code.vegaprotocol.io/vega/proto.UpdateNetworkParameter
+  InstrumentConfiguration:
+    model: code.vegaprotocol.io/vega/proto.InstrumentConfiguration
+  FutureProduct:
+    model: code.vegaprotocol.io/vega/proto.FutureProduct
+  Asset:
+    model: code.vegaprotocol.io/vega/proto.Asset
+    fields:
+      infrastructureFeeAccount:
+        resolver: true
+  Deposit:
+    model: code.vegaprotocol.io/vega/proto.Deposit
+  Withdrawal:
+    model: code.vegaprotocol.io/vega/proto.Withdrawal
+    fields:
+      txHash:
+        resolver: true
+  PeggedOrder:
+    model: code.vegaprotocol.io/vega/proto.PeggedOrder
+  OracleSpecToFutureBinding:
+    model: code.vegaprotocol.io/vega/proto.OracleSpecToFutureBinding
+  OracleSpecConfiguration:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.OracleSpecConfiguration
+  OracleSpec:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.OracleSpec
+  Filter:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.Filter
+  PropertyKey:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.PropertyKey
+  Condition:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.Condition
+  OracleData:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.OracleData
+  Property:
+    model: code.vegaprotocol.io/vega/proto/oracles/v1.Property
+  AuctionEvent:
+    model: code.vegaprotocol.io/vega/proto/events/v1.AuctionEvent
+  FeeFactors:
+    model: code.vegaprotocol.io/vega/proto.FeeFactors
+  Fees:
+    model: code.vegaprotocol.io/vega/proto.Fees
+  ScalingFactors:
+    model: code.vegaprotocol.io/vega/proto.ScalingFactors
+  MarginCalculator:
+    model: code.vegaprotocol.io/vega/proto.MarginCalculator
+  Vote:
+    model: code.vegaprotocol.io/vega/proto.Vote
+  MarketTimestamps:
+    model: code.vegaprotocol.io/vega/proto.MarketTimestamps
