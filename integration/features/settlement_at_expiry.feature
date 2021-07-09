@@ -96,7 +96,7 @@ Feature: Test mark to market settlement
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 | 0      | 8084    |
-      | trader2 | ETH   | ETH/DEC19 | 0      | 1826    |
-      | trader3 | ETH   | ETH/DEC19 | 0      | 5826    |
+      | trader1 | ETH   | ETH/DEC19 | 0      | 11676   |
+      | trader2 | ETH   | ETH/DEC19 | 0      | 42      |
+      | trader3 | ETH   | ETH/DEC19 | 0      | 4042    |      
     # And the cumulated balance for all accounts should be worth "100214513"

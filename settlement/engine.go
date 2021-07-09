@@ -29,7 +29,7 @@ type MarketPosition interface {
 // Product ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/settlement_product_mock.go -package mocks code.vegaprotocol.io/vega/settlement Product
 type Product interface {
-	Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error)
+	Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error)
 	GetAsset() string
 }
 
@@ -317,7 +317,7 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 		e.log.Debug("Settling position for trader", logging.String("trader-id", party))
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
-		amt, err := settleProd.Settle(pos.price, pos.size)
+		amt, neg, err := settleProd.Settle(pos.price, pos.size)
 		// for now, product.Settle returns the total value, we need to only settle the delta between a traders current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
@@ -338,13 +338,11 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 			logging.String("trader-id", party),
 			logging.String("amount", amt.Amount.String()),
 		)
-		// size was negative, this is a loss transfer
-		if pos.size < 0 {
-			// trader is winning...
+
+		if neg { // this is a loss transfer
 			settlePos.Type = types.TransferType_TRANSFER_TYPE_LOSS
 			aggregated = append(aggregated, settlePos)
-		} else {
-			// bad name again, but SELL means trader is owed money
+		} else { // this is a win transfer
 			settlePos.Type = types.TransferType_TRANSFER_TYPE_WIN
 			owed = append(owed, settlePos)
 		}
@@ -427,16 +425,17 @@ type lastMarkPriceSettlement struct {
 	asset     string
 }
 
-func (l *lastMarkPriceSettlement) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error) {
+func (l *lastMarkPriceSettlement) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, bool, error) {
+	amt, neg := num.Zero().Delta(l.markPrice, entryPrice)
 	if netPosition < 0 {
 		netPosition *= -1
+		neg = !neg
 	}
-	amt := num.Zero().Sub(l.markPrice, entryPrice)
 	amt = amt.Mul(amt, num.NewUint(uint64(netPosition)))
 	return &types.FinancialAmount{
 		Asset:  l.asset,
 		Amount: amt,
-	}, nil
+	}, neg, nil
 }
 
 func (l *lastMarkPriceSettlement) GetAsset() string {

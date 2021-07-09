@@ -65,17 +65,17 @@ func testSettleExpiredSuccess(t *testing.T) {
 	data := []posValue{ // {{{2
 		{
 			trader: "trader1",
-			price:  pr,
+			price:  pr, // winning
 			size:   10,
 		},
 		{
 			trader: "trader2",
-			price:  pr,
+			price:  pr, // losing
 			size:   -5,
 		},
 		{
 			trader: "trader3",
-			price:  pr,
+			price:  pr, // losing
 			size:   -5,
 		},
 	}
@@ -104,15 +104,17 @@ func testSettleExpiredSuccess(t *testing.T) {
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
-	settleF := func(price *num.Uint, size int64) (*types.FinancialAmount, error) {
+	settleF := func(price *num.Uint, size int64) (*types.FinancialAmount, bool, error) {
+		amt, neg := num.Zero().Delta(oraclePrice, price)
 		if size < 0 {
 			size *= -1
+			neg = !neg
 		}
-		amt := num.Zero().Sub(oraclePrice, price)
+
 		amt = amt.Mul(amt, num.NewUint(uint64(size)))
 		return &types.FinancialAmount{
 			Amount: amt,
-		}, nil
+		}, neg, nil
 	}
 	positions := engine.getExpiryPositions(data...)
 	for _, d := range data {
@@ -224,7 +226,7 @@ func testSettleExpiryFail(t *testing.T) {
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, errExp)
+	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, false, errExp)
 	engine.Update(positions)
 	empty, err := engine.Settle(time.Now(), num.Zero())
 	assert.Empty(t, empty)
@@ -567,8 +569,8 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size int64) (*types.FinancialAmount, error) {
-		return &types.FinancialAmount{Amount: num.Zero()}, nil
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size int64) (*types.FinancialAmount, bool, error) {
+		return &types.FinancialAmount{Amount: num.Zero()}, false, nil
 	})
 
 	cfg := engine.Config
