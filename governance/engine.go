@@ -12,7 +12,6 @@ import (
 	"code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/types/num"
-	"code.vegaprotocol.io/data-node/validators"
 
 	"github.com/pkg/errors"
 )
@@ -52,10 +51,15 @@ type TimeService interface {
 	GetTimeNow() (time.Time, error)
 }
 
+type Resource interface {
+	GetID() string
+	Check() error
+}
+
 // Witness ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/governance Witness
 type Witness interface {
-	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
+	StartCheck(Resource, func(interface{}, bool), time.Time) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/netparams_mock.go -package mocks code.vegaprotocol.io/vega/governance NetParams
