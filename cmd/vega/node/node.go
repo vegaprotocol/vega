@@ -128,7 +128,6 @@ type NodeCommand struct {
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
-	governance     *governance.Engine
 	collateral     *collateral.Engine
 	oracle         *oracles.Engine
 	oracleAdaptors *adaptors.Adaptors

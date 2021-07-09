@@ -34,7 +34,6 @@ import (
 	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/vegatime"
 	"github.com/cenkalti/backoff"
-	"github.com/prometheus/common/log"
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
@@ -271,13 +270,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
-	// TODO Remove governance engine
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, nil, l.netParams, now)
-	if err != nil {
-		log.Error("unable to initialise governance", logging.Error(err))
-		return err
-	}
-
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
 		return
@@ -341,7 +333,6 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
-		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
 
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
