@@ -235,7 +235,7 @@ Scenario: WIP - Testing fees in continuous trading with two trades and one liqui
       # | aux1    | ETH/DEC21 | buy  | 105      | 910   | 0                | TYPE_LIMIT | TIF_GTC |
       # | aux2    | ETH/DEC21 | sell | 92     | 1090  | 0                | TYPE_LIMIT | TIF_GTC |
 
-  #  TODO: Remove liquidity orders, add limit orders for same price and volume so that checks on lines 250-1 pass and update margin/general account figures.
+    #TODO: Chancing party to lp5 changes order book composition, check why.
     Given the traders submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | aux1   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
