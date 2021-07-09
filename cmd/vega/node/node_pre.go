@@ -3,9 +3,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
@@ -13,8 +10,6 @@ import (
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/execution"
-	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
@@ -30,7 +25,6 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/proto"
-	oraclepb "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
@@ -40,8 +34,6 @@ import (
 	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/vegatime"
 	"github.com/cenkalti/backoff"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 )
 
@@ -86,10 +78,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
 
-	if err = l.loadMarketsConfig(); err != nil {
-		return err
-	}
-
 	// Set ulimits
 	if err = l.SetUlimits(); err != nil {
 		l.Log.Warn("Unable to set ulimits",
@@ -112,33 +100,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	} else {
 		l.Log.Info("node setted up with badger store support")
 	}
-
-	return nil
-}
-
-func (l *NodeCommand) loadMarketsConfig() error {
-	pmkts := []proto.Market{}
-	mktsCfg := l.conf.Execution.Markets
-	// loads markets from configuration
-	for _, v := range mktsCfg.Configs {
-		path := filepath.Join(mktsCfg.Path, v)
-		buf, err := ioutil.ReadFile(path)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to read market configuration at %s", path))
-		}
-
-		mkt := proto.Market{}
-		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to unmarshal market configuration at %s", path))
-		}
-
-		l.Log.Info("New market loaded from configuation",
-			logging.String("market-config", path),
-			logging.String("market-id", mkt.Id))
-		pmkts = append(pmkts, mkt)
-	}
-	l.mktscfg = pmkts
 
 	return nil
 }
@@ -214,45 +175,6 @@ func (l *NodeCommand) setupStorages() (err error) {
 	)
 
 	return
-}
-
-// UponGenesis loads all asset from genesis state
-func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
-	state, err := assets.LoadGenesisState(rawstate)
-	if err != nil {
-		return err
-	}
-	if state == nil {
-		return nil
-	}
-
-	for k, v := range state {
-		err := l.loadAsset(k, v)
-		if err != nil {
-			return err
-		}
-	}
-
-	// then we load the markets
-	if len(l.mktscfg) > 0 {
-		for _, mkt := range l.mktscfg {
-			mkt := mkt
-
-			// hot fix: attribute an ID to oracle spec to avoid blank ID
-			spec := mkt.TradableInstrument.Instrument.GetFuture().OracleSpec
-			specWithID := oraclepb.NewOracleSpec(spec.PubKeys, spec.Filters)
-			mkt.TradableInstrument.Instrument.GetFuture().OracleSpec = specWithID
-			// end of hot fix
-
-			err = l.executionEngine.SubmitMarket(l.ctx, types.MarketFromProto(&mkt))
-			if err != nil {
-				l.Log.Panic("Unable to submit market",
-					logging.Error(err))
-			}
-		}
-	}
-
-	return nil
 }
 
 func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
@@ -347,16 +269,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
 	l.oracleAdaptors = oracleAdaptors.New()
 
-	// instantiate the execution engine
-	l.executionEngine = execution.NewEngine(
-		l.Log,
-		l.conf.Execution,
-		l.timeService,
-		l.collateral,
-		l.oracle,
-		l.broker,
-	)
-
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
 	// TODO Remove governance engine
@@ -385,7 +297,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub, l.netParams)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
-	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore, l.marketDataStore)
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
@@ -421,72 +332,11 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.GovernanceVoteAsset,
 			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets),
 		},
-		netparams.WatchParam{
-			Param:   netparams.MarketMarginScalingFactors,
-			Watcher: l.executionEngine.OnMarketMarginScalingFactorsUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketFeeFactorsMakerFee,
-			Watcher: l.executionEngine.OnMarketFeeFactorsMakerFeeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketFeeFactorsInfrastructureFee,
-			Watcher: l.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
-			Watcher: l.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketValueWindowLength,
-			Watcher: l.executionEngine.OnMarketValueWindowLengthUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeScalingFactor,
-			Watcher: l.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeTimeWindow,
-			Watcher: l.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
-			Watcher: l.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
-			Watcher: l.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
-			Watcher: l.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: l.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
-			Watcher: l.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketAuctionMinimumDuration,
-			Watcher: l.executionEngine.OnMarketAuctionMinimumDurationUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketProbabilityOfTradingTauScaling,
-			Watcher: l.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
-			Watcher: l.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
-		},
 	)
 }
 
 func (l *NodeCommand) setupConfigWatchers() {
 	l.cfgwatchr.OnConfigUpdate(
-		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
@@ -506,6 +356,5 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) },
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
-		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
 	)
 }

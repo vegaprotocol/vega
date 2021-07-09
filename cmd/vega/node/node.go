@@ -16,7 +16,6 @@ import (
 	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/evtforward"
-	"code.vegaprotocol.io/data-node/execution"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway/server"
 	"code.vegaprotocol.io/data-node/governance"
@@ -129,12 +128,11 @@ type NodeCommand struct {
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
-	executionEngine *execution.Engine
-	governance      *governance.Engine
-	collateral      *collateral.Engine
-	oracle          *oracles.Engine
-	oracleAdaptors  *adaptors.Adaptors
-	netParams       *netparams.Store
+	governance     *governance.Engine
+	collateral     *collateral.Engine
+	oracle         *oracles.Engine
+	oracleAdaptors *adaptors.Adaptors
+	netParams      *netparams.Store
 
 	mktscfg []types.Market
 

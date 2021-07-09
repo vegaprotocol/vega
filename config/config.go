@@ -14,7 +14,6 @@ import (
 	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/evtforward"
-	"code.vegaprotocol.io/data-node/execution"
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
@@ -47,7 +46,6 @@ type Config struct {
 	Accounts          accounts.Config    `group:"Accounts" namespace:"accounts"`
 	Candles           candles.Config     `group:"Candles" namespace:"candles"`
 	Collateral        collateral.Config  `group:"Collateral" namespace:"collateral"`
-	Execution         execution.Config   `group:"Execution" namespace:"execution"`
 	Logging           logging.Config     `group:"Logging" namespace:"logging"`
 	Matching          matching.Config    `group:"Matching" namespace:"matching"`
 	Markets           markets.Config     `group:"Markets" namespace:"markets"`
@@ -84,7 +82,6 @@ type Config struct {
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
 		Trades:            trades.NewDefaultConfig(),
-		Execution:         execution.NewDefaultConfig(defaultStoreDirPath),
 		API:               api.NewDefaultConfig(),
 		Accounts:          accounts.NewDefaultConfig(),
 		Oracles:           oracles.NewDefaultConfig(),
