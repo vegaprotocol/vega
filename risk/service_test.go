@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/vega/logging"
-	ptypes "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/risk/mocks"
+	"code.vegaprotocol.io/data-node/logging"
+	ptypes "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/risk/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

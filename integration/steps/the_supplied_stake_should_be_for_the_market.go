@@ -3,8 +3,8 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/execution"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 func TheSuppliedStakeShouldBeForTheMarket(engine *execution.Engine, marketID string, wantSuppliedStake string) error {

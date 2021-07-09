@@ -3,8 +3,8 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/integration/stubs"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 func TheSettlementAccountShouldHaveBalanceForMarket(

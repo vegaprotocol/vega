@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 // TransferResponse is responsible for storing the ledger entries

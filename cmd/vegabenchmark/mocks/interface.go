@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/governance"
-	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/oracles"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/governance"
+	"code.vegaprotocol.io/data-node/nodewallet"
+	"code.vegaprotocol.io/data-node/oracles"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/txn"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/validators"
 
 	"github.com/golang/protobuf/proto"
 )

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/contextutil"
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/events"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -5,12 +5,12 @@ package execution
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/liquidity"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/liquidity"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 func (m *Market) repricePeggedOrders(

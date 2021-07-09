@@ -6,10 +6,10 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/trades"
-	"code.vegaprotocol.io/vega/trades/mocks"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/trades"
+	"code.vegaprotocol.io/data-node/trades/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/liquidity AuctionState

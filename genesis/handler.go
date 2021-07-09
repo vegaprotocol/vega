@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 type Handler struct {

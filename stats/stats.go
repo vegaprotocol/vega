@@ -3,7 +3,7 @@ package stats
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 // Stats ties together all other package level application stats types.

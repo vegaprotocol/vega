@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/assets/builtin"
-	"code.vegaprotocol.io/vega/assets/erc20"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/assets/builtin"
+	"code.vegaprotocol.io/data-node/assets/erc20"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/nodewallet"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 var (

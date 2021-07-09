@@ -1,8 +1,8 @@
 package events
 
 import (
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 // MarketPosition is an event with a change to a position.

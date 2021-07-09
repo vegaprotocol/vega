@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 type FeeSplitter struct {

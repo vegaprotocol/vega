@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/parties"
-	"code.vegaprotocol.io/vega/parties/mocks"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/parties"
+	"code.vegaprotocol.io/data-node/parties/mocks"
+	types "code.vegaprotocol.io/data-node/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

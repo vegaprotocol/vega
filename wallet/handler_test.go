@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	walletpb "code.vegaprotocol.io/vega/proto/wallet/v1"
-	"code.vegaprotocol.io/vega/wallet"
-	"code.vegaprotocol.io/vega/wallet/mocks"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	walletpb "code.vegaprotocol.io/data-node/proto/wallet/v1"
+	"code.vegaprotocol.io/data-node/wallet"
+	"code.vegaprotocol.io/data-node/wallet/mocks"
 	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"

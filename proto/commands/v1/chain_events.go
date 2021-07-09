@@ -3,7 +3,7 @@ package v1
 import (
 	"fmt"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/data-node/proto"
 )
 
 func (c *ChainEvent) PrepareToSign() ([]byte, error) {

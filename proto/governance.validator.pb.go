@@ -7,7 +7,7 @@ import (
 	fmt "fmt"
 	math "math"
 
-	_ "code.vegaprotocol.io/vega/proto/oracles/v1"
+	_ "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
 	github_com_mwitkow_go_proto_validators "github.com/mwitkow/go-proto-validators"

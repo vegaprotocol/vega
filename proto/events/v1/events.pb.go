@@ -4,9 +4,9 @@
 package v1
 
 import (
-	proto1 "code.vegaprotocol.io/vega/proto"
-	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
-	v11 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	proto1 "code.vegaprotocol.io/data-node/proto"
+	v1 "code.vegaprotocol.io/data-node/proto/commands/v1"
+	v11 "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	math "math"

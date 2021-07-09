@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	validators "code.vegaprotocol.io/vega/validators"
+	validators "code.vegaprotocol.io/data-node/validators"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"

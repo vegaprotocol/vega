@@ -1,8 +1,8 @@
 package notary
 
 import (
-	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/logging"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 )
 
 // Plugin ...

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 type Assets interface {

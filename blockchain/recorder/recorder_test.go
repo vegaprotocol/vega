@@ -3,8 +3,8 @@ package recorder_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/blockchain/recorder"
-	"code.vegaprotocol.io/vega/blockchain/recorder/mocks"
+	"code.vegaprotocol.io/data-node/blockchain/recorder"
+	"code.vegaprotocol.io/data-node/blockchain/recorder/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/spf13/afero"

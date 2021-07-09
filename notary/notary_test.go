@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/notary"
-	"code.vegaprotocol.io/vega/notary/mocks"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	bmock "code.vegaprotocol.io/data-node/broker/mocks"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/notary"
+	"code.vegaprotocol.io/data-node/notary/mocks"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

@@ -12,13 +12,13 @@ import (
 	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/grpc"
 
-	"code.vegaprotocol.io/vega/gateway"
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/gateway"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	"code.vegaprotocol.io/data-node/vegatime"
 )
 
 var (

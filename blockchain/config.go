@@ -1,9 +1,9 @@
 package blockchain
 
 import (
-	"code.vegaprotocol.io/vega/blockchain/noop"
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/blockchain/noop"
+	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 // Config represent the configuration of the blockchain package

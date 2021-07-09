@@ -3,9 +3,9 @@ package builtin
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/assets/common"
+	"code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 type Builtin struct {

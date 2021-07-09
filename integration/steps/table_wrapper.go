@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/proto"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/proto"
+	oraclesv1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 
 	"github.com/cucumber/godog/gherkin"
 )

@@ -1,10 +1,10 @@
 package server
 
 import (
-	"code.vegaprotocol.io/vega/gateway"
-	gql "code.vegaprotocol.io/vega/gateway/graphql"
-	"code.vegaprotocol.io/vega/gateway/rest"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/gateway"
+	gql "code.vegaprotocol.io/data-node/gateway/graphql"
+	"code.vegaprotocol.io/data-node/gateway/rest"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 type Server struct {

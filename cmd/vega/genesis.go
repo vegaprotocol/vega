@@ -9,10 +9,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/genesis"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/genesis"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/nodewallet"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"

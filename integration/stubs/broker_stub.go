@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/data-node/broker"
+	"code.vegaprotocol.io/data-node/events"
+	types "code.vegaprotocol.io/data-node/proto"
+	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 )
 
 type BrokerStub struct {

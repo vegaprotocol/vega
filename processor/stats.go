@@ -3,7 +3,7 @@ package processor
 import (
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 const (

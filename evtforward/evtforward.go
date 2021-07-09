@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/data-node/crypto"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/txn"
 
 	"github.com/golang/protobuf/proto"
 )

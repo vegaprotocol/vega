@@ -6,9 +6,9 @@ import (
 
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/collateral"
+	"code.vegaprotocol.io/data-node/integration/stubs"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 func TradersDepositTheFollowingAssets(

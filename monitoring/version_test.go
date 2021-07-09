@@ -3,7 +3,7 @@ package monitoring_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/monitoring"
+	"code.vegaprotocol.io/data-node/monitoring"
 	"github.com/blang/semver"
 	"github.com/stretchr/testify/assert"
 )

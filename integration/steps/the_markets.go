@@ -6,11 +6,11 @@ import (
 
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/integration/steps/market"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/collateral"
+	"code.vegaprotocol.io/data-node/execution"
+	"code.vegaprotocol.io/data-node/integration/steps/market"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 func TheMarkets(

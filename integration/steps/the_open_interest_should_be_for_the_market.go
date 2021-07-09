@@ -3,8 +3,8 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/execution"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 func TheOpenInterestShouldBeForTheMarket(engine *execution.Engine, marketID string, wantOpenInterest string) error {

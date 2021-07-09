@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"code.vegaprotocol.io/vega/fsutil"
+	"code.vegaprotocol.io/data-node/fsutil"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

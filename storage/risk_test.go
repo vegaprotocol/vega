@@ -3,9 +3,9 @@ package storage_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/storage"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/storage"
 
 	"github.com/stretchr/testify/assert"
 )

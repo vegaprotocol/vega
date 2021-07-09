@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/data-node/crypto"
 )
 
 func (OracleSpec) IsEvent() {}

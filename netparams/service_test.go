@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/netparams"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/netparams"
+	types "code.vegaprotocol.io/data-node/proto"
 	"github.com/stretchr/testify/assert"
 )
 

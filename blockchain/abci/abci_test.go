@@ -7,8 +7,8 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/data-node/blockchain/abci"
+	"code.vegaprotocol.io/data-node/txn"
 
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"

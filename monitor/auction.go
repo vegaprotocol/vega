@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/metrics"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/vegatime"
 )
 
 type AuctionState struct {

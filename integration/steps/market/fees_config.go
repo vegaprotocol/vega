@@ -4,8 +4,8 @@ import (
 	"embed"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/data-node/integration/steps/market/defaults"
+	types "code.vegaprotocol.io/data-node/proto"
 
 	"github.com/jinzhu/copier"
 )

@@ -7,7 +7,7 @@ import (
 	"io"
 	"sync/atomic"
 
-	tmreplay "code.vegaprotocol.io/vega/proto/tm"
+	tmreplay "code.vegaprotocol.io/data-node/proto/tm"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/afero"

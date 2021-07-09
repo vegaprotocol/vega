@@ -4,7 +4,7 @@
 package proto
 
 import (
-	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	v1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"

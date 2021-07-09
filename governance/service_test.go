@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/governance"
-	"code.vegaprotocol.io/vega/governance/mocks"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/governance"
+	"code.vegaprotocol.io/data-node/governance/mocks"
+	"code.vegaprotocol.io/data-node/logging"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

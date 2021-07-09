@@ -3,8 +3,8 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/execution"
+	"code.vegaprotocol.io/data-node/types"
 	"github.com/cucumber/godog/gherkin"
 )
 

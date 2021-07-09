@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/gateway"
-	"code.vegaprotocol.io/vega/logging"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
+	"code.vegaprotocol.io/data-node/gateway"
+	"code.vegaprotocol.io/data-node/logging"
+	protoapi "code.vegaprotocol.io/data-node/proto/api"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"

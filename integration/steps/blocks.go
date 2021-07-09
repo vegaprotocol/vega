@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/integration/helpers"
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/data-node/integration/helpers"
+	"code.vegaprotocol.io/data-node/integration/stubs"
 )
 
 func TheAverageBlockDurationIs(block *helpers.Block, dur string) error {

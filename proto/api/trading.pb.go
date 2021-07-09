@@ -4,10 +4,10 @@
 package api
 
 import (
-	proto1 "code.vegaprotocol.io/vega/proto"
-	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
-	v11 "code.vegaprotocol.io/vega/proto/events/v1"
-	v12 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	proto1 "code.vegaprotocol.io/data-node/proto"
+	v1 "code.vegaprotocol.io/data-node/proto/commands/v1"
+	v11 "code.vegaprotocol.io/data-node/proto/events/v1"
+	v12 "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"

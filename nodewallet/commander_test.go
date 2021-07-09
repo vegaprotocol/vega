@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/nodewallet/mocks"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/data-node/blockchain"
+	"code.vegaprotocol.io/data-node/nodewallet"
+	"code.vegaprotocol.io/data-node/nodewallet/mocks"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/txn"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

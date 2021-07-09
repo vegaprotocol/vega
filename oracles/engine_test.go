@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/oracles"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
+	"code.vegaprotocol.io/data-node/broker/mocks"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/oracles"
+	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

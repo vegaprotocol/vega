@@ -8,7 +8,7 @@ import (
 	"net/http/httputil"
 	"testing"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 func headerNotPresent(t *testing.T, x *httptest.ResponseRecorder, key string) {

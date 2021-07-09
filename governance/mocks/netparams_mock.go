@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	netparams "code.vegaprotocol.io/vega/netparams"
+	netparams "code.vegaprotocol.io/data-node/netparams"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"

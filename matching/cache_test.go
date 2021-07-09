@@ -3,9 +3,9 @@ package matching_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/matching"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/matching"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 	"github.com/stretchr/testify/assert"
 )
 

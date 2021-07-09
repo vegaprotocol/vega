@@ -4,7 +4,7 @@
 package v1
 
 import (
-	proto1 "code.vegaprotocol.io/vega/proto"
+	proto1 "code.vegaprotocol.io/data-node/proto"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"

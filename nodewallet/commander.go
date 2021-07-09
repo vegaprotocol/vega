@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/data-node/blockchain"
+	"code.vegaprotocol.io/data-node/proto/api"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/txn"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )

@@ -3,8 +3,8 @@ package oracles
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/types/num"
 
 	"go.uber.org/zap"
 )

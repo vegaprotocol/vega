@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	"code.vegaprotocol.io/data-node/blockchain/abci"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
 )

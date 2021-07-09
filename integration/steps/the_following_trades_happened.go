@@ -6,7 +6,7 @@ import (
 
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/data-node/integration/stubs"
 )
 
 func TheFollowingTradesShouldBeExecuted(

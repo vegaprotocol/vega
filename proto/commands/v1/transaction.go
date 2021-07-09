@@ -3,7 +3,7 @@ package v1
 import (
 	"encoding/hex"
 
-	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/data-node/crypto"
 )
 
 func NewTransaction(pubKey, data []byte, signature *Signature) *Transaction {

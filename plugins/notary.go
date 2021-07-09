@@ -5,9 +5,9 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/vega/events"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/data-node/events"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/subscribers"
 
 	"github.com/pkg/errors"
 )

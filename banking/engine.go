@@ -11,14 +11,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/validators"
+	"code.vegaprotocol.io/data-node/assets"
+	"code.vegaprotocol.io/data-node/crypto"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
+	"code.vegaprotocol.io/data-node/validators"
 )
 
 var (

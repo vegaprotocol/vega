@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/data-node/crypto"
 )
 
 func rootDir() string {

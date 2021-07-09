@@ -1,7 +1,7 @@
 package adaptors
 
 import (
-	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/data-node/oracles"
 
 	"code.vegaprotocol.io/oracles-relay/openoracle"
 )

@@ -1,8 +1,8 @@
 package steps
 
 import (
-	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/integration/stubs"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 func DebugLPs(broker *stubs.BrokerStub, log *logging.Logger) error {

@@ -3,7 +3,7 @@ package api_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/data-node/api"
 )
 
 func TestErrorMapUniqueCodes(t *testing.T) {

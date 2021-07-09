@@ -3,9 +3,9 @@ package gql
 import (
 	"context"
 
-	protoapi "code.vegaprotocol.io/vega/proto/api"
-	"code.vegaprotocol.io/vega/proto/oracles/v1"
-	"code.vegaprotocol.io/vega/vegatime"
+	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	"code.vegaprotocol.io/data-node/proto/oracles/v1"
+	"code.vegaprotocol.io/data-node/vegatime"
 )
 
 type oracleSpecResolver VegaResolverRoot

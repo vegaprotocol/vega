@@ -5,9 +5,9 @@ package types
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/proto"
-	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/proto"
+	v1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare

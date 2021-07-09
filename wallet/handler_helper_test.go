@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/wallet"
+	"code.vegaprotocol.io/data-node/wallet"
 )
 
 type mockedStore struct {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
+	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
 )
 
 // OnMatchedOracleData describes the callback function used to received

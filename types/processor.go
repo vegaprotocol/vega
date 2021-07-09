@@ -3,9 +3,9 @@
 package types
 
 import (
-	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/proto"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 type OracleDataSubmission = commandspb.OracleDataSubmission

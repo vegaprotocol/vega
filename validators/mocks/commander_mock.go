@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	txn "code.vegaprotocol.io/vega/txn"
+	txn "code.vegaprotocol.io/data-node/txn"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"

@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/cmd/vega/node"
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/cmd/vega/node"
+	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/logging"
 	"github.com/jessevdk/go-flags"
 )
 

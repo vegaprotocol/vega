@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	num "code.vegaprotocol.io/vega/types/num"
+	num "code.vegaprotocol.io/data-node/types/num"
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
 	reflect "reflect"

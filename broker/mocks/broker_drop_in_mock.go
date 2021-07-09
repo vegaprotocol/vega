@@ -3,7 +3,7 @@ package mocks
 import (
 	"sync"
 
-	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/data-node/events"
 	"github.com/golang/mock/gomock"
 )
 

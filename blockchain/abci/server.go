@@ -4,8 +4,8 @@ import (
 	"net"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/blockchain"
+	"code.vegaprotocol.io/data-node/logging"
 
 	"github.com/tendermint/tendermint/abci/server"
 	"github.com/tendermint/tendermint/abci/types"

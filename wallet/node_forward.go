@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/proto/api"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 	"github.com/cenkalti/backoff/v4"
 	"google.golang.org/grpc"
 )

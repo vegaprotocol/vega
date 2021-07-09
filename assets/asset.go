@@ -1,10 +1,10 @@
 package assets
 
 import (
-	"code.vegaprotocol.io/vega/assets/builtin"
-	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/assets/erc20"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/assets/builtin"
+	"code.vegaprotocol.io/data-node/assets/common"
+	"code.vegaprotocol.io/data-node/assets/erc20"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 type isAsset interface {

@@ -3,10 +3,10 @@ package notary
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/txn"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"

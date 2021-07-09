@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"sort"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/liquidity"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/liquidity"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/positions"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.

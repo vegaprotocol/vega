@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/crypto"
+	"code.vegaprotocol.io/data-node/logging"
 
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/julienschmidt/httprouter"

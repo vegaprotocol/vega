@@ -14,9 +14,9 @@ import (
 	"runtime"
 	"runtime/pprof"
 
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/fsutil"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 const (

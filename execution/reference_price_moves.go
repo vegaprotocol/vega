@@ -3,7 +3,7 @@ package execution
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 const (

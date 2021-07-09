@@ -3,14 +3,14 @@ package execution
 import (
 	"path/filepath"
 
-	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/fee"
-	"code.vegaprotocol.io/vega/liquidity"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/matching"
-	"code.vegaprotocol.io/vega/positions"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/fee"
+	"code.vegaprotocol.io/data-node/liquidity"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/matching"
+	"code.vegaprotocol.io/data-node/positions"
+	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/settlement"
 )
 
 const (

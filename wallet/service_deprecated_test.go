@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"code.vegaprotocol.io/vega/wallet"
+	"code.vegaprotocol.io/data-node/wallet"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

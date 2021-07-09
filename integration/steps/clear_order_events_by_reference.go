@@ -3,7 +3,7 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/data-node/integration/stubs"
 	"github.com/cucumber/godog/gherkin"
 )
 

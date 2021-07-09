@@ -4,9 +4,9 @@ import (
 	"errors"
 	"math/big"
 
-	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/assets/common"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/assets"
+	"code.vegaprotocol.io/data-node/assets/common"
+	"code.vegaprotocol.io/data-node/types"
 	uuid "github.com/satori/go.uuid"
 )
 

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/vega/oracles"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/data-node/oracles"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

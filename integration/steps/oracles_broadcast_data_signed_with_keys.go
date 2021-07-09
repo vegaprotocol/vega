@@ -6,7 +6,7 @@ import (
 
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/data-node/oracles"
 )
 
 func OraclesBroadcastDataSignedWithKeys(

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"sync"
 
-	"code.vegaprotocol.io/vega/events"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
-	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/data-node/events"
+	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	"code.vegaprotocol.io/data-node/subscribers"
 )
 
 var (

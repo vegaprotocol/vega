@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 type gzipResponseWriter struct {

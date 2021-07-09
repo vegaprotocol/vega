@@ -1,7 +1,7 @@
 package commands
 
 import (
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 )
 
 func CheckNodeSignature(cmd *commandspb.NodeSignature) error {

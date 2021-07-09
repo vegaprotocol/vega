@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/data-node/types/num"
 )
 
 // GetPeggedOrderCount returns the number of pegged orders in the market

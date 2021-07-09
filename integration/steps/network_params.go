@@ -6,7 +6,7 @@ import (
 
 	"github.com/cucumber/godog/gherkin"
 
-	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/data-node/netparams"
 )
 
 func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *gherkin.DataTable) error {

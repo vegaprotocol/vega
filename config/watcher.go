@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/logging"
 	"github.com/fsnotify/fsnotify"
 	"github.com/zannen/toml"
 )

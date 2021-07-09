@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/cmd/vega/verify"
+	"code.vegaprotocol.io/data-node/cmd/vega/verify"
 
 	"github.com/jessevdk/go-flags"
 )

@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/logging"
 	"github.com/jessevdk/go-flags"
 )
 

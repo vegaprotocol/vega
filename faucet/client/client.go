@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"path"
 
-	"code.vegaprotocol.io/vega/faucet"
+	"code.vegaprotocol.io/data-node/faucet"
 )
 
 const (

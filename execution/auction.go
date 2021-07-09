@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/types"
 )
 
 func (m *Market) checkAuction(ctx context.Context, now time.Time) {

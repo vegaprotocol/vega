@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/subscribers"
 
 	"github.com/golang/mock/gomock"
 )
