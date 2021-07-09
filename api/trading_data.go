@@ -12,7 +12,6 @@ import (
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	"code.vegaprotocol.io/data-node/monitoring"
 	types "code.vegaprotocol.io/data-node/proto"
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
 	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
@@ -228,7 +227,6 @@ type tradingDataService struct {
 	AssetService            AssetService
 	FeeService              FeeService
 	eventService            EventService
-	statusChecker           *monitoring.Status
 	WithdrawalService       WithdrawalService
 	DepositService          DepositService
 	MarketDepthService      *subscribers.MarketDepthBuilder
@@ -861,7 +859,6 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 		AverageOrdersPerBlock:    t.Stats.Blockchain.AverageOrdersPerBatch(),
 		TradesPerSecond:          t.Stats.Blockchain.TradesPerSecond(),
 		OrdersPerSecond:          t.Stats.Blockchain.OrdersPerSecond(),
-		Status:                   t.statusChecker.ChainStatus(),
 		TotalMarkets:             uint64(len(m)),
 		AppVersionHash:           t.Stats.GetVersionHash(),
 		AppVersion:               t.Stats.GetVersion(),
