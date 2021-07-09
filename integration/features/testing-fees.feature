@@ -339,7 +339,6 @@ Scenario: WIP - Testing fees in continuous trading with two trades and one liqui
 
     Then debug transfers
 
-    # TODO: Verfiy that the spec doesn't say where this fee should go and if so ask for spec clarification.
     And the following transfers should happen:
-      | from   | to   | from account                | to account           | market id | amount | asset |
+      | from   | to   | from account                | to account          | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5     | ETH   |
