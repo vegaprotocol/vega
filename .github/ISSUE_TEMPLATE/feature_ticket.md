@@ -28,8 +28,8 @@ or
 
 ## Specs
 
-- [Link](xyz) to spec or section in a spec
-- [Link](xyz) to another spec or other section
+- [Link](xyz) to spec or section within a spec
+- [Link](xyz) to another spec or section
 
 # Tasks
 A checklist of the tasks that are needed to develop the feature and meet the accceptance criteria and feature test scenarios. Ideally, tasks would reflect the pull requests likely to be created when developing the feature. 
