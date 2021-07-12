@@ -47,8 +47,11 @@ func (m *MarketUpdated) loop(ctx context.Context) {
 func (m *MarketUpdated) Push(evts ...events.Event) {
 	batch := make([]types.Market, 0, len(evts))
 	for _, e := range evts {
-		if te, ok := e.(MEE); ok {
-			batch = append(batch, te.Proto())
+		switch et := e.(type) {
+		case MEE:
+			batch = append(batch, et.Proto())
+		default:
+			m.log.Panic("Unknown event type in market updated subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 	if len(batch) > 0 {
