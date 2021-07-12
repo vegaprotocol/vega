@@ -698,8 +698,6 @@ type UpdateNetworkParameterInput struct {
 type AccountType string
 
 const (
-	// Asset insurance pool account
-	AccountTypeGlobalInsurance AccountType = "GlobalInsurance"
 	// Insurance pool account - only for 'system' party
 	AccountTypeInsurance AccountType = "Insurance"
 	// Settlement - only for 'system' party
@@ -727,12 +725,11 @@ var AllAccountType = []AccountType{
 	AccountTypeFeeLiquidity,
 	AccountTypeLockWithdraw,
 	AccountTypeBond,
-	AccountTypeGlobalInsurance,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond, AccountTypeGlobalInsurance:
+	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
 		return true
 	}
 	return false
