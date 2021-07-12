@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
-	"code.vegaprotocol.io/data-node/positions"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/settlement"
@@ -50,7 +49,6 @@ type Config struct {
 	Orders            orders.Config      `group:"Orders" namespace:"orders"`
 	Liquidity         liquidity.Config   `group:"Liquidity" namespace:"liquidity"`
 	Parties           parties.Config     `group:"Parties" namespace:"parties"`
-	Position          positions.Config   `group:"Position" namespace:"position"`
 	Risk              risk.Config        `group:"Risk" namespace:"risk"`
 	Settlement        settlement.Config  `group:"Settlement" namespace:"settlement"`
 	Storage           storage.Config     `group:"Storage" namespace:"storage"`
@@ -93,7 +91,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Pprof:             pprof.NewDefaultConfig(),
 		Logging:           logging.NewDefaultConfig(),
 		Gateway:           gateway.NewDefaultConfig(),
-		Position:          positions.NewDefaultConfig(),
 		Settlement:        settlement.NewDefaultConfig(),
 		Metrics:           metrics.NewDefaultConfig(),
 		Transfers:         transfers.NewDefaultConfig(),
