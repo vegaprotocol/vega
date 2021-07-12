@@ -25,7 +25,6 @@ import (
 	"code.vegaprotocol.io/data-node/netparams"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
-	"code.vegaprotocol.io/data-node/oracles/adaptors"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
@@ -127,9 +126,7 @@ type NodeCommand struct {
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
-	oracle         *oracles.Engine
-	oracleAdaptors *adaptors.Adaptors
-	netParams      *netparams.Store
+	netParams *netparams.Store
 
 	mktscfg []types.Market
 

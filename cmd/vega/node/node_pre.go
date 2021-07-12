@@ -18,7 +18,6 @@ import (
 	"code.vegaprotocol.io/data-node/netparams/dispatch"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
-	oracleAdaptors "code.vegaprotocol.io/data-node/oracles/adaptors"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
@@ -252,16 +251,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService)
 
-	now, _ := l.timeService.GetTimeNow()
-
 	l.assets, err = assets.New(l.Log, l.conf.Assets, l.timeService)
 	if err != nil {
 		return err
 	}
-
-	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker)
-	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
-	l.oracleAdaptors = oracleAdaptors.New()
 
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 

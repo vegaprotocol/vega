@@ -18,11 +18,17 @@ var (
 	ErrUnimplementedProduct = errors.New("unimplemented product")
 )
 
+// TODO - remove after all core functionality is remove from data node.
+// This is here only to be able to compile data node.
+type OnMatchedOracleData func(ctx context.Context, data oracles.OracleData) error
+type OracleSpecPredicate func(spec oracles.OracleSpec) (bool, error)
+type SubscriptionID uint64
+
 // OracleEngine ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/products OracleEngine
 type OracleEngine interface {
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
-	Unsubscribe(context.Context, oracles.SubscriptionID)
+	Subscribe(context.Context, oracles.OracleSpec, OnMatchedOracleData) SubscriptionID
+	Unsubscribe(context.Context, SubscriptionID)
 }
 
 // Product is the interface provided by all product in vega

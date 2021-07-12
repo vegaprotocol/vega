@@ -30,7 +30,7 @@ type Future struct {
 
 type oracle struct {
 	spec           *oracles.OracleSpec
-	subscriptionID oracles.SubscriptionID
+	subscriptionID SubscriptionID
 	binding        oracleBinding
 	data           oracleData
 }
