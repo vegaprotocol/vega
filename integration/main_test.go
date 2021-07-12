@@ -1,6 +1,7 @@
 package core_test
 
 import (
+	"context"
 	"flag"
 	"os"
 	"strings"
@@ -99,12 +100,28 @@ func FeatureContext(s *godog.Suite) {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
-			if err := execsetup.collateralEngine.TopUpInsurancePool(mkt.Id, asset, amount); err != nil {
+			marketInsuranceAccount, err := execsetup.collateralEngine.GetMarketInsurancePoolAccount(mkt.Id, asset)
+			if err != nil {
+				return err
+			}
+			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), marketInsuranceAccount.Id, amount); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
+	s.Step(`^the initial insurance pool balance is "([^"]*)" for the asset:$`, func(amountstr string) error {
+		amount, _ := num.UintFromString(amountstr, 10)
+		for _, mkt := range execsetup.markets {
+			asset, _ := mkt.GetAsset()
+			assetInsuranceAccount := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
+			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.Id, amount); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
 	s.Step(`^the following network parameters are set:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingNetworkParametersAreSet(execsetup.netParams, table)
 	})
@@ -211,6 +228,9 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^the insurance pool balance should be "([^"]*)" for the market "([^"]*)"$`, func(rawAmount, marketID string) error {
 		return steps.TheInsurancePoolBalanceShouldBeForTheMarket(execsetup.broker, rawAmount, marketID)
+	})
+	s.Step(`^the insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
+		return steps.TheInsurancePoolBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
 	})
 	s.Step(`^the following transfers should happen:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)

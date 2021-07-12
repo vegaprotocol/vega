@@ -20,6 +20,12 @@ func (a Account) String() string {
 	return a.IntoProto().String()
 }
 
+func (a *Account) Clone() *Account {
+	acccpy := *a
+	acccpy.Balance = acccpy.Balance.Clone()
+	return &acccpy
+}
+
 func (a *Account) IntoProto() *proto.Account {
 	return &proto.Account{
 		Id:       a.Id,
@@ -176,4 +182,6 @@ const (
 	AccountType_ACCOUNT_TYPE_BOND AccountType = 9
 	// External account represents an external source (deposit/withdrawal)
 	AccountType_ACCOUNT_TYPE_EXTERNAL AccountType = 10
+	// Global insurance pool accounts contain insurance funds for a asset - one insurance pool per asset
+	AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE AccountType = 11
 )

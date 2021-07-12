@@ -735,7 +735,10 @@ enum AccountType {
 
   // External account represents an external source (deposit/withdrawal)
   ACCOUNT_TYPE_EXTERNAL = 10;
-
+  
+  // Global insurance account for the asset
+  ACCOUNT_TYPE_GLOBAL_INSURANCE = 11;
+  
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
