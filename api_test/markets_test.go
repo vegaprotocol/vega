@@ -9,39 +9,32 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/data-node/events"
-	pb "code.vegaprotocol.io/data-node/proto"
 	apipb "code.vegaprotocol.io/data-node/proto/api"
 	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
 )
 
-func TestGetPartyAccounts(t *testing.T) {
+func TestMarkets_GetAll(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
 	conn, broker := NewTestServer(t, ctx, true)
 
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
-		acc := be.GetAccount()
-		require.NotNil(t, acc)
-		e := events.NewAccountEvent(ctx, types.Account{
-			Id:       acc.Id,
-			Owner:    acc.Owner,
-			Balance:  num.NewUint(acc.Balance),
-			Asset:    acc.Asset,
-			MarketId: acc.MarketId,
-			Type:     acc.Type,
+		market := be.GetMarket()
+		require.NotNil(t, market)
+		e := events.NewMarketCreatedEvent(ctx, types.Market{
+			Id: market.MarketId,
 		})
 		return e, nil
-	}, "account-events.golden")
+	}, "markets-events.golden")
 
 	client := apipb.NewTradingDataServiceClient(conn)
 	require.NotNil(t, client)
 
-	partyID := "6fb72005cde8e239f8d3b08c5fbcec06f93bfb45e9013208f662954923343fba"
+	marketID := "a6f2c001f855f926b49bd43add22bc8bf619d569c3ef6fe442a3c31ffdc54fa5"
 
-	var resp *apipb.PartyAccountsResponse
+	var resp *apipb.MarketsResponse
 	var err error
 
 loop:
@@ -50,17 +43,16 @@ loop:
 		case <-ctx.Done():
 			t.Fatalf("test timeout")
 		case <-time.Tick(50 * time.Millisecond):
-			resp, err = client.PartyAccounts(ctx, &apipb.PartyAccountsRequest{
-				PartyId: partyID,
-				Type:    pb.AccountType_ACCOUNT_TYPE_GENERAL,
-			})
-			if err == nil && len(resp.Accounts) > 0 {
+			resp, err = client.Markets(ctx, &apipb.MarketsRequest{})
+			require.NotNil(t, resp)
+			require.NoError(t, err)
+			if len(resp.Markets) > 0 {
 				break loop
 			}
 		}
 	}
 
 	assert.NoError(t, err)
-	assert.Len(t, resp.Accounts, 1)
-	assert.Equal(t, partyID, resp.Accounts[0].Owner)
+	assert.Len(t, resp.Markets, 1)
+	assert.Equal(t, marketID, resp.Markets[0].Id)
 }
