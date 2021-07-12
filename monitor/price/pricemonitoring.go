@@ -59,8 +59,8 @@ type bound struct {
 }
 
 type priceRange struct {
-	MinPrice       *num.Uint
-	MaxPrice       *num.Uint
+	MinPrice       num.WrappedDecimal
+	MaxPrice       num.WrappedDecimal
 	ReferencePrice num.Decimal
 }
 
@@ -166,15 +166,16 @@ func (e *Engine) GetHorizonYearFractions() []num.Decimal {
 }
 
 // GetValidPriceRange returns the range of prices that won't trigger the price monitoring auction
-func (e *Engine) GetValidPriceRange() (*num.Uint, *num.Uint) {
-	min := num.NewUint(0)
-	max := num.MaxUint()
+func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
+	min := num.NewWrappedDecimal(num.Zero(), num.DecimalZero())
+	m := num.MaxUint()
+	max := num.NewWrappedDecimal(m, m.ToDecimal())
 	for _, pr := range e.getCurrentPriceRanges() {
-		if pr.MinPrice.GT(min) {
-			min = pr.MinPrice.Clone()
+		if pr.MinPrice.Representation().GT(min.Representation()) {
+			min = pr.MinPrice
 		}
-		if !pr.MaxPrice.IsZero() && pr.MaxPrice.LT(max) {
-			max = pr.MaxPrice.Clone()
+		if !pr.MaxPrice.Representation().IsZero() && pr.MaxPrice.Representation().LT(max.Representation()) {
+			max = pr.MaxPrice
 		}
 	}
 	return min, max
@@ -188,8 +189,8 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 		if b.Active {
 			ret = append(ret,
 				&types.PriceMonitoringBounds{
-					MinValidPrice:  pr.MinPrice.Clone(),
-					MaxValidPrice:  pr.MaxPrice.Clone(),
+					MinValidPrice:  pr.MinPrice.Representation(),
+					MaxValidPrice:  pr.MaxPrice.Representation(),
 					Trigger:        b.Trigger,
 					ReferencePrice: pr.ReferencePrice,
 				})
@@ -385,7 +386,7 @@ func (e *Engine) checkBounds(ctx context.Context, p *num.Uint, v uint64) []*type
 			continue
 		}
 		priceRange := priceRanges[b]
-		if p.LT(priceRange.MinPrice) || p.GT(priceRange.MaxPrice) {
+		if p.LT(priceRange.MinPrice.Representation()) || p.GT(priceRange.MaxPrice.Representation()) {
 			ret = append(ret, b.Trigger)
 			// Disactivate the bound that just got violated so it doesn't prevent auction from terminating
 			b.Active = false
@@ -403,11 +404,14 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 				continue
 			}
 			ref := e.getRefPrice(b.Trigger.Horizon)
-			min, _ := num.UintFromDecimal(ref.Mul(b.DownFactor).Ceil())
-			max, _ := num.UintFromDecimal(ref.Mul(b.UpFactor).Floor())
+			min := ref.Mul(b.DownFactor)
+			max := ref.Mul(b.UpFactor)
+
+			minUint, _ := num.UintFromDecimal(min.Ceil())
+			maxUint, _ := num.UintFromDecimal(max.Floor())
 			e.priceRangesCache[b] = priceRange{
-				MinPrice:       min,
-				MaxPrice:       max,
+				MinPrice:       num.NewWrappedDecimal(minUint, min),
+				MaxPrice:       num.NewWrappedDecimal(maxUint, max),
 				ReferencePrice: ref,
 			}
 		}
