@@ -260,6 +260,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE,
 		}
 		e.accs[globalInsuranceID] = insuranceAcc
+		e.addAccountToHashableSlice(insuranceAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insuranceAcc))
 	}
 
