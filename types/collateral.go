@@ -20,6 +20,12 @@ func (a Account) String() string {
 	return a.IntoProto().String()
 }
 
+func (a *Account) Clone() *Account {
+	acccpy := *a
+	acccpy.Balance = acccpy.Balance.Clone()
+	return &acccpy
+}
+
 func (a *Account) IntoProto() *proto.Account {
 	return &proto.Account{
 		Id:       a.Id,

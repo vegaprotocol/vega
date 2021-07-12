@@ -5,10 +5,10 @@ package proto
 
 import (
 	fmt "fmt"
-	math "math"
 
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -483,21 +483,22 @@ var AccountType_name = map[int32]string{
 	8:  "ACCOUNT_TYPE_LOCK_WITHDRAW",
 	9:  "ACCOUNT_TYPE_BOND",
 	10: "ACCOUNT_TYPE_EXTERNAL",
-	11: "AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE",
+	11: "ACCOUNT_TYPE_GLOBAL_INSURANCE",
 }
 
 var AccountType_value = map[string]int32{
-	"ACCOUNT_TYPE_UNSPECIFIED":                  0,
-	"ACCOUNT_TYPE_INSURANCE":                    1,
-	"ACCOUNT_TYPE_SETTLEMENT":                   2,
-	"ACCOUNT_TYPE_MARGIN":                       3,
-	"ACCOUNT_TYPE_GENERAL":                      4,
-	"ACCOUNT_TYPE_FEES_INFRASTRUCTURE":          5,
-	"ACCOUNT_TYPE_FEES_LIQUIDITY":               6,
-	"ACCOUNT_TYPE_FEES_MAKER":                   7,
-	"ACCOUNT_TYPE_LOCK_WITHDRAW":                8,
-	"ACCOUNT_TYPE_BOND":                         9,
-	"AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE": 11,
+	"ACCOUNT_TYPE_UNSPECIFIED":         0,
+	"ACCOUNT_TYPE_INSURANCE":           1,
+	"ACCOUNT_TYPE_SETTLEMENT":          2,
+	"ACCOUNT_TYPE_MARGIN":              3,
+	"ACCOUNT_TYPE_GENERAL":             4,
+	"ACCOUNT_TYPE_FEES_INFRASTRUCTURE": 5,
+	"ACCOUNT_TYPE_FEES_LIQUIDITY":      6,
+	"ACCOUNT_TYPE_FEES_MAKER":          7,
+	"ACCOUNT_TYPE_LOCK_WITHDRAW":       8,
+	"ACCOUNT_TYPE_BOND":                9,
+	"ACCOUNT_TYPE_EXTERNAL":            10,
+	"ACCOUNT_TYPE_GLOBAL_INSURANCE":    11,
 }
 
 func (x AccountType) String() string {

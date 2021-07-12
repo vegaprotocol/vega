@@ -1556,9 +1556,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	var insuranceAccounts []*types.Account
 	for _, acc := range e.accs {
 		if acc.Id != marketInsuranceID && acc.Asset == asset && acc.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
-			acccpy := *acc
-			acccpy.Balance = acccpy.Balance.Clone()
-			insuranceAccounts = append(insuranceAccounts, &acccpy)
+			insuranceAccounts = append(insuranceAccounts, acc.Clone())
 		}
 	}
 
@@ -2147,9 +2145,7 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	if !ok {
 		return nil, fmt.Errorf("account does not exist: %s", id)
 	}
-	acccpy := *acc
-	acccpy.Balance = acccpy.Balance.Clone()
-	return &acccpy, nil
+	return acc.Clone(), nil
 }
 
 // GetAssetTotalSupply - return the total supply of the asset if it's known
@@ -2204,6 +2200,6 @@ func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Acc
 // GetAssetInsurancePoolAccount returns the global insurance account for the asset
 func (e *Engine) GetAssetInsurancePoolAccount(asset string) *types.Account {
 	globalInsuranceID := e.accountID(noMarket, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE)
-	globalInsuranceAcc, _ := e.accs[globalInsuranceID]
+	globalInsuranceAcc := e.accs[globalInsuranceID]
 	return globalInsuranceAcc
 }
