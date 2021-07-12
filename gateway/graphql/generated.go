@@ -6806,6 +6806,8 @@ enum Interval {
 enum AccountType {
   "Insurance pool account - only for 'system' party"
   Insurance
+  "Global insurance pool account for an asset"
+  GlobalInsurance
   "Settlement - only for 'system' party"
   Settlement
   "Margin - The leverage account for traders"

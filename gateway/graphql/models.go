@@ -700,6 +700,8 @@ type AccountType string
 const (
 	// Insurance pool account - only for 'system' party
 	AccountTypeInsurance AccountType = "Insurance"
+	// Global insurance pool account for an asset
+	AccountTypeGlobalInsurance AccountType = "GlobalInsurance"
 	// Settlement - only for 'system' party
 	AccountTypeSettlement AccountType = "Settlement"
 	// Margin - The leverage account for traders
@@ -718,6 +720,7 @@ const (
 
 var AllAccountType = []AccountType{
 	AccountTypeInsurance,
+	AccountTypeGlobalInsurance,
 	AccountTypeSettlement,
 	AccountTypeMargin,
 	AccountTypeGeneral,
@@ -729,7 +732,7 @@ var AllAccountType = []AccountType{
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
+	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
 		return true
 	}
 	return false
