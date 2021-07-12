@@ -44,6 +44,9 @@ type Fees struct {
 }
 
 func FeesFromProto(f *proto.Fees) *Fees {
+	if f == nil {
+		return nil
+	}
 	return &Fees{
 		Factors: FeeFactorsFromProto(f.Factors),
 	}

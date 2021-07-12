@@ -40,6 +40,9 @@ func (p PriceMonitoringSettings) IntoProto() *proto.PriceMonitoringSettings {
 }
 
 func PriceMonitoringSettingsFromProto(pr *proto.PriceMonitoringSettings) *PriceMonitoringSettings {
+	if pr == nil {
+		return nil
+	}
 	p := PriceMonitoringSettings{
 		UpdateFrequency: pr.UpdateFrequency,
 	}
