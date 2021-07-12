@@ -4,12 +4,12 @@
 *2021-07-12*
 
 ### Improvements
-- [#3718](https://github.com/vegaprotocol/vega/pull/3718) - Run unparam over the codebase
+- [#3718](https://github.com/vegaprotocol/vega/pull/3718) - Run `unparam` over the codebase
 - [#3705](https://github.com/vegaprotocol/vega/pull/3705) - Return theoretical target stake when in auction
 - [#3703](https://github.com/vegaprotocol/vega/pull/3703) - Remove inefficient metrics calls
 - [#3693](https://github.com/vegaprotocol/vega/pull/3693) - Calculation without Decimal in the liquidity target package
-- [#3696](https://github.com/vegaprotocol/vega/pull/3696) - Remove some uint <-> Decimal convertion
-- [#3689](https://github.com/vegaprotocol/vega/pull/3689) - Do not rely on proto convertion for GetAsset
+- [#3696](https://github.com/vegaprotocol/vega/pull/3696) - Remove some uint <-> Decimal conversion
+- [#3689](https://github.com/vegaprotocol/vega/pull/3689) - Do not rely on proto conversion for `GetAsset`
 - [#3676](https://github.com/vegaprotocol/vega/pull/3676) - Ad the `tm` subcommand
 - [#3569](https://github.com/vegaprotocol/vega/pull/3569) - Migrate from uint64 to uint256 for all balances, amount, prices in the core
 
