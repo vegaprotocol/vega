@@ -257,7 +257,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
+	l.netParamsStore = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
@@ -275,7 +275,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return
 	}
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub, l.netParams)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub, l.netParamsStore)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
@@ -285,7 +285,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
 
-	// setup config reloads for all engines / services /etc
+	// setup config reloads for all services /etc
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
 
@@ -298,7 +298,7 @@ func (l *NodeCommand) setupNetParameters() error {
 	// now we are going to setup some network parameters which can be done
 	// through runtime checks
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
-	if err := l.netParams.AddRules(
+	if err := l.netParamsStore.AddRules(
 		netparams.ParamStringRules(
 			netparams.GovernanceVoteAsset,
 			checks.GovernanceAssetUpdate(l.Log, l.assets),
@@ -308,7 +308,7 @@ func (l *NodeCommand) setupNetParameters() error {
 	}
 
 	// now add some watcher for our netparams
-	return l.netParams.Watch(
+	return l.netParamsStore.Watch(
 		netparams.WatchParam{
 			Param:   netparams.GovernanceVoteAsset,
 			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets),
@@ -318,7 +318,6 @@ func (l *NodeCommand) setupNetParameters() error {
 
 func (l *NodeCommand) setupConfigWatchers() {
 	l.cfgwatchr.OnConfigUpdate(
-		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
 
