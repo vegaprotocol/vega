@@ -299,7 +299,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 func (l *NodeCommand) setupNetParameters() error {
 	// now we are going to setup some network parameters which can be done
 	// through runtime checks
-	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
+	// e.g: changing the governance asset require the Assets service, so we can ensure any changes there are made for a valid asset
 	if err := l.netParamsStore.AddRules(
 		netparams.ParamStringRules(
 			netparams.GovernanceVoteAsset,
