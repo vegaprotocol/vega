@@ -58,7 +58,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
        | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
-       | 100000     | TRADING_MODE_CONTINUOUS | 43200   | 89942     | 110965    | 361194       | 3000000        | 10            |
+       | 100000     | TRADING_MODE_CONTINUOUS | 43200   | 89942     | 110965    | 361190       | 3000000        | 10            |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
@@ -104,7 +104,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the market data for the market "ETH2/MAR22" should be:
        | mark price   | trading mode            | horizon | min bound   | max bound   | target stake   | supplied stake | open interest  |
-       | 100000       | TRADING_MODE_CONTINUOUS | 43200   | 89942       | 110965      | 361194         | 3000000        | 10             |
+       | 100000       | TRADING_MODE_CONTINUOUS | 43200   | 89942       | 110965      | 361190         | 3000000        | 10             |
 
 
     # # the lp1 one volume on this side should go to 89843 but because price monitoring bound is still 89942 it gets pushed to 89942.

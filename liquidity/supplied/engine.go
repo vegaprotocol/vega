@@ -33,14 +33,14 @@ type LiquidityOrder struct {
 // RiskModel allows calculation of min/max price range and a probability of trading.
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_model_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied RiskModel
 type RiskModel interface {
-	ProbabilityOfTrading(currentPrice, orderPrice, minPrice, maxPrice *num.Uint, yearFraction num.Decimal, isBid, applyMinMax bool) num.Decimal
+	ProbabilityOfTrading(currentPrice, orderPrice *num.Uint, minPrice, maxPrice num.Decimal, yearFraction num.Decimal, isBid, applyMinMax bool) num.Decimal
 	GetProjectionHorizon() num.Decimal
 }
 
 // PriceMonitor provides the range of valid prices, that is prices that wouldn't trade the current trading mode
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/price_monitor_mock.go -package mocks code.vegaprotocol.io/vega/liquidity/supplied PriceMonitor
 type PriceMonitor interface {
-	GetValidPriceRange() (*num.Uint, *num.Uint)
+	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 }
 
 // Engine provides functionality related to supplied liquidity
@@ -113,13 +113,13 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 
 	buyRemaining := liquidityObligation.Clone()
 	buyRemaining.Sub(buyRemaining, buySupplied)
-	if err := e.updateSizes(buyRemaining, bestBidPrice.Clone(), bestAskPrice.Clone(), buyShapes, true, minPrice.Clone(), maxPrice.Clone()); err != nil {
+	if err := e.updateSizes(buyRemaining, bestBidPrice.Clone(), bestAskPrice.Clone(), buyShapes, true, minPrice, maxPrice); err != nil {
 		return err
 	}
 
 	sellRemaining := liquidityObligation.Clone()
 	sellRemaining.Sub(sellRemaining, sellSupplied)
-	if err := e.updateSizes(sellRemaining, bestBidPrice.Clone(), bestAskPrice.Clone(), sellShapes, false, minPrice.Clone(), maxPrice.Clone()); err != nil {
+	if err := e.updateSizes(sellRemaining, bestBidPrice.Clone(), bestAskPrice.Clone(), sellShapes, false, minPrice, maxPrice); err != nil {
 		return err
 	}
 
@@ -130,21 +130,21 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	bestBidPrice, bestAskPrice *num.Uint,
 	orders []*types.Order,
-	minPrice, maxPrice *num.Uint,
+	minPrice, maxPrice num.WrappedDecimal,
 ) (*num.Uint, *num.Uint) {
 	bLiq := num.DecimalZero()
 	sLiq := num.DecimalZero()
 	for _, o := range orders {
 		if o.Side == types.Side_SIDE_BUY {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), true, minPrice.Clone(), maxPrice.Clone())
+			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), true, minPrice, maxPrice)
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			bLiq = bLiq.Add(d)
 		}
 		if o.Side == types.Side_SIDE_SELL {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), false, minPrice.Clone(), maxPrice.Clone())
+			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), false, minPrice, maxPrice)
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			sLiq = sLiq.Add(d)
@@ -160,7 +160,7 @@ func (e *Engine) updateSizes(
 	bestBidPrice, bestAskprice *num.Uint,
 	orders []*LiquidityOrder,
 	isBid bool,
-	minPrice, maxPrice *num.Uint,
+	minPrice, maxPrice num.WrappedDecimal,
 ) error {
 	if liquidityObligation.IsZero() || liquidityObligation.IsNegative() {
 		setSizesTo0(orders)
@@ -173,7 +173,7 @@ func (e *Engine) updateSizes(
 	for _, o := range orders {
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
-		prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskprice.Clone(), o.Price.Clone(), isBid, minPrice.Clone(), maxPrice.Clone())
+		prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskprice.Clone(), o.Price.Clone(), isBid, minPrice, maxPrice)
 		if prob.IsZero() || prob.IsNegative() {
 			proportion = num.DecimalZero()
 		}
@@ -201,12 +201,12 @@ func (e *Engine) updateSizes(
 	return nil
 }
 
-func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice *num.Uint, maxPrice *num.Uint) num.Decimal {
+func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice num.WrappedDecimal) num.Decimal {
 	// if min, max changed since caches were created then reset
-	if e.cachedMin.NEQ(minPrice) || e.cachedMax.NEQ(maxPrice) {
+	if e.cachedMin.NEQ(minPrice.Representation()) || e.cachedMax.NEQ(maxPrice.Representation()) {
 		e.bCache = make(map[num.Uint]num.Decimal, len(e.bCache))
 		e.aCache = make(map[num.Uint]num.Decimal, len(e.aCache))
-		e.cachedMin, e.cachedMax = minPrice.Clone(), maxPrice.Clone()
+		e.cachedMin, e.cachedMax = minPrice.Representation(), maxPrice.Representation()
 	}
 
 	// Any part of shape that's pegged between or equal to
@@ -229,7 +229,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 	return e.minProbabilityOfTrading
 }
 
-func (e *Engine) calcProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice *num.Uint) num.Decimal {
+func (e *Engine) calcProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice num.WrappedDecimal) num.Decimal {
 	tauScaled := e.horizon.Mul(e.probabilityOfTradingTauScaling)
 	if isBid {
 		return e.calcProbabilityOfTradingBid(bestBidPrice, orderPrice, minPrice, tauScaled)
@@ -237,20 +237,20 @@ func (e *Engine) calcProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice
 	return e.calcProbabilityOfTradingAsk(bestAskPrice, orderPrice, maxPrice, tauScaled)
 }
 
-func (e *Engine) calcProbabilityOfTradingAsk(bestAskPrice, orderPrice, maxPrice *num.Uint, tauScaled num.Decimal) (f num.Decimal) {
+func (e *Engine) calcProbabilityOfTradingAsk(bestAskPrice, orderPrice *num.Uint, maxPrice num.WrappedDecimal, tauScaled num.Decimal) (f num.Decimal) {
 	prob, ok := e.aCache[*orderPrice]
 	if !ok {
-		prob = e.rm.ProbabilityOfTrading(bestAskPrice, orderPrice, bestAskPrice, maxPrice, tauScaled, false, true)
+		prob = e.rm.ProbabilityOfTrading(bestAskPrice, orderPrice, bestAskPrice.ToDecimal(), maxPrice.Original(), tauScaled, false, true)
 		prob = rescaleProbability(prob)
 		e.aCache[*orderPrice] = prob
 	}
 	return prob
 }
 
-func (e *Engine) calcProbabilityOfTradingBid(bestBidPrice, orderPrice, minPrice *num.Uint, tauScaled num.Decimal) (f num.Decimal) {
+func (e *Engine) calcProbabilityOfTradingBid(bestBidPrice, orderPrice *num.Uint, minPrice num.WrappedDecimal, tauScaled num.Decimal) (f num.Decimal) {
 	prob, ok := e.bCache[*orderPrice]
 	if !ok {
-		prob = e.rm.ProbabilityOfTrading(bestBidPrice, orderPrice, minPrice, bestBidPrice, tauScaled, true, true)
+		prob = e.rm.ProbabilityOfTrading(bestBidPrice, orderPrice, minPrice.Original(), bestBidPrice.ToDecimal(), tauScaled, true, true)
 		prob = rescaleProbability(prob)
 		e.bCache[*orderPrice] = prob
 	}

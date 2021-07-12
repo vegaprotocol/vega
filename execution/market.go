@@ -93,7 +93,7 @@ type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, now time.Time, persistent bool) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
-	GetValidPriceRange() (*num.Uint, *num.Uint)
+	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 }
 
 // LiquidityMonitor
