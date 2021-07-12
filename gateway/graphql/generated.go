@@ -408,7 +408,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		SubmitTransaction func(childComplexity int, data string, sig SignatureInput, typeArg *SubmitTransactionType) int
+		SubmitTransaction func(childComplexity int, inputData string, sig SignatureInput, pubKey string, typeArg *SubmitTransactionType) int
 	}
 
 	NetworkParameter struct {
@@ -535,36 +535,6 @@ type ComplexityRoot struct {
 		Distressed func(childComplexity int) int
 		MarkPrice  func(childComplexity int) int
 		MarketID   func(childComplexity int) int
-	}
-
-	PreparedAmendOrder struct {
-		Blob func(childComplexity int) int
-	}
-
-	PreparedCancelOrder struct {
-		Blob func(childComplexity int) int
-	}
-
-	PreparedLiquidityProvision struct {
-		Blob func(childComplexity int) int
-	}
-
-	PreparedProposal struct {
-		Blob            func(childComplexity int) int
-		PendingProposal func(childComplexity int) int
-	}
-
-	PreparedSubmitOrder struct {
-		Blob func(childComplexity int) int
-	}
-
-	PreparedVote struct {
-		Blob func(childComplexity int) int
-		Vote func(childComplexity int) int
-	}
-
-	PreparedWithdrawal struct {
-		Blob func(childComplexity int) int
 	}
 
 	PriceLevel struct {
@@ -990,7 +960,7 @@ type MarketTimestampsResolver interface {
 	Close(ctx context.Context, obj *proto.MarketTimestamps) (*string, error)
 }
 type MutationResolver interface {
-	SubmitTransaction(ctx context.Context, data string, sig SignatureInput, typeArg *SubmitTransactionType) (*TransactionSubmitted, error)
+	SubmitTransaction(ctx context.Context, inputData string, sig SignatureInput, pubKey string, typeArg *SubmitTransactionType) (*TransactionSubmitted, error)
 }
 type NewAssetResolver interface {
 	Name(ctx context.Context, obj *proto.NewAsset) (string, error)
@@ -2611,7 +2581,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(SignatureInput), args["type"].(*SubmitTransactionType)), true
+		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["inputData"].(string), args["sig"].(SignatureInput), args["pubKey"].(string), args["type"].(*SubmitTransactionType)), true
 
 	case "NetworkParameter.key":
 		if e.complexity.NetworkParameter.Key == nil {
@@ -3209,69 +3179,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PositionResolution.MarketID(childComplexity), true
-
-	case "PreparedAmendOrder.blob":
-		if e.complexity.PreparedAmendOrder.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedAmendOrder.Blob(childComplexity), true
-
-	case "PreparedCancelOrder.blob":
-		if e.complexity.PreparedCancelOrder.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedCancelOrder.Blob(childComplexity), true
-
-	case "PreparedLiquidityProvision.blob":
-		if e.complexity.PreparedLiquidityProvision.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedLiquidityProvision.Blob(childComplexity), true
-
-	case "PreparedProposal.blob":
-		if e.complexity.PreparedProposal.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedProposal.Blob(childComplexity), true
-
-	case "PreparedProposal.pendingProposal":
-		if e.complexity.PreparedProposal.PendingProposal == nil {
-			break
-		}
-
-		return e.complexity.PreparedProposal.PendingProposal(childComplexity), true
-
-	case "PreparedSubmitOrder.blob":
-		if e.complexity.PreparedSubmitOrder.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedSubmitOrder.Blob(childComplexity), true
-
-	case "PreparedVote.blob":
-		if e.complexity.PreparedVote.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedVote.Blob(childComplexity), true
-
-	case "PreparedVote.vote":
-		if e.complexity.PreparedVote.Vote == nil {
-			break
-		}
-
-		return e.complexity.PreparedVote.Vote(childComplexity), true
-
-	case "PreparedWithdrawal.blob":
-		if e.complexity.PreparedWithdrawal.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedWithdrawal.Blob(childComplexity), true
 
 	case "PriceLevel.numberOfOrders":
 		if e.complexity.PriceLevel.NumberOfOrders == nil {
@@ -4739,12 +4646,14 @@ type Mutation {
   """
   submitTransaction(
     "The signed transaction"
-    data: String!
+    inputData: String!
     "The signature"
     sig: SignatureInput!
+    "The public key to be used"
+    pubKey: String!
     "The way to send the transaction"
     type: SubmitTransactionType
-  ): TransactionSubmitted!
+): TransactionSubmitted!
 }
 
 "The way the transaction is sent to the blockchain"
@@ -5002,25 +4911,6 @@ type MarketDataCommitments {
   buys: [LiquidityOrderReference!]
 }
 
-type PreparedWithdrawal {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedSubmitOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedCancelOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedAmendOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
 
 type TransactionSubmitted {
   success: Boolean!
@@ -7070,7 +6960,7 @@ type Proposal {
   id: ID
   "A UUID reference to aid tracking proposals on VEGA"
   reference: String!
-  "Party that prepared the proposal"
+  "Party that submitted the proposal"
   party: Party!
   "State of the proposal"
   state: ProposalState!
@@ -7104,12 +6994,6 @@ type ProposalVoteSide {
   totalTokens: String!
 }
 
-type PreparedProposal {
-  "Raw transaction data to sign & submit"
-  blob: String!
-  "The pending proposal"
-  pendingProposal: Proposal!
-}
 
 enum VoteValue {
   "No reject a proposal"
@@ -7144,13 +7028,6 @@ type ProposalVote {
 
   "Proposal casting the vote on"
   proposalId: ID!
-}
-
-type PreparedVote {
-  "Raw, serialised vote to be signed"
-  blob: String!
-  "The vote serialised in the blob field"
-  vote: ProposalVote!
 }
 
 type TimeUpdate {
@@ -7463,12 +7340,6 @@ type LiquidityProvision {
   "A reference for the orders created out of this Liquidity provision"
   reference: String
 }
-
-"A prepared LiquidityProvision command"
-type PreparedLiquidityProvision {
-  "The blob to be send to the wallet and to be signed"
-  blob: String!
-}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -7605,13 +7476,13 @@ func (ec *executionContext) field_Mutation_submitTransaction_args(ctx context.Co
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["data"]; ok {
+	if tmp, ok := rawArgs["inputData"]; ok {
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["data"] = arg0
+	args["inputData"] = arg0
 	var arg1 SignatureInput
 	if tmp, ok := rawArgs["sig"]; ok {
 		arg1, err = ec.unmarshalNSignatureInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSignatureInput(ctx, tmp)
@@ -7620,14 +7491,22 @@ func (ec *executionContext) field_Mutation_submitTransaction_args(ctx context.Co
 		}
 	}
 	args["sig"] = arg1
-	var arg2 *SubmitTransactionType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg2, err = ec.unmarshalOSubmitTransactionType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx, tmp)
+	var arg2 string
+	if tmp, ok := rawArgs["pubKey"]; ok {
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["type"] = arg2
+	args["pubKey"] = arg2
+	var arg3 *SubmitTransactionType
+	if tmp, ok := rawArgs["type"]; ok {
+		arg3, err = ec.unmarshalOSubmitTransactionType2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg3
 	return args, nil
 }
 
@@ -15011,7 +14890,7 @@ func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SubmitTransaction(rctx, args["data"].(string), args["sig"].(SignatureInput), args["type"].(*SubmitTransactionType))
+		return ec.resolvers.Mutation().SubmitTransaction(rctx, args["inputData"].(string), args["sig"].(SignatureInput), args["pubKey"].(string), args["type"].(*SubmitTransactionType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17717,312 +17596,6 @@ func (ec *executionContext) _PositionResolution_markPrice(ctx context.Context, f
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedAmendOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedAmendOrder) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedAmendOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedCancelOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedCancelOrder) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedCancelOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedLiquidityProvision_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedLiquidityProvision) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedLiquidityProvision",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedProposal_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedProposal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedProposal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedProposal_pendingProposal(ctx context.Context, field graphql.CollectedField, obj *PreparedProposal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedProposal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PendingProposal, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*proto.GovernanceData)
-	fc.Result = res
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚐGovernanceData(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedSubmitOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedSubmitOrder) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedSubmitOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedVote_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedVote) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedVote",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedVote_vote(ctx context.Context, field graphql.CollectedField, obj *PreparedVote) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedVote",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Vote, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ProposalVote)
-	fc.Result = res
-	return ec.marshalNProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedWithdrawal_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedWithdrawal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedWithdrawal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *proto.PriceLevel) (ret graphql.Marshaler) {
@@ -30189,205 +29762,6 @@ func (ec *executionContext) _PositionResolution(ctx context.Context, sel ast.Sel
 			}
 		case "markPrice":
 			out.Values[i] = ec._PositionResolution_markPrice(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedAmendOrderImplementors = []string{"PreparedAmendOrder"}
-
-func (ec *executionContext) _PreparedAmendOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedAmendOrder) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedAmendOrderImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedAmendOrder")
-		case "blob":
-			out.Values[i] = ec._PreparedAmendOrder_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedCancelOrderImplementors = []string{"PreparedCancelOrder"}
-
-func (ec *executionContext) _PreparedCancelOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedCancelOrder) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedCancelOrderImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedCancelOrder")
-		case "blob":
-			out.Values[i] = ec._PreparedCancelOrder_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedLiquidityProvisionImplementors = []string{"PreparedLiquidityProvision"}
-
-func (ec *executionContext) _PreparedLiquidityProvision(ctx context.Context, sel ast.SelectionSet, obj *PreparedLiquidityProvision) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedLiquidityProvisionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedLiquidityProvision")
-		case "blob":
-			out.Values[i] = ec._PreparedLiquidityProvision_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedProposalImplementors = []string{"PreparedProposal"}
-
-func (ec *executionContext) _PreparedProposal(ctx context.Context, sel ast.SelectionSet, obj *PreparedProposal) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedProposalImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedProposal")
-		case "blob":
-			out.Values[i] = ec._PreparedProposal_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "pendingProposal":
-			out.Values[i] = ec._PreparedProposal_pendingProposal(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedSubmitOrderImplementors = []string{"PreparedSubmitOrder"}
-
-func (ec *executionContext) _PreparedSubmitOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedSubmitOrder) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedSubmitOrderImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedSubmitOrder")
-		case "blob":
-			out.Values[i] = ec._PreparedSubmitOrder_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedVoteImplementors = []string{"PreparedVote"}
-
-func (ec *executionContext) _PreparedVote(ctx context.Context, sel ast.SelectionSet, obj *PreparedVote) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedVoteImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedVote")
-		case "blob":
-			out.Values[i] = ec._PreparedVote_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "vote":
-			out.Values[i] = ec._PreparedVote_vote(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedWithdrawalImplementors = []string{"PreparedWithdrawal"}
-
-func (ec *executionContext) _PreparedWithdrawal(ctx context.Context, sel ast.SelectionSet, obj *PreparedWithdrawal) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedWithdrawalImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedWithdrawal")
-		case "blob":
-			out.Values[i] = ec._PreparedWithdrawal_blob(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

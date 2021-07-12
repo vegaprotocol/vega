@@ -14,7 +14,7 @@ import (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
 type Chain interface {
-	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error
+	SubmitTransaction(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet BlockchainStats
@@ -67,7 +67,7 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 
 	tx := commandspb.NewTransaction(c.wal.PubKeyOrAddress(), marshalledData, signature)
 
-	return c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
+	return c.bc.SubmitTransaction(ctx, tx, api.SubmitTransactionRequest_TYPE_ASYNC)
 }
 
 func (c *Commander) sign(marshalledData []byte) (*commandspb.Signature, error) {

@@ -635,17 +635,17 @@ func testSigningTransactionSucceeds(t *testing.T) {
 
 	// setup
 	s.handler.EXPECT().
-		SignTxV2(token, gomock.Any(), gomock.Any()).
+		SignTx(token, gomock.Any(), gomock.Any()).
 		Times(1).
 		Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().
-		SendTxV2(gomock.Any(), &commandspb.Transaction{}, api.SubmitTransactionV2Request_TYPE_ASYNC).
+		SendTx(gomock.Any(), &commandspb.Transaction{}, api.SubmitTransactionRequest_TYPE_ASYNC).
 		Times(0)
 	s.nodeClient.EXPECT().LastBlockHeight(gomock.Any()).
 		Times(1).Return(uint64(42), nil)
 
 	// when
-	s.SignTxSyncV2(token, response, request, nil)
+	s.SignTxSync(token, response, request, nil)
 
 	// then
 	result := response.Result()
@@ -664,18 +664,18 @@ func testSigningTransactionWithPropagationSucceeds(t *testing.T) {
 
 	// setup
 	s.handler.EXPECT().
-		SignTxV2(token, gomock.Any(), gomock.Any()).
+		SignTx(token, gomock.Any(), gomock.Any()).
 		Times(1).
 		Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().
-		SendTxV2(gomock.Any(), &commandspb.Transaction{}, api.SubmitTransactionV2Request_TYPE_SYNC).
+		SendTx(gomock.Any(), &commandspb.Transaction{}, api.SubmitTransactionRequest_TYPE_SYNC).
 		Times(1).
 		Return(nil)
 	s.nodeClient.EXPECT().LastBlockHeight(gomock.Any()).
 		Times(1).Return(uint64(42), nil)
 
 	// when
-	s.SignTxSyncV2(token, response, request, nil)
+	s.SignTxSync(token, response, request, nil)
 
 	// then
 	result := response.Result()
@@ -694,18 +694,18 @@ func testSigningTransactionWithFailedPropagationFails(t *testing.T) {
 
 	// setup
 	s.handler.EXPECT().
-		SignTxV2(token, gomock.Any(), gomock.Any()).
+		SignTx(token, gomock.Any(), gomock.Any()).
 		Times(1).
 		Return(&commandspb.Transaction{}, nil)
 	s.nodeForward.EXPECT().
-		SendTxV2(gomock.Any(), &commandspb.Transaction{}, api.SubmitTransactionV2Request_TYPE_SYNC).
+		SendTx(gomock.Any(), &commandspb.Transaction{}, api.SubmitTransactionRequest_TYPE_SYNC).
 		Times(1).
 		Return(errors.New("failure"))
 	s.nodeClient.EXPECT().LastBlockHeight(gomock.Any()).
 		Times(1).Return(uint64(42), nil)
 
 	// when
-	s.SignTxSyncV2(token, response, request, nil)
+	s.SignTxSync(token, response, request, nil)
 
 	// then
 	result := response.Result()
@@ -724,14 +724,14 @@ func testFailedSigningTransactionFails(t *testing.T) {
 
 	// setup
 	s.handler.EXPECT().
-		SignTxV2(token, gomock.Any(), gomock.Any()).
+		SignTx(token, gomock.Any(), gomock.Any()).
 		Times(1).
 		Return(nil, errors.New("failure"))
 	s.nodeClient.EXPECT().LastBlockHeight(gomock.Any()).
 		Times(1).Return(uint64(42), nil)
 
 	// when
-	s.SignTxSyncV2(token, response, request, nil)
+	s.SignTxSync(token, response, request, nil)
 
 	// then
 	result := response.Result()
@@ -749,7 +749,7 @@ func testSigningTransactionWithInvalidPayloadFails(t *testing.T) {
 	response := httptest.NewRecorder()
 
 	// when
-	s.SignTxSyncV2(token, response, request, nil)
+	s.SignTxSync(token, response, request, nil)
 
 	// then
 	result := response.Result()
@@ -767,7 +767,7 @@ func testSigningTransactionWithoutPubKeyFails(t *testing.T) {
 	request := newAuthenticatedRequest(payload)
 
 	// when
-	s.SignTxSyncV2(token, response, request, nil)
+	s.SignTxSync(token, response, request, nil)
 
 	// then
 	result := response.Result()
@@ -785,7 +785,7 @@ func testSigningTransactionWithoutCommandFails(t *testing.T) {
 	request := newAuthenticatedRequest(payload)
 
 	// when
-	s.SignTxSyncV2(token, response, request, nil)
+	s.SignTxSync(token, response, request, nil)
 
 	// then
 	result := response.Result()

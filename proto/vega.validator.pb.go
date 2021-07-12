@@ -270,20 +270,6 @@ func (this *PriceMonitoringBounds) Validate() error {
 func (this *ErrorDetail) Validate() error {
 	return nil
 }
-func (this *Transaction) Validate() error {
-	return nil
-}
-func (this *Signature) Validate() error {
-	return nil
-}
-func (this *SignedBundle) Validate() error {
-	if this.Sig != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Sig); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Sig", err)
-		}
-	}
-	return nil
-}
 func (this *NetworkParameter) Validate() error {
 	return nil
 }

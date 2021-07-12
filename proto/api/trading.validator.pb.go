@@ -43,17 +43,6 @@ func (this *SubmitTransactionRequest) Validate() error {
 func (this *SubmitTransactionResponse) Validate() error {
 	return nil
 }
-func (this *SubmitTransactionV2Request) Validate() error {
-	if this.Tx != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Tx); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Tx", err)
-		}
-	}
-	return nil
-}
-func (this *SubmitTransactionV2Response) Validate() error {
-	return nil
-}
 func (this *AssetsRequest) Validate() error {
 	return nil
 }

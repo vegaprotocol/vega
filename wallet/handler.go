@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrPubKeyIsTainted      = errors.New("public key is tainted")
+	ErrPubKeyIsTainted = errors.New("public key is tainted")
 )
 
 // Auth ...
@@ -175,7 +175,7 @@ func (h *Handler) SignAny(token, inputData, pubKey string) ([]byte, error) {
 	return kp.Algorithm.Sign(kp.privBytes, rawInputData)
 }
 
-func (h *Handler) SignTxV2(token string, req walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error) {
+func (h *Handler) SignTx(token string, req walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 

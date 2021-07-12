@@ -5,9 +5,7 @@
 package mocks
 
 import (
-	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	types "code.vegaprotocol.io/vega/types"
-	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -48,18 +46,4 @@ func (m *MockLiquidityService) Get(arg0, arg1 string) ([]types.LiquidityProvisio
 func (mr *MockLiquidityServiceMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockLiquidityService)(nil).Get), arg0, arg1)
-}
-
-// PrepareLiquidityProvisionSubmission mocks base method
-func (m *MockLiquidityService) PrepareLiquidityProvisionSubmission(arg0 context.Context, arg1 *v1.LiquidityProvisionSubmission) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrepareLiquidityProvisionSubmission", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PrepareLiquidityProvisionSubmission indicates an expected call of PrepareLiquidityProvisionSubmission
-func (mr *MockLiquidityServiceMockRecorder) PrepareLiquidityProvisionSubmission(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareLiquidityProvisionSubmission", reflect.TypeOf((*MockLiquidityService)(nil).PrepareLiquidityProvisionSubmission), arg0, arg1)
 }

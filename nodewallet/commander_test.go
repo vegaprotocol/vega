@@ -73,7 +73,7 @@ func testSignedCommandSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
-	commander.chain.EXPECT().SubmitTransactionV2(
+	commander.chain.EXPECT().SubmitTransaction(
 		ctx, gomock.Any(), gomock.Any()).Times(1)
 
 	assert.NoError(t, commander.Command(ctx, cmd, payload))

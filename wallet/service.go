@@ -78,13 +78,6 @@ type KeysResponse struct {
 	Keys []Keypair `json:"keys"`
 }
 
-// SignTxResponse describes the response for SignTx.
-type SignTxResponse struct {
-	SignedTx     SignedBundle `json:"signedTx"`
-	HexBundle    string       `json:"hexBundle"`
-	Base64Bundle string       `json:"base64Bundle"`
-}
-
 // SignAnyResponse describes the response for SignAny.
 type SignAnyResponse struct {
 	HexSignature    string `json:"hexSignature"`
@@ -111,8 +104,7 @@ type WalletHandler interface {
 	GetPublicKey(token, pubKey string) (*Keypair, error)
 	GetWalletName(token string) (string, error)
 	ListPublicKeys(token string) ([]Keypair, error)
-	SignTx(token, tx, pubKey string, height uint64) (SignedBundle, error)
-	SignTxV2(token string, req walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error)
+	SignTx(token string, req walletpb.SubmitTransactionRequest, height uint64) (*commandspb.Transaction, error)
 	SignAny(token, inputData, pubKey string) ([]byte, error)
 	TaintKey(token, pubKey, passphrase string) error
 	UpdateMeta(token, pubKey, passphrase string, meta []Meta) error
@@ -122,8 +114,7 @@ type WalletHandler interface {
 // NodeForward ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeForward
 type NodeForward interface {
-	Send(context.Context, *SignedBundle, api.SubmitTransactionRequest_Type) error
-	SendTxV2(context.Context, *commandspb.Transaction, api.SubmitTransactionV2Request_Type) error
+	SendTx(context.Context, *commandspb.Transaction, api.SubmitTransactionRequest_Type) error
 }
 
 // NodeClient ...
@@ -184,15 +175,10 @@ func NewServiceWith(log *logging.Logger, cfg *Config, h WalletHandler, n NodeFor
 	s.PUT("/api/v1/keys/:keyid/taint", ExtractToken(s.TaintKey))
 	s.PUT("/api/v1/keys/:keyid/metadata", ExtractToken(s.UpdateMeta))
 	s.POST("/api/v1/sign", ExtractToken(s.SignAny))
-	s.POST("/api/v1/command", ExtractToken(s.SignTxV2))
-	s.POST("/api/v1/command/sync", ExtractToken(s.SignTxSyncV2))
-	s.POST("/api/v1/command/commit", ExtractToken(s.SignTxCommitV2))
+	s.POST("/api/v1/command", ExtractToken(s.SignTx))
+	s.POST("/api/v1/command/sync", ExtractToken(s.SignTxSync))
+	s.POST("/api/v1/command/commit", ExtractToken(s.SignTxCommit))
 	s.GET("/api/v1/wallets", ExtractToken(s.DownloadWallet))
-
-	// DEPRECATED Use
-	s.POST("/api/v1/messages", ExtractToken(s.SignTx))
-	s.POST("/api/v1/messages/sync", ExtractToken(s.SignTxSync))
-	s.POST("/api/v1/messages/commit", ExtractToken(s.SignTxCommit))
 
 	return s, nil
 }
@@ -470,19 +456,19 @@ func (s *Service) SignAny(t string, w http.ResponseWriter, r *http.Request, _ ht
 	writeSuccess(w, res, http.StatusOK)
 }
 
-func (s *Service) SignTxSyncV2(token string, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	s.signTxV2(token, w, r, p, api.SubmitTransactionV2Request_TYPE_SYNC)
+func (s *Service) SignTxSync(token string, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	s.signTx(token, w, r, p, api.SubmitTransactionRequest_TYPE_SYNC)
 }
 
-func (s *Service) SignTxCommitV2(token string, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	s.signTxV2(token, w, r, p, api.SubmitTransactionV2Request_TYPE_COMMIT)
+func (s *Service) SignTxCommit(token string, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	s.signTx(token, w, r, p, api.SubmitTransactionRequest_TYPE_COMMIT)
 }
 
-func (s *Service) SignTxV2(token string, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	s.signTxV2(token, w, r, p, api.SubmitTransactionV2Request_TYPE_ASYNC)
+func (s *Service) SignTx(token string, w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	s.signTx(token, w, r, p, api.SubmitTransactionRequest_TYPE_ASYNC)
 }
 
-func (s *Service) signTxV2(token string, w http.ResponseWriter, r *http.Request, _ httprouter.Params, ty api.SubmitTransactionV2Request_Type) {
+func (s *Service) signTx(token string, w http.ResponseWriter, r *http.Request, _ httprouter.Params, ty api.SubmitTransactionRequest_Type) {
 	defer r.Body.Close()
 
 	errs := commands.NewErrors()
@@ -506,14 +492,14 @@ func (s *Service) signTxV2(token string, w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	tx, err := s.handler.SignTxV2(token, req, height)
+	tx, err := s.handler.SignTx(token, req, height)
 	if err != nil {
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return
 	}
 
 	if req.Propagate {
-		if err := s.nodeForward.SendTxV2(r.Context(), tx, ty); err != nil {
+		if err := s.nodeForward.SendTx(r.Context(), tx, ty); err != nil {
 			if s, ok := status.FromError(err); ok {
 				details := []string{}
 				for _, v := range s.Details() {

@@ -2,25 +2,19 @@ package processor_test
 
 import (
 	"context"
-	"crypto"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
-	proto1 "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
-	"code.vegaprotocol.io/vega/types"
 	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -28,24 +22,6 @@ import (
 
 type AbciTestSuite struct {
 	sig *vegacrypto.SignatureAlgorithm
-}
-
-func (s *AbciTestSuite) signedTx(t *testing.T, tx *types.Transaction, key crypto.PrivateKey) *types.SignedBundle {
-	txBytes, err := proto.Marshal(tx)
-	require.NoError(t, err)
-
-	sig, err := s.sig.Sign(key, txBytes)
-	require.NoError(t, err)
-
-	stx := &types.SignedBundle{
-		Tx: txBytes,
-		Sig: &types.Signature{
-			Algo: s.sig.Name(),
-			Sig:  sig,
-		},
-	}
-
-	return stx
 }
 
 func (s *AbciTestSuite) newApp(proc *procTest) *processor.App {
@@ -72,62 +48,6 @@ func (s *AbciTestSuite) newApp(proc *procTest) *processor.App {
 			Adaptors: proc.oracles.Adaptors,
 		},
 	)
-}
-
-func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.App, proc *procTest) {
-	pub, priv, err := s.sig.GenKey()
-	require.NoError(t, err)
-
-	party := hex.EncodeToString(pub.([]byte))
-	data := map[txn.Command]proto.Message{
-		txn.SubmitOrderCommand: &commandspb.OrderSubmission{},
-		txn.ProposeCommand: &commandspb.ProposalSubmission{
-			Terms: &proto1.ProposalTerms{}, // avoid nil bit, shouldn't be asset
-		},
-		// FIXME(): This is not passing now because of the validations
-		// but this will not even be needed anyway once txv2 is the only
-		// tx format
-		// txn.VoteCommand: &commandspb.VoteSubmission{},
-	}
-	zero := uint64(0)
-
-	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
-	proc.stat.EXPECT().Height().AnyTimes()
-	proc.stat.EXPECT().SetAverageTxSizeBytes(gomock.Any()).AnyTimes()
-	proc.stat.EXPECT().IncTotalTxCurrentBatch().AnyTimes()
-
-	proc.stat.EXPECT().IncTotalCreateOrder().Times(1)
-	// creating an order, should be no trades
-	proc.stat.EXPECT().IncTotalOrders().Times(1)
-	proc.stat.EXPECT().AddCurrentTradesInBatch(zero).Times(1)
-	proc.stat.EXPECT().AddTotalTrades(zero).Times(1)
-	proc.stat.EXPECT().IncCurrentOrdersInBatch().Times(1)
-
-	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), party).Times(1).Return(&types.OrderConfirmation{
-		Order: &types.Order{},
-	}, nil)
-	//	proc.gov.EXPECT().AddVote(
-	//		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
-
-	for cmd, msg := range data {
-		tx := txEncode(t, cmd, msg)
-		tx.From = &types.Transaction_PubKey{
-			PubKey: pub.([]byte),
-		}
-
-		stx := s.signedTx(t, tx, priv)
-		bz, err := proto.Marshal(stx)
-		require.NoError(t, err)
-
-		req := tmtypes.RequestDeliverTx{
-			Tx: bz,
-		}
-
-		resp := app.Abci().DeliverTx(req)
-		require.True(t, resp.IsOK())
-	}
-
 }
 
 func (s *AbciTestSuite) testBeginCommitSuccess(_ *testing.T, app *processor.App, proc *procTest) {
@@ -303,8 +223,6 @@ func TestAbci(t *testing.T) {
 		name string
 		fn   func(t *testing.T, app *processor.App, proc *procTest)
 	}{
-		{"Test all basic process commands - Success", s.testProcessCommandSuccess},
-
 		{"Call Begin and Commit - success", s.testBeginCommitSuccess},
 		{"Call Begin twice, only calls commander once", s.testBeginCallsCommanderOnce},
 		{"OnCheckTx fail with no balance", s.testOnCheckTxFailWithNoBalances},

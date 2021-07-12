@@ -417,46 +417,6 @@ type PositionResolution struct {
 
 func (PositionResolution) IsEvent() {}
 
-type PreparedAmendOrder struct {
-	// the raw transaction to sign & submit
-	Blob string `json:"blob"`
-}
-
-type PreparedCancelOrder struct {
-	// the raw transaction to sign & submit
-	Blob string `json:"blob"`
-}
-
-// A prepared LiquidityProvision command
-type PreparedLiquidityProvision struct {
-	// The blob to be send to the wallet and to be signed
-	Blob string `json:"blob"`
-}
-
-type PreparedProposal struct {
-	// Raw transaction data to sign & submit
-	Blob string `json:"blob"`
-	// The pending proposal
-	PendingProposal *proto.GovernanceData `json:"pendingProposal"`
-}
-
-type PreparedSubmitOrder struct {
-	// the raw transaction to sign & submit
-	Blob string `json:"blob"`
-}
-
-type PreparedVote struct {
-	// Raw, serialised vote to be signed
-	Blob string `json:"blob"`
-	// The vote serialised in the blob field
-	Vote *ProposalVote `json:"vote"`
-}
-
-type PreparedWithdrawal struct {
-	// the raw transaction to sign & submit
-	Blob string `json:"blob"`
-}
-
 // Range of valid prices and the associated price monitoring trigger
 type PriceMonitoringBounds struct {
 	// Minimum price that isn't currently breaching the specified price monitoring trigger

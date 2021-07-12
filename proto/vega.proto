@@ -993,45 +993,6 @@ message ErrorDetail {
   string inner = 3;
 }
 
-// Represents a transaction to be sent to Vega
-message Transaction {
-  // One of the set of Vega commands (proto marshalled)
-  bytes input_data = 1;
-  // A random number used to provide uniqueness and prevent against replay attack
-  uint64 nonce = 2;
-  // The block height associated to the transaction, this should always be current block height
-  // of the node at the time of sending the Tx and block height is used as a mechanism
-  // for replay protection
-  uint64 block_height = 3;
-  // The sender of the transaction,
-  // any of the following would be valid:
-  oneof from {
-    // The address of the sender
-    bytes address = 1001;
-    // The public key of the sender
-    bytes pub_key = 1002;
-  }
-}
-
-// A signature to be authenticate a transaction
-// and to be verified by the vega network
-message Signature {
-  // The bytes of the signature
-  bytes sig = 1;
-  // The algorithm used to create the signature
-  string algo = 2;
-  // The version of the signature used to create the signature
-  uint32 version = 3;
-}
-
-// A bundle of a transaction and it's signature
-message SignedBundle {
-  // Transaction payload (proto marshalled)
-  bytes tx = 1;
-  // The signature authenticating the transaction
-  Signature sig = 2;
-}
-
 // Represents a network parameter on Vega
 message NetworkParameter {
   // The unique key

@@ -1601,7 +1601,13 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 
 type myMutationResolver VegaResolverRoot
 
-func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
+func (r *myMutationResolver) SubmitTransaction(
+	ctx context.Context,
+	inputData string,
+	signature SignatureInput,
+	pubKey string,
+	ty *SubmitTransactionType,
+) (*TransactionSubmitted, error) {
 
 	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
 	if ty != nil {
@@ -1613,22 +1619,22 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 		}
 	}
 
-	decodedData, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return nil, err
-	}
-	decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
+	decodedData, err := base64.StdEncoding.DecodeString(inputData)
 	if err != nil {
 		return nil, err
 	}
 	req := &protoapi.SubmitTransactionRequest{
-		Tx: &types.SignedBundle{
-			Tx: decodedData,
-			Sig: &types.Signature{
-				Sig:     decodedSig,
-				Version: uint32(sig.Version),
-				Algo:    sig.Algo,
+		Tx: &commandspb.Transaction{
+			From: &commandspb.Transaction_PubKey{
+				PubKey: pubKey,
 			},
+			InputData: decodedData,
+			Signature: &commandspb.Signature{
+				Value:   signature.Sig,
+				Version: uint32(signature.Version),
+				Algo:    signature.Algo,
+			},
+			Version: 1,
 		},
 		Type: pty,
 	}

@@ -39,32 +39,14 @@ func (n *nodeForward) Stop() error {
 	return n.conn.Close()
 }
 
-func (n *nodeForward) Send(ctx context.Context, tx *SignedBundle, ty api.SubmitTransactionRequest_Type) error {
+func (n *nodeForward) SendTx(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) error {
 	req := api.SubmitTransactionRequest{
-		Tx:   tx.IntoProto(),
-		Type: ty,
-	}
-	return backoff.Retry(
-		func() error {
-			resp, err := n.clt.SubmitTransaction(ctx, &req)
-			if err != nil {
-				return err
-			}
-			n.log.Debug("response from SubmitTransaction", logging.Bool("success", resp.Success))
-			return nil
-		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfg.Retries),
-	)
-}
-
-func (n *nodeForward) SendTxV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error {
-	req := api.SubmitTransactionV2Request{
 		Tx:   tx,
 		Type: ty,
 	}
 	return backoff.Retry(
 		func() error {
-			resp, err := n.clt.SubmitTransactionV2(ctx, &req)
+			resp, err := n.clt.SubmitTransaction(ctx, &req)
 			if err != nil {
 				return err
 			}

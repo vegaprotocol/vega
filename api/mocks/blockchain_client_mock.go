@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
 	api "code.vegaprotocol.io/vega/proto/api"
 	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
 	context "context"
@@ -129,7 +128,7 @@ func (mr *MockBlockchainClientMockRecorder) Health() *gomock.Call {
 }
 
 // SubmitTransaction mocks base method
-func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle, arg2 api.SubmitTransactionRequest_Type) error {
+func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *v1.Transaction, arg2 api.SubmitTransactionRequest_Type) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
@@ -140,18 +139,4 @@ func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *pro
 func (mr *MockBlockchainClientMockRecorder) SubmitTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockBlockchainClient)(nil).SubmitTransaction), arg0, arg1, arg2)
-}
-
-// SubmitTransactionV2 mocks base method
-func (m *MockBlockchainClient) SubmitTransactionV2(arg0 context.Context, arg1 *v1.Transaction, arg2 api.SubmitTransactionV2Request_Type) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitTransactionV2", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SubmitTransactionV2 indicates an expected call of SubmitTransactionV2
-func (mr *MockBlockchainClientMockRecorder) SubmitTransactionV2(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionV2", reflect.TypeOf((*MockBlockchainClient)(nil).SubmitTransactionV2), arg0, arg1, arg2)
 }

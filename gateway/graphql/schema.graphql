@@ -14,12 +14,14 @@ type Mutation {
   """
   submitTransaction(
     "The signed transaction"
-    data: String!
+    inputData: String!
     "The signature"
     sig: SignatureInput!
+    "The public key to be used"
+    pubKey: String!
     "The way to send the transaction"
     type: SubmitTransactionType
-  ): TransactionSubmitted!
+): TransactionSubmitted!
 }
 
 "The way the transaction is sent to the blockchain"
@@ -277,25 +279,6 @@ type MarketDataCommitments {
   buys: [LiquidityOrderReference!]
 }
 
-type PreparedWithdrawal {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedSubmitOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedCancelOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedAmendOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
 
 type TransactionSubmitted {
   success: Boolean!
@@ -2345,7 +2328,7 @@ type Proposal {
   id: ID
   "A UUID reference to aid tracking proposals on VEGA"
   reference: String!
-  "Party that prepared the proposal"
+  "Party that submitted the proposal"
   party: Party!
   "State of the proposal"
   state: ProposalState!
@@ -2379,12 +2362,6 @@ type ProposalVoteSide {
   totalTokens: String!
 }
 
-type PreparedProposal {
-  "Raw transaction data to sign & submit"
-  blob: String!
-  "The pending proposal"
-  pendingProposal: Proposal!
-}
 
 enum VoteValue {
   "No reject a proposal"
@@ -2419,13 +2396,6 @@ type ProposalVote {
 
   "Proposal casting the vote on"
   proposalId: ID!
-}
-
-type PreparedVote {
-  "Raw, serialised vote to be signed"
-  blob: String!
-  "The vote serialised in the blob field"
-  vote: ProposalVote!
 }
 
 type TimeUpdate {
@@ -2737,10 +2707,4 @@ type LiquidityProvision {
   status: LiquidityProvisionStatus!
   "A reference for the orders created out of this Liquidity provision"
   reference: String
-}
-
-"A prepared LiquidityProvision command"
-type PreparedLiquidityProvision {
-  "The blob to be send to the wallet and to be signed"
-  blob: String!
 }
