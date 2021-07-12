@@ -238,6 +238,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
+
 	l.netParamsService = netparams.NewService(l.ctx)
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 	l.oracleService = oracles.NewService(l.ctx)
