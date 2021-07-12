@@ -18,7 +18,6 @@ import (
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
-	"code.vegaprotocol.io/data-node/matching"
 	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/netparams"
 	"code.vegaprotocol.io/data-node/notary"
@@ -43,7 +42,6 @@ type Config struct {
 	Accounts          accounts.Config    `group:"Accounts" namespace:"accounts"`
 	Candles           candles.Config     `group:"Candles" namespace:"candles"`
 	Logging           logging.Config     `group:"Logging" namespace:"logging"`
-	Matching          matching.Config    `group:"Matching" namespace:"matching"`
 	Markets           markets.Config     `group:"Markets" namespace:"markets"`
 	Oracles           oracles.Config     `group:"Oracles" namespace:"oracles"`
 	Orders            orders.Config      `group:"Orders" namespace:"orders"`
@@ -83,7 +81,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Liquidity:         liquidity.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
 		Markets:           markets.NewDefaultConfig(),
-		Matching:          matching.NewDefaultConfig(),
 		Parties:           parties.NewDefaultConfig(),
 		Candles:           candles.NewDefaultConfig(),
 		Risk:              risk.NewDefaultConfig(),
