@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -15,9 +16,10 @@ type MEE interface {
 type MarketUpdated struct {
 	*Base
 	store MarketStore
+	log   *logging.Logger
 }
 
-func NewMarketUpdatedSub(ctx context.Context, store MarketStore, ack bool) *MarketUpdated {
+func NewMarketUpdatedSub(ctx context.Context, store MarketStore, log *logging.Logger, ack bool) *MarketUpdated {
 	m := &MarketUpdated{
 		Base:  NewBase(ctx, 1, ack),
 		store: store,

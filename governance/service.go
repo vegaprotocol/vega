@@ -167,7 +167,7 @@ func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string
 	out := make(chan []proto.Vote)
 	// new subscriber, in "stream mode" (changes only), filtered by party ID
 	// and make subscriber non-acking, missed votes are ignored
-	sub := subscribers.NewVoteSub(ctx, true, false, subscribers.VoteByPartyID(partyID))
+	sub := subscribers.NewVoteSub(ctx, true, false, s.log, subscribers.VoteByPartyID(partyID))
 	id := s.bus.Subscribe(sub)
 	go func() {
 		defer func() {
@@ -202,7 +202,7 @@ func (s *Svc) ObserveProposalVotes(ctx context.Context, retries int, proposalID 
 	ctx, cfunc := context.WithCancel(ctx)
 	out := make(chan []proto.Vote)
 	// new subscriber, in "stream mode" (changes only), filtered by proposal ID
-	sub := subscribers.NewVoteSub(ctx, true, false, subscribers.VoteByProposalID(proposalID))
+	sub := subscribers.NewVoteSub(ctx, true, false, s.log, subscribers.VoteByProposalID(proposalID))
 	id := s.bus.Subscribe(sub)
 	go func() {
 		defer func() {

@@ -10,13 +10,13 @@ import (
 
 type RiskFactor struct {
 	*Base
-	r types.RiskFactor
+	r proto.RiskFactor
 }
 
 func NewRiskFactorEvent(ctx context.Context, r types.RiskFactor) *RiskFactor {
 	return &RiskFactor{
 		Base: newBase(ctx, RiskFactorEvent),
-		r:    r,
+		r:    *r.IntoProto(),
 	}
 }
 
@@ -24,13 +24,12 @@ func (r RiskFactor) MarketID() string {
 	return r.r.Market
 }
 
-func (r *RiskFactor) RiskFactor() types.RiskFactor {
+func (r *RiskFactor) RiskFactor() proto.RiskFactor {
 	return r.r
 }
 
 func (r RiskFactor) Proto() proto.RiskFactor {
-	p := r.r.IntoProto()
-	return *p
+	return r.r
 }
 
 func (r RiskFactor) StreamMessage() *eventspb.BusEvent {
@@ -39,7 +38,7 @@ func (r RiskFactor) StreamMessage() *eventspb.BusEvent {
 		Block: r.TraceID(),
 		Type:  r.et.ToProto(),
 		Event: &eventspb.BusEvent_RiskFactor{
-			RiskFactor: r.r.IntoProto(),
+			RiskFactor: &r.r,
 		},
 	}
 }

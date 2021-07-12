@@ -11,17 +11,17 @@ import (
 // MarginLevels - the margin levels event
 type MarginLevels struct {
 	*Base
-	l types.MarginLevels
+	l proto.MarginLevels
 }
 
 func NewMarginLevelsEvent(ctx context.Context, l types.MarginLevels) *MarginLevels {
 	return &MarginLevels{
 		Base: newBase(ctx, MarginLevelsEvent),
-		l:    l,
+		l:    *l.IntoProto(),
 	}
 }
 
-func (m MarginLevels) MarginLevels() types.MarginLevels {
+func (m MarginLevels) MarginLevels() proto.MarginLevels {
 	return m.l
 }
 
@@ -42,8 +42,7 @@ func (m MarginLevels) Asset() string {
 }
 
 func (m MarginLevels) Proto() proto.MarginLevels {
-	p := m.l.IntoProto()
-	return *p
+	return m.l
 }
 
 func (m MarginLevels) StreamMessage() *eventspb.BusEvent {
@@ -52,7 +51,7 @@ func (m MarginLevels) StreamMessage() *eventspb.BusEvent {
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
 		Event: &eventspb.BusEvent_MarginLevels{
-			MarginLevels: m.l.IntoProto(),
+			MarginLevels: &m.l,
 		},
 	}
 }
