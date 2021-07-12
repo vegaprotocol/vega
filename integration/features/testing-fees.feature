@@ -635,13 +635,13 @@ Scenario: WIP - Testing fees in continuous trading with two trades and insuffici
     # And the accumulated infrastructure fee should be "8" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
 
-    When the network moves ahead "11" blocks
+    # When the network moves ahead "11" blocks
 
-    Then debug transfers
+    # Then debug transfers
 
-    And the following transfers should happen:
-      | from   | to   | from account                | to account          | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5      | ETH   |
+    # And the following transfers should happen:
+    #   | from   | to   | from account                | to account          | market id | amount | asset |
+    #   | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5      | ETH   |
 
 
 # TO DO -
