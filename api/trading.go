@@ -330,6 +330,7 @@ func (s *tradingService) PrepareLiquidityProvision(ctx context.Context, req *pro
 	}, nil
 }
 
+// TODO remove - figure out what to do with this function
 func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
 	if req.Evt == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)

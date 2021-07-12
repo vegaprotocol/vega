@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/evtforward"
+	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
@@ -61,6 +62,7 @@ type Config struct {
 	EvtForward        evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
 	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
+	Fee               fee.Config         `group:"Fee" namespace:"fee"`
 	NetworkParameters netparams.Config
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
@@ -97,6 +99,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		EvtForward:        evtforward.NewDefaultConfig(),
 		Stats:             stats.NewDefaultConfig(),
 		Subscribers:       subscribers.NewDefaultConfig(),
+		Fee:               fee.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
 		GatewayEnabled:    true,
 		StoresEnabled:     true,
