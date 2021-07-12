@@ -13,7 +13,6 @@ import (
 	"code.vegaprotocol.io/data-node/banking"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
-	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/evtforward"
 	"code.vegaprotocol.io/data-node/fee"
@@ -128,7 +127,6 @@ type NodeCommand struct {
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
-	collateral     *collateral.Engine
 	oracle         *oracles.Engine
 	oracleAdaptors *adaptors.Adaptors
 	netParams      *netparams.Store

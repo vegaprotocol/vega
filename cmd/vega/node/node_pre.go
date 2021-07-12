@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
-	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
@@ -209,9 +208,6 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	}
 
 	assetD := asset.Type()
-	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
-		return fmt.Errorf("unable to enable asset in collateral: %v", err)
-	}
 
 	l.Log.Info("new asset added successfully",
 		logging.String("asset", asset.String()))
@@ -263,7 +259,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
 	l.oracleAdaptors = oracleAdaptors.New()
@@ -312,7 +307,7 @@ func (l *NodeCommand) setupNetParameters() error {
 	if err := l.netParams.AddRules(
 		netparams.ParamStringRules(
 			netparams.GovernanceVoteAsset,
-			checks.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+			checks.GovernanceAssetUpdate(l.Log, l.assets),
 		),
 	); err != nil {
 		return err
