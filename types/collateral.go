@@ -176,4 +176,6 @@ const (
 	AccountType_ACCOUNT_TYPE_BOND AccountType = 9
 	// External account represents an external source (deposit/withdrawal)
 	AccountType_ACCOUNT_TYPE_EXTERNAL AccountType = 10
+	// Global insurance pool accounts contain insurance funds for a asset - one insurance pool per asset
+	AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE AccountType = 11
 )

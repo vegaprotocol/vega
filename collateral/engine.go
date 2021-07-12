@@ -247,6 +247,22 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.accs[externalID] = externalAcc
 		// e.addAccountToHashableSlice(externalAcc)
 	}
+
+	// when an asset is enabled a global insurance account is created for it
+	globalInsuranceID := e.accountID(noMarket, systemOwner, asset.Id, types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE)
+	if _, ok := e.accs[globalInsuranceID]; !ok {
+		insuranceAcc := &types.Account{
+			Id:       globalInsuranceID,
+			Asset:    asset.Id,
+			Owner:    systemOwner,
+			Balance:  num.Zero(),
+			MarketId: noMarket,
+			Type:     types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE,
+		}
+		e.accs[globalInsuranceID] = insuranceAcc
+		e.broker.Send(events.NewAccountEvent(ctx, *insuranceAcc))
+	}
+
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.Id),
 	)
@@ -538,7 +554,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 			// no error when getting MTM accounts, and no margin account == network position
 			// we are not interested in this event, continue here
 			if party != types.NetworkParty {
-			              marginEvts = append(marginEvts, marginEvt)
+				marginEvts = append(marginEvts, marginEvt)
 			}
 			continue
 		}
@@ -1528,7 +1544,40 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		resps = append(resps, ledgerEntries)
 	}
 
-	return resps, nil
+	// redistribute the remaining funds in the market insurance account between other markets insurance accounts and global insurance account
+	marketInsuranceID := e.accountID(mktID, "", asset, types.AccountType_ACCOUNT_TYPE_INSURANCE)
+	marketInsuranceAcc, ok := e.accs[marketInsuranceID]
+	if !ok || marketInsuranceAcc.Balance.EQ(num.Zero()) {
+		// if there's no market insurance account or it has no balance, nothing to do here
+		return resps, nil
+	}
+
+	// get all other market insurance accounts for the same asset
+	var insuranceAccounts []*types.Account
+	for _, acc := range e.accs {
+		if acc.Id != marketInsuranceID && acc.Asset == asset && acc.Type == types.AccountType_ACCOUNT_TYPE_INSURANCE {
+			acccpy := *acc
+			acccpy.Balance = acccpy.Balance.Clone()
+			insuranceAccounts = append(insuranceAccounts, &acccpy)
+		}
+	}
+
+	// add the global account
+	insuranceAccounts = append(insuranceAccounts, e.GetAssetInsurancePoolAccount(asset))
+
+	// redistribute market insurance funds between the global and other markets equally
+	req.FromAccount[0] = marketInsuranceAcc
+	req.ToAccount = insuranceAccounts
+	req.Amount = marketInsuranceAcc.Balance.Clone()
+	insuranceledgerEntries, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		e.log.Panic("unable to redistribute market insurance funds", logging.Error(err))
+	}
+	for _, acc := range insuranceAccounts {
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	}
+
+	return append(resps, insuranceledgerEntries), nil
 }
 
 func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) bool {
@@ -2152,14 +2201,9 @@ func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Acc
 	return e.GetAccountByID(insuranceAccID)
 }
 
-// TopUpInsurancePool - this is used only for test purposed for now
-// and ease out removing the insurance pool balance from configuration, this should
-// definitely never be used in real code.
-func (e *Engine) TopUpInsurancePool(market, asset string, amount *num.Uint) error {
-	acc, err := e.GetAccountByID(e.accountID(market, "", asset, types.AccountType_ACCOUNT_TYPE_INSURANCE))
-	if err != nil {
-		return err
-	}
-
-	return e.IncrementBalance(context.Background(), acc.Id, amount)
+// GetAssetInsurancePoolAccount returns the global insurance account for the asset
+func (e *Engine) GetAssetInsurancePoolAccount(asset string) *types.Account {
+	globalInsuranceID := e.accountID(noMarket, systemOwner, asset, types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE)
+	globalInsuranceAcc, _ := e.accs[globalInsuranceID]
+	return globalInsuranceAcc
 }

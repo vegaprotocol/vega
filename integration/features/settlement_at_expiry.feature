@@ -5,6 +5,8 @@ Feature: Test mark to market settlement
     And the markets:
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -41,6 +43,7 @@ Feature: Test mark to market settlement
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
   Scenario: Settlement happened when market is being closed
+    Given the initial insurance pool balance is "10000" for the markets:
     Given the traders deposit on asset's general account the following amount:
       | trader    | asset | amount    |
       | trader1   | ETH   | 10000     |
@@ -83,7 +86,7 @@ Feature: Test mark to market settlement
       | trader2 | ETH   | ETH/DEC19 | 132    | 868     |
       | trader3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the cumulated balance for all accounts should be worth "100216000"
+    And the cumulated balance for all accounts should be worth "100236000"
 
     # Close positions by aux traders
     When the traders place the following orders:
@@ -100,3 +103,6 @@ Feature: Test mark to market settlement
       | trader2 | ETH   | ETH/DEC19 | 0      | 42      |
       | trader3 | ETH   | ETH/DEC19 | 0      | 4042    |      
     # And the cumulated balance for all accounts should be worth "100214513"
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5000" for the asset "ETH"
+    And the insurance pool balance should be "15000" for the market "ETH/DEC20"

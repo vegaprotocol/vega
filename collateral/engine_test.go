@@ -574,6 +574,10 @@ func testEnableAssetSuccess(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
+
+	assetInsuranceAcc := eng.Engine.GetAssetInsurancePoolAccount(asset.Id)
+	assert.True(t, assetInsuranceAcc.Balance.IsZero())
+
 }
 
 func testEnableAssetFailureDuplicate(t *testing.T) {
@@ -2093,7 +2097,10 @@ func TestClearMarket(t *testing.T) {
 	trader := "oktrader"
 
 	// create traders
-	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(9)
+
+	eng.Engine.IncrementBalance(context.Background(), eng.marketInsuranceID, num.NewUint(1000))
+
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -2104,7 +2111,11 @@ func TestClearMarket(t *testing.T) {
 	responses, err := eng.Engine.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
 
 	assert.Nil(t, err)
-	assert.Equal(t, len(responses), 1)
+	assert.Equal(t, 2, len(responses))
+
+	// as there's only one market and it's being cleared we expect all the balance to go to the global account
+	assetInsuranceAcc := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
+	assert.Equal(t, num.NewUint(1000), assetInsuranceAcc.Balance)
 }
 
 func TestClearMarketNoMargin(t *testing.T) {
@@ -2325,7 +2336,8 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	// 4 new events expected:
 	// 2 markets accounts
 	// 2 new assets
-	broker.EXPECT().Send(gomock.Any()).Times(10)
+	// 3 asset insurance accounts
+	broker.EXPECT().Send(gomock.Any()).Times(13)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
