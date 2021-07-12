@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/assets"
-	"code.vegaprotocol.io/data-node/banking"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config"
@@ -130,10 +129,9 @@ type NodeCommand struct {
 
 	mktscfg []types.Market
 
-	assets  *assets.Service
-	notary  *notary.Notary
-	evtfwd  *evtforward.EvtForwarder
-	banking *banking.Engine
+	assets *assets.Service
+	notary *notary.Notary
+	evtfwd *evtforward.EvtForwarder
 
 	// plugins
 	settlePlugin     *plugins.Positions

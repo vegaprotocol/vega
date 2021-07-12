@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/assets"
-	"code.vegaprotocol.io/data-node/banking"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/evtforward"
@@ -65,7 +64,6 @@ type Config struct {
 	Notary            notary.Config      `group:"Notary" namespace:"notary"`
 	EvtForward        evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
 	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
-	Banking           banking.Config     `group:"Banking" namespace:"banking"`
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	NetworkParameters netparams.Config
 
@@ -103,7 +101,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Assets:            assets.NewDefaultConfig(),
 		Notary:            notary.NewDefaultConfig(),
 		EvtForward:        evtforward.NewDefaultConfig(),
-		Banking:           banking.NewDefaultConfig(),
 		Stats:             stats.NewDefaultConfig(),
 		Subscribers:       subscribers.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),

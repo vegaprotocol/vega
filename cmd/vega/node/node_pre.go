@@ -320,7 +320,6 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
-		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 
 		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
