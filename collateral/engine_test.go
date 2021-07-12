@@ -2509,7 +2509,7 @@ func TestHash(t *testing.T) {
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"e503fd3b86b7d16599c7db430c7d4e229d46ae65e92de319fb7554a62532ae75",
+		"29401e9399a8b4162fec5afaea65d38dc561584934b9c23ed69e4eb32be7f725",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)
