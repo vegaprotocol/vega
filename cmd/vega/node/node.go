@@ -129,7 +129,6 @@ type NodeCommand struct {
 	mktscfg []types.Market
 
 	assets *assets.Service
-	notary *notary.Notary
 	evtfwd *evtforward.EvtForwarder
 
 	// plugins
