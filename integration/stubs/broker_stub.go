@@ -351,13 +351,13 @@ func (b *BrokerStub) GetMarginByPartyAndMarket(partyID, marketID string) (types.
 			if _, ok := mapped[ml.PartyId]; !ok {
 				mapped[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			mapped[ml.PartyId][ml.MarketId] = *ml.IntoProto()
+			mapped[ml.PartyId][ml.MarketId] = ml
 		case events.MarginLevels:
 			ml := et.MarginLevels()
 			if _, ok := mapped[ml.PartyId]; !ok {
 				mapped[ml.PartyId] = map[string]types.MarginLevels{}
 			}
-			mapped[ml.PartyId][ml.MarketId] = *ml.IntoProto()
+			mapped[ml.PartyId][ml.MarketId] = ml
 		}
 	}
 	mkts, ok := mapped[partyID]

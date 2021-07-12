@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
@@ -26,7 +27,7 @@ func TestFilterOne(t *testing.T) {
 func testGetByID(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
-	sub := subscribers.NewGovernanceDataSub(ctx, true)
+	sub := subscribers.NewGovernanceDataSub(ctx, logging.NewTestLogger(), true)
 	ids := []string{
 		"prop1",
 		"prop2",
@@ -55,7 +56,7 @@ func testGetByID(t *testing.T) {
 func testFilterByState(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
-	sub := subscribers.NewGovernanceDataSub(ctx, true)
+	sub := subscribers.NewGovernanceDataSub(ctx, logging.NewTestLogger(), true)
 	party := "test-party"
 	states := []proto.Proposal_State{
 		proto.Proposal_STATE_OPEN,
@@ -92,7 +93,7 @@ func testFilterByState(t *testing.T) {
 
 func testFilterByParty(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
-	sub := subscribers.NewGovernanceDataSub(ctx, true)
+	sub := subscribers.NewGovernanceDataSub(ctx, logging.NewTestLogger(), true)
 	assert.Empty(t, sub.Filter(false))
 	party := "test-party"
 	ids := []string{
@@ -123,7 +124,7 @@ func testFilterByParty(t *testing.T) {
 func testNoFilterVotes(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
-	sub := subscribers.NewGovernanceDataSub(ctx, true)
+	sub := subscribers.NewGovernanceDataSub(ctx, logging.NewTestLogger(), true)
 	parties := []string{
 		"party1",
 		"party2",
