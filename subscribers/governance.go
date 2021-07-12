@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -44,6 +45,7 @@ type GovernanceSub struct {
 	changed  map[string]types.GovernanceData
 	update   chan struct{}
 	mu       *sync.Mutex
+	log      *logging.Logger
 }
 
 // Governance - vararg to set governance filters
@@ -70,7 +72,7 @@ func Votes(f ...VoteFilter) Filter {
 // NewGovernanceSub creates a new governance data subscriber with specific filters
 // this subscriber is used by the governance service for gRPC streams, not for general use
 // @TODO this subscriber needs to move to the appropriate package
-func NewGovernanceSub(ctx context.Context, ack bool, filters ...Filter) *GovernanceSub {
+func NewGovernanceSub(ctx context.Context, log *logging.Logger, ack bool, filters ...Filter) *GovernanceSub {
 	g := GovernanceSub{
 		Base:     NewBase(ctx, 10, ack),
 		gfilters: []GovernanceFilter{},
@@ -81,6 +83,7 @@ func NewGovernanceSub(ctx context.Context, ack bool, filters ...Filter) *Governa
 		byPID:    map[string]*types.GovernanceData{},
 		update:   make(chan struct{}),
 		mu:       &sync.Mutex{},
+		log:      log,
 	}
 	for _, f := range filters {
 		f(&g)
@@ -136,6 +139,9 @@ func (g *GovernanceSub) filter(e GovernanceEvent) bool {
 				return false
 			}
 		}
+	default:
+		g.log.Panic("Unknown event type in governanceSub filter", logging.String("Type", et.Type().String()))
+
 	}
 	return true
 }
@@ -172,6 +178,9 @@ func (g *GovernanceSub) Push(evts ...events.Event) {
 				gd.NoParty[vote.PartyId] = &vote
 			}
 			g.changed[vote.ProposalId] = *gd
+		default:
+			g.log.Panic("Unknown event type in governanceSub push", logging.String("Type", et.Type().String()))
+
 		}
 		// data has changed for the first time
 		// close the signal channel

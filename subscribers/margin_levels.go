@@ -53,12 +53,10 @@ func (m *MarginLevelSub) loop(ctx context.Context) {
 }
 
 func (m *MarginLevelSub) Push(evts ...events.Event) {
-	m.log.Error("Margin level pushing events")
 	for _, e := range evts {
-		switch te := e.(type) {
+		switch et := e.(type) {
 		case MLE:
-			m.log.Error("Margin level MLE")
-			ml := te.MarginLevels()
+			ml := et.MarginLevels()
 			m.mu.Lock()
 			if _, ok := m.buf[ml.PartyId]; !ok {
 				m.buf[ml.PartyId] = map[string]types.MarginLevels{}
@@ -68,7 +66,7 @@ func (m *MarginLevelSub) Push(evts ...events.Event) {
 		case TimeEvent:
 			m.flush()
 		default:
-			m.log.Error("Margin levels:", logging.String("Type", te.Type().String()))
+			m.log.Panic("Unknown event type in margin level subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }

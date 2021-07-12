@@ -64,7 +64,7 @@ func (m *RiskFactorSub) Push(evts ...events.Event) {
 		case TimeEvent:
 			m.flush()
 		default:
-			m.log.Panic("Unknown event type in account subscriber", logging.String("Type", et.Type().String()))
+			m.log.Panic("Unknown event type in risk factor subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }

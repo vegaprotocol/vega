@@ -60,11 +60,13 @@ func (o *OrderEvent) loop(ctx context.Context) {
 
 func (o *OrderEvent) Push(evts ...events.Event) {
 	for _, e := range evts {
-		switch te := e.(type) {
+		switch et := e.(type) {
 		case OE:
-			o.write(te)
+			o.write(et)
 		case TimeEvent:
 			o.flush()
+		default:
+			o.log.Panic("Unknown event type in order subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }
