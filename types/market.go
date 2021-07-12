@@ -148,6 +148,9 @@ type AuctionDuration struct {
 }
 
 func AuctionDurationFromProto(ad *proto.AuctionDuration) *AuctionDuration {
+	if ad == nil {
+		return nil
+	}
 	return &AuctionDuration{
 		Duration: ad.Duration,
 		Volume:   ad.Volume,
@@ -206,6 +209,9 @@ type isTRM interface {
 }
 
 func TradableInstrumentFromProto(ti *proto.TradableInstrument) *TradableInstrument {
+	if ti == nil {
+		return nil
+	}
 	rm := isTRMFromProto(ti.RiskModel)
 	return &TradableInstrument{
 		Instrument:       InstrumentFromProto(ti.Instrument),
@@ -590,7 +596,9 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 		asset:                         asset,
 	}
-	m.tmc = m.TradingModeConfig.tmcType()
+	if m.TradingModeConfig != nil {
+		m.tmc = m.TradingModeConfig.tmcType()
+	}
 	return m
 }
 

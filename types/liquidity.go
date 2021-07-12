@@ -360,6 +360,9 @@ func (l LiquidityMonitoringParameters) DeepClone() *LiquidityMonitoringParameter
 }
 
 func LiquidityMonitoringParametersFromProto(p *proto.LiquidityMonitoringParameters) *LiquidityMonitoringParameters {
+	if p == nil {
+		return nil
+	}
 	var params *TargetStakeParameters
 	if p.TargetStakeParameters != nil {
 		params = TargetStakeParametersFromProto(p.TargetStakeParameters)
