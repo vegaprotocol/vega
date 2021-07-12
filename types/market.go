@@ -596,7 +596,9 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 		asset:                         asset,
 	}
-	m.tmc = m.TradingModeConfig.tmcType()
+	if m.TradingModeConfig != nil {
+		m.tmc = m.TradingModeConfig.tmcType()
+	}
 	return m
 }
 
