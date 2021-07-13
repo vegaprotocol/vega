@@ -637,6 +637,10 @@ Scenario: Testing fees in auction trading with two trades and one liquidity prov
        | 1002      | TRADING_MODE_CONTINUOUS |  
      # | 1002      | TRADING_MODE_OPENING_AUCTION |  
 
+    Then the following trades should be executed:
+      | buyer    | price | size | seller  |
+      | trader3a | 1002  | 2    | trader4 |
+
     # Then debug liquidity provision events
      Then debug trades
    Then debug transfers
