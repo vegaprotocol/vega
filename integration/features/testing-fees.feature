@@ -573,7 +573,7 @@ Scenario: Testing fees in opening auction session (with one trades and one liqui
       | name                                          | value |
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.targetstake.triggering.ratio | 0     |
+      | market.liquidity.targetstake.triggering.ratio | 1     |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
 
     And the average block duration is "1"
@@ -586,7 +586,7 @@ Scenario: Testing fees in opening auction session (with one trades and one liqui
       | 1       | 0.99        | 300               |
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
-      | 0.2  | 0.1   | 100          | -100         | 0.1                    |
+      | 0.2  | 0.1   | 100         | -100          | 0.1                    |
     
     And the log normal risk model named "log-normal-risk-model-1":
       | risk aversion | tau | mu | r   | sigma |
@@ -606,31 +606,26 @@ Scenario: Testing fees in opening auction session (with one trades and one liqui
       | lp5      | ETH   | 100000000  |
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/DEC21 | buy  | 1      | 1050  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 1      | 1050  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1    | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
-      # | aux1    | ETH/DEC21 | buy  | 105    | 910   | 0                | TYPE_LIMIT | TIF_GTC |
-      # | aux2    | ETH/DEC21 | sell | 92     | 1090  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3a | ETH/DEC21 | buy   | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell  | 4      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader   | market id | side  | volume | price | resulting trades | type       | tif     |
+      | aux1     | ETH/DEC21 | buy   | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2     | ETH/DEC21 | sell  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader3a | ETH/DEC21 | buy   | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     #TODO: Changing party to lp5 changes order book composition, check why.
     Given the traders submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    |
 
    
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | 
-      | 1002       | TRADING_MODE_CONTINUOUS |  
-     # | 1002      | TRADING_MODE_OPENING_AUCTION |  
+      | mark price | trading mode            | target stake | supplied stake |
+      | 1002       | TRADING_MODE_CONTINUOUS |          200 |            200 |
      Then the following trades should be executed:
       | buyer    | price | size | seller  |
-      | trader3a | 1002  | 2    | trader4 |
+      | trader3a | 1002  | 1    | trader4 |
 
     # Then debug liquidity provision events
      Then debug trades
@@ -664,11 +659,6 @@ Scenario: Testing fees in opening auction session (with one trades and one liqui
 
   #Scenario: Testing fees when trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended, the markets trading mode is TRADING_MODE_MONITORING_AUCTION and the trigger is AUCTION_TRIGGER_LIQUIDITY (with one trades and one liquidity providers with 10 s liquidity fee distribution timestep);(each side of a trade is debited 1/2 IF & LP)
 
-    Given the traders submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    |
-
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       # | aux1    | ETH/DEC21 | buy  | 1      | 1050  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -677,27 +667,54 @@ Scenario: Testing fees in opening auction session (with one trades and one liqui
       # | aux2    | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
       # | aux1    | ETH/DEC21 | buy  | 105    | 910   | 0                | TYPE_LIMIT | TIF_GTC |
       # | aux2    | ETH/DEC21 | sell | 92     | 1090  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3a | ETH/DEC21 | buy   | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell  | 4      | 1004  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader3a | ETH/DEC21 | buy   | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                 | auction trigger         |
-     # | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING |
-        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
-    And the traders place the following orders:
-      | trader   | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trading mode                    | auction trigger           |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
     
-    When the network moves ahead "1" blocks
-    Then the auction ends with a traded volume of "6" at a price of "1002"
+    Given the traders submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    |
 
+    When the network moves ahead "1" blocks
+
+    # TODO: This seems to be suming the traded volume from the previous auction, verify and raise a bug.
+    # Then the auction ends with a traded volume of "3" at a price of "1002"
+
+    Then the following trades should be executed:
+      | buyer    | price | size | seller  |
+      | trader3a | 1002  | 3    | trader4 |
+
+    #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 1000         | 10000          | 6             |
+      | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 801          | 10000          | 4            |
 
+
+    Then the traders place the following orders:
+      | trader   | market id  | side  | volume | price | resulting trades | type       | tif     |
+      | trader3a | ETH/DEC21  | buy   | 1      | 900  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21  | sell  | 1      | 900  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the market data for the market "ETH/DEC21" should be:
+      | trading mode                    | auction trigger       |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
+
+
+    Then the network moves ahead "301" blocks
+
+    Then the following trades should be executed:
+      | buyer    | price | size | seller  |
+      | trader3a | 900   | 1    | trader4 |
+
+    Then the market data for the market "ETH/DEC21" should be:
+      | trading mode            | auction trigger             |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
 
 
