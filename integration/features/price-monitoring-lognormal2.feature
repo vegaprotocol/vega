@@ -21,59 +21,59 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by 1st trigger (lower bound breached)
     Given the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount       |
-      | trader1 | ETH   | 10000000000  |
-      | trader2 | ETH   | 10000000000  |
-      | trader3 | ETH   | 10000000000  |
-      | trader4 | ETH   | 10000000000  |
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | party3 | ETH   | 10000000000  |
+      | party4 | ETH   | 10000000000  |
       | aux     | ETH   | 100000000000 |
       | aux2    | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
-      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
       | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
-      | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1 |
+      | party4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | party4-1 |
+      | party3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party3-2 |
+      | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2 |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     When the parties cancel the following orders:
-      | trader  | reference |
-      | trader3 | trader3-1 |
-      | trader4 | trader4-1 |
+      | party  | reference |
+      | party3 | party3-1 |
+      | party4 | party4-1 |
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the mark price should be "95878" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the mark price should be "104251" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
@@ -83,9 +83,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | 104251     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -105,16 +105,16 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by 1st trigger, upper bound
     Given the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount       |
-      | trader1 | ETH   | 10000000000  |
-      | trader2 | ETH   | 10000000000  |
-      | trader3 | ETH   | 10000000000  |
-      | trader4 | ETH   | 10000000000  |
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | party3 | ETH   | 10000000000  |
+      | party4 | ETH   | 10000000000  |
       | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
-      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
       | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -122,40 +122,40 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
-      | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1 |
+      | party4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | party4-1 |
+      | party3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party3-2 |
+      | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2 |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     When the parties cancel the following orders:
-      | trader  | reference |
-      | trader3 | trader3-1 |
-      | trader4 | trader4-1 |
+      | party  | reference |
+      | party3 | party3-1 |
+      | party4 | party4-1 |
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the mark price should be "95878" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the mark price should be "104251" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
@@ -164,9 +164,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | 104251     | TRADING_MODE_CONTINUOUS | 7200    | 90497     | 110401    |
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 104252 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -186,65 +186,65 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by 1 trigger (upper bound breached)
     Given the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount       |
-      | trader1 | ETH   | 10000000000  |
-      | trader2 | ETH   | 10000000000  |
-      | trader3 | ETH   | 10000000000  |
-      | trader4 | ETH   | 10000000000  |
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | party3 | ETH   | 10000000000  |
+      | party4 | ETH   | 10000000000  |
       | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
       | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
-      | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1 |
+      | party4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | party4-1 |
+      | party3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party3-2 |
+      | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2 |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
     Then the parties cancel the following orders:
-      | trader  | reference |
-      | trader3 | trader3-1 |
-      | trader4 | trader4-1 |
+      | party  | reference |
+      | party3 | party3-1 |
+      | party4 | party4-1 |
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 104253 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104253 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 104253 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 104253 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -264,65 +264,65 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by both triggers (lower bound breached)
     Given the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount       |
-      | trader1 | ETH   | 10000000000  |
-      | trader2 | ETH   | 10000000000  |
-      | trader3 | ETH   | 10000000000  |
-      | trader4 | ETH   | 10000000000  |
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | party3 | ETH   | 10000000000  |
+      | party4 | ETH   | 10000000000  |
       | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
       | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
-      | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1 |
+      | party4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | party4-1 |
+      | party3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party3-2 |
+      | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2 |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
     Then the parties cancel the following orders:
-      | trader  | reference |
-      | trader3 | trader3-1 |
-      | trader4 | trader4-1 |
+      | party  | reference |
+      | party3 | party3-1 |
+      | party4 | party4-1 |
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 90496 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -354,65 +354,65 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by both triggers, upper bound
     Given the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount       |
-      | trader1 | ETH   | 10000000000  |
-      | trader2 | ETH   | 10000000000  |
-      | trader3 | ETH   | 10000000000  |
-      | trader4 | ETH   | 10000000000  |
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | party3 | ETH   | 10000000000  |
+      | party4 | ETH   | 10000000000  |
       | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
       | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
-      | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1 |
+      | party4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | party4-1 |
+      | party3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party3-2 |
+      | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2 |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
     Then the parties cancel the following orders:
-      | trader  | reference |
-      | trader3 | trader3-1 |
-      | trader4 | trader4-1 |
+      | party  | reference |
+      | party3 | party3-1 |
+      | party4 | party4-1 |
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -444,38 +444,38 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
   Scenario: Auction triggered by 1st trigger (lower bound breached), extended by second (upper bound)
     Given the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount       |
-      | trader1 | ETH   | 10000000000  |
-      | trader2 | ETH   | 10000000000  |
-      | trader3 | ETH   | 10000000000  |
-      | trader4 | ETH   | 10000000000  |
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | party3 | ETH   | 10000000000  |
+      | party4 | ETH   | 10000000000  |
       | aux     | ETH   | 100000000000 |
 
      # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
-      | trader | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
       | aux    | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | trader4-1 |
-      | trader3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader3-2 |
-      | trader4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | trader4-2 |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1 |
+      | party4 | ETH/DEC20 | buy  | 1      | 80000  | 0                | TYPE_LIMIT | TIF_GTC | party4-1 |
+      | party3 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party3-2 |
+      | party4 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA | party4-2 |
     Then the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
     Then the parties cancel the following orders:
-      | trader  | reference |
-      | trader3 | trader3-1 |
-      | trader4 | trader4-1 |
+      | party  | reference |
+      | party3 | party3-1 |
+      | party4 | party4-1 |
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -484,18 +484,18 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 95878 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 95878 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "95878" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 104251 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 104251 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
@@ -506,9 +506,9 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me |
-      | trader2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC |           |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me |
+      | party2 | ETH/DEC20 | buy  | 1      | 95877 | 0                | TYPE_LIMIT | TIF_GTC |           |
 
     And the mark price should be "104251" for the market "ETH/DEC20"
 
@@ -520,13 +520,13 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     Then the parties cancel the following orders:
-      | trader  | reference |
-      | trader1 | cancel-me |
+      | party  | reference |
+      | party1 | cancel-me |
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | sell | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC20 | buy  | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 110430 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     #T0 + 4min01s
     Then time is updated to "2020-10-16T02:04:03Z"

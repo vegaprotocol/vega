@@ -31,29 +31,29 @@ Feature: Test margin for lp near price monitoring boundaries
       | name             | value |
       | prices.ETH.value | 100   |
     And the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount    |
+      | party  | asset | amount    |
       | lp1     | ETH   | 100000000 |
-      | trader1 | ETH   | 10000000  |
-      | trader2 | ETH   | 10000000  |
+      | party1 | ETH   | 10000000  |
+      | party2 | ETH   | 10000000  |
 
     Given the parties submit the following liquidity provision:
       | id          | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy  | BID              | 500        | -100   |
       | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell | ASK              | 500        | 100    |
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "10" at a price of "1000"
 
     And the parties should have the following profit and loss:
-      | trader  | volume | unrealised pnl | realised pnl |
-      | trader1 | 10     | 0              | 0            |
-      | trader2 | -10    | 0              | 0            |
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 10     | 0              | 0            |
+      | party2 | -10    | 0              | 0            |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -68,33 +68,33 @@ Feature: Test margin for lp near price monitoring boundaries
     # As these are the best bid / best ask the probability of trading used is 1/2.
 
     And the parties should have the following margin levels:
-      | trader | market id | maintenance | search   | initial  | release  |
+      | party | market id | maintenance | search   | initial  | release  |
       | lp1    | ETH/DEC21 | 17333400    | 19066740 | 20800080 | 24266760 |
 
     And the parties should have the following account balances:
-      | trader | asset | market id | margin   | general | bond     |
+      | party | asset | market id | margin   | general | bond     |
       | lp1    | ETH   | ETH/DEC21 | 20800080 | 1199920 | 78000000 |
 
 
     Then the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
 
     And the parties should have the following margin levels:
-      | trader | market id | maintenance | search   | initial  | release  |
+      | party | market id | maintenance | search   | initial  | release  |
       | lp1    | ETH/DEC21 | 17333400    | 19066740 | 20800080 | 24266760 |
 
     # now we place an order which makes the best bid 901.
     Then the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC21 | buy  | 1      | 901   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4 |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC21 | buy  | 1      | 901   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4 |
 
     # the lp1 one volume on this side should go to 801 but because price monitoring bound is still 900 it gets pushed to 900.
     # but 900 is no longer the best bid, so the risk model is used to get prob of trading. This is 0.1 (see above).
     # Hence a lot more volume is required to meet commitment and thus the margin requirement jumps substantially.
 
     And the parties should have the following margin levels:
-      | trader | market id | maintenance | search   | initial   | release   |
+      | party | market id | maintenance | search   | initial   | release   |
       | lp1    | ETH/DEC21 | 86666700    | 95333370 | 104000040 | 121333380 |
       # value before uint stuff
       #| lp1    | ETH/DEC21 | 86666701    | 95333371 | 104000041 | 121333381 |
@@ -118,29 +118,29 @@ Feature: Test margin for lp near price monitoring boundaries
       | name              | value |
       | prices.ETH2.value | 1000  |
     And the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount    |
+      | party  | asset | amount    |
       | lp1     | ETH2  | 100000000 |
-      | trader1 | ETH2  | 10000000  |
-      | trader2 | ETH2  | 10000000  |
+      | party1 | ETH2  | 10000000  |
+      | party2 | ETH2  | 10000000  |
 
     And the parties submit the following liquidity provision:
       | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | -100   |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    |
     And the parties place the following orders:
-      | trader  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
-      | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
-      | trader1 | ETH2/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
-      | trader2 | ETH2/MAR22 | sell | 1      | 1109  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | trader2 | ETH2/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party1 | ETH2/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+      | party2 | ETH2/MAR22 | sell | 1      | 1109  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
+      | party2 | ETH2/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
     When the opening auction period ends for market "ETH2/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "1000"
 
     And the parties should have the following profit and loss:
-      | trader  | volume | unrealised pnl | realised pnl |
-      | trader1 | 10     | 0              | 0            |
-      | trader2 | -10    | 0              | 0            |
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 10     | 0              | 0            |
+      | party2 | -10    | 0              | 0            |
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -161,17 +161,17 @@ Feature: Test margin for lp near price monitoring boundaries
     # As these are the best bid / best ask the probability of trading used is 1/2.
 
     And the parties should have the following margin levels:
-      | trader | market id  | maintenance | search   | initial  | release  |
+      | party | market id  | maintenance | search   | initial  | release  |
       | lp1    | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
 
     And the parties should have the following account balances:
-      | trader | asset | market id  | margin   | general  | bond     |
+      | party | asset | market id  | margin   | general  | bond     |
       | lp1    | ETH2  | ETH2/MAR22 | 39083413 | 10916587 | 50000000 |
 
     And clear order events
     Then the parties place the following orders:
-      | trader  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
+      | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -188,13 +188,13 @@ Feature: Test margin for lp near price monitoring boundaries
 
 
     And the parties should have the following margin levels:
-      | trader | market id  | maintenance | search   | initial  | release  |
+      | party | market id  | maintenance | search   | initial  | release  |
       | lp1    | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |
 
     # now we place an order which makes the best bid 901.
     Then the parties place the following orders:
-      | trader  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH2/MAR22 | buy  | 1      | 901   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4 |
+      | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH2/MAR22 | buy  | 1      | 901   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4 |
 
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -214,5 +214,5 @@ Feature: Test margin for lp near price monitoring boundaries
 
 
     And the traders should have the following margin levels:
-      | trader | market id  | maintenance | search   | initial  | release   |
+      | party | market id  | maintenance | search   | initial  | release   |
       | lp1    | ETH2/MAR22 | 80237809    | 88261589 | 96285370 | 112332932 |

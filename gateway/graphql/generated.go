@@ -5071,7 +5071,7 @@ type Subscription {
 
   "Subscribe to the margin changes"
   margins(
-    "id of the trader we want to subscribe for margin updates"
+    "id of the party we want to subscribe for margin updates"
     partyId: ID!
     "market we want to listen to margin updates (nil if we want updates for all markets)"
     marketId: ID
@@ -5104,24 +5104,24 @@ type Subscription {
   ): [BusEvent!]
 }
 
-"Margins for a given a trader"
+"Margins for a given a party"
 type MarginLevels {
-  "market in which the margin is required for this trader"
+  "market in which the margin is required for this party"
   market: Market!
   "asset for the current margins"
   asset: Asset!
-  "id of the trader for this margin"
+  "id of the party for this margin"
   party: Party!
   "minimal margin for the position to be maintained in the network (unsigned int actually)"
   maintenanceLevel: String!
   "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)"
   searchLevel: String!
-  "this is the minimal margin required for a trader to place a new order on the network (unsigned int actually)"
+  "this is the minimal margin required for a party to place a new order on the network (unsigned int actually)"
   initialLevel: String!
 
   """
-  If the margin of the trader is greater than this level, then collateral will be released from the margin account into
-  the general account of the trader for the given asset.
+  If the margin of the party is greater than this level, then collateral will be released from the margin account into
+  the general account of the party for the given asset.
   """
   collateralReleaseLevel: String!
 
@@ -6159,7 +6159,7 @@ type Party {
 }
 
 """
-An individual trader at any point in time is considered net long or net short. This refers to their Open Volume,
+An individual party at any point in time is considered net long or net short. This refers to their Open Volume,
 calculated using FIFO. This volume is signed as either negative for LONG positions and positive for SHORT positions. A
 single trade may end up "splitting" with some of its volume matched into closed volume and some of its volume
 remaining as open volume. This is why we don't refer to positions being comprised of trades, rather of volume.
@@ -6213,7 +6213,7 @@ type Order {
   "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  "The trader who place the order (probably stored internally as the trader's public key)"
+  "The party who place the order (probably stored internally as the party's public key)"
   party: Party!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
@@ -6723,7 +6723,7 @@ enum OrderType {
   Limit
 
   """
-  Used for distressed parties, an order placed by the network to close out distressed traders
+  Used for distressed parties, an order placed by the network to close out distressed partys
   similar to Market order, only no party is attached to the order.
   """
   Network
@@ -7458,7 +7458,7 @@ type SettleDistressed {
   marketId: ID!
   "the party who closed out"
   partyId: ID!
-  "the margin taken from distressed trader"
+  "the margin taken from distressed party"
   margin: Int!
   "the price at which position was closed out"
   price: Int!

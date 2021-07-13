@@ -64,7 +64,7 @@ type amendOrderRow struct {
 
 func parseAmendOrderTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"reference",
 		"price",
 		"size delta",
@@ -76,7 +76,7 @@ func parseAmendOrderTable(table *gherkin.DataTable) []RowWrapper {
 }
 
 func (r amendOrderRow) Party() string {
-	return r.row.MustStr("trader")
+	return r.row.MustStr("party")
 }
 
 func (r amendOrderRow) Reference() string {

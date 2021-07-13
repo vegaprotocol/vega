@@ -212,7 +212,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	)
 	e := getTestEngine(t)
 	orderBuy := types.Order{
-		PartyId:   "test_trader",
+		PartyId:   "test_party",
 		Side:      types.Side_SIDE_BUY,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
@@ -228,7 +228,7 @@ func testRegisterOrderSuccessful(t *testing.T) {
 	assert.Equal(t, pos.Buy(), positions[0].Buy())
 
 	orderSell := types.Order{
-		PartyId:   "test_trader",
+		PartyId:   "test_party",
 		Side:      types.Side_SIDE_SELL,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
@@ -252,7 +252,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	)
 	e := getTestEngine(t)
 	orderBuy := types.Order{
-		PartyId:   "test_trader",
+		PartyId:   "test_party",
 		Side:      types.Side_SIDE_BUY,
 		Size:      uint64(buysize),
 		Remaining: uint64(buysize),
@@ -265,7 +265,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 	assert.Zero(t, pos.Buy())
 
 	orderSell := types.Order{
-		PartyId:   "test_trader",
+		PartyId:   "test_party",
 		Side:      types.Side_SIDE_SELL,
 		Size:      uint64(sellsize),
 		Remaining: uint64(sellsize),
@@ -283,7 +283,7 @@ func testUnregisterOrderSuccessful(t *testing.T) {
 func testUnregisterOrderUnsuccessful(t *testing.T) {
 	e := getTestEngine(t)
 	orderBuy := types.Order{
-		PartyId:   "test_trader",
+		PartyId:   "test_party",
 		Side:      types.Side_SIDE_BUY,
 		Size:      uint64(999),
 		Remaining: uint64(999),
@@ -520,28 +520,28 @@ func TestHash(t *testing.T) {
 	e := getTestEngine(t)
 	orders := []types.Order{
 		{
-			PartyId:   "test_trader_1",
+			PartyId:   "test_party_1",
 			Side:      types.Side_SIDE_BUY,
 			Size:      uint64(100),
 			Remaining: uint64(100),
 			Price:     num.Zero(),
 		},
 		{
-			PartyId:   "test_trader_2",
+			PartyId:   "test_party_2",
 			Side:      types.Side_SIDE_BUY,
 			Size:      uint64(200),
 			Remaining: uint64(200),
 			Price:     num.Zero(),
 		},
 		{
-			PartyId:   "test_trader_3",
+			PartyId:   "test_party_3",
 			Side:      types.Side_SIDE_BUY,
 			Size:      uint64(300),
 			Remaining: uint64(300),
 			Price:     num.Zero(),
 		},
 		{
-			PartyId:   "test_trader_1",
+			PartyId:   "test_party_1",
 			Side:      types.Side_SIDE_SELL,
 			Size:      uint64(1000),
 			Remaining: uint64(1000),
@@ -559,8 +559,8 @@ func TestHash(t *testing.T) {
 		MarketId:  "market_id",
 		Price:     num.NewUint(10000),
 		Size:      uint64(15),
-		Buyer:     "test_trader_3",
-		Seller:    "test_trader_1",
+		Buyer:     "test_party_3",
+		Seller:    "test_party_1",
 		BuyOrder:  "buy_order_id",
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),

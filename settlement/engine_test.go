@@ -30,7 +30,7 @@ type testEngine struct {
 }
 
 type posValue struct {
-	trader string
+	party string
 	price  *num.Uint // absolute Mark price
 	size   int64
 }
@@ -51,9 +51,9 @@ func TestMarketExpiry(t *testing.T) {
 func TestMarkToMarket(t *testing.T) {
 	t.Run("No settle positions if none were on channel", testMarkToMarketEmpty)
 	t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
-	t.Run("Trade adds new trader to market, no MTM settlement because markPrice is the same", testAddNewParty)
+	t.Run("Trade adds new party to market, no MTM settlement because markPrice is the same", testAddNewParty)
 	// add this test case because we had a runtime panic on the trades map earlier
-	t.Run("Trade adds new trader, immediately closing out with themselves", testAddNewPartySelfTrade)
+	t.Run("Trade adds new party, immediately closing out with themselves", testAddNewPartySelfTrade)
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
 }
 
@@ -64,17 +64,17 @@ func testSettleExpiredSuccess(t *testing.T) {
 	pr := num.NewUint(1000)
 	data := []posValue{ // {{{2
 		{
-			trader: "trader1",
+			party: "party1",
 			price:  pr, // winning
 			size:   10,
 		},
 		{
-			trader: "trader2",
+			party: "party2",
 			price:  pr, // losing
 			size:   -5,
 		},
 		{
-			trader: "trader3",
+			party: "party3",
 			price:  pr, // losing
 			size:   -5,
 		},
@@ -82,21 +82,21 @@ func testSettleExpiredSuccess(t *testing.T) {
 	half := num.NewUint(500)
 	expect := []*types.Transfer{
 		{
-			Owner: data[1].trader,
+			Owner: data[1].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
-			Owner: data[2].trader,
+			Owner: data[2].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
-			Owner: data[0].trader,
+			Owner: data[0].party,
 			Amount: &types.FinancialAmount{
 				Amount: pr,
 			},
@@ -141,17 +141,17 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 	pr := num.NewUint(1000)
 	data := []posValue{ // {{{2
 		{
-			trader: "trader1",
+			party: "party1",
 			price:  pr,
 			size:   10,
 		},
 		{
-			trader: "trader2",
+			party: "party2",
 			price:  pr,
 			size:   -5,
 		},
 		{
-			trader: "trader3",
+			party: "party3",
 			price:  pr,
 			size:   -5,
 		},
@@ -159,21 +159,21 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 	half := num.NewUint(500)
 	expect := []*types.Transfer{
 		{
-			Owner: data[1].trader,
+			Owner: data[1].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
-			Owner: data[2].trader,
+			Owner: data[2].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
-			Owner: data[0].trader,
+			Owner: data[0].party,
 			Amount: &types.FinancialAmount{
 				Amount: pr,
 			},
@@ -219,7 +219,7 @@ func testSettleExpiryFail(t *testing.T) {
 	// these are mark prices, product will provide the actual value
 	data := []posValue{
 		{
-			trader: "trader1",
+			party: "party1",
 			price:  num.NewUint(1000),
 			size:   10,
 		},
@@ -240,12 +240,12 @@ func testMarkToMarketEmpty(t *testing.T) {
 	data := posValue{
 		price:  markPrice,
 		size:   1,
-		trader: "test",
+		party: "test",
 	}
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	pos := mocks.NewMockMarketPosition(engine.ctrl)
-	pos.EXPECT().Party().AnyTimes().Return(data.trader)
+	pos.EXPECT().Party().AnyTimes().Return(data.party)
 	pos.EXPECT().Size().AnyTimes().Return(data.size)
 	pos.EXPECT().Price().AnyTimes().Return(markPrice)
 	engine.Update([]events.MarketPosition{pos})
@@ -259,33 +259,33 @@ func testAddNewPartySelfTrade(t *testing.T) {
 	markPrice := num.NewUint(1000)
 	t1 := testPos{
 		price: markPrice.Clone(),
-		party: "trader1",
+		party: "party1",
 		size:  5,
 	}
 	init := []events.MarketPosition{
 		t1,
 		testPos{
 			price: markPrice.Clone(),
-			party: "trader2",
+			party: "party2",
 			size:  -5,
 		},
 	}
 	// let's not change the markPrice
-	// just add a trader to the market, buying from an existing trader
+	// just add a party to the market, buying from an existing party
 	trade := &types.Trade{
-		Buyer:  "trader3",
-		Seller: "trader3",
+		Buyer:  "party3",
+		Seller: "party3",
 		Price:  markPrice.Clone(),
 		Size:   1,
 	}
-	// the first trader is the seller
+	// the first party is the seller
 	// so these are the new positions after the trade
 	t1.size -= 1
 	positions := []events.MarketPosition{
 		t1,
 		init[1],
 		testPos{
-			party: "trader3",
+			party: "party3",
 			size:  0,
 			price: markPrice.Clone(),
 		},
@@ -303,33 +303,33 @@ func testAddNewParty(t *testing.T) {
 	markPrice := num.NewUint(1000)
 	t1 := testPos{
 		price: markPrice.Clone(),
-		party: "trader1",
+		party: "party1",
 		size:  5,
 	}
 	init := []events.MarketPosition{
 		t1,
 		testPos{
 			price: markPrice.Clone(),
-			party: "trader2",
+			party: "party2",
 			size:  -5,
 		},
 	}
 	// let's not change the markPrice
-	// just add a trader to the market, buying from an existing trader
+	// just add a party to the market, buying from an existing party
 	trade := &types.Trade{
-		Buyer:  "trader3",
+		Buyer:  "party3",
 		Seller: t1.party,
 		Price:  markPrice.Clone(),
 		Size:   1,
 	}
-	// the first trader is the seller
+	// the first party is the seller
 	// so these are the new positions after the trade
 	t1.size -= 1
 	positions := []events.MarketPosition{
 		t1,
 		init[1],
 		testPos{
-			party: "trader3",
+			party: "party3",
 			size:  1,
 			price: markPrice.Clone(),
 		},
@@ -344,7 +344,7 @@ func testAddNewParty(t *testing.T) {
 }
 
 // This tests MTM results put losses first, trades tested are Long going longer, short going shorter
-// and long going short, short going long, and a third trader who's not trading at all
+// and long going short, short going long, and a third party who's not trading at all
 func testMarkToMarketOrdered(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
@@ -353,12 +353,12 @@ func testMarkToMarketOrdered(t *testing.T) {
 		{
 			price:  pr,
 			size:   1,
-			trader: "trader1", // mocks will create 2 parties (long & short)
+			party: "party1", // mocks will create 2 parties (long & short)
 		},
 		{
 			price:  pr.Clone(),
 			size:   -1,
-			trader: "trader2",
+			party: "party2",
 		},
 	}
 	markPrice := pr.Clone()
@@ -372,12 +372,12 @@ func testMarkToMarketOrdered(t *testing.T) {
 		neutral,
 		testPos{
 			price: neutral.price.Clone(),
-			party: "trader1",
+			party: "party1",
 			size:  1,
 		},
 		testPos{
 			price: neutral.price.Clone(),
-			party: "trader2",
+			party: "party2",
 			size:  -1,
 		},
 	}
@@ -401,28 +401,28 @@ func testMarkToMarketOrdered(t *testing.T) {
 	// creates trades and event slices we'll be needing later on
 	for _, p := range positions {
 		if p.size > 0 {
-			trades["long"].Buyer = p.trader
-			trades["short"].Seller = p.trader
+			trades["long"].Buyer = p.party
+			trades["short"].Seller = p.party
 			long = append(long, testPos{
-				party: p.trader,
+				party: p.party,
 				price: markPrice.Clone(),
 				size:  p.size + int64(trades["long"].Size),
 			})
 			short = append(short, testPos{
-				party: p.trader,
+				party: p.party,
 				price: markPrice.Clone(),
 				size:  p.size - int64(trades["short"].Size),
 			})
 		} else {
-			trades["long"].Seller = p.trader
-			trades["short"].Buyer = p.trader
+			trades["long"].Seller = p.party
+			trades["short"].Buyer = p.party
 			long = append(long, testPos{
-				party: p.trader,
+				party: p.party,
 				price: markPrice.Clone(),
 				size:  p.size - int64(trades["long"].Size),
 			})
 			short = append(short, testPos{
-				party: p.trader,
+				party: p.party,
 				price: markPrice.Clone(),
 				size:  p.size + int64(trades["short"].Size),
 			})
@@ -445,7 +445,7 @@ func testMarkToMarketOrdered(t *testing.T) {
 		// start with losses, end with wins
 		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_LOSS, transfers[0].Transfer().Type)
 		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
-		assert.Equal(t, "trader2", transfers[0].Party()) // we expect trader2 to have a loss
+		assert.Equal(t, "party2", transfers[0].Party()) // we expect party2 to have a loss
 	}
 }
 
@@ -457,65 +457,65 @@ func testMTMNetworkZero(t *testing.T) {
 	init := []events.MarketPosition{
 		testPos{
 			price: markPrice.Clone(),
-			party: "trader1",
+			party: "party1",
 			size:  5,
 		},
 		testPos{
 			price: markPrice.Clone(),
-			party: "trader2",
+			party: "party2",
 			size:  -5,
 		},
 		testPos{
 			price: markPrice.Clone(),
-			party: "trader3",
+			party: "party3",
 			size:  10,
 		},
 		testPos{
 			price: markPrice.Clone(),
-			party: "trader4",
+			party: "party4",
 			size:  -10,
 		},
 	}
 	// initialise the engine with the positions above
 	engine.Update(init)
-	// assume trader 4 is distressed, network has to trade and buy 10
+	// assume party 4 is distressed, network has to trade and buy 10
 	// ensure the network loses in this scenario: the price has gone up
 	cPrice := num.Sum(markPrice, num.NewUint(1))
 	trade := &types.Trade{
 		Buyer:  types.NetworkParty,
-		Seller: "trader1",
-		Size:   5, // trader 1 only has 5 on the book, let's pretend we can close him our
+		Seller: "party1",
+		Size:   5, // party 1 only has 5 on the book, let's pretend we can close him our
 		Price:  cPrice.Clone(),
 	}
 	engine.AddTrade(trade)
 	engine.AddTrade(&types.Trade{
 		Buyer:  types.NetworkParty,
-		Seller: "trader3",
+		Seller: "party3",
 		Size:   2,
 		Price:  cPrice.Clone(),
 	})
 	engine.AddTrade(&types.Trade{
 		Buyer:  types.NetworkParty,
-		Seller: "trader2",
+		Seller: "party2",
 		Size:   3,
-		Price:  cPrice.Clone(), // trader 2 is going from -5 to -8
+		Price:  cPrice.Clone(), // party 2 is going from -5 to -8
 	})
 	// the new positions of the parties who have traded with the network...
 	positions := []events.MarketPosition{
 		testPos{
-			party: "trader1", // trader 1 was 5 long, sold 5 to network, so closed out
+			party: "party1", // party 1 was 5 long, sold 5 to network, so closed out
 			price: markPrice.Clone(),
 			size:  0,
 		},
 		testPos{
-			party: "trader3",
+			party: "party3",
 			size:  8, // long 10, sold 2
 			price: markPrice.Clone(),
 		},
 		testPos{
-			party: "trader2",
+			party: "party2",
 			size:  -8,
-			price: markPrice.Clone(), // trader 2 was -5, shorted an additional 3 => -8
+			price: markPrice.Clone(), // party 2 was -5, shorted an additional 3 => -8
 		},
 	}
 	// new markprice is cPrice
@@ -542,7 +542,7 @@ func (te *testEngine) getExpiryPositions(positions ...posValue) []events.MarketP
 	for _, p := range positions {
 		pos := mocks.NewMockMarketPosition(te.ctrl)
 		// these values should only be obtained once, and assigned internally
-		pos.EXPECT().Party().MinTimes(1).AnyTimes().Return(p.trader)
+		pos.EXPECT().Party().MinTimes(1).AnyTimes().Return(p.party)
 		pos.EXPECT().Size().MinTimes(1).AnyTimes().Return(p.size)
 		pos.EXPECT().Price().Times(1).Return(p.price)
 		te.positions = append(te.positions, pos)
@@ -555,7 +555,7 @@ func (te *testEngine) getMockMarketPositions(data []posValue) ([]settlement.Mark
 	raw, evts := make([]settlement.MarketPosition, 0, len(data)), make([]events.MarketPosition, 0, len(data))
 	for _, pos := range data {
 		mock := mocks.NewMockMarketPosition(te.ctrl)
-		mock.EXPECT().Party().MinTimes(1).Return(pos.trader)
+		mock.EXPECT().Party().MinTimes(1).Return(pos.party)
 		mock.EXPECT().Size().MinTimes(1).Return(pos.size)
 		mock.EXPECT().Price().MinTimes(1).Return(pos.price)
 		raw = append(raw, mock)
@@ -586,12 +586,12 @@ func TestConcurrent(t *testing.T) {
 	for i := 0; i < N; i++ {
 		data := []posValue{
 			{
-				trader: "testtrader1",
+				party: "testparty1",
 				price:  num.NewUint(1234),
 				size:   100,
 			},
 			{
-				trader: "testtrader2",
+				party: "testparty2",
 				price:  num.NewUint(1235),
 				size:   0,
 			},

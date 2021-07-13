@@ -590,7 +590,7 @@ type SettleDistressed struct {
 	MarketID string `json:"marketId"`
 	// the party who closed out
 	PartyID string `json:"partyId"`
-	// the margin taken from distressed trader
+	// the margin taken from distressed party
 	Margin int `json:"margin"`
 	// the price at which position was closed out
 	Price int `json:"price"`
@@ -1654,7 +1654,7 @@ const (
 	OrderTypeMarket OrderType = "Market"
 	// mentioned in ticket, but as yet unused order type
 	OrderTypeLimit OrderType = "Limit"
-	// Used for distressed parties, an order placed by the network to close out distressed traders
+	// Used for distressed parties, an order placed by the network to close out distressed partys
 	// similar to Market order, only no party is attached to the order.
 	OrderTypeNetwork OrderType = "Network"
 )

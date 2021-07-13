@@ -197,7 +197,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 			continue
 		}
 		eventBatch = append(eventBatch, events.NewMarginLevelsEvent(ctx, *levels))
-		// trader has sufficient margin, no need to transfer funds
+		// party has sufficient margin, no need to transfer funds
 		if curMargin.GTE(levels.InitialMargin) {
 			continue
 		}
@@ -227,7 +227,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 
 // UpdateMarginOnNewOrder calculate the new margin requirement for a single order
 // this is intended to be used when a new order is created in order to ensure the
-// trader margin account is at least at the InitialMargin level before the order is added to the book.
+// party margin account is at least at the InitialMargin level before the order is added to the book.
 func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, markPrice *num.Uint) (events.Risk, events.Margin, error) {
 	if evt == nil {
 		return nil, nil, nil
@@ -305,7 +305,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 // | 3 | CurMargin > ReleaseLevel                | release up to the InitialLevel          |
 //  ---------------------------------------------------------------------------------------
 // In the case where the CurMargin is smaller to the MaintenanceLevel after trying to
-// move monies later, we'll need to close out the trader but that cannot be figured out
+// move monies later, we'll need to close out the party but that cannot be figured out
 // now only in later when we try to move monies from the general account.
 func (e *Engine) UpdateMarginsOnSettlement(
 	ctx context.Context, evts []events.Margin, markPrice *num.Uint) []events.Risk {
@@ -397,7 +397,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 }
 
 // ExpectMargins is used in the case some parties are in a distressed positions
-// in this situation we will only check if the trader margin is > to the maintenance margin
+// in this situation we will only check if the party margin is > to the maintenance margin
 func (e *Engine) ExpectMargins(
 	evts []events.Margin, markPrice *num.Uint,
 ) (okMargins []events.Margin, distressedPositions []events.Margin) {

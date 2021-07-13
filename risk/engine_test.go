@@ -90,7 +90,7 @@ func testMarginLevelsTS(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
-		party:   "trader1",
+		party:   "party1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
@@ -132,7 +132,7 @@ func testMarginTopup(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
-		party:   "trader1",
+		party:   "party1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
@@ -163,7 +163,7 @@ func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
 	_, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
-		party:   "trader1",
+		party:   "party1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
@@ -189,7 +189,7 @@ func testMarginNoop(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
-		party:   "trader1",
+		party:   "party1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
@@ -215,7 +215,7 @@ func testMarginOverflow(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
-		party:   "trader1",
+		party:   "party1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",
@@ -247,7 +247,7 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	evt := testMargin{
-		party:   "trader1",
+		party:   "party1",
 		size:    1,
 		price:   1000,
 		asset:   "ETH",

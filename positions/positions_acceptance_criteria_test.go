@@ -29,10 +29,10 @@ func TestPositionsEngineAcceptanceCriteria(t *testing.T) {
 	//No active buy orders, a new buy order is added to the order book
 	t.Run("Active buy orders, a new buy order is added to the order book", testNewOrderAddedToTheBook)
 	t.Run("Active sell orders, a new sell order is added to the order book", testNewOrderAddedToTheBook)
-	t.Run("Active buy order, an order initiated by another trader causes a partial amount of the existing buy order to trade.", testNewTradePartialAmountOfExistingOrderTraded)
-	t.Run("Active sell order, an order initiated by another trader causes a partial amount of the existing sell order to trade.", testNewTradePartialAmountOfExistingOrderTraded)
-	t.Run("Active buy order, an order initiated by another trader causes the full amount of the existing buy order to trade.", testTradeCauseTheFullAmountOfOrderToTrade)
-	t.Run("Active sell order, an order initiated by another trader causes the full amount of the existing sell order to trade.", testTradeCauseTheFullAmountOfOrderToTrade)
+	t.Run("Active buy order, an order initiated by another party causes a partial amount of the existing buy order to trade.", testNewTradePartialAmountOfExistingOrderTraded)
+	t.Run("Active sell order, an order initiated by another party causes a partial amount of the existing sell order to trade.", testNewTradePartialAmountOfExistingOrderTraded)
+	t.Run("Active buy order, an order initiated by another party causes the full amount of the existing buy order to trade.", testTradeCauseTheFullAmountOfOrderToTrade)
+	t.Run("Active sell order, an order initiated by another party causes the full amount of the existing sell order to trade.", testTradeCauseTheFullAmountOfOrderToTrade)
 	t.Run("Active buy orders, an existing order is cancelled", testOrderCancelled)
 	t.Run("Active sell orders, an existing order is cancelled", testOrderCancelled)
 
@@ -111,8 +111,8 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	cases := []struct {
 		trade               types.Trade
 		expectedSizePartyA int64
@@ -125,8 +125,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
-				Buyer:     traderA,
-				Seller:    traderB,
+				Buyer:     partyA,
+				Seller:    partyB,
 				BuyOrder:  "buy_order_id1",
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
@@ -142,8 +142,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      5,
-				Buyer:     traderB,
-				Seller:    traderA,
+				Buyer:     partyB,
+				Seller:    partyA,
 				BuyOrder:  "buy_order_id2",
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
@@ -164,9 +164,9 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 
 		// check size of positions
 		for _, p := range pos {
-			if p.Party() == traderA {
+			if p.Party() == partyA {
 				assert.Equal(t, c.expectedSizePartyA, p.Size())
-			} else if p.Party() == traderB {
+			} else if p.Party() == partyB {
 				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
@@ -176,8 +176,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 func testTradeOccurClosingShortAndLong(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	cases := []struct {
 		trade               types.Trade
 		expectedSizePartyA int64
@@ -190,8 +190,8 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
-				Buyer:     traderA,
-				Seller:    traderB,
+				Buyer:     partyA,
+				Seller:    partyB,
 				BuyOrder:  "buy_order_id1",
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
@@ -207,8 +207,8 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
-				Buyer:     traderB,
-				Seller:    traderA,
+				Buyer:     partyB,
+				Seller:    partyA,
 				BuyOrder:  "buy_order_id2",
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
@@ -228,9 +228,9 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 
 		// check size of positions
 		for _, p := range pos {
-			if p.Party() == traderA {
+			if p.Party() == partyA {
 				assert.Equal(t, c.expectedSizePartyA, p.Size())
-			} else if p.Party() == traderB {
+			} else if p.Party() == partyB {
 				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
@@ -240,8 +240,8 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	cases := []struct {
 		trade               types.Trade
 		expectedSizePartyA int64
@@ -254,8 +254,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
-				Buyer:     traderA,
-				Seller:    traderB,
+				Buyer:     partyA,
+				Seller:    partyB,
 				BuyOrder:  "buy_order_id1",
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
@@ -271,8 +271,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      15,
-				Buyer:     traderB,
-				Seller:    traderA,
+				Buyer:     partyB,
+				Seller:    partyA,
 				BuyOrder:  "buy_order_id2",
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
@@ -293,9 +293,9 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 
 		// check size of positions
 		for _, p := range pos {
-			if p.Party() == traderA {
+			if p.Party() == partyA {
 				assert.Equal(t, c.expectedSizePartyA, p.Size())
-			} else if p.Party() == traderB {
+			} else if p.Party() == partyB {
 				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
@@ -304,8 +304,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 
 func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	engine := getTestEngine(t)
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	c := struct {
 		trade               types.Trade
 		expectedSizePartyA int64
@@ -317,8 +317,8 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 			MarketId:  "market_id",
 			Price:     num.NewUint(100),
 			Size:      10,
-			Buyer:     traderA,
-			Seller:    traderB,
+			Buyer:     partyA,
+			Seller:    partyB,
 			BuyOrder:  "buy_order_id1",
 			SellOrder: "sell_order_id1",
 			Timestamp: time.Now().Unix(),
@@ -340,9 +340,9 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 
 	// check size of positions
 	for _, p := range pos {
-		if p.Party() == traderA {
+		if p.Party() == partyA {
 			assert.Equal(t, c.expectedSizePartyA, p.Size())
-		} else if p.Party() == traderB {
+		} else if p.Party() == partyB {
 			assert.Equal(t, c.expectedSizePartyB, p.Size())
 		}
 	}
@@ -352,9 +352,9 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
-	traderA := "trader_a"
-	traderB := "trader_b"
-	traderC := "trader_c"
+	partyA := "party_a"
+	partyB := "party_b"
+	partyC := "party_c"
 	cases := []struct {
 		trade               types.Trade
 		expectedSizePartyA int64
@@ -370,8 +370,8 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
-				Buyer:     traderA,
-				Seller:    traderB,
+				Buyer:     partyA,
+				Seller:    partyB,
 				BuyOrder:  "buy_order_id1",
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
@@ -389,8 +389,8 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
-				Buyer:     traderC,
-				Seller:    traderA,
+				Buyer:     partyC,
+				Seller:    partyA,
 				BuyOrder:  "buy_order_id2",
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
@@ -408,8 +408,8 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      3,
-				Buyer:     traderB,
-				Seller:    traderA,
+				Buyer:     partyB,
+				Seller:    partyA,
 				BuyOrder:  "buy_order_id3",
 				SellOrder: "sell_order_id3",
 				Timestamp: time.Now().Unix(),
@@ -432,11 +432,11 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 
 		// check size of positions
 		for _, p := range pos {
-			if p.Party() == traderA {
+			if p.Party() == partyA {
 				assert.Equal(t, c.expectedSizePartyA, p.Size())
-			} else if p.Party() == traderB {
+			} else if p.Party() == partyB {
 				assert.Equal(t, c.expectedSizePartyB, p.Size())
-			} else if p.Party() == traderC {
+			} else if p.Party() == partyC {
 				assert.Equal(t, c.expectedSizePartyC, p.Size())
 			}
 		}
@@ -447,8 +447,8 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 func testWashTradeDoNotChangePosition(t *testing.T) {
 	engine := getTestEngine(t)
 	assert.Empty(t, engine.Positions())
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	cases := []struct {
 		trade               types.Trade
 		expectedSizePartyA int64
@@ -461,8 +461,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
-				Buyer:     traderA,
-				Seller:    traderB,
+				Buyer:     partyA,
+				Seller:    partyB,
 				BuyOrder:  "buy_order_id1",
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
@@ -470,7 +470,7 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 			expectedSizePartyA: +10,
 			expectedSizePartyB: -10,
 		},
-		// trader A trade with himsefl, no positions changes
+		// party A trade with himsefl, no positions changes
 		{
 			trade: types.Trade{
 				Type:      types.Trade_TYPE_DEFAULT,
@@ -478,8 +478,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 				MarketId:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      30,
-				Buyer:     traderA,
-				Seller:    traderA,
+				Buyer:     partyA,
+				Seller:    partyA,
 				BuyOrder:  "buy_order_id2",
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
@@ -500,9 +500,9 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 
 		// check size of positions
 		for _, p := range pos {
-			if p.Party() == traderA {
+			if p.Party() == partyA {
 				assert.Equal(t, c.expectedSizePartyA, p.Size())
-			} else if p.Party() == traderB {
+			} else if p.Party() == partyB {
 				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
@@ -511,8 +511,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 
 func testNewOrderAddedToTheBook(t *testing.T) {
 	engine := getTestEngine(t)
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	cases := []struct {
 		order        types.Order
 		expectedBuy  int64
@@ -524,7 +524,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   traderA,
+				PartyId:   partyA,
 				Side:      types.Side_SIDE_BUY,
 				Price:     num.Zero(),
 			},
@@ -537,7 +537,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      16,
 				Remaining: 16,
-				PartyId:   traderB,
+				PartyId:   partyB,
 				Side:      types.Side_SIDE_SELL,
 				Price:     num.Zero(),
 			},
@@ -550,7 +550,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      17,
 				Remaining: 17,
-				PartyId:   traderA,
+				PartyId:   partyA,
 				Side:      types.Side_SIDE_BUY,
 				Price:     num.Zero(),
 			},
@@ -563,7 +563,7 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      5,
 				Remaining: 5,
-				PartyId:   traderB,
+				PartyId:   partyB,
 				Side:      types.Side_SIDE_SELL,
 				Price:     num.Zero(),
 			},
@@ -586,8 +586,8 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 
 func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	engine := getTestEngine(t)
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	cases := struct {
 		orders  []types.Order
 		expects map[string]struct {
@@ -600,14 +600,14 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   traderA,
+				PartyId:   partyA,
 				Side:      types.Side_SIDE_BUY,
 				Price:     num.Zero(),
 			},
 			{
 				Size:      16,
 				Remaining: 16,
-				PartyId:   traderB,
+				PartyId:   partyB,
 				Side:      types.Side_SIDE_SELL,
 				Price:     num.Zero(),
 			},
@@ -617,12 +617,12 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 			expectedSell int64
 			expectedSize int64
 		}{
-			traderA: {
+			partyA: {
 				expectedBuy:  10,
 				expectedSell: 0,
 				expectedSize: 0,
 			},
-			traderB: {
+			partyB: {
 				expectedBuy:  0,
 				expectedSell: 16,
 				expectedSize: 0,
@@ -635,7 +635,7 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 
 	for i, c := range cases.orders {
 		engine.RegisterOrder(&c)
-		// ensure we have 1 position with 1 potential buy of size 10 for traderA
+		// ensure we have 1 position with 1 potential buy of size 10 for partyA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
 		for _, v := range pos {
@@ -653,8 +653,8 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 		MarketId:  "market_id",
 		Price:     num.NewUint(100),
 		Size:      3,
-		Buyer:     traderA,
-		Seller:    traderB,
+		Buyer:     partyA,
+		Seller:    partyB,
 		BuyOrder:  "buy_order_id1",
 		SellOrder: "sell_order_id1",
 		Timestamp: time.Now().Unix(),
@@ -669,10 +669,10 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 
 	// check size of positions
 	for _, p := range pos {
-		if p.Party() == traderA {
+		if p.Party() == partyA {
 			assert.Equal(t, int64(3), p.Size())
 			assert.Equal(t, int64(7), p.Buy())
-		} else if p.Party() == traderB {
+		} else if p.Party() == partyB {
 			assert.Equal(t, int64(-3), p.Size())
 			assert.Equal(t, int64(13), p.Sell())
 		}
@@ -681,8 +681,8 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 
 func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 	engine := getTestEngine(t)
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	cases := struct {
 		orders  []types.Order
 		expects map[string]struct {
@@ -695,14 +695,14 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   traderA,
+				PartyId:   partyA,
 				Side:      types.Side_SIDE_BUY,
 				Price:     num.Zero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   traderB,
+				PartyId:   partyB,
 				Side:      types.Side_SIDE_SELL,
 				Price:     num.Zero(),
 			},
@@ -712,12 +712,12 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 			expectedSell int64
 			expectedSize int64
 		}{
-			traderA: {
+			partyA: {
 				expectedBuy:  10,
 				expectedSell: 0,
 				expectedSize: 0,
 			},
-			traderB: {
+			partyB: {
 				expectedBuy:  0,
 				expectedSell: 10,
 				expectedSize: 0,
@@ -730,7 +730,7 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 
 	for i, c := range cases.orders {
 		engine.RegisterOrder(&c)
-		// ensure we have 1 position with 1 potential buy of size 10 for traderA
+		// ensure we have 1 position with 1 potential buy of size 10 for partyA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
 		for _, v := range pos {
@@ -748,8 +748,8 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 		MarketId:  "market_id",
 		Price:     num.NewUint(100),
 		Size:      10,
-		Buyer:     traderA,
-		Seller:    traderB,
+		Buyer:     partyA,
+		Seller:    partyB,
 		BuyOrder:  "buy_order_id1",
 		SellOrder: "sell_order_id1",
 		Timestamp: time.Now().Unix(),
@@ -764,10 +764,10 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 
 	// check size of positions
 	for _, p := range pos {
-		if p.Party() == traderA {
+		if p.Party() == partyA {
 			assert.Equal(t, int64(10), p.Size())
 			assert.Equal(t, int64(0), p.Buy())
-		} else if p.Party() == traderB {
+		} else if p.Party() == partyB {
 			assert.Equal(t, int64(-10), p.Size())
 			assert.Equal(t, int64(0), p.Sell())
 		}
@@ -776,8 +776,8 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 
 func testOrderCancelled(t *testing.T) {
 	engine := getTestEngine(t)
-	traderA := "trader_a"
-	traderB := "trader_b"
+	partyA := "party_a"
+	partyB := "party_b"
 	cases := struct {
 		orders  []types.Order
 		expects map[string]struct {
@@ -790,14 +790,14 @@ func testOrderCancelled(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   traderA,
+				PartyId:   partyA,
 				Side:      types.Side_SIDE_BUY,
 				Price:     num.Zero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   traderB,
+				PartyId:   partyB,
 				Side:      types.Side_SIDE_SELL,
 				Price:     num.Zero(),
 			},
@@ -807,12 +807,12 @@ func testOrderCancelled(t *testing.T) {
 			expectedSell int64
 			expectedSize int64
 		}{
-			traderA: {
+			partyA: {
 				expectedBuy:  10,
 				expectedSell: 0,
 				expectedSize: 0,
 			},
-			traderB: {
+			partyB: {
 				expectedBuy:  0,
 				expectedSell: 10,
 				expectedSize: 0,
@@ -826,7 +826,7 @@ func testOrderCancelled(t *testing.T) {
 	// first add the orders
 	for i, c := range cases.orders {
 		engine.RegisterOrder(&c)
-		// ensure we have 1 position with 1 potential buy of size 10 for traderA
+		// ensure we have 1 position with 1 potential buy of size 10 for partyA
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
 		for _, v := range pos {
@@ -850,14 +850,14 @@ func testOrderCancelled(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   traderA,
+				PartyId:   partyA,
 				Side:      types.Side_SIDE_BUY,
 				Price:     num.Zero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   traderB,
+				PartyId:   partyB,
 				Side:      types.Side_SIDE_SELL,
 				Price:     num.Zero(),
 			},
@@ -867,12 +867,12 @@ func testOrderCancelled(t *testing.T) {
 			expectedSell int64
 			expectedSize int64
 		}{
-			traderA: {
+			partyA: {
 				expectedBuy:  0,
 				expectedSell: 0,
 				expectedSize: 0,
 			},
-			traderB: {
+			partyB: {
 				expectedBuy:  0,
 				expectedSell: 0,
 				expectedSize: 0,

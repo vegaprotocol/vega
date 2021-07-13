@@ -202,8 +202,8 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the following orders should be stopped:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingOrdersShouldBeStopped(execsetup.broker, table)
 	})
-	s.Step(`^"([^"]*)" should have general account balance of "([^"]*)" for asset "([^"]*)"$`, func(trader, balance, asset string) error {
-		return steps.PartyShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, trader, asset, balance)
+	s.Step(`^"([^"]*)" should have general account balance of "([^"]*)" for asset "([^"]*)"$`, func(party, balance, asset string) error {
+		return steps.PartyShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, party, asset, balance)
 	})
 	s.Step(`^"([^"]*)" should have one account per asset$`, func(owner string) error {
 		return steps.PartyShouldHaveOneAccountPerAsset(execsetup.broker, owner)

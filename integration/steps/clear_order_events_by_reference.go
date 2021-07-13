@@ -9,22 +9,22 @@ import (
 
 func ClearOrdersByReference(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	for _, row := range parseClearOrdersTable(table) {
-		trader := row.MustStr("trader")
+		party := row.MustStr("party")
 		reference := row.MustStr("reference")
-		if err := broker.ClearOrderByReference(trader, reference); err != nil {
-			return errClearingOrder(trader, reference, err)
+		if err := broker.ClearOrderByReference(party, reference); err != nil {
+			return errClearingOrder(party, reference, err)
 		}
 	}
 	return nil
 }
 
-func errClearingOrder(trader, reference string, err error) error {
-	return fmt.Errorf("failed to clear order for trader %s with reference %s: %v", trader, reference, err)
+func errClearingOrder(party, reference string, err error) error {
+	return fmt.Errorf("failed to clear order for party %s with reference %s: %v", party, reference, err)
 }
 
 func parseClearOrdersTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"reference",
 	}, []string{})
 }

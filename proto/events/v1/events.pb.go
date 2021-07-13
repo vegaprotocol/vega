@@ -482,7 +482,7 @@ func (m *TransferResponses) GetResponses() []*proto1.TransferResponse {
 type PositionResolution struct {
 	// Market identifier for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Number of distressed parties
+	// Number of distressed partys
 	Distressed int64 `protobuf:"varint,2,opt,name=distressed,proto3" json:"distressed,omitempty"`
 	// Number of close outs
 	Closed int64 `protobuf:"varint,3,opt,name=closed,proto3" json:"closed,omitempty"`

@@ -22,8 +22,8 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 100000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Start the opening auction
@@ -49,7 +49,7 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder02")
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder02")
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
@@ -62,7 +62,7 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder03")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder03")
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 }
@@ -73,8 +73,8 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 100000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Start the opening auction
@@ -99,7 +99,7 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
@@ -111,7 +111,7 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 		Buys:             buys,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder02")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder02")
 	require.Error(t, err)
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 }
@@ -122,10 +122,10 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 10000000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 10000000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Start the opening auction
@@ -134,22 +134,22 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-B", 10, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 10)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "party-C", 2, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 20)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "party-C", 1, 20)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-C", 1, 9)
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "party-C", 1, 9)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -176,7 +176,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
@@ -189,7 +189,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.Error(t, err)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 }
@@ -203,8 +203,8 @@ func TestLiquidity_TooManyShapeLevels(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 10000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Start the opening auction
@@ -232,7 +232,7 @@ func TestLiquidity_TooManyShapeLevels(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.EqualError(t, err, "SIDE_BUY shape size exceed max (100)")
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 }
@@ -327,10 +327,10 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 10000000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 10000000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
@@ -338,17 +338,17 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-B", 10, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 10)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "party-C", 2, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 20)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "party-C", 1, 20)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -367,7 +367,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Leave auction
@@ -381,10 +381,10 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 
 	// FIXME(): REDO THIS TEST
 	// Attempt to cancel one of the pegged orders and it is rejected
-	// orders := tm.market.GetPeggedOrders("trader-A")
+	// orders := tm.market.GetPeggedOrders("party-A")
 	// assert.GreaterOrEqual(t, len(orders), 0)
 
-	// cancelConf, err := tm.market.CancelOrder(ctx, "trader-A", orders[0].Id)
+	// cancelConf, err := tm.market.CancelOrder(ctx, "party-A", orders[0].Id)
 	// require.Nil(t, cancelConf)
 	// require.Error(t, err)
 	// assert.Equal(t, types.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED, err)
@@ -408,9 +408,10 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 	ctx := context.Background()
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 5000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	addAccountWithAmount(tm, "party-A", 5000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
+
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
@@ -418,17 +419,17 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-B", 10, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 10)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "party-C", 2, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 20)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "party-C", 1, 20)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -451,11 +452,11 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Check we have the right amount of bond balance
-	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Leave auction
 	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
@@ -467,7 +468,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 	assert.Equal(t, int64(6), tm.market.GetOrdersOnBookCount())
 
 	// Check that the bond balance has been reduced
-	assert.True(t, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset).LT(num.NewUint(1000)))
+	assert.True(t, tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset).LT(num.NewUint(1000)))
 }
 
 // When a liquidity provider has a position that requires more margin after a MTM settlement,
@@ -479,9 +480,9 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	ctx := context.Background()
 
 	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 7000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	addAccountWithAmount(tm, "party-A", 7000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
@@ -489,22 +490,22 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-B", 10, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 10)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "party-C", 2, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 20)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "party-C", 1, 20)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	o31 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order031", types.Side_SIDE_SELL, "trader-C", 1, 30)
+	o31 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order031", types.Side_SIDE_SELL, "party-C", 1, 30)
 	o31conf, err := tm.market.SubmitOrder(ctx, o31)
 	require.NotNil(t, o31conf)
 	require.NoError(t, err)
@@ -527,11 +528,11 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Check we have the right amount of bond balance
-	assert.Equal(t, lps.CommitmentAmount, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+	assert.Equal(t, lps.CommitmentAmount, tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Leave auction
 	now = now.Add(time.Second * 40)
@@ -545,11 +546,11 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	assert.Equal(t, int64(7), tm.market.GetOrdersOnBookCount())
 
 	// Check that the bond balance is untouched
-	assert.True(t, tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset).EQ(lps.CommitmentAmount))
+	assert.True(t, tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset).EQ(lps.CommitmentAmount))
 
 	tm.events = nil
 	// Now move the mark price to force MTM settlement
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "trader-B", 1, 20)
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_BUY, "party-B", 1, 20)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -582,10 +583,10 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 7000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 7000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.2)
 
@@ -594,22 +595,22 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-B", 10, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 10)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "party-C", 2, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 20)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "party-C", 1, 20)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	o31 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order031", types.Side_SIDE_SELL, "trader-C", 1, 30)
+	o31 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order031", types.Side_SIDE_SELL, "party-C", 1, 30)
 	o31conf, err := tm.market.SubmitOrder(ctx, o31)
 	require.NotNil(t, o31conf)
 	require.NoError(t, err)
@@ -632,36 +633,36 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("trader-A").String())
+	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("party-A").String())
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 
 	// Check we have the right amount of bond balance
-	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Amend the commitment
 	lps.CommitmentAmount = num.NewUint(2000)
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Check we have the right amount of bond balance
-	assert.Equal(t, num.NewUint(2000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+	assert.Equal(t, num.NewUint(2000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Amend the commitment
 	lps.CommitmentAmount = num.NewUint(500)
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Check we have the right amount of bond balance
-	assert.Equal(t, num.NewUint(500), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+	assert.Equal(t, num.NewUint(500), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Change the shape of the lp submission
 	buys = []*types.LiquidityOrder{{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1, Proportion: 50}}
 	sells = []*types.LiquidityOrder{{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1, Proportion: 50}}
 	lps.Buys = buys
 	lps.Sells = sells
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
@@ -675,10 +676,10 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 7000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 7000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
@@ -703,19 +704,19 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("trader-A").String())
+	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("party-A").String())
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Now attempt to amend the LP submission with something invalid
 	lps.Buys = nil
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.EqualError(t, err, "empty SIDE_BUY shape")
 
 	// Check that the original LP submission is still working fine
-	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("trader-A").String())
+	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("party-A").String())
 }
 
 // Liquidity fee must be updated when new LP submissions are added or existing ones
@@ -726,8 +727,8 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 7000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 7000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
@@ -749,7 +750,7 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err := tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Check the fee is correct
@@ -757,7 +758,7 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 
 	// Update the fee
 	lps.Fee = num.DecimalFromFloat(0.5)
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Check the fee is correct
@@ -787,10 +788,10 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	ctx := context.Background()
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 10*time.Second)
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 70000000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 70000000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
@@ -798,22 +799,22 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 1000)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-B", 10, 1000)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 1000)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "party-C", 2, 1000)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 2000)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "party-C", 1, 2000)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_SELL, "trader-C", 10, 3000)
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_SELL, "party-C", 10, 3000)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -826,7 +827,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, tm.market.GetMarketData().Trigger)
 
 	// Move the price enough that we go into a price auction
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-B", 3, 3000)
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "party-B", 3, 3000)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -853,9 +854,9 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("trader-A").String())
+	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("party-A").String())
 	// Only 3 pegged orders as one fails due to price monitoring
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 }
@@ -866,10 +867,10 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 7000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 7000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
@@ -877,23 +878,23 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 10)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-B", 10, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 10)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "party-C", 2, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 20)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "party-C", 1, 20)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
 	// Add a manual pegged order which should be included in commitment calculations
-	pegged := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Peggy", types.Side_SIDE_BUY, "trader-A", 1, 0)
+	pegged := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Peggy", types.Side_SIDE_BUY, "party-A", 1, 0)
 	pegged.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -2}
 	peggedconf, err := tm.market.SubmitOrder(ctx, pegged)
 	require.NotNil(t, peggedconf)
@@ -915,9 +916,9 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("trader-A").String())
+	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("party-A").String())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 
@@ -955,29 +956,29 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	ctx := context.Background()
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second*10)
 
-	// Create a new trader account with very little funding
-	addAccountWithAmount(tm, "trader-A", 700000)
-	addAccountWithAmount(tm, "trader-B", 10000000)
-	addAccountWithAmount(tm, "trader-C", 10000000)
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 700000)
+	addAccountWithAmount(tm, "party-B", 10000000)
+	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Create some normal orders to set the reference prices
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "trader-B", 10, 1000)
+	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-B", 10, 1000)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "trader-C", 2, 1000)
+	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order02", types.Side_SIDE_SELL, "party-C", 2, 1000)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "trader-C", 1, 2000)
+	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order03", types.Side_SIDE_SELL, "party-C", 1, 2000)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_SELL, "trader-C", 10, 3000)
+	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_SELL, "party-C", 10, 3000)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -994,9 +995,9 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "trader-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
 	require.NoError(t, err)
-	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("trader-A").String())
+	require.Equal(t, types.LiquidityProvision_STATUS_PENDING.String(), tm.market.GetLPSState("party-A").String())
 
 	// Leave the auction so we can uncross the book
 	now = now.Add(time.Second * 20)
@@ -1004,11 +1005,11 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Save the total amount of assets we have in general+margin+bond
-	totalFunds := tm.market.GetTotalAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset)
+	totalFunds := tm.market.GetTotalAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset)
 
 	// Move the price enough that we go into a price auction
 	now = now.Add(time.Second * 20)
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "trader-B", 3, 3000)
+	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order05", types.Side_SIDE_BUY, "party-B", 3, 3000)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -1021,7 +1022,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	// TODO assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 
 	// Check we have not lost any assets
-	assert.Equal(t, totalFunds, tm.market.GetTotalAccountBalance(ctx, "trader-A", tm.market.GetID(), tm.asset))
+	assert.Equal(t, totalFunds, tm.market.GetTotalAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 }
 
 func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {

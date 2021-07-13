@@ -776,7 +776,7 @@ func (m *Market) cancelLiquidityProvision(
 	}
 
 	// now if our bondAccount is nil
-	// it just mean that the trader my have gone the distressed path
+	// it just mean that the party my have gone the distressed path
 	// also if the balance is already 0, let's not bother create a
 	// transfer request
 	if err == nil && !bondAcc.Balance.IsZero() {

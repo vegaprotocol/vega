@@ -49,15 +49,15 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 	return nil
 }
 
-func errCannotGetPartyGeneralAccount(trader, asset string, err error) error {
-	return fmt.Errorf("couldn't get general account for trader(%s) and asset(%s): %s",
-		trader, asset, err.Error(),
+func errCannotGetPartyGeneralAccount(party, asset string, err error) error {
+	return fmt.Errorf("couldn't get general account for party(%s) and asset(%s): %s",
+		party, asset, err.Error(),
 	)
 }
 
-func errCannotGetPartyMarginAccount(trader, asset string, err error) error {
-	return fmt.Errorf("couldn't get margin account for trader(%s) and asset(%s): %s",
-		trader, asset, err.Error(),
+func errCannotGetPartyMarginAccount(party, asset string, err error) error {
+	return fmt.Errorf("couldn't get margin account for party(%s) and asset(%s): %s",
+		party, asset, err.Error(),
 	)
 }
 
@@ -93,7 +93,7 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 
 func parseAccountBalancesTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"asset",
 		"market id",
 		"margin",
@@ -108,7 +108,7 @@ type accountBalancesRow struct {
 }
 
 func (r accountBalancesRow) Party() string {
-	return r.row.MustStr("trader")
+	return r.row.MustStr("party")
 }
 
 func (r accountBalancesRow) Asset() string {

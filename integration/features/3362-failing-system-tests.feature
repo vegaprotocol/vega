@@ -22,25 +22,25 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
 
   Scenario: Replicate test called test_TriggerWithMarketOrder
     Given the parties deposit on asset's general account the following amount:
-      | trader   | asset | amount    |
-      | trader1  | ETH   | 100000000 |
-      | trader2  | ETH   | 100000000 |
-      | trader3  | ETH   | 100000000 |
-      | traderLP | ETH   | 100000000 |
+      | party   | asset | amount    |
+      | party1  | ETH   | 100000000 |
+      | party2  | ETH   | 100000000 |
+      | party3  | ETH   | 100000000 |
+      | partyLP | ETH   | 100000000 |
       | aux      | ETH   | 100000000 |
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA |
-      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA |
-      | trader1 | ETH/DEC20 | buy  | 5      | 95000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | sell | 5      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party1 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA |
+      | party2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA |
+      | party1 | ETH/DEC20 | buy  | 5      | 95000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC20 | sell | 5      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | trader1 | ETH/DEC20 | 16000000          | 0.3 | buy  | BID              | 2          | -10    |
-      | lp1 | trader1 | ETH/DEC20 | 16000000          | 0.3 | sell | ASK              | 13         | 10     |
+      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | buy  | BID              | 2          | -10    |
+      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | sell | ASK              | 13         | 10     |
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
@@ -50,31 +50,31 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
 
     ## price bounds are 99771 to 100290
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT | TIF_GTC |
-      # | trader1 | ETH/DEC20 | buy  | 1      | 100448 | 0                | TYPE_LIMIT  | TIF_GTC |
-      # | trader2 | ETH/DEC20 | sell | 1      | 100448 | 1                | TYPE_LIMIT  | TIF_GTC |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party1 | ETH/DEC20 | buy  | 1      | 100150 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC20 | sell | 1      | 100150 | 1                | TYPE_LIMIT | TIF_GTC |
+      # | party1 | ETH/DEC20 | buy  | 1      | 100448 | 0                | TYPE_LIMIT  | TIF_GTC |
+      # | party2 | ETH/DEC20 | sell | 1      | 100448 | 1                | TYPE_LIMIT  | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC20 | buy  | 2      | 100213 | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC20 | buy  | 1      | 100050 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party1 | ETH/DEC20 | buy  | 2      | 100213 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC20 | buy  | 1      | 100050 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-    # Now place a FOK order that would trigger a price auction (trader 1 has a buy at 95,000 on the book
+    # Now place a FOK order that would trigger a price auction (party 1 has a buy at 95,000 on the book
 
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type        | tif     | error                                                       |
-      | trader2 | ETH/DEC20 | sell | 3      | 0     | 0                | TYPE_MARKET | TIF_FOK | OrderError: non-persistent order trades out of price bounds |
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | error                                                       |
+      | party2 | ETH/DEC20 | sell | 3      | 0     | 0                | TYPE_MARKET | TIF_FOK | OrderError: non-persistent order trades out of price bounds |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100150" for the market "ETH/DEC20"
 
     ## Now place the order for the same volume again, but set price to 100,000 -> the buy at 95,000 doesn't uncross
     ## We'll see the mark price move as we've uncrossed with the orders at 100213 and 100050 we've just placed
     When the parties place the following orders:
-      | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
-      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party2 | ETH/DEC20 | sell | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100213" for the market "ETH/DEC20"

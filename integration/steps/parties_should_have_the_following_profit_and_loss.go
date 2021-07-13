@@ -30,9 +30,9 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 
 	var pos []*types.Position
 	for retries > 0 {
-		pos, err = positionService.GetPositionsByParty(row.trader())
+		pos, err = positionService.GetPositionsByParty(row.party())
 		if err != nil {
-			return errCannotGetPositionForParty(row.trader(), err)
+			return errCannotGetPositionForParty(row.party(), err)
 		}
 
 		if areSamePosition(pos, row) {
@@ -45,7 +45,7 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 	}
 
 	if len(pos) == 0 {
-		return errNoPositionForMarket(row.trader())
+		return errNoPositionForMarket(row.party())
 	}
 
 	return errProfitAndLossValuesForParty(pos, row)
@@ -53,7 +53,7 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 
 func errProfitAndLossValuesForParty(pos []*types.Position, row pnlRow) error {
 	return formatDiff(
-		fmt.Sprintf("invalid positions values for party(%v)", row.trader()),
+		fmt.Sprintf("invalid positions values for party(%v)", row.party()),
 		map[string]string{
 			"volume":         i64ToS(row.volume()),
 			"unrealised PNL": row.unrealisedPNL().String(),
@@ -67,8 +67,8 @@ func errProfitAndLossValuesForParty(pos []*types.Position, row pnlRow) error {
 	)
 }
 
-func errNoPositionForMarket(trader string) error {
-	return fmt.Errorf("trader do not have a position, party(%v)", trader)
+func errNoPositionForMarket(party string) error {
+	return fmt.Errorf("party do not have a position, party(%v)", party)
 }
 
 func areSamePosition(pos []*types.Position, row pnlRow) bool {
@@ -78,13 +78,13 @@ func areSamePosition(pos []*types.Position, row pnlRow) bool {
 		pos[0].UnrealisedPnl.Equals(row.unrealisedPNL())
 }
 
-func errCannotGetPositionForParty(trader string, err error) error {
-	return fmt.Errorf("error getting party position, trader(%v), err(%v)", trader, err)
+func errCannotGetPositionForParty(party string, err error) error {
+	return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
 }
 
 func parseProfitAndLossTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"volume",
 		"unrealised pnl",
 		"realised pnl",
@@ -95,8 +95,8 @@ type pnlRow struct {
 	row RowWrapper
 }
 
-func (r pnlRow) trader() string {
-	return r.row.MustStr("trader")
+func (r pnlRow) party() string {
+	return r.row.MustStr("party")
 }
 
 func (r pnlRow) volume() int64 {

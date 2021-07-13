@@ -21,8 +21,8 @@ type tstService struct {
 }
 
 func TestAccountsService(t *testing.T) {
-	t.Run("Get trader accounts success", testGetPartyAccountsSuccess)
-	t.Run("Get trader accounts fails", testGetPartyAccountsErr)
+	t.Run("Get party accounts success", testGetPartyAccountsSuccess)
+	t.Run("Get party accounts fails", testGetPartyAccountsErr)
 }
 
 func testGetPartyAccountsSuccess(t *testing.T) {
@@ -46,7 +46,7 @@ func testGetPartyAccountsSuccess(t *testing.T) {
 	accs, err := svc.GetPartyAccounts(owner, "", "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.NoError(t, err)
 	assert.Equal(t, all, accs)
-	// now see if we get the expected accounts (only BTC accounts) if we get trader balance for a market
+	// now see if we get the expected accounts (only BTC accounts) if we get party balance for a market
 	svc.storage.EXPECT().GetPartyAccounts(owner, market1, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED).Times(1).Return(firstMarket[:2], nil)
 	accs, err = svc.GetPartyAccounts(owner, market1, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)
 	assert.NoError(t, err)
@@ -68,7 +68,7 @@ func testGetPartyAccountsErr(t *testing.T) {
 	assert.Nil(t, accs)
 	assert.Equal(t, storage.ErrOwnerNotFound, err)
 
-	// accounts not set up, so we can test the errors for trader market balance here, too
+	// accounts not set up, so we can test the errors for party market balance here, too
 	market := "BTC/DEC19"
 	svc.storage.EXPECT().GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED).Times(1).Return(nil, storage.ErrOwnerNotFound)
 	accs, err = svc.GetPartyAccounts(owner, market, "", types.AccountType_ACCOUNT_TYPE_UNSPECIFIED)

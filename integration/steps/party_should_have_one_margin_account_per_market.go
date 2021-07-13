@@ -27,5 +27,5 @@ func PartyShouldHaveOneMarginAccountPerMarket(
 }
 
 func errMultipleMarginAccountForMarket(owner string, acc types.Account) error {
-	return fmt.Errorf("trader=%v have multiple account for market=%v", owner, acc.MarketId)
+	return fmt.Errorf("party=%v have multiple account for market=%v", owner, acc.MarketId)
 }

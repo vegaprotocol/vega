@@ -14,15 +14,15 @@ Feature: Test LP orders
 
   Scenario: create liquidity provisions
     Given the parties deposit on asset's general account the following amount:
-      | trader           | asset | amount    |
-      | trader1          | ETH   | 100000000 |
+      | party           | asset | amount    |
+      | party1          | ETH   | 100000000 |
       | sellSideProvider | ETH   | 100000000 |
       | buySideProvider  | ETH   | 100000000 |
       | auxiliary        | ETH   | 100000000 |
       | aux2             | ETH   | 100000000 |
 
     When the parties place the following orders:
-      | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | auxiliary | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | oa-b-1    |
       | auxiliary | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-1    |
       | aux2      | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | oa-b-2    |
@@ -31,24 +31,24 @@ Feature: Test LP orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     When the parties place the following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-      | trader1          | ETH/DEC19 | buy  | 500    | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-1        |
-      | trader1          | ETH/DEC19 | sell | 500    | 120   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-2        |
+      | party1          | ETH/DEC19 | buy  | 500    | 110   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-1        |
+      | party1          | ETH/DEC19 | sell | 500    | 120   | 0                | TYPE_LIMIT | TIF_GTC | lp-ref-2        |
     Then the orders should have the following states:
-      | trader           | market id | side | volume | price | status        |
+      | party           | market id | side | volume | price | status        |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
     And clear order events
     Then the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | -10    |
-      | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | sell | ASK              | 500        | 10     |
+      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | -10    |
+      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | sell | ASK              | 500        | 10     |
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
-      | lp1 | trader1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |
+      | lp1 | party1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |
     Then the orders should have the following states:
-      | trader  | market id | side | volume | price | status        |
-      | trader1 | ETH/DEC19 | buy  | 2250   | 100   | STATUS_ACTIVE |
-      | trader1 | ETH/DEC19 | sell | 1539   | 130   | STATUS_ACTIVE |
+      | party  | market id | side | volume | price | status        |
+      | party1 | ETH/DEC19 | buy  | 2250   | 100   | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | sell | 1539   | 130   | STATUS_ACTIVE |

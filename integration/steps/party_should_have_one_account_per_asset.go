@@ -27,5 +27,5 @@ func PartyShouldHaveOneAccountPerAsset(
 }
 
 func errMultipleGeneralAccountForAsset(owner string, acc types.Account) error {
-	return fmt.Errorf("trader=%v have multiple account for asset=%v", owner, acc.Asset)
+	return fmt.Errorf("party=%v have multiple account for asset=%v", owner, acc.Asset)
 }

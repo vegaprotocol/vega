@@ -93,7 +93,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	// 3. get the asset and ID for this market
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
-	// 3-b. Get position for the trader placing this order, if exists
+	// 3-b. Get position for the party placing this order, if exists
 	if cPos, ok := m.position.GetPositionByPartyID(order.PartyId); ok {
 		e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
 		if err != nil {
@@ -104,8 +104,8 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 			// this order would take party below maintenance -> stop here
 			return nil, nil, ErrMarginCheckInsufficient
 		}
-		// we could transfer the funds for this trader here, but we're handling all positions lower down, including this one
-		// this is just to stop all margins being updated based on a price that the trader can't even manage
+		// we could transfer the funds for this party here, but we're handling all positions lower down, including this one
+		// this is just to stop all margins being updated based on a price that the party can't even manage
 	}
 	// 4. construct the events for all positions + margin balances
 	// at this point, we have established the order is going through

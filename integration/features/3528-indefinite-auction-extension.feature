@@ -27,31 +27,31 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | name             | value |
       | prices.ETH.value | 100   |
     And the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount     |
-      | trader0 | ETH   | 1000000000 |
-      | trader1 | ETH   | 100000000  |
-      | trader2 | ETH   | 100000000  |
-      | trader3 | ETH   | 100000000  |
-      | trader4 | ETH   | 100000000  |
-      | trader5 | ETH   | 100000000  |
-      | trader6 | ETH   | 100000000  |
-      | trader7 | ETH   | 100000000  |
+      | party  | asset | amount     |
+      | party0 | ETH   | 1000000000 |
+      | party1 | ETH   | 100000000  |
+      | party2 | ETH   | 100000000  |
+      | party3 | ETH   | 100000000  |
+      | party4 | ETH   | 100000000  |
+      | party5 | ETH   | 100000000  |
+      | party6 | ETH   | 100000000  |
+      | party7 | ETH   | 100000000  |
 
   Scenario: Enter liquidity auction, extended by trades at liq. auction end, single trade -> single extension
 
     Given the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
   # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
@@ -66,10 +66,10 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
@@ -80,15 +80,15 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           |
@@ -100,10 +100,10 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
 
@@ -113,9 +113,9 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 10000          | 10            | 302         |
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 20     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 10     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 20     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the network moves ahead "10" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -124,9 +124,9 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
   # place some more orders out of bounds
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 20     | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 10     | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 20     | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the network moves ahead "290" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -137,17 +137,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     Given the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
   # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
@@ -162,10 +162,10 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
@@ -176,15 +176,15 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           |
@@ -196,10 +196,10 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
 
@@ -209,13 +209,13 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 10000          | 10            | 302         |
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 5      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3 | ETH/DEC21 | buy  | 3      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader5 | ETH/DEC21 | buy  | 2      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 10     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4 | ETH/DEC21 | sell | 6      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader6 | ETH/DEC21 | sell | 4      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 5      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC21 | buy  | 3      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party5 | ETH/DEC21 | buy  | 2      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/DEC21 | sell | 6      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party6 | ETH/DEC21 | sell | 4      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the network moves ahead "10" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -224,13 +224,13 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
   # place some more orders out of bounds
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 5      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3 | ETH/DEC21 | buy  | 3      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader5 | ETH/DEC21 | buy  | 2      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 10     | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4 | ETH/DEC21 | sell | 6      | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader6 | ETH/DEC21 | sell | 4      | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 5      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC21 | buy  | 3      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party5 | ETH/DEC21 | buy  | 2      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/DEC21 | sell | 6      | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party6 | ETH/DEC21 | sell | 4      | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the network moves ahead "290" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -244,17 +244,17 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | market.liquidity.targetstake.triggering.ratio | 0.8 |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
   # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
@@ -269,19 +269,19 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
 
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 5      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3 | ETH/DEC21 | buy  | 3      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader5 | ETH/DEC21 | buy  | 2      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 10     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4 | ETH/DEC21 | sell | 6      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader6 | ETH/DEC21 | sell | 4      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 5      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC21 | buy  | 3      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party5 | ETH/DEC21 | buy  | 2      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/DEC21 | sell | 6      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party6 | ETH/DEC21 | sell | 4      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
@@ -299,10 +299,10 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:

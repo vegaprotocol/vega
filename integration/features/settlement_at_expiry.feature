@@ -16,14 +16,14 @@ Feature: Test mark to market settlement
 
   Scenario: Order cannot be placed once the market is expired
     Given the parties deposit on asset's general account the following amount:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 10000  |
+      | party  | asset | amount |
+      | party1 | ETH   | 10000  |
       | aux1    | ETH   | 100000 |
       | aux2    | ETH   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1   | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | aux2   | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -33,33 +33,33 @@ Feature: Test mark to market settlement
 
     # Set mark price
     Then the parties place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-5     |
       | aux2   | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
 
     Then time is updated to "2020-01-01T01:01:01Z"
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
+      | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - no insurance taken
     Given the initial insurance pool balance is "10000" for the markets:
     Given the parties deposit on asset's general account the following amount:
-      | trader    | asset | amount    |
-      | trader1   | ETH   | 10000     |
-      | trader2   | ETH   | 1000      |
-      | trader3   | ETH   | 5000      |
+      | party    | asset | amount    |
+      | party1   | ETH   | 10000     |
+      | party2   | ETH   | 1000      |
+      | party3   | ETH   | 5000      |
       | aux1      | ETH   | 100000    |
       | aux2      | ETH   | 100000    |
-      | trader-lp | ETH   | 100000000 |
+      | party-lp | ETH   | 100000000 |
     And the parties submit the following liquidity provision:
       | id  | party     | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | trader-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1   | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | aux2   | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -69,40 +69,40 @@ Feature: Test mark to market settlement
 
     # Set mark price
     And the parties place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | aux2   | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     When the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | trader2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
-      | trader3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
     Then the parties should have the following account balances:
-      | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 | 240    | 9760    |
-      | trader2 | ETH   | ETH/DEC19 | 132    | 868     |
-      | trader3 | ETH   | ETH/DEC19 | 132    | 4868    |
+      | party  | asset | market id | margin | general |
+      | party1 | ETH   | ETH/DEC19 | 240    | 9760    |
+      | party2 | ETH   | ETH/DEC19 | 132    | 868     |
+      | party3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     And the cumulated balance for all accounts should be worth "100236000"
 
     # Close positions by aux parties
     When the parties place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
       | aux1   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     And time is updated to "2020-01-01T01:01:01Z"
     And the parties place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
-      | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
+      | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
     And the parties should have the following account balances:
-      | trader  | asset | market id | margin | general |
-      | trader1 | ETH   | ETH/DEC19 | 0      | 11676   |
-      | trader2 | ETH   | ETH/DEC19 | 0      | 42      |
-      | trader3 | ETH   | ETH/DEC19 | 0      | 4042    |      
+      | party  | asset | market id | margin | general |
+      | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
+      | party2 | ETH   | ETH/DEC19 | 0      | 42      |
+      | party3 | ETH   | ETH/DEC19 | 0      | 4042    |      
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "5000" for the asset "ETH"
