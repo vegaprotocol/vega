@@ -13,7 +13,6 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/evtforward"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway/server"
 	"code.vegaprotocol.io/data-node/governance"
@@ -129,7 +128,6 @@ type NodeCommand struct {
 	mktscfg []types.Market
 
 	assets *assets.Service
-	evtfwd *evtforward.EvtForwarder
 
 	// plugins
 	settlePlugin     *plugins.Positions
@@ -184,7 +182,6 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.riskService,
 		l.governanceService,
 		l.notaryService,
-		l.evtfwd,
 		l.assetService,
 		l.feeService,
 		l.eventService,

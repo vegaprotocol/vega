@@ -20,7 +20,7 @@ import (
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	pbtypes "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -33,14 +33,28 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
+// MarketService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_service_mock.go -package mocks code.vegaprotocol.io/data-node/api MarketService
+type MarketService interface {
+	GetByID(ctx context.Context, name string) (*pbtypes.Market, error)
+	GetAll(ctx context.Context) ([]*pbtypes.Market, error)
+	GetDepth(ctx context.Context, market string, limit uint64) (marketDepth *pbtypes.MarketDepth, err error)
+	ObserveDepth(ctx context.Context, retries int, market string) (depth <-chan *pbtypes.MarketDepth, ref uint64)
+	ObserveDepthUpdates(ctx context.Context, retries int, market string) (depth <-chan *pbtypes.MarketDepthUpdate, ref uint64)
+	GetMarketDepthSubscribersCount() int32
+	ObserveMarketsData(ctx context.Context, retries int, marketID string) (<-chan []pbtypes.MarketData, uint64)
+	GetMarketDataSubscribersCount() int32
+	GetMarketDataByID(marketID string) (pbtypes.MarketData, error)
+	GetMarketsData() []pbtypes.MarketData
+}
+
 // GRPCServer represent the grpc api provided by the vega node
 type GRPCServer struct {
 	Config
 
-	client BlockchainClient
-	log    *logging.Logger
-	srv    *grpc.Server
-	stats  *stats.Stats
+	log   *logging.Logger
+	srv   *grpc.Server
+	stats *stats.Stats
 
 	accountsService         *accounts.Svc
 	candleService           *candles.Svc
@@ -54,7 +68,6 @@ type GRPCServer struct {
 	riskService             *risk.Svc
 	governanceService       *governance.Svc
 	notaryService           *notary.Svc
-	evtfwd                  EvtForwarder
 	assetService            *assets.Svc
 	feeService              *fee.Svc
 	eventService            *subscribers.Service
@@ -62,9 +75,6 @@ type GRPCServer struct {
 	depositService          *plugins.Deposit
 	netParamsService        *netparams.Service
 	oracleService           *oracles.Service
-
-	tradingService     *tradingService
-	tradingDataService *tradingDataService
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
@@ -90,7 +100,6 @@ func NewGRPCServer(
 	riskService *risk.Svc,
 	governanceService *governance.Svc,
 	notaryService *notary.Svc,
-	evtfwd EvtForwarder,
 	assetService *assets.Svc,
 	feeService *fee.Svc,
 	eventService *subscribers.Service,
@@ -121,7 +130,6 @@ func NewGRPCServer(
 		riskService:             riskService,
 		governanceService:       governanceService,
 		notaryService:           notaryService,
-		evtfwd:                  evtfwd,
 		assetService:            assetService,
 		feeService:              feeService,
 		eventService:            eventService,
@@ -149,7 +157,6 @@ func (g *GRPCServer) ReloadConf(cfg Config) {
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
-	g.tradingService.updateConfig(cfg)
 }
 
 func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
@@ -215,50 +222,6 @@ func (g *GRPCServer) Start() {
 
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
 	g.srv = grpc.NewServer(intercept)
-
-	tradingSvc := &tradingService{
-		log:               g.log,
-		conf:              g.Config,
-		blockchain:        g.client,
-		tradeOrderService: g.orderService,
-		liquidityService:  g.liquidityService,
-		accountService:    g.accountsService,
-		marketService:     g.marketService,
-		governanceService: g.governanceService,
-		evtForwarder:      g.evtfwd,
-	}
-	g.tradingService = tradingSvc
-	protoapi.RegisterTradingServiceServer(g.srv, tradingSvc)
-
-	tradingDataSvc := &tradingDataService{
-		log:                     g.log,
-		Config:                  g.Config,
-		Stats:                   g.stats,
-		Client:                  g.client,
-		OrderService:            g.orderService,
-		TradeService:            g.tradeService,
-		CandleService:           g.candleService,
-		MarketService:           g.marketService,
-		PartyService:            g.partyService,
-		TimeService:             g.timeService,
-		AccountsService:         g.accountsService,
-		TransferResponseService: g.transferResponseService,
-		RiskService:             g.riskService,
-		NotaryService:           g.notaryService,
-		governanceService:       g.governanceService,
-		AssetService:            g.assetService,
-		FeeService:              g.feeService,
-		eventService:            g.eventService,
-		WithdrawalService:       g.withdrawalService,
-		DepositService:          g.depositService,
-		MarketDepthService:      g.marketDepthService,
-		NetParamsService:        g.netParamsService,
-		LiquidityService:        g.liquidityService,
-		oracleService:           g.oracleService,
-	}
-	go tradingDataSvc.updateNetInfo(g.ctx)
-	g.tradingDataService = tradingDataSvc
-	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)
 
 	err = g.srv.Serve(lis)
 	if err != nil {

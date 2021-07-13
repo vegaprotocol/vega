@@ -320,7 +320,6 @@ func (l *NodeCommand) setupNetParameters() error {
 
 func (l *NodeCommand) setupConfigWatchers() {
 	l.cfgwatchr.OnConfigUpdate(
-		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
 
 		// services
