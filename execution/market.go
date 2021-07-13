@@ -1160,7 +1160,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	}
 
 	// if an auction was trigger, and we are a pegged order
-	// let's return now.
+	// or a liquidity order, let's return now.
 	if m.as.InAuction() && (isPegged || order.IsLiquidityOrder()) {
 		return &types.OrderConfirmation{Order: order}, nil, nil
 	}
