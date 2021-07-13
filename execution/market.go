@@ -40,8 +40,8 @@ const InitialOrderVersion = 1
 var (
 	// ErrMarketClosed signals that an action have been tried to be applied on a closed market
 	ErrMarketClosed = errors.New("market closed")
-	// ErrTraderDoNotExists signals that the trader used does not exists
-	ErrTraderDoNotExists = errors.New("trader does not exist")
+	// ErrPartyDoNotExists signals that the trader used does not exists
+	ErrPartyDoNotExists = errors.New("trader does not exist")
 	// ErrMarginCheckFailed signals that a margin check for a position failed
 	ErrMarginCheckFailed = errors.New("margin check failed")
 	// ErrMarginCheckInsufficient signals that a margin had not enough funds
@@ -955,7 +955,7 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		// trader should be created before even trying to post order
-		return ErrTraderDoNotExists
+		return ErrPartyDoNotExists
 	}
 
 	// ensure party have a general account, and margin account is / can be created

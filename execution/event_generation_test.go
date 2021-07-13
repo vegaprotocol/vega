@@ -220,7 +220,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	assert.Equal(t, int64(5), mdb.GetOrderCount(tm.market.GetID()))
 }
 
-func TestEvents_CloseOutTrader(t *testing.T) {
+func TestEvents_CloseOutParty(t *testing.T) {
 	t.Skip("TODO fix this - this test seems to trigger price auction (price range is 501-1010 IIRC)")
 	now := time.Unix(10, 0)
 	ctx := context.Background()
@@ -300,7 +300,7 @@ func TestEvents_CloseOutTrader(t *testing.T) {
 	assert.Equal(t, uint64(89), mdb.GetVolumeAtPrice(tm.market.GetID(), types.Side_SIDE_SELL, 100))
 }
 
-func TestEvents_CloseOutTraderWithPeggedOrder(t *testing.T) {
+func TestEvents_CloseOutPartyWithPeggedOrder(t *testing.T) {
 	t.Skip("there's some weird magic going on here...")
 	now := time.Unix(10, 0)
 	ctx := context.Background()
@@ -835,7 +835,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	assert.Equal(t, 4, mdb.GetPriceLevels(tm.market.GetID()))
 }
 
-func TestEvents_CloseOutTraderWithNotEnoughLiquidity(t *testing.T) {
+func TestEvents_CloseOutPartyWithNotEnoughLiquidity(t *testing.T) {
 	t.Skip("Jehova!!!")
 	now := time.Unix(10, 0)
 	ctx := context.Background()

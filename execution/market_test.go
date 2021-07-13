@@ -3286,18 +3286,18 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 }
 
 // This is a scenario to test issue: 2734
-// Trader A - 100000000
+// Party A - 100000000
 //  A - Buy 5@15000 GTC
-// Trader B - 100000000
+// Party B - 100000000
 //  B - Sell 10 IOC Market
-// Trader C - Deposit 100000
+// Party C - Deposit 100000
 //  C - Buy GTT 6@1001 (60s)
-// Trader D- Fund 578
+// Party D- Fund 578
 //  D - Pegged 3@BA +1
-// Trader E - Deposit 100000
+// Party E - Deposit 100000
 //  E - Sell GTC 3@1002
 // C amends order price=1002
-func TestOrderBook_CrashWithDistressedTraderPeggedOrderNotRemovedFromPeggedList2734(t *testing.T) {
+func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList2734(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{

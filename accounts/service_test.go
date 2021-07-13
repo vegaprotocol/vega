@@ -21,11 +21,11 @@ type tstService struct {
 }
 
 func TestAccountsService(t *testing.T) {
-	t.Run("Get trader accounts success", testGetTraderAccountsSuccess)
-	t.Run("Get trader accounts fails", testGetTraderAccountsErr)
+	t.Run("Get trader accounts success", testGetPartyAccountsSuccess)
+	t.Run("Get trader accounts fails", testGetPartyAccountsErr)
 }
 
-func testGetTraderAccountsSuccess(t *testing.T) {
+func testGetPartyAccountsSuccess(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 
@@ -58,7 +58,7 @@ func testGetTraderAccountsSuccess(t *testing.T) {
 	}
 }
 
-func testGetTraderAccountsErr(t *testing.T) {
+func testGetPartyAccountsErr(t *testing.T) {
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
 	owner := "test"

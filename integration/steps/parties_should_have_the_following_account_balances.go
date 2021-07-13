@@ -17,22 +17,22 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		row := accountBalancesRow{row: r}
 		var hasError bool
 
-		generalAccount, err := broker.GetTraderGeneralAccount(row.Party(), row.Asset())
+		generalAccount, err := broker.GetPartyGeneralAccount(row.Party(), row.Asset())
 		if err != nil {
-			return errCannotGetTraderGeneralAccount(row.Party(), row.Asset(), err)
+			return errCannotGetPartyGeneralAccount(row.Party(), row.Asset(), err)
 		}
 		if generalAccount.GetBalance() != row.GeneralAccountBalance() {
 			hasError = true
 		}
 
-		marginAccount, err := broker.GetTraderMarginAccount(row.Party(), row.MarketID())
+		marginAccount, err := broker.GetPartyMarginAccount(row.Party(), row.MarketID())
 		if err != nil {
-			return errCannotGetTraderMarginAccount(row.Party(), row.Asset(), err)
+			return errCannotGetPartyMarginAccount(row.Party(), row.Asset(), err)
 		}
 		// check bond
 		var bondAcc types.Account
 		if row.ExpectBondAccountBalance() {
-			bondAcc, err = broker.GetTraderBondAccount(row.Party(), row.Asset())
+			bondAcc, err = broker.GetPartyBondAccount(row.Party(), row.Asset())
 			if err == nil && bondAcc.Balance != row.BondAccountBalance() {
 				hasError = true
 			}
@@ -49,13 +49,13 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 	return nil
 }
 
-func errCannotGetTraderGeneralAccount(trader, asset string, err error) error {
+func errCannotGetPartyGeneralAccount(trader, asset string, err error) error {
 	return fmt.Errorf("couldn't get general account for trader(%s) and asset(%s): %s",
 		trader, asset, err.Error(),
 	)
 }
 
-func errCannotGetTraderMarginAccount(trader, asset string, err error) error {
+func errCannotGetPartyMarginAccount(trader, asset string, err error) error {
 	return fmt.Errorf("couldn't get margin account for trader(%s) and asset(%s): %s",
 		trader, asset, err.Error(),
 	)

@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TraderShouldHaveOneMarginAccountPerMarket(
+func PartyShouldHaveOneMarginAccountPerMarket(
 	broker *stubs.BrokerStub,
 	owner string,
 ) error {

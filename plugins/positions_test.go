@@ -49,7 +49,7 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 	assert.Equal(t, ps.Price(), pp[0].AverageEntryPrice)
 }
 
-func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
+func TestMultipleTradesAndLossSocializationPartyNoOpenVolume(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
@@ -82,7 +82,7 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	assert.Equal(t, "0", pp[0].UnrealisedPnl.String())
 }
 
-func TestDistressedTraderUpdate(t *testing.T) {
+func TestDistressedPartyUpdate(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
@@ -124,7 +124,7 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	assert.Equal(t, "-1000", pp[0].RealisedPnl.String())
 }
 
-func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
+func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"

@@ -7,12 +7,12 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
-func TraderShouldHaveGeneralAccountBalanceForAsset(
+func PartyShouldHaveGeneralAccountBalanceForAsset(
 	broker *stubs.BrokerStub,
 	trader, asset, rawBalance string,
 ) error {
 	balance, _ := strconv.ParseUint(rawBalance, 10, 0)
-	acc, err := broker.GetTraderGeneralAccount(trader, asset)
+	acc, err := broker.GetPartyGeneralAccount(trader, asset)
 	if err != nil {
 		return err
 	}

@@ -1119,7 +1119,7 @@ func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 	})
 }
 
-func TestCloseOutLPTraderContIssue3086(t *testing.T) {
+func TestCloseOutLPPartyContIssue3086(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()

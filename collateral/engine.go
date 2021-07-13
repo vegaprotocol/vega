@@ -31,8 +31,8 @@ var (
 	// ErrFeeAccountsMissing signals that a fee account is missing, which may means that the
 	// collateral engine have not been initialised properly
 	ErrFeeAccountsMissing = errors.New("fee accounts missing for collateral engine to work")
-	// ErrTraderAccountsMissing signals that the accounts for this trader do not exists
-	ErrTraderAccountsMissing = errors.New("trader accounts missing, cannot collect")
+	// ErrPartyAccountsMissing signals that the accounts for this trader do not exists
+	ErrPartyAccountsMissing = errors.New("trader accounts missing, cannot collect")
 	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
 	ErrAccountDoesNotExist                     = errors.New("account does not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
@@ -678,7 +678,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 					logging.String("party-id", party),
 					logging.String("asset", asset),
 					logging.String("market-id", settle.MarketId))
-				// return nil, nil, ErrTraderAccountsMissing
+				// return nil, nil, ErrPartyAccountsMissing
 			}
 		}
 
@@ -826,7 +826,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 					logging.String("party-id", evt.Party()),
 					logging.String("asset", asset),
 					logging.String("market-id", settle.MarketId))
-				// return nil, nil, ErrTraderAccountsMissing
+				// return nil, nil, ErrPartyAccountsMissing
 			}
 
 			if transfer == nil {
@@ -892,7 +892,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 		e.log.Error(
 			"Party doesn't have a general account somehow?",
 			logging.String("party-id", pos.Party()))
-		return nil, ErrTraderAccountsMissing
+		return nil, ErrPartyAccountsMissing
 	}
 	marAcc, err := e.GetAccountByID(marginID)
 	if err != nil {
@@ -900,7 +900,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 			"Party doesn't have a margin account somehow?",
 			logging.String("party-id", pos.Party()),
 			logging.String("market-id", marketID))
-		return nil, ErrTraderAccountsMissing
+		return nil, ErrPartyAccountsMissing
 	}
 	// do not check error,
 	// not all parties have a bond account

@@ -51,8 +51,8 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 	seller := "seller_id"
 	cases := []struct {
 		trade               types.Trade
-		expectedSizeTraderA int64
-		expectedSizeTraderB int64
+		expectedSizePartyA int64
+		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
@@ -67,8 +67,8 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 				SellOrder: "sell_order_id",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +10,
-			expectedSizeTraderB: -10,
+			expectedSizePartyA: +10,
+			expectedSizePartyB: -10,
 		},
 		{
 			trade: types.Trade{
@@ -83,8 +83,8 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 				SellOrder: "sell_order_id",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +35,
-			expectedSizeTraderB: -35,
+			expectedSizePartyA: +35,
+			expectedSizePartyB: -35,
 		},
 	}
 
@@ -100,9 +100,9 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 		// check size of positions
 		for _, p := range pos {
 			if p.Party() == buyer {
-				assert.Equal(t, c.expectedSizeTraderA, p.Size())
+				assert.Equal(t, c.expectedSizePartyA, p.Size())
 			} else if p.Party() == seller {
-				assert.Equal(t, c.expectedSizeTraderB, p.Size())
+				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
 	}
@@ -115,8 +115,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 	traderB := "trader_b"
 	cases := []struct {
 		trade               types.Trade
-		expectedSizeTraderA int64
-		expectedSizeTraderB int64
+		expectedSizePartyA int64
+		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
@@ -131,8 +131,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +10,
-			expectedSizeTraderB: -10,
+			expectedSizePartyA: +10,
+			expectedSizePartyB: -10,
 		},
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
@@ -148,8 +148,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +5,
-			expectedSizeTraderB: -5,
+			expectedSizePartyA: +5,
+			expectedSizePartyB: -5,
 		},
 	}
 
@@ -165,9 +165,9 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 		// check size of positions
 		for _, p := range pos {
 			if p.Party() == traderA {
-				assert.Equal(t, c.expectedSizeTraderA, p.Size())
+				assert.Equal(t, c.expectedSizePartyA, p.Size())
 			} else if p.Party() == traderB {
-				assert.Equal(t, c.expectedSizeTraderB, p.Size())
+				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
 	}
@@ -180,8 +180,8 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 	traderB := "trader_b"
 	cases := []struct {
 		trade               types.Trade
-		expectedSizeTraderA int64
-		expectedSizeTraderB int64
+		expectedSizePartyA int64
+		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
@@ -196,8 +196,8 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +10,
-			expectedSizeTraderB: -10,
+			expectedSizePartyA: +10,
+			expectedSizePartyB: -10,
 		},
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
@@ -213,8 +213,8 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: 0,
-			expectedSizeTraderB: 0,
+			expectedSizePartyA: 0,
+			expectedSizePartyB: 0,
 		},
 	}
 
@@ -229,9 +229,9 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 		// check size of positions
 		for _, p := range pos {
 			if p.Party() == traderA {
-				assert.Equal(t, c.expectedSizeTraderA, p.Size())
+				assert.Equal(t, c.expectedSizePartyA, p.Size())
 			} else if p.Party() == traderB {
-				assert.Equal(t, c.expectedSizeTraderB, p.Size())
+				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
 	}
@@ -244,8 +244,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 	traderB := "trader_b"
 	cases := []struct {
 		trade               types.Trade
-		expectedSizeTraderA int64
-		expectedSizeTraderB int64
+		expectedSizePartyA int64
+		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
@@ -260,8 +260,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +10,
-			expectedSizeTraderB: -10,
+			expectedSizePartyA: +10,
+			expectedSizePartyB: -10,
 		},
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
@@ -277,8 +277,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: -5,
-			expectedSizeTraderB: +5,
+			expectedSizePartyA: -5,
+			expectedSizePartyB: +5,
 		},
 	}
 
@@ -294,9 +294,9 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 		// check size of positions
 		for _, p := range pos {
 			if p.Party() == traderA {
-				assert.Equal(t, c.expectedSizeTraderA, p.Size())
+				assert.Equal(t, c.expectedSizePartyA, p.Size())
 			} else if p.Party() == traderB {
-				assert.Equal(t, c.expectedSizeTraderB, p.Size())
+				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
 	}
@@ -308,8 +308,8 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	traderB := "trader_b"
 	c := struct {
 		trade               types.Trade
-		expectedSizeTraderA int64
-		expectedSizeTraderB int64
+		expectedSizePartyA int64
+		expectedSizePartyB int64
 	}{
 		trade: types.Trade{
 			Type:      types.Trade_TYPE_DEFAULT,
@@ -323,8 +323,8 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 			SellOrder: "sell_order_id1",
 			Timestamp: time.Now().Unix(),
 		},
-		expectedSizeTraderA: +10,
-		expectedSizeTraderB: -10,
+		expectedSizePartyA: +10,
+		expectedSizePartyB: -10,
 	}
 
 	// ensure there is no open positions in the engine
@@ -341,9 +341,9 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	// check size of positions
 	for _, p := range pos {
 		if p.Party() == traderA {
-			assert.Equal(t, c.expectedSizeTraderA, p.Size())
+			assert.Equal(t, c.expectedSizePartyA, p.Size())
 		} else if p.Party() == traderB {
-			assert.Equal(t, c.expectedSizeTraderB, p.Size())
+			assert.Equal(t, c.expectedSizePartyB, p.Size())
 		}
 	}
 
@@ -357,9 +357,9 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 	traderC := "trader_c"
 	cases := []struct {
 		trade               types.Trade
-		expectedSizeTraderA int64
-		expectedSizeTraderB int64
-		expectedSizeTraderC int64
+		expectedSizePartyA int64
+		expectedSizePartyB int64
+		expectedSizePartyC int64
 		posSize             int
 	}{
 		// first trade between A and B, open a new position
@@ -376,9 +376,9 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +10,
-			expectedSizeTraderB: -10,
-			expectedSizeTraderC: 0,
+			expectedSizePartyA: +10,
+			expectedSizePartyB: -10,
+			expectedSizePartyC: 0,
 			posSize:             2,
 		},
 		// second trade between A and C, open C close A
@@ -395,9 +395,9 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: 0,
-			expectedSizeTraderB: -10,
-			expectedSizeTraderC: 10,
+			expectedSizePartyA: 0,
+			expectedSizePartyB: -10,
+			expectedSizePartyC: 10,
 			posSize:             3,
 		},
 		// last trade between A and B again, re-open A, decrease B
@@ -414,9 +414,9 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 				SellOrder: "sell_order_id3",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: -3,
-			expectedSizeTraderB: -7,
-			expectedSizeTraderC: 10,
+			expectedSizePartyA: -3,
+			expectedSizePartyB: -7,
+			expectedSizePartyC: 10,
 			posSize:             3,
 		},
 	}
@@ -433,11 +433,11 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 		// check size of positions
 		for _, p := range pos {
 			if p.Party() == traderA {
-				assert.Equal(t, c.expectedSizeTraderA, p.Size())
+				assert.Equal(t, c.expectedSizePartyA, p.Size())
 			} else if p.Party() == traderB {
-				assert.Equal(t, c.expectedSizeTraderB, p.Size())
+				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			} else if p.Party() == traderC {
-				assert.Equal(t, c.expectedSizeTraderC, p.Size())
+				assert.Equal(t, c.expectedSizePartyC, p.Size())
 			}
 		}
 	}
@@ -451,8 +451,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 	traderB := "trader_b"
 	cases := []struct {
 		trade               types.Trade
-		expectedSizeTraderA int64
-		expectedSizeTraderB int64
+		expectedSizePartyA int64
+		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
@@ -467,8 +467,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 				SellOrder: "sell_order_id1",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +10,
-			expectedSizeTraderB: -10,
+			expectedSizePartyA: +10,
+			expectedSizePartyB: -10,
 		},
 		// trader A trade with himsefl, no positions changes
 		{
@@ -484,8 +484,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 				SellOrder: "sell_order_id2",
 				Timestamp: time.Now().Unix(),
 			},
-			expectedSizeTraderA: +10,
-			expectedSizeTraderB: -10,
+			expectedSizePartyA: +10,
+			expectedSizePartyB: -10,
 		},
 	}
 
@@ -501,9 +501,9 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 		// check size of positions
 		for _, p := range pos {
 			if p.Party() == traderA {
-				assert.Equal(t, c.expectedSizeTraderA, p.Size())
+				assert.Equal(t, c.expectedSizePartyA, p.Size())
 			} else if p.Party() == traderB {
-				assert.Equal(t, c.expectedSizeTraderB, p.Size())
+				assert.Equal(t, c.expectedSizePartyB, p.Size())
 			}
 		}
 	}

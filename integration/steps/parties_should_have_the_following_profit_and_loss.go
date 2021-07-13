@@ -48,10 +48,10 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 		return errNoPositionForMarket(row.trader())
 	}
 
-	return errProfitAndLossValuesForTrader(pos, row)
+	return errProfitAndLossValuesForParty(pos, row)
 }
 
-func errProfitAndLossValuesForTrader(pos []*types.Position, row pnlRow) error {
+func errProfitAndLossValuesForParty(pos []*types.Position, row pnlRow) error {
 	return formatDiff(
 		fmt.Sprintf("invalid positions values for party(%v)", row.trader()),
 		map[string]string{

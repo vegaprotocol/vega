@@ -23,7 +23,7 @@ type PartyEvt interface {
 
 func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	trader := "test-trader"
-	moneyTrader := "money-trader"
+	moneyParty := "money-trader"
 	price := num.NewUint(1000)
 
 	eng := getTestEngine(t, testMarketID)
@@ -45,12 +45,12 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	assert.NotEmpty(t, gID)
 
 	// create + add balance
-	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), moneyTrader, testMarketAsset)
-	marginMoneyTrader, err := eng.Engine.CreatePartyMarginAccount(context.Background(), moneyTrader, testMarketID, testMarketAsset)
+	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), moneyParty, testMarketAsset)
+	marginMoneyParty, err := eng.Engine.CreatePartyMarginAccount(context.Background(), moneyParty, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyTrader, num.Zero().Mul(num.NewUint(5), price))
+	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyParty, num.Zero().Mul(num.NewUint(5), price))
 	assert.Nil(t, err)
 
 	pos := []*types.Transfer{
@@ -63,7 +63,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
-			Owner: moneyTrader,
+			Owner: moneyParty,
 			Amount: &types.FinancialAmount{
 				Amount: price,
 				Asset:  testMarketAsset,
@@ -96,7 +96,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			assert.Equal(t, acc.Balance, int64(833))
 		}
-		if acc.Owner == moneyTrader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+		if acc.Owner == moneyParty && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			assert.Equal(t, acc.Balance, int64(1666))
 		}
 	})
@@ -125,7 +125,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 
 func testMTMWithNetworkLossSoc(t *testing.T) {
 	trader := "test-trader"
-	moneyTrader := "money-trader"
+	moneyParty := "money-trader"
 	price := num.NewUint(1000)
 
 	eng := getTestEngine(t, testMarketID)
@@ -147,12 +147,12 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	assert.NotEmpty(t, gID)
 
 	// create + add balance
-	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), moneyTrader, testMarketAsset)
-	marginMoneyTrader, err := eng.Engine.CreatePartyMarginAccount(context.Background(), moneyTrader, testMarketID, testMarketAsset)
+	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), moneyParty, testMarketAsset)
+	marginMoneyParty, err := eng.Engine.CreatePartyMarginAccount(context.Background(), moneyParty, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyTrader, num.Zero().Mul(num.NewUint(5), price))
+	err = eng.Engine.UpdateBalance(context.Background(), marginMoneyParty, num.Zero().Mul(num.NewUint(5), price))
 	assert.Nil(t, err)
 
 	pos := []*types.Transfer{
@@ -165,7 +165,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
 		},
 		{
-			Owner: moneyTrader,
+			Owner: moneyParty,
 			Amount: &types.FinancialAmount{
 				Amount: price,
 				Asset:  testMarketAsset,
@@ -198,7 +198,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			assert.Equal(t, acc.Balance, int64(833))
 		}
-		if acc.Owner == moneyTrader && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+		if acc.Owner == moneyParty && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			assert.Equal(t, acc.Balance, int64(1666))
 		}
 	})

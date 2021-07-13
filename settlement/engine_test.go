@@ -51,9 +51,9 @@ func TestMarketExpiry(t *testing.T) {
 func TestMarkToMarket(t *testing.T) {
 	t.Run("No settle positions if none were on channel", testMarkToMarketEmpty)
 	t.Run("Settle positions are pushed onto the slice channel in order", testMarkToMarketOrdered)
-	t.Run("Trade adds new trader to market, no MTM settlement because markPrice is the same", testAddNewTrader)
+	t.Run("Trade adds new trader to market, no MTM settlement because markPrice is the same", testAddNewParty)
 	// add this test case because we had a runtime panic on the trades map earlier
-	t.Run("Trade adds new trader, immediately closing out with themselves", testAddNewTraderSelfTrade)
+	t.Run("Trade adds new trader, immediately closing out with themselves", testAddNewPartySelfTrade)
 	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
 }
 
@@ -253,7 +253,7 @@ func testMarkToMarketEmpty(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func testAddNewTraderSelfTrade(t *testing.T) {
+func testAddNewPartySelfTrade(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	markPrice := num.NewUint(1000)
@@ -297,7 +297,7 @@ func testAddNewTraderSelfTrade(t *testing.T) {
 	assert.Nil(t, noTransfers[0].Transfer())
 }
 
-func testAddNewTrader(t *testing.T) {
+func testAddNewParty(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	markPrice := num.NewUint(1000)

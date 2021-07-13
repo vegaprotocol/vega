@@ -203,13 +203,13 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TheFollowingOrdersShouldBeStopped(execsetup.broker, table)
 	})
 	s.Step(`^"([^"]*)" should have general account balance of "([^"]*)" for asset "([^"]*)"$`, func(trader, balance, asset string) error {
-		return steps.TraderShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, trader, asset, balance)
+		return steps.PartyShouldHaveGeneralAccountBalanceForAsset(execsetup.broker, trader, asset, balance)
 	})
 	s.Step(`^"([^"]*)" should have one account per asset$`, func(owner string) error {
-		return steps.TraderShouldHaveOneAccountPerAsset(execsetup.broker, owner)
+		return steps.PartyShouldHaveOneAccountPerAsset(execsetup.broker, owner)
 	})
 	s.Step(`^"([^"]*)" should have one margin account per market$`, func(owner string) error {
-		return steps.TraderShouldHaveOneMarginAccountPerMarket(execsetup.broker, owner)
+		return steps.PartyShouldHaveOneMarginAccountPerMarket(execsetup.broker, owner)
 	})
 	s.Step(`^the cumulated balance for all accounts should be worth "([^"]*)"$`, func(rawAmount string) error {
 		return steps.TheCumulatedBalanceForAllAccountsShouldBeWorth(execsetup.broker, rawAmount)

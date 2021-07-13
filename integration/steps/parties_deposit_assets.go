@@ -30,15 +30,15 @@ func PartiesDepositTheFollowingAssets(
 			return err
 		}
 
-		_, err = broker.GetTraderGeneralAccount(row.Party(), row.Asset())
+		_, err = broker.GetPartyGeneralAccount(row.Party(), row.Asset())
 		if err != nil {
-			return errNoGeneralAccountForTrader(row, err)
+			return errNoGeneralAccountForParty(row, err)
 		}
 	}
 	return nil
 }
 
-func errNoGeneralAccountForTrader(party depositAssetRow, err error) error {
+func errNoGeneralAccountForParty(party depositAssetRow, err error) error {
 	return fmt.Errorf("party(%v) has no general account for asset(%v): %s",
 		party.Party(),
 		party.Asset(),
