@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -38,6 +39,7 @@ type CandleSub struct {
 	last    map[string]*types.Trade
 	tCh     chan tradeBlock
 	candles map[string]map[string]types.Candle
+	log     *logging.Logger
 }
 
 // Currently we support 6 interval durations for trading candles on VEGA, as follows:
@@ -50,7 +52,7 @@ var supportedIntervals = [6]types.Interval{
 	types.Interval_INTERVAL_I1D,  // 1 day
 }
 
-func NewCandleSub(ctx context.Context, store CandleStore, ack bool) *CandleSub {
+func NewCandleSub(ctx context.Context, store CandleStore, log *logging.Logger, ack bool) *CandleSub {
 	sub := &CandleSub{
 		Base:    NewBase(ctx, 1, ack),
 		store:   store,
@@ -58,6 +60,7 @@ func NewCandleSub(ctx context.Context, store CandleStore, ack bool) *CandleSub {
 		last:    map[string]*types.Trade{},
 		tCh:     make(chan tradeBlock, 10), // ensure we're one block behind
 		candles: map[string]map[string]types.Candle{},
+		log:     log,
 	}
 	go sub.internalLoop()
 	return sub
@@ -88,9 +91,9 @@ func (c *CandleSub) Push(evts ...events.Event) {
 	// trade events are batched, we need to lock outside of the loop
 	c.mu.Lock()
 	for _, e := range evts {
-		switch te := e.(type) {
+		switch et := e.(type) {
 		case TE:
-			trade := te.Trade()
+			trade := et.Trade()
 			mID := trade.MarketId
 			if _, ok := c.buf[mID]; !ok {
 				c.buf[mID] = []types.Trade{}
@@ -98,7 +101,7 @@ func (c *CandleSub) Push(evts ...events.Event) {
 			c.buf[mID] = append(c.buf[mID], trade)
 			c.last[mID] = &trade
 		case NME:
-			mID := te.Market().Id
+			mID := et.Market().Id
 			if _, ok := c.buf[mID]; !ok {
 				c.buf[mID] = []types.Trade{}
 			}
@@ -106,17 +109,19 @@ func (c *CandleSub) Push(evts ...events.Event) {
 				mID: mID,
 			}
 		case MarketTickEvt:
-			mID := te.MarketID()
+			mID := et.MarketID()
 			cpy := c.buf[mID]
 			last := c.last[mID]
 			c.last[mID] = nil
 			c.buf[mID] = make([]types.Trade, 0, cap(cpy))
 			c.tCh <- tradeBlock{
 				trades: cpy,
-				time:   te.Time(),
+				time:   et.Time(),
 				last:   last,
 				mID:    mID,
 			}
+		default:
+			c.log.Panic("Unknown event type in candles subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 	c.mu.Unlock()

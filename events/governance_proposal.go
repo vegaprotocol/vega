@@ -10,19 +10,18 @@ import (
 
 type Proposal struct {
 	*Base
-	p types.Proposal
+	p proto.Proposal
 }
 
 func NewProposalEvent(ctx context.Context, p types.Proposal) *Proposal {
-	cpy := p.DeepClone()
 	return &Proposal{
 		Base: newBase(ctx, ProposalEvent),
-		p:    *cpy,
+		p:    *p.IntoProto(),
 	}
 }
 
 func (p *Proposal) Proposal() proto.Proposal {
-	return *p.p.IntoProto()
+	return p.p
 }
 
 // ProposalID - for combined subscriber, communal interface
@@ -40,8 +39,7 @@ func (p *Proposal) PartyID() string {
 }
 
 func (p Proposal) Proto() proto.Proposal {
-	pr := p.p.IntoProto()
-	return *pr
+	return p.p
 }
 
 func (p Proposal) StreamMessage() *eventspb.BusEvent {
@@ -50,7 +48,7 @@ func (p Proposal) StreamMessage() *eventspb.BusEvent {
 		Block: p.TraceID(),
 		Type:  p.et.ToProto(),
 		Event: &eventspb.BusEvent_Proposal{
-			Proposal: p.p.IntoProto(),
+			Proposal: &p.p,
 		},
 	}
 }

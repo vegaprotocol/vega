@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -22,13 +23,15 @@ type RiskFactorSub struct {
 	store RFStore
 	mu    sync.Mutex
 	buf   map[string]types.RiskFactor
+	log   *logging.Logger
 }
 
-func NewRiskFactorSub(ctx context.Context, store RFStore, ack bool) *RiskFactorSub {
+func NewRiskFactorSub(ctx context.Context, store RFStore, log *logging.Logger, ack bool) *RiskFactorSub {
 	m := RiskFactorSub{
 		Base:  NewBase(ctx, 10, ack),
 		store: store,
 		buf:   map[string]types.RiskFactor{},
+		log:   log,
 	}
 	if m.isRunning() {
 		go m.loop(m.ctx)
@@ -52,14 +55,16 @@ func (m *RiskFactorSub) loop(ctx context.Context) {
 
 func (m *RiskFactorSub) Push(evts ...events.Event) {
 	for _, e := range evts {
-		switch te := e.(type) {
+		switch et := e.(type) {
 		case RF:
-			rf := te.RiskFactor()
+			rf := et.RiskFactor()
 			m.mu.Lock()
 			m.buf[rf.Market] = rf
 			m.mu.Unlock()
 		case TimeEvent:
 			m.flush()
+		default:
+			m.log.Panic("Unknown event type in risk factor subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }

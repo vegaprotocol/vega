@@ -91,7 +91,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		return
 	}
 	accountService := accounts.NewService(logger, conf.Accounts, accountStore)
-	accountSub := subscribers.NewAccountSub(ctx, accountStore, true)
+	accountSub := subscribers.NewAccountSub(ctx, accountStore, logger, true)
 
 	candleStore, err := storage.NewCandles(logger, conf.Storage, cancel)
 	if err != nil {

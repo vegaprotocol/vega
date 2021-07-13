@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -19,12 +20,14 @@ type MarketStore interface {
 type Market struct {
 	*Base
 	store MarketStore
+	log   *logging.Logger
 }
 
-func NewMarketSub(ctx context.Context, store MarketStore, ack bool) *Market {
+func NewMarketSub(ctx context.Context, store MarketStore, log *logging.Logger, ack bool) *Market {
 	m := &Market{
 		Base:  NewBase(ctx, 1, ack),
 		store: store,
+		log:   log,
 	}
 	if m.isRunning() {
 		go m.loop(m.ctx)
@@ -49,8 +52,11 @@ func (m *Market) loop(ctx context.Context) {
 func (m *Market) Push(evts ...events.Event) {
 	batch := make([]types.Market, 0, len(evts))
 	for _, e := range evts {
-		if te, ok := e.(NME); ok {
-			batch = append(batch, te.Market())
+		switch et := e.(type) {
+		case NME:
+			batch = append(batch, et.Market())
+		default:
+			m.log.Panic("Unknown event type in market subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 	if len(batch) > 0 {

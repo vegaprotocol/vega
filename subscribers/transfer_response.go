@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -30,13 +31,15 @@ type TransferResponse struct {
 	mu    sync.Mutex
 	store TransferResponseStore
 	trs   []*types.TransferResponse
+	log   *logging.Logger
 }
 
-func NewTransferResponse(ctx context.Context, store TransferResponseStore, ack bool) *TransferResponse {
+func NewTransferResponse(ctx context.Context, store TransferResponseStore, log *logging.Logger, ack bool) *TransferResponse {
 	s := &TransferResponse{
 		Base:  NewBase(ctx, 0, ack),
 		store: store,
 		trs:   []*types.TransferResponse{},
+		log:   log,
 	}
 	if s.isRunning() {
 		go s.loop()
@@ -88,6 +91,8 @@ func (t *TransferResponse) Push(evts ...events.Event) {
 			t.mu.Lock()
 			t.trs = append(t.trs, te.TransferResponses()...)
 			t.mu.Unlock()
+		default:
+			t.log.Panic("Unknown event type in transfer response subscriber", logging.String("Type", te.Type().String()))
 		}
 	}
 }

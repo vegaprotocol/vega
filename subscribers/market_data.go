@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/proto"
 )
 
@@ -22,13 +23,15 @@ type MarketDataSub struct {
 	mu    sync.Mutex
 	buf   []proto.MarketData
 	store Storage
+	log   *logging.Logger
 }
 
-func NewMarketDataSub(ctx context.Context, store Storage, ack bool) *MarketDataSub {
+func NewMarketDataSub(ctx context.Context, store Storage, log *logging.Logger, ack bool) *MarketDataSub {
 	md := &MarketDataSub{
 		Base:  NewBase(ctx, 10, ack),
 		buf:   []proto.MarketData{},
 		store: store,
+		log:   log,
 	}
 	if md.isRunning() {
 		go md.loop(md.ctx)
@@ -52,14 +55,16 @@ func (m *MarketDataSub) loop(ctx context.Context) {
 
 func (m *MarketDataSub) Push(evts ...events.Event) {
 	for _, e := range evts {
-		switch te := e.(type) {
+		switch et := e.(type) {
 		case MDE:
-			md := te.MarketData()
+			md := et.MarketData()
 			m.mu.Lock()
 			m.buf = append(m.buf, md)
 			m.mu.Unlock()
 		case TimeEvent:
 			m.flush()
+		default:
+			m.log.Panic("Unknown event type in market data subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }

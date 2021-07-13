@@ -173,21 +173,21 @@ func (l *NodeCommand) loadMarketsConfig() error {
 }
 
 func (l *NodeCommand) setupSubscibers() {
-	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
+	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, l.Log, true)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
 	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
-	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
-	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
-	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, true)
-	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore, true)
-	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, true)
-	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
-	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
-	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
-	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, true)
-	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
+	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, l.Log, true)
+	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, l.Log, true)
+	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, l.Log, true)
+	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore, l.Log, true)
+	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, l.Log, true)
+	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true, l.Log)
+	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, l.Log, true)
+	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, l.Log, true)
+	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, l.Log, true)
+	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, l.Log, true)
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
-	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
+	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, l.Log, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {

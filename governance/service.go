@@ -79,7 +79,7 @@ func (s *Svc) ObserveGovernance(ctx context.Context, retries int) <-chan []proto
 	out := make(chan []proto.GovernanceData)
 	ctx, cfunc := context.WithCancel(ctx)
 	// use non-acking subscriber
-	sub := subscribers.NewGovernanceSub(ctx, false)
+	sub := subscribers.NewGovernanceSub(ctx, s.log, false)
 	id := s.bus.Subscribe(sub)
 	go func() {
 		defer func() {
@@ -118,7 +118,7 @@ func (s *Svc) getCompleteGovernanceData(data []proto.GovernanceData) []proto.Gov
 		} else if len(gd.No) > 0 {
 			id = gd.No[0].ProposalId
 		}
-		if p, err := s.GetProposalByID(id); err != nil && p != nil {
+		if p, err := s.GetProposalByID(id); err == nil && p != nil {
 			gds = append(gds, *p)
 		} else {
 			s.log.Debug("invalid proposal id",
@@ -133,7 +133,7 @@ func (s *Svc) getCompleteGovernanceData(data []proto.GovernanceData) []proto.Gov
 // ObservePartyProposals streams proposals submitted by the specific party
 func (s *Svc) ObservePartyProposals(ctx context.Context, retries int, partyID string) <-chan []proto.GovernanceData {
 	ctx, cfunc := context.WithCancel(ctx)
-	sub := subscribers.NewGovernanceSub(ctx, false, subscribers.Proposals(subscribers.ProposalByPartyID(partyID)))
+	sub := subscribers.NewGovernanceSub(ctx, s.log, false, subscribers.Proposals(subscribers.ProposalByPartyID(partyID)))
 	out := make(chan []proto.GovernanceData)
 	id := s.bus.Subscribe(sub)
 	go func() {
@@ -167,7 +167,7 @@ func (s *Svc) ObservePartyVotes(ctx context.Context, retries int, partyID string
 	out := make(chan []proto.Vote)
 	// new subscriber, in "stream mode" (changes only), filtered by party ID
 	// and make subscriber non-acking, missed votes are ignored
-	sub := subscribers.NewVoteSub(ctx, true, false, subscribers.VoteByPartyID(partyID))
+	sub := subscribers.NewVoteSub(ctx, true, false, s.log, subscribers.VoteByPartyID(partyID))
 	id := s.bus.Subscribe(sub)
 	go func() {
 		defer func() {
@@ -202,7 +202,7 @@ func (s *Svc) ObserveProposalVotes(ctx context.Context, retries int, proposalID 
 	ctx, cfunc := context.WithCancel(ctx)
 	out := make(chan []proto.Vote)
 	// new subscriber, in "stream mode" (changes only), filtered by proposal ID
-	sub := subscribers.NewVoteSub(ctx, true, false, subscribers.VoteByProposalID(proposalID))
+	sub := subscribers.NewVoteSub(ctx, true, false, s.log, subscribers.VoteByProposalID(proposalID))
 	id := s.bus.Subscribe(sub)
 	go func() {
 		defer func() {

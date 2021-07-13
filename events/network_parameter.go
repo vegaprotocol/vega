@@ -3,27 +3,27 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type NetworkParameter struct {
 	*Base
-	np types.NetworkParameter
+	np proto.NetworkParameter
 }
 
 func NewNetworkParameterEvent(ctx context.Context, key, value string) *NetworkParameter {
 	return &NetworkParameter{
 		Base: newBase(ctx, NetworkParameterEvent),
-		np:   types.NetworkParameter{Key: key, Value: value},
+		np:   proto.NetworkParameter{Key: key, Value: value},
 	}
 }
 
-func (n *NetworkParameter) NetworkParameter() types.NetworkParameter {
+func (n *NetworkParameter) NetworkParameter() proto.NetworkParameter {
 	return n.np
 }
 
-func (n NetworkParameter) Proto() types.NetworkParameter {
+func (n NetworkParameter) Proto() proto.NetworkParameter {
 	return n.np
 }
 
