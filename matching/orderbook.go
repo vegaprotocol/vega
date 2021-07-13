@@ -669,6 +669,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if err := b.validateOrder(order); err != nil {
 		return nil, err
 	}
+	if _, ok := b.ordersByID[order.Id]; ok {
+		b.log.Panic("an order in the book already exists with the same ID", logging.Order(*order))
+	}
 
 	if order.CreatedAt > b.latestTimestamp {
 		b.latestTimestamp = order.CreatedAt

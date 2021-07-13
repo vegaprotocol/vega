@@ -71,6 +71,7 @@ func testFOKFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
@@ -86,6 +87,7 @@ func testFOKFilled(t *testing.T) {
 
 	// now place our fok order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
@@ -134,6 +136,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
@@ -149,6 +152,7 @@ func testIOCPartiallyFilled(t *testing.T) {
 
 	// now place our IOC order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
@@ -175,6 +179,7 @@ func testIOCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
@@ -190,6 +195,7 @@ func testIOCFilled(t *testing.T) {
 
 	// now place our fok order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
@@ -317,6 +323,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
@@ -437,6 +444,7 @@ func testGTCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
@@ -452,6 +460,7 @@ func testGTCFilled(t *testing.T) {
 
 	// now place our GTC order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
@@ -583,6 +592,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
@@ -628,6 +638,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
@@ -677,6 +688,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
@@ -708,6 +720,7 @@ func testGTTFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
@@ -724,6 +737,7 @@ func testGTTFilled(t *testing.T) {
 
 	// now place our GTT order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
