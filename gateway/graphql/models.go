@@ -407,11 +407,11 @@ type PeggedOrderInput struct {
 type PositionResolution struct {
 	// the market ID where position resolution happened
 	MarketID string `json:"marketId"`
-	// number of distressed parties on market
+	// number of distressed partys on market
 	Distressed int `json:"distressed"`
-	// number of parties closed out
+	// number of partys closed out
 	Closed int `json:"closed"`
-	// the mark price at which parties were distressed/closed out
+	// the mark price at which partys were distressed/closed out
 	MarkPrice int `json:"markPrice"`
 }
 
@@ -704,9 +704,9 @@ const (
 	AccountTypeGlobalInsurance AccountType = "GlobalInsurance"
 	// Settlement - only for 'system' party
 	AccountTypeSettlement AccountType = "Settlement"
-	// Margin - The leverage account for parties
+	// Margin - The leverage account for partys
 	AccountTypeMargin AccountType = "Margin"
-	// General account - the account containing 'unused' collateral for parties
+	// General account - the account containing 'unused' collateral for partys
 	AccountTypeGeneral AccountType = "General"
 	// Infrastructure fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
@@ -1654,7 +1654,7 @@ const (
 	OrderTypeMarket OrderType = "Market"
 	// mentioned in ticket, but as yet unused order type
 	OrderTypeLimit OrderType = "Limit"
-	// Used for distressed parties, an order placed by the network to close out distressed partys
+	// Used for distressed partys, an order placed by the network to close out distressed partys
 	// similar to Market order, only no party is attached to the order.
 	OrderTypeNetwork OrderType = "Network"
 )

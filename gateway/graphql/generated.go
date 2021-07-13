@@ -6231,7 +6231,7 @@ type Order {
   "Trades relating to this order"
   trades: [Trade!]
 
-  "Type the order type (defaults to TRADER)"
+  "Type the order type (defaults to PARTY)"
   type: OrderType
 
   "Reason for the order to be rejected"
@@ -6723,7 +6723,7 @@ enum OrderType {
   Limit
 
   """
-  Used for distressed parties, an order placed by the network to close out distressed partys
+  Used for distressed partys, an order placed by the network to close out distressed partys
   similar to Market order, only no party is attached to the order.
   """
   Network
@@ -6810,9 +6810,9 @@ enum AccountType {
   GlobalInsurance
   "Settlement - only for 'system' party"
   Settlement
-  "Margin - The leverage account for parties"
+  "Margin - The leverage account for partys"
   Margin
-  "General account - the account containing 'unused' collateral for parties"
+  "General account - the account containing 'unused' collateral for partys"
   General
   "Infrastructure fee account - the account where all infrastructure fees are collected"
   FeeInfrastructure
@@ -7418,11 +7418,11 @@ type TransferResponses {
 type PositionResolution {
   "the market ID where position resolution happened"
   marketId: ID!
-  "number of distressed parties on market"
+  "number of distressed partys on market"
   distressed: Int!
-  "number of parties closed out"
+  "number of partys closed out"
   closed: Int!
-  "the mark price at which parties were distressed/closed out"
+  "the mark price at which partys were distressed/closed out"
   markPrice: Int!
 }
 

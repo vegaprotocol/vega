@@ -457,7 +457,7 @@ const (
 	// Liquidity accounts contain fees earned by providing liquidity on Vega markets
 	AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY AccountType = 6
 	// This account is created to hold fees earned by placing orders that sit on the book
-	// and are then matched with an incoming order to create a trade - These fees reward partys
+	// and are then matched with an incoming order to create a trade - These fees reward parties
 	// who provide the best priced liquidity that actually allows trading to take place
 	AccountType_ACCOUNT_TYPE_FEES_MAKER AccountType = 7
 	// This account is created to lock funds to be withdrawn by parties
@@ -671,7 +671,7 @@ const (
 	Order_TYPE_LIMIT Order_Type = 1
 	// Used for Market orders
 	Order_TYPE_MARKET Order_Type = 2
-	// Used for orders where the initiating party is the network (with distressed partys)
+	// Used for orders where the initiating party is the network (with distressed parties)
 	Order_TYPE_NETWORK Order_Type = 3
 )
 
