@@ -10,13 +10,9 @@ import (
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/assets"
-	"code.vegaprotocol.io/data-node/banking"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
-	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/evtforward"
-	"code.vegaprotocol.io/data-node/execution"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway/server"
 	"code.vegaprotocol.io/data-node/governance"
@@ -27,7 +23,6 @@ import (
 	"code.vegaprotocol.io/data-node/netparams"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
-	"code.vegaprotocol.io/data-node/oracles/adaptors"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
@@ -129,19 +124,7 @@ type NodeCommand struct {
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
-	executionEngine *execution.Engine
-	governance      *governance.Engine
-	collateral      *collateral.Engine
-	oracle          *oracles.Engine
-	oracleAdaptors  *adaptors.Adaptors
-	netParams       *netparams.Store
-
 	mktscfg []types.Market
-
-	assets  *assets.Service
-	notary  *notary.Notary
-	evtfwd  *evtforward.EvtForwarder
-	banking *banking.Engine
 
 	// plugins
 	settlePlugin     *plugins.Positions
@@ -196,7 +179,6 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.riskService,
 		l.governanceService,
 		l.notaryService,
-		l.evtfwd,
 		l.assetService,
 		l.feeService,
 		l.eventService,

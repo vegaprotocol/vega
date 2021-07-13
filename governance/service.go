@@ -2,6 +2,7 @@ package governance
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"code.vegaprotocol.io/data-node/broker"
@@ -14,20 +15,24 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/vega/governance EventBus
+var (
+	ErrProposalNotFound = errors.New("proposal not found")
+)
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/data-node EventBus
 type EventBus interface {
 	Subscribe(s broker.Subscriber) int
 	Unsubscribe(id int)
 }
 
 // GovernanceDataSub - the subscriber that will be aggregating all governance data, used in non-stream calls
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_sub_mock.go -package mocks code.vegaprotocol.io/vega/governance GovernanceDataSub
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_sub_mock.go -package mocks code.vegaprotocol.io/data-node GovernanceDataSub
 type GovernanceDataSub interface {
 	Filter(uniqueVotes bool, filters ...subscribers.ProposalFilter) []*proto.GovernanceData
 }
 
 // VoteSub - subscriber containing all votes, which we can filter out
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_sub_mock.go -package mocks code.vegaprotocol.io/vega/governance VoteSub
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_sub_mock.go -package mocks code.vegaprotocol.io/data-node VoteSub
 type VoteSub interface {
 	Filter(filters ...subscribers.VoteFilter) []*proto.Vote
 }
@@ -40,11 +45,10 @@ type Svc struct {
 	bus   EventBus
 	gov   GovernanceDataSub
 	votes VoteSub
-	netp  NetParams
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDataSub, votes VoteSub, netp NetParams) *Svc {
+func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDataSub, votes VoteSub) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -54,7 +58,6 @@ func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDat
 		bus:    bus,
 		gov:    gov,
 		votes:  votes,
-		netp:   netp,
 	}
 }
 

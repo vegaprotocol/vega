@@ -2,47 +2,31 @@ package node
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
-	"code.vegaprotocol.io/data-node/collateral"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/execution"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/netparams"
-	"code.vegaprotocol.io/data-node/netparams/checks"
-	"code.vegaprotocol.io/data-node/netparams/dispatch"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
-	oracleAdaptors "code.vegaprotocol.io/data-node/oracles/adaptors"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	"code.vegaprotocol.io/data-node/proto"
-	oraclepb "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
-	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/vegatime"
-	"github.com/cenkalti/backoff"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/pkg/errors"
-	"github.com/prometheus/common/log"
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
@@ -86,10 +70,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this doesn't fail
 	l.timeService = vegatime.New(l.conf.Time)
 
-	if err = l.loadMarketsConfig(); err != nil {
-		return err
-	}
-
 	// Set ulimits
 	if err = l.SetUlimits(); err != nil {
 		l.Log.Warn("Unable to set ulimits",
@@ -112,33 +92,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	} else {
 		l.Log.Info("node setted up with badger store support")
 	}
-
-	return nil
-}
-
-func (l *NodeCommand) loadMarketsConfig() error {
-	pmkts := []proto.Market{}
-	mktsCfg := l.conf.Execution.Markets
-	// loads markets from configuration
-	for _, v := range mktsCfg.Configs {
-		path := filepath.Join(mktsCfg.Path, v)
-		buf, err := ioutil.ReadFile(path)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to read market configuration at %s", path))
-		}
-
-		mkt := proto.Market{}
-		err = jsonpb.Unmarshal(strings.NewReader(string(buf)), &mkt)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to unmarshal market configuration at %s", path))
-		}
-
-		l.Log.Info("New market loaded from configuation",
-			logging.String("market-config", path),
-			logging.String("market-id", mkt.Id))
-		pmkts = append(pmkts, mkt)
-	}
-	l.mktscfg = pmkts
 
 	return nil
 }
@@ -216,97 +169,6 @@ func (l *NodeCommand) setupStorages() (err error) {
 	return
 }
 
-// UponGenesis loads all asset from genesis state
-func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
-	state, err := assets.LoadGenesisState(rawstate)
-	if err != nil {
-		return err
-	}
-	if state == nil {
-		return nil
-	}
-
-	for k, v := range state {
-		err := l.loadAsset(k, v)
-		if err != nil {
-			return err
-		}
-	}
-
-	// then we load the markets
-	if len(l.mktscfg) > 0 {
-		for _, mkt := range l.mktscfg {
-			mkt := mkt
-
-			// hot fix: attribute an ID to oracle spec to avoid blank ID
-			spec := mkt.TradableInstrument.Instrument.GetFuture().OracleSpec
-			specWithID := oraclepb.NewOracleSpec(spec.PubKeys, spec.Filters)
-			mkt.TradableInstrument.Instrument.GetFuture().OracleSpec = specWithID
-			// end of hot fix
-
-			err = l.executionEngine.SubmitMarket(l.ctx, types.MarketFromProto(&mkt))
-			if err != nil {
-				l.Log.Panic("Unable to submit market",
-					logging.Error(err))
-			}
-		}
-	}
-
-	return nil
-}
-
-func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
-	aid, err := l.assets.NewAsset(id, types.AssetDetailsFromProto(v))
-	if err != nil {
-		return fmt.Errorf("error instanciating asset %v", err)
-	}
-
-	asset, err := l.assets.Get(aid)
-	if err != nil {
-		return fmt.Errorf("unable to get asset %v", err)
-	}
-
-	// just a simple backoff here
-	err = backoff.Retry(
-		func() error {
-			err := asset.Validate()
-			if !asset.IsValid() {
-				return err
-			}
-			return nil
-		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
-	)
-	if err != nil {
-		return fmt.Errorf("unable to instantiate new asset err=%v, asset-source=%s", err, v.String())
-	}
-	if err := l.assets.Enable(aid); err != nil {
-		l.Log.Error("invalid genesis asset",
-			logging.String("asset-details", v.String()),
-			logging.Error(err))
-		return fmt.Errorf("unable to enable asset: %v", err)
-	}
-
-	assetD := asset.Type()
-	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
-		return fmt.Errorf("unable to enable asset in collateral: %v", err)
-	}
-
-	l.Log.Info("new asset added successfully",
-		logging.String("asset", asset.String()))
-
-	// FIXME: this will be remove once we stop loading market from config
-	// here we replace the mkts assets symbols with ids
-	for _, v := range l.mktscfg {
-		sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
-		if sym == assetD.Details.Symbol {
-			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.Id
-		}
-	}
-
-	return nil
-}
-
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -322,6 +184,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
+
 	l.netParamsService = netparams.NewService(l.ctx)
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 	l.oracleService = oracles.NewService(l.ctx)
@@ -334,37 +197,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService)
-
-	now, _ := l.timeService.GetTimeNow()
-
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.timeService)
-	if err != nil {
-		return err
-	}
-
-	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
-	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker)
-	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
-	l.oracleAdaptors = oracleAdaptors.New()
-
-	// instantiate the execution engine
-	l.executionEngine = execution.NewEngine(
-		l.Log,
-		l.conf.Execution,
-		l.timeService,
-		l.collateral,
-		l.oracle,
-		l.broker,
-	)
-
-	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
-
-	// TODO Remove governance engine
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, nil, l.netParams, now)
-	if err != nil {
-		log.Error("unable to initialise governance", logging.Error(err))
-		return err
-	}
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
@@ -382,10 +214,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return
 	}
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub, l.netParams)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
-	l.feeService = fee.NewService(l.Log, l.conf.Execution.Fee, l.marketStore, l.marketDataStore)
+	l.feeService = fee.NewService(l.Log, l.conf.Fee, l.marketStore, l.marketDataStore)
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
 	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
@@ -393,107 +225,15 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
 
-	// setup config reloads for all engines / services /etc
+	// setup config reloads for all services /etc
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
 
-	// setup some network parameters runtime validations
-	// and network parameters updates dispatches
-	return l.setupNetParameters()
-}
-
-func (l *NodeCommand) setupNetParameters() error {
-	// now we are going to setup some network parameters which can be done
-	// through runtime checks
-	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
-	if err := l.netParams.AddRules(
-		netparams.ParamStringRules(
-			netparams.GovernanceVoteAsset,
-			checks.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
-		),
-	); err != nil {
-		return err
-	}
-
-	// now add some watcher for our netparams
-	return l.netParams.Watch(
-		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
-			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets),
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketMarginScalingFactors,
-			Watcher: l.executionEngine.OnMarketMarginScalingFactorsUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketFeeFactorsMakerFee,
-			Watcher: l.executionEngine.OnMarketFeeFactorsMakerFeeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketFeeFactorsInfrastructureFee,
-			Watcher: l.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
-			Watcher: l.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketValueWindowLength,
-			Watcher: l.executionEngine.OnMarketValueWindowLengthUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeScalingFactor,
-			Watcher: l.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeTimeWindow,
-			Watcher: l.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
-			Watcher: l.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
-			Watcher: l.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
-			Watcher: l.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityBondPenaltyParameter,
-			Watcher: l.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
-			Watcher: l.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketAuctionMinimumDuration,
-			Watcher: l.executionEngine.OnMarketAuctionMinimumDurationUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketProbabilityOfTradingTauScaling,
-			Watcher: l.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
-			Watcher: l.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
-		},
-	)
+	return nil
 }
 
 func (l *NodeCommand) setupConfigWatchers() {
 	l.cfgwatchr.OnConfigUpdate(
-		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
-		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
-		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
-		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
-		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
-		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
-
-		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
 		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
 		func(cfg config.Config) { l.liquidityService.ReloadConf(cfg.Liquidity) },
@@ -506,6 +246,5 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) },
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
-		func(cfg config.Config) { l.feeService.ReloadConf(cfg.Execution.Fee) },
 	)
 }
