@@ -80,7 +80,6 @@ type NodeCommand struct {
 	partyStore            *storage.Party
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
-	netParamsStore        *netparams.Store
 
 	broker *broker.Broker
 
@@ -126,8 +125,6 @@ type NodeCommand struct {
 	cfgwatchr    *config.Watcher
 
 	mktscfg []types.Market
-
-	assets *assets.Service
 
 	// plugins
 	settlePlugin     *plugins.Positions

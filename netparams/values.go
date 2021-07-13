@@ -13,6 +13,26 @@ import (
 	validators "github.com/mwitkow/go-proto-validators"
 )
 
+type Reset interface {
+	Reset()
+}
+
+type value interface {
+	Validate(value string) error
+	Update(value string) error
+	String() string
+	ToFloat() (float64, error)
+	ToInt() (int64, error)
+	ToUint() (uint64, error)
+	ToBool() (bool, error)
+	ToString() (string, error)
+	ToDuration() (time.Duration, error)
+	ToJSONStruct(Reset) error
+	AddRules(...interface{}) error
+	GetDispatch() func(context.Context, interface{}) error
+	CheckDispatch(interface{}) error
+}
+
 type baseValue struct{}
 
 func (b *baseValue) ToFloat() (float64, error) {

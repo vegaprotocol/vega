@@ -2,7 +2,6 @@ package node
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
@@ -15,24 +14,19 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/netparams"
-	"code.vegaprotocol.io/data-node/netparams/checks"
-	"code.vegaprotocol.io/data-node/netparams/dispatch"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	"code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
-	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/vegatime"
-	"github.com/cenkalti/backoff"
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
@@ -175,55 +169,6 @@ func (l *NodeCommand) setupStorages() (err error) {
 	return
 }
 
-func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
-	aid, err := l.assets.NewAsset(id, types.AssetDetailsFromProto(v))
-	if err != nil {
-		return fmt.Errorf("error instanciating asset %v", err)
-	}
-
-	asset, err := l.assets.Get(aid)
-	if err != nil {
-		return fmt.Errorf("unable to get asset %v", err)
-	}
-
-	// just a simple backoff here
-	err = backoff.Retry(
-		func() error {
-			err := asset.Validate()
-			if !asset.IsValid() {
-				return err
-			}
-			return nil
-		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
-	)
-	if err != nil {
-		return fmt.Errorf("unable to instantiate new asset err=%v, asset-source=%s", err, v.String())
-	}
-	if err := l.assets.Enable(aid); err != nil {
-		l.Log.Error("invalid genesis asset",
-			logging.String("asset-details", v.String()),
-			logging.Error(err))
-		return fmt.Errorf("unable to enable asset: %v", err)
-	}
-
-	assetD := asset.Type()
-
-	l.Log.Info("new asset added successfully",
-		logging.String("asset", asset.String()))
-
-	// FIXME: this will be remove once we stop loading market from config
-	// here we replace the mkts assets symbols with ids
-	for _, v := range l.mktscfg {
-		sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
-		if sym == assetD.Details.Symbol {
-			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.Id
-		}
-	}
-
-	return nil
-}
-
 // we've already set everything up WRT arguments etc... just bootstrap the node
 func (l *NodeCommand) preRun(_ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
@@ -253,13 +198,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService)
 
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.timeService)
-	if err != nil {
-		return err
-	}
-
-	l.netParamsStore = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
-
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
 		return
@@ -276,7 +214,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return
 	}
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub, l.netParamsStore)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
 
 	// last assignment to err, no need to check here, if something went wrong, we'll know about it
 	l.feeService = fee.NewService(l.Log, l.conf.Fee, l.marketStore, l.marketDataStore)
@@ -291,38 +229,11 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
 
-	// setup some network parameters runtime validations
-	// and network parameters updates dispatches
-	return l.setupNetParameters()
-}
-
-func (l *NodeCommand) setupNetParameters() error {
-	// now we are going to setup some network parameters which can be done
-	// through runtime checks
-	// e.g: changing the governance asset require the Assets service, so we can ensure any changes there are made for a valid asset
-	if err := l.netParamsStore.AddRules(
-		netparams.ParamStringRules(
-			netparams.GovernanceVoteAsset,
-			checks.GovernanceAssetUpdate(l.Log, l.assets),
-		),
-	); err != nil {
-		return err
-	}
-
-	// now add some watcher for our netparams
-	return l.netParamsStore.Watch(
-		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
-			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets),
-		},
-	)
+	return nil
 }
 
 func (l *NodeCommand) setupConfigWatchers() {
 	l.cfgwatchr.OnConfigUpdate(
-		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
-
-		// services
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
 		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
 		func(cfg config.Config) { l.liquidityService.ReloadConf(cfg.Liquidity) },

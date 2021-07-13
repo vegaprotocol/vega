@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"time"
 
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/commands"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/netparams"
 	"code.vegaprotocol.io/data-node/proto"
 	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -39,17 +37,6 @@ type VoteSub interface {
 	Filter(filters ...subscribers.VoteFilter) []*proto.Vote
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/netparams_mock.go -package mocks code.vegaprotocol.io/data-node NetParams
-type NetParams interface {
-	Validate(string, string) error
-	Update(context.Context, string, string) error
-	GetFloat(string) (float64, error)
-	GetInt(string) (int64, error)
-	GetDuration(string) (time.Duration, error)
-	GetJSONStruct(string, netparams.Reset) error
-	Get(string) (string, error)
-}
-
 // Svc is governance service, responsible for managing proposals and votes.
 type Svc struct {
 	Config
@@ -58,11 +45,10 @@ type Svc struct {
 	bus   EventBus
 	gov   GovernanceDataSub
 	votes VoteSub
-	netp  NetParams
 }
 
 // NewService creates new governance service instance
-func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDataSub, votes VoteSub, netp NetParams) *Svc {
+func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDataSub, votes VoteSub) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -72,7 +58,6 @@ func NewService(log *logging.Logger, cfg Config, bus EventBus, gov GovernanceDat
 		bus:    bus,
 		gov:    gov,
 		votes:  votes,
-		netp:   netp,
 	}
 }
 
