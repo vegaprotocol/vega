@@ -442,17 +442,37 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 	}
 	responses := make([]*types.TransferResponse, 0, len(transfers))
 	asset := transfers[0].Amount.Asset
-	// This is where we'll implement everything
+
+	var (
+		winidx               int
+		expectCollected      num.Decimal
+		expCollected         = num.Zero()
+		totalAmountCollected = num.Zero()
+	)
+
+	brokerEvts := make([]events.Event, 0, len(transfers))
+
 	settle, insurance, err := e.getSystemAccounts(marketID, asset)
-	if err != nil {
-		e.log.Error(
-			"Failed to get system accounts required for final settlement",
-			logging.Error(err),
-		)
-		return nil, err
-	}
-	// get the component that calculates the loss socialisation etc... if needed
-	for _, transfer := range transfers {
+
+	// process loses first
+	for i, transfer := range transfers {
+		if err != nil {
+			e.log.Error(
+				"Failed to get system accounts required for final settlement",
+				logging.Error(err),
+			)
+			return nil, err
+		}
+
+		if transfer == nil {
+			continue
+		}
+		if transfer.Type == types.TransferType_TRANSFER_TYPE_WIN {
+			// we processed all losses break then
+			winidx = i
+			break
+		}
+
 		req, err := e.getTransferRequest(ctx, transfer, settle, insurance, &marginUpdate{})
 		if err != nil {
 			e.log.Error(
@@ -461,6 +481,14 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 			)
 			return nil, err
 		}
+
+		// accumulate the expected transfer size
+		expCollected.AddSum(req.Amount)
+		expectCollected = expectCollected.Add(num.DecimalFromUint(req.Amount))
+		// doing a copy of the amount here, as the request is send to getLedgerEntries, which actually
+		// modifies it
+		requestAmount := req.Amount.Clone()
+
 		// set the amount (this can change the req.Amount value if we entered loss socialisation
 		res, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
@@ -470,6 +498,106 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 			)
 			return nil, err
 		}
+		amountCollected := num.Zero()
+
+		for _, bal := range res.Balances {
+			amountCollected.AddSum(bal.Balance)
+			if err := e.UpdateBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
+				e.log.Error(
+					"Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.Id),
+					logging.Error(err),
+				)
+				return nil, err
+			}
+		}
+		totalAmountCollected.AddSum(amountCollected)
+		responses = append(responses, res)
+
+		// Update to see how much we still need
+		requestAmount = requestAmount.Sub(requestAmount, amountCollected)
+		if transfer.Owner != types.NetworkParty {
+			// no error possible here, we're just reloading the accounts to ensure the correct balance
+			general, margin, _ := e.getMTMPartyAccounts(transfer.Owner, marketID, asset)
+			if totalInAccount := num.Sum(general.Balance, margin.Balance); totalInAccount.LT(requestAmount) {
+				delta := req.Amount.Sub(requestAmount, totalInAccount)
+				e.log.Warn("loss socialization missing amount to be collected or used from insurance pool",
+					logging.String("party-id", transfer.Owner),
+					logging.BigUint("amount", delta),
+					logging.String("market-id", settle.MarketId))
+
+				brokerEvts = append(brokerEvts,
+					events.NewLossSocializationEvent(ctx, transfer.Owner, marketID, delta, false, e.currentTime))
+			}
+		}
+	}
+
+	if len(brokerEvts) > 0 {
+		e.broker.SendBatch(brokerEvts)
+	}
+
+	// if winidx is 0, this means we had now win and loss, but may have some event which
+	// needs to be propagated forward so we return now.
+	if winidx == 0 {
+		if !settle.Balance.IsZero() {
+			return nil, ErrSettlementBalanceNotZero
+		}
+		return responses, nil
+	}
+
+	// now compare what's in the settlement account what we expect initially to redistribute.
+	// if there's not enough we enter loss socialization
+	distr := simpleDistributor{
+		log:             e.log,
+		marketID:        marketID,
+		expectCollected: expCollected,
+		collected:       totalAmountCollected,
+		requests:        make([]request, 0, len(transfers)-winidx),
+		ts:              e.currentTime,
+	}
+
+	if distr.LossSocializationEnabled() {
+		e.log.Warn("Entering loss socialization on final settlement",
+			logging.String("market-id", marketID),
+			logging.String("asset", asset),
+			logging.BigUint("expect-collected", expCollected),
+			logging.BigUint("collected", settle.Balance))
+		for _, transfer := range transfers[winidx:] {
+			if transfer != nil && transfer.Type == types.TransferType_TRANSFER_TYPE_WIN {
+				distr.Add(transfer)
+			}
+		}
+		if evts := distr.Run(ctx); len(evts) != 0 {
+			e.broker.SendBatch(evts)
+		}
+	}
+
+	// then we process all the wins
+	for _, transfer := range transfers[winidx:] {
+		if transfer == nil {
+			continue
+		}
+
+		req, err := e.getTransferRequest(ctx, transfer, settle, insurance, &marginUpdate{})
+		if err != nil {
+			e.log.Error(
+				"Failed to build transfer request for event",
+				logging.Error(err),
+			)
+			return nil, err
+		}
+
+		// set the amount (this can change the req.Amount value if we entered loss socialisation
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Error(
+				"Failed to transfer funds",
+				logging.Error(err),
+			)
+			return nil, err
+		}
+
+		// update the to accounts now
 		for _, bal := range res.Balances {
 			if err := e.UpdateBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
 				e.log.Error(
@@ -482,6 +610,11 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		}
 		responses = append(responses, res)
 	}
+
+	if !settle.Balance.IsZero() {
+		return nil, ErrSettlementBalanceNotZero
+	}
+
 	return responses, nil
 }
 

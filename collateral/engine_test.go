@@ -44,7 +44,6 @@ func TestCollateralTransfer(t *testing.T) {
 	t.Run("test collecting buys - both insurance and sufficient in trader accounts", testTransferLoss)
 	t.Run("test collecting buys - trader account not empty, but insufficient", testTransferComplexLoss)
 	t.Run("test collecting buys - trader missing some accounts", testTransferLossMissingTraderAccounts)
-	t.Run("test collecting sells - cases where settle account is full + where insurance pool is tapped", testDistributeWin)
 	t.Run("test collecting both buys and sells - Successfully collect buy and sell in a single call", testProcessBoth)
 	t.Run("test distribution insufficient funds - Transfer losses (partial), distribute wins pro-rate", testProcessBothProRated)
 	t.Run("test releas party margin account", testReleasePartyMarginAccount)
@@ -674,6 +673,7 @@ func testAddTrader(t *testing.T) {
 func testTransferLoss(t *testing.T) {
 	trader := "test-trader"
 	moneyTrader := "money-trader"
+
 	price := num.NewUint(1000)
 
 	eng := getTestEngine(t, testMarketID)
@@ -713,7 +713,7 @@ func testTransferLoss(t *testing.T) {
 				Amount: price,
 				Asset:  "BTC",
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	}
 
@@ -723,21 +723,30 @@ func testTransferLoss(t *testing.T) {
 	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
-	// total balance of settlement account should be 3 times price
+	// total balance of settlement account should be 2 times price
 	assert.Equal(t, num.Sum(price, price), num.Sum(resp.Balances[0].Balance, responses[1].Balances[0].Balance))
-	// there should be 2 ledger moves
+	// there should be 1 ledger moves
 	assert.Equal(t, 1, len(resp.Transfers))
 }
 
 func testTransferComplexLoss(t *testing.T) {
 	trader := "test-trader"
+	moneyTrader := "money-trader"
 	half := num.NewUint(500)
 	price := num.Sum(half, half)
 
 	eng := getTestEngine(t, testMarketID)
 	defer eng.Finish()
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(10)
+
+	_, _ = eng.CreatePartyGeneralAccount(context.Background(), moneyTrader, testMarketAsset)
+	marginMoneyTrader, err := eng.Engine.CreatePartyMarginAccount(context.Background(), moneyTrader, testMarketID, testMarketAsset)
+	assert.Nil(t, err)
+
+	err = eng.UpdateBalance(context.Background(), marginMoneyTrader, num.NewUint(100000))
+	assert.Nil(t, err)
+
 	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 	// 5x price
@@ -763,10 +772,19 @@ func testTransferComplexLoss(t *testing.T) {
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
+		{
+			Owner: moneyTrader,
+			Amount: &types.FinancialAmount{
+				Asset:  "BTC",
+				Amount: price,
+			},
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
+		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
-	assert.Equal(t, 1, len(responses))
+	assert.Equal(t, 2, len(responses))
 	resp := responses[0]
 	assert.NoError(t, err)
 	// total balance should equal price (only 1 call after all)
@@ -797,84 +815,6 @@ func testTransferLossMissingTraderAccounts(t *testing.T) {
 	assert.Nil(t, resp)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "account does not exist:")
-}
-
-func testDistributeWin(t *testing.T) {
-	trader := "test-trader"
-	moneyTrader := "money-trader"
-	price := num.NewUint(1000)
-
-	eng := getTestEngine(t, testMarketID)
-	defer eng.Finish()
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
-	assert.Nil(t, err)
-	err = eng.UpdateBalance(context.Background(), insurancePool.Id, price)
-	assert.Nil(t, err)
-
-	// set settlement account
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err = eng.Engine.IncrementBalance(context.Background(), eng.marketSettlementID, num.Sum(price, price))
-	assert.Nil(t, err)
-
-	// create trader accounts, add balance for money trader
-	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
-	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
-	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
-	assert.Nil(t, err)
-
-	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), moneyTrader, testMarketAsset)
-	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), moneyTrader, testMarketID, testMarketAsset)
-	assert.Nil(t, err)
-	// err = eng.Engine.IncrementBalance(context.Background(), marginMoneyTrader, price*5)
-	// assert.Nil(t, err)
-
-	// now the positions
-	pos := []*types.Transfer{
-		{
-			Owner: trader,
-			Amount: &types.FinancialAmount{
-				Amount: price,
-				Asset:  "BTC",
-			},
-			Type: types.TransferType_TRANSFER_TYPE_WIN,
-		},
-		{
-			Owner: moneyTrader,
-			Amount: &types.FinancialAmount{
-				Amount: price,
-				Asset:  "BTC",
-			},
-			Type: types.TransferType_TRANSFER_TYPE_WIN,
-		},
-	}
-
-	brokerExpMoneyBalance := price
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		if acc.Owner == trader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			assert.Equal(t, price.Uint64(), acc.Balance)
-		}
-		if acc.Owner == moneyTrader && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
-			assert.Equal(t, brokerExpMoneyBalance.Uint64(), acc.Balance)
-			brokerExpMoneyBalance = num.Zero().Add(brokerExpMoneyBalance, price)
-		}
-	})
-	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
-	assert.Equal(t, 2, len(responses))
-	resp := responses[0]
-	assert.NoError(t, err)
-	// total balance of settlement account should be 3 times price
-	for _, bal := range resp.Balances {
-		if bal.Account.Type == types.AccountType_ACCOUNT_TYPE_SETTLEMENT {
-			assert.Zero(t, bal.Account.Balance)
-		}
-	}
-	// there should be 3 ledger moves -> settle to trader 1, settle to trader 2, insurance to trader 2
-	assert.Equal(t, 1, len(resp.Transfers))
 }
 
 func testProcessBoth(t *testing.T) {
@@ -963,6 +903,85 @@ func testProcessBoth(t *testing.T) {
 	// resp = responses[1]
 	// there should be 3 ledger moves -> settle to trader 1, settle to trader 2, insurance to trader 2
 	assert.Equal(t, 1, len(responses[1].Transfers))
+}
+
+func TestLossSocialization(t *testing.T) {
+	eng := getTestEngine(t, testMarketID)
+	defer eng.Finish()
+	lossTrader1 := "losstrader1"
+	lossTrader2 := "losstrader2"
+	winTrader1 := "wintrader1"
+	winTrader2 := "wintrader2"
+
+	// create traders
+	eng.broker.EXPECT().Send(gomock.Any()).Times(18)
+	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), lossTrader1, testMarketAsset)
+	margin, err := eng.Engine.CreatePartyMarginAccount(context.Background(), lossTrader1, testMarketID, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), margin, num.NewUint(500))
+	assert.Nil(t, err)
+	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), lossTrader2, testMarketAsset)
+	margin, err = eng.Engine.CreatePartyMarginAccount(context.Background(), lossTrader2, testMarketID, testMarketAsset)
+	eng.Engine.IncrementBalance(context.Background(), margin, num.NewUint(1100))
+	assert.Nil(t, err)
+	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), winTrader1, testMarketAsset)
+	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), winTrader1, testMarketID, testMarketAsset)
+	// eng.Engine.IncrementBalance(context.Background(), margin, 0)
+	assert.Nil(t, err)
+	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), winTrader2, testMarketAsset)
+	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), winTrader2, testMarketID, testMarketAsset)
+	// eng.Engine.IncrementBalance(context.Background(), margin, 700)
+	assert.Nil(t, err)
+
+	transfers := []*types.Transfer{
+		{
+			Owner: lossTrader1,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(700),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+		},
+		{
+			Owner: lossTrader2,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1400),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+		},
+		{
+			Owner: winTrader1,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1400),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
+		},
+		{
+			Owner: winTrader2,
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(700),
+				Asset:  testMarketAsset,
+			},
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
+		},
+	}
+
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(evt events.Event) {
+		ae, ok := evt.(accEvt)
+		assert.True(t, ok)
+		acc := ae.Account()
+		if acc.Owner == winTrader1 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
+			assert.Equal(t, uint64(1066), acc.Balance)
+		}
+		if acc.Owner == winTrader2 && acc.Type == types.AccountType_ACCOUNT_TYPE_MARGIN {
+			assert.Equal(t, uint64(534), acc.Balance)
+		}
+	})
+	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers)
+	assert.NoError(t, err)
+	assert.Equal(t, 4, len(raw))
 }
 
 func testSettleBalanceNotZero(t *testing.T) {
@@ -1088,6 +1107,7 @@ func testProcessBothProRated(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
 	assert.Equal(t, 4, len(responses))
 	assert.NoError(t, err)
@@ -1594,12 +1614,21 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
+		{
+			Owner: "testTrader",
+			Amount: &types.FinancialAmount{
+				Amount: num.Zero().Mul(amount, num.NewUint(100)),
+				Asset:  "BTC",
+			},
+			Type: types.TransferType_TRANSFER_TYPE_WIN,
+		},
 	}
 
+	eng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(responses))
+	assert.Equal(t, 2, len(responses))
 }
 
 func TestGetPartyMarginNoAccounts(t *testing.T) {
