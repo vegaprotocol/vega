@@ -9,7 +9,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TradersShouldHaveTheFollowingAccountBalances(
+func PartiesShouldHaveTheFollowingAccountBalances(
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {

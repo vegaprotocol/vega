@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-func TradersDepositTheFollowingAssets(
+func PartiesDepositTheFollowingAssets(
 	collateralEngine *collateral.Engine,
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,

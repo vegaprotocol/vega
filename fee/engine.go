@@ -301,7 +301,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		transfers        = []*types.Transfer{}
 	)
 
-	// first calculate the share of all distressedTraders
+	// first calculate the share of all distressedParties
 	for _, v := range closedMPs {
 		var size = v.Size()
 		if size < 0 {

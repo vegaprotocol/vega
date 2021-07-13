@@ -9,7 +9,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersWithdrawTheFollowingAssets(
+func PartiesWithdrawTheFollowingAssets(
 	collateral *collateral.Engine,
 	table *gherkin.DataTable,
 ) error {

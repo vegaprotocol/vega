@@ -21,7 +21,7 @@ func (o OrderAmendmentError) Error() string {
 	return fmt.Sprintf("%v: %v", o.OrderAmendment, o.Err)
 }
 
-func TradersAmendTheFollowingOrders(
+func PartiesAmendTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
 	table *gherkin.DataTable,

@@ -11,7 +11,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersCancelAllTheirOrdersForTheMarkets(
+func PartiesCancelAllTheirOrdersForTheMarkets(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
 	table *gherkin.DataTable,

@@ -10,7 +10,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersCancelTheFollowingOrders(
+func PartiesCancelTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
 	table *gherkin.DataTable,

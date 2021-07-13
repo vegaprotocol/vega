@@ -1412,7 +1412,7 @@ func (m *Market) confirmMTM(
 			m.broker.Send(events.NewTransferResponse(ctx, transfers))
 		}
 		if len(closed) > 0 {
-			orderUpdates, err = m.resolveClosedOutTraders(ctx, closed, order)
+			orderUpdates, err = m.resolveClosedOutParties(ctx, closed, order)
 			if err != nil {
 				m.log.Error("unable to close out traders",
 					logging.String("market-id", m.GetID()),
@@ -1445,15 +1445,15 @@ func (m *Market) getLiquidityFee() num.Decimal {
 	return m.mkt.Fees.Factors.LiquidityFee
 }
 
-// resolveClosedOutTraders - the traders with the given market position who haven't got sufficient collateral
+// resolveClosedOutParties - the traders with the given market position who haven't got sufficient collateral
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
 // pass in the order which caused traders to be distressed
-func (m *Market) resolveClosedOutTraders(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order) ([]*types.Order, error) {
+func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order) ([]*types.Order, error) {
 	if len(distressedMarginEvts) == 0 {
 		return nil, nil
 	}
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "resolveClosedOutTraders")
+	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "resolveClosedOutParties")
 	defer timer.EngineTimeCounterAdd()
 
 	// this is going to be run after the the close out routines

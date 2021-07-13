@@ -129,28 +129,28 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TimeIsUpdatedTo(execsetup.timeService, rawTime)
 	})
 	s.Step(`^the traders cancel the following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
+		return steps.PartiesCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders cancel all their orders for the markets:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersCancelAllTheirOrdersForTheMarkets(execsetup.broker, execsetup.executionEngine, table)
+		return steps.PartiesCancelAllTheirOrdersForTheMarkets(execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders amend the following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersAmendTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
+		return steps.PartiesAmendTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders place the following pegged orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceTheFollowingPeggedOrders(execsetup.executionEngine, table)
+		return steps.PartiesPlaceTheFollowingPeggedOrders(execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders deposit on asset's general account the following amount:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
+		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
 	})
 	s.Step(`^the traders withdraw the following assets:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersWithdrawTheFollowingAssets(execsetup.collateralEngine, table)
+		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, table)
 	})
 	s.Step(`^the traders place the following orders:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersPlaceTheFollowingOrders(execsetup.executionEngine, table)
+		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, table)
 	})
 	s.Step(`^the traders submit the following liquidity provision:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersSubmitLiquidityProvision(execsetup.executionEngine, table)
+		return steps.PartiesSubmitLiquidityProvision(execsetup.executionEngine, table)
 	})
 	s.Step(`^the opening auction period ends for market "([^"]+)"$`, func(marketID string) error {
 		return steps.MarketOpeningAuctionPeriodEnds(execsetup.timeService, execsetup.markets, marketID)
@@ -176,13 +176,13 @@ func FeatureContext(s *godog.Suite) {
 
 	// Assertion steps
 	s.Step(`^the traders should have the following account balances:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersShouldHaveTheFollowingAccountBalances(execsetup.broker, table)
+		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.broker, table)
 	})
 	s.Step(`^the traders should have the following margin levels:$`, func(table *gherkin.DataTable) error {
-		return steps.TheTradersShouldHaveTheFollowingMarginLevels(execsetup.broker, table)
+		return steps.ThePartiesShouldHaveTheFollowingMarginLevels(execsetup.broker, table)
 	})
 	s.Step(`^the traders should have the following profit and loss:$`, func(table *gherkin.DataTable) error {
-		return steps.TradersHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
+		return steps.PartiesHaveTheFollowingProfitAndLoss(execsetup.positionPlugin, table)
 	})
 	s.Step(`^the order book should have the following volumes for market "([^"]*)":$`, func(marketID string, table *gherkin.DataTable) error {
 		return steps.TheOrderBookOfMarketShouldHaveTheFollowingVolumes(execsetup.broker, marketID, table)

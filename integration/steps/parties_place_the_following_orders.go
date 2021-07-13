@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-func TradersPlaceTheFollowingOrders(
+func PartiesPlaceTheFollowingOrders(
 	exec *execution.Engine,
 	table *gherkin.DataTable,
 ) error {

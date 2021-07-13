@@ -406,7 +406,7 @@ func (m *Market) cancelDistressedLiquidityProvision(
 			logging.Error(perr))
 		return nil, perr
 	}
-	orderUpdates, err := m.resolveClosedOutTraders(
+	orderUpdates, err := m.resolveClosedOutParties(
 		ctx, []events.Margin{margin}, order)
 	if err != nil {
 		m.log.Error("could not resolve out traders",

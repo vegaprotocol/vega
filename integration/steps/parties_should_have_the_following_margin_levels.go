@@ -9,7 +9,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheTradersShouldHaveTheFollowingMarginLevels(
+func ThePartiesShouldHaveTheFollowingMarginLevels(
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {

@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-func TradersHaveTheFollowingProfitAndLoss(
+func PartiesHaveTheFollowingProfitAndLoss(
 	positionService *plugins.Positions,
 	table *gherkin.DataTable,
 ) error {

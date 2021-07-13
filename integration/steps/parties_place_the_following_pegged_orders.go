@@ -9,7 +9,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *gherkin.DataTable) error {
+func PartiesPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *gherkin.DataTable) error {
 	for _, r := range parseSubmitPeggedOrderTable(table) {
 		row := submitPeggedOrderRow{row: r}
 
