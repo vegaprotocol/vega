@@ -14,14 +14,14 @@ Feature: Amend orders
 
   Scenario: Amend rejected for non existing order
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
       | aux    | BTC   | 100000 |
       | aux2   | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -30,22 +30,22 @@ Feature: Amend orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # cancel the order, so we cannot edit it.
-    And the traders cancel the following orders:
+    And the parties cancel the following orders:
       | trader | reference   |
       | myboi  | myboi-ref-1 |
 
-    Then the traders amend the following orders:
+    Then the parties amend the following orders:
       | trader | reference   | price | size delta | tif     | error                        |
       | myboi  | myboi-ref-1 | 2     | 3          | TIF_GTC | OrderError: Invalid Order ID |
 
   Scenario: Reduce size success and not loosing position in order book
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
       | myboi2 | BTC   | 10000  |
@@ -54,7 +54,7 @@ Feature: Amend orders
       | aux2   | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -63,19 +63,19 @@ Feature: Amend orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
       | myboi2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
-    Then the traders amend the following orders:
+    Then the parties amend the following orders:
       | trader | reference   | price | size delta | tif     |
       | myboi  | myboi-ref-1 | 0     | -2         | TIF_GTC |
 
 # matching the order now
 # this should match with the size 3 order of myboi
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  | 3      | 2     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
@@ -85,7 +85,7 @@ Feature: Amend orders
 
   Scenario: Increase size success and loosing position in order book
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
       | myboi2 | BTC   | 10000  |
@@ -94,7 +94,7 @@ Feature: Amend orders
       | aux2   | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -103,19 +103,19 @@ Feature: Amend orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
       | myboi2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # reducing size
-    And the traders amend the following orders:
+    And the parties amend the following orders:
       | trader | reference   | price | size delta | tif     |
       | myboi  | myboi-ref-1 | 0     | 3          | TIF_GTC |
 
 # matching the order now
 # this should match with the size 3 order of myboi
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  | 3      | 2     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
     Then the following trades should be executed:
@@ -124,7 +124,7 @@ Feature: Amend orders
 
   Scenario: Reduce size success and order cancelled as  < to remaining
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
       | myboi2 | BTC   | 10000  |
@@ -133,7 +133,7 @@ Feature: Amend orders
       | aux2   | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -142,19 +142,19 @@ Feature: Amend orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
       | myboi2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-2 |
 
 # matching the order now
 # this will reduce the remaining to 2 so it get cancelled later on
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi3 | ETH/DEC19 | buy  | 3      | 2     | 1                | TYPE_LIMIT | TIF_GTC | myboi-ref-3 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
-    Then the traders amend the following orders:
+    Then the parties amend the following orders:
       | trader | reference   | price | size delta | tif     |
       | myboi  | myboi-ref-1 | 0     | -3         | TIF_GTC |
 
@@ -165,14 +165,14 @@ Feature: Amend orders
 
   Scenario: Amend to invalid tif is rejected
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
       | aux    | BTC   | 100000 |
       | aux2   | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -181,48 +181,48 @@ Feature: Amend orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 
 # cannot amend TIF to TIF_FOK so this will be rejected
-    Then the traders amend the following orders:
+    Then the parties amend the following orders:
       | trader | reference   | price | size delta | tif     | error                                      |
       | myboi  | myboi-ref-1 | 0     | 0          | TIF_FOK | OrderError: Cannot amend TIF to FOK or IOC |
 
   Scenario: TIF_GTC to TIF_GTT rejected without expiry
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
       | aux    | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # TIF_GTT rejected because of missing expiration date
-    Then the traders amend the following orders:
+    Then the parties amend the following orders:
       | trader | reference   | price | size delta | tif     | error                                                           |
       | myboi  | myboi-ref-1 | 0     | 0          | TIF_GTT | OrderError: Cannot amend order to GTT without an expiryAt field |
 
   Scenario: TIF_GTC to TIF_GTT with time in the past
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount |
       | myboi  | BTC   | 10000  |
       | aux    | BTC   | 100000 |
       | aux2   | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -231,11 +231,11 @@ Feature: Amend orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | myboi  | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | myboi-ref-1 |
 
 # reducing size, remaining goes from 2 to -1, this will cancel
-    Then the traders amend the following orders:
+    Then the parties amend the following orders:
       | trader | reference   | price | expiration date      | size delta | tif     |
       | myboi  | myboi-ref-1 | 2     | 2030-11-30T00:00:00Z | 0          | TIF_GTT |

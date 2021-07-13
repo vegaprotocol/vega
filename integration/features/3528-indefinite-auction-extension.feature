@@ -26,7 +26,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
-    And the traders deposit on asset's general account the following amount:
+    And the parties deposit on asset's general account the following amount:
       | trader  | asset | amount     |
       | trader0 | ETH   | 1000000000 |
       | trader1 | ETH   | 100000000  |
@@ -39,14 +39,14 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
   Scenario: Enter liquidity auction, extended by trades at liq. auction end, single trade -> single extension
 
-    Given the traders submit the following liquidity provision:
+    Given the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -64,7 +64,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      | 1000         | 700            | 10            | 1           |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     |
@@ -78,14 +78,14 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      | 1000         | 800            | 10            | 2           |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      |
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -98,7 +98,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      | 1000         | 801            | 10            | 2           |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
@@ -112,7 +112,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 10000          | 10            | 302         |
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 10     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 20     | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -123,7 +123,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1030      | 1000         | 10000          | 10            | 302         |
 
   # place some more orders out of bounds
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 10     | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 20     | 1039  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -135,14 +135,14 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
   Scenario: Enter liquidity auction, extended by trades at liq. auction end, multiple trades -> still a single extension
 
-    Given the traders submit the following liquidity provision:
+    Given the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -160,7 +160,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      | 1000         | 700            | 10            | 1           |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     |
@@ -174,14 +174,14 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      | 1000         | 800            | 10            | 2           |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | trader0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      |
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -194,7 +194,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      | 1000         | 801            | 10            | 2           |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
@@ -208,7 +208,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 10000          | 10            | 302         |
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 5      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC21 | buy  | 3      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -223,7 +223,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 10000          | 10            | 302         |
 
   # place some more orders out of bounds
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 5      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC21 | buy  | 3      | 1041  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -242,14 +242,14 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8 |
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -267,14 +267,14 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      | 1000         | 700            | 10            | 1           |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | trader0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC21 | buy  | 5      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC21 | buy  | 3      | 1040  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -297,7 +297,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | mark price | trading mode                    | auction trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
       | 1000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1       | 990       | 1010      | 1000         | 700            | 10            | 3           |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | trader0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |

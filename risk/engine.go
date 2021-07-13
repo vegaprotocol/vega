@@ -174,7 +174,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		return nil, nil
 	}
 	revts := make([]events.Risk, 0, len(evts))
-	// traders with insufficient margin to meet required level, return the event passed as arg
+	// parties with insufficient margin to meet required level, return the event passed as arg
 	low := []events.Margin{}
 	eventBatch := make([]events.Event, 0, len(evts))
 	// for now, we can assume a single asset for all events
@@ -396,7 +396,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 	return ret
 }
 
-// ExpectMargins is used in the case some traders are in a distressed positions
+// ExpectMargins is used in the case some parties are in a distressed positions
 // in this situation we will only check if the trader margin is > to the maintenance margin
 func (e *Engine) ExpectMargins(
 	evts []events.Margin, markPrice *num.Uint,

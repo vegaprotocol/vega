@@ -19,7 +19,7 @@ Feature: Price monitoring test for issue 2668
       | prices.ETH.value | 42    |
 
   Scenario: Upper bound breached
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader    | asset | amount       |
       | trader1   | ETH   | 10000000000  |
       | trader2   | ETH   | 10000000000  |
@@ -27,7 +27,7 @@ Feature: Price monitoring test for issue 2668
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -36,7 +36,7 @@ Feature: Price monitoring test for issue 2668
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -45,7 +45,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 4850000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -54,7 +54,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 6630000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 6630000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -63,7 +63,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -88,7 +88,7 @@ Feature: Price monitoring test for issue 2668
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
   Scenario: Lower bound breached
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader    | asset | amount       |
       | trader1   | ETH   | 10000000000  |
       | trader2   | ETH   | 10000000000  |
@@ -96,7 +96,7 @@ Feature: Price monitoring test for issue 2668
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -105,7 +105,7 @@ Feature: Price monitoring test for issue 2668
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 5670000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 5670000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -114,7 +114,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 4850000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -123,7 +123,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 6630000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 6630000 | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -132,7 +132,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -156,7 +156,7 @@ Feature: Price monitoring test for issue 2668
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
   Scenario: Upper bound breached (scale prices down by 10000)
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader    | asset | amount       |
       | trader1   | ETH   | 10000000000  |
       | trader2   | ETH   | 10000000000  |
@@ -164,7 +164,7 @@ Feature: Price monitoring test for issue 2668
       | aux2      | ETH   | 100000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader    | market id | side | volume | price    | resulting trades | type       | tif     |
       | auxiliary | ETH/DEC20 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
       | auxiliary | ETH/DEC20 | sell | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -173,7 +173,7 @@ Feature: Price monitoring test for issue 2668
     Then the opening auction period ends for market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 567   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 567   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -182,7 +182,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 485   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 485   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -191,7 +191,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 663   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 663   | 1                | TYPE_LIMIT | TIF_FOK | ref-2     |
@@ -200,7 +200,7 @@ Feature: Price monitoring test for issue 2668
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC20 | sell | 1      | 665   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader2 | ETH/DEC20 | buy  | 1      | 665   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |

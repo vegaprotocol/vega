@@ -14,7 +14,7 @@ Feature: Test market depth events for pegged orders (with BID and ASK price)
 
   Scenario: Ensure the expect order events for pegged orders are produced for all references
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader           | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |
       | buySideProvider  | BTC   | 100000000 |
@@ -25,7 +25,7 @@ Feature: Test market depth events for pegged orders (with BID and ASK price)
       | aux              | BTC   | 100000000 |
       | aux2             | BTC   | 100000000 |
 # setup pegged orders
-    Then the traders place the following pegged orders:
+    Then the parties place the following pegged orders:
       | trader  | market id | side | volume | pegged reference | offset |
       | pegged1 | ETH/DEC19 | sell | 5      | ASK              | 10     |
       | pegged2 | ETH/DEC19 | sell | 5      | MID              | 15     |
@@ -39,7 +39,7 @@ Feature: Test market depth events for pegged orders (with BID and ASK price)
       | pegged4 | ETH/DEC19 | buy  | 5      | MID       | -10    | 0     | STATUS_PARKED |
 # keep things simple: remove the events we've just verified
     And clear order events
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |

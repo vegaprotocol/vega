@@ -147,7 +147,7 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		sellerSize = cd[len(cd)-1].newSize
 	}
 	size := int64(trade.Size)
-	// the traders both need to get a MTM settlement on the traded volume
+	// the parties both need to get a MTM settlement on the traded volume
 	// and this MTM part has to be based on the _actual_ trade value
 	price := trade.Price.Clone()
 	e.trades[trade.Buyer] = append(e.trades[trade.Buyer], &pos{
@@ -267,7 +267,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 	return transfers
 }
 
-// RemoveDistressed - remove whatever settlement data we have for distressed traders
+// RemoveDistressed - remove whatever settlement data we have for distressed parties
 // they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
 func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	devts := make([]events.Event, 0, len(evts))
@@ -304,9 +304,9 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 		return nil, err
 	}
 
-	// there should be as many positions as there are traders (obviously)
+	// there should be as many positions as there are parties (obviously)
 	aggregated := make([]*types.Transfer, 0, len(e.pos))
-	// traders who are in profit should be appended (collect first).
+	// parties who are in profit should be appended (collect first).
 	// The split won't always be 50-50, but it's a reasonable approximation
 	owed := make([]*types.Transfer, 0, len(e.pos)/2)
 	for party, pos := range e.pos {
@@ -318,7 +318,7 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 		// @TODO - there was something here... the final amount had to be oracle - market or something
 		// check with Tamlyn why that was, because we're only handling open positions here...
 		amt, neg, err := settleProd.Settle(pos.price, pos.size)
-		// for now, product.Settle returns the total value, we need to only settle the delta between a traders current position
+		// for now, product.Settle returns the total value, we need to only settle the delta between a parties current position
 		// and the final price coming from the oracle, so oracle_price - mark_price * volume (check with Tamlyn whether this should be absolute or not)
 		if err != nil {
 			e.log.Error(
@@ -347,7 +347,7 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 			owed = append(owed, settlePos)
 		}
 	}
-	// append the traders in profit to the end
+	// append the parties in profit to the end
 	aggregated = append(aggregated, owed...)
 	e.mu.Unlock()
 	return aggregated, nil

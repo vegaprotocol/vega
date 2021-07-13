@@ -35,7 +35,7 @@ Feature: Target stake
 
   Scenario: Max open interest changes over time
     # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount    |
       | tt_0   | BTC   | 100000000 |
       | tt_1   | BTC   | 100000000 |
@@ -44,7 +44,7 @@ Feature: Target stake
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_0   | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | tt_0_0    |
       | tt_0   | ETH/DEC21 | sell | 1000   | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_0_1    |
@@ -54,7 +54,7 @@ Feature: Target stake
     Then the mark price should be "0" for the market "ETH/DEC21"
 
     # Traders 1, 2, 3 go long
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_1   | ETH/DEC21 | buy  | 10     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
       | tt_2   | ETH/DEC21 | buy  | 20     | 110   | 0                | TYPE_LIMIT | TIF_GTC | tt_2_0    |
@@ -62,7 +62,7 @@ Feature: Target stake
 
     Then the opening auction period ends for market "ETH/DEC21"
 
-    # So now traders 1,2,3 are long 10+20+30 = 60.
+    # So now parties 1,2,3 are long 10+20+30 = 60.
     Then the mark price should be "110" for the market "ETH/DEC21"
 
     # Target stake is mark_price x max_oi x target_stake_scaling_factor x rf_short
@@ -74,7 +74,7 @@ Feature: Target stake
     When time is updated to "2021-03-08T01:00:00Z"
 
     # Trader 3 closes out 20
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3   | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 

@@ -56,7 +56,7 @@ func TestCollateralMarkToMarket(t *testing.T) {
 }
 
 func TestAddTraderToMarket(t *testing.T) {
-	t.Run("Successful calls adding new traders (one duplicate, one actual new)", testAddTrader)
+	t.Run("Successful calls adding new parties (one duplicate, one actual new)", testAddTrader)
 	t.Run("Can add a trader margin account if general account for asset exists", testAddMarginAccount)
 	t.Run("Fail add trader margin account if no general account for asset exisrts", testAddMarginAccountFail)
 }
@@ -1710,7 +1710,7 @@ func TestMTMLossSocialization(t *testing.T) {
 	winTrader1 := "wintrader1"
 	winTrader2 := "wintrader2"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(18)
 	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), lossTrader1, testMarketAsset)
 	margin, err := eng.Engine.CreatePartyMarginAccount(context.Background(), lossTrader1, testMarketID, testMarketAsset)
@@ -1788,7 +1788,7 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -1829,7 +1829,7 @@ func testMarginUpdateOnOrderOKNotShortFallWithBondAccount(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -1872,7 +1872,7 @@ func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	genaccID, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), genaccID, num.Zero())
@@ -1924,7 +1924,7 @@ func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	genaccID, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), genaccID, num.NewUint(70))
@@ -1986,7 +1986,7 @@ func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -2056,7 +2056,7 @@ func testMarginUpdateOnOrderFail(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), trader, testMarketID, testMarketAsset)
@@ -2088,7 +2088,7 @@ func TestMarginUpdates(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -2123,7 +2123,7 @@ func TestClearMarket(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(9)
 
 	eng.Engine.IncrementBalance(context.Background(), eng.marketInsuranceID, num.NewUint(1000))
@@ -2150,7 +2150,7 @@ func TestClearMarketNoMargin(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -2168,7 +2168,7 @@ func TestWithdrawalOK(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -2214,7 +2214,7 @@ func TestWithdrawalExact(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -2258,7 +2258,7 @@ func TestWithdrawalNotEnough(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -2275,7 +2275,7 @@ func TestWithdrawalInvalidAccount(t *testing.T) {
 	defer eng.Finish()
 	trader := "oktrader"
 
-	// create traders
+	// create parties
 	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	acc, _ := eng.Engine.CreatePartyGeneralAccount(context.Background(), trader, testMarketAsset)
 	eng.Engine.IncrementBalance(context.Background(), acc, num.NewUint(500))
@@ -2404,7 +2404,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	err = eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
-	// create market and traders used for tests
+	// create market and parties used for tests
 	insID, setID, err := eng.CreateMarketAccounts(context.Background(), testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 

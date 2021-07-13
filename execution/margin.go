@@ -88,7 +88,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	// 1. Get the price
 	price := m.getMarkPrice(order)
 	// m.log.Infof("calculating margins at %d for order at price %d", price, order.Price)
-	// 2. Get all positions - we have to update margins for all traders on the book so nobody can get distressed when we eventually do uncross
+	// 2. Get all positions - we have to update margins for all parties on the book so nobody can get distressed when we eventually do uncross
 	allPos := m.position.Positions()
 	// 3. get the asset and ID for this market
 	asset, _ := m.mkt.GetAsset()
@@ -129,7 +129,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	// 6. Attempt margin updates where possible. If position is to be closed, append it to the closed slice we already have
 	riskTransfers := make([]events.Risk, 0, len(risk))
 	for _, ru := range risk {
-		// skip the traders with a shortfall/distressed
+		// skip the parties with a shortfall/distressed
 		if _, ok := distressed[ru.Party()]; ok {
 			continue
 		}

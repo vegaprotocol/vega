@@ -243,10 +243,10 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	return ret
 }
 
-// RemoveDistressed Removes positions for distressed traders, and returns the most up to date positions we have
-func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.MarketPosition {
-	ret := make([]events.MarketPosition, 0, len(traders))
-	for _, trader := range traders {
+// RemoveDistressed Removes positions for distressed parties, and returns the most up to date positions we have
+func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
+	ret := make([]events.MarketPosition, 0, len(parties))
+	for _, trader := range parties {
 		e.log.Warn("removing trader from positions engine",
 			logging.String("party-id", trader.Party()))
 

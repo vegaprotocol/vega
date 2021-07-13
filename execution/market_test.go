@@ -548,8 +548,8 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	closingAt := time.Unix(20, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	defer tm.ctrl.Finish()
-	// add 2 traders to the party engine
-	// this will create 2 traders, credit their account
+	// add 2 parties to the party engine
+	// this will create 2 parties, credit their account
 	// and move some monies to the market
 	// this will also output the close accounts
 	addAccount(tm, party1)
@@ -620,8 +620,8 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	defer tm.ctrl.Finish()
-	// add 2 traders to the party engine
-	// this will create 2 traders, credit their account
+	// add 2 parties to the party engine
+	// this will create 2 parties, credit their account
 	// and move some monies to the market
 	addAccount(tm, party1)
 
@@ -663,8 +663,8 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 		Duration: 1,
 	})
 	defer tm.ctrl.Finish()
-	// add 2 traders to the party engine
-	// this will create 2 traders, credit their account
+	// add 2 parties to the party engine
+	// this will create 2 parties, credit their account
 	// and move some monies to the market
 	addAccountWithAmount(tm, party1, 0)
 	addAccountWithAmount(tm, party2, 1000000)

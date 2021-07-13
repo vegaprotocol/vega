@@ -9,9 +9,9 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | name             | value |
       | prices.ETH.value | 100   |
 
-  Scenario: set up 2 traders with balance
+  Scenario: set up 2 parties with balance
     # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader  | asset | amount    |
       | trader1 | BTC   | 100000000 |
       | trader2 | BTC   | 100000000 |
@@ -19,7 +19,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader4 | BTC   | 100000000 |
 
     # place orders and generate trades
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
       | trader4 | ETH/DEC19 | sell | 1      | 11000 | 0                | TYPE_LIMIT | TIF_GTC | t4-s-1    |
@@ -29,24 +29,24 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader2 | ETH/DEC19 | sell | 5      | 10001 | 0                | TYPE_LIMIT | TIF_GFA | t2-s-2    |
       | trader1 | ETH/DEC19 | buy  | 4      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t1-b-3    |
       | trader2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
-    Then the traders should have the following margin levels:
+    Then the parties should have the following margin levels:
       | trader  | market id | maintenance | search | initial | release |
       | trader1 | ETH/DEC19 | 25200       | 27720  | 30240   | 65520   |
       | trader2 | ETH/DEC19 | 23900       | 26290  | 28680   | 57460   |
       # values before uint stuff
       #| trader1 | ETH/DEC19 | 25201       | 27721  | 30241   | 65521   |
       #| trader2 | ETH/DEC19 | 23899       | 26289  | 28679   | 57458   |
-    Then the traders should have the following account balances:
+    Then the parties should have the following account balances:
       | trader  | asset | market id | margin | general  |
       | trader1 | BTC   | ETH/DEC19 | 30240  | 99969760 |
       | trader2 | BTC   | ETH/DEC19 | 28680  | 99971320 |
       # values before uint
       #| trader1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
-    When the traders withdraw the following assets:
+    When the parties withdraw the following assets:
       | trader  | asset | amount   |
       | trader1 | BTC   | 99969760 |
       | trader2 | BTC   | 99971320 |
-    Then the traders should have the following account balances:
+    Then the parties should have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | BTC   | ETH/DEC19 | 30240  | 0       |
       | trader2 | BTC   | ETH/DEC19 | 28680  | 0       |
@@ -72,7 +72,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     And the following transfers should happen:
       | from    | to      | from account        | to account           | market id | amount | asset |
       | trader2 | trader2 | ACCOUNT_TYPE_MARGIN | ACCOUNT_TYPE_GENERAL | ETH/DEC19 | 9480   | BTC   |
-    Then the traders should have the following account balances:
+    Then the parties should have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader2 | BTC   | ETH/DEC19 | 19200  | 9480    |
       | trader1 | BTC   | ETH/DEC19 | 30240  | 0       |

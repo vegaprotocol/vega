@@ -1414,7 +1414,7 @@ func (m *Market) confirmMTM(
 		if len(closed) > 0 {
 			orderUpdates, err = m.resolveClosedOutParties(ctx, closed, order)
 			if err != nil {
-				m.log.Error("unable to close out traders",
+				m.log.Error("unable to close out parties",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
 			}
@@ -1445,10 +1445,10 @@ func (m *Market) getLiquidityFee() num.Decimal {
 	return m.mkt.Fees.Factors.LiquidityFee
 }
 
-// resolveClosedOutParties - the traders with the given market position who haven't got sufficient collateral
+// resolveClosedOutParties - the parties with the given market position who haven't got sufficient collateral
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
-// pass in the order which caused traders to be distressed
+// pass in the order which caused parties to be distressed
 func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order) ([]*types.Order, error) {
 	if len(distressedMarginEvts) == 0 {
 		return nil, nil
@@ -1487,10 +1487,10 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		distressedPos = append(distressedPos, v)
 		distressedParties = append(distressedParties, v.Party())
 	}
-	// cancel pending orders for traders
+	// cancel pending orders for parties
 	rmorders, err := m.matching.RemoveDistressedOrders(distressedPos)
 	if err != nil {
-		m.log.Panic("Failed to remove distressed traders from the orderbook",
+		m.log.Panic("Failed to remove distressed parties from the orderbook",
 			logging.Error(err),
 		)
 	}
@@ -1544,7 +1544,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 	closed := distressedMarginEvts // default behaviour (ie if rmorders is empty) is to close out all distressed positions we started out with
 
-	// we need to check margin requirements again, it's possible for traders to no longer be distressed now that their orders have been removed
+	// we need to check margin requirements again, it's possible for parties to no longer be distressed now that their orders have been removed
 	if len(rmorders) != 0 {
 		var okPos []events.Margin // need to declare this because we want to reassign closed
 		// now that we closed orders, let's run the risk engine again
@@ -1578,7 +1578,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		closedMPs = append(closedMPs, pos)
 	}
 	if networkPos == 0 {
-		m.log.Warn("Network positions is 0 after closing out traders, nothing more to do",
+		m.log.Warn("Network positions is 0 after closing out parties, nothing more to do",
 			logging.String("market-id", m.GetID()))
 		m.finalizePartiesCloseOut(ctx, closed, closedMPs)
 		return orderUpdates, nil
@@ -1623,7 +1623,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// in the book to 0 out the positions.
 	// in this case we will just return now, cutting off the position resolution
 	// this means that trader still being distressed will stay distressed,
-	// then when a new order is placed, the distressed traders will go again through positions resolution
+	// then when a new order is placed, the distressed parties will go again through positions resolution
 	// and if the volume of the book is acceptable, we will then process positions resolutions
 	if no.Remaining == no.Size {
 		return orderUpdates, ErrNotEnoughVolumeToZeroOutNetworkOrder
@@ -1703,7 +1703,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	_, responses, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
 	if m.log.GetLevel() == logging.DebugLevel {
 		m.log.Debug(
-			"ledger movements after MTM on traders who closed out distressed",
+			"ledger movements after MTM on parties who closed out distressed",
 			logging.Int("response-count", len(responses)),
 			logging.String("raw", fmt.Sprintf("%#v", responses)),
 		)
@@ -1775,7 +1775,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 	return nil
 }
 
-func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) {
+func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
@@ -1798,8 +1798,8 @@ func (m *Market) zeroOutNetwork(ctx context.Context, traders []events.MarketPosi
 		Timestamp: m.currentTime.UnixNano(),
 	}
 
-	tradeEvts := make([]events.Event, 0, len(traders))
-	for i, trader := range traders {
+	tradeEvts := make([]events.Event, 0, len(parties))
+	for i, trader := range parties {
 		tSide, nSide := types.Side_SIDE_SELL, types.Side_SIDE_SELL // one of them will have to sell
 		if trader.Size() < 0 {
 			tSide = types.Side_SIDE_BUY
@@ -1891,7 +1891,7 @@ func (m *Market) checkMarginForOrder(ctx context.Context, pos *positions.MarketP
 	if err != nil {
 		return err
 	}
-	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those traders are distressed
+	// margins calculated, set about tranferring funds. At this point, if closed is not empty, those parties are distressed
 	// the risk slice are risk events, that we must use to transfer funds
 	return m.transferMargins(ctx, risk, closed)
 }

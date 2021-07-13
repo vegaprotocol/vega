@@ -10,15 +10,15 @@ Feature: Test crash on cancel of missing order
       | prices.ETH.value | 42    |
 
   Scenario: A non-existent party attempts to place an order
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader        | market id | side | volume | price | resulting trades | type       | tif     | reference     | error                 |
       | missingTrader | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | missing-ref-1 | trader does not exist |
-    When the traders cancel the following orders:
+    When the parties cancel the following orders:
       | trader        | reference     | error                                  |
       | missingTrader | missing-ref-1 | unable to find the order in the market |
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader        | market id | side | volume | price | resulting trades | type       | tif     | reference     | error                 |
       | missingTrader | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | missing-ref-2 | trader does not exist |
-    When the traders cancel the following orders:
+    When the parties cancel the following orders:
       | trader        | reference     | error                                  |
       | missingTrader | missing-ref-2 | unable to find the order in the market |

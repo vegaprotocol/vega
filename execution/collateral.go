@@ -40,7 +40,7 @@ func (m *Market) transferMargins(ctx context.Context, risk []events.Risk, closed
 func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk, distressed []events.MarketPosition) error {
 	evts := make([]events.Event, 0, len(risk))
 	mID := m.GetID()
-	// first, update the margin accounts for all traders who have enough balance
+	// first, update the margin accounts for all parties who have enough balance
 	for _, re := range risk {
 		tr, _, err := m.collateral.MarginUpdateOnOrder(ctx, mID, re)
 		if err != nil {

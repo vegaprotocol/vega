@@ -11,7 +11,7 @@ Feature: Regression test for issue 630
 
   Scenario: Trader is being closed out.
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader           | asset | amount  |
       | sellSideProvider | BTC   | 1000000 |
       | buySideProvider  | BTC   | 1000000 |
@@ -21,13 +21,13 @@ Feature: Regression test for issue 630
       | aux              | BTC   | 100000  |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
@@ -35,18 +35,18 @@ Feature: Regression test for issue 630
     And the mark price should be "100" for the market "ETH/DEC19"
 
 # setup orderbook
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 200    | 10000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 200    | 1     | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the cumulated balance for all accounts should be worth "4340000"
-    Then the traders should have the following margin levels:
+    Then the parties should have the following margin levels:
       | trader           | market id | maintenance | search | initial | release |
       | sellSideProvider | ETH/DEC19 | 2000        | 2200   | 2400    | 2800    |
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | traderGuy | ETH/DEC19 | buy  | 100    | 10000 | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    Then the traders should have the following account balances:
+    Then the parties should have the following account balances:
       | trader           | asset | market id | margin | general |
       | traderGuy        | BTC   | ETH/DEC19 | 0      | 0       |
       | sellSideProvider | BTC   | ETH/DEC19 | 240000 | 760000  |

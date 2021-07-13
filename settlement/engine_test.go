@@ -353,7 +353,7 @@ func testMarkToMarketOrdered(t *testing.T) {
 		{
 			price:  pr,
 			size:   1,
-			trader: "trader1", // mocks will create 2 traders (long & short)
+			trader: "trader1", // mocks will create 2 parties (long & short)
 		},
 		{
 			price:  pr.Clone(),
@@ -500,7 +500,7 @@ func testMTMNetworkZero(t *testing.T) {
 		Size:   3,
 		Price:  cPrice.Clone(), // trader 2 is going from -5 to -8
 	})
-	// the new positions of the traders who have traded with the network...
+	// the new positions of the parties who have traded with the network...
 	positions := []events.MarketPosition{
 		testPos{
 			party: "trader1", // trader 1 was 5 long, sold 5 to network, so closed out

@@ -13,7 +13,7 @@ Feature: Verify the order size is correctly cumulated.
 
   Scenario: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size.
 
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader      | asset | amount       |
       | trader1     | ETH   | 10000000     |
       | trader2     | ETH   | 10000000     |
@@ -21,7 +21,7 @@ Feature: Verify the order size is correctly cumulated.
       | trader3     | ETH   | 1000000000   |
 
     # Trigger an auction to set the mark price
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 12000007 | 0                | TYPE_LIMIT | TIF_GTC | trader1-1 |
       | trader2 | ETH/DEC19 | sell | 1      | 12000020 | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
@@ -30,10 +30,10 @@ Feature: Verify the order size is correctly cumulated.
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "12000010" for the market "ETH/DEC19"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader-lp-1 | ETH/DEC19 | sell | 50     | 12000013 | 0                | TYPE_LIMIT | TIF_GTC | trader2-1 |
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party       | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | -10    | lp-1-ref  |
       | lp1 | trader-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | -9     | lp-1-ref  |
@@ -77,7 +77,7 @@ Feature: Verify the order size is correctly cumulated.
       | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000001 | STATUS_ACTIVE |
       | trader-lp-1 | ETH/DEC19 | buy  | 19     | 12000000 | STATUS_ACTIVE |
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference  |
       | trader3 | ETH/DEC19 | sell | 167    | 12000020 | 0                | TYPE_LIMIT | TIF_GTC | trader3-1  |
       | trader3 | ETH/DEC19 | sell | 50     | 12000019 | 0                | TYPE_LIMIT | TIF_GTC | trader3-2  |

@@ -13,7 +13,7 @@ Feature: Test loss socialization case 1
 
   Scenario: case 1 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader           | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |
       | buySideProvider  | BTC   | 100000000 |
@@ -23,7 +23,7 @@ Feature: Test loss socialization case 1
       | aux1             | BTC   | 100000000 |
       | aux2             | BTC   | 100000000 |
 # setup order book
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
@@ -35,36 +35,36 @@ Feature: Test loss socialization case 1
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 # trader 1 place an order + we check margins
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 100    | 100   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 # then trader2 place an order, and we calculate the margins again
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader2 | ETH/DEC19 | buy  | 100    | 100   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 # then we change the volume in the book
-    Then the traders cancel the following orders:
+    Then the parties cancel the following orders:
       | trader           | reference       |
       | sellSideProvider | sell-provider-1 |
       | buySideProvider  | buy-provider-1  |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
-    Then the traders cancel the following orders:
+    Then the parties cancel the following orders:
       | trader | reference |
       | aux1   | aux-s-1   |
       | aux2   | aux-b-1   |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader2 | ETH/DEC19 | buy  | 100    | 180   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3 | ETH/DEC19 | sell | 100    | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    Then the traders should have the following profit and loss:
+    Then the parties should have the following profit and loss:
       | trader  | volume | unrealised pnl | realised pnl |
       | trader1 | 0      | 0              | -5000        |
       | trader2 | 200    | 8000           | -2970        |

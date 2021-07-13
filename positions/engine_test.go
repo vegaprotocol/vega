@@ -301,8 +301,8 @@ func getTestEngine(t *testing.T) *positions.Engine {
 }
 
 func TestGetOpenInterestGivenTrades(t *testing.T) {
-	//A, B represents traders who already have positions
-	//C, D represents traders who don't have positions (but there are entries in "trades" array that contain their trades)
+	//A, B represents parties who already have positions
+	//C, D represents parties who don't have positions (but there are entries in "trades" array that contain their trades)
 
 	cases := []struct {
 		ExistingPositions []*types.Trade

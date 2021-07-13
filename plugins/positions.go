@@ -165,8 +165,8 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	defer p.mu.RUnlock()
 	// at most, trader is active in all markets
 	positions := make([]*types.Position, 0, len(p.data))
-	for _, traders := range p.data {
-		if pos, ok := traders[party]; ok {
+	for _, parties := range p.data {
+		if pos, ok := parties[party]; ok {
 			positions = append(positions, &pos.Position)
 		}
 	}
@@ -183,12 +183,12 @@ func (p *Positions) GetAllPositions() ([]*types.Position, error) {
 	defer p.mu.RUnlock()
 	var pos []*types.Position
 	for k := range p.data {
-		// guesstimate what the slice cap ought to be: number of markets * number of traders in 1 market
+		// guesstimate what the slice cap ought to be: number of markets * number of parties in 1 market
 		pos = make([]*types.Position, 0, len(p.data)*len(p.data[k]))
 		break
 	}
-	for _, traders := range p.data {
-		for _, tp := range traders {
+	for _, parties := range p.data {
+		for _, tp := range parties {
 			pos = append(pos, &tp.Position)
 		}
 	}

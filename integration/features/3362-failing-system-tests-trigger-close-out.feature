@@ -21,7 +21,7 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Replicate test called test_TriggerWithMarketOrder
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader   | asset | amount    |
       | trader1  | ETH   | 100000000 |
       | trader2  | ETH   | 100000000 |
@@ -30,7 +30,7 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | traderLP | ETH   | 100000000 |
       | aux      | ETH   | 100000000 |
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA |
       | trader2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GFA |
@@ -38,7 +38,7 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | trader2 | ETH/DEC20 | sell | 5      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC20 | buy  | 1      | 95000  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
       | lp1 | trader1 | ETH/DEC20 | 16000000          | 0.3 | buy  | BID              | 2          | -10    |
       | lp1 | trader1 | ETH/DEC20 | 16000000          | 0.3 | sell | ASK              | 13         | 10     |
@@ -52,14 +52,14 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     ## price bounds are 99711 - 99845 - 100156 - 100290
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader2 | ETH/DEC20 | sell | 15     | 107500 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC20 | buy  | 10     | 107100 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader3 | ETH/DEC20 | buy  | 10     | 107300 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2 | ETH/DEC20 | sell | 10     | 107100 | 0                | TYPE_LIMIT | TIF_GTC |
@@ -72,25 +72,25 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "107100" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader4 | ETH/DEC20 | buy  | 50     | 107500 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "107100" for the market "ETH/DEC20"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader3 | ETH/DEC20 | buy  | 70     | 106000 | 0                | TYPE_LIMIT | TIF_GFA |
-    And the traders place the following pegged orders:
+    And the parties place the following pegged orders:
       | trader  | market id | side | volume | pegged reference | offset |
       | trader4 | ETH/DEC20 | buy  | 35     | BID              | -1000  |
       | trader4 | ETH/DEC20 | sell | 35     | ASK              | 3000   |
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     |
       | trader2 | ETH/DEC20 | sell | 80     | 105000 | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3 | ETH/DEC20 | buy  | 81     | 106000 | 0                | TYPE_LIMIT | TIF_GFA |
       | trader3 | ETH/DEC20 | buy  | 86     | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
-    And the traders place the following pegged orders:
+    And the parties place the following pegged orders:
       | trader  | market id | side | volume | pegged reference | offset |
       | trader1 | ETH/DEC20 | buy  | 100    | BID              | -5000  |
       | trader2 | ETH/DEC20 | sell | 95     | ASK              | 1000   |
@@ -106,6 +106,6 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
     ## Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     ## This isn't working ATM
-    ## And the traders should have the following account balances:
+    ## And the parties should have the following account balances:
     ##  | trader  | asset | market id | margin | general | bond |
     ##  | trader4 | ETH   | ETH/DEC20 |      0 |       0 |    0 |

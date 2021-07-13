@@ -16,16 +16,16 @@ Feature: Set up a market, with an opening auction, then uncross the book. Make s
       | name             | value |
       | prices.ETH.value | 100   |
 
-  Scenario: set up 2 traders with balance
+  Scenario: set up 2 parties with balance
     # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader  | asset | amount     |
       | trader1 | ETH   | 1000000000 |
       | trader2 | ETH   | 1000000000 |
       | trader3 | ETH   | 1000000000 |
 
     # place orders and generate trades - slippage 100
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | trader2 | ETH/DEC20 | buy  | 1      | 9500000  | 0                | TYPE_LIMIT | TIF_GTC | t2-b-1    |
       | trader1 | ETH/DEC20 | buy  | 1      | 10000000 | 0                | TYPE_LIMIT | TIF_GFA | t1-b-1    |

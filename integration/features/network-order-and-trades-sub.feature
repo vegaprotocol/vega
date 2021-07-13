@@ -14,7 +14,7 @@ Feature: Ensure network trader are generated
 
   Scenario: Implement trade and order network
 # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader           | asset | amount        |
       | sellSideProvider | BTC   | 1000000000000 |
       | buySideProvider  | BTC   | 1000000000000 |
@@ -23,7 +23,7 @@ Feature: Ensure network trader are generated
       | aux2             | BTC   | 1000000000000 |
 
 # insurance pool generation - setup orderbook
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
@@ -35,25 +35,25 @@ Feature: Ensure network trader are generated
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
 # insurance pool generation - trade
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
 # insurance pool generation - modify order book
-    Then the traders cancel the following orders:
+    Then the parties cancel the following orders:
       | trader          | reference      |
       | buySideProvider | buy-provider-1 |
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader          | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 400    | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
-    And the traders cancel the following orders:
+    And the parties cancel the following orders:
       | trader | reference |
       | aux2   | aux-b-2   |
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
 # insurance pool generation - set new mark price (and trigger closeout)
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |

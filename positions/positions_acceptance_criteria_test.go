@@ -23,7 +23,7 @@ func TestPositionsEngineAcceptanceCriteria(t *testing.T) {
 	t.Run("No open position, trades occur opening a short position", testNoOpenPositionsTradeOccurOpenLongAndShortPosition)
 	t.Run("Open position, trades occur that close it (take it to zero), in a separate transaction, trades occur and that open a new position", testOpenPosTradeOccurCloseThanOpenPositioAgain)
 	// NOTE: this will not be tested, as we do not remove a position from the engine when it reach 0
-	// Opening and closing positions for multiple traders, maintains position size for all open (non-zero) positions
+	// Opening and closing positions for multiple parties, maintains position size for all open (non-zero) positions
 	t.Run("Does not change position size for a wash trade (buyer = seller)", testWashTradeDoNotChangePosition)
 
 	//No active buy orders, a new buy order is added to the order book

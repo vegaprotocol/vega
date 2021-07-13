@@ -13,7 +13,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | prices.ETH.value | 42    |
 
   Scenario:
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader   | asset | amount     |
       | trader0  | ETH   | 1000000000 |
       | trader1  | ETH   | 1000000000 |
@@ -22,13 +22,13 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | traderlp | ETH   | 1000000000 |
 
 # submit our LP
-    Then the traders submit the following liquidity provision:
+    Then the parties submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
       | lp1 | traderlp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | -10    |
       | lp1 | traderlp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     |
 
 # get out of auction
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader0 | ETH/DEC19 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-1    |
       | trader1 | ETH/DEC19 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-1    |
@@ -39,7 +39,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
 # trigger liquidity monitoring
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 1      | 99844 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-3    |
       | trader0 | ETH/DEC19 | buy  | 1      | 99844 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-3    |
@@ -47,11 +47,11 @@ Feature: Leave a monitoring auction, enter a liquidity auction
     And time is updated to "2019-11-30T00:00:03Z"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
-    Then the traders cancel the following orders:
+    Then the parties cancel the following orders:
       | trader  | reference |
       | trader1 | t1-s-3    |
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | trader0 | ETH/DEC19 | buy  | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-4    |
@@ -60,17 +60,17 @@ Feature: Leave a monitoring auction, enter a liquidity auction
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "100291" for the market "ETH/DEC19"
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader3 | ETH/DEC19 | buy  | 106    | 110000 | 0                | TYPE_LIMIT | TIF_GTC | t3-b-1    |
 
-    Then the traders place the following pegged orders:
+    Then the parties place the following pegged orders:
       | trader  | market id | side | volume | pegged reference | offset |
       | trader3 | ETH/DEC19 | buy  | 3      | BID              | -900   |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader0 | ETH/DEC19 | buy  | 5      | 108500 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-5    |
 
@@ -80,7 +80,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | sell | 125    | 95000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-5    |
 

@@ -13,7 +13,7 @@ Feature: Test LP orders
       | prices.ETH.value | 42    |
 
   Scenario: create liquidity provisions
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader           | asset | amount    |
       | trader1          | ETH   | 100000000 |
       | sellSideProvider | ETH   | 100000000 |
@@ -21,7 +21,7 @@ Feature: Test LP orders
       | auxiliary        | ETH   | 100000000 |
       | aux2             | ETH   | 100000000 |
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | auxiliary | ETH/DEC19 | buy  | 1      | 80    | 0                | TYPE_LIMIT | TIF_GTC | oa-b-1    |
       | auxiliary | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | oa-s-1    |
@@ -30,7 +30,7 @@ Feature: Test LP orders
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
@@ -41,7 +41,7 @@ Feature: Test LP orders
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
     And clear order events
-    Then the traders submit the following liquidity provision:
+    Then the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
       | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | -10    |
       | lp1 | trader1 | ETH/DEC19 | 50000             | 0.1 | sell | ASK              | 500        | 10     |

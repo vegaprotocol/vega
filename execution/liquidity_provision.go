@@ -409,7 +409,7 @@ func (m *Market) cancelDistressedLiquidityProvision(
 	orderUpdates, err := m.resolveClosedOutParties(
 		ctx, []events.Margin{margin}, order)
 	if err != nil {
-		m.log.Error("could not resolve out traders",
+		m.log.Error("could not resolve out parties",
 			logging.MarketID(mktID),
 			logging.PartyID(party),
 			logging.Error(err))
@@ -748,7 +748,7 @@ func (m *Market) cancelLiquidityProvision(
 
 	// is our party distressed?
 	// if yes, the orders have been cancelled by the resolve
-	// distressed traders flow.
+	// distressed parties flow.
 	if !isDistressed {
 		// now we cancel all existing orders
 		for _, order := range cancelOrders {

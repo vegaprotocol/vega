@@ -10,7 +10,7 @@ Feature: test bugfix 614 for margin calculations
       | prices.ETH.value | 100   |
 
   Scenario: CASE-1: Trader submits long order that will trade - new formula & high exit price
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader  | asset | amount  |
       | chris   | ETH   | 10000   |
       | edd     | ETH   | 10000   |
@@ -22,20 +22,20 @@ Feature: test bugfix 614 for margin calculations
       | aux     | ETH   | 1000    |
 
  # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     |
       | aux    | ETH/DEC19 | buy  | 1      | 87    | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 250   | 0                | TYPE_LIMIT | TIF_GTC |
 
     # Trigger an auction to set the mark price
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC19 | buy  | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader1-2 |
       | trader2 | ETH/DEC19 | sell | 1      | 94    | 0                | TYPE_LIMIT | TIF_GFA | trader2-2 |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "94" for the market "ETH/DEC19"
 
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | chris   | ETH/DEC19 | sell | 100    | 250   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | edd     | ETH/DEC19 | sell | 11     | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
@@ -45,13 +45,13 @@ Feature: test bugfix 614 for margin calculations
       | chris   | ETH/DEC19 | buy  | 15     | 90    | 0                | TYPE_LIMIT | TIF_GTC | ref-6     |
       | rebecca | ETH/DEC19 | buy  | 50     | 87    | 0                | TYPE_LIMIT | TIF_GTC | ref-7     |
       # this is now the actual trader that we are testing
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tamlyn | ETH/DEC19 | buy  | 13     | 150   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    Then the traders should have the following margin levels:
+    Then the parties should have the following margin levels:
       | trader | market id | maintenance | search | initial | release |
       | tamlyn | ETH/DEC19 | 988         | 3161   | 3952    | 4940    |
-    Then the traders should have the following account balances:
+    Then the parties should have the following account balances:
       | trader  | asset | market id | margin | general |
       | tamlyn  | ETH   | ETH/DEC19 | 3952   | 6104    |
       | chris   | ETH   | ETH/DEC19 | 3760   | 6240    |

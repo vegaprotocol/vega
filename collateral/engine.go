@@ -318,7 +318,7 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 	if len(ft.Transfers()) <= 0 {
 		return nil, nil
 	}
-	// check quickly that all traders have enough monies in their accounts
+	// check quickly that all parties have enough monies in their accounts
 	// this may be done only in case of continuous trading
 	for party, amount := range ft.TotalFeesAmountPerParty() {
 		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, party, assetID, types.AccountType_ACCOUNT_TYPE_GENERAL))
@@ -1608,7 +1608,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 				logging.String("market-id", mktID),
 				logging.String("asset", asset),
 				logging.Error(err))
-			// just try to do other traders
+			// just try to do other parties
 			continue
 		}
 
@@ -1897,8 +1897,8 @@ func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyI
 
 // RemoveDistressed will remove all distressed trader in the event positions
 // for a given market and asset
-func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
-	tl := len(traders)
+func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
+	tl := len(parties)
 	if tl == 0 {
 		return nil, nil
 	}
@@ -1910,7 +1910,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, traders []events.MarketPo
 	resp := types.TransferResponse{
 		Transfers: make([]*types.LedgerEntry, 0, tl),
 	}
-	for _, trader := range traders {
+	for _, trader := range parties {
 		bondAcc, err := e.GetAccountByID(e.accountID(marketID, trader.Party(), asset, types.AccountType_ACCOUNT_TYPE_BOND))
 		if err != nil {
 			bondAcc = &types.Account{}

@@ -26,7 +26,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 100   |
-    And the traders deposit on asset's general account the following amount:
+    And the parties deposit on asset's general account the following amount:
       | trader  | asset | amount     |
       | trader0 | ETH   | 6400       |
       | trader1 | ETH   | 100000000  |
@@ -37,12 +37,12 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
   Scenario: LP gets distressed during continuous trading
 
-    Given the traders submit the following liquidity provision:
+    Given the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
       | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | trader1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -61,12 +61,12 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 5000           | 10            |
     # check the requried balances
-    And the traders should have the following account balances:
+    And the parties should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1320   | 80      | 5000 |
 
     # Now let's make some trades happen to increase the margin for LP
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC21 | buy  | 3      | 1010  | 2                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader2 | ETH/DEC21 | sell | 5      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-4 |
@@ -75,24 +75,24 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1010       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1313         | 5000           | 13            |
     # LP margin requirement increased, had to dip in to bond account to top up the margin
-    And the traders should have the following account balances:
+    And the parties should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1670   | 0       | 4478 |
 
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader2 | ETH/DEC21 | sell | 15     | 1030  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-1 |
       | trader3 | ETH/DEC21 | buy  | 10     | 1022  | 2                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader3 | ETH/DEC21 | buy  | 3      | 1020  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-2  |
       | trader2 | ETH/DEC21 | sell | 5      | 1030  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-2 |
-    Then the traders should have the following account balances:
+    Then the parties should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
     And the insurance pool balance should be "6250" for the market "ETH/DEC21"
 
-    # Then the traders should have the following account balances:
+    # Then the parties should have the following account balances:
     #   | trader  | asset | market id | margin | general | bond |
     #   | trader0 | ETH   | ETH/DEC21 | 1789   | 0       | 0    |
     # And the insurance pool balance should be "4646" for the market "ETH/DEC21"
@@ -100,19 +100,19 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
     #   | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 5000           | 23            |
     # # getting closer to distressed LP, still in continuous trading
-    # And the traders should have the following account balances:
+    # And the parties should have the following account balances:
     #   | trader  | asset | market id | margin | general | bond |
     #   | trader0 | ETH   | ETH/DEC21 | 1789   | 0       | 0    |
 
     # When the network moves ahead "2" blocks
-    # And the traders place the following orders:
+    # And the parties place the following orders:
     #   | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
     #   | trader3 | ETH/DEC21 | buy  | 3      | 1012  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-3  |
     #   | trader2 | ETH/DEC21 | sell | 5      | 1012  | 2                | TYPE_LIMIT | TIF_GTC | trader2-sell-3 |
     # Then the market data for the market "ETH/DEC21" should be:
     #   | mark price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
     #   | 1012       | TRADING_MODE_MONITORING_AUCTION | 1       | 1000      | 1020      | 2834         | 0              | 28            |
-    # And the traders should have the following account balances:
+    # And the parties should have the following account balances:
     #   | trader  | asset | market id | margin | general | bond |
     #   | trader0 | ETH   | ETH/DEC21 | 1787   | 0       | 0    |
     # # make sure bond slashing moved money to insurance pool
@@ -121,14 +121,14 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
   Scenario: LP gets distressed after auction
 
-    Given the traders submit the following liquidity provision:
+    Given the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
       | lp1 | trader0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
       | lp2 | trader5 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
       | lp2 | trader5 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
 
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | trader1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
@@ -147,12 +147,12 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
     # check the requried balances
-    And the traders should have the following account balances:
+    And the parties should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1320   | 80      | 5000 |
 
     # Now let's make some trades happen to increase the margin for LP
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC21 | buy  | 3      | 1010  | 2                | TYPE_LIMIT | TIF_GTC | trader3-buy-4  |
       | trader2 | ETH/DEC21 | sell | 5      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-4 |
@@ -161,13 +161,13 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1010       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1313         | 10000          | 13            |
     # LP margin requirement increased, had to dip in to bond account to top up the margin
-    And the traders should have the following account balances:
+    And the parties should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1670   | 0       | 4478 |
 
     # progress time a bit, so the price bounds get updated
     When the network moves ahead "2" blocks
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC21 | buy  | 10     | 1022  | 2                | TYPE_LIMIT | TIF_GTC | trader3-buy-5  |
       | trader2 | ETH/DEC21 | sell | 75     | 1050  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell-5 |
@@ -176,20 +176,20 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1010       | TRADING_MODE_CONTINUOUS | 1       | 993       | 1012      | 2323         | 5000           | 23            |
     # getting closer to distressed LP, still in continuous trading
-    And the traders should have the following account balances:
+    And the parties should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1762   | 0       | 0    |
     And the insurance pool balance should be "4649" for the market "ETH/DEC21"
 
     # Move price out of bounds
     When the network moves ahead "2" blocks
-    And the traders place the following orders:
+    And the parties place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 10     | 1060  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger       | target stake | supplied stake | open interest |
       | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 2323         | 5000           | 23            |
-    And the traders should have the following account balances:
+    And the parties should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 1762   | 0       | 0    |
 
@@ -198,7 +198,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1055       | TRADING_MODE_CONTINUOUS | 1       | 1045      | 1065      | 3481         | 5000           | 33            |
-    And the traders should have the following account balances:
+    And the parties should have the following account balances:
       | trader  | asset | market id | margin | general | bond |
       | trader0 | ETH   | ETH/DEC21 | 265    | 1407    | 0    |
       # values before uint stuff

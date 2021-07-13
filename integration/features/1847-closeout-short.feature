@@ -14,7 +14,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
-    Given the traders deposit on asset's general account the following amount:
+    Given the parties deposit on asset's general account the following amount:
       | trader | asset | amount    |
       | tt_12  | BTC   | 10000000  |
       | tt_13  | BTC   | 10000000  |
@@ -25,7 +25,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | t2_aux | BTC   | 100000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the traders place the following orders:
+    Then the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
@@ -36,7 +36,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
     # place orders and generate trades
-    When the traders place the following orders:
+    When the parties place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference | expires in |
       | tt_12  | ETH/DEC19 | buy  | 5      | 20    | 0                | TYPE_LIMIT | TIF_GTT | tt_12-1   | 3600       |
       | tt_13  | ETH/DEC19 | sell | 5      | 20    | 1                | TYPE_LIMIT | TIF_GTT | tt_13-1   | 3600       |
@@ -51,7 +51,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
     And the mark price should be "20" for the market "ETH/DEC19"
 
     # checking margins
-    Then the traders should have the following account balances:
+    Then the parties should have the following account balances:
       | trader | asset | market id | margin | general |
       | tt_15  | BTC   | ETH/DEC19 | 0      | 0       |
 
@@ -60,7 +60,7 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
     #check positions
-    Then the traders should have the following profit and loss:
+    Then the parties should have the following profit and loss:
       | trader | volume | unrealised pnl | realised pnl |
       | tt_12  | 5      | 0              | 0            |
       | tt_13  | -5     | 0              | 0            |
