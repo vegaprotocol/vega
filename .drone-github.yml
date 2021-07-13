@@ -201,7 +201,6 @@ steps:
       - fetch
     when:
       ref:
-        - refs/heads/3738-market-creation
         - refs/heads/master
         - refs/heads/develop
         - refs/tags/*
@@ -248,7 +247,6 @@ steps:
       - build-branch
     when:
       branch:
-        - 3738-market-creation
         - develop
       event:
         - push
@@ -286,7 +284,6 @@ steps:
       - deploy_devnet
     when:
       branch:
-        - 3738-market-creation
         - develop
       event:
         - push
