@@ -251,6 +251,43 @@ steps:
       event:
         - push
 
+  - name: deploy_devnet_markets
+    image: docker.pkg.github.com/vegaprotocol/devops-infra/pytools:devnet
+    volumes: []
+    environment:
+      DEVNET_DEPLOY_FAUCET_URL:
+        from_secret: DEVNET_DEPLOY_FAUCET_URL
+      DEVNET_DEPLOY_WALLET_NAME:
+        from_secret: DEVNET_DEPLOY_WALLET_NAME
+      DEVNET_DEPLOY_WALLET_PASSPHRASE:
+        from_secret: DEVNET_DEPLOY_WALLET_PASSPHRASE
+      DEVNET_DEPLOY_WALLET_URL:
+        from_secret: DEVNET_DEPLOY_WALLET_URL
+      DEVNET_DEPLOY_VEGANODE_GRPC:
+        from_secret: DEVNET_DEPLOY_VEGANODE_GRPC
+      DEVNET_DEPLOY_VOTE_TOKEN:
+        from_secret: DEVNET_DEPLOY_VOTE_TOKEN
+    commands:
+      - allocate-fake-tokens.py
+          --config /data/token-balances.json
+          --veganode "$$DEVNET_DEPLOY_VEGANODE_GRPC"
+          --faucetserver "$$DEVNET_DEPLOY_FAUCET_URL"
+      - sleep 10
+      - propose-vote.py
+          --proposals /data/markets.json
+          --walletname "$$DEVNET_DEPLOY_WALLET_NAME"
+          --passphrase "$$DEVNET_DEPLOY_WALLET_PASSPHRASE"
+          --walletserver "$$DEVNET_DEPLOY_WALLET_URL"
+          --veganode "$$DEVNET_DEPLOY_VEGANODE_GRPC"
+          --vote-token "$$DEVNET_DEPLOY_VOTE_TOKEN"
+    depends_on:
+      - deploy_devnet
+    when:
+      branch:
+        - develop
+      event:
+        - push
+
   - name: build_docker_image
     image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline-docker:18.09.9
     volumes:
