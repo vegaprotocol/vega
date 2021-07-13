@@ -274,6 +274,7 @@ steps:
           --config /data/token-balances.json
           --veganode "$$DEVNET_DEPLOY_VEGANODE_GRPC"
           --faucetserver "$$DEVNET_DEPLOY_FAUCET_URL"
+      - sleep 10
       - propose-vote.py
           --proposals /data/markets.json
           --walletname "$$DEVNET_DEPLOY_WALLET_NAME"
