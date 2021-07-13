@@ -356,6 +356,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -367,6 +368,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -378,6 +380,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -389,6 +392,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000012",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -422,6 +426,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -433,6 +438,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -444,6 +450,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -455,6 +462,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000012",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -488,6 +496,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -500,6 +509,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -543,6 +553,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -555,6 +566,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -598,6 +610,7 @@ func getClosePNLBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -610,6 +623,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -622,6 +636,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -663,6 +678,7 @@ func getClosePNLSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -675,6 +691,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -687,6 +704,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -1668,6 +1686,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[0] = []*types.Order{
 		// Side Sell
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -1680,6 +1699,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -1693,6 +1713,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -1705,6 +1726,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000012",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -1722,6 +1744,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[1] = []*types.Order{
 		// Side Sell
 		{
+			Id:          "V0000000032-0000000013",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -1735,6 +1758,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Id:          "V0000000032-0000000014",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
@@ -1766,6 +1790,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
+				Id:          "V0000000032-0000000015",
 				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_TYPE_LIMIT,
 				MarketId:    market,
@@ -2050,10 +2075,10 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	logger.Debug("BEGIN PARTIAL FILL IOC ORDER")
 
 	newOrder := &types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		MarketId:    market,
-		Id:          "100000",
 		Side:        types.Side_SIDE_SELL,
 		Price:       num.NewUint(100),
 		PartyId:     "A",
@@ -2069,7 +2094,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, "100000", confirmation.Order.Id)
+	assert.Equal(t, "V0000000032-0000000009", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
@@ -2778,14 +2803,14 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 110, "party01", 1)
 	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 110, "party02", 1)
 
-	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 111, "party01", 1)
-	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 111, "party02", 1)
+	makeOrder(t, book, market, "BuyOrder01-2", types.Side_SIDE_BUY, 111, "party01", 1)
+	makeOrder(t, book, market, "SellOrder01-2", types.Side_SIDE_SELL, 111, "party02", 1)
 
-	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 133, "party01", 2)
-	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 133, "party02", 2)
+	makeOrder(t, book, market, "BuyOrder01-3", types.Side_SIDE_BUY, 133, "party01", 2)
+	makeOrder(t, book, market, "SellOrder01-3", types.Side_SIDE_SELL, 133, "party02", 2)
 
-	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 303, "party01", 10)
-	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 303, "party02", 10)
+	makeOrder(t, book, market, "BuyOrder01-4", types.Side_SIDE_BUY, 303, "party01", 10)
+	makeOrder(t, book, market, "SellOrder01-4", types.Side_SIDE_SELL, 303, "party02", 10)
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
@@ -3112,7 +3137,7 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	sp1 := getOrder(t, book, market, "SellPeg1", types.Side_SIDE_SELL, 100, "party01", 5)
 	sp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
 		Offset: +3}
-	book.ob.SubmitOrder(bp1)
+	book.ob.SubmitOrder(sp1)
 
 	// Leave auction and uncross the book
 	cancels := book.ob.EnterAuction()

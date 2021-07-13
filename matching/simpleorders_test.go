@@ -203,6 +203,7 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -218,6 +219,7 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -248,6 +250,7 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -263,6 +266,7 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -293,6 +297,7 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -308,6 +313,7 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -338,6 +344,7 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -353,6 +360,7 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -383,6 +391,7 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -398,6 +407,7 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -428,6 +438,7 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -443,6 +454,7 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -473,6 +485,7 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -489,6 +502,7 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -519,6 +533,7 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -534,6 +549,7 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -555,6 +571,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -570,6 +587,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order1 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -585,6 +603,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000011",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -608,6 +627,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
@@ -623,6 +643,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order1 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
@@ -638,6 +659,7 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000011",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
