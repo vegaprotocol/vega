@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -36,8 +35,6 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	types "code.vegaprotocol.io/data-node/proto"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
