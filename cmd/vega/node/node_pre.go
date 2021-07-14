@@ -446,13 +446,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService)
 
-	now, _ := l.timeService.GetTimeNow()
+	now := l.timeService.GetTimeNow()
 
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
-	if err != nil {
-		return err
-	}
-
+	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
 	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker, l.timeService)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
@@ -480,11 +476,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
-	if err != nil {
-		log.Error("unable to initialise governance", logging.Error(err))
-		return err
-	}
+	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
@@ -501,12 +493,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
-
-	l.evtfwd, err = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
-	if err != nil {
-		return err
-	}
-
+	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
 	// now instantiate the blockchain layer

@@ -62,7 +62,6 @@ type Witness interface {
 // TimeService provide the time of the vega node using the tm time
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/banking TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
 	NotifyOnTick(func(context.Context, time.Time))
 }
 

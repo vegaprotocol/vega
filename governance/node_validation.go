@@ -55,14 +55,14 @@ func NewNodeValidation(
 	assets Assets,
 	now time.Time,
 	witness Witness,
-) (*NodeValidation, error) {
+) *NodeValidation {
 	return &NodeValidation{
 		log:              log,
 		nodeProposals:    []*nodeProposal{},
 		assets:           assets,
 		currentTimestamp: now,
 		witness:          witness,
-	}, nil
+	}
 }
 
 func (n *NodeValidation) onResChecked(i interface{}, valid bool) {

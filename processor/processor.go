@@ -27,8 +27,8 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
-	GetTimeLastBatch() (time.Time, error)
+	GetTimeNow() time.Time
+	GetTimeLastBatch() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 	SetTimeNow(context.Context, time.Time)
 }

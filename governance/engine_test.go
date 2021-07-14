@@ -962,9 +962,8 @@ func getTestEngine(t *testing.T) *tstEngine {
 	require.NoError(t, netp.Update(context.Background(), netparams.GovernanceProposalMarketRequiredParticipation, "0.5"))
 	now := time.Now()
 	now = now.Truncate(time.Second)
-	eng, err := governance.NewEngine(log, cfg, accounts, broker, assets, witness, netp, now) // started as a validator
+	eng := governance.NewEngine(log, cfg, accounts, broker, assets, witness, netp, now) // started as a validator
 	assert.NotNil(t, eng)
-	assert.NoError(t, err)
 	return &tstEngine{
 		Engine:   eng,
 		ctrl:     ctrl,

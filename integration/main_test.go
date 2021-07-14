@@ -126,7 +126,8 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TheFollowingNetworkParametersAreSet(execsetup.netParams, table)
 	})
 	s.Step(`^time is updated to "([^"]*)"$`, func(rawTime string) error {
-		return steps.TimeIsUpdatedTo(execsetup.timeService, rawTime)
+		steps.TimeIsUpdatedTo(execsetup.timeService, rawTime)
+		return nil
 	})
 	s.Step(`^the parties cancel the following orders:$`, func(table *gherkin.DataTable) error {
 		return steps.PartiesCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
@@ -266,34 +267,41 @@ func FeatureContext(s *godog.Suite) {
 		return steps.TheMarketDataShouldBe(execsetup.executionEngine, marketID, table)
 	})
 	s.Step(`the auction ends with a traded volume of "([^"]+)" at a price of "([^"]+)"`, func(vol, price string) error {
-		now, _ := execsetup.timeService.GetTimeNow()
+		now := execsetup.timeService.GetTimeNow()
 		return steps.TheAuctionTradedVolumeAndPriceShouldBe(execsetup.broker, vol, price, now)
 	})
 
 	// Debug steps
 	s.Step(`^debug transfers$`, func() error {
-		return steps.DebugTransfers(execsetup.broker, execsetup.log)
+		steps.DebugTransfers(execsetup.broker, execsetup.log)
+		return nil
 	})
 	s.Step(`^debug trades$`, func() error {
-		return steps.DebugTrades(execsetup.broker, execsetup.log)
+		steps.DebugTrades(execsetup.broker, execsetup.log)
+		return nil
 	})
 	s.Step(`^debug orders$`, func() error {
-		return steps.DebugOrders(execsetup.broker, execsetup.log)
+		steps.DebugOrders(execsetup.broker, execsetup.log)
+		return nil
 	})
 	s.Step(`^debug market data for "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugMarketData(execsetup.executionEngine, execsetup.log, mkt)
 	})
 	s.Step(`^debug auction events$`, func() error {
-		return steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
+		steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
+		return nil
 	})
 	s.Step(`^debug transaction errors$`, func() error {
-		return steps.DebugTxErrors(execsetup.broker, execsetup.log)
+		steps.DebugTxErrors(execsetup.broker, execsetup.log)
+		return nil
 	})
 	s.Step(`^debug liquidity submission errors$`, func() error {
-		return steps.DebugLPSTxErrors(execsetup.broker, execsetup.log)
+		steps.DebugLPSTxErrors(execsetup.broker, execsetup.log)
+		return nil
 	})
 	s.Step(`^debug liquidity provision events$`, func() error {
-		return steps.DebugLPs(execsetup.broker, execsetup.log)
+		steps.DebugLPs(execsetup.broker, execsetup.log)
+		return nil
 	})
 
 	// Event steps

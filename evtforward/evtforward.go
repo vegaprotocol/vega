@@ -28,7 +28,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/evtforward TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
@@ -76,12 +76,7 @@ type nodeHash struct {
 }
 
 // New creates a new instance of the event forwarder
-func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) (*EvtForwarder, error) {
-	now, err := time.GetTimeNow()
-	if err != nil {
-		return nil, err
-	}
-
+func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) *EvtForwarder {
 	var allowlist atomic.Value
 	allowlist.Store(buildAllowlist(cfg))
 	evtf := &EvtForwarder{
@@ -90,7 +85,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		cmd:              cmd,
 		nodes:            []nodeHash{},
 		self:             string(top.SelfVegaPubKey()),
-		currentTime:      now,
+		currentTime:      time.GetTimeNow(),
 		ackedEvts:        map[string]*commandspb.ChainEvent{},
 		evts:             map[string]tsEvt{},
 		top:              top,
@@ -98,7 +93,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 	}
 	evtf.updateValidatorsList()
 	time.NotifyOnTick(evtf.onTick)
-	return evtf, nil
+	return evtf
 }
 
 func buildAllowlist(cfg Config) map[string]struct{} {

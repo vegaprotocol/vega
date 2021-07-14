@@ -75,7 +75,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.log = logging.NewTestLogger()
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()
-	currentTime, _ := execsetup.timeService.GetTimeNow()
+	currentTime := execsetup.timeService.GetTimeNow()
 	execsetup.collateralEngine = collateral.New(
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)

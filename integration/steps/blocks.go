@@ -34,10 +34,7 @@ func TheNetworkMovesAheadNBlocks(block *helpers.Block, time *stubs.TimeStub, n s
 	if err != nil {
 		return err
 	}
-	now, err := time.GetTimeNow()
-	if err != nil {
-		return err
-	}
+	now := time.GetTimeNow()
 	for i := int64(0); i < nr; i++ {
 		now = now.Add(block.GetDuration())
 		// progress time
@@ -55,10 +52,7 @@ func TheNetworkMovesAheadDurationWithBlocks(block *helpers.Block, ts *stubs.Time
 	if err != nil {
 		return err
 	}
-	now, err := ts.GetTimeNow()
-	if err != nil {
-		return err
-	}
+	now := ts.GetTimeNow()
 	target := now.Add(td)
 	for now.Before(target) {
 		now = now.Add(block.GetStep(bd))

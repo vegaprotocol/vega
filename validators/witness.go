@@ -26,7 +26,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/validators TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
@@ -116,11 +116,10 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	now, _ := tsvc.GetTimeNow()
 	return &Witness{
 		log:       log,
 		cfg:       cfg,
-		now:       now,
+		now:       tsvc.GetTimeNow(),
 		cmd:       cmd,
 		top:       top,
 		resources: map[string]*res{},

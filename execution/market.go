@@ -674,7 +674,7 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 }
 
 // Reprice a pegged order. This only updates the price on the order
-func (m *Market) repricePeggedOrder(ctx context.Context, order *types.Order) error {
+func (m *Market) repricePeggedOrder(order *types.Order) error {
 	// Work out the new price of the order
 	price, err := m.getNewPeggedPrice(order)
 	if err != nil {
@@ -810,7 +810,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	m.updateLiquidityFee(ctx)
 }
 
-func (m *Market) validatePeggedOrder(ctx context.Context, order *types.Order) types.OrderError {
+func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
 	if order.Type != types.OrderTypeLimit {
 		// All pegged orders must be LIMIT orders
 		return types.ErrPeggedOrderMustBeLimitOrder
@@ -928,7 +928,7 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 
 	// Validate pegged orders
 	if order.PeggedOrder != nil {
-		reason := m.validatePeggedOrder(ctx, order)
+		reason := m.validatePeggedOrder(order)
 		if reason != types.OrderErrorUnspecified {
 			order.Status = types.OrderStatusRejected
 			order.Reason = reason
@@ -1100,7 +1100,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			return &types.OrderConfirmation{Order: order}, nil, nil
 		} else {
 			// Reprice
-			err := m.repricePeggedOrder(ctx, order)
+			err := m.repricePeggedOrder(order)
 			if err != nil {
 				m.broker.Send(events.NewOrderEvent(ctx, order))
 				return &types.OrderConfirmation{Order: order}, nil, nil
@@ -2177,7 +2177,7 @@ func (m *Market) amendOrder(
 		return nil, nil, err
 	}
 
-	amendedOrder, err := m.applyOrderAmendment(ctx, existingOrder, orderAmendment)
+	amendedOrder, err := m.applyOrderAmendment(existingOrder, orderAmendment)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -2305,7 +2305,7 @@ func (m *Market) amendOrder(
 			m.broker.Send(events.NewOrderEvent(ctx, amendedOrder))
 			return ret, nil, nil
 		}
-		err := m.repricePeggedOrder(ctx, amendedOrder)
+		err := m.repricePeggedOrder(amendedOrder)
 		if err != nil {
 			// Failed to reprice so we have to park the order
 			if amendedOrder.Status != types.OrderStatusParked {
@@ -2466,7 +2466,6 @@ func (m *Market) validateOrderAmendment(
 
 // this function assume the amendment have been validated before
 func (m *Market) applyOrderAmendment(
-	ctx context.Context,
 	existingOrder *types.Order,
 	amendment *types.OrderAmendment,
 ) (order *types.Order, err error) {
@@ -2516,7 +2515,7 @@ func (m *Market) applyOrderAmendment(
 		if amendment.PeggedReference != types.PeggedReferenceUnspecified {
 			order.PeggedOrder.Reference = amendment.PeggedReference
 		}
-		if verr := m.validatePeggedOrder(ctx, order); verr != types.OrderErrorUnspecified {
+		if verr := m.validatePeggedOrder(order); verr != types.OrderErrorUnspecified {
 			err = verr
 		}
 	}
