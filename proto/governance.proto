@@ -10,6 +10,22 @@ import "vega.proto";
 import "assets.proto";
 import "oracles/v1/spec.proto";
 
+message OracleDetails {
+  // The oracle spec describing the oracle data of interest
+  oracles.v1.OracleSpecConfiguration oracle_spec = 1 [(validator.field) = {msg_exists: true}];
+  // The binding between the oracle spec and event
+  OracleSpecToFutureBinding oracle_spec_binding = 2 [(validator.field) = {msg_exists: true}];
+
+  enum OracleEventType {
+    ORACLE_EVENT_TYPE_UNSPECIFIED = 0;
+    ORACLE_EVENT_TYPE_SETTLEMENT_PRICE = 1;
+    ORACLE_EVENT_TYPE_TERMINATE_TRADING = 2;
+  }
+
+  // What sort of event does this generate
+  OracleEventType eventType = 3; 
+}
+
 // Future product configuration
 message FutureProduct {
   // Future product maturity (ISO8601/RFC3339 timestamp)
@@ -18,10 +34,8 @@ message FutureProduct {
   string settlement_asset = 2  [(validator.field) = {string_not_empty : true}];
   // Product quote name
   string quote_name = 3 [(validator.field) = {string_not_empty : true}];
-  // The oracle spec describing the oracle data of interest
-  oracles.v1.OracleSpecConfiguration oracle_spec = 5;
-  // The binding between the oracle spec and the settlement price
-  OracleSpecToFutureBinding oracle_spec_binding = 6;
+  // Details about the oracles and what events they generate
+  repeated OracleDetails details = 4;
 }
 
 // Instrument configuration
