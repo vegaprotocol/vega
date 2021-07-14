@@ -22,8 +22,6 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Subscribing to oracle engine succeeds", testOracleEngineSubscribingSucceeds)
 	t.Run("Subscribing to oracle engine with without callback fails", testOracleEngineSubscribingWithoutCallbackFails)
 	t.Run("Broadcasting to right callback with correct data succeeds", testOracleEngineBroadcastingCorrectDataSucceeds)
-	// I'm keeping this for the purpose of the review - this is not relevant anymore because there is no feedback on errors
-	//t.Run("Broadcasting to right callback with incorrect data fails", testOracleEngineBroadcastingIncorrectDataFails)
 	t.Run("Unsubscribing known ID from oracle engine succeeds", testOracleEngineUnsubscribingKnownIDSucceeds)
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
@@ -108,26 +106,6 @@ func testOracleEngineBroadcastingCorrectDataSucceeds(t *testing.T) {
 	assert.Nil(t, ethEquals42.subscriber.ReceivedData)
 	assert.Nil(t, ethLess84.subscriber.ReceivedData)
 	assert.Nil(t, btcGreater100.subscriber.ReceivedData)
-}
-
-func testOracleEngineBroadcastingIncorrectDataFails(t *testing.T) {
-	// given
-	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
-	dataBTC42 := dataWithPrice("BTC", "hello")
-
-	// setup
-	ctx := context.Background()
-	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, btcEquals42.spec.Proto)
-
-	// when
-	_ = engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
-	errB := engine.BroadcastData(ctx, dataBTC42.data)
-
-	// then
-	assert.Error(t, errB)
-	assert.Nil(t, btcEquals42.subscriber.ReceivedData)
 }
 
 func testOracleEngineUnsubscribingUnknownIDPanics(t *testing.T) {
