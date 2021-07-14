@@ -8,7 +8,7 @@ import (
 	"time"
 
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
-	omock "code.vegaprotocol.io/vega/oracles/mocks"
+	emock "code.vegaprotocol.io/vega/execution/mocks"
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
@@ -89,7 +89,7 @@ type testMarket struct {
 	ctrl             *gomock.Controller
 	collateralEngine *collateral.Engine
 	broker           *bmock.MockBroker
-	timeService      *omock.MockTimeService
+	timeService      *emock.MockTimeService
 	now              time.Time
 	asset            string
 	mas              *monitor.AuctionState
@@ -114,7 +114,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 
 	// Setup Mocking Expectations
 	tm.broker = bmock.NewMockBroker(ctrl)
-	tm.timeService = omock.NewMockTimeService(ctrl)
+	tm.timeService = emock.NewMockTimeService(ctrl)
 	tm.timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 
 	// eventFn records and count events and orderEvents
@@ -246,7 +246,7 @@ func getTestMarket2(
 	feeConfig := fee.NewDefaultConfig()
 	liquidityConfig := liquidity.NewDefaultConfig()
 	broker := bmock.NewMockBroker(ctrl)
-	timeService := omock.NewMockTimeService(ctrl)
+	timeService := emock.NewMockTimeService(ctrl)
 	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 
 	tm := &testMarket{
