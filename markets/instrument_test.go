@@ -9,6 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/oracles"
+	omock "code.vegaprotocol.io/vega/oracles/mocks"
+
 	"code.vegaprotocol.io/vega/products"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/types"
@@ -113,11 +115,16 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any())
+
+	ts := omock.NewMockTimeService(ctrl)
+	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+
 	return oracles.NewEngine(
 		logging.NewTestLogger(),
 		oracles.NewDefaultConfig(),
 		time.Now(),
 		broker,
+		ts,
 	)
 }
 

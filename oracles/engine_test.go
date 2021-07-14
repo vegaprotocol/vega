@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/broker/mocks"
+	bmok "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/mocks"
 	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
@@ -21,7 +22,8 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Subscribing to oracle engine succeeds", testOracleEngineSubscribingSucceeds)
 	t.Run("Subscribing to oracle engine with without callback fails", testOracleEngineSubscribingWithoutCallbackFails)
 	t.Run("Broadcasting to right callback with correct data succeeds", testOracleEngineBroadcastingCorrectDataSucceeds)
-	t.Run("Broadcasting to right callback with incorrect data fails", testOracleEngineBroadcastingIncorrectDataFails)
+	// I'm keeping this for the purpose of the review - this is not relevant anymore because there is no feedback on errors
+	//t.Run("Broadcasting to right callback with incorrect data fails", testOracleEngineBroadcastingIncorrectDataFails)
 	t.Run("Unsubscribing known ID from oracle engine succeeds", testOracleEngineUnsubscribingKnownIDSucceeds)
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
@@ -100,6 +102,7 @@ func testOracleEngineBroadcastingCorrectDataSucceeds(t *testing.T) {
 
 	// then
 	require.NoError(t, errB)
+	engine.UpdateCurrentTime(ctx, currentTime)
 	assert.Equal(t, &dataBTC42.data, btcEquals42.subscriber.ReceivedData)
 	assert.Equal(t, &dataBTC42.data, btcGreater21.subscriber.ReceivedData)
 	assert.Nil(t, ethEquals42.subscriber.ReceivedData)
@@ -168,6 +171,7 @@ func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	errB2 := engine.BroadcastData(context.Background(), dataBTC42.data)
 
 	// then
+	engine.UpdateCurrentTime(ctx, currentTime)
 	require.NoError(t, errB1)
 	require.NoError(t, errB2)
 	assert.Equal(t, &dataETH42.data, ethEquals42.subscriber.ReceivedData)
@@ -195,12 +199,17 @@ type testEngine struct {
 
 func newEngine(ctx context.Context, t *testing.T, currentTime time.Time) *testEngine {
 	broker := newBroker(ctx, t)
+	ts := newTimeService(ctx, t)
+
+	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+
 	return &testEngine{
 		Engine: oracles.NewEngine(
 			logging.NewTestLogger(),
 			oracles.NewDefaultConfig(),
 			currentTime,
 			broker,
+			ts,
 		),
 		broker: broker,
 	}
@@ -276,16 +285,33 @@ func (d *dummySubscriber) Cb(_ context.Context, data oracles.OracleData) error {
 }
 
 type testBroker struct {
-	*mocks.MockBroker
+	*bmok.MockBroker
+	ctx context.Context
+}
+
+type testTimeService struct {
+	*mocks.MockTimeService
 	ctx context.Context
 }
 
 func newBroker(ctx context.Context, t *testing.T) *testBroker {
 	ctrl := gomock.NewController(t)
 	return &testBroker{
-		MockBroker: mocks.NewMockBroker(ctrl),
+		MockBroker: bmok.NewMockBroker(ctrl),
 		ctx:        ctx,
 	}
+}
+
+func newTimeService(ctx context.Context, t *testing.T) *testTimeService {
+	ctrl := gomock.NewController(t)
+	return &testTimeService{
+		MockTimeService: mocks.NewMockTimeService(ctrl),
+		ctx:             ctx,
+	}
+}
+
+func (ts *testTimeService) mockNotifyOnTick(f interface{}) {
+	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 }
 
 func (b *testBroker) mockNewOracleSpecSubscription(currentTime time.Time, spec oraclespb.OracleSpec) {
