@@ -5,8 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/execution"
-
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/storage"
@@ -14,10 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testMarket = "market"
-const testParty = "party"
-const testPartyA = "partyA"
-const testPartyB = "partyB"
+const (
+	testMarket          = "market"
+	testParty           = "party"
+	testPartyA          = "partyA"
+	testPartyB          = "partyB"
+	InitialOrderVersion = 1
+)
 
 func TestStorage_NewOrders(t *testing.T) {
 	config, err := storage.NewTestConfig()
@@ -370,7 +371,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	defer newOrderStore.Close()
 
 	id := "KOTEK-KLOPOTEK"
-	var version uint64 = execution.InitialOrderVersion
+	var version uint64 = InitialOrderVersion
 
 	orderV1 := &types.Order{
 		Id:          id,
@@ -402,7 +403,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Size:        222,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
-		Version:     execution.InitialOrderVersion,
+		Version:     InitialOrderVersion,
 	}
 	anotherOrder := &types.Order{
 		Id:          "000000000000000000000000000000",
@@ -413,7 +414,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		Size:        222,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		Status:      types.Order_STATUS_ACTIVE,
-		Version:     execution.InitialOrderVersion,
+		Version:     InitialOrderVersion,
 	}
 
 	err = newOrderStore.SaveBatch([]types.Order{*orderV1, *orderV2, *differentOrder, *anotherOrder, *orderV3})
@@ -434,7 +435,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.Equal(t, 3, len(allVersions))
 		assert.NotEqual(t, allVersions[0].Version, allVersions[2].Version)
 		assert.EqualValues(t, allVersions[0].Version+1, allVersions[1].Version)
-		assert.EqualValues(t, execution.InitialOrderVersion, allVersions[0].Version)
+		assert.EqualValues(t, InitialOrderVersion, allVersions[0].Version)
 	})
 
 	t.Run("test if default order version is latest", func(t *testing.T) {
@@ -463,12 +464,12 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	})
 
 	t.Run("test if able to load first order version", func(t *testing.T) {
-		var initialVersion uint64 = execution.InitialOrderVersion
+		var initialVersion uint64 = InitialOrderVersion
 		fetchedOrder, err := newOrderStore.GetByOrderID(context.Background(), id, &initialVersion)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
-		assert.EqualValues(t, execution.InitialOrderVersion, fetchedOrder.Version)
+		assert.EqualValues(t, InitialOrderVersion, fetchedOrder.Version)
 	})
 
 	t.Run("test massive number of versions", func(t *testing.T) {
@@ -490,12 +491,12 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 		assert.Equal(t, id, fetchedOrder.Id)
 		assert.EqualValues(t, version, fetchedOrder.Version)
 
-		var firstVersion uint64 = execution.InitialOrderVersion
+		var firstVersion uint64 = InitialOrderVersion
 		fetchedOrder, err = newOrderStore.GetByOrderID(context.Background(), id, &firstVersion)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedOrder)
 		assert.Equal(t, id, fetchedOrder.Id)
-		assert.EqualValues(t, execution.InitialOrderVersion, fetchedOrder.Version)
+		assert.EqualValues(t, InitialOrderVersion, fetchedOrder.Version)
 
 		allVersions, err := newOrderStore.GetAllVersionsByOrderID(context.Background(), id, 0, 0, true)
 		assert.NoError(t, err)

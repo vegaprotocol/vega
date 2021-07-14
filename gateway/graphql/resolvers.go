@@ -595,15 +595,6 @@ func (r *myQueryResolver) Party(ctx context.Context, name string) (*types.Party,
 	return getParty(ctx, r.log, r.tradingDataClient, name)
 }
 
-func (r *myQueryResolver) Statistics(ctx context.Context) (*types.Statistics, error) {
-	res, err := r.tradingDataClient.Statistics(ctx, &protoapi.StatisticsRequest{})
-	if err != nil {
-		r.log.Error("tradingCore client", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return res.Statistics, nil
-}
-
 func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version *int) (*types.Order, error) {
 	return r.r.getOrderByID(ctx, orderID, version)
 }

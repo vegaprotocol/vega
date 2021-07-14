@@ -1489,23 +1489,6 @@
         ]
       }
     },
-    "/statistics": {
-      "get": {
-        "summary": "Get Statistics on Vega",
-        "operationId": "Statistics",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1StatisticsResponse"
-            }
-          }
-        },
-        "tags": [
-          "TradingDataService"
-        ]
-      }
-    },
     "/time": {
       "get": {
         "summary": "Get Time",
@@ -3375,14 +3358,6 @@
       },
       "title": "A settle position event contains position settlement information for a party"
     },
-    "v1StatisticsResponse": {
-      "type": "object",
-      "properties": {
-        "statistics": {
-          "$ref": "#/definitions/vegaStatistics"
-        }
-      }
-    },
     "v1SubmitTransactionRequest": {
       "type": "object",
       "properties": {
@@ -3950,18 +3925,6 @@
         }
       },
       "title": "Represents the high, low, open, and closing prices for an interval of trading,\nreferred to commonly as a candlestick or candle"
-    },
-    "vegaChainStatus": {
-      "type": "string",
-      "enum": [
-        "CHAIN_STATUS_UNSPECIFIED",
-        "CHAIN_STATUS_DISCONNECTED",
-        "CHAIN_STATUS_REPLAYING",
-        "CHAIN_STATUS_CONNECTED"
-      ],
-      "default": "CHAIN_STATUS_UNSPECIFIED",
-      "description": "- CHAIN_STATUS_UNSPECIFIED: Default value, always invalid\n - CHAIN_STATUS_DISCONNECTED: Blockchain is disconnected\n - CHAIN_STATUS_REPLAYING: Blockchain is replaying historic transactions\n - CHAIN_STATUS_CONNECTED: Blockchain is connected and receiving transactions",
-      "title": "The Vega blockchain status as reported by the node the caller is connected to"
     },
     "vegaContinuousTrading": {
       "type": "object",
@@ -5705,163 +5668,6 @@
         }
       },
       "title": "Risk model for simple modelling"
-    },
-    "vegaStatistics": {
-      "type": "object",
-      "properties": {
-        "block_height": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Current block height as reported by the Vega blockchain"
-        },
-        "backlog_length": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Current backlog length (number of transactions) that are waiting to be included in a block"
-        },
-        "total_peers": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Total number of connected peers to this node"
-        },
-        "genesis_time": {
-          "type": "string",
-          "title": "Genesis block date and time formatted in ISO-8601 datetime format with nanosecond precision"
-        },
-        "current_time": {
-          "type": "string",
-          "title": "Current system date and time formatted in ISO-8601 datetime format with nanosecond precision"
-        },
-        "vega_time": {
-          "type": "string",
-          "title": "Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision"
-        },
-        "status": {
-          "$ref": "#/definitions/vegaChainStatus",
-          "title": "Status of the connection to the Vega blockchain\n- See [`ChainStatus`](#vega.ChainStatus)"
-        },
-        "tx_per_block": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Transactions per block"
-        },
-        "average_tx_bytes": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Average transaction size in bytes"
-        },
-        "average_orders_per_block": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Average orders per block"
-        },
-        "trades_per_second": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Trades emitted per second"
-        },
-        "orders_per_second": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Orders processed per second"
-        },
-        "total_markets": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Total markets on this Vega network"
-        },
-        "total_amend_order": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Total number of order amendments since genesis (on all markets)"
-        },
-        "total_cancel_order": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Total number of order cancellations since genesis (on all markets)"
-        },
-        "total_create_order": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Total number of order submissions since genesis (on all markets)"
-        },
-        "total_orders": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Total number of orders processed since genesis (on all markets)"
-        },
-        "total_trades": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Total number of trades emitted since genesis (on all markets)"
-        },
-        "order_subscriptions": {
-          "type": "integer",
-          "format": "int64",
-          "title": "Current number of stream subscribers to order data"
-        },
-        "trade_subscriptions": {
-          "type": "integer",
-          "format": "int64",
-          "title": "Current number of stream subscribers to trade data"
-        },
-        "candle_subscriptions": {
-          "type": "integer",
-          "format": "int64",
-          "title": "Current number of stream subscribers to candle-stick data"
-        },
-        "market_depth_subscriptions": {
-          "type": "integer",
-          "format": "int64",
-          "title": "Current number of stream subscribers to market depth data"
-        },
-        "positions_subscriptions": {
-          "type": "integer",
-          "format": "int64",
-          "title": "Current number of stream subscribers to positions data"
-        },
-        "account_subscriptions": {
-          "type": "integer",
-          "format": "int64",
-          "title": "Current number of stream subscribers to account data"
-        },
-        "market_data_subscriptions": {
-          "type": "integer",
-          "format": "int64",
-          "title": "Current number of stream subscribers to market data"
-        },
-        "app_version_hash": {
-          "type": "string",
-          "title": "The version hash of the Vega node software"
-        },
-        "app_version": {
-          "type": "string",
-          "title": "The version of the Vega node software"
-        },
-        "chain_version": {
-          "type": "string",
-          "title": "The version of the underlying Vega blockchain"
-        },
-        "block_duration": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Current block duration, in nanoseconds"
-        },
-        "uptime": {
-          "type": "string",
-          "title": "Total uptime for this node formatted in ISO-8601 datetime format with nanosecond precision"
-        },
-        "chain_id": {
-          "type": "string",
-          "title": "Unique identifier for the underlying Vega blockchain"
-        },
-        "market_depth_updates_subscriptions": {
-          "type": "integer",
-          "format": "int64",
-          "title": "Current number of stream subscribers to market depth update data"
-        }
-      },
-      "title": "Vega domain specific statistics as reported by the node the caller is connected to"
     },
     "vegaTargetStakeParameters": {
       "type": "object",

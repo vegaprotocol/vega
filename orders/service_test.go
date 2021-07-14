@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/execution"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/orders/mocks"
@@ -14,6 +13,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+const InitialOrderVersion = 1
 
 var (
 	orderSubmission = commandspb.OrderSubmission{
@@ -47,7 +48,7 @@ func testGetByOrderIDDefaultVersion(t *testing.T) {
 		TimeInForce: orderSubmission.TimeInForce,
 		Status:      types.Order_STATUS_ACTIVE,
 		Remaining:   orderSubmission.Size,
-		Version:     execution.InitialOrderVersion,
+		Version:     InitialOrderVersion,
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()
@@ -69,7 +70,7 @@ func testGetByOrderIDFirstVersion(t *testing.T) {
 		TimeInForce: orderSubmission.TimeInForce,
 		Status:      types.Order_STATUS_ACTIVE,
 		Remaining:   orderSubmission.Size,
-		Version:     execution.InitialOrderVersion,
+		Version:     InitialOrderVersion,
 	}
 	svc := getTestService(t)
 	defer svc.ctrl.Finish()

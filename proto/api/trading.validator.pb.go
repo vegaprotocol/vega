@@ -951,17 +951,6 @@ func (this *ObserveEventBusResponse) Validate() error {
 	}
 	return nil
 }
-func (this *StatisticsRequest) Validate() error {
-	return nil
-}
-func (this *StatisticsResponse) Validate() error {
-	if this.Statistics != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.Statistics); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("Statistics", err)
-		}
-	}
-	return nil
-}
 func (this *WithdrawalsRequest) Validate() error {
 	if this.PartyId == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("PartyId", fmt.Errorf(`value '%v' must not be an empty string`, this.PartyId))
