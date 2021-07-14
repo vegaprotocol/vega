@@ -453,17 +453,16 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 	brokerEvts := make([]events.Event, 0, len(transfers))
 
 	settle, insurance, err := e.getSystemAccounts(marketID, asset)
+	if err != nil {
+		e.log.Error(
+			"Failed to get system accounts required for final settlement",
+			logging.Error(err),
+		)
+		return nil, err
+	}
 
 	// process loses first
 	for i, transfer := range transfers {
-		if err != nil {
-			e.log.Error(
-				"Failed to get system accounts required for final settlement",
-				logging.Error(err),
-			)
-			return nil, err
-		}
-
 		if transfer == nil {
 			continue
 		}

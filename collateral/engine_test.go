@@ -925,11 +925,9 @@ func TestLossSocialization(t *testing.T) {
 	assert.Nil(t, err)
 	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), winTrader1, testMarketAsset)
 	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), winTrader1, testMarketID, testMarketAsset)
-	// eng.Engine.IncrementBalance(context.Background(), margin, 0)
 	assert.Nil(t, err)
 	_, _ = eng.Engine.CreatePartyGeneralAccount(context.Background(), winTrader2, testMarketAsset)
 	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), winTrader2, testMarketID, testMarketAsset)
-	// eng.Engine.IncrementBalance(context.Background(), margin, 700)
 	assert.Nil(t, err)
 
 	transfers := []*types.Transfer{
