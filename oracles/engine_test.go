@@ -310,10 +310,6 @@ func newTimeService(ctx context.Context, t *testing.T) *testTimeService {
 	}
 }
 
-func (ts *testTimeService) mockNotifyOnTick(f interface{}) {
-	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-}
-
 func (b *testBroker) mockNewOracleSpecSubscription(currentTime time.Time, spec oraclespb.OracleSpec) {
 	spec.CreatedAt = currentTime.UnixNano()
 	spec.Status = oraclespb.OracleSpec_STATUS_ACTIVE
