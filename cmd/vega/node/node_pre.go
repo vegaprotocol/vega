@@ -454,7 +454,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	}
 
 	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
-	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker)
+	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker, l.timeService)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
 	l.oracleAdaptors = oracleAdaptors.New()
 

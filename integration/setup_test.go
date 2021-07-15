@@ -80,7 +80,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
 	execsetup.oracleEngine = oracles.NewEngine(
-		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker,
+		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
 	execsetup.executionEngine = execution.NewEngine(
 		execsetup.log,

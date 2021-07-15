@@ -8,6 +8,8 @@ import (
 	"time"
 
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	emock "code.vegaprotocol.io/vega/execution/mocks"
+
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution"
@@ -87,6 +89,7 @@ type testMarket struct {
 	ctrl             *gomock.Controller
 	collateralEngine *collateral.Engine
 	broker           *bmock.MockBroker
+	timeService      *emock.MockTimeService
 	now              time.Time
 	asset            string
 	mas              *monitor.AuctionState
@@ -111,6 +114,8 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 
 	// Setup Mocking Expectations
 	tm.broker = bmock.NewMockBroker(ctrl)
+	tm.timeService = emock.NewMockTimeService(ctrl)
+	tm.timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 
 	// eventFn records and count events and orderEvents
 	eventFn := func(evt events.Event) {
@@ -153,7 +158,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 		liquidityConfig  = liquidity.NewDefaultConfig()
 	)
 
-	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.now, tm.broker)
+	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.now, tm.broker, tm.timeService)
 
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
@@ -241,6 +246,8 @@ func getTestMarket2(
 	feeConfig := fee.NewDefaultConfig()
 	liquidityConfig := liquidity.NewDefaultConfig()
 	broker := bmock.NewMockBroker(ctrl)
+	timeService := emock.NewMockTimeService(ctrl)
+	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 
 	tm := &testMarket{
 		log:    log,
@@ -280,7 +287,7 @@ func getTestMarket2(
 		},
 	})
 
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker)
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker, timeService)
 
 	// add the token asset
 	tokAsset := types.Asset{
