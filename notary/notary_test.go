@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/notary/mocks"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ func TestNotary(t *testing.T) {
 
 func testAddKeyForKOResource(t *testing.T) {
 	notr := getTestNotary(t)
-	kind := commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
+	kind := types.NodeSignatureKindAssetNew
 	resID := "resid"
 	key := []byte(("123456"))
 	sig := []byte(("123456"))
@@ -71,7 +72,7 @@ func testAddKeyForKOResource(t *testing.T) {
 func testAddKeyForOKResource(t *testing.T) {
 	notr := getTestNotary(t)
 
-	kind := commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
+	kind := types.NodeSignatureKindAssetNew
 	resID := "resid"
 	key := []byte(("123456"))
 	sig := []byte(("123456"))
@@ -96,7 +97,7 @@ func testAddKeyForOKResource(t *testing.T) {
 func testAddKeyFinalize(t *testing.T) {
 	notr := getTestNotary(t)
 
-	kind := commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
+	kind := types.NodeSignatureKindAssetNew
 	resID := "resid"
 	key := []byte(("123456"))
 	sig := []byte(("123456"))
