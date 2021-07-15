@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vega.commands.v1;
-option go_package = "code.vegaprotocol.io/vega/proto/commands/v1";
+option go_package = "code.vegaprotocol.io/data-node/proto/commands/v1";
 
 import "chain_events.proto";
 import "github.com/mwitkow/go-proto-validators/validator.proto";

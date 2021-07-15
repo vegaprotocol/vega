@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package tm;
-option go_package = "code.vegaprotocol.io/vega/tm";
+option go_package = "code.vegaprotocol.io/data-node/tm";
 
 message TmEvent {
   oneof action {

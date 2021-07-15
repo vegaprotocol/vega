@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -26,7 +25,6 @@ import (
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
-	mockgov "code.vegaprotocol.io/data-node/governance/mocks"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
@@ -37,8 +35,6 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	types "code.vegaprotocol.io/data-node/proto"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
@@ -178,17 +174,16 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 
 	gov, vote := govStub{}, voteStub{}
 
-	governanceService := governance.NewService(logger, conf.Governance, eventBroker, gov, vote, mockgov.NewMockNetParams(mockCtrl))
+	governanceService := governance.NewService(logger, conf.Governance, eventBroker, gov, vote)
 
 	nplugin := plugins.NewNotary(context.Background())
 	notaryService := notary.NewService(logger, conf.Notary, nplugin)
 
 	aplugin := plugins.NewAsset(context.Background())
 	assetService := assets.NewService(logger, conf.Assets, aplugin)
-	feeService := fee.NewService(logger, conf.Execution.Fee, marketStore, marketDataStore)
+	feeService := fee.NewService(logger, conf.Fee, marketStore, marketDataStore)
 	eventService := subscribers.NewService(eventBroker)
 
-	evtfwd := mocks.NewMockEvtForwarder(mockCtrl)
 	withdrawal := plugins.NewWithdrawal(ctx)
 	deposit := plugins.NewDeposit(ctx)
 	netparams := netparams.NewService(ctx)
@@ -223,7 +218,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		riskService,
 		governanceService,
 		notaryService,
-		evtfwd,
 		assetService,
 		feeService,
 		eventService,
@@ -252,9 +246,9 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 			t.Fatalf("failed to dial gRPC server: %v", err)
 		}
 
-		if err = waitForNode(t, ctx, conn); err != nil {
-			t.Fatalf("failed to start gRPC server: %v", err)
-		}
+		// if err = waitForNode(t, ctx, conn); err != nil {
+		// 	t.Fatalf("failed to start gRPC server: %v", err)
+		// }
 	}
 
 	return
@@ -350,38 +344,6 @@ func waitForTime(tmConf *TimeSub, now time.Time) bool {
 func randomPort() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(65535-1023) + 1023
-}
-
-func waitForNode(t testing.TB, ctx context.Context, conn *grpc.ClientConn) error {
-	const maxSleep = 2000
-
-	req := &protoapi.PrepareSubmitOrderRequest{
-		Submission: &commandspb.OrderSubmission{
-			Type:     types.Order_TYPE_LIMIT,
-			MarketId: "non-existent",
-		},
-	}
-
-	c := protoapi.NewTradingServiceClient(conn)
-	sleepTime := 10
-	for sleepTime < maxSleep {
-		_, err := c.PrepareSubmitOrder(ctx, req)
-		if err == nil {
-			return fmt.Errorf("expected error when calling PrepareSubmitOrderRequest API with invalid marketID")
-		}
-
-		if strings.Contains(err.Error(), "InvalidArgument") {
-			return nil
-		}
-
-		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
-		sleepTime *= 2
-	}
-	if sleepTime >= maxSleep {
-		return fmt.Errorf("timeout waiting for gRPC server to respond")
-	}
-
-	return nil
 }
 
 type govStub struct{}

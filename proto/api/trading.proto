@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "code.vegaprotocol.io/vega/proto/api";
+option go_package = "code.vegaprotocol.io/data-node/proto/api";
 
 import "vega.proto";
 import "markets.proto";
@@ -317,10 +317,7 @@ service TradingDataService {
   rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
 
   // -- Misc --
-
-  // Get Statistics on Vega
-  rpc Statistics(StatisticsRequest) returns (StatisticsResponse);
-
+  
   rpc LastBlockHeight(LastBlockHeightRequest) returns (LastBlockHeightResponse);
 
   // Get Time
@@ -1149,13 +1146,6 @@ message ObserveEventBusRequest {
 message ObserveEventBusResponse {
   // One or more events
   repeated vega.events.v1.BusEvent events = 1;
-}
-
-// A a request for statistics about the Vega network
-message StatisticsRequest {}
-
-message StatisticsResponse {
-  vega.Statistics statistics = 1;
 }
 
 // A request to get a list of withdrawal from a given party

@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package vega.wallet.v1;
-option go_package = "code.vegaprotocol.io/vega/proto/wallet/v1";
+option go_package = "code.vegaprotocol.io/data-node/proto/wallet/v1";
 
 import "commands/v1/commands.proto";
 import "commands/v1/validator_commands.proto";

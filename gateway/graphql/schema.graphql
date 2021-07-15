@@ -433,9 +433,6 @@ type Query {
   "An entity that is trading on the VEGA network"
   party("ID of a party" id: ID!): Party
 
-  "a bunch of statistics about the node"
-  statistics: Statistics!
-
   "The last block process by the blockchain"
   lastBlockHeight: String!
 

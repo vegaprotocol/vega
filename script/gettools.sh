@@ -4,7 +4,7 @@
 BUF_VER="0.36.0" # do not add "v" prefix
 PROTOC_VER="3.7.1" # do not add "v" prefix
 PROTOC_URL="https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VER}/protoc-${PROTOC_VER}-linux-x86_64.zip"
-PROTOBUF_VER="1.3.1" # do not add "v" prefix
+PROTOBUF_VER="1.3.5" # do not add "v" prefix
 
 
 gettools_develop() {
@@ -26,7 +26,7 @@ golang.org/x/tools/cmd/goimports@v0.0.0-20190329200012-0ec5c269d481
 honnef.co/go/tools/cmd/staticcheck@2019.2.3"
 	# Note: Make sure the above tools and versions match the ones in devops-infra/docker/cipipeline/Dockerfile
 	echo "$tools" | while read -r toolurl ; do
-		go install "$toolurl"
+		go get "$toolurl"
 	done
 }
 
