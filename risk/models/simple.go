@@ -58,12 +58,12 @@ func (f *Simple) PriceRange(currentP, _, _ num.Decimal) (num.Decimal, num.Decima
 
 // ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
 // Additional arguments control optional truncation of probability density outside the [minPrice,maxPrice] range.
-func (f *Simple) ProbabilityOfTrading(currentP, orderP, minP, maxP *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal {
-	if !applyMinMax {
-		return f.prob
-	}
-	if orderP.LT(minP) || orderP.GT(maxP) {
-		return num.DecimalZero()
+func (f *Simple) ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal {
+	if applyMinMax {
+		p := orderP.ToDecimal()
+		if p.LessThan(minP) || p.GreaterThan(maxP) {
+			return num.DecimalZero()
+		}
 	}
 	return f.prob
 }

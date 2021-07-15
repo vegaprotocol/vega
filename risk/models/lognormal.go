@@ -91,11 +91,11 @@ func (f *LogNormal) PriceRange(currentP, yFrac, probabilityLevel num.Decimal) (n
 
 // ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
 // Additional arguments control optional truncation of probability density outside the [minPrice,maxPrice] range.
-func (f *LogNormal) ProbabilityOfTrading(currentP, orderP, minP, maxP *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal {
+func (f *LogNormal) ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal {
 	dist := f.getDistribution(currentP, yFrac)
-	min := math.Max(minP.Float64(), 0)
+	min := math.Max(minP.InexactFloat64(), 0)
 	// still, quant uses floats
-	prob := pd.ProbabilityOfTrading(dist, orderP.Float64(), isBid, applyMinMax, min, maxP.Float64())
+	prob := pd.ProbabilityOfTrading(dist, orderP.Float64(), isBid, applyMinMax, min, maxP.InexactFloat64())
 	return num.DecimalFromFloat(prob)
 }
 

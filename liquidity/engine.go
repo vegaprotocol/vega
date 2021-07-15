@@ -31,7 +31,7 @@ type Broker interface {
 
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
-	ProbabilityOfTrading(currentPrice, orderPrice, minPrice, maxPrice *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
+	ProbabilityOfTrading(currentPrice, orderPrice *num.Uint, minPrice, maxPrice num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
 
 	GetProjectionHorizon() num.Decimal
 }
@@ -39,7 +39,7 @@ type RiskModel interface {
 // PriceMonitor provides the range of valid prices, that is prices that
 // wouldn't trade the current trading mode
 type PriceMonitor interface {
-	GetValidPriceRange() (*num.Uint, *num.Uint)
+	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 }
 
 // IDGen is an id generator for orders.

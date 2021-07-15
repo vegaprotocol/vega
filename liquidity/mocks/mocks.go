@@ -50,7 +50,7 @@ func (mr *MockRiskModelMockRecorder) GetProjectionHorizon() *gomock.Call {
 }
 
 // ProbabilityOfTrading mocks base method
-func (m *MockRiskModel) ProbabilityOfTrading(arg0, arg1, arg2, arg3 *num.Uint, arg4 decimal.Decimal, arg5, arg6 bool) decimal.Decimal {
+func (m *MockRiskModel) ProbabilityOfTrading(arg0, arg1 *num.Uint, arg2, arg3, arg4 decimal.Decimal, arg5, arg6 bool) decimal.Decimal {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProbabilityOfTrading", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(decimal.Decimal)
@@ -87,11 +87,11 @@ func (m *MockPriceMonitor) EXPECT() *MockPriceMonitorMockRecorder {
 }
 
 // GetValidPriceRange mocks base method
-func (m *MockPriceMonitor) GetValidPriceRange() (*num.Uint, *num.Uint) {
+func (m *MockPriceMonitor) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidPriceRange")
-	ret0, _ := ret[0].(*num.Uint)
-	ret1, _ := ret[1].(*num.Uint)
+	ret0, _ := ret[0].(num.WrappedDecimal)
+	ret1, _ := ret[1].(num.WrappedDecimal)
 	return ret0, ret1
 }
 

@@ -588,6 +588,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	// and order price should be bounded to min/max price.
 	minPrice, maxPrice := m.pMonitor.GetValidPriceRange()
 	// minPrice can't be negative anymore
+	minP := minPrice.Representation()
+	maxP := maxPrice.Representation()
 
 	// this is handling bestAsk / mid for ASK.
 	if side == types.Side_SIDE_SELL {
@@ -596,9 +598,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// now if this price+offset is < to maxPrice,
 		// nothing needs to be changed. we return
 		// both the current price, and the offset
-		if basePrice.LTE(maxPrice) {
+		if basePrice.LTE(maxP) {
 			// now we also need to make sure we are > minPrice
-			if basePrice.GTE(minPrice) {
+			if basePrice.GTE(minP) {
 				return basePrice, po, nil
 			}
 
@@ -622,13 +624,13 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// we have two posibilitied now, maxPrice is
 		// bigger than the price we got, then we use it
 		// or we will use price if it's higher.
-		if price.LT(maxPrice) {
+		if price.LT(maxP) {
 			// this is the case where maxPrice is > to price,
 			// then we need to adapt the offset
-			off := num.Zero().Sub(maxPrice, price)
+			off := num.Zero().Sub(maxP, price)
 			po.Offset = int64(off.Uint64())
 			// and our price is the maxPrice
-			return maxPrice, po, nil
+			return maxP, po, nil
 		}
 
 		// then this is the last case, were maxPrice would be smaller
@@ -661,8 +663,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// and this would cover anycase where minPrice
 		// would be 0, it's safe to return this offset
 		// minPrice <= basePrice <= price
-		if basePrice.GTE(minPrice) {
-			if basePrice.LTE(maxPrice) {
+		if basePrice.GTE(minP) {
+			if basePrice.LTE(maxP) {
 				return basePrice, po, nil
 			}
 
@@ -684,8 +686,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 
 		// now this is the case where basePrice is < minPrice
 		// and minPrice is non-negative + inferior to bestBid
-		if !minPrice.IsZero() && minPrice.LT(price) {
-			off := num.Zero().Sub(price, minPrice)
+		if !minP.IsZero() && minP.LT(price) {
+			off := num.Zero().Sub(price, minP)
 			po.Offset = -int64(off.Uint64())
 			return price.Sub(price, off), po, nil
 		}
@@ -712,7 +714,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	// would be negative, so we need to handle 2 cases
 	// either minPrice is a non-0 price after offset
 	// and it's smaller that price, or we will use price
-	if minPrice.IsZero() || minPrice.GT(price) {
+	if minP.IsZero() || minP.GT(price) {
 		// here we use the price as both case are invalid
 		// for using minPrice
 		switch po.Reference {
@@ -725,7 +727,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	}
 
 	// this is the last case where we can use the minPrice
-	off := num.Zero().Sub(price, minPrice)
+	off := num.Zero().Sub(price, minP)
 	po.Offset = -int64(off.Uint64())
 	return price.Sub(price, off), po, nil
 }

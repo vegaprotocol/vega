@@ -876,15 +876,15 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 
 	expMax := num.MaxUint()
 	min, max := pm.GetValidPriceRange()
-	require.True(t, min.IsZero())
-	require.Equal(t, expMax.String(), max.String())
+	require.True(t, min.Representation().IsZero())
+	require.Equal(t, expMax.String(), max.Representation().String())
 
 	err = pm.CheckPrice(ctx, auctionStateMock, currentPrice, 1, now, true)
 	require.NoError(t, err)
 
 	min, max = pm.GetValidPriceRange()
-	require.True(t, min.IsZero())
-	require.Equal(t, expMax.String(), max.String())
+	require.True(t, min.Representation().IsZero())
+	require.Equal(t, expMax.String(), max.Representation().String())
 }
 
 func TestGetValidPriceRange_2triggers(t *testing.T) {
@@ -960,16 +960,16 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 
 	min, max := pm.GetValidPriceRange()
 
-	err = pm.CheckPrice(ctx, auctionStateMock, min, 1, now, true)
+	err = pm.CheckPrice(ctx, auctionStateMock, min.Representation(), 1, now, true)
 	require.NoError(t, err)
 
-	err = pm.CheckPrice(ctx, auctionStateMock, max, 1, now, true)
+	err = pm.CheckPrice(ctx, auctionStateMock, max.Representation(), 1, now, true)
 	require.NoError(t, err)
 
 	// Should trigger an auction
 	auctionStateMock.EXPECT().StartPriceAuction(now, gomock.Any()).Times(1)
 
-	cPrice.Sub(min, one)
+	cPrice.Sub(min.Representation(), one)
 	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 
@@ -979,15 +979,15 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 
 	min, max = pm.GetValidPriceRange()
 
-	err = pm.CheckPrice(ctx, auctionStateMock, min, 1, now, true)
+	err = pm.CheckPrice(ctx, auctionStateMock, min.Representation(), 1, now, true)
 	require.NoError(t, err)
 
-	err = pm.CheckPrice(ctx, auctionStateMock, max, 1, now, true)
+	err = pm.CheckPrice(ctx, auctionStateMock, max.Representation(), 1, now, true)
 	require.NoError(t, err)
 
 	// Should trigger an auction
 	auctionStateMock.EXPECT().StartPriceAuction(now, gomock.Any()).Times(1)
-	cPrice.Add(max, one)
+	cPrice.Add(max.Representation(), one)
 	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true)
 	require.NoError(t, err)
 }
