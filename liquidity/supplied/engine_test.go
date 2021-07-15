@@ -43,7 +43,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 		Price:     num.NewUint(102),
 		Size:      30,
 		Remaining: 25,
-		Side:      types.Side_SIDE_BUY,
+		Side:      types.SideBuy,
 	}
 
 	buyOrder1Prob := num.DecimalFromFloat(0.256)
@@ -58,13 +58,13 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 		Price:     num.NewUint(99),
 		Size:      15,
 		Remaining: 11,
-		Side:      types.Side_SIDE_SELL,
+		Side:      types.SideSell,
 	}
 	sellOrder2 := &types.Order{
 		Price:     num.NewUint(97),
 		Size:      60,
 		Remaining: 60,
-		Side:      types.Side_SIDE_SELL,
+		Side:      types.SideSell,
 	}
 
 	sellOrder1Prob := num.DecimalFromFloat(0.33)
@@ -101,7 +101,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 		Price:     num.NewUint(102),
 		Size:      600,
 		Remaining: 599,
-		Side:      types.Side_SIDE_BUY,
+		Side:      types.SideBuy,
 	}
 	buyOrder2Prob := 0.256
 
@@ -354,19 +354,19 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Price:     num.NewUint(95),
 			Size:      500,
 			Remaining: 1,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		},
 		{
 			Price:     num.NewUint(97),
 			Size:      1000,
 			Remaining: 1,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		},
 		{
 			Price:     num.NewUint(104),
 			Size:      500,
 			Remaining: 1,
-			Side:      types.Side_SIDE_SELL,
+			Side:      types.SideSell,
 		},
 	}
 
@@ -403,19 +403,19 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Price:     num.NewUint(95),
 			Size:      500,
 			Remaining: 100,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		},
 		{
 			Price:     num.NewUint(97),
 			Size:      1000,
 			Remaining: 100,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		},
 		{
 			Price:     num.NewUint(104),
 			Size:      500,
 			Remaining: 1,
-			Side:      types.Side_SIDE_SELL,
+			Side:      types.SideSell,
 		},
 	}
 
@@ -442,19 +442,19 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Price:     num.NewUint(95),
 			Size:      500,
 			Remaining: 1,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		},
 		{
 			Price:     num.NewUint(97),
 			Size:      1000,
 			Remaining: 1,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		},
 		{
 			Price:     num.NewUint(104),
 			Size:      500,
 			Remaining: 100,
-			Side:      types.Side_SIDE_SELL,
+			Side:      types.SideSell,
 		},
 	}
 
@@ -483,19 +483,19 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 			Price:     num.NewUint(95),
 			Size:      500,
 			Remaining: 100,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		},
 		{
 			Price:     num.NewUint(97),
 			Size:      1000,
 			Remaining: 100,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		},
 		{
 			Price:     num.NewUint(104),
 			Size:      500,
 			Remaining: 100,
-			Side:      types.Side_SIDE_SELL,
+			Side:      types.SideSell,
 		},
 	}
 
@@ -571,13 +571,13 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 		Price:     minPrice.Representation(),
 		Size:      15,
 		Remaining: 11,
-		Side:      types.Side_SIDE_BUY,
+		Side:      types.SideBuy,
 	}
 	order2 := &types.Order{
 		Price:     maxPrice.Representation(),
 		Size:      60,
 		Remaining: 60,
-		Side:      types.Side_SIDE_SELL,
+		Side:      types.SideSell,
 	}
 
 	orders := []*types.Order{
@@ -613,7 +613,7 @@ func collateOrders(limitOrders []*types.Order, buyShapes []*supplied.LiquidityOr
 			Price:     s.Price,
 			Size:      s.LiquidityImpliedVolume,
 			Remaining: s.LiquidityImpliedVolume,
-			Side:      types.Side_SIDE_BUY,
+			Side:      types.SideBuy,
 		}
 		limitOrders = append(limitOrders, lo)
 	}
@@ -623,7 +623,7 @@ func collateOrders(limitOrders []*types.Order, buyShapes []*supplied.LiquidityOr
 			Price:     s.Price,
 			Size:      s.LiquidityImpliedVolume,
 			Remaining: s.LiquidityImpliedVolume,
-			Side:      types.Side_SIDE_SELL,
+			Side:      types.SideSell,
 		}
 		limitOrders = append(limitOrders, lo)
 	}

@@ -37,7 +37,7 @@ func (l *PriceLevel) reduceVolume(reduceBy uint64) {
 func (l *PriceLevel) getOrdersByParty(partyID string) []*types.Order {
 	ret := []*types.Order{}
 	for _, o := range l.orders {
-		if o.PartyId == partyID {
+		if o.Party == partyID {
 			ret = append(ret, o)
 		}
 	}
@@ -69,7 +69,7 @@ func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*ty
 	}
 
 	for _, order := range l.orders {
-		if order.PartyId == agg.PartyId {
+		if order.Party == agg.Party {
 			err = ErrWashTrade
 			return
 		}
@@ -113,7 +113,7 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 	for i, order := range l.orders {
 		// prevent wash trade
 		if checkWashTrades {
-			if order.PartyId == agg.PartyId {
+			if order.Party == agg.Party {
 				err = ErrWashTrade
 				break
 			}
@@ -185,7 +185,7 @@ func max(x, y uint64) uint64 {
 // Creates a trade of a given size between two orders and updates the order details
 func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	var buyer, seller *types.Order
-	if agg.Side == types.Side_SIDE_BUY {
+	if agg.Side == types.SideBuy {
 		buyer = agg
 		seller = pass
 	} else {
@@ -198,13 +198,13 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	}
 
 	return &types.Trade{
-		Type:      types.Trade_TYPE_DEFAULT,
-		MarketId:  agg.MarketId,
+		Type:      types.TradeTypeDefault,
+		MarketID:  agg.MarketID,
 		Price:     pass.Price.Clone(),
 		Size:      size,
 		Aggressor: agg.Side,
-		Buyer:     buyer.PartyId,
-		Seller:    seller.PartyId,
+		Buyer:     buyer.Party,
+		Seller:    seller.Party,
 		Timestamp: agg.CreatedAt,
 	}
 }
@@ -213,13 +213,13 @@ func (l PriceLevel) print(log *logging.Logger) {
 	log.Debug(fmt.Sprintf("priceLevel: %d\n", l.price))
 	for _, o := range l.orders {
 		var side string
-		if o.Side == types.Side_SIDE_BUY {
+		if o.Side == types.SideBuy {
 			side = "BUY"
 		} else {
 			side = "SELL"
 		}
 
 		log.Debug(fmt.Sprintf("    %s %s @%d size=%d R=%d Type=%d T=%d %s\n",
-			o.PartyId, side, o.Price, o.Size, o.Remaining, o.TimeInForce, o.CreatedAt, o.Id))
+			o.Party, side, o.Price, o.Size, o.Remaining, o.TimeInForce, o.CreatedAt, o.ID))
 	}
 }

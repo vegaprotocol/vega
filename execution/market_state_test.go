@@ -50,7 +50,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// expect error
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "party-A", 5, 5000)
+	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-A", 5, 5000)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	assert.Nil(t, o1conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
@@ -64,7 +64,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
 	amendment := &types.OrderAmendment{
-		OrderId:   o1.Id,
+		OrderId:   o1.ID,
 		Price:     num.NewUint(4000),
 		SizeDelta: 10,
 	}
@@ -80,14 +80,14 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.1),
 		Sells: []*types.LiquidityOrder{
 			{
-				Reference:  types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+				Reference:  types.PeggedReferenceBestAsk,
 				Proportion: 1,
 				Offset:     1,
 			},
 		},
 		Buys: []*types.LiquidityOrder{
 			{
-				Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+				Reference:  types.PeggedReferenceMid,
 				Proportion: 1,
 				Offset:     -1,
 			},
@@ -153,10 +153,10 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 	addAccountWithAmount(tm, "party3", 100000000)
 	addAccountWithAmount(tm, "party4", 100000000)
 	orders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order1", types.Side_SIDE_BUY, "party1", 1, 5000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order2", types.Side_SIDE_SELL, "party2", 1, 5000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order3", types.Side_SIDE_BUY, "party3", 1, 4500),  // buy too low
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order4", types.Side_SIDE_SELL, "party4", 1, 5500), // sell too expensive
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order1", types.SideBuy, "party1", 1, 5000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order2", types.SideSell, "party2", 1, 5000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order3", types.SideBuy, "party3", 1, 4500),  // buy too low
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order4", types.SideSell, "party4", 1, 5500), // sell too expensive
 	}
 	for _, o := range orders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
@@ -188,10 +188,10 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	addAccountWithAmount(tm, "party3", 100000000)
 	addAccountWithAmount(tm, "party4", 100000000)
 	orders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order1", types.Side_SIDE_BUY, "party1", 1, 5000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order2", types.Side_SIDE_SELL, "party2", 1, 5000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order3", types.Side_SIDE_BUY, "party3", 1, 4500),  // buy too low
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "order4", types.Side_SIDE_SELL, "party4", 1, 5500), // sell too expensive
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order1", types.SideBuy, "party1", 1, 5000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order2", types.SideSell, "party2", 1, 5000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order3", types.SideBuy, "party3", 1, 4500),  // buy too low
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "order4", types.SideSell, "party4", 1, 5500), // sell too expensive
 	}
 	for _, o := range orders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
@@ -206,7 +206,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// expect error
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order01", types.Side_SIDE_BUY, "someparty", 5, 5000)
+	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "someparty", 5, 5000)
 	o1conf, err := tm.market.SubmitOrder(context.Background(), o1)
 	assert.NotNil(t, o1conf)
 	assert.NoError(t, err)

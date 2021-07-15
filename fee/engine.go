@@ -103,12 +103,12 @@ func (e *Engine) CalculateForContinuousMode(
 	for _, v := range trades {
 		fee := e.calculateContinuousModeFees(v)
 		switch v.Aggressor {
-		case types.Side_SIDE_BUY:
+		case types.SideBuy:
 			v.BuyerFee = fee
 			v.SellerFee = types.NewFee()
 			aggressor = v.Buyer
 			maker = v.Seller
-		case types.Side_SIDE_SELL:
+		case types.SideSell:
 			v.SellerFee = fee
 			v.BuyerFee = types.NewFee()
 			aggressor = v.Seller
@@ -253,9 +253,9 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 		} else {
 			// set the aggressor to be the side of the party
 			// entering the later auction
-			v.Aggressor = types.Side_SIDE_SELL
+			v.Aggressor = types.SideSell
 			if v.BuyerAuctionBatch > v.SellerAuctionBatch {
-				v.Aggressor = types.Side_SIDE_BUY
+				v.Aggressor = types.SideBuy
 			}
 			// fees are being assign to the trade directly
 			// no need to do add them there as well

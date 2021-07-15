@@ -14,33 +14,33 @@ func TestOrderBookAmends_simpleAmend(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 
 	amend := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.NoError(t, err)
-	assert.Equal(t, 1, int(book.getVolumeAtLevel(100, types.Side_SIDE_BUY)))
+	assert.Equal(t, 1, int(book.getVolumeAtLevel(100, types.SideBuy)))
 }
 
 func TestOrderBookAmends_invalidPartyID(t *testing.T) {
@@ -48,33 +48,33 @@ func TestOrderBookAmends_invalidPartyID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 
 	amend := types.Order{
-		MarketId:    market,
-		PartyId:     "B",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "B",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 }
 
 func TestOrderBookAmends_invalidPriceAmend(t *testing.T) {
@@ -82,33 +82,33 @@ func TestOrderBookAmends_invalidPriceAmend(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 
 	amend := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(101),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 }
 
 func TestOrderBookAmends_invalidSize(t *testing.T) {
@@ -116,33 +116,33 @@ func TestOrderBookAmends_invalidSize(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 
 	amend := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        5,
 		Remaining:   5,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 }
 
 func TestOrderBookAmends_reduceToZero(t *testing.T) {
@@ -150,33 +150,33 @@ func TestOrderBookAmends_reduceToZero(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 
 	amend := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        0,
 		Remaining:   0,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
-	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(2), book.getVolumeAtLevel(100, types.SideBuy))
 }
 
 func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
@@ -184,48 +184,48 @@ func TestOrderBookAmends_invalidSizeDueToPartialFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, uint64(10), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(10), book.getVolumeAtLevel(100, types.SideBuy))
 
 	order2 := types.Order{
-		MarketId:    market,
-		PartyId:     "B",
-		Side:        types.Side_SIDE_SELL,
+		MarketID:    market,
+		Party:       "B",
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        5,
 		Remaining:   5,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.SideBuy))
 
 	amend := types.Order{
-		MarketId:    market,
-		PartyId:     "B",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "B",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        6,
 		Remaining:   6,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
-	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.SideBuy))
 }
 
 func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
@@ -233,48 +233,48 @@ func TestOrderBookAmends_validSizeDueToPartialFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, uint64(10), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(10), book.getVolumeAtLevel(100, types.SideBuy))
 
 	order2 := types.Order{
-		MarketId:    market,
-		PartyId:     "B",
-		Side:        types.Side_SIDE_SELL,
+		MarketID:    market,
+		Party:       "B",
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        5,
 		Remaining:   5,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(5), book.getVolumeAtLevel(100, types.SideBuy))
 
 	amend := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        3,
 		Remaining:   3,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	err = book.AmendOrder(&order, &amend)
 	assert.Error(t, types.ErrOrderAmendFailure, err)
-	assert.Equal(t, uint64(3), book.getVolumeAtLevel(100, types.Side_SIDE_BUY))
+	assert.Equal(t, uint64(3), book.getVolumeAtLevel(100, types.SideBuy))
 }
 
 func TestOrderBookAmends_noOrderToAmend(t *testing.T) {
@@ -283,14 +283,14 @@ func TestOrderBookAmends_noOrderToAmend(t *testing.T) {
 	defer book.Finish()
 
 	amend := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	err := book.AmendOrder(nil, &amend)
 	assert.Error(t, types.ErrOrderNotFound, err)

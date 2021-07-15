@@ -24,13 +24,13 @@ func TestVersioning(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	orderBuy := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        size,
 		Price:       num.NewUint(price),
 		Remaining:   100,
@@ -43,7 +43,7 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, confirmation.Order.Version, uint64(1))
 
-	orderID := confirmation.Order.Id
+	orderID := confirmation.Order.ID
 
 	// Amend price up, check version moves to 2
 	amend := &types.OrderAmendment{
@@ -76,7 +76,7 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Flip to GTT, check version moves to 6
-	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
+	amend.TimeInForce = types.OrderTimeInForceGTT
 	exp := now.UnixNano() + 100000000000
 	amend.ExpiresAt = &exp
 	amend.SizeDelta = 0
@@ -92,7 +92,7 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Flip back GTC, check version moves to 8
-	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTC
+	amend.TimeInForce = types.OrderTimeInForceGTC
 	amend.ExpiresAt = nil
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendment)

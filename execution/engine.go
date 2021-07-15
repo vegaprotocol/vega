@@ -483,7 +483,7 @@ func (e *Engine) decrementOrderGaugeMetrics(
 	passive []*types.Order,
 ) {
 	// order was active, not anymore -> decrement gauge
-	if order.Status != types.Order_STATUS_ACTIVE {
+	if order.Status != types.OrderStatusActive {
 		metrics.OrderGaugeAdd(-1, market)
 	}
 	var passiveCount int
@@ -533,7 +533,7 @@ func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string)
 	if err != nil {
 		return nil, err
 	}
-	if conf.Order.Status == types.Order_STATUS_CANCELLED {
+	if conf.Order.Status == types.OrderStatusCancelled {
 		metrics.OrderGaugeAdd(-1, market)
 	}
 	return []*types.OrderCancellationConfirmation{conf}, nil
@@ -550,7 +550,7 @@ func (e *Engine) cancelOrderByMarket(ctx context.Context, party, market string) 
 	}
 	var confirmed int
 	for _, conf := range confirmations {
-		if conf.Order.Status == types.Order_STATUS_CANCELLED {
+		if conf.Order.Status == types.OrderStatusCancelled {
 			confirmed += 1
 		}
 	}
@@ -569,7 +569,7 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 		confirmations = append(confirmations, confs...)
 		var confirmed int
 		for _, conf := range confs {
-			if conf.Order.Status == types.Order_STATUS_CANCELLED {
+			if conf.Order.Status == types.OrderStatusCancelled {
 				confirmed += 1
 			}
 		}

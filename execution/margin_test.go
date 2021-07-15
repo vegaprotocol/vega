@@ -37,21 +37,21 @@ func TestMargins(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	// set auction durations to 1 second
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 100000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 100000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_BUY, auxParty, 1, price.Uint64()),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_SELL, auxParty2, 1, price.Uint64()),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideBuy, auxParty, 1, price.Uint64()),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideSell, auxParty2, 1, price.Uint64()),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
@@ -66,13 +66,13 @@ func TestMargins(t *testing.T) {
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, data.MarketTradingMode)
 
 	order1 := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid12",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party2,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid12",
+		Side:        types.SideBuy,
+		Party:       party2,
+		MarketID:    tm.market.GetID(),
 		Size:        size,
 		Price:       price.Clone(),
 		Remaining:   size,
@@ -80,13 +80,13 @@ func TestMargins(t *testing.T) {
 		Reference:   "party2-buy-order",
 	}
 	order2 := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid123",
-		Side:        types.Side_SIDE_SELL,
-		PartyId:     party3,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid123",
+		Side:        types.SideSell,
+		Party:       party3,
+		MarketID:    tm.market.GetID(),
 		Size:        size,
 		Price:       price.Clone(),
 		Remaining:   size,
@@ -100,13 +100,13 @@ func TestMargins(t *testing.T) {
 	assert.Equal(t, 1, len(confirmation.Trades))
 
 	orderBuy := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        size,
 		Price:       price.Clone(),
 		Remaining:   size,
@@ -122,7 +122,7 @@ func TestMargins(t *testing.T) {
 		t.Fatal("SubmitOrder confirmation was nil, but no error.")
 	}
 
-	orderID := confirmation.Order.Id
+	orderID := confirmation.Order.ID
 
 	// Amend size up
 	amend := &types.OrderAmendment{
@@ -166,21 +166,21 @@ func TestPartialFillMargins(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	// ensure auction durations are 1 second
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 	// create orders so we can leave opening auction
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_BUY, auxParty, 1, 10000000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_SELL, auxParty2, 1, 10000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideBuy, auxParty, 1, 10000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideSell, auxParty2, 1, 10000000),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
@@ -192,11 +192,11 @@ func TestPartialFillMargins(t *testing.T) {
 
 	// use party 2+3 to set super high mark price
 	orderSell1 := &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Side:        types.Side_SIDE_SELL,
-		PartyId:     party2,
-		MarketId:    tm.market.GetID(),
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Side:        types.SideSell,
+		Party:       party2,
+		MarketID:    tm.market.GetID(),
 		Size:        1,
 		Price:       num.NewUint(10000000),
 		Remaining:   1,
@@ -210,11 +210,11 @@ func TestPartialFillMargins(t *testing.T) {
 
 	// other side of the instant match
 	orderBuy1 := &types.Order{
-		Type:        types.Order_TYPE_MARKET,
-		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party3,
-		MarketId:    tm.market.GetID(),
+		Type:        types.OrderTypeMarket,
+		TimeInForce: types.OrderTimeInForceIOC,
+		Side:        types.SideBuy,
+		Party:       party3,
+		MarketID:    tm.market.GetID(),
 		Size:        1,
 		Price:       num.Zero(),
 		Remaining:   1,
@@ -232,11 +232,11 @@ func TestPartialFillMargins(t *testing.T) {
 
 	// Create a valid smaller order
 	orderBuy3 := &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        1,
 		Price:       num.NewUint(2),
 		Remaining:   1,
@@ -251,7 +251,7 @@ func TestPartialFillMargins(t *testing.T) {
 	if !assert.NotNil(t, confirmation) {
 		t.Fatal("SubmitOrder confirmation was nil, but no error.")
 	}
-	orderID := confirmation.Order.Id
+	orderID := confirmation.Order.ID
 
 	// Attempt to amend it to the same size as the failed new order
 	amend := &types.OrderAmendment{

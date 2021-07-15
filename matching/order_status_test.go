@@ -45,20 +45,20 @@ func testFOKStopped(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceFOK,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, types.Order_STATUS_STOPPED, order.Status)
+	assert.Equal(t, types.OrderStatusStopped, order.Status)
 }
 
 func testFOKFilled(t *testing.T) {
@@ -71,37 +71,37 @@ func testFOKFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		Id:          "V0000000032-0000000009",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		ID:          "V0000000032-0000000009",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our fok order to be filled
 	order := types.Order{
-		Id:          "V0000000032-0000000010",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000010",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceFOK,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
+	assert.Equal(t, types.OrderStatusFilled, order.Status)
 }
 
 func testIOCStopped(t *testing.T) {
@@ -110,20 +110,20 @@ func testIOCStopped(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceIOC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, types.Order_STATUS_STOPPED, order.Status)
+	assert.Equal(t, types.OrderStatusStopped, order.Status)
 }
 
 func testIOCPartiallyFilled(t *testing.T) {
@@ -136,37 +136,37 @@ func testIOCPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		Id:          "V0000000032-0000000009",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		ID:          "V0000000032-0000000009",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our IOC order to be filled
 	order := types.Order{
-		Id:          "V0000000032-0000000010",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000010",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
-		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceIOC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_STATUS_PARTIALLY_FILLED, order.Status)
+	assert.Equal(t, types.OrderStatusPartiallyFilled, order.Status)
 }
 
 func testIOCFilled(t *testing.T) {
@@ -179,37 +179,37 @@ func testIOCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		Id:          "V0000000032-0000000009",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		ID:          "V0000000032-0000000009",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our fok order to be filled
 	order := types.Order{
-		Id:          "V0000000032-0000000010",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000010",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceIOC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
+	assert.Equal(t, types.OrderStatusFilled, order.Status)
 }
 
 func testGTCActive(t *testing.T) {
@@ -221,20 +221,20 @@ func testGTCActive(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_STATUS_ACTIVE, order1.Status)
+	assert.Equal(t, types.OrderStatusActive, order1.Status)
 }
 
 func testGTCStoppedNotFilled(t *testing.T) {
@@ -246,16 +246,16 @@ func testGTCStoppedNotFilled(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -264,7 +264,7 @@ func testGTCStoppedNotFilled(t *testing.T) {
 	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
-	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
+	assert.Equal(t, types.OrderStatusStopped, rmOrders[0].Status)
 }
 
 func testGTCCancelledNotFilled(t *testing.T) {
@@ -276,16 +276,16 @@ func testGTCCancelledNotFilled(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
@@ -293,7 +293,7 @@ func testGTCCancelledNotFilled(t *testing.T) {
 	// then stop the order
 	confirm, err := book.ob.CancelOrder(&order1)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
+	assert.Equal(t, types.OrderStatusCancelled, confirm.Order.Status)
 }
 
 func testGTCActivePartiallyFilled(t *testing.T) {
@@ -307,37 +307,37 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		Id:          "V0000000032-0000000010",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000010",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Len(t, confirm.PassiveOrdersAffected, 1)
-	assert.Equal(t, types.Order_STATUS_ACTIVE, confirm.PassiveOrdersAffected[0].Status)
+	assert.Equal(t, types.OrderStatusActive, confirm.PassiveOrdersAffected[0].Status)
 }
 
 func testGTCCancelledPartiallyFilled(t *testing.T) {
@@ -351,31 +351,31 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -384,7 +384,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 	confirm, err := book.ob.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
+	assert.Equal(t, types.OrderStatusCancelled, confirm.Order.Status)
 }
 
 func testGTCStoppedPartiallyFilled(t *testing.T) {
@@ -398,31 +398,31 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err = book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -431,7 +431,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
-	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
+	assert.Equal(t, types.OrderStatusStopped, rmOrders[0].Status)
 }
 
 func testGTCFilled(t *testing.T) {
@@ -444,37 +444,37 @@ func testGTCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		Id:          "V0000000032-0000000009",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		ID:          "V0000000032-0000000009",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
 
 	// now place our GTC order to be filled
 	order := types.Order{
-		Id:          "V0000000032-0000000010",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000010",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
+	assert.Equal(t, types.OrderStatusFilled, order.Status)
 }
 
 func testGTTActive(t *testing.T) {
@@ -486,21 +486,21 @@ func testGTTActive(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_STATUS_ACTIVE, order1.Status)
+	assert.Equal(t, types.OrderStatusActive, order1.Status)
 }
 
 func testGTTStoppedNotFilled(t *testing.T) {
@@ -512,16 +512,16 @@ func testGTTStoppedNotFilled(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
@@ -531,7 +531,7 @@ func testGTTStoppedNotFilled(t *testing.T) {
 	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
-	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
+	assert.Equal(t, types.OrderStatusStopped, rmOrders[0].Status)
 }
 
 func testGTTCancelledNotFilled(t *testing.T) {
@@ -543,16 +543,16 @@ func testGTTCancelledNotFilled(t *testing.T) {
 	defer book.Finish()
 
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
@@ -561,7 +561,7 @@ func testGTTCancelledNotFilled(t *testing.T) {
 	// then stop the order
 	confirm, err := book.ob.CancelOrder(&order1)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
+	assert.Equal(t, types.OrderStatusCancelled, confirm.Order.Status)
 }
 
 func testGTTActivePartiallyFilled(t *testing.T) {
@@ -575,16 +575,16 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
@@ -592,22 +592,22 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		Id:          "V0000000032-0000000009",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000009",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Len(t, confirm.PassiveOrdersAffected, 1)
-	assert.Equal(t, types.Order_STATUS_ACTIVE, confirm.PassiveOrdersAffected[0].Status)
+	assert.Equal(t, types.OrderStatusActive, confirm.PassiveOrdersAffected[0].Status)
 }
 
 func testGTTCancelledPartiallyFilled(t *testing.T) {
@@ -621,16 +621,16 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and cancelled
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
@@ -638,16 +638,16 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		Id:          "V0000000032-0000000009",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000009",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err = book.ob.SubmitOrder(&order)
@@ -657,7 +657,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 	confirm, err := book.ob.CancelOrder(&order1)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
-	assert.Equal(t, types.Order_STATUS_CANCELLED, confirm.Order.Status)
+	assert.Equal(t, types.OrderStatusCancelled, confirm.Order.Status)
 }
 
 func testGTTStoppedPartiallyFilled(t *testing.T) {
@@ -671,16 +671,16 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book, be partially filled, and stopped
 	order1 := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          orderID,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		ID:          orderID,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
@@ -688,16 +688,16 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		Id:          "V0000000032-0000000009",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000009",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err = book.ob.SubmitOrder(&order)
@@ -707,7 +707,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 	rmOrders, err := book.ob.RemoveDistressedOrders([]events.MarketPosition{marketPositionFake{partyID1}})
 	assert.NoError(t, err)
 	assert.Len(t, rmOrders, 1)
-	assert.Equal(t, types.Order_STATUS_STOPPED, rmOrders[0].Status)
+	assert.Equal(t, types.OrderStatusStopped, rmOrders[0].Status)
 }
 
 func testGTTFilled(t *testing.T) {
@@ -720,16 +720,16 @@ func testGTTFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		Id:          "V0000000032-0000000009",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID1,
-		Side:        types.Side_SIDE_SELL,
+		ID:          "V0000000032-0000000009",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID1,
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	_, err := book.ob.SubmitOrder(&order1)
@@ -737,22 +737,22 @@ func testGTTFilled(t *testing.T) {
 
 	// now place our GTT order to be filled
 	order := types.Order{
-		Id:          "V0000000032-0000000010",
-		Status:      types.Order_STATUS_ACTIVE,
-		MarketId:    market,
-		PartyId:     partyID2,
-		Side:        types.Side_SIDE_BUY,
+		ID:          "V0000000032-0000000010",
+		Status:      types.OrderStatusActive,
+		MarketID:    market,
+		Party:       partyID2,
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Type:        types.OrderTypeLimit,
 		ExpiresAt:   10,
 	}
 	confirm, err := book.ob.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
-	assert.Equal(t, types.Order_STATUS_FILLED, order.Status)
+	assert.Equal(t, types.OrderStatusFilled, order.Status)
 }
 
 type marketPositionFake struct {

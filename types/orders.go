@@ -47,7 +47,7 @@ type OrderAmendment struct {
 	Price           *num.Uint
 	SizeDelta       int64
 	ExpiresAt       *int64 // timestamp
-	TimeInForce     Order_TimeInForce
+	TimeInForce     OrderTimeInForce
 	PeggedOffset    *int64 // *wrappers.Int64Value
 	PeggedReference PeggedReference
 }
@@ -110,18 +110,18 @@ func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 // based on the order it's actually trying to amend
 func (o OrderAmendment) Validate() error {
 	// check TIME_IN_FORCE and expiry
-	if o.TimeInForce == Order_TIME_IN_FORCE_GTT && o.ExpiresAt == nil {
-		return OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
+	if o.TimeInForce == OrderTimeInForceGTT && o.ExpiresAt == nil {
+		return OrderErrorCannotAmendToGTTWithoutExpiryAt
 	}
 
-	if o.TimeInForce == Order_TIME_IN_FORCE_GTC && o.ExpiresAt != nil {
+	if o.TimeInForce == OrderTimeInForceGTC && o.ExpiresAt != nil {
 		// this is cool, but we need to ensure and expiry is not set
-		return OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
+		return OrderErrorCannotHaveGTCAndExpiryAt
 	}
 
-	if o.TimeInForce == Order_TIME_IN_FORCE_FOK || o.TimeInForce == Order_TIME_IN_FORCE_IOC {
+	if o.TimeInForce == OrderTimeInForceFOK || o.TimeInForce == OrderTimeInForceIOC {
 		// IOC and FOK are not acceptable for amend order
-		return OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC
+		return OrderErrorCannotAmendToFOKOrIOC
 	}
 
 	return nil

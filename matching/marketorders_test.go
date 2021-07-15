@@ -14,13 +14,13 @@ func TestOrderBook_MarketOrderFOKNotFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
-		Type:        types.Order_TYPE_MARKET,
+		TimeInForce: types.OrderTimeInForceFOK,
+		Type:        types.OrderTypeMarket,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -35,13 +35,13 @@ func TestOrderBook_MarketOrderIOCNotFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
-		Type:        types.Order_TYPE_MARKET,
+		TimeInForce: types.OrderTimeInForceIOC,
+		Type:        types.OrderTypeMarket,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -56,26 +56,26 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_SELL,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        6,
 		Remaining:   6,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	order = types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
-		Type:        types.Order_TYPE_MARKET,
+		TimeInForce: types.OrderTimeInForceFOK,
+		Type:        types.OrderTypeMarket,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -97,26 +97,26 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_SELL,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        6,
 		Remaining:   6,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
 	}
 	_, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 
 	order2 := types.Order{
-		MarketId:    market,
-		PartyId:     "B",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "B",
+		Side:        types.SideBuy,
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
-		Type:        types.Order_TYPE_MARKET,
+		TimeInForce: types.OrderTimeInForceIOC,
+		Type:        types.OrderTypeMarket,
 	}
 	confirm, err := book.SubmitOrder(&order2)
 	assert.NoError(t, err)

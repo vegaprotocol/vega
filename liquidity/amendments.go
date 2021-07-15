@@ -54,7 +54,7 @@ func (e *Engine) AmendLiquidityProvision(
 	}
 
 	sort.Slice(cancels, func(i, j int) bool {
-		return cancels[i].Id < cancels[j].Id
+		return cancels[i].ID < cancels[j].ID
 	})
 
 	// now let's apply all changes
@@ -112,11 +112,11 @@ func (e *Engine) GetPotentialShapeOrders(
 		return shape, true
 	}
 
-	buyShape, ok := priceShape(lps.Buys, types.Side_SIDE_BUY)
+	buyShape, ok := priceShape(lps.Buys, types.SideBuy)
 	if !ok {
 		return nil, errors.New("unable to price buy shape")
 	}
-	sellShape, ok := priceShape(lps.Sells, types.Side_SIDE_SELL)
+	sellShape, ok := priceShape(lps.Sells, types.SideSell)
 	if !ok {
 		return nil, errors.New("unable to price sell shape")
 	}
@@ -142,9 +142,9 @@ func (e *Engine) GetPotentialShapeOrders(
 
 	// from this point we should have no error possible, let's just
 	// make the order shapes
-	toCreate := e.buildPotentialShapeOrders(party, buyShape, types.Side_SIDE_BUY)
+	toCreate := e.buildPotentialShapeOrders(party, buyShape, types.SideBuy)
 	toCreate = append(toCreate,
-		e.buildPotentialShapeOrders(party, sellShape, types.Side_SIDE_SELL)...)
+		e.buildPotentialShapeOrders(party, sellShape, types.SideSell)...)
 
 	return toCreate, nil
 }

@@ -157,14 +157,14 @@ func (e *Engine) GetAllLiquidityOrders() []*types.Order {
 	orders := []*types.Order{}
 	for _, v := range e.liquidityOrders {
 		for _, o := range v {
-			if o.Status == types.Order_STATUS_ACTIVE {
+			if o.Status == types.OrderStatusActive {
 				orders = append(orders, o)
 			}
 		}
 	}
 
 	sort.Slice(orders, func(i, j int) bool {
-		return orders[i].Id < orders[j].Id
+		return orders[i].ID < orders[j].ID
 	})
 
 	return orders
@@ -212,7 +212,7 @@ func (e *Engine) stopLiquidityProvision(
 	// way to sort this here and make sure that all orders are always
 	// cancelled in the same order
 	sort.Slice(orders, func(i, j int) bool {
-		return orders[i].Id < orders[j].Id
+		return orders[i].ID < orders[j].ID
 	})
 
 	// now delete all stuff
@@ -275,10 +275,10 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(
 		return errors.New("invalid liquidity provision fee")
 	}
 
-	if err := validateShape(lp.Buys, types.Side_SIDE_BUY, e.maxShapesSize); err != nil {
+	if err := validateShape(lp.Buys, types.SideBuy, e.maxShapesSize); err != nil {
 		return err
 	}
-	return validateShape(lp.Sells, types.Side_SIDE_SELL, e.maxShapesSize)
+	return validateShape(lp.Sells, types.SideSell, e.maxShapesSize)
 }
 
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
@@ -370,7 +370,7 @@ func (e *Engine) buildLiquidityProvisionShapesReferences(
 	for _, buy := range lps.Buys {
 		e.idGen.SetID(order)
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
-			OrderId:        order.Id,
+			OrderId:        order.ID,
 			LiquidityOrder: buy,
 		})
 	}
@@ -379,7 +379,7 @@ func (e *Engine) buildLiquidityProvisionShapesReferences(
 	for _, sell := range lps.Sells {
 		e.idGen.SetID(order)
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
-			OrderId:        order.Id,
+			OrderId:        order.ID,
 			LiquidityOrder: sell,
 		})
 	}
@@ -401,21 +401,21 @@ func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
 
 	for _, order := range orders {
 		// skip if it's a liquidity order
-		if len(order.LiquidityProvisionId) > 0 {
+		if len(order.LiquidityProvisionID) > 0 {
 			continue
 		}
-		if _, ok := lm[order.Id]; ok {
+		if _, ok := lm[order.ID]; ok {
 			continue
 		}
 
 		// Remove
-		if order.Status != types.Order_STATUS_ACTIVE {
-			delete(m, order.Id)
+		if order.Status != types.OrderStatusActive {
+			delete(m, order.ID)
 			continue
 		}
 
 		// Create or Modify
-		m[order.Id] = order
+		m[order.ID] = order
 	}
 }
 
@@ -520,7 +520,7 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    buy.OrderId,
 			Proportion: uint64(buy.LiquidityOrder.Proportion),
 		}
-		if price, peggedO, err := repriceFn(pegged, types.Side_SIDE_BUY); err != nil {
+		if price, peggedO, err := repriceFn(pegged, types.SideBuy); err != nil {
 			e.log.Debug("Building Buy Shape", logging.Error(err))
 			repriceFailure = true
 		} else {
@@ -539,7 +539,7 @@ func (e *Engine) createOrUpdateForParty(
 			OrderID:    sell.OrderId,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
 		}
-		if price, peggedO, err := repriceFn(pegged, types.Side_SIDE_SELL); err != nil {
+		if price, peggedO, err := repriceFn(pegged, types.SideSell); err != nil {
 			e.log.Debug("Building Sell Shape", logging.Error(err))
 			repriceFailure = true
 		} else {
@@ -556,9 +556,9 @@ func (e *Engine) createOrUpdateForParty(
 
 	if repriceFailure {
 		needsUpdateBuys = e.undeployOrdersFromShape(
-			party, buysShape, types.Side_SIDE_BUY)
+			party, buysShape, types.SideBuy)
 		needsUpdateSells = e.undeployOrdersFromShape(
-			party, sellsShape, types.Side_SIDE_SELL)
+			party, sellsShape, types.SideSell)
 
 		// set to undeployed if active basically as
 		// we want to keep it pending until it deployed for the first time
@@ -583,9 +583,9 @@ func (e *Engine) createOrUpdateForParty(
 		}
 
 		needsCreateBuys, needsUpdateBuys = e.createOrdersFromShape(
-			party, buysShape, types.Side_SIDE_BUY)
+			party, buysShape, types.SideBuy)
 		needsCreateSells, needsUpdateSells = e.createOrdersFromShape(
-			party, sellsShape, types.Side_SIDE_SELL)
+			party, sellsShape, types.SideSell)
 
 		lp.Status = types.LiquidityProvision_STATUS_ACTIVE
 	}
@@ -599,16 +599,16 @@ func (e *Engine) createOrUpdateForParty(
 
 func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID string, size uint64, ref string, lpID string) *types.Order {
 	order := &types.Order{
-		MarketId:             marketID,
+		MarketID:             marketID,
 		Side:                 side,
 		Price:                price.Clone(),
-		PartyId:              partyID,
+		Party:                partyID,
 		Size:                 size,
 		Remaining:            size,
-		Type:                 types.Order_TYPE_LIMIT,
-		TimeInForce:          types.Order_TIME_IN_FORCE_GTC,
+		Type:                 types.OrderTypeLimit,
+		TimeInForce:          types.OrderTimeInForceGTC,
 		Reference:            ref,
-		LiquidityProvisionId: lpID,
+		LiquidityProvisionID: lpID,
 	}
 	return order.Create(e.currentTime)
 }
@@ -637,7 +637,7 @@ func (e *Engine) undeployOrdersFromShape(
 			order = lm[o.OrderID]
 			ref   *types.LiquidityOrderReference
 		)
-		if side == types.Side_SIDE_BUY {
+		if side == types.SideBuy {
 			ref = lp.Buys[i]
 		} else {
 			ref = lp.Sells[i]
@@ -648,7 +648,7 @@ func (e *Engine) undeployOrdersFromShape(
 			// if not the market already took care in cleaning
 			// up everything
 			if order.Remaining != 0 {
-				toCancel.Add(order.Id)
+				toCancel.Add(order.ID)
 			}
 
 			// then we can delete the order from our mapping
@@ -682,7 +682,7 @@ func (e *Engine) createOrdersFromShape(
 	for i, o := range supplied {
 		order := lm[o.OrderID]
 		var ref *types.LiquidityOrderReference
-		if side == types.Side_SIDE_BUY {
+		if side == types.SideBuy {
 			ref = lp.Buys[i]
 		} else {
 			ref = lp.Sells[i]
@@ -695,7 +695,7 @@ func (e *Engine) createOrdersFromShape(
 			// if not the market already took care in cleaning
 			// up everything
 			if order.Remaining != 0 {
-				toCancel.Add(order.Id)
+				toCancel.Add(order.ID)
 			}
 
 			// then we can delete the order from our mapping
@@ -724,10 +724,10 @@ func (e *Engine) createOrdersFromShape(
 		// 	Offset:    ref.LiquidityOrder.Offset,
 		// }
 		order = e.buildOrder(side, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
-		order.Id = ref.OrderId
+		order.ID = ref.OrderId
 		newOrders = append(newOrders, order)
-		lm[order.Id] = order
-		ref.OrderId = order.Id
+		lm[order.ID] = order
+		ref.OrderId = order.ID
 	}
 
 	return newOrders, toCancel
@@ -741,7 +741,7 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 		return fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
 	}
 	for _, lo := range sh {
-		if lo.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+		if lo.Reference == types.PeggedReferenceUnspecified {
 			// We must specify a valid reference
 			return errors.New("order in shape without reference")
 		}
@@ -749,28 +749,28 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 			return errors.New("order in shape without a proportion")
 		}
 
-		if side == types.Side_SIDE_BUY {
+		if side == types.SideBuy {
 			switch lo.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			case types.PeggedReferenceBestAsk:
 				return errors.New("order in buy side shape with best ask price reference")
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			case types.PeggedReferenceBestBid:
 				if lo.Offset > 0 {
 					return errors.New("order in buy side shape offset must be <= 0")
 				}
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
+			case types.PeggedReferenceMid:
 				if lo.Offset >= 0 {
 					return errors.New("order in buy side shape offset must be < 0")
 				}
 			}
 		} else {
 			switch lo.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			case types.PeggedReferenceBestAsk:
 				if lo.Offset < 0 {
 					return errors.New("order in sell shape offset must be >= 0")
 				}
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			case types.PeggedReferenceBestBid:
 				return errors.New("order in buy side shape with best ask price reference")
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
+			case types.PeggedReferenceMid:
 				if lo.Offset <= 0 {
 					return errors.New("order in sell shape offset must be > 0")
 				}

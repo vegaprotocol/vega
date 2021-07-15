@@ -60,12 +60,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -91,12 +91,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -148,9 +148,9 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		require.Len(t, found, 8)
 
 		// reference -> status
-		expectedStatus := map[string]types.Order_Status{
-			"ref-lp-submission-1": types.Order_STATUS_CANCELLED,
-			"ref-lp-submission-2": types.Order_STATUS_ACTIVE,
+		expectedStatus := map[string]types.OrderStatus{
+			"ref-lp-submission-1": types.OrderStatusCancelled,
+			"ref-lp-submission-2": types.OrderStatusActive,
 		}
 
 		totalCancelled := 0
@@ -161,10 +161,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				expectedStatus[o.Reference].String(),
 				o.Status.String(),
 			)
-			if o.Status == types.Order_STATUS_CANCELLED {
+			if o.Status == types.OrderStatusCancelled {
 				totalCancelled += 1
 			}
-			if o.Status == types.Order_STATUS_ACTIVE {
+			if o.Status == types.OrderStatusActive {
 				totalActive += 1
 			}
 		}
@@ -182,12 +182,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-3",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -239,9 +239,9 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		require.Len(t, found, 8)
 
 		// reference -> status
-		expectedStatus := map[string]types.Order_Status{
-			"ref-lp-submission-2": types.Order_STATUS_CANCELLED,
-			"ref-lp-submission-3": types.Order_STATUS_ACTIVE,
+		expectedStatus := map[string]types.OrderStatus{
+			"ref-lp-submission-2": types.OrderStatusCancelled,
+			"ref-lp-submission-3": types.OrderStatusActive,
 		}
 
 		totalCancelled := 0
@@ -252,10 +252,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				expectedStatus[o.Reference].String(),
 				o.Status.String(),
 			)
-			if o.Status == types.Order_STATUS_CANCELLED {
+			if o.Status == types.OrderStatusCancelled {
 				totalCancelled += 1
 			}
-			if o.Status == types.Order_STATUS_ACTIVE {
+			if o.Status == types.OrderStatusActive {
 				totalActive += 1
 			}
 		}
@@ -273,14 +273,14 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-3-bis",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -4},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -3},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -2},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -4},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -3},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -2},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -332,9 +332,9 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		require.Len(t, found, 10)
 
 		// reference -> status
-		expectedStatus := map[string]types.Order_Status{
-			"ref-lp-submission-3":     types.Order_STATUS_CANCELLED,
-			"ref-lp-submission-3-bis": types.Order_STATUS_ACTIVE,
+		expectedStatus := map[string]types.OrderStatus{
+			"ref-lp-submission-3":     types.OrderStatusCancelled,
+			"ref-lp-submission-3-bis": types.OrderStatusActive,
 		}
 
 		totalCancelled := 0
@@ -345,10 +345,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				expectedStatus[o.Reference].String(),
 				o.Status.String(),
 			)
-			if o.Status == types.Order_STATUS_CANCELLED {
+			if o.Status == types.OrderStatusCancelled {
 				totalCancelled += 1
 			}
-			if o.Status == types.Order_STATUS_ACTIVE {
+			if o.Status == types.OrderStatusActive {
 				totalActive += 1
 			}
 		}
@@ -368,12 +368,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-4",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -395,12 +395,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-5",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -482,12 +482,12 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -575,12 +575,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -623,7 +623,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// only 4 cancellations
 		i := 0
 		for _, o := range found {
-			var expectedStatus = types.Order_STATUS_CANCELLED
+			var expectedStatus = types.OrderStatusCancelled
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -649,7 +649,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		require.Len(t, found, 4)
 
 		for _, o := range found {
-			var expectedStatus = types.Order_STATUS_ACTIVE
+			var expectedStatus = types.OrderStatusActive
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -707,12 +707,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -760,7 +760,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		// 4 cancellations
 		i := 0
 		for _, o := range found {
-			var expectedStatus = types.Order_STATUS_CANCELLED
+			var expectedStatus = types.OrderStatusCancelled
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -776,12 +776,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 

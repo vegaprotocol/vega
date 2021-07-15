@@ -48,8 +48,8 @@ func (s *OrderBookSide) getOrdersToCancel(auction bool) []*types.Order {
 	for _, pricelevel := range s.levels {
 		for _, order := range pricelevel.orders {
 			// Find orders to cancel
-			if (order.TimeInForce == types.Order_TIME_IN_FORCE_GFA && !auction) ||
-				(order.TimeInForce == types.Order_TIME_IN_FORCE_GFN && auction) {
+			if (order.TimeInForce == types.OrderTimeInForceGFA && !auction) ||
+				(order.TimeInForce == types.OrderTimeInForceGFN && auction) {
 				// Save order to send back to client
 				ordersToCancel = append(ordersToCancel, order)
 			}
@@ -84,7 +84,7 @@ func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 	for i := len(s.levels) - 1; i >= 0; i-- {
 		pricelevel := s.levels[i]
 		for _, order := range pricelevel.orders {
-			if order.PeggedOrder == nil && len(order.LiquidityProvisionId) <= 0 {
+			if order.PeggedOrder == nil && len(order.LiquidityProvisionID) <= 0 {
 				return pricelevel.price.Clone(), nil
 			}
 		}
@@ -106,7 +106,7 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	for i := len(s.levels) - 1; i >= 0; i-- {
 		pricelevel := s.levels[i]
 		for _, order := range pricelevel.orders {
-			if order.PeggedOrder == nil && len(order.LiquidityProvisionId) <= 0 {
+			if order.PeggedOrder == nil && len(order.LiquidityProvisionID) <= 0 {
 				bestPrice = pricelevel.price
 				bestVolume += order.Remaining
 			}
@@ -128,7 +128,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 		if priceLevel.price.EQ(orderAmend.Price) {
 			priceLevelIndex = idx
 			for j, order := range priceLevel.orders {
-				if order.Id == orderAmend.Id {
+				if order.ID == orderAmend.ID {
 					orderIndex = j
 					oldOrder = order
 					break
@@ -142,7 +142,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 		return 0, types.ErrOrderNotFound
 	}
 
-	if oldOrder.PartyId != orderAmend.PartyId {
+	if oldOrder.Party != orderAmend.Party {
 		return 0, types.ErrOrderAmendFailure
 	}
 
@@ -168,7 +168,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.O
 		totalVolume uint64
 		checkPrice  func(*num.Uint) bool
 	)
-	if s.side == types.Side_SIDE_BUY {
+	if s.side == types.SideBuy {
 		checkPrice = func(orderPrice *num.Uint) bool { return orderPrice.GTE(price) }
 	} else {
 		checkPrice = func(orderPrice *num.Uint) bool { return orderPrice.LTE(price) }
@@ -228,7 +228,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.O
 func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	// first  we try to find the pricelevel of the order
 	var i int
-	if o.Side == types.Side_SIDE_BUY {
+	if o.Side == types.SideBuy {
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.GTE(o.Price) })
 	} else {
 		// sell side levels should be ordered in ascending
@@ -244,7 +244,7 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	// lets iterate over them in order to find the right one
 	finaloidx := -1
 	for index, order := range s.levels[i].orders {
-		if order.Id == o.Id {
+		if order.ID == o.ID {
 			finaloidx = index
 			break
 		}
@@ -269,7 +269,7 @@ func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 
 func (s *OrderBookSide) getPriceLevelIfExists(price *num.Uint) *PriceLevel {
 	var i int
-	if s.side == types.Side_SIDE_BUY {
+	if s.side == types.SideBuy {
 		// buy side levels should be ordered in ascending
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.GTE(price) })
 	} else {
@@ -286,7 +286,7 @@ func (s *OrderBookSide) getPriceLevelIfExists(price *num.Uint) *PriceLevel {
 
 func (s *OrderBookSide) getPriceLevel(price *num.Uint) *PriceLevel {
 	var i int
-	if s.side == types.Side_SIDE_BUY {
+	if s.side == types.SideBuy {
 		// buy side levels should be ordered in descending
 		i = sort.Search(len(s.levels), func(i int) bool { return s.levels[i].price.GTE(price) })
 	} else {
@@ -326,9 +326,9 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 		trades            []*types.Trade
 		totalVolumeToFill uint64
 	)
-	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
+	if agg.TimeInForce == types.OrderTimeInForceFOK {
 		var checkPrice func(*num.Uint) bool
-		if agg.Side == types.Side_SIDE_BUY {
+		if agg.Side == types.SideBuy {
 			checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LTE(agg.Price) }
 		} else {
 			checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.GTE(agg.Price) }
@@ -338,9 +338,9 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 			level := s.levels[i]
 			// we don't have to account for network orders, they don't apply in price monitoring
 			// nor do fees apply
-			if checkPrice(level.price) || agg.Type == types.Order_TYPE_MARKET {
+			if checkPrice(level.price) || agg.Type == types.OrderTypeMarket {
 				for _, order := range level.orders {
-					if agg.PartyId == order.PartyId {
+					if agg.Party == order.Party {
 						return nil, ErrWashTrade
 					}
 					totalVolumeToFill += order.Remaining
@@ -370,7 +370,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 		checkPrice func(*num.Uint) bool
 	)
 
-	if fake.Side == types.Side_SIDE_BUY {
+	if fake.Side == types.SideBuy {
 		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.GT(agg.Price) }
 	} else {
 		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LT(agg.Price) }
@@ -381,7 +381,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order) ([]*types.Trade, error) {
 	// also it will allow us to reduce allocations
 	for idx >= 0 && fake.Remaining > 0 {
 		// not a market order && buy side price is too low => break
-		if agg.Type != types.Order_TYPE_MARKET && checkPrice(s.levels[idx].price) {
+		if agg.Type != types.OrderTypeMarket && checkPrice(s.levels[idx].price) {
 			break
 		}
 		fake, ntrades, err = s.levels[idx].fakeUncross(fake)
@@ -406,23 +406,23 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		checkPrice        func(*num.Uint) bool
 	)
 
-	if agg.Side == types.Side_SIDE_SELL {
+	if agg.Side == types.SideSell {
 		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.GTE(agg.Price) }
 	} else {
 		checkPrice = func(levelPrice *num.Uint) bool { return levelPrice.LTE(agg.Price) }
 	}
 
-	if agg.TimeInForce == types.Order_TIME_IN_FORCE_FOK {
+	if agg.TimeInForce == types.OrderTimeInForceFOK {
 		// Process these backwards
 		for i := len(s.levels) - 1; i >= 0; i-- {
 			level := s.levels[i]
-			if checkPrice(level.price) || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
+			if checkPrice(level.price) || agg.Type == types.OrderTypeMarket || agg.Type == types.OrderTypeNetwork {
 				// We have to process every order to check for wash trades
 				for _, order := range level.orders {
 					// Check for wash trading
-					if agg.PartyId == order.PartyId {
+					if agg.Party == order.Party {
 						// Stop the order and return
-						agg.Status = types.Order_STATUS_STOPPED
+						agg.Status = types.OrderStatusStopped
 						return nil, nil, lastTradedPrice, ErrWashTrade
 					}
 					// in case of network trades, we want to calculate an accurate average price to return
@@ -459,7 +459,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	// price levels from the back of the slice instead of from the front
 	// also it will allow us to reduce allocations
 	for !filled && idx >= 0 {
-		if checkPrice(s.levels[idx].price) || agg.Type == types.Order_TYPE_MARKET || agg.Type == types.Order_TYPE_NETWORK {
+		if checkPrice(s.levels[idx].price) || agg.Type == types.OrderTypeMarket || agg.Type == types.OrderTypeNetwork {
 			filled, ntrades, nimpact, err = s.levels[idx].uncross(agg, checkWashTrades)
 			trades = append(trades, ntrades...)
 			impactedOrders = append(impactedOrders, nimpact...)
@@ -489,7 +489,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 		s.levels = s.levels[:idx]
 	}
 
-	if agg.Type == types.Order_TYPE_NETWORK {
+	if agg.Type == types.OrderTypeNetwork {
 		var totalPrice = num.Zero()
 		for _, t := range trades {
 			// totalPrice += t.Price * t.Size

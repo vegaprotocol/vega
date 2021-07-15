@@ -107,21 +107,21 @@ func (r submitOrderRow) Price() *num.Uint {
 	return r.row.MustUint("price")
 }
 
-func (r submitOrderRow) OrderType() types.Order_Type {
+func (r submitOrderRow) OrderType() types.OrderType {
 	return r.row.MustOrderType("type")
 }
 
-func (r submitOrderRow) TimeInForce() types.Order_TimeInForce {
+func (r submitOrderRow) TimeInForce() types.OrderTimeInForce {
 	return r.row.MustTIF("tif")
 }
 
 func (r submitOrderRow) ExpirationDate() int64 {
-	if r.OrderType() == types.Order_TYPE_MARKET {
+	if r.OrderType() == types.OrderTypeMarket {
 		return 0
 	}
 
 	now := time.Now()
-	if r.TimeInForce() == types.Order_TIME_IN_FORCE_GTT {
+	if r.TimeInForce() == types.OrderTimeInForceGTT {
 		return now.Add(r.row.MustDurationSec("expires in")).Local().UnixNano()
 	} else {
 		return now.Add(24 * time.Hour).UnixNano()

@@ -17,7 +17,7 @@ func (m *Market) GetPeggedOrderCount() int {
 func (m *Market) GetParkedOrderCount() int {
 	var count int
 	for _, order := range m.peggedOrders.orders {
-		if order.Status == types.Order_STATUS_PARKED {
+		if order.Status == types.OrderStatusParked {
 			count++
 		}
 	}
@@ -128,7 +128,7 @@ func (m *Market) GetLiquidityFee() num.Decimal {
 
 // Log out orders that don't match
 func (m *Market) ValidateOrder(order *types.Order) bool {
-	order2, err := m.matching.GetOrderByID(order.Id)
+	order2, err := m.matching.GetOrderByID(order.ID)
 	if err != nil {
 		return false
 	}

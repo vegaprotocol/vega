@@ -135,14 +135,14 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	bLiq := num.DecimalZero()
 	sLiq := num.DecimalZero()
 	for _, o := range orders {
-		if o.Side == types.Side_SIDE_BUY {
+		if o.Side == types.SideBuy {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
 			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), true, minPrice, maxPrice)
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			bLiq = bLiq.Add(d)
 		}
-		if o.Side == types.Side_SIDE_SELL {
+		if o.Side == types.SideSell {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
 			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), false, minPrice, maxPrice)
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))

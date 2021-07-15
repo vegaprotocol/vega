@@ -109,7 +109,7 @@ func (ords Orders) ByParty() []PartyOrders {
 	// first extract all orders, per party
 	parties := map[string][]*types.Order{}
 	for _, order := range ords {
-		parties[order.PartyId] = append(parties[order.PartyId], order)
+		parties[order.Party] = append(parties[order.Party], order)
 	}
 
 	// now, move stuff from the map, into the PartyOrders type, and sort it

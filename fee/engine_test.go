@@ -122,7 +122,7 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	})
 	trades := []*types.Trade{
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      5,
@@ -166,35 +166,35 @@ func testCalcContinuousTrading(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      10,
 			Price:     num.NewUint(10000),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party3",
 			Size:      1,
 			Price:     num.NewUint(10300),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party4",
 			Size:      7,
 			Price:     num.NewUint(10300),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      2,
 			Price:     num.NewUint(10500),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party5",
 			Size:      5,
@@ -248,7 +248,7 @@ func testCalcAuctionTrading(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      1,
@@ -309,7 +309,7 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor:          types.Side_SIDE_SELL,
+			Aggressor:          types.SideSell,
 			Seller:             "party1",
 			Buyer:              "party2",
 			Size:               1,
@@ -366,7 +366,7 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor:          types.Side_SIDE_SELL,
+			Aggressor:          types.SideSell,
 			Seller:             "party1",
 			Buyer:              "party2",
 			Size:               1,
@@ -420,14 +420,14 @@ func testCalcPositionResolution(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "network",
 			Size:      3,
 			Price:     num.NewUint(1000),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party2",
 			Buyer:     "network",
 			Size:      2,

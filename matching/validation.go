@@ -13,37 +13,37 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	if orderMessage.Price == nil {
 		orderMessage.Price = num.Zero()
 	}
-	if orderMessage.MarketId != b.marketID {
+	if orderMessage.MarketID != b.marketID {
 		b.log.Error("Market ID mismatch",
-			logging.String("market", orderMessage.MarketId),
+			logging.String("market", orderMessage.MarketID),
 			logging.String("order-book", b.marketID),
 			logging.Order(*orderMessage))
 		err = types.ErrInvalidMarketID
-	} else if orderMessage.Type == types.Order_TYPE_UNSPECIFIED {
+	} else if orderMessage.Type == types.OrderTypeUnspecified {
 		err = types.ErrInvalidType
 	} else if orderMessage.Remaining == 0 {
 		err = types.ErrInvalidRemainingSize
-	} else if orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GTT && orderMessage.ExpiresAt == 0 {
+	} else if orderMessage.TimeInForce == types.OrderTimeInForceGTT && orderMessage.ExpiresAt == 0 {
 		// if order is GTT, validate timestamp and convert to block number
 		err = types.ErrInvalidExpirationDatetime
-	} else if len(orderMessage.PartyId) == 0 {
+	} else if len(orderMessage.Party) == 0 {
 		err = types.ErrInvalidPartyID
 	} else if orderMessage.Size == 0 {
 		err = types.ErrInvalidSize
 	} else if orderMessage.Remaining > orderMessage.Size {
 		err = types.ErrInvalidRemainingSize
-	} else if orderMessage.Type == types.Order_TYPE_NETWORK && orderMessage.TimeInForce != types.Order_TIME_IN_FORCE_FOK {
+	} else if orderMessage.Type == types.OrderTypeNetwork && orderMessage.TimeInForce != types.OrderTimeInForceFOK {
 		err = types.ErrInvalidPersistence
-	} else if orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GTT && orderMessage.Type != types.Order_TYPE_LIMIT {
+	} else if orderMessage.TimeInForce == types.OrderTimeInForceGTT && orderMessage.Type != types.OrderTypeLimit {
 		err = types.ErrInvalidPersistence
-	} else if orderMessage.Type == types.Order_TYPE_MARKET &&
-		(orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GTT || orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GTC) {
+	} else if orderMessage.Type == types.OrderTypeMarket &&
+		(orderMessage.TimeInForce == types.OrderTimeInForceGTT || orderMessage.TimeInForce == types.OrderTimeInForceGTC) {
 		err = types.ErrInvalidPersistence
-	} else if b.auction && orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GFN {
+	} else if b.auction && orderMessage.TimeInForce == types.OrderTimeInForceGFN {
 		err = types.ErrInvalidTimeInForce
-	} else if !b.auction && orderMessage.TimeInForce == types.Order_TIME_IN_FORCE_GFA {
+	} else if !b.auction && orderMessage.TimeInForce == types.OrderTimeInForceGFA {
 		err = types.ErrInvalidTimeInForce
-	} else if orderMessage.ExpiresAt > 0 && orderMessage.Type == types.Order_TYPE_MARKET {
+	} else if orderMessage.ExpiresAt > 0 && orderMessage.Type == types.OrderTypeMarket {
 		err = types.ErrInvalidExpirationDatetime
 	}
 	return

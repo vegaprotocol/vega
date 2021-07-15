@@ -101,10 +101,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
-	pos, found := e.positions[order.PartyId]
+	pos, found := e.positions[order.Party]
 	if !found {
-		pos = NewMarketPosition(order.PartyId)
-		e.positions[order.PartyId] = pos
+		pos = NewMarketPosition(order.Party)
+		e.positions[order.Party] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
@@ -115,7 +115,7 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
 func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
-	pos, found := e.positions[order.PartyId]
+	pos, found := e.positions[order.Party]
 	if !found {
 		e.log.Panic("could not find position in engine when unregistering order",
 			logging.Order(*order))
@@ -128,7 +128,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
-	pos, found := e.positions[originalOrder.PartyId]
+	pos, found := e.positions[originalOrder.Party]
 	if !found {
 		e.log.Panic("could not find position in engine when amending order",
 			logging.Order(*originalOrder),

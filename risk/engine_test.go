@@ -319,9 +319,9 @@ func testMarginWithOrderInBook(t *testing.T) {
 		// {volume: 3, price: 188, tid: "t3", side: types.Side_SIDE_SELL},
 		// bids
 
-		{volume: 1, price: num.NewUint(120), tid: "t4", side: types.Side_SIDE_BUY},
-		{volume: 4, price: num.NewUint(110), tid: "t5", side: types.Side_SIDE_BUY},
-		{volume: 5, price: num.NewUint(108), tid: "t6", side: types.Side_SIDE_BUY},
+		{volume: 1, price: num.NewUint(120), tid: "t4", side: types.SideBuy},
+		{volume: 4, price: num.NewUint(110), tid: "t5", side: types.SideBuy},
+		{volume: 5, price: num.NewUint(108), tid: "t6", side: types.SideBuy},
 	}
 
 	marketID := "testingmarket"
@@ -340,16 +340,16 @@ func testMarginWithOrderInBook(t *testing.T) {
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
-			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
-			MarketId:    marketID,
-			PartyId:     "A",
+			ID:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
+			MarketID:    marketID,
+			Party:       "A",
 			Side:        v.side,
 			Price:       v.price.Clone(),
 			Size:        uint64(v.volume),
 			Remaining:   uint64(v.volume),
-			TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-			Type:        types.Order_TYPE_LIMIT,
-			Status:      types.Order_STATUS_ACTIVE,
+			TimeInForce: types.OrderTimeInForceGTT,
+			Type:        types.OrderTypeLimit,
+			Status:      types.OrderStatusActive,
 			ExpiresAt:   10000,
 		}
 		_, err := book.SubmitOrder(o)
@@ -423,14 +423,14 @@ func testMarginWithOrderInBook2(t *testing.T) {
 		side   types.Side
 	}{
 		// asks
-		{volume: 100, price: num.NewUint(250), tid: "t1", side: types.Side_SIDE_SELL},
-		{volume: 11, price: num.NewUint(140), tid: "t2", side: types.Side_SIDE_SELL},
-		{volume: 2, price: num.NewUint(112), tid: "t3", side: types.Side_SIDE_SELL},
+		{volume: 100, price: num.NewUint(250), tid: "t1", side: types.SideSell},
+		{volume: 11, price: num.NewUint(140), tid: "t2", side: types.SideSell},
+		{volume: 2, price: num.NewUint(112), tid: "t3", side: types.SideSell},
 		// bids
-		{volume: 1, price: num.NewUint(100), tid: "t4", side: types.Side_SIDE_BUY},
-		{volume: 3, price: num.NewUint(96), tid: "t5", side: types.Side_SIDE_BUY},
-		{volume: 15, price: num.NewUint(90), tid: "t6", side: types.Side_SIDE_BUY},
-		{volume: 50, price: num.NewUint(87), tid: "t7", side: types.Side_SIDE_BUY},
+		{volume: 1, price: num.NewUint(100), tid: "t4", side: types.SideBuy},
+		{volume: 3, price: num.NewUint(96), tid: "t5", side: types.SideBuy},
+		{volume: 15, price: num.NewUint(90), tid: "t6", side: types.SideBuy},
+		{volume: 50, price: num.NewUint(87), tid: "t7", side: types.SideBuy},
 	}
 
 	marketID := "testingmarket"
@@ -452,16 +452,16 @@ func testMarginWithOrderInBook2(t *testing.T) {
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
-			Id:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
-			MarketId:    marketID,
-			PartyId:     "A",
+			ID:          fmt.Sprintf("o-%v-%v", v.tid, marketID),
+			MarketID:    marketID,
+			Party:       "A",
 			Side:        v.side,
 			Price:       v.price.Clone(),
 			Size:        uint64(v.volume),
 			Remaining:   uint64(v.volume),
-			TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-			Type:        types.Order_TYPE_LIMIT,
-			Status:      types.Order_STATUS_ACTIVE,
+			TimeInForce: types.OrderTimeInForceGTT,
+			Type:        types.OrderTypeLimit,
+			Status:      types.OrderStatusActive,
 			ExpiresAt:   10000,
 		}
 		_, err := book.SubmitOrder(o)

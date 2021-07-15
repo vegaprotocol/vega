@@ -43,7 +43,7 @@ func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(order *types.Order) {
 
-	if order.Side == types.Side_SIDE_BUY {
+	if order.Side == types.SideBuy {
 		// calculate vwBuyPrice: total worth of orders divided by total size
 		if buyVol := uint64(p.buy) + order.Remaining; buyVol != 0 {
 			var a, b, c num.Uint
@@ -73,7 +73,7 @@ func (p *MarketPosition) RegisterOrder(order *types.Order) {
 }
 
 func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order) {
-	if order.Side == types.Side_SIDE_BUY {
+	if order.Side == types.SideBuy {
 		if uint64(p.buy) < order.Remaining {
 			log.Panic("cannot unregister order with remaining > potential buy",
 				logging.Order(*order),
@@ -116,7 +116,7 @@ func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
 func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder *types.Order) {
-	if originalOrder.Side == types.Side_SIDE_BUY {
+	if originalOrder.Side == types.SideBuy {
 		if uint64(p.buy) < originalOrder.Remaining {
 			log.Panic("cannot amend order with remaining > potential buy",
 				logging.Order(*originalOrder),

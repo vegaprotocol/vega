@@ -24,50 +24,50 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	mPrice := num.NewUint(price)
 	orders := []*types.Order{
 		{
-			MarketId:    mkt.market.GetID(),
-			PartyId:     parties[0],
-			Side:        types.Side_SIDE_BUY,
+			MarketID:    mkt.market.GetID(),
+			Party:       parties[0],
+			Side:        types.SideBuy,
 			Price:       num.Zero().Sub(mPrice, delta),
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.OrderTimeInForceGTC,
+			Type:        types.OrderTypeLimit,
 			CreatedAt:   now.UnixNano(),
 			Reference:   "oo-no-trade-buy",
 		},
 		{
-			MarketId:    mkt.market.GetID(),
-			PartyId:     parties[2],
-			Side:        types.Side_SIDE_BUY,
+			MarketID:    mkt.market.GetID(),
+			Party:       parties[2],
+			Side:        types.SideBuy,
 			Price:       mPrice,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
-			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.OrderTimeInForceGFA,
+			Type:        types.OrderTypeLimit,
 			CreatedAt:   now.UnixNano(),
 			Reference:   "oo-trade-buy",
 		},
 		{
-			MarketId:    mkt.market.GetID(),
-			PartyId:     parties[3],
-			Side:        types.Side_SIDE_SELL,
+			MarketID:    mkt.market.GetID(),
+			Party:       parties[3],
+			Side:        types.SideSell,
 			Price:       mPrice,
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
-			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.OrderTimeInForceGFA,
+			Type:        types.OrderTypeLimit,
 			CreatedAt:   now.UnixNano(),
 			Reference:   "oo-trade-sell",
 		},
 		{
-			MarketId:    mkt.market.GetID(),
-			PartyId:     parties[1],
-			Side:        types.Side_SIDE_SELL,
+			MarketID:    mkt.market.GetID(),
+			Party:       parties[1],
+			Side:        types.SideSell,
 			Price:       num.Sum(mPrice, delta),
 			Size:        1,
 			Remaining:   1,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-			Type:        types.Order_TYPE_LIMIT,
+			TimeInForce: types.OrderTimeInForceGTC,
+			Type:        types.OrderTypeLimit,
 			CreatedAt:   now.UnixNano(),
 			Reference:   "oo-no-trade-sell",
 		},
@@ -108,13 +108,13 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 5, initialMarkPrice+2)
 
 	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-1", types.SideBuy, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -127,10 +127,10 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
 		},
 	}
 
@@ -165,13 +165,13 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 5, initialMarkPrice+2)
 
 	confirmationSell, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-1", types.SideBuy, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -184,10 +184,10 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
 		},
 	}
 
@@ -244,17 +244,17 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 10, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 10, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-2", types.SideSell, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-1", types.SideBuy, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -267,10 +267,10 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
 		},
 	}
 
@@ -295,7 +295,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	insurancePoolBalanceBeforeLPCloseout := insurancePool.Balance.Clone()
 	require.Equal(t, num.Zero(), insurancePoolBalanceBeforeLPCloseout)
 
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
+	orderBuyAux1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party2-buy-order-1", types.SideBuy, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
@@ -343,17 +343,17 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-2", types.SideSell, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-1", types.SideBuy, mainParty, 4, initialMarkPrice-2)
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
@@ -364,10 +364,10 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
 		},
 	}
 
@@ -385,7 +385,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance.Clone()
 	require.Equal(t, num.Zero(), insurancePoolBalanceBeforeMarketMove)
 
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
+	orderBuyAux1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party2-buy-order-1", types.SideBuy, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
@@ -439,17 +439,17 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-2", types.SideSell, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-1", types.SideBuy, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -462,10 +462,10 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.0),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
 		},
 	}
 
@@ -495,7 +495,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance.Clone()
 	require.Equal(t, num.Zero(), insurancePoolBalanceBeforeMarketMove)
 
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
+	orderBuyAux1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party2-buy-order-1", types.SideBuy, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
@@ -572,17 +572,17 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderSell2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-2", types.Side_SIDE_SELL, mainParty, 1, initialMarkPrice+5)
+	orderSell2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-2", types.SideSell, mainParty, 1, initialMarkPrice+5)
 	confirmationSell2, err := tm.market.SubmitOrder(ctx, orderSell2)
 	require.NotNil(t, confirmationSell2)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-1", types.SideBuy, mainParty, 4, initialMarkPrice-2)
 
 	confirmationBuy, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy)
@@ -595,10 +595,10 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
 		},
 	}
 
@@ -622,13 +622,13 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	insurancePoolBalanceBeforeMarketMove := insurancePool.Balance.Clone()
 
 	// Add sell order so LP can be closed out
-	orderSellAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_SELL, auxParty1, 10, orderSell1.Price.Uint64()+1)
+	orderSellAux1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party2-buy-order-1", types.SideSell, auxParty1, 10, orderSell1.Price.Uint64()+1)
 	confirmationSellAux1, err := tm.market.SubmitOrder(ctx, orderSellAux1)
 	require.NotNil(t, confirmationSellAux1)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(confirmationSellAux1.Trades))
 
-	orderBuyAux1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party2-buy-order-1", types.Side_SIDE_BUY, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
+	orderBuyAux1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party2-buy-order-1", types.SideBuy, auxParty1, orderSell1.Size+1, orderSell1.Price.Uint64())
 	confirmationBuyAux1, err := tm.market.SubmitOrder(ctx, orderBuyAux1)
 	require.NotNil(t, confirmationBuyAux1)
 	require.NoError(t, err)
@@ -684,12 +684,12 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	addAccount(tm, auxParty1)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	orderSell1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-sell-order-1", types.Side_SIDE_SELL, mainParty, 5, initialMarkPrice+2)
+	orderSell1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-sell-order-1", types.SideSell, mainParty, 5, initialMarkPrice+2)
 	confirmationSell1, err := tm.market.SubmitOrder(ctx, orderSell1)
 	require.NotNil(t, confirmationSell1)
 	require.NoError(t, err)
 
-	orderBuy1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "party1-buy-order-1", types.Side_SIDE_BUY, mainParty, 4, initialMarkPrice-2)
+	orderBuy1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "party1-buy-order-1", types.SideBuy, mainParty, 4, initialMarkPrice-2)
 	confirmationBuy1, err := tm.market.SubmitOrder(ctx, orderBuy1)
 	assert.NotNil(t, confirmationBuy1)
 	assert.NoError(t, err)
@@ -700,10 +700,10 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 0},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
 		},
 	}
 

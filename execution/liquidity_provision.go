@@ -247,8 +247,8 @@ func (m *Market) updateAndCreateLPOrders(
 
 	// first add all party which are already distressed here
 	for _, v := range distressed {
-		faultyLPOrders[v.PartyId] = v
-		faultyLPs[v.PartyId] = true
+		faultyLPOrders[v.Party] = v
+		faultyLPs[v.Party] = true
 	}
 
 	mktID := m.GetID()
@@ -258,15 +258,15 @@ func (m *Market) updateAndCreateLPOrders(
 		// before we submit orders, we check if the party was pending
 		// and save the amount of the margin balance.
 		// so we can roll back to this state later on
-		if m.liquidity.IsPending(order.PartyId) {
-			if _, ok := initialMargins[order.PartyId]; !ok {
+		if m.liquidity.IsPending(order.Party) {
+			if _, ok := initialMargins[order.Party]; !ok {
 				marginAcc, _ := m.collateral.GetPartyMarginAccount(
-					mktID, order.PartyId, asset)
-				initialMargins[order.PartyId] = marginAcc.Balance // no need to clone
+					mktID, order.Party, asset)
+				initialMargins[order.Party] = marginAcc.Balance // no need to clone
 			}
 		}
 
-		if faulty, ok := faultyLPs[order.PartyId]; ok && faulty {
+		if faulty, ok := faultyLPs[order.Party]; ok && faulty {
 			// we already tried to submit an lp order which failed
 			// for this party. we'll cancel them just in a bit
 			// be patient...
@@ -275,13 +275,13 @@ func (m *Market) updateAndCreateLPOrders(
 		conf, orderUpdts, err := m.submitOrder(ctx, order, false)
 		if err != nil {
 			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
-				logging.OrderID(order.Id),
-				logging.PartyID(order.PartyId),
-				logging.MarketID(order.MarketId),
+				logging.OrderID(order.ID),
+				logging.PartyID(order.Party),
+				logging.MarketID(order.MarketID),
 				logging.Error(err))
 			// set the party as faulty
-			faultyLPs[order.PartyId] = true
-			faultyLPOrders[order.PartyId] = order
+			faultyLPs[order.Party] = true
+			faultyLPOrders[order.Party] = order
 			continue
 		}
 		if len(conf.Trades) > 0 {
@@ -296,7 +296,7 @@ func (m *Market) updateAndCreateLPOrders(
 		}
 
 		orderUpdates = append(orderUpdates, orderUpdts...)
-		faultyLPs[order.PartyId] = false
+		faultyLPs[order.Party] = false
 	}
 
 	// now get all non faulty parties, and get them not pending
@@ -425,7 +425,7 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 	}
 
 	asset, _ := m.mkt.GetAsset()
-	party := newOrders[0].PartyId
+	party := newOrders[0].Party
 	// get the new balance
 	marginAcc, _ := m.collateral.GetPartyMarginAccount(
 		m.GetID(), party, asset)
@@ -438,7 +438,7 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 		if err == nil || len(newOrders) <= 0 {
 			return
 		}
-		party := newOrders[0].PartyId
+		party := newOrders[0].Party
 		mappedIDs := map[string]struct{}{} // just a map to access them easily
 		// first we cancel all order which we  were able to submit
 		for _, v := range submittedIDs {
@@ -460,13 +460,13 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 		// the we just send through the bus all order
 		// we were not even able to submit with a rejected event
 		for _, v := range newOrders {
-			_, ok := mappedIDs[v.Id]
-			if !ok && failedOnID != v.Id {
+			_, ok := mappedIDs[v.ID]
+			if !ok && failedOnID != v.ID {
 				// this was not handled before, we need to send an
-				v.Status = types.Order_STATUS_REJECTED
+				v.Status = types.OrderStatusRejected
 				// set margin check failed, it's the only reason we could
 				// not place the order at this point
-				v.Reason = types.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
+				v.Reason = types.OrderErrorMarginCheckFailed
 				m.broker.Send(events.NewOrderEvent(ctx, v))
 			}
 		}
@@ -477,11 +477,11 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 		// no updates there as the party should ever be able to
 		// submit without issues or not at all.
 		if conf, _, err := m.submitOrder(ctx, order, false); err != nil {
-			failedOnID = order.Id
+			failedOnID = order.ID
 			m.log.Debug("unable to submit liquidity provision order",
 				logging.MarketID(m.GetID()),
-				logging.OrderID(order.Id),
-				logging.PartyID(order.PartyId),
+				logging.OrderID(order.ID),
+				logging.PartyID(order.Party),
 				logging.Error(err))
 			return err
 		} else if len(conf.Trades) > 0 {
@@ -490,9 +490,9 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 		}
 		m.log.Debug("new liquidity order submitted successfully",
 			logging.MarketID(m.GetID()),
-			logging.OrderID(order.Id),
-			logging.PartyID(order.PartyId))
-		submittedIDs = append(submittedIDs, order.Id)
+			logging.OrderID(order.ID),
+			logging.PartyID(order.Party))
+		submittedIDs = append(submittedIDs, order.ID)
 	}
 
 	return nil
@@ -563,11 +563,11 @@ func (m *Market) repriceLiquidityOrder(
 	)
 
 	switch po.Reference {
-	case types.PeggedReference_PEGGED_REFERENCE_MID:
+	case types.PeggedReferenceMid:
 		price, err = m.getStaticMidPrice(side)
-	case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+	case types.PeggedReferenceBestBid:
 		price, err = m.getBestStaticBidPrice()
-	case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+	case types.PeggedReferenceBestAsk:
 		price, err = m.getBestStaticAskPrice()
 	}
 	if err != nil {
@@ -592,7 +592,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	maxP := maxPrice.Representation()
 
 	// this is handling bestAsk / mid for ASK.
-	if side == types.Side_SIDE_SELL {
+	if side == types.SideSell {
 		// that's our initial price with our offset
 		basePrice := num.Sum(price, num.NewUint(uint64(po.Offset)))
 		// now if this price+offset is < to maxPrice,
@@ -609,9 +609,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			// to place an offset which gets us at least to
 			// bestAsk/Mid
 			switch po.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			case types.PeggedReferenceBestAsk:
 				po.Offset = 0
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
+			case types.PeggedReferenceMid:
 				po.Offset = 1
 				if m.as.InAuction() {
 					po.Offset = 0
@@ -638,9 +638,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// then we're going to set our price to the calculated price,
 		// and the offset to 0 or 1 dependingof the reference.
 		switch po.Reference {
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+		case types.PeggedReferenceBestAsk:
 			po.Offset = 0
-		case types.PeggedReference_PEGGED_REFERENCE_MID:
+		case types.PeggedReferenceMid:
 			po.Offset = 1
 			if m.as.InAuction() {
 				po.Offset = 0
@@ -673,9 +673,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			// to place an offset which gets us at max to
 			// at bestBid/Mid
 			switch po.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			case types.PeggedReferenceBestBid:
 				po.Offset = 0
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
+			case types.PeggedReferenceMid:
 				po.Offset = -1
 				if m.as.InAuction() {
 					po.Offset = 0
@@ -699,9 +699,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// we also know the price here cannot be 0
 		// so it's safe to have a -1 offset
 		switch po.Reference {
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+		case types.PeggedReferenceBestBid:
 			po.Offset = 0
-		case types.PeggedReference_PEGGED_REFERENCE_MID:
+		case types.PeggedReferenceMid:
 			po.Offset = -1
 			if m.as.InAuction() {
 				po.Offset = 0
@@ -718,9 +718,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// here we use the price as both case are invalid
 		// for using minPrice
 		switch po.Reference {
-		case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+		case types.PeggedReferenceBestBid:
 			po.Offset = 0
-		case types.PeggedReference_PEGGED_REFERENCE_MID:
+		case types.PeggedReferenceMid:
 			po.Offset = -1
 		}
 		return price.Sub(price, num.NewUint(uint64(-po.Offset))), po, nil
@@ -752,13 +752,13 @@ func (m *Market) cancelLiquidityProvision(
 	if !isDistressed {
 		// now we cancel all existing orders
 		for _, order := range cancelOrders {
-			if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
+			if _, err := m.cancelOrder(ctx, party, order.ID); err != nil {
 				// nothing much we can do here, I suppose
 				// something wrong might have happen...
 				// does this need a panic? need to think about it...
 				m.log.Debug("unable cancel liquidity order",
 					logging.String("party", party),
-					logging.String("order-id", order.Id),
+					logging.String("order-id", order.ID),
 					logging.Error(err))
 			}
 		}
@@ -1048,7 +1048,7 @@ func (m *Market) amendLiquidityProvisionContinuous(
 	lorders := m.liquidity.GetLiquidityOrders(party)
 	for _, v := range lorders {
 		// ensure the order is on the actual potential position first
-		if order, foundOnBook, _ := m.getOrderByID(v.Id); foundOnBook {
+		if order, foundOnBook, _ := m.getOrderByID(v.ID); foundOnBook {
 			pos.UnregisterOrder(m.log, order)
 		}
 	}
@@ -1083,13 +1083,13 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 	}
 
 	for _, order := range cancels {
-		if _, err := m.cancelOrder(ctx, party, order.Id); err != nil {
+		if _, err := m.cancelOrder(ctx, party, order.ID); err != nil {
 			// nothing much we can do here, I suppose
 			// something wrong might have happen...
 			// does this need a panic? need to think about it...
 			m.log.Debug("unable cancel liquidity order",
 				logging.String("party", party),
-				logging.String("order-id", order.Id),
+				logging.String("order-id", order.ID),
 				logging.Error(err))
 		}
 	}

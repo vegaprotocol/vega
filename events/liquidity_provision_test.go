@@ -16,7 +16,7 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 	buyOrder := &types.LiquidityOrderReference{
 		OrderId: "OrderId1",
 		LiquidityOrder: &types.LiquidityOrder{
-			Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+			Reference:  types.PeggedReferenceMid,
 			Proportion: 10,
 			Offset:     -5,
 		},
@@ -25,7 +25,7 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 	sellOrder := &types.LiquidityOrderReference{
 		OrderId: "OrderId1",
 		LiquidityOrder: &types.LiquidityOrder{
-			Reference:  types.PeggedReference_PEGGED_REFERENCE_MID,
+			Reference:  types.PeggedReferenceMid,
 			Proportion: 20,
 			Offset:     5,
 		},
@@ -64,11 +64,11 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 	sellOrder.OrderId = "Changed"
 	sellOrder.LiquidityOrder.Offset = -999
 	sellOrder.LiquidityOrder.Proportion = 999
-	sellOrder.LiquidityOrder.Reference = types.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+	sellOrder.LiquidityOrder.Reference = types.PeggedReferenceBestAsk
 	buyOrder.OrderId = "Changed"
 	buyOrder.LiquidityOrder.Offset = 999
 	buyOrder.LiquidityOrder.Proportion = 999
-	buyOrder.LiquidityOrder.Reference = types.PeggedReference_PEGGED_REFERENCE_BEST_BID
+	buyOrder.LiquidityOrder.Reference = types.PeggedReferenceBestBid
 
 	// Check that values are different
 	assert.NotEqual(t, lp.Id, lp2.Id)
