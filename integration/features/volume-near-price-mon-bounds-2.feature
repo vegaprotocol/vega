@@ -23,18 +23,18 @@ Feature: Test margin for lp near price monitoring boundaries
       | 0.004     | 0.001              |
     And the price monitoring updated every "1" seconds named "price-monitoring-2":
       | horizon | probability  | auction extension |
-      | 43200   | 0.982        | 300                 |
+      | 43200   | 0.982        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 2022-03-31T23:59:59Z |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name              | value  |
-      | prices.ETH2.value | 100000   |
+      | prices.ETH2.value | 100000 |
     And the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount     |
-      | lp1     | ETH2   | 10000000000   |
-      | trader1 | ETH2   |  1000000000   |
-      | trader2 | ETH2   |  1000000000   |
+      | trader  | asset | amount      |
+      | lp1     | ETH2  | 10000000000 |
+      | trader1 | ETH2  |  1000000000 |
+      | trader2 | ETH2  |  1000000000 |
 
     Given the traders submit the following liquidity provision:
       | id          | party   | market id | commitment amount | fee  | side | pegged reference | proportion | offset |
@@ -57,8 +57,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader2          | -10    | 0              | 0            |
 
     And the market data for the market "ETH2/MAR22" should be:
-       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest   |
-       | 100000     | TRADING_MODE_CONTINUOUS | 43200   | 89942     | 110965    | 361190       | 3000000        | 10            |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 100000     | TRADING_MODE_CONTINUOUS | 43200   | 89942     | 110965    | 361190       | 3000000        | 10            |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
@@ -83,8 +83,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | lp1       | ETH2   | ETH2/MAR22 | 2383875    | 9994616125   | 3000000 |
 
     Then the traders place the following orders:
-       | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference  |
-       | trader1 | ETH2/MAR22 | buy  | 1      | 89942   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
+      | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference  |
+      | trader1 | ETH2/MAR22 | buy  | 1      | 89942   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
@@ -99,12 +99,12 @@ Feature: Test margin for lp near price monitoring boundaries
 
     # # now we place an order which makes the best bid 89943.
     Then the traders place the following orders:
-        | trader  | market id  | side  | volume | price   | resulting trades   | type       | tif     | reference  |
-        | trader1 | ETH2/MAR22 | buy   | 1      | 89943   | 0                 | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
+      | trader  | market id  | side  | volume | price   | resulting trades   | type       | tif     | reference  |
+      | trader1 | ETH2/MAR22 | buy   | 1      | 89943   | 0                  | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
 
     And the market data for the market "ETH2/MAR22" should be:
-       | mark price   | trading mode            | horizon | min bound   | max bound   | target stake   | supplied stake | open interest  |
-       | 100000       | TRADING_MODE_CONTINUOUS | 43200   | 89942       | 110965      | 361190         | 3000000        | 10             |
+      | mark price   | trading mode            | horizon | min bound   | max bound   | target stake   | supplied stake | open interest  |
+      | 100000       | TRADING_MODE_CONTINUOUS | 43200   | 89942       | 110965      | 361190         | 3000000        | 10             |
 
 
     # # the lp1 one volume on this side should go to 89843 but because price monitoring bound is still 89942 it gets pushed to 89942.

@@ -17,8 +17,8 @@ Feature: Test margin for lp near price monitoring boundaries
   Scenario: first scenario for volume at near price monitoring bounds and simple-risk-model
 
     And the simple risk model named "simple-risk-model-1":
-       | long | short | max move up | min move down | probability of trading |
-       | 0.1  | 0.1   | 100         | -100          | 0.2                    |
+      | long | short | max move up | min move down | probability of trading |
+      | 0.1  | 0.1   | 100         | -100          | 0.2                    |
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
