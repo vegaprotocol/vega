@@ -37,16 +37,16 @@ Feature: Test margin for lp near price monitoring boundaries
       | trader2 | ETH2  |  1000000000 |
 
     Given the traders submit the following liquidity provision:
-      | id          | party   | market id | commitment amount | fee  | side | pegged reference | proportion | offset |
-      | commitment1 | lp1     | ETH2/MAR22 | 3000000         | 0.001 | buy  | BID              | 500        | -100   |
-      | commitment1 | lp1     | ETH2/MAR22 | 3000000         | 0.001 | sell | ASK              | 500        |  100   |
-
+      | id          | party   | market id  | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | commitment1 | lp1     | ETH2/MAR22 | 3000000           | 0.001 | buy  | BID              | 500        | -100   |
+      | commitment1 | lp1     | ETH2/MAR22 | 3000000           | 0.001 | sell | ASK              | 500        |  100   |
+  
     And the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-      | trader1 | ETH2/MAR22 | buy  | 1      | 89942   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
-      | trader1 | ETH2/MAR22 | buy  | 10     | 100000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
-      | trader2 | ETH2/MAR22 | sell | 1      | 110965  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | trader2 | ETH2/MAR22 | sell | 10     | 100000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | trader  | market id | side  | volume | price  | resulting trades | type       | tif     | reference  |
+      | trader1 | ETH2/MAR22 | buy  | 1      | 89942  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | trader1 | ETH2/MAR22 | buy  | 10     | 100000 | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
+      | trader2 | ETH2/MAR22 | sell | 1      | 110965 | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
+      | trader2 | ETH2/MAR22 | sell | 10     | 100000 | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
 
     When the opening auction period ends for market "ETH2/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "100000"
@@ -62,9 +62,9 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
-      | sell | 110965     | 56   |
-      | buy  | 89943      | 0    |
-      | buy  | 89942      | 68   |
+      | sell | 110965   | 56     |
+      | buy  | 89943    | 0      |
+      | buy  | 89942    | 68     |
 
 
     # # at this point what's left on the book (static) is the buy @ 89942 and sell @ 110965
@@ -83,14 +83,14 @@ Feature: Test margin for lp near price monitoring boundaries
       | lp1       | ETH2   | ETH2/MAR22 | 2383875    | 9994616125   | 3000000 |
 
     Then the traders place the following orders:
-      | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference  |
+      | trader  | market id  | side | volume | price   | resulting trades | type       | tif     | reference  |
       | trader1 | ETH2/MAR22 | buy  | 1      | 89942   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3  |
 
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price    | volume |
-      | sell | 110965     | 56   |
-      | buy  | 89943      | 0    |
-      | buy  | 89942      | 69   |
+      | sell | 110965   | 56     |
+      | buy  | 89943    | 0      |
+      | buy  | 89942    | 69     |
 
 
     And the traders should have the following margin levels:
