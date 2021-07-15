@@ -6,7 +6,7 @@ import (
 )
 
 // Plugin ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/notary Plugin
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/data-node/notary Plugin
 type Plugin interface {
 	GetByID(string) ([]commandspb.NodeSignature, error)
 }

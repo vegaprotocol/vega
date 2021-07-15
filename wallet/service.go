@@ -102,7 +102,7 @@ type TokenResponse struct {
 }
 
 // WalletHandler ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/vega/wallet WalletHandler
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_handler_mock.go -package mocks code.vegaprotocol.io/data-node/wallet WalletHandler
 type WalletHandler interface {
 	CreateWallet(name, passphrase string) (string, error)
 	LoginWallet(name, passphrase string) (string, error)
@@ -120,14 +120,14 @@ type WalletHandler interface {
 }
 
 // NodeForward ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeForward
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_forward_mock.go -package mocks code.vegaprotocol.io/data-node/wallet NodeForward
 type NodeForward interface {
 	Send(context.Context, *SignedBundle, api.SubmitTransactionRequest_Type) error
 	SendTxV2(context.Context, *commandspb.Transaction, api.SubmitTransactionV2Request_Type) error
 }
 
 // NodeClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_client_mock.go -package mocks code.vegaprotocol.io/vega/wallet NodeClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_client_mock.go -package mocks code.vegaprotocol.io/data-node/wallet NodeClient
 type NodeClient interface {
 	LastBlockHeight(context.Context) (uint64, error)
 }

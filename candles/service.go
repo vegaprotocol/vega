@@ -14,7 +14,7 @@ import (
 )
 
 // CandleStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/candles CandleStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/data-node/candles CandleStore
 type CandleStore interface {
 	Subscribe(iT *storage.InternalTransport) uint64
 	Unsubscribe(id uint64) error

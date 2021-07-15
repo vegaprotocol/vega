@@ -21,13 +21,13 @@ var (
 )
 
 // TimeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/orders TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/data-node/orders TimeService
 type TimeService interface {
 	GetTimeNow() (time.Time, error)
 }
 
 // OrderStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/orders  OrderStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/data-node/orders  OrderStore
 type OrderStore interface {
 	GetByMarketAndID(ctx context.Context, market string, id string) (*types.Order, error)
 	GetByPartyAndID(ctx context.Context, party, id string) (*types.Order, error)

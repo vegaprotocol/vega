@@ -14,7 +14,7 @@ import (
 )
 
 // TradeStore represents an abstraction over a trade storage
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/vega/trades TradeStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_store_mock.go -package mocks code.vegaprotocol.io/data-node/trades TradeStore
 type TradeStore interface {
 	GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) ([]*ptypes.Trade, error)
 	GetByMarketAndID(ctx context.Context, market string, id string) (*ptypes.Trade, error)
@@ -27,7 +27,7 @@ type TradeStore interface {
 	Unsubscribe(id uint64) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_plugin_mock.go -package mocks code.vegaprotocol.io/vega/trades PositionsPlugin
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/positions_plugin_mock.go -package mocks code.vegaprotocol.io/data-node/trades PositionsPlugin
 type PositionsPlugin interface {
 	GetPositionsByMarket(market string) ([]*types.Position, error)
 	GetPositionsByParty(party string) ([]*types.Position, error)

@@ -10,13 +10,13 @@ import (
 )
 
 // MarketStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/fee MarketStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/data-node/fee MarketStore
 type MarketStore interface {
 	GetByID(name string) (*types.Market, error)
 }
 
 // MarketDataStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/vega/fee MarketDataStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/data-node/fee MarketDataStore
 type MarketDataStore interface {
 	GetByID(marketID string) (types.MarketData, error)
 }

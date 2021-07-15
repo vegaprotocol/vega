@@ -19,7 +19,7 @@ var (
 )
 
 // AccountStore represents a store for the accounts
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/vega/accounts AccountStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_store_mock.go -package mocks code.vegaprotocol.io/data-node/accounts AccountStore
 type AccountStore interface {
 	GetPartyAccounts(string, string, string, types.AccountType) ([]*types.Account, error)
 	GetMarketAccounts(string, string) ([]*types.Account, error)
