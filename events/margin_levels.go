@@ -3,24 +3,25 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 // MarginLevels - the margin levels event
 type MarginLevels struct {
 	*Base
-	l types.MarginLevels
+	l proto.MarginLevels
 }
 
 func NewMarginLevelsEvent(ctx context.Context, l types.MarginLevels) *MarginLevels {
 	return &MarginLevels{
 		Base: newBase(ctx, MarginLevelsEvent),
-		l:    l,
+		l:    *l.IntoProto(),
 	}
 }
 
-func (m MarginLevels) MarginLevels() types.MarginLevels {
+func (m MarginLevels) MarginLevels() proto.MarginLevels {
 	return m.l
 }
 
@@ -40,7 +41,7 @@ func (m MarginLevels) Asset() string {
 	return m.l.Asset
 }
 
-func (m MarginLevels) Proto() types.MarginLevels {
+func (m MarginLevels) Proto() proto.MarginLevels {
 	return m.l
 }
 

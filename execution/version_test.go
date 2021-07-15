@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +32,7 @@ func TestVersioning(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        size,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
@@ -46,10 +46,10 @@ func TestVersioning(t *testing.T) {
 	orderID := confirmation.Order.Id
 
 	// Amend price up, check version moves to 2
-	amend := &commandspb.OrderAmendment{
+	amend := &types.OrderAmendment{
 		OrderId:  orderID,
 		MarketId: tm.market.GetID(),
-		Price:    &types.Price{Value: price + 1},
+		Price:    num.NewUint(price + 1),
 	}
 
 	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)
@@ -57,7 +57,7 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend price down, check version moves to 3
-	amend.Price = &types.Price{Value: price - 1}
+	amend.Price = num.NewUint(price - 1)
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
@@ -70,7 +70,6 @@ func TestVersioning(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend quantity down, check version moves to 5
-	amend.Price = nil
 	amend.SizeDelta = -2
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendment)
@@ -78,14 +77,16 @@ func TestVersioning(t *testing.T) {
 
 	// Flip to GTT, check version moves to 6
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
-	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
+	exp := now.UnixNano() + 100000000000
+	amend.ExpiresAt = &exp
 	amend.SizeDelta = 0
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Update expiry time, check version moves to 7
-	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
+	exp = now.UnixNano() + 100000000000
+	amend.ExpiresAt = &exp
 	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)

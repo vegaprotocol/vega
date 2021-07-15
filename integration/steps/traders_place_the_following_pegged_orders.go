@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/execution"
-	ptypes "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cucumber/godog/gherkin"
@@ -15,14 +13,14 @@ func TradersPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *gherkin
 	for _, r := range parseSubmitPeggedOrderTable(table) {
 		row := submitPeggedOrderRow{row: r}
 
-		orderSubmission := &commandspb.OrderSubmission{
+		orderSubmission := &types.OrderSubmission{
 			Type:        types.Order_TYPE_LIMIT,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			Side:        row.Side(),
 			MarketId:    row.MarketID(),
 			Size:        row.Volume(),
 			Reference:   row.Reference(),
-			PeggedOrder: &ptypes.PeggedOrder{
+			PeggedOrder: &types.PeggedOrder{
 				Reference: row.PeggedReference(),
 				Offset:    row.Offset(),
 			},

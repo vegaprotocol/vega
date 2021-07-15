@@ -16,9 +16,17 @@ type gatewayCmd struct {
 	ctx context.Context
 	gateway.Config
 	config.RootPathFlag
+	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
-func (opts *gatewayCmd) Execute(args []string) error {
+func (opts *gatewayCmd) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega gateway subcommand help",
+		}
+	}
+
 	ctx, cancel := context.WithCancel(opts.ctx)
 	defer cancel()
 

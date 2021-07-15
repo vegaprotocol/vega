@@ -3,7 +3,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
   Background:
     And the simple risk model named "my-simple-risk-model":
       | long                   | short                  | max move up | min move down | probability of trading |
-      | 0.08628781058136630000 | 0.09370922348428490000 | -1          | -1            | 0.1                    |
+      | 0.08628781058136630000 | 0.09370922348428490000 | -1          | -1            | 0.2                    |
     And the fees configuration named "my-fees-config":
       | maker fee | infrastructure fee |
       | 0.004     | 0.001              |
@@ -151,6 +151,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | trader1 | ETH/DEC20 | sell | 1      | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | trader2 | ETH/DEC20 | buy  | 1      | 14000000 | 1                | TYPE_LIMIT | TIF_GTC | t2-b-7    |
     # Check MTM Loss transfer happened
+    #  4449804
     Then the following transfers should happen:
       | from    | to      | from account            | to account           | market id | amount  | asset |
       | market  | trader3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 4000000 | ETH   |

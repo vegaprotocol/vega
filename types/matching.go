@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/proto"
-	"google.golang.org/protobuf/types/known/wrapperspb"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type Order struct {
@@ -15,7 +15,7 @@ type Order struct {
 	MarketId             string
 	PartyId              string
 	Side                 Side
-	Price                uint64
+	Price                *num.Uint
 	Size                 uint64
 	Remaining            uint64
 	TimeInForce          Order_TimeInForce
@@ -30,6 +30,39 @@ type Order struct {
 	BatchId              uint64
 	PeggedOrder          *PeggedOrder
 	LiquidityProvisionId string
+}
+
+func (o Order) IntoSubmission() *OrderSubmission {
+	sub := &OrderSubmission{
+		MarketId:    o.MarketId,
+		Size:        o.Size,
+		Side:        o.Side,
+		TimeInForce: o.TimeInForce,
+		ExpiresAt:   o.ExpiresAt,
+		Type:        o.Type,
+		Reference:   o.Reference,
+	}
+	if o.Price != nil {
+		sub.Price = o.Price.Clone()
+	}
+	if o.PeggedOrder != nil {
+		sub.PeggedOrder = o.PeggedOrder.Clone()
+	}
+
+	return sub
+}
+
+func (o Order) Clone() *Order {
+	cpy := o
+	if o.Price != nil {
+		cpy.Price = o.Price.Clone()
+	} else {
+		cpy.Price = num.Zero()
+	}
+	if o.PeggedOrder != nil {
+		cpy.PeggedOrder = o.PeggedOrder.Clone()
+	}
+	return &cpy
 }
 
 func (o Order) String() string {
@@ -60,7 +93,7 @@ func (o *Order) IntoProto() *proto.Order {
 		MarketId:             o.MarketId,
 		PartyId:              o.PartyId,
 		Side:                 o.Side,
-		Price:                o.Price,
+		Price:                num.UintToUint64(o.Price),
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,
@@ -81,14 +114,14 @@ func (o *Order) IntoProto() *proto.Order {
 func OrderFromProto(o *proto.Order) *Order {
 	var pegged *PeggedOrder
 	if o.PeggedOrder != nil {
-		pegged = PeggedOrderFromProto(o.PeggedOrder)
+		pegged = NewPeggedOrderFromProto(o.PeggedOrder)
 	}
 	return &Order{
 		Id:                   o.Id,
 		MarketId:             o.MarketId,
 		PartyId:              o.PartyId,
 		Side:                 o.Side,
-		Price:                o.Price,
+		Price:                num.NewUint(o.Price),
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,
@@ -132,36 +165,6 @@ func (o *Order) IsPersistent() bool {
 		o.Remaining > 0
 }
 
-func (o *Order) AmendSize(newSize int64) *OrderAmendment {
-	a := &OrderAmendment{
-		OrderId:  o.Id,
-		MarketId: o.MarketId,
-
-		SizeDelta:   newSize - int64(o.Size),
-		TimeInForce: o.TimeInForce,
-	}
-	if e := o.ExpiresAt; e > 0 {
-		a.ExpiresAt = &Timestamp{
-			Value: e,
-		}
-	}
-
-	if p := o.PeggedOrder; p != nil {
-		a.PeggedReference = p.Reference
-		a.PeggedOffset = &wrapperspb.Int64Value{
-			Value: p.Offset,
-		}
-	} else {
-		if p := o.Price; p > 0 {
-			a.Price = &Price{
-				Value: p,
-			}
-		}
-	}
-
-	return a
-}
-
 func (o *Order) IsExpireable() bool {
 	return (o.TimeInForce == Order_TIME_IN_FORCE_GFN ||
 		o.TimeInForce == Order_TIME_IN_FORCE_GTT ||
@@ -186,7 +189,12 @@ type PeggedOrder struct {
 	Offset    int64
 }
 
-func PeggedOrderFromProto(p *proto.PeggedOrder) *PeggedOrder {
+func (p PeggedOrder) Clone() *PeggedOrder {
+	cpy := p
+	return &cpy
+}
+
+func NewPeggedOrderFromProto(p *proto.PeggedOrder) *PeggedOrder {
 	if p == nil {
 		return nil
 	}
@@ -230,7 +238,7 @@ func (o *OrderCancellationConfirmation) IntoProto() *proto.OrderCancellationConf
 type Trade struct {
 	Id                 string
 	MarketId           string
-	Price              uint64
+	Price              *num.Uint
 	Size               uint64
 	Buyer              string
 	Seller             string
@@ -268,7 +276,7 @@ func (t *Trade) IntoProto() *proto.Trade {
 	return &proto.Trade{
 		Id:                 t.Id,
 		MarketId:           t.MarketId,
-		Price:              t.Price,
+		Price:              num.UintToUint64(t.Price),
 		Size:               t.Size,
 		Buyer:              t.Buyer,
 		Seller:             t.Seller,
@@ -296,20 +304,6 @@ func (t Trades) IntoProto() []*proto.Trade {
 		out = append(out, v.IntoProto())
 	}
 	return out
-}
-
-type Fee struct {
-	MakerFee          uint64
-	InfrastructureFee uint64
-	LiquidityFee      uint64
-}
-
-func (f *Fee) IntoProto() *proto.Fee {
-	return &proto.Fee{
-		MakerFee:          f.MakerFee,
-		InfrastructureFee: f.InfrastructureFee,
-		LiquidityFee:      f.LiquidityFee,
-	}
 }
 
 type Trade_Type = proto.Trade_Type

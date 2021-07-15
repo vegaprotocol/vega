@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.40.0
+*2021-07-12*
+
+### Improvements
+- [#3718](https://github.com/vegaprotocol/vega/pull/3718) - Run `unparam` over the codebase
+- [#3705](https://github.com/vegaprotocol/vega/pull/3705) - Return theoretical target stake when in auction
+- [#3703](https://github.com/vegaprotocol/vega/pull/3703) - Remove inefficient metrics calls
+- [#3693](https://github.com/vegaprotocol/vega/pull/3693) - Calculation without Decimal in the liquidity target package
+- [#3696](https://github.com/vegaprotocol/vega/pull/3696) - Remove some uint <-> Decimal conversion
+- [#3689](https://github.com/vegaprotocol/vega/pull/3689) - Do not rely on proto conversion for `GetAsset`
+- [#3676](https://github.com/vegaprotocol/vega/pull/3676) - Ad the `tm` subcommand
+- [#3569](https://github.com/vegaprotocol/vega/pull/3569) - Migrate from uint64 to uint256 for all balances, amount, prices in the core
+- [#3594](https://github.com/vegaprotocol/vega/pull/3594) - Improve probability of trading calculations
+- [#3752](https://github.com/vegaprotocol/vega/pull/3752) - Update oracle engine to send events at the end of the block
+- [#3745](https://github.com/vegaprotocol/vega/pull/3745) - Add loss socialization for final settlement
+
+### Fixes
+- [#3722](https://github.com/vegaprotocol/vega/pull/3722) - Added sign to settle return values to allow to determine correctly win/loss
+- [#3720](https://github.com/vegaprotocol/vega/pull/3720) - Tidy up max open interest calculations
+- [#3704](https://github.com/vegaprotocol/vega/pull/3704) - Fix settlement with network orders
+- [#3686](https://github.com/vegaprotocol/vega/pull/3686) -Fixes in the positions engine following migration to uint256
+- [#3684](https://github.com/vegaprotocol/vega/pull/3684) - Fix the position engine hash state following migration to uint256
+- [#3467](https://github.com/vegaprotocol/vega/pull/3647) - Ensure LP orders are not submitted during auction
+- [#3736](https://github.com/vegaprotocol/vega/pull/3736) - Correcting event types and adding panics to catch mistakes
+
+
 ## 0.39.0
 *2021-06-30*
 

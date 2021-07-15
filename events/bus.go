@@ -3,12 +3,9 @@ package events
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"code.vegaprotocol.io/vega/contextutil"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	"code.vegaprotocol.io/vega/types"
 
 	"github.com/pkg/errors"
 )
@@ -200,64 +197,6 @@ var (
 		OracleDataEvent:         "OracleDataEvent",
 	}
 )
-
-// New is a generic constructor - based on the type of v, the specific event will be returned
-func New(ctx context.Context, v interface{}) (interface{}, error) {
-	switch tv := v.(type) {
-	case *time.Time:
-		e := NewTime(ctx, *tv)
-		return e, nil
-	case time.Time:
-		e := NewTime(ctx, tv)
-		return e, nil
-	case []*types.TransferResponse:
-		e := NewTransferResponse(ctx, tv)
-		return e, nil
-	case *types.Order:
-		e := NewOrderEvent(ctx, tv)
-		return e, nil
-	case types.Account:
-		e := NewAccountEvent(ctx, tv)
-		return e, nil
-	case types.Party:
-		e := NewPartyEvent(ctx, tv)
-		return e, nil
-	case types.Trade:
-		e := NewTradeEvent(ctx, tv)
-		return e, nil
-	case types.MarginLevels:
-		e := NewMarginLevelsEvent(ctx, tv)
-		return e, nil
-	case types.Proposal:
-		e := NewProposalEvent(ctx, tv)
-		return e, nil
-	case types.Vote:
-		e := NewVoteEvent(ctx, tv)
-		return e, nil
-	case types.MarketData:
-		e := NewMarketDataEvent(ctx, tv)
-		return e, nil
-	case commandspb.NodeSignature:
-		e := NewNodeSignatureEvent(ctx, tv)
-		return e, nil
-	case types.Asset:
-		e := NewAssetEvent(ctx, tv)
-		return e, nil
-	case types.Withdrawal:
-		e := NewWithdrawalEvent(ctx, tv)
-		return e, nil
-	case types.Deposit:
-		e := NewDepositEvent(ctx, tv)
-		return e, nil
-	case types.RiskFactor:
-		e := NewRiskFactorEvent(ctx, tv)
-		return e, nil
-	case types.LiquidityProvision:
-		e := NewLiquidityProvisionEvent(ctx, &tv)
-		return e, nil
-	}
-	return nil, ErrUnsupportedEvent
-}
 
 // A base event holds no data, so the constructor will not be called directly
 func newBase(ctx context.Context, t Type) *Base {

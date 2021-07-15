@@ -45,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/transfers"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -172,21 +173,21 @@ func (l *NodeCommand) loadMarketsConfig() error {
 }
 
 func (l *NodeCommand) setupSubscibers() {
-	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, true)
+	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, l.Log, true)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
 	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
-	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, true)
-	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, true)
-	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, true)
-	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore, true)
-	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, true)
-	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true)
-	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, true)
-	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, true)
-	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, true)
-	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, true)
+	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, l.Log, true)
+	l.partySub = subscribers.NewPartySub(l.ctx, l.partyStore, l.Log, true)
+	l.tradeSub = subscribers.NewTradeSub(l.ctx, l.tradeStore, l.Log, true)
+	l.marginLevelSub = subscribers.NewMarginLevelSub(l.ctx, l.riskStore, l.Log, true)
+	l.governanceSub = subscribers.NewGovernanceDataSub(l.ctx, l.Log, true)
+	l.voteSub = subscribers.NewVoteSub(l.ctx, false, true, l.Log)
+	l.marketDataSub = subscribers.NewMarketDataSub(l.ctx, l.marketDataStore, l.Log, true)
+	l.newMarketSub = subscribers.NewMarketSub(l.ctx, l.marketStore, l.Log, true)
+	l.marketUpdatedSub = subscribers.NewMarketUpdatedSub(l.ctx, l.marketStore, l.Log, true)
+	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, l.Log, true)
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
-	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, true)
+	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, l.Log, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -272,7 +273,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 			mkt.TradableInstrument.Instrument.GetFuture().OracleSpec = specWithID
 			// end of hot fix
 
-			err = l.executionEngine.SubmitMarket(l.ctx, &mkt)
+			err = l.executionEngine.SubmitMarket(l.ctx, types.MarketFromProto(&mkt))
 			if err != nil {
 				l.Log.Panic("Unable to submit market",
 					logging.Error(err))
@@ -284,7 +285,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 }
 
 func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
-	aid, err := l.assets.NewAsset(id, v)
+	aid, err := l.assets.NewAsset(id, types.AssetDetailsFromProto(v))
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
 	}
@@ -315,7 +316,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 		return fmt.Errorf("unable to enable asset: %v", err)
 	}
 
-	assetD := asset.ProtoAsset()
+	assetD := asset.Type()
 	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
 		return fmt.Errorf("unable to enable asset in collateral: %v", err)
 	}
@@ -336,7 +337,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 }
 
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
-	app, err := processor.NewApp(
+	app := processor.NewApp(
 		l.Log,
 		l.conf.Processor,
 		l.cancel,
@@ -353,16 +354,12 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.stats.Blockchain,
 		l.timeService,
 		l.topology,
-		l.nodeWallet,
 		l.netParams,
 		&processor.Oracle{
 			Engine:   l.oracle,
 			Adaptors: l.oracleAdaptors,
 		},
 	)
-	if err != nil {
-		return nil, err
-	}
 
 	var abciApp tmtypes.Application
 	tmCfg := l.conf.Blockchain.Tendermint
@@ -456,14 +453,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	//  create collateral
-	l.collateral, err = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
-	if err != nil {
-		log.Error("unable to initialise collateral", logging.Error(err))
-		return err
-	}
-
-	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker)
+	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
+	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker, l.timeService)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
 	l.oracleAdaptors = oracleAdaptors.New()
 

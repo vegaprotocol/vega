@@ -13,6 +13,7 @@ import (
 type FaucetCmd struct {
 	Init faucetInit `command:"init" description:"Generates the faucet configuration"`
 	Run  faucetRun  `command:"run" description:"Runs the faucet"`
+	Help bool       `short:"h" long:"help" description:"Show this help message"`
 }
 
 // faucetCmd is a global variable that holds generic options for the faucet

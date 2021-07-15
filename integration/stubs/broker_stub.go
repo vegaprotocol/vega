@@ -217,12 +217,14 @@ func (b *BrokerStub) GetMarket(marketID string) *types.Market {
 			if mkt.MarketID() != marketID {
 				continue
 			}
-			return mkt.Market().DeepClone()
+			m := mkt.Proto()
+			return &m
 		case events.MarketUpdated:
 			if mkt.MarketID() != marketID {
 				continue
 			}
-			return mkt.Market().DeepClone()
+			m := mkt.Proto()
+			return &m
 		}
 	}
 
@@ -380,6 +382,17 @@ func (b *BrokerStub) GetMarketInsurancePoolAccount(market string) (types.Account
 	return types.Account{}, errors.New("account does not exist")
 }
 
+func (b *BrokerStub) GetAssetInsurancePoolAccount(asset string) (types.Account, error) {
+	batch := b.GetAccountEvents()
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE {
+			return v, nil
+		}
+	}
+	return types.Account{}, errors.New("account does not exist")
+}
+
 func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
@@ -492,6 +505,37 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 		return last, nil
 	}
 	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
+}
+
+func (b *BrokerStub) GetTxErrors() []events.TxErr {
+	batch := b.GetBatch(events.TxErrEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.TxErr, 0, len(batch))
+	for _, e := range batch {
+		switch te := e.(type) {
+		case *events.TxErr:
+			ret = append(ret, *te)
+		case events.TxErr:
+			ret = append(ret, te)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetLPSErrors() []events.TxErr {
+	errs := b.GetTxErrors()
+	if len(errs) == 0 {
+		return nil
+	}
+	ret := make([]events.TxErr, 0, len(errs)/2)
+	for _, e := range errs {
+		if p := e.Proto(); p.GetLiquidityProvisionSubmission() != nil {
+			ret = append(ret, e)
+		}
+	}
+	return ret
 }
 
 func (b *BrokerStub) GetTrades() []types.Trade {

@@ -3,20 +3,20 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type MarketData struct {
 	*Base
-	md types.MarketData
+	md proto.MarketData
 }
 
 func NewMarketDataEvent(ctx context.Context, md types.MarketData) *MarketData {
-	cpy := md.DeepClone()
 	return &MarketData{
 		Base: newBase(ctx, MarketDataEvent),
-		md:   *cpy,
+		md:   *md.IntoProto(),
 	}
 }
 
@@ -24,11 +24,11 @@ func (m MarketData) MarketID() string {
 	return m.md.Market
 }
 
-func (m MarketData) MarketData() types.MarketData {
+func (m MarketData) MarketData() proto.MarketData {
 	return m.md
 }
 
-func (m MarketData) Proto() types.MarketData {
+func (m MarketData) Proto() proto.MarketData {
 	return m.md
 }
 

@@ -7,8 +7,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/products/mocks"
-	types "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,7 +62,7 @@ func TestFuture(t *testing.T) {
 
 	proto := getValidInstrumentProto()
 
-	prodSpec := proto.GetProduct()
+	prodSpec := proto.Product
 	require.NotNil(t, prodSpec)
 	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe)
 
@@ -75,9 +76,10 @@ func TestFuture(t *testing.T) {
 	assert.Equal(t, SettlementAssetStr, prod.GetAsset())
 
 	// Future values are the same as the mark price
-	value, err := prod.Value(1000)
+	given := num.NewUint(1000)
+	value, err := prod.Value(given)
 	assert.NoError(t, err)
-	assert.EqualValues(t, 1000, value)
+	assert.EqualValues(t, given.String(), value.String())
 
 	var params = []struct {
 		entryPrice      uint64
@@ -94,8 +96,9 @@ func TestFuture(t *testing.T) {
 	for _, param := range params {
 		// Use debug function to update the settlement price as if from a Oracle
 		f.SetSettlementPrice(ctx, "prices.ETH.value", param.settlementPrice)
-		fa, err := prod.Settle(param.entryPrice, param.position)
+		ep := num.NewUint(param.entryPrice)
+		fa, _, err := prod.Settle(ep, param.position)
 		assert.NoError(t, err)
-		assert.EqualValues(t, param.result, fa.Amount)
+		assert.EqualValues(t, param.result, fa.Amount.Uint64())
 	}
 }

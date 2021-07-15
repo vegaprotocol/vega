@@ -8,6 +8,7 @@ import (
 	ptypes "code.vegaprotocol.io/vega/proto"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"go.uber.org/zap"
 )
@@ -94,6 +95,11 @@ func Int8(key string, val int8) zap.Field {
 // String constructs a field with the given key and value.
 func String(key string, val string) zap.Field {
 	return zap.String(key, val)
+}
+
+// BigUint constructs a field with the given key and value.
+func BigUint(key string, val *num.Uint) zap.Field {
+	return String(key, val.String())
 }
 
 // Uint constructs a field with the given key and value.
@@ -187,13 +193,32 @@ func AssetID(id string) zap.Field {
 	return zap.String("asset-id", id)
 }
 
+func WithdrawalID(id string) zap.Field {
+	return zap.String("withdrawal-id", id)
+}
+
 func LiquidityID(id string) zap.Field {
 	return zap.String("liquidity-id", id)
 }
 
-func LiquidityProvisionSubmission(
-	lp commandspb.LiquidityProvisionSubmission) zap.Field {
+func LiquidityProvisionSubmissionProto(
+	lp *commandspb.LiquidityProvisionSubmission) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
+}
+
+func LiquidityProvisionSubmission(
+	lp types.LiquidityProvisionSubmission) zap.Field {
+	return zap.String("liquidity-provision-submission", lp.String())
+}
+
+func WithdrawSubmissionProto(
+	lp *commandspb.WithdrawSubmission) zap.Field {
+	return zap.String("withdraw-submission", lp.String())
+}
+
+func WithdrawSubmission(
+	lp types.WithdrawSubmission) zap.Field {
+	return zap.String("withdraw-submission", lp.String())
 }
 
 // Party constructs a field with the given VEGA party proto value.
@@ -219,17 +244,27 @@ func ProtoAccount(a ptypes.Account) zap.Field {
 	return zap.String("account", a.String())
 }
 
-// OrderAmendment constructs a single string field to contain all the object information
-func OrderAmendment(oa *commandspb.OrderAmendment) zap.Field {
+// OrderAmendmentProto constructs a single string field to contain all the object information
+func OrderAmendmentProto(oa *commandspb.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
-// OrderSubmission constructs a single string field to contain all the object information
-func OrderSubmission(os *commandspb.OrderSubmission) zap.Field {
+// OrderAmendment constructs a single string field to contain all the object information
+func OrderAmendment(oa *types.OrderAmendment) zap.Field {
+	return zap.String("order-amendment", oa.String())
+}
+
+// OrderSubmissionProto constructs a single string field to contain all the object information
+func OrderSubmissionProto(os *commandspb.OrderSubmission) zap.Field {
 	return zap.String("order-submission", os.String())
 }
 
-func OrderCancellation(oc *commandspb.OrderCancellation) zap.Field {
+// OrderSubmission constructs a single string field to contain all the object information
+func OrderSubmission(os *types.OrderSubmission) zap.Field {
+	return zap.String("order-submission", os.String())
+}
+
+func OrderCancellation(oc *types.OrderCancellation) zap.Field {
 	return zap.String("order-cancellation", oc.String())
 }
 

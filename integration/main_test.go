@@ -1,9 +1,10 @@
 package core_test
 
 import (
+	"context"
 	"flag"
 	"os"
-	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/cucumber/godog"
@@ -11,6 +12,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 
 	"code.vegaprotocol.io/vega/integration/steps"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -18,15 +20,23 @@ var (
 		Output: colors.Colored(os.Stdout),
 		Format: "progress",
 	}
+
+	features string
 )
 
 func init() {
 	godog.BindFlags("godog.", flag.CommandLine, &gdOpts)
+	flag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
 }
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	gdOpts.Paths = flag.Args()
+
+	if features != "" {
+		paths := strings.Split(features, ",")
+		gdOpts.Paths = paths
+	}
 
 	status := godog.RunWithOptions("godogs", func(s *godog.Suite) {
 		FeatureContext(s)
@@ -86,15 +96,32 @@ func FeatureContext(s *godog.Suite) {
 
 	// Other steps
 	s.Step(`^the initial insurance pool balance is "([^"]*)" for the markets:$`, func(amountstr string) error {
-		amount, _ := strconv.ParseUint(amountstr, 10, 0)
+		//		amount, _ := strconv.ParseUint(amountstr, 10, 0)
+		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
-			if err := execsetup.collateralEngine.TopUpInsurancePool(mkt.Id, asset, amount); err != nil {
+			marketInsuranceAccount, err := execsetup.collateralEngine.GetMarketInsurancePoolAccount(mkt.Id, asset)
+			if err != nil {
+				return err
+			}
+			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), marketInsuranceAccount.Id, amount); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
+	s.Step(`^the initial insurance pool balance is "([^"]*)" for the asset:$`, func(amountstr string) error {
+		amount, _ := num.UintFromString(amountstr, 10)
+		for _, mkt := range execsetup.markets {
+			asset, _ := mkt.GetAsset()
+			assetInsuranceAccount := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
+			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.Id, amount); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
 	s.Step(`^the following network parameters are set:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingNetworkParametersAreSet(execsetup.netParams, table)
 	})
@@ -202,6 +229,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the insurance pool balance should be "([^"]*)" for the market "([^"]*)"$`, func(rawAmount, marketID string) error {
 		return steps.TheInsurancePoolBalanceShouldBeForTheMarket(execsetup.broker, rawAmount, marketID)
 	})
+	s.Step(`^the insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
+		return steps.TheInsurancePoolBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
+	})
 	s.Step(`^the following transfers should happen:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)
 	})
@@ -255,6 +285,15 @@ func FeatureContext(s *godog.Suite) {
 	})
 	s.Step(`^debug auction events$`, func() error {
 		return steps.DebugAuctionEvents(execsetup.broker, execsetup.log)
+	})
+	s.Step(`^debug transaction errors$`, func() error {
+		return steps.DebugTxErrors(execsetup.broker, execsetup.log)
+	})
+	s.Step(`^debug liquidity submission errors$`, func() error {
+		return steps.DebugLPSTxErrors(execsetup.broker, execsetup.log)
+	})
+	s.Step(`^debug liquidity provision events$`, func() error {
+		return steps.DebugLPs(execsetup.broker, execsetup.log)
 	})
 
 	// Event steps

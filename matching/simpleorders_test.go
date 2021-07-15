@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +20,7 @@ func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -31,7 +32,7 @@ func TestOrderBookSimple_simpleLimitBuy(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(100), price)
+	assert.Equal(t, uint64(100), price.Uint64())
 	assert.Equal(t, uint64(1), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 1)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -49,7 +50,7 @@ func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -61,7 +62,7 @@ func TestOrderBookSimple_simpleLimitSell(t *testing.T) {
 
 	price, volume, err := book.BestOfferPriceAndVolume()
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(100), price)
+	assert.Equal(t, uint64(100), price.Uint64())
 	assert.Equal(t, uint64(1), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 1)
@@ -79,7 +80,7 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
@@ -91,7 +92,7 @@ func TestOrderBookSimple_simpleMarketBuy(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -109,7 +110,7 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
@@ -121,7 +122,7 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -143,7 +144,7 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
@@ -155,7 +156,7 @@ func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -173,7 +174,7 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
@@ -185,7 +186,7 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -202,11 +203,12 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -217,11 +219,12 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -233,7 +236,7 @@ func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -247,11 +250,12 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -262,11 +266,12 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -278,7 +283,7 @@ func TestOrderBookSimple_simpleLimitSellFill(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -292,11 +297,12 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -307,11 +313,12 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
@@ -323,7 +330,7 @@ func TestOrderBookSimple_simpleMarketBuyFill(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -337,11 +344,12 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -352,11 +360,12 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
@@ -368,7 +377,7 @@ func TestOrderBookSimple_simpleMarketSellFill(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -382,11 +391,12 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -397,11 +407,12 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
@@ -413,7 +424,7 @@ func TestOrderBookSimple_simpleNetworkBuyFill(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -427,11 +438,12 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -442,11 +454,12 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
@@ -458,7 +471,7 @@ func TestOrderBookSimple_simpleNetworkSellFill(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -472,11 +485,12 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -488,11 +502,12 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
@@ -504,7 +519,7 @@ func TestOrderBookSimple_FillAgainstGTTOrder(t *testing.T) {
 
 	price, volume, err := book.BestBidPriceAndVolume()
 	assert.Error(t, err)
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
@@ -518,11 +533,12 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -533,11 +549,12 @@ func TestOrderBookSimple_simpleWashTrade(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -554,11 +571,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -569,11 +587,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order1 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -584,11 +603,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStopped(t *testing.T)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000011",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -607,11 +627,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "B",
 		Side:        types.Side_SIDE_SELL,
-		Price:       1,
+		Price:       num.NewUint(1),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -622,11 +643,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order1 := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       2,
+		Price:       num.NewUint(2),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -637,11 +659,12 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
+		Id:          "V0000000032-0000000011",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -658,8 +681,8 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 type MarketPos struct {
 	size, buy, sell int64
 	party           string
-	price           uint64
-	vwBuy, vwSell   uint64
+	price           *num.Uint
+	vwBuy, vwSell   *num.Uint
 }
 
 func (m MarketPos) Party() string {
@@ -678,16 +701,25 @@ func (m MarketPos) Sell() int64 {
 	return m.sell
 }
 
-func (m MarketPos) Price() uint64 {
-	return m.price
+func (m MarketPos) Price() *num.Uint {
+	if m.price != nil {
+		return m.price
+	}
+	return num.Zero()
 }
 
-func (m MarketPos) VWBuy() uint64 {
-	return m.vwBuy
+func (m MarketPos) VWBuy() *num.Uint {
+	if m.vwBuy != nil {
+		return m.vwBuy
+	}
+	return num.Zero()
 }
 
-func (m MarketPos) VWSell() uint64 {
-	return m.vwSell
+func (m MarketPos) VWSell() *num.Uint {
+	if m.vwSell != nil {
+		return m.vwSell
+	}
+	return num.Zero()
 }
 
 func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
@@ -699,7 +731,7 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -716,7 +748,7 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,

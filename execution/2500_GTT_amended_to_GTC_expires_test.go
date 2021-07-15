@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -28,7 +27,7 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	require.NotNil(t, o1conf)
 
 	// now we edit the order t make it GTC so it should not expire
-	amendment := &commandspb.OrderAmendment{
+	amendment := &types.OrderAmendment{
 		OrderId:     o1.Id,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}

@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cucumber/godog/gherkin"
 )
@@ -24,7 +24,7 @@ func TradersCancelAllTheirOrdersForTheMarkets(
 		orders := broker.GetOrdersByPartyAndMarket(party, row.MarketID())
 
 		for _, o := range orders {
-			cancel := commandspb.OrderCancellation{
+			cancel := types.OrderCancellation{
 				OrderId:  o.Id,
 				MarketId: o.MarketId,
 			}

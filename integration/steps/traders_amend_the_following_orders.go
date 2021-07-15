@@ -8,12 +8,11 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type OrderAmendmentError struct {
-	OrderAmendment commandspb.OrderAmendment
+	OrderAmendment types.OrderAmendment
 	OrderReference string
 	Err            error
 }
@@ -35,13 +34,19 @@ func TradersAmendTheFollowingOrders(
 			return errOrderNotFound(row.Reference(), row.Party(), err)
 		}
 
-		amend := commandspb.OrderAmendment{
+		amend := types.OrderAmendment{
 			OrderId:     o.Id,
 			MarketId:    o.MarketId,
-			Price:       row.Price(),
 			SizeDelta:   row.SizeDelta(),
 			TimeInForce: row.TimeInForce(),
-			ExpiresAt:   row.ExpirationDate(),
+		}
+
+		if row.Price() != nil {
+			amend.Price = row.Price().Value
+		}
+
+		if row.ExpirationDate() != nil {
+			amend.ExpiresAt = &row.ExpirationDate().Value
 		}
 
 		_, err = exec.AmendOrder(context.Background(), &amend, o.PartyId)

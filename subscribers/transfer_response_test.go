@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/subscribers/mocks"
@@ -35,7 +36,7 @@ func getTestSub(t *testing.T, ack bool) *trTst {
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	store := mocks.NewMockTransferResponseStore(ctrl)
-	tr := subscribers.NewTransferResponse(ctx, store, ack)
+	tr := subscribers.NewTransferResponse(ctx, store, logging.NewTestLogger(), ack)
 	return &trTst{
 		TransferResponse: tr,
 		ctrl:             ctrl,

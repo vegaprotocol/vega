@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
@@ -30,12 +29,11 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	require.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
 
 	// now we edit the order t make it GTC so it should not expire
-	amendment := &commandspb.OrderAmendment{
+	v10 := now.Add(10 * time.Second).UnixNano()
+	amendment := &types.OrderAmendment{
 		OrderId:     o1.Id,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		ExpiresAt: &types.Timestamp{
-			Value: now.Add(10 * time.Second).UnixNano(),
-		},
+		ExpiresAt:   &v10,
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa")
@@ -45,12 +43,11 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	require.Equal(t, 1, tm.market.GetPeggedExpiryOrderCount())
 
 	// now we edit the order t make it GTC so it should not expire
-	amendment2 := &commandspb.OrderAmendment{
+	v := now.Add(20 * time.Second).UnixNano()
+	amendment2 := &types.OrderAmendment{
 		OrderId:     o1.Id,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		ExpiresAt: &types.Timestamp{
-			Value: now.Add(20 * time.Second).UnixNano(),
-		},
+		ExpiresAt:   &v,
 	}
 
 	amendConf2, err := tm.market.AmendOrder(ctx, amendment2, "aaa")
@@ -60,7 +57,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	require.Equal(t, 1, tm.market.GetPeggedExpiryOrderCount())
 
 	// now we edit the order t make it GTC so it should not expire
-	amendment3 := &commandspb.OrderAmendment{
+	amendment3 := &types.OrderAmendment{
 		OrderId:     o1.Id,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	}

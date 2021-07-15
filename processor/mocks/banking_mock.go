@@ -6,6 +6,8 @@ package mocks
 
 import (
 	proto "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/vega/types"
+	num "code.vegaprotocol.io/vega/types/num"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,7 +37,7 @@ func (m *MockBanking) EXPECT() *MockBankingMockRecorder {
 }
 
 // DepositBuiltinAsset mocks base method
-func (m *MockBanking) DepositBuiltinAsset(arg0 context.Context, arg1 *proto.BuiltinAssetDeposit, arg2 string, arg3 uint64) error {
+func (m *MockBanking) DepositBuiltinAsset(arg0 context.Context, arg1 *types.BuiltinAssetDeposit, arg2 string, arg3 uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DepositBuiltinAsset", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -49,7 +51,7 @@ func (mr *MockBankingMockRecorder) DepositBuiltinAsset(arg0, arg1, arg2, arg3 in
 }
 
 // DepositERC20 mocks base method
-func (m *MockBanking) DepositERC20(arg0 context.Context, arg1 *proto.ERC20Deposit, arg2 string, arg3, arg4 uint64, arg5 string) error {
+func (m *MockBanking) DepositERC20(arg0 context.Context, arg1 *types.ERC20Deposit, arg2 string, arg3, arg4 uint64, arg5 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DepositERC20", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
@@ -77,7 +79,7 @@ func (mr *MockBankingMockRecorder) EnableBuiltinAsset(arg0, arg1 interface{}) *g
 }
 
 // EnableERC20 mocks base method
-func (m *MockBanking) EnableERC20(arg0 context.Context, arg1 *proto.ERC20AssetList, arg2, arg3 uint64, arg4 string) error {
+func (m *MockBanking) EnableERC20(arg0 context.Context, arg1 *types.ERC20AssetList, arg2, arg3 uint64, arg4 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnableERC20", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
@@ -105,7 +107,7 @@ func (mr *MockBankingMockRecorder) HasBalance(arg0 interface{}) *gomock.Call {
 }
 
 // LockWithdrawalERC20 mocks base method
-func (m *MockBanking) LockWithdrawalERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 uint64, arg5 *proto.Erc20WithdrawExt) error {
+func (m *MockBanking) LockWithdrawalERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint, arg5 *proto.Erc20WithdrawExt) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LockWithdrawalERC20", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
@@ -119,7 +121,7 @@ func (mr *MockBankingMockRecorder) LockWithdrawalERC20(arg0, arg1, arg2, arg3, a
 }
 
 // WithdrawalBuiltinAsset mocks base method
-func (m *MockBanking) WithdrawalBuiltinAsset(arg0 context.Context, arg1, arg2, arg3 string, arg4 uint64) error {
+func (m *MockBanking) WithdrawalBuiltinAsset(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WithdrawalBuiltinAsset", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
@@ -133,7 +135,7 @@ func (mr *MockBankingMockRecorder) WithdrawalBuiltinAsset(arg0, arg1, arg2, arg3
 }
 
 // WithdrawalERC20 mocks base method
-func (m *MockBanking) WithdrawalERC20(arg0 context.Context, arg1 *proto.ERC20Withdrawal, arg2, arg3 uint64, arg4 string) error {
+func (m *MockBanking) WithdrawalERC20(arg0 context.Context, arg1 *types.ERC20Withdrawal, arg2, arg3 uint64, arg4 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WithdrawalERC20", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)

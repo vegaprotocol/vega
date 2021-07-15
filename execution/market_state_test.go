@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/execution"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -63,10 +63,10 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.Nil(t, o3conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
-	amendment := &commandspb.OrderAmendment{
+	amendment := &types.OrderAmendment{
 		OrderId:   o1.Id,
-		Price:     &types.Price{Value: 4000},
-		SizeDelta: +10,
+		Price:     num.NewUint(4000),
+		SizeDelta: 10,
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, "trader-A")
@@ -74,10 +74,10 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
 	// but can place liquidity submission
-	lpsub := &commandspb.LiquidityProvisionSubmission{
+	lpsub := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 1,
-		Fee:              "0.1",
+		CommitmentAmount: num.NewUint(1),
+		Fee:              num.DecimalFromFloat(0.1),
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,

@@ -1,8 +1,6 @@
 package execution
 
 import (
-	"code.vegaprotocol.io/vega/types"
-
 	"github.com/google/btree"
 )
 
@@ -11,8 +9,9 @@ type ExpiringOrders struct {
 }
 
 type ordersAtTS struct {
-	ts     int64
-	orders []types.Order
+	ts int64
+	// order IDs
+	orders []string
 }
 
 func (a *ordersAtTS) Less(b btree.Item) bool {
@@ -30,13 +29,14 @@ func (a *ExpiringOrders) GetExpiryingOrderCount() int {
 	return result
 }
 
-func (a *ExpiringOrders) Insert(order types.Order) {
-	item := &ordersAtTS{ts: order.ExpiresAt}
+func (a *ExpiringOrders) Insert(
+	orderID string, ts int64) {
+	item := &ordersAtTS{ts: ts}
 	if item := a.orders.Get(item); item != nil {
-		item.(*ordersAtTS).orders = append(item.(*ordersAtTS).orders, order)
+		item.(*ordersAtTS).orders = append(item.(*ordersAtTS).orders, orderID)
 		return
 	}
-	item.orders = []types.Order{order}
+	item.orders = []string{orderID}
 	a.orders.ReplaceOrInsert(item)
 }
 
@@ -45,7 +45,7 @@ func (a *ExpiringOrders) RemoveOrder(expiresAt int64, orderID string) bool {
 	if item := a.orders.Get(item); item != nil {
 		oat := item.(*ordersAtTS)
 		for i := 0; i < len(oat.orders); i++ {
-			if oat.orders[i].Id == orderID {
+			if oat.orders[i] == orderID {
 				oat.orders = oat.orders[:i+copy(oat.orders[i:], oat.orders[i+1:])]
 
 				// if the slice is empty, remove the parent container
@@ -59,11 +59,11 @@ func (a *ExpiringOrders) RemoveOrder(expiresAt int64, orderID string) bool {
 	return false
 }
 
-func (a *ExpiringOrders) Expire(ts int64) []types.Order {
+func (a *ExpiringOrders) Expire(ts int64) []string {
 	if a.orders.Len() == 0 {
 		return nil
 	}
-	orders := []types.Order{}
+	orders := []string{}
 	toDelete := []int64{}
 	item := &ordersAtTS{ts: ts + 1}
 	a.orders.AscendLessThan(item, func(i btree.Item) bool {

@@ -13,9 +13,11 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/settlement/mocks"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testEngine struct {
@@ -29,7 +31,7 @@ type testEngine struct {
 
 type posValue struct {
 	trader string
-	price  uint64 // absolute Mark price
+	price  *num.Uint // absolute Mark price
 	size   int64
 }
 
@@ -52,60 +54,67 @@ func TestMarkToMarket(t *testing.T) {
 	t.Run("Trade adds new trader to market, no MTM settlement because markPrice is the same", testAddNewTrader)
 	// add this test case because we had a runtime panic on the trades map earlier
 	t.Run("Trade adds new trader, immediately closing out with themselves", testAddNewTraderSelfTrade)
+	t.Run("Test MTM settle when the network is closed out", testMTMNetworkZero)
 }
 
 func testSettleExpiredSuccess(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	// these are mark prices, product will provide the actual value
+	pr := num.NewUint(1000)
 	data := []posValue{ // {{{2
 		{
 			trader: "trader1",
-			price:  1000,
+			price:  pr, // winning
 			size:   10,
 		},
 		{
 			trader: "trader2",
-			price:  1000,
+			price:  pr, // losing
 			size:   -5,
 		},
 		{
 			trader: "trader3",
-			price:  1000,
+			price:  pr, // losing
 			size:   -5,
 		},
 	}
+	half := num.NewUint(500)
 	expect := []*types.Transfer{
 		{
 			Owner: data[1].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 500,
+				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 500,
+				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[0].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 1000,
+				Amount: pr,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	} // }}}
-	oraclePrice := uint64(1100)
-	settleF := func(price uint64, size int64) (*types.FinancialAmount, error) {
+	oraclePrice := num.NewUint(1100)
+	settleF := func(price *num.Uint, size int64) (*types.FinancialAmount, bool, error) {
+		amt, neg := num.Zero().Delta(oraclePrice, price)
 		if size < 0 {
 			size *= -1
+			neg = !neg
 		}
+
+		amt = amt.Mul(amt, num.NewUint(uint64(size)))
 		return &types.FinancialAmount{
-			Amount: (oraclePrice - price) * uint64(size),
-		}, nil
+			Amount: amt,
+		}, neg, nil
 	}
 	positions := engine.getExpiryPositions(data...)
 	for _, d := range data {
@@ -115,7 +124,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now(), 0)
+	got, err := engine.Settle(time.Now(), num.Zero())
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -129,49 +138,51 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	// these are mark prices, product will provide the actual value
+	pr := num.NewUint(1000)
 	data := []posValue{ // {{{2
 		{
 			trader: "trader1",
-			price:  1000,
+			price:  pr,
 			size:   10,
 		},
 		{
 			trader: "trader2",
-			price:  1000,
+			price:  pr,
 			size:   -5,
 		},
 		{
 			trader: "trader3",
-			price:  1000,
+			price:  pr,
 			size:   -5,
 		},
 	}
+	half := num.NewUint(500)
 	expect := []*types.Transfer{
 		{
 			Owner: data[1].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 500,
+				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[2].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 500,
+				Amount: half,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_LOSS,
 		},
 		{
 			Owner: data[0].trader,
 			Amount: &types.FinancialAmount{
-				Amount: 1000,
+				Amount: pr,
 			},
 			Type: types.TransferType_TRANSFER_TYPE_WIN,
 		},
 	} // }}}
 
 	// settlement price at markPrice
-	var markPrice uint64 = 1100
+	markPrice := num.NewUint(1100)
 	// set the FinalSettlement to the MarkPrice method
 	engine.Engine.Config.FinalSettlement.FinalSettlement = settlement.FinalSettlementMarkPrice
 
@@ -194,7 +205,7 @@ func testSettleExpiredSuccessErrorInvalidSettlementMethod(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 	// settlement price at markPrice
-	var markPrice uint64 = 1100
+	markPrice := num.NewUint(1100)
 	// set the FinalSettlement to the MarkPrice method
 	engine.Engine.Config.FinalSettlement.FinalSettlement = "not a settlement"
 	// now settle:
@@ -209,22 +220,22 @@ func testSettleExpiryFail(t *testing.T) {
 	data := []posValue{
 		{
 			trader: "trader1",
-			price:  1000,
+			price:  num.NewUint(1000),
 			size:   10,
 		},
 	}
 	errExp := errors.New("product.Settle error")
 	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, errExp)
+	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, false, errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now(), 0)
+	empty, err := engine.Settle(time.Now(), num.Zero())
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
 }
 
 func testMarkToMarketEmpty(t *testing.T) {
-	markPrice := uint64(10000)
+	markPrice := num.NewUint(10000)
 	// there's only 1 trade to test here
 	data := posValue{
 		price:  markPrice,
@@ -245,16 +256,16 @@ func testMarkToMarketEmpty(t *testing.T) {
 func testAddNewTraderSelfTrade(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	markPrice := uint64(1000)
+	markPrice := num.NewUint(1000)
 	t1 := testPos{
-		price: markPrice,
+		price: markPrice.Clone(),
 		party: "trader1",
 		size:  5,
 	}
 	init := []events.MarketPosition{
 		t1,
 		testPos{
-			price: markPrice,
+			price: markPrice.Clone(),
 			party: "trader2",
 			size:  -5,
 		},
@@ -264,7 +275,7 @@ func testAddNewTraderSelfTrade(t *testing.T) {
 	trade := &types.Trade{
 		Buyer:  "trader3",
 		Seller: "trader3",
-		Price:  markPrice,
+		Price:  markPrice.Clone(),
 		Size:   1,
 	}
 	// the first trader is the seller
@@ -276,7 +287,7 @@ func testAddNewTraderSelfTrade(t *testing.T) {
 		testPos{
 			party: "trader3",
 			size:  0,
-			price: markPrice,
+			price: markPrice.Clone(),
 		},
 	}
 	engine.Update(init)
@@ -289,16 +300,16 @@ func testAddNewTraderSelfTrade(t *testing.T) {
 func testAddNewTrader(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	markPrice := uint64(1000)
+	markPrice := num.NewUint(1000)
 	t1 := testPos{
-		price: markPrice,
+		price: markPrice.Clone(),
 		party: "trader1",
 		size:  5,
 	}
 	init := []events.MarketPosition{
 		t1,
 		testPos{
-			price: markPrice,
+			price: markPrice.Clone(),
 			party: "trader2",
 			size:  -5,
 		},
@@ -308,7 +319,7 @@ func testAddNewTrader(t *testing.T) {
 	trade := &types.Trade{
 		Buyer:  "trader3",
 		Seller: t1.party,
-		Price:  markPrice,
+		Price:  markPrice.Clone(),
 		Size:   1,
 	}
 	// the first trader is the seller
@@ -320,7 +331,7 @@ func testAddNewTrader(t *testing.T) {
 		testPos{
 			party: "trader3",
 			size:  1,
-			price: markPrice,
+			price: markPrice.Clone(),
 		},
 	}
 	engine.Update(init)
@@ -337,40 +348,42 @@ func testAddNewTrader(t *testing.T) {
 func testMarkToMarketOrdered(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
+	pr := num.NewUint(10000)
 	positions := []posValue{
 		{
-			price:  10000,
+			price:  pr,
 			size:   1,
 			trader: "trader1", // mocks will create 2 traders (long & short)
 		},
 		{
-			price:  10000,
+			price:  pr.Clone(),
 			size:   -1,
 			trader: "trader2",
 		},
 	}
-	markPrice := uint64(10000 + 1000)
+	markPrice := pr.Clone()
+	markPrice = markPrice.Add(markPrice, num.NewUint(1000))
 	neutral := testPos{
 		party: "neutral",
 		size:  5,
-		price: 10000,
+		price: pr.Clone(),
 	}
 	init := []events.MarketPosition{
 		neutral,
 		testPos{
-			price: neutral.price,
+			price: neutral.price.Clone(),
 			party: "trader1",
 			size:  1,
 		},
 		testPos{
-			price: neutral.price,
+			price: neutral.price.Clone(),
 			party: "trader2",
 			size:  -1,
 		},
 	}
 	short, long := make([]events.MarketPosition, 0, 3), make([]events.MarketPosition, 0, 3)
 	// the SettleMTM data must contain the new mark price already
-	neutral.price = markPrice
+	neutral.price = markPrice.Clone()
 	short = append(short, neutral)
 	long = append(long, neutral)
 	// we have a long and short trade example
@@ -392,12 +405,12 @@ func testMarkToMarketOrdered(t *testing.T) {
 			trades["short"].Seller = p.trader
 			long = append(long, testPos{
 				party: p.trader,
-				price: markPrice,
+				price: markPrice.Clone(),
 				size:  p.size + int64(trades["long"].Size),
 			})
 			short = append(short, testPos{
 				party: p.trader,
-				price: markPrice,
+				price: markPrice.Clone(),
 				size:  p.size - int64(trades["short"].Size),
 			})
 		} else {
@@ -405,12 +418,12 @@ func testMarkToMarketOrdered(t *testing.T) {
 			trades["short"].Buyer = p.trader
 			long = append(long, testPos{
 				party: p.trader,
-				price: markPrice,
+				price: markPrice.Clone(),
 				size:  p.size - int64(trades["long"].Size),
 			})
 			short = append(short, testPos{
 				party: p.trader,
-				price: markPrice,
+				price: markPrice.Clone(),
 				size:  p.size + int64(trades["short"].Size),
 			})
 		}
@@ -434,6 +447,92 @@ func testMarkToMarketOrdered(t *testing.T) {
 		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
 		assert.Equal(t, "trader2", transfers[0].Party()) // we expect trader2 to have a loss
 	}
+}
+
+func testMTMNetworkZero(t *testing.T) {
+	t.Skip("not implemented yet")
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	markPrice := num.NewUint(1000)
+	init := []events.MarketPosition{
+		testPos{
+			price: markPrice.Clone(),
+			party: "trader1",
+			size:  5,
+		},
+		testPos{
+			price: markPrice.Clone(),
+			party: "trader2",
+			size:  -5,
+		},
+		testPos{
+			price: markPrice.Clone(),
+			party: "trader3",
+			size:  10,
+		},
+		testPos{
+			price: markPrice.Clone(),
+			party: "trader4",
+			size:  -10,
+		},
+	}
+	// initialise the engine with the positions above
+	engine.Update(init)
+	// assume trader 4 is distressed, network has to trade and buy 10
+	// ensure the network loses in this scenario: the price has gone up
+	cPrice := num.Sum(markPrice, num.NewUint(1))
+	trade := &types.Trade{
+		Buyer:  types.NetworkParty,
+		Seller: "trader1",
+		Size:   5, // trader 1 only has 5 on the book, let's pretend we can close him our
+		Price:  cPrice.Clone(),
+	}
+	engine.AddTrade(trade)
+	engine.AddTrade(&types.Trade{
+		Buyer:  types.NetworkParty,
+		Seller: "trader3",
+		Size:   2,
+		Price:  cPrice.Clone(),
+	})
+	engine.AddTrade(&types.Trade{
+		Buyer:  types.NetworkParty,
+		Seller: "trader2",
+		Size:   3,
+		Price:  cPrice.Clone(), // trader 2 is going from -5 to -8
+	})
+	// the new positions of the traders who have traded with the network...
+	positions := []events.MarketPosition{
+		testPos{
+			party: "trader1", // trader 1 was 5 long, sold 5 to network, so closed out
+			price: markPrice.Clone(),
+			size:  0,
+		},
+		testPos{
+			party: "trader3",
+			size:  8, // long 10, sold 2
+			price: markPrice.Clone(),
+		},
+		testPos{
+			party: "trader2",
+			size:  -8,
+			price: markPrice.Clone(), // trader 2 was -5, shorted an additional 3 => -8
+		},
+	}
+	// new markprice is cPrice
+	noTransfers := engine.SettleMTM(context.Background(), cPrice, positions)
+	assert.Len(t, noTransfers, 3)
+	hasNetwork := false
+	for i, v := range noTransfers {
+		assert.NotNil(t, v.Transfer())
+		if v.Party() == types.NetworkParty {
+			// network hás to lose
+			require.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_LOSS, v.Transfer().Type)
+			// network loss should be at the start of the slice
+			require.Equal(t, 0, i)
+			hasNetwork = true
+		}
+	}
+	require.True(t, hasNetwork)
 }
 
 // {{{
@@ -470,8 +569,8 @@ func TestConcurrent(t *testing.T) {
 
 	engine := getTestEngine(t)
 	defer engine.Finish()
-	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price uint64, size int64) (*types.FinancialAmount, error) {
-		return &types.FinancialAmount{Amount: 0}, nil
+	engine.prod.EXPECT().Settle(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(price *num.Uint, size int64) (*types.FinancialAmount, bool, error) {
+		return &types.FinancialAmount{Amount: num.Zero()}, false, nil
 	})
 
 	cfg := engine.Config
@@ -488,12 +587,12 @@ func TestConcurrent(t *testing.T) {
 		data := []posValue{
 			{
 				trader: "testtrader1",
-				price:  1234,
+				price:  num.NewUint(1234),
 				size:   100,
 			},
 			{
 				trader: "testtrader2",
-				price:  1235,
+				price:  num.NewUint(1235),
 				size:   0,
 			},
 		}
@@ -519,7 +618,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now, 0)
+			_, err := engine.Settle(now, num.Zero())
 			assert.NoError(t, err)
 		}()
 	}
@@ -537,7 +636,7 @@ func (te *testEngine) Finish() {
 type testPos struct {
 	party           string
 	size, buy, sell int64
-	price           uint64
+	price           *num.Uint
 	vwBuy, vwSell   uint64
 }
 
@@ -557,16 +656,19 @@ func (t testPos) Sell() int64 {
 	return t.sell
 }
 
-func (t testPos) Price() uint64 {
+func (t testPos) Price() *num.Uint {
+	if t.price == nil {
+		return num.Zero()
+	}
 	return t.price
 }
 
-func (t testPos) VWBuy() uint64 {
-	return t.vwBuy
+func (t testPos) VWBuy() *num.Uint {
+	return num.NewUint(t.vwBuy)
 }
 
-func (t testPos) VWSell() uint64 {
-	return t.vwSell
+func (t testPos) VWSell() *num.Uint {
+	return num.NewUint(t.vwSell)
 }
 
 func (t testPos) ClearPotentials() {}
@@ -597,20 +699,20 @@ func (m marginVal) MarketID() string {
 	return m.marketID
 }
 
-func (m marginVal) MarginBalance() uint64 {
-	return m.margin
+func (m marginVal) MarginBalance() *num.Uint {
+	return num.NewUint(m.margin)
 }
 
-func (m marginVal) GeneralBalance() uint64 {
-	return m.general
+func (m marginVal) GeneralBalance() *num.Uint {
+	return num.NewUint(m.general)
 }
 
-func (m marginVal) BondBalance() uint64 {
-	return 0
+func (m marginVal) BondBalance() *num.Uint {
+	return num.Zero()
 }
 
-func (m marginVal) MarginShortFall() uint64 {
-	return m.marginShortFall
+func (m marginVal) MarginShortFall() *num.Uint {
+	return num.NewUint(m.marginShortFall)
 }
 
 //  vim: set ts=4 sw=4 tw=0 foldlevel=1 foldmethod=marker noet :

@@ -5,11 +5,10 @@ import (
 	"testing"
 	"time"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
-	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +30,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		ExpiresAt:   0,
@@ -51,19 +50,20 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	amend := &commandspb.OrderAmendment{
+	amend := &types.OrderAmendment{
 		MarketId: tm.market.GetID(),
 		OrderId:  orderAmend.Id,
 	}
 
+	one := num.NewUint(1)
 	// Amend price down (generates one order message)
-	amend.Price = &types.Price{Value: orderBuy.Price - 1}
+	amend.Price = num.Zero().Sub(orderBuy.Price, one)
 	amendConf, err := tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend price up (generates one order message)
-	amend.Price = &types.Price{Value: orderBuy.Price + 1}
+	amend.Price.AddSum(one, one) // we subtracted one, add 1 to get == to orderBuy.Price, + 1 again
 	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
@@ -84,7 +84,8 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	// Amend TIME_IN_FORCE -> GTT (generates one order message)
 	amend.SizeDelta = 0
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
-	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
+	exp := now.UnixNano() + 100000000000
+	amend.ExpiresAt = &exp
 	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
@@ -98,12 +99,14 @@ func TestOrderBufferOutputCount(t *testing.T) {
 
 	// Amend ExpiresAt (generates two order messages)
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
-	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 100000000000}
+	exp = now.UnixNano() + 100000000000
+	amend.ExpiresAt = &exp
 	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
-	amend.ExpiresAt = &types.Timestamp{Value: now.UnixNano() + 200000000000}
+	exp = now.UnixNano() + 200000000000
+	amend.ExpiresAt = &exp
 	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
@@ -126,7 +129,7 @@ func TestAmendCancelResubmit(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
@@ -140,19 +143,19 @@ func TestAmendCancelResubmit(t *testing.T) {
 
 	// Amend the price to force a cancel+resubmit to the order book
 
-	amend := &commandspb.OrderAmendment{
+	amend := &types.OrderAmendment{
 		OrderId:  orderID,
 		MarketId: confirmation.Order.MarketId,
-		Price:    &types.Price{Value: 101},
+		Price:    num.NewUint(101),
 	}
 	amended, err := tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.PartyId)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
-	amend = &commandspb.OrderAmendment{
+	amend = &types.OrderAmendment{
 		OrderId:   orderID,
 		MarketId:  confirmation.Order.MarketId,
-		Price:     &types.Price{Value: 101},
+		Price:     num.NewUint(101),
 		SizeDelta: 1,
 	}
 	amended, err = tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.PartyId)
@@ -179,7 +182,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
@@ -190,7 +193,7 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Now attempt to cancel it with the wrong partyID
-	cancelOrder := &commandspb.OrderCancellation{
+	cancelOrder := &types.OrderCancellation{
 		OrderId:  confirmation.Order.Id,
 		MarketId: confirmation.Order.MarketId,
 	}
@@ -251,7 +254,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       10,
+		Price:       num.NewUint(10),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
@@ -270,7 +273,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        50,
-		Price:       10,
+		Price:       num.NewUint(10),
 		Remaining:   50,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order",
@@ -282,7 +285,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Validate that the mark price has been updated
-	assert.EqualValues(t, tm.market.GetMarketData().MarkPrice, 10)
+	assert.True(t, tm.market.GetMarketData().MarkPrice.EQ(num.NewUint(10)))
 }
 
 func TestExpireCancelGTCOrder(t *testing.T) {
@@ -302,7 +305,7 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       10,
+		Price:       num.NewUint(10),
 		Remaining:   100,
 		Reference:   "party1-buy-order",
 		Type:        types.Order_TYPE_LIMIT,
@@ -315,10 +318,11 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 	// Move the current time forward
 	tm.market.OnChainTimeUpdate(context.Background(), time.Unix(10, 100))
 
-	amend := &commandspb.OrderAmendment{
+	exp := int64(10000000010)
+	amend := &types.OrderAmendment{
 		OrderId:     buyConfirmation.Order.Id,
 		MarketId:    tm.market.GetID(),
-		ExpiresAt:   &types.Timestamp{Value: 10000000010},
+		ExpiresAt:   &exp,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party1)
@@ -384,7 +388,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        20,
-		Price:       5,
+		Price:       num.NewUint(5),
 		Remaining:   20,
 		Reference:   "party1-buy-order",
 		Type:        types.Order_TYPE_LIMIT,
@@ -401,7 +405,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        10,
-		Price:       5,
+		Price:       num.NewUint(5),
 		Remaining:   10,
 		Reference:   "party2-sell-order",
 		Type:        types.Order_TYPE_MARKET,
@@ -411,17 +415,17 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NotNil(t, sellConfirmation)
 	assert.NoError(t, err)
 
-	amend := &commandspb.OrderAmendment{
+	amend := &types.OrderAmendment{
 		OrderId:  buyConfirmation.Order.Id,
 		MarketId: tm.market.GetID(),
-		Price:    &types.Price{Value: 20},
+		Price:    num.NewUint(20),
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party1)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
 	// Check the values are correct
-	assert.EqualValues(t, amended.Order.Price, 20)
+	assert.True(t, amended.Order.Price.EQ(amend.Price))
 	assert.EqualValues(t, amended.Order.Remaining, 10)
 	assert.EqualValues(t, amended.Order.Size, 20)
 }
@@ -444,7 +448,7 @@ func TestAmendWrongPartyID(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        100,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
@@ -455,10 +459,10 @@ func TestAmendWrongPartyID(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Send an amend but use the wrong partyID
-	amend := &commandspb.OrderAmendment{
+	amend := &types.OrderAmendment{
 		OrderId:  confirmation.Order.Id,
 		MarketId: confirmation.Order.MarketId,
-		Price:    &types.Price{Value: 101},
+		Price:    num.NewUint(101),
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party2)
 	assert.Nil(t, amended)
@@ -519,7 +523,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        15,
-		Price:       55,
+		Price:       num.NewUint(55),
 		Remaining:   15,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-sell-order",
@@ -536,7 +540,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 		PartyId:     party2,
 		MarketId:    tm.market.GetID(),
 		Size:        15,
-		Price:       53,
+		Price:       num.NewUint(53),
 		Remaining:   15,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order",
@@ -554,7 +558,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 		PartyId:     party1,
 		MarketId:    tm.market.GetID(),
 		Size:        30,
-		Price:       60,
+		Price:       num.NewUint(60),
 		Remaining:   30,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
@@ -566,9 +570,9 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	assert.Equal(t, confirmation.Order.Remaining, uint64(15))
 }
 
-func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif types.Order_TimeInForce, expiresAt int64) *commandspb.OrderAmendment {
+func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif types.Order_TimeInForce, expiresAt int64) *types.OrderAmendment {
 
-	amend := &commandspb.OrderAmendment{
+	amend := &types.OrderAmendment{
 		OrderId:     orderID,
 		MarketId:    market,
 		SizeDelta:   sizeDelta,
@@ -576,11 +580,11 @@ func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif 
 	}
 
 	if price > 0 {
-		amend.Price = &types.Price{Value: price}
+		amend.Price = num.NewUint(price)
 	}
 
 	if expiresAt > 0 {
-		amend.ExpiresAt = &types.Timestamp{Value: expiresAt}
+		amend.ExpiresAt = &expiresAt
 	}
 
 	return amend
@@ -607,7 +611,7 @@ func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.Orde
 		PartyId:     party,
 		MarketId:    tm.market.GetID(),
 		Size:        size,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   size,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "",
@@ -629,7 +633,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 		PartyId:     party,
 		MarketId:    tm.market.GetID(),
 		Size:        size,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Remaining:   size,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "",
@@ -640,7 +644,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 	}
 
 	confirmation, err := tm.market.SubmitOrder(context.Background(), order)
-	assert.NotNil(t, confirmation)
+	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Move time forward one second
@@ -1130,7 +1134,7 @@ func testPeggedOrderAdd(t *testing.T) {
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 
-	assert.Equal(t, uint64(98), order.Price)
+	assert.True(t, order.Price.EQ(num.NewUint(98)))
 }
 
 func testPeggedOrderWithReprice(t *testing.T) {
@@ -1167,7 +1171,7 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
 
 	md := tm.market.GetMarketData()
-	assert.Equal(t, uint64(100), md.MidPrice)
+	assert.True(t, md.MidPrice.EQ(num.NewUint(100)))
 	// Place a valid pegged order which will be added to the order book
 	// This order will cause the MID price to move and thus a reprice multiple times until it settles
 	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
@@ -1786,44 +1790,46 @@ func testPeggedOrderRepricing(t *testing.T) {
 		reference      types.PeggedReference
 		side           types.Side
 		offset         int64
-		expectedPrice  uint64
+		expectedPrice  *num.Uint
 		expectingError string
 	}{
 		{
 			reference:     types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
 			side:          types.Side_SIDE_BUY,
 			offset:        -3,
-			expectedPrice: buyPrice - 3,
+			expectedPrice: num.NewUint(buyPrice - 3),
 		},
 		{
 			reference:      types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
 			side:           types.Side_SIDE_BUY,
 			offset:         3,
+			expectedPrice:  num.Zero(),
 			expectingError: "can't have a positive offset on Buy orders",
 		},
 		{
 			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
 			side:          types.Side_SIDE_BUY,
 			offset:        -5,
-			expectedPrice: midPrice - 5,
+			expectedPrice: num.NewUint(midPrice - 5),
 		},
 		{
 			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
 			side:          types.Side_SIDE_SELL,
 			offset:        5,
-			expectedPrice: midPrice + 5,
+			expectedPrice: num.NewUint(midPrice + 5),
 		},
 		{
 			reference:     types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
 			side:          types.Side_SIDE_SELL,
 			offset:        5,
-			expectedPrice: sellPrice + 5,
+			expectedPrice: num.NewUint(sellPrice + 5),
 		},
 		{
 			reference:      types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
 			side:           types.Side_SIDE_SELL,
 			offset:         -5,
 			expectingError: "can't have a negative offset on Sell orders",
+			expectedPrice:  num.Zero(),
 		},
 	}
 
@@ -1868,7 +1874,7 @@ func testPeggedOrderRepricing(t *testing.T) {
 				require.Error(t, err, msg)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expectedPrice, conf.Order.Price)
+				assert.True(t, test.expectedPrice.EQ(conf.Order.Price))
 			}
 		})
 	}
@@ -2003,10 +2009,11 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 
 	// Amend offset so we can reprice
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -5}
+	off := int64(-5)
+	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
-	assert.Equal(t, int64(-5), amended.Order.PeggedOrder.Offset)
+	assert.Equal(t, off, amended.Order.PeggedOrder.Offset)
 	assert.NoError(t, err)
 
 	// Check we should have no parked orders
@@ -2044,10 +2051,11 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 
 	// Amend offset so we can reprice
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -15}
+	off := int64(-15)
+	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
-	assert.Equal(t, int64(-15), amended.Order.PeggedOrder.Offset)
+	assert.Equal(t, off, amended.Order.PeggedOrder.Offset)
 	assert.NoError(t, err)
 
 	// Check we should have no parked orders
@@ -2080,7 +2088,8 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 
 	// Amend offset so we cannot reprice
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -15}
+	off := int64(-15)
+	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
@@ -2120,7 +2129,8 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 
 	// Amend offset so we cannot reprice
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	amend.PeggedOffset = &wrapperspb.Int64Value{Value: -5}
+	off := int64(-5)
+	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
@@ -2254,7 +2264,8 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
-	amend.ExpiresAt = &types.Timestamp{Value: 20000000000}
+	exp := int64(20000000000)
+	amend.ExpiresAt = &exp
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
@@ -2311,7 +2322,8 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
 	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
 	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
-	amend.ExpiresAt = &types.Timestamp{Value: 20000000000}
+	exp := int64(20000000000)
+	amend.ExpiresAt = &exp
 	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
@@ -2361,22 +2373,22 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 	confirmation1, err := tm.market.SubmitOrder(context.Background(), &order1)
 	require.NotNil(t, confirmation1)
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(80), confirmation1.Order.Price)
+	assert.True(t, confirmation1.Order.Price.EQ(num.NewUint(80)))
 
 	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 10)
 	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: +20}
 	confirmation2, err := tm.market.SubmitOrder(context.Background(), &order2)
 	require.NotNil(t, confirmation2)
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(120), confirmation2.Order.Price)
+	assert.True(t, confirmation2.Order.Price.EQ(num.NewUint(120)))
 
 	// Make the mid price wonky (needs rounding)
 	buyOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 91)
 	require.NotNil(t, buyOrder2)
 
 	// Check the pegged orders have reprices properly
-	assert.Equal(t, uint64(81), confirmation1.Order.Price)  // Buy price gets rounded up
-	assert.Equal(t, uint64(120), confirmation2.Order.Price) // Sell price gets rounded down
+	assert.True(t, confirmation1.Order.Price.EQ(num.NewUint(81)))  // Buy price gets rounded up
+	assert.True(t, confirmation2.Order.Price.EQ(num.NewUint(120))) // Sell price gets rounded down
 }
 
 func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
@@ -2650,19 +2662,19 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	})
 	mktCfg.Fees = &types.Fees{
 		Factors: &types.FeeFactors{
-			LiquidityFee:      "0.001",
-			InfrastructureFee: "0.0005",
-			MakerFee:          "0.00025",
+			LiquidityFee:      num.DecimalFromFloat(0.001),
+			InfrastructureFee: num.DecimalFromFloat(0.0005),
+			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
 	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
-			RiskAversionParameter: 0.001,
-			Tau:                   0.00011407711613050422,
+			RiskAversionParameter: num.DecimalFromFloat(0.001),
+			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
 			Params: &types.LogNormalModelParams{
-				Mu:    0,
-				R:     0.016,
-				Sigma: 20,
+				Mu:    num.DecimalZero(),
+				R:     num.DecimalFromFloat(0.016),
+				Sigma: num.DecimalFromFloat(20),
 			},
 		},
 	}
@@ -2701,7 +2713,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       uint64(5500 + traderA.pegOffset), // 3500
+			Price:       num.NewUint(uint64(5500 + traderA.pegOffset)), // 3500
 			Side:        types.Side_SIDE_BUY,
 			PartyId:     "trader-0",
 			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
@@ -2709,7 +2721,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       uint64(5000 - traderB.pegOffset), // 4000
+			Price:       num.NewUint(uint64(5000 - traderB.pegOffset)), // 4000
 			Side:        types.Side_SIDE_SELL,
 			PartyId:     "trader-1",
 			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
@@ -2717,7 +2729,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        10,
 			Remaining:   10,
-			Price:       5500,
+			Price:       num.NewUint(5500),
 			Side:        types.Side_SIDE_BUY,
 			PartyId:     "trader-2",
 			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
@@ -2725,7 +2737,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        100,
 			Remaining:   100,
-			Price:       5000,
+			Price:       num.NewUint(5000),
 			Side:        types.Side_SIDE_SELL,
 			PartyId:     "trader-2",
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -2733,7 +2745,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        100,
 			Remaining:   100,
-			Price:       3500,
+			Price:       num.NewUint(3500),
 			Side:        types.Side_SIDE_BUY,
 			PartyId:     "trader-0",
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -2741,7 +2753,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       8500,
+			Price:       num.NewUint(8500),
 			Side:        types.Side_SIDE_BUY,
 			PartyId:     "trader-0",
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -2777,10 +2789,10 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	// Add a LPSubmission
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
-	lp := &commandspb.LiquidityProvisionSubmission{
+	lp := &types.LiquidityProvisionSubmission{
 		MarketId:         tm.market.GetID(),
-		CommitmentAmount: 2000000,
-		Fee:              "0.01",
+		CommitmentAmount: num.NewUint(2000000),
+		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "THIS-IS-LP",
 		Sells: []*types.LiquidityOrder{
 			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 10, Offset: 2},
@@ -2804,7 +2816,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		MarketId:    tm.market.GetID(),
 		Size:        20,
 		Remaining:   20,
-		Price:       10250,
+		Price:       num.NewUint(10250),
 		Side:        types.Side_SIDE_SELL,
 		PartyId:     "trader-2",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,

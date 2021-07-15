@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/plugins"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 )
@@ -57,7 +57,7 @@ type executionTestSetup struct {
 	// save trader accounts state
 	markets []types.Market
 
-	block        *helpers.Block
+	block *helpers.Block
 
 	netParams *netparams.Store
 }
@@ -76,11 +76,11 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()
 	currentTime, _ := execsetup.timeService.GetTimeNow()
-	execsetup.collateralEngine, _ = collateral.New(
+	execsetup.collateralEngine = collateral.New(
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
 	execsetup.oracleEngine = oracles.NewEngine(
-		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker,
+		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
 	execsetup.executionEngine = execution.NewEngine(
 		execsetup.log,

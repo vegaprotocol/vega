@@ -76,7 +76,7 @@ set_version() {
 }
 
 set_ldflags() {
-    ldflags="-X main.CLIVersion=$version -X main.CLIVersionHash=$version_hash"
+	ldflags="-X main.CLIVersion=$version -X main.CLIVersionHash=$version_hash"
 }
 
 parse_args() {
@@ -276,6 +276,18 @@ run() {
 		go test -v ./integration/... -godog.format=pretty
 		return "$?"
 		;;
+	spec_feature_test) ## Run qa integration tests (godog)
+		local repo="${specsrepo:?}"
+		if test -z "$repo"; then
+			echo "specsrepo not specified"
+			exit 1
+		fi
+		local features
+		features="${repo}/qa-scenarios"
+		echo "features = $features"
+		go test -v ./integration/... --features="$features" -godog.format=pretty
+		return "$?"
+		;;
 	mocks) ## Generate mocks
 		go generate ./...
 		return "$?"
@@ -297,7 +309,7 @@ run() {
 		return "$?"
 		;;
 	buflint) ## Run
-	        buf lint
+		buf lint
 		return "$?"
 		;;
 	misspell) ## Run misspell

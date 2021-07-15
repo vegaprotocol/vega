@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +49,7 @@ func testFOKStopped(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
@@ -70,11 +71,12 @@ func testFOKFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -85,11 +87,12 @@ func testFOKFilled(t *testing.T) {
 
 	// now place our fok order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
@@ -111,7 +114,7 @@ func testIOCStopped(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
@@ -133,11 +136,12 @@ func testIOCPartiallyFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -148,11 +152,12 @@ func testIOCPartiallyFilled(t *testing.T) {
 
 	// now place our IOC order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        2,
 		Remaining:   2,
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
@@ -174,11 +179,12 @@ func testIOCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -189,11 +195,12 @@ func testIOCFilled(t *testing.T) {
 
 	// now place our fok order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
@@ -219,7 +226,7 @@ func testGTCActive(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -244,7 +251,7 @@ func testGTCStoppedNotFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -274,7 +281,7 @@ func testGTCCancelledNotFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -305,7 +312,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -316,11 +323,12 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -348,7 +356,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -363,7 +371,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -395,7 +403,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -410,7 +418,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -436,11 +444,12 @@ func testGTCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -451,11 +460,12 @@ func testGTCFilled(t *testing.T) {
 
 	// now place our GTC order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -481,7 +491,7 @@ func testGTTActive(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -507,7 +517,7 @@ func testGTTStoppedNotFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -538,7 +548,7 @@ func testGTTCancelledNotFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -570,7 +580,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -582,11 +592,12 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -615,7 +626,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -627,11 +638,12 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -664,7 +676,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -676,11 +688,12 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -707,11 +720,12 @@ func testGTTFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID1,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -723,11 +737,12 @@ func testGTTFilled(t *testing.T) {
 
 	// now place our GTT order to be filled
 	order := types.Order{
+		Id:          "V0000000032-0000000010",
 		Status:      types.Order_STATUS_ACTIVE,
 		MarketId:    market,
 		PartyId:     partyID2,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -744,10 +759,10 @@ type marketPositionFake struct {
 	party string
 }
 
-func (m marketPositionFake) Party() string  { return m.party }
-func (m marketPositionFake) Size() int64    { return 0 }
-func (m marketPositionFake) Buy() int64     { return 0 }
-func (m marketPositionFake) Sell() int64    { return 0 }
-func (m marketPositionFake) Price() uint64  { return 0 }
-func (m marketPositionFake) VWBuy() uint64  { return 0 }
-func (m marketPositionFake) VWSell() uint64 { return 0 }
+func (m marketPositionFake) Party() string     { return m.party }
+func (m marketPositionFake) Size() int64       { return 0 }
+func (m marketPositionFake) Buy() int64        { return 0 }
+func (m marketPositionFake) Sell() int64       { return 0 }
+func (m marketPositionFake) Price() *num.Uint  { return num.Zero() }
+func (m marketPositionFake) VWBuy() *num.Uint  { return num.Zero() }
+func (m marketPositionFake) VWSell() *num.Uint { return num.Zero() }

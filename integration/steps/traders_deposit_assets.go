@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TradersDepositTheFollowingAssets(
@@ -67,8 +68,8 @@ func (r depositAssetRow) Asset() string {
 	return r.row.MustStr("asset")
 }
 
-func (r depositAssetRow) Amount() uint64 {
-	return r.row.MustU64("amount")
+func (r depositAssetRow) Amount() *num.Uint {
+	return r.row.MustUint("amount")
 }
 
 func (r depositAssetRow) Error() string {

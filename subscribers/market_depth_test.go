@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +20,7 @@ func buildOrder(id string, side types.Side, orderType types.Order_Type, price ui
 		Id:          id,
 		Side:        side,
 		Type:        orderType,
-		Price:       price,
+		Price:       num.NewUint(price),
 		Size:        size,
 		Remaining:   remaining,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -196,7 +197,7 @@ func TestAmendOrderPrice(t *testing.T) {
 
 	// Amend the price to force a change in price level
 	amendorder := *order
-	amendorder.Price = 90
+	amendorder.Price = num.NewUint(90)
 	event3 := events.NewOrderEvent(ctx, &amendorder)
 	mdb.Push(event3)
 

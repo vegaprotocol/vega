@@ -9,8 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // Errors
@@ -51,21 +51,29 @@ func New(log *logging.Logger, config Config) *Engine {
 }
 
 func (e *Engine) Hash() []byte {
-	output := make([]byte, len(e.positionsCpy)*8*5)
+	// Fields * FieldSize = (8 * 3)
+	// Prices = 32 * 2
+	output := make([]byte, len(e.positionsCpy)*((8*3)+(32*2)))
 	var i int
 	for _, p := range e.positionsCpy {
 		values := []uint64{
 			uint64(p.Size()),
 			uint64(p.Buy()),
 			uint64(p.Sell()),
-			p.VWBuy(),
-			p.VWSell(),
 		}
 
 		for _, v := range values {
 			binary.BigEndian.PutUint64(output[i:], v)
 			i += 8
 		}
+
+		// Add bytes for VWBuy and VWSell here
+		b := p.VWBuy().Bytes()
+		copy(output[i:], b[:])
+		i += 32
+		s := p.VWBuy().Bytes()
+		copy(output[i:], s[:])
+		i += 32
 	}
 
 	return crypto.Hash(output)
@@ -93,24 +101,20 @@ func (e *Engine) ReloadConf(cfg Config) {
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
-	timer := metrics.NewTimeCounter("-", "positions", "RegisterOrder")
 	pos, found := e.positions[order.PartyId]
 	if !found {
-		pos = &MarketPosition{partyID: order.PartyId}
+		pos = NewMarketPosition(order.PartyId)
 		e.positions[order.PartyId] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 	pos.RegisterOrder(order)
-	timer.EngineTimeCounterAdd()
 	return pos
 }
 
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
 func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
-	defer metrics.NewTimeCounter("-", "positions", "UnregisterOrder").EngineTimeCounterAdd()
-
 	pos, found := e.positions[order.PartyId]
 	if !found {
 		e.log.Panic("could not find position in engine when unregistering order",
@@ -124,8 +128,6 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
-	timer := metrics.NewTimeCounter("-", "positions", "AmendOrder")
-
 	pos, found := e.positions[originalOrder.PartyId]
 	if !found {
 		e.log.Panic("could not find position in engine when amending order",
@@ -133,7 +135,6 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPositio
 			logging.Order(*newOrder))
 	}
 	pos.AmendOrder(e.log, originalOrder, newOrder)
-	timer.EngineTimeCounterAdd()
 	return pos
 }
 
@@ -184,7 +185,8 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 		size = -size
 	}
 	pos.size += size
-	return []events.MarketPosition{*pos}
+	cpy := pos.Clone()
+	return []events.MarketPosition{*cpy}
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
@@ -227,8 +229,8 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	seller.sell -= int64(trade.Size)
 
 	ret := []events.MarketPosition{
-		*buyer,
-		*seller,
+		*buyer.Clone(),
+		*seller.Clone(),
 	}
 
 	if e.log.GetLevel() == logging.DebugLevel {
@@ -269,9 +271,9 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 
 // UpdateMarkPrice update the mark price on all positions and return a slice
 // of the updated positions
-func (e *Engine) UpdateMarkPrice(markPrice uint64) []events.MarketPosition {
+func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
 	for _, pos := range e.positions {
-		pos.price = markPrice
+		pos.price.Set(markPrice)
 	}
 	return e.positionsCpy
 }
@@ -329,9 +331,9 @@ func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
 	if !ok {
 		return nil, false
 	}
-	cpy := *pos
+	cpy := pos.Clone()
 	// return a copy
-	return &cpy, true
+	return cpy, true
 }
 
 // Parties returns a list of all the parties in the position engine

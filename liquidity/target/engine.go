@@ -2,10 +2,10 @@ package target
 
 import (
 	"errors"
-	"math"
 	"time"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -15,10 +15,16 @@ var (
 	ErrNegativeScalingFactor = errors.New("scaling factor can't be negative")
 )
 
+var (
+	exp    = num.Zero().Exp(num.NewUint(10), num.NewUint(5))
+	exp2   = num.Zero().Exp(num.NewUint(10), num.NewUint(10))
+	expDec = num.DecimalFromUint(exp)
+)
+
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
 	tWindow time.Duration
-	sFactor float64
+	sFactor *num.Uint
 	oiCalc  OpenInterestCalculator
 
 	now               time.Time
@@ -40,9 +46,10 @@ type OpenInterestCalculator interface {
 
 // NewEngine returns a new instance of target stake calculation Engine
 func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
+	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
 	return &Engine{
 		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
-		sFactor: parameters.ScalingFactor,
+		sFactor: factor,
 		oiCalc:  oiCalc,
 	}
 }
@@ -54,11 +61,12 @@ func (e *Engine) UpdateTimeWindow(tWindow time.Duration) {
 
 // UpdateScalingFactor updates the scaling factor used in target stake calculation
 // if it's non-negative and returns an error otherwise
-func (e *Engine) UpdateScalingFactor(sFactor float64) error {
-	if sFactor < 0 {
+func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
+	if sFactor.IsNegative() {
 		return ErrNegativeScalingFactor
 	}
-	e.sFactor = sFactor
+	factor, _ := num.UintFromDecimal(sFactor.Mul(expDec))
+	e.sFactor = factor
 	return nil
 }
 
@@ -73,7 +81,7 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	}
 
 	if now.After(e.now) {
-		toi := timestampedOI{Time: e.now, OI: e.getMaxFromCurrent()}
+		toi := e.getMaxFromCurrent()
 		e.previous = append(e.previous, toi)
 		e.current = make([]uint64, 0, len(e.current))
 		e.now = now
@@ -89,34 +97,59 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 
 // GetTargetStake returns target stake based current time, risk factors
 // and the open interest time series constructed by calls to RecordOpenInterest
-func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64) float64 {
+func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
-		e.computeMaxOI(now, minTime)
+		e.computeMaxOI(minTime)
 	}
 
-	return float64(markPrice*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	// float64(markPrice.Uint64()*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	factor := rf.Long
+	if factor.LessThan(rf.Short) {
+		factor = rf.Short
+	}
+	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
+
+	return num.Zero().Div(
+		num.Zero().Mul(
+			markPrice.Mul(markPrice, num.NewUint(e.max.OI)),
+			factorUint.Mul(factorUint, e.sFactor),
+		),
+		exp2,
+	)
 }
 
 //GetTheoreticalTargetStake returns target stake based current time, risk factors
 //and the supplied trades without modifying the internal state
-func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice uint64, trades []*types.Trade) float64 {
+func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
 	minTime := e.minTime(now)
 	if minTime.After(e.max.Time) {
-		e.computeMaxOI(now, minTime)
+		e.computeMaxOI(minTime)
 	}
 	maxOI := e.max.OI
 	if theoreticalOI > maxOI {
 		maxOI = theoreticalOI
 	}
 
-	return float64(markPrice*maxOI) * math.Max(rf.Short, rf.Long) * e.sFactor
+	factor := rf.Long
+	if factor.LessThan(rf.Short) {
+		factor = rf.Short
+	}
+
+	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
+	return num.Zero().Div(
+		num.Zero().Mul(
+			num.Zero().Mul(markPrice, num.NewUint(maxOI)),
+			factorUint.Mul(factorUint, e.sFactor),
+		),
+		exp2,
+	)
 }
 
-func (e *Engine) getMaxFromCurrent() uint64 {
+func (e *Engine) getMaxFromCurrent() timestampedOI {
 	if len(e.current) == 0 {
-		return 0
+		return timestampedOI{Time: e.now, OI: 0}
 	}
 	m := e.current[0]
 	for i := 1; i < len(e.current); i++ {
@@ -124,11 +157,11 @@ func (e *Engine) getMaxFromCurrent() uint64 {
 			m = e.current[i]
 		}
 	}
-	return m
+	return timestampedOI{Time: e.now, OI: m}
 }
 
-func (e *Engine) computeMaxOI(now, minTime time.Time) {
-	m := timestampedOI{Time: e.now, OI: e.getMaxFromCurrent()}
+func (e *Engine) computeMaxOI(minTime time.Time) {
+	m := e.getMaxFromCurrent()
 	e.truncateHistory(minTime)
 	var j int
 	for i := 0; i < len(e.previous); i++ {

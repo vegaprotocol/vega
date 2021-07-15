@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -22,9 +23,10 @@ type TradeSub struct {
 	mu    sync.Mutex
 	buf   []types.Trade
 	store TradeStore
+	log   *logging.Logger
 }
 
-func NewTradeSub(ctx context.Context, store TradeStore, ack bool) *TradeSub {
+func NewTradeSub(ctx context.Context, store TradeStore, log *logging.Logger, ack bool) *TradeSub {
 	t := &TradeSub{
 		Base:  NewBase(ctx, 10, ack),
 		buf:   []types.Trade{},
@@ -62,6 +64,8 @@ func (t *TradeSub) Push(evts ...events.Event) {
 			t.buf = append(t.buf, te.Trade())
 		case TimeEvent:
 			t.flush()
+		default:
+			t.log.Panic("Unknown event type in trade subscriber", logging.String("Type", te.Type().String()))
 		}
 	}
 	t.mu.Unlock()

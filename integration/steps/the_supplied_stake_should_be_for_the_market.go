@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TheSuppliedStakeShouldBeForTheMarket(engine *execution.Engine, marketID string, wantSuppliedStake string) error {
@@ -13,7 +13,7 @@ func TheSuppliedStakeShouldBeForTheMarket(engine *execution.Engine, marketID str
 		return errMarketDataNotFound(marketID, err)
 	}
 
-	if marketData.GetSuppliedStake() != wantSuppliedStake {
+	if marketData.SuppliedStake != wantSuppliedStake {
 		return errUnexpectedSuppliedStake(marketData, wantSuppliedStake)
 	}
 
@@ -21,5 +21,5 @@ func TheSuppliedStakeShouldBeForTheMarket(engine *execution.Engine, marketID str
 }
 
 func errUnexpectedSuppliedStake(md types.MarketData, wantSuppliedStake string) error {
-	return fmt.Errorf("unexpected supplied stake for market %s got %s, want %s", md.Market, md.GetSuppliedStake(), wantSuppliedStake)
+	return fmt.Errorf("unexpected supplied stake for market %s got %s, want %s", md.Market, md.SuppliedStake, wantSuppliedStake)
 }

@@ -7,11 +7,11 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
-	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -36,26 +36,26 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
 	// orders stuff
-	SubmitOrder(ctx context.Context, orderSubmission *commandspb.OrderSubmission, party string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *commandspb.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *commandspb.OrderAmendment, party string) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
-	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *commandspb.LiquidityProvisionSubmission, party, lpid string) error
+	SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpid string) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 
 	// LP stuff
-	SubmitLiquidityProvision(ctx context.Context, sub *commandspb.LiquidityProvisionSubmission, party, id string) error
+	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
 
 	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor GovernanceEngine
 type GovernanceEngine interface {
-	SubmitProposal(context.Context, commandspb.ProposalSubmission, string, string) (*governance.ToSubmit, error)
-	AddVote(context.Context, commandspb.VoteSubmission, string) error
+	SubmitProposal(context.Context, types.ProposalSubmission, string, string) (*governance.ToSubmit, error)
+	AddVote(context.Context, types.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
 }
@@ -90,11 +90,6 @@ type Stats interface {
 	SetTotalTxCurrentBatch(i uint64)
 	TotalTxCurrentBatch() uint64
 	TotalTxLastBatch() uint64
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/processor Wallet
-type Wallet interface {
-	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/processor Assets
@@ -149,10 +144,10 @@ type EvtForwarder interface {
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
-	WithdrawalBuiltinAsset(context.Context, string, string, string, uint64) error
+	WithdrawalBuiltinAsset(context.Context, string, string, string, *num.Uint) error
 	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64, string) error
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
-	LockWithdrawalERC20(context.Context, string, string, string, uint64, *types.Erc20WithdrawExt) error
+	LockWithdrawalERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
 	WithdrawalERC20(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
 	HasBalance(string) bool
 }

@@ -1,15 +1,15 @@
 package governance
 
 import (
+	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/oracles"
-	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -52,17 +52,17 @@ var (
 func assignProduct(
 	source *types.InstrumentConfiguration,
 	target *types.Instrument,
-) (types.ProposalError, error) {
+) (proto.ProposalError, error) {
 	switch product := source.Product.(type) {
 	case *types.InstrumentConfiguration_Future:
 		if product.Future == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingFutureProduct
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingFutureProduct
 		}
 		if product.Future.OracleSpec == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpec
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpec
 		}
 		if product.Future.OracleSpecBinding == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecBinding
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecBinding
 		}
 
 		target.Product = &types.Instrument_Future{
@@ -153,14 +153,14 @@ func createMarket(
 	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
 	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
 	// get the margin scaling factors
-	scalingFactors := types.ScalingFactors{}
+	scalingFactors := proto.ScalingFactors{}
 	_ = netp.GetJSONStruct(netparams.MarketMarginScalingFactors, &scalingFactors)
 	// get price monitoring parameters
 	pmUpdateFreq, _ := netp.GetDuration(netparams.MarketPriceMonitoringUpdateFrequency)
 	if definition.Changes.PriceMonitoringParameters == nil {
-		pmParams := &types.PriceMonitoringParameters{}
+		pmParams := &proto.PriceMonitoringParameters{}
 		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
-		definition.Changes.PriceMonitoringParameters = pmParams
+		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
 	}
 
 	if definition.Changes.LiquidityMonitoringParameters == nil ||
@@ -173,26 +173,28 @@ func createMarket(
 
 		params := &types.TargetStakeParameters{
 			TimeWindow:    int64(tsTimeWindow.Seconds()),
-			ScalingFactor: tsScalingFactor,
+			ScalingFactor: num.DecimalFromFloat(tsScalingFactor),
 		}
 
 		if definition.Changes.LiquidityMonitoringParameters == nil {
 			definition.Changes.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
 				TargetStakeParameters: params,
-				TriggeringRatio:       triggeringRatio,
+				TriggeringRatio:       num.DecimalFromFloat(triggeringRatio),
 			}
 		} else {
 			definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters = params
 		}
 	}
 
+	makerFeeDec, _ := num.DecimalFromString(makerFee)
+	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
 		Id:            marketID,
 		DecimalPlaces: definition.Changes.DecimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
-				MakerFee:          makerFee,
-				InfrastructureFee: infraFee,
+				MakerFee:          makerFeeDec,
+				InfrastructureFee: infraFeeDec,
 			},
 		},
 		OpeningAuction: &types.AuctionDuration{
@@ -201,11 +203,7 @@ func createMarket(
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: instrument,
 			MarginCalculator: &types.MarginCalculator{
-				ScalingFactors: &types.ScalingFactors{
-					CollateralRelease: scalingFactors.CollateralRelease,
-					InitialMargin:     scalingFactors.InitialMargin,
-					SearchLevel:       scalingFactors.SearchLevel,
-				},
+				ScalingFactors: types.ScalingFactorsFromProto(&scalingFactors),
 			},
 		},
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
@@ -215,12 +213,12 @@ func createMarket(
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
 	}
 	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
-		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
 	if err := assignTradingMode(definition.Changes, market); err != nil {
-		return nil, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
-	return market, types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return market, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 func validateAsset(assetID string, assets Assets, deepCheck bool) (types.ProposalError, error) {
@@ -248,7 +246,7 @@ func validateAsset(assetID string, assets Assets, deepCheck bool) (types.Proposa
 func validateFuture(currentTime time.Time, future *types.FutureProduct, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	maturity, err := time.Parse(time.RFC3339, future.Maturity)
 	if err != nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, errors.Wrap(err, "future product maturity timestamp")
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, fmt.Errorf("invalid future product maturity timestamp: %v", err)
 	}
 
 	if deepCheck && maturity.UnixNano() < currentTime.UnixNano() {
@@ -299,10 +297,10 @@ func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalErr
 func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	switch r := rp.(type) {
 	case *types.NewMarketConfiguration_Simple:
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+		return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	case *types.NewMarketConfiguration_LogNormal:
 		if r.LogNormal.Params == nil {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER, ErrInvalidRiskParameter
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_RISK_PARAMETER, ErrInvalidRiskParameter
 		}
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	case nil:
@@ -334,23 +332,24 @@ func validateCommitment(
 ) (types.ProposalError, error) {
 	maxShapesSize, _ := netp.GetInt(netparams.MarketLiquidityProvisionShapesMaxSize)
 	maxFee, _ := netp.GetFloat(netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel)
+	maxFeeDec := num.DecimalFromFloat(maxFee)
 
 	if commitment == nil {
 		return types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT, errors.New("market proposal is missing liquidity commitment")
 	}
-	if commitment.CommitmentAmount == 0 {
-		return types.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT,
+	if commitment.CommitmentAmount.IsZero() {
+		return proto.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT,
 			fmt.Errorf("proposal commitment amount is 0 or missing")
 	}
-	if fee, err := strconv.ParseFloat(commitment.Fee, 64); err != nil || fee < 0 || len(commitment.Fee) <= 0 || fee > maxFee {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT,
+	if commitment.Fee.LessThanOrEqual(num.DecimalZero()) || commitment.Fee.GreaterThan(maxFeeDec) {
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT,
 			errors.New("invalid liquidity provision fee")
 	}
 
-	if perr, err := validateShape(commitment.Buys, types.Side_SIDE_BUY, uint64(maxShapesSize)); err != nil {
+	if perr, err := validateShape(commitment.Buys, proto.Side_SIDE_BUY, uint64(maxShapesSize)); err != nil {
 		return perr, err
 	}
-	return validateShape(commitment.Sells, types.Side_SIDE_SELL, uint64(maxShapesSize))
+	return validateShape(commitment.Sells, proto.Side_SIDE_SELL, uint64(maxShapesSize))
 }
 
 func validateShape(
@@ -359,49 +358,49 @@ func validateShape(
 	maxSize uint64,
 ) (types.ProposalError, error) {
 	if len(sh) <= 0 {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("empty %v shape", side)
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("empty %v shape", side)
 	}
 	if len(sh) > int(maxSize) {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
+		return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
 	}
 	for _, lo := range sh {
-		if lo.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
+		if lo.Reference == proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			// We must specify a valid reference
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without reference")
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without reference")
 		}
 		if lo.Proportion == 0 {
-			return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without a proportion")
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without a proportion")
 		}
 
 		if side == types.Side_SIDE_BUY {
 			switch lo.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+			case proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+				return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")
+			case proto.PeggedReference_PEGGED_REFERENCE_BEST_BID:
 				if lo.Offset > 0 {
-					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be <= 0")
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be <= 0")
 				}
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
+			case proto.PeggedReference_PEGGED_REFERENCE_MID:
 				if lo.Offset >= 0 {
-					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be < 0")
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be < 0")
 				}
 			}
 		} else {
 			switch lo.Reference {
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
+			case proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
 				if lo.Offset < 0 {
-					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be >= 0")
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be >= 0")
 				}
-			case types.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell side shape with best bid price reference")
-			case types.PeggedReference_PEGGED_REFERENCE_MID:
+			case proto.PeggedReference_PEGGED_REFERENCE_BEST_BID:
+				return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell side shape with best bid price reference")
+			case proto.PeggedReference_PEGGED_REFERENCE_MID:
 				if lo.Offset <= 0 {
-					return types.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be > 0")
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be > 0")
 				}
 			}
 		}
 	}
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
 // ValidateNewMarket checks new market proposal terms
@@ -430,5 +429,5 @@ func validateNewMarket(
 		return perr, err
 	}
 
-	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
+	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

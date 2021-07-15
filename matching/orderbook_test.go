@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/stretchr/testify/assert"
@@ -73,7 +74,7 @@ func TestHash(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       10,
+			Price:       num.NewUint(10),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -85,7 +86,7 @@ func TestHash(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       30,
+			Price:       num.NewUint(30),
 			Size:        5,
 			Remaining:   5,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -97,7 +98,7 @@ func TestHash(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_SELL,
-			Price:       200,
+			Price:       num.NewUint(200),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -109,7 +110,7 @@ func TestHash(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_SELL,
-			Price:       400,
+			Price:       num.NewUint(400),
 			Size:        10,
 			Remaining:   10,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -123,7 +124,7 @@ func TestHash(t *testing.T) {
 
 	hash := book.ob.Hash()
 	require.Equal(t,
-		"ff7190c637406cf6907a73f8eab20c0465e3ee0f471ca95f739aa5f4e4192a8e",
+		"fc0073b33273253dd021d4fdd330e00c32c8b484c8bb484abac92acfb9d575bf",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)
@@ -146,7 +147,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -158,7 +159,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       300,
+			Price:       num.NewUint(300),
 			Size:        5,
 			Remaining:   5,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -170,7 +171,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_BUY,
-			Price:       200,
+			Price:       num.NewUint(200),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -182,7 +183,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       300,
+			Price:       num.NewUint(300),
 			Size:        10,
 			Remaining:   10,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -222,7 +223,7 @@ func getAllOrderForAParty(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -234,7 +235,7 @@ func getAllOrderForAParty(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       300,
+			Price:       num.NewUint(300),
 			Size:        5,
 			Remaining:   5,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -246,7 +247,7 @@ func getAllOrderForAParty(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_BUY,
-			Price:       200,
+			Price:       num.NewUint(200),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -258,7 +259,7 @@ func getAllOrderForAParty(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       300,
+			Price:       num.NewUint(300),
 			Size:        10,
 			Remaining:   10,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -297,7 +298,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -309,7 +310,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       300,
+			Price:       num.NewUint(300),
 			Size:        5,
 			Remaining:   5,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -321,7 +322,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_BUY,
-			Price:       200,
+			Price:       num.NewUint(200),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -333,7 +334,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       300,
+			Price:       num.NewUint(300),
 			Size:        10,
 			Remaining:   10,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -355,45 +356,49 @@ func testBestBidPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_BUY,
-			Price:       300,
+			Price:       num.NewUint(300),
 			Size:        5,
 			Remaining:   5,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_BUY,
-			Price:       200,
+			Price:       num.NewUint(200),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000012",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "d",
 			Side:        types.Side_SIDE_BUY,
-			Price:       300,
+			Price:       num.NewUint(300),
 			Size:        10,
 			Remaining:   10,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -410,7 +415,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 
 	price, volume, err := book.ob.BestBidPriceAndVolume()
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(300), price)
+	assert.Equal(t, uint64(300), price.Uint64())
 	assert.Equal(t, uint64(15), volume)
 }
 
@@ -421,45 +426,49 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_SELL,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_SELL,
-			Price:       10,
+			Price:       num.NewUint(10),
 			Size:        5,
 			Remaining:   5,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_SELL,
-			Price:       200,
+			Price:       num.NewUint(200),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		},
 		{
+			Id:          "V0000000032-0000000012",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "d",
 			Side:        types.Side_SIDE_SELL,
-			Price:       10,
+			Price:       num.NewUint(10),
 			Size:        10,
 			Remaining:   10,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -476,7 +485,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 
 	price, volume, err := book.ob.BestOfferPriceAndVolume()
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(10), price)
+	assert.Equal(t, uint64(10), price.Uint64())
 	assert.Equal(t, uint64(15), volume)
 }
 
@@ -487,24 +496,26 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_BUY,
-			Price:       110,
+			Price:       num.NewUint(110),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -527,11 +538,11 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// this calculates the actual volume
 	for vol, exp := range callExp {
 		price, err := book.ob.GetCloseoutPrice(vol, types.Side_SIDE_BUY)
-		assert.Equal(t, exp, price)
+		assert.Equal(t, exp, price.Uint64())
 		assert.NoError(t, err)
 	}
 	price, err := book.ob.GetCloseoutPrice(3, types.Side_SIDE_BUY)
-	assert.Equal(t, callExp[2], price)
+	assert.Equal(t, callExp[2], price.Uint64())
 	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
 
@@ -542,24 +553,26 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_SELL,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_SELL,
-			Price:       110,
+			Price:       num.NewUint(110),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -582,11 +595,11 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	// this calculates the actual volume
 	for vol, exp := range callExp {
 		price, err := book.ob.GetCloseoutPrice(vol, types.Side_SIDE_SELL)
-		assert.Equal(t, exp, price)
+		assert.Equal(t, exp, price.Uint64())
 		assert.NoError(t, err)
 	}
 	price, err := book.ob.GetCloseoutPrice(3, types.Side_SIDE_SELL)
-	assert.Equal(t, callExp[2], price)
+	assert.Equal(t, callExp[2], price.Uint64())
 	assert.Equal(t, matching.ErrNotEnoughOrders, err)
 }
 
@@ -597,36 +610,39 @@ func getClosePNLBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_BUY,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_BUY,
-			Price:       110,
+			Price:       num.NewUint(110),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "C",
 			Side:        types.Side_SIDE_BUY,
-			Price:       120,
+			Price:       num.NewUint(120),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -650,7 +666,7 @@ func getClosePNLBuy(t *testing.T) {
 	// this calculates the actual volume
 	for vol, exp := range callExp {
 		price, err := book.ob.GetCloseoutPrice(vol, types.Side_SIDE_BUY)
-		assert.Equal(t, int(exp), int(price))
+		assert.Equal(t, exp, price.Uint64())
 		assert.NoError(t, err)
 	}
 }
@@ -662,36 +678,39 @@ func getClosePNLSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_SELL,
-			Price:       100,
+			Price:       num.NewUint(100),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_SELL,
-			Price:       110,
+			Price:       num.NewUint(110),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "C",
 			Side:        types.Side_SIDE_SELL,
-			Price:       120,
+			Price:       num.NewUint(120),
 			Size:        1,
 			Remaining:   1,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -716,7 +735,7 @@ func getClosePNLSell(t *testing.T) {
 	for vol, exp := range callExp {
 		price, err := book.ob.GetCloseoutPrice(vol, types.Side_SIDE_SELL)
 		assert.NoError(t, err)
-		assert.Equal(t, exp, price)
+		assert.Equal(t, exp, price.Uint64())
 	}
 }
 
@@ -734,7 +753,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       1,
+		Price:       num.NewUint(1),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -747,7 +766,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       1,
+		Price:       num.NewUint(1),
 		Size:        100,
 		Remaining:   1, // use a wrong remaining here to get the order from the book
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -781,7 +800,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       1,
+		Price:       num.NewUint(1),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -801,7 +820,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       3298,
+		Price:       num.NewUint(3298),
 		Size:        99,
 		Remaining:   99,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -821,7 +840,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       771,
+		Price:       num.NewUint(771),
 		Size:        19,
 		Remaining:   19,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -841,7 +860,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       1000,
+		Price:       num.NewUint(1000),
 		Size:        7,
 		Remaining:   7,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -860,7 +879,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       199,
+		Price:       num.NewUint(199),
 		Size:        99999,
 		Remaining:   99999,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -881,7 +900,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -900,7 +919,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       41,
+		Price:       num.NewUint(41),
 		Size:        9999,
 		Remaining:   9999,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -920,7 +939,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       1,
+		Price:       num.NewUint(1),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -940,7 +959,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       65,
+		Price:       num.NewUint(65),
 		Size:        12,
 		Remaining:   12,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -959,7 +978,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 		MarketId:    market,
 		PartyId:     party,
 		Side:        types.Side_SIDE_SELL,
-		Price:       1,
+		Price:       num.NewUint(1),
 		Size:        1,
 		Remaining:   1,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -1004,7 +1023,7 @@ func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   300,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1029,7 +1048,7 @@ func TestOrderBook_DeleteOrder(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1059,7 +1078,7 @@ func TestOrderBook_RemoveOrder(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1092,7 +1111,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		MarketId:    "invalid",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1130,7 +1149,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1176,7 +1195,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1221,7 +1240,7 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 		MarketId:    market,
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       101,
+		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1324,7 +1343,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
 	// run asserts for protocol trade data
 	assert.Equal(t, expectedTrade.Type, trade.Type, "invalid trade type")
-	assert.Equal(t, int(expectedTrade.Price), int(trade.Price), "invalid trade price")
+	assert.Equal(t, int(expectedTrade.Price.Uint64()), int(trade.Price.Uint64()), "invalid trade price")
 	assert.Equal(t, int(expectedTrade.Size), int(trade.Size), "invalid trade size")
 	assert.Equal(t, expectedTrade.Buyer, trade.Buyer, "invalid trade buyer")
 	assert.Equal(t, expectedTrade.Seller, trade.Seller, "invalid trade seller")
@@ -1336,7 +1355,7 @@ func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
 	assert.Equal(t, expectedOrder.MarketId, order.MarketId, "invalid order market id")
 	assert.Equal(t, expectedOrder.PartyId, order.PartyId, "invalid order party id")
 	assert.Equal(t, expectedOrder.Side, order.Side, "invalid order side")
-	assert.Equal(t, int(expectedOrder.Price), int(order.Price), "invalid order price")
+	assert.Equal(t, int(expectedOrder.Price.Uint64()), int(order.Price.Uint64()), "invalid order price")
 	assert.Equal(t, int(expectedOrder.Size), int(order.Size), "invalid order size")
 	assert.Equal(t, int(expectedOrder.Remaining), int(order.Remaining), "invalid order remaining")
 	assert.Equal(t, expectedOrder.TimeInForce, order.TimeInForce, "invalid order tif")
@@ -1355,7 +1374,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 		Id:          "123456",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        200,
 		Remaining:   200,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1378,7 +1397,7 @@ func TestOrderBook_AmendOrder(t *testing.T) {
 		Id:          "123456",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        200,
 		Remaining:   200,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1404,7 +1423,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		Id:          "123456",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        200,
 		Remaining:   200,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1427,7 +1446,7 @@ func TestOrderBook_AmendOrderInvalidRemaining(t *testing.T) {
 		PartyId:     "A",
 		Id:          "123456",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        100,
 		Remaining:   200,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1451,7 +1470,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 		MarketId:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        200,
 		Remaining:   200,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1474,7 +1493,7 @@ func TestOrderBook_AmendOrderInvalidAmend(t *testing.T) {
 		Id:          "123456",
 		PartyId:     "A",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		Size:        200,
 		Remaining:   200,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1502,7 +1521,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 		MarketId:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "A",
 		Size:        200,
 		Remaining:   200,
@@ -1525,7 +1544,7 @@ func TestOrderBook_AmendOrderInvalidAmend1(t *testing.T) {
 		MarketId:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "B",
 		Size:        200,
 		Remaining:   200,
@@ -1555,7 +1574,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		MarketId:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "A",
 		Size:        200,
 		Remaining:   200,
@@ -1579,7 +1598,7 @@ func TestOrderBook_AmendOrderInvalidAmendOutOfSequence(t *testing.T) {
 		MarketId:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "A",
 		Size:        200,
 		Remaining:   200,
@@ -1610,7 +1629,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		MarketId:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "A",
 		Size:        200,
 		Remaining:   200,
@@ -1634,7 +1653,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 		MarketId:    market,
 		Id:          "123456",
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "B",
 		Size:        300,
 		Remaining:   300,
@@ -1667,24 +1686,26 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[0] = []*types.Order{
 		// Side Sell
 		{
+			Id:          "V0000000032-0000000009",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "A",
 			Side:        types.Side_SIDE_SELL,
-			Price:       101,
+			Price:       num.NewUint(101),
 			Size:        100,
 			Remaining:   100,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000010",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "B",
 			Side:        types.Side_SIDE_SELL,
-			Price:       101,
+			Price:       num.NewUint(101),
 			Size:        100,
 			Remaining:   100,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1692,24 +1713,26 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Id:          "V0000000032-0000000011",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "C",
 			Side:        types.Side_SIDE_BUY,
-			Price:       98,
+			Price:       num.NewUint(98),
 			Size:        100,
 			Remaining:   100,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 			CreatedAt:   0,
 		},
 		{
+			Id:          "V0000000032-0000000012",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "D",
 			Side:        types.Side_SIDE_BUY,
-			Price:       98,
+			Price:       num.NewUint(98),
 			Size:        100,
 			Remaining:   100,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1721,12 +1744,13 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	m[1] = []*types.Order{
 		// Side Sell
 		{
+			Id:          "V0000000032-0000000013",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "E",
 			Side:        types.Side_SIDE_SELL,
-			Price:       101,
+			Price:       num.NewUint(101),
 			Size:        100,
 			Remaining:   100,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1734,12 +1758,13 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		},
 		// Side Buy
 		{
+			Id:          "V0000000032-0000000014",
 			Status:      types.Order_STATUS_ACTIVE,
 			Type:        types.Order_TYPE_LIMIT,
 			MarketId:    market,
 			PartyId:     "F",
 			Side:        types.Side_SIDE_BUY,
-			Price:       99,
+			Price:       num.NewUint(99),
 			Size:        100,
 			Remaining:   100,
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1765,12 +1790,13 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		{
 			// same price level, remaining on the passive
 			aggressiveOrder: &types.Order{
+				Id:          "V0000000032-0000000015",
 				Status:      types.Order_STATUS_ACTIVE,
 				Type:        types.Order_TYPE_LIMIT,
 				MarketId:    market,
 				PartyId:     "M",
 				Side:        types.Side_SIDE_BUY,
-				Price:       101,
+				Price:       num.NewUint(101),
 				Size:        100,
 				Remaining:   100,
 				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1780,7 +1806,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				{
 					Type:      types.Trade_TYPE_DEFAULT,
 					MarketId:  market,
-					Price:     101,
+					Price:     num.NewUint(101),
 					Size:      100,
 					Buyer:     "M",
 					Seller:    "A",
@@ -1794,7 +1820,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketId:    market,
 					PartyId:     "A",
 					Side:        types.Side_SIDE_SELL,
-					Price:       101,
+					Price:       num.NewUint(101),
 					Size:        100,
 					Remaining:   0,
 					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1810,7 +1836,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				MarketId:    market,
 				PartyId:     "N",
 				Side:        types.Side_SIDE_BUY,
-				Price:       102,
+				Price:       num.NewUint(102),
 				Size:        200,
 				Remaining:   200,
 				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1820,7 +1846,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				{
 					Type:      types.Trade_TYPE_DEFAULT,
 					MarketId:  market,
-					Price:     101,
+					Price:     num.NewUint(101),
 					Size:      100,
 					Buyer:     "N",
 					Seller:    "B",
@@ -1829,7 +1855,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				{
 					Type:      types.Trade_TYPE_DEFAULT,
 					MarketId:  market,
-					Price:     101,
+					Price:     num.NewUint(101),
 					Size:      100,
 					Buyer:     "N",
 					Seller:    "E",
@@ -1843,7 +1869,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketId:    market,
 					PartyId:     "B",
 					Side:        types.Side_SIDE_SELL,
-					Price:       101,
+					Price:       num.NewUint(101),
 					Size:        100,
 					Remaining:   0,
 					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1855,7 +1881,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketId:    market,
 					PartyId:     "E",
 					Side:        types.Side_SIDE_SELL,
-					Price:       101,
+					Price:       num.NewUint(101),
 					Size:        100,
 					Remaining:   0,
 					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1871,7 +1897,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				MarketId:    market,
 				PartyId:     "O",
 				Side:        types.Side_SIDE_SELL,
-				Price:       97,
+				Price:       num.NewUint(97),
 				Size:        250,
 				Remaining:   250,
 				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1881,7 +1907,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				{
 					Type:      types.Trade_TYPE_DEFAULT,
 					MarketId:  market,
-					Price:     99,
+					Price:     num.NewUint(99),
 					Size:      100,
 					Buyer:     "F",
 					Seller:    "O",
@@ -1890,7 +1916,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				{
 					Type:      types.Trade_TYPE_DEFAULT,
 					MarketId:  market,
-					Price:     98,
+					Price:     num.NewUint(98),
 					Size:      100,
 					Buyer:     "C",
 					Seller:    "O",
@@ -1899,7 +1925,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				{
 					Type:      types.Trade_TYPE_DEFAULT,
 					MarketId:  market,
-					Price:     98,
+					Price:     num.NewUint(98),
 					Size:      50,
 					Buyer:     "D",
 					Seller:    "O",
@@ -1913,7 +1939,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketId:    market,
 					PartyId:     "F",
 					Side:        types.Side_SIDE_BUY,
-					Price:       99,
+					Price:       num.NewUint(99),
 					Size:        100,
 					Remaining:   0,
 					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1925,7 +1951,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketId:    market,
 					PartyId:     "C",
 					Side:        types.Side_SIDE_BUY,
-					Price:       98,
+					Price:       num.NewUint(98),
 					Size:        100,
 					Remaining:   0,
 					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1937,7 +1963,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketId:    market,
 					PartyId:     "D",
 					Side:        types.Side_SIDE_BUY,
-					Price:       98,
+					Price:       num.NewUint(98),
 					Size:        100,
 					Remaining:   50,
 					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1953,7 +1979,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				MarketId:    market,
 				PartyId:     "X",
 				Side:        types.Side_SIDE_SELL,
-				Price:       98,
+				Price:       num.NewUint(98),
 				Size:        50,
 				Remaining:   50,
 				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -1963,7 +1989,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 				{
 					Type:      types.Trade_TYPE_DEFAULT,
 					MarketId:  market,
-					Price:     98,
+					Price:     num.NewUint(98),
 					Size:      50,
 					Buyer:     "D",
 					Seller:    "X",
@@ -1977,7 +2003,7 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 					MarketId:    market,
 					PartyId:     "D",
 					Side:        types.Side_SIDE_BUY,
-					Price:       98,
+					Price:       num.NewUint(98),
 					Size:        100,
 					Remaining:   0,
 					TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -2049,12 +2075,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	logger.Debug("BEGIN PARTIAL FILL IOC ORDER")
 
 	newOrder := &types.Order{
+		Id:          "V0000000032-0000000009",
 		Status:      types.Order_STATUS_ACTIVE,
 		Type:        types.Order_TYPE_LIMIT,
 		MarketId:    market,
-		Id:          "100000",
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "A",
 		Size:        100,
 		Remaining:   100,
@@ -2068,7 +2094,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, "100000", confirmation.Order.Id)
+	assert.Equal(t, "V0000000032-0000000009", confirmation.Order.Id)
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
@@ -2079,7 +2105,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 		MarketId:    market,
 		Id:          iocOrderID,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "B",
 		Size:        20,
 		Remaining:   20,
@@ -2115,7 +2141,7 @@ func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side typ
 		MarketId:    market,
 		Id:          id,
 		Side:        side,
-		Price:       price,
+		Price:       num.NewUint(price),
 		PartyId:     partyid,
 		Size:        size,
 		Remaining:   size,
@@ -2267,8 +2293,7 @@ func TestOrderBook_GFNOrdersCancelledInAuction(t *testing.T) {
 	assert.NotNil(t, orderConf)
 
 	// Switch to auction and makes sure the order is cancelled
-	orders, err := book.ob.EnterAuction()
-	assert.NoError(t, err)
+	orders := book.ob.EnterAuction()
 	assert.Equal(t, len(orders), 1)
 	assert.Equal(t, book.ob.GetTotalNumberOfOrders(), int64(1))
 }
@@ -2282,8 +2307,7 @@ func TestOrderBook_GFAOrdersCancelledInContinuous(t *testing.T) {
 	defer logger.Sync()
 
 	// Flip straight to auction mode
-	_, err := book.ob.EnterAuction()
-	assert.NoError(t, err)
+	_ = book.ob.EnterAuction()
 	assert.True(t, book.ob.InAuction())
 
 	// Add a GFA order
@@ -2315,11 +2339,11 @@ func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
 
 	// Get indicative auction price and volume which should be zero as we are out of auction
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Switch to auction mode
 	book.ob.EnterAuction()
@@ -2328,11 +2352,11 @@ func TestOrderBook_IndicativePriceAndVolumeState(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side = book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2359,11 +2383,11 @@ func TestOrderBook_IndicativePriceAndVolumeEmpty(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2391,11 +2415,11 @@ func TestOrderBook_IndicativePriceAndVolumeOnlyBuySide(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2425,11 +2449,11 @@ func TestOrderBook_IndicativePriceAndVolumeOnlySellSide(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 	assert.Equal(t, volume, uint64(0))
 	assert.Equal(t, side, types.Side_SIDE_UNSPECIFIED)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, price, uint64(0))
+	assert.Equal(t, price.Uint64(), uint64(0))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2466,11 +2490,11 @@ func TestOrderBook_IndicativePriceAndVolume1(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(101))
+	assert.Equal(t, price.Uint64(), uint64(101))
 	assert.Equal(t, volume, uint64(20))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, price, uint64(101))
+	assert.Equal(t, price.Uint64(), uint64(101))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2505,11 +2529,11 @@ func TestOrderBook_IndicativePriceAndVolume2(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, uint64(100), price)
+	assert.Equal(t, uint64(100), price.Uint64())
 	assert.Equal(t, uint64(30), volume)
 	assert.Equal(t, types.Side_SIDE_BUY, side)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, uint64(100), price)
+	assert.Equal(t, uint64(100), price.Uint64())
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2541,11 +2565,11 @@ func TestOrderBook_IndicativePriceAndVolume3(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, 100, int(price))
+	assert.Equal(t, 100, int(price.Uint64()))
 	assert.Equal(t, 45, int(volume))
 	assert.Equal(t, types.Side_SIDE_BUY, side)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, 100, int(price))
+	assert.Equal(t, 100, int(price.Uint64()))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2577,11 +2601,11 @@ func TestOrderBook_IndicativePriceAndVolume4(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 	assert.Equal(t, uint64(0), volume)
 	assert.Equal(t, types.Side_SIDE_UNSPECIFIED, side)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, uint64(0), price)
+	assert.Equal(t, uint64(0), price.Uint64())
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2627,11 +2651,11 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, uint64(99), price)
+	assert.Equal(t, uint64(99), price.Uint64())
 	assert.Equal(t, uint64(34), volume)
 	assert.Equal(t, types.Side_SIDE_BUY, side)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, uint64(99), price)
+	assert.Equal(t, uint64(99), price.Uint64())
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2666,11 +2690,11 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, 101, int(price))
+	assert.Equal(t, 101, int(price.Uint64()))
 	assert.Equal(t, 10, int(volume))
 	assert.Equal(t, types.Side_SIDE_BUY, side)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, 101, int(price))
+	assert.Equal(t, 101, int(price.Uint64()))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2709,11 +2733,11 @@ func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, uint64(99), price)
+	assert.Equal(t, uint64(99), price.Uint64())
 	assert.Equal(t, uint64(37), volume)
 	assert.Equal(t, types.Side_SIDE_SELL, side)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, uint64(99), price)
+	assert.Equal(t, uint64(99), price.Uint64())
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2751,11 +2775,11 @@ func TestOrderBook_IndicativePriceAndVolume8(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, 99, int(price))
+	assert.Equal(t, 99, int(price.Uint64()))
 	assert.Equal(t, 38, int(volume))
 	assert.Equal(t, types.Side_SIDE_BUY, side)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, 99, int(price))
+	assert.Equal(t, 99, int(price.Uint64()))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2779,22 +2803,22 @@ func TestOrderBook_IndicativePriceAndVolume9(t *testing.T) {
 	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 110, "party01", 1)
 	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 110, "party02", 1)
 
-	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 111, "party01", 1)
-	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 111, "party02", 1)
+	makeOrder(t, book, market, "BuyOrder01-2", types.Side_SIDE_BUY, 111, "party01", 1)
+	makeOrder(t, book, market, "SellOrder01-2", types.Side_SIDE_SELL, 111, "party02", 1)
 
-	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 133, "party01", 2)
-	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 133, "party02", 2)
+	makeOrder(t, book, market, "BuyOrder01-3", types.Side_SIDE_BUY, 133, "party01", 2)
+	makeOrder(t, book, market, "SellOrder01-3", types.Side_SIDE_SELL, 133, "party02", 2)
 
-	makeOrder(t, book, market, "BuyOrder01", types.Side_SIDE_BUY, 303, "party01", 10)
-	makeOrder(t, book, market, "SellOrder01", types.Side_SIDE_SELL, 303, "party02", 10)
+	makeOrder(t, book, market, "BuyOrder01-4", types.Side_SIDE_BUY, 303, "party01", 10)
+	makeOrder(t, book, market, "SellOrder01-4", types.Side_SIDE_SELL, 303, "party02", 10)
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, 303, int(price))
+	assert.Equal(t, 303, int(price.Uint64()))
 	assert.Equal(t, 10, int(volume))
 	assert.Equal(t, types.Side_SIDE_BUY, side)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, 303, int(price))
+	assert.Equal(t, 303, int(price.Uint64()))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2832,11 +2856,11 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 	assert.Equal(t, volume, uint64(5))
 	assert.Equal(t, side, types.Side_SIDE_SELL)
 	price = book.ob.GetIndicativePrice()
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 
 	// Leave auction and uncross the book
 	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
@@ -2858,7 +2882,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 			MarketId:    market,
 			Id:          "123456",
 			Side:        types.Side_SIDE_BUY,
-			Price:       100,
+			Price:       num.NewUint(100),
 			PartyId:     "A",
 			Size:        100,
 			Remaining:   100,
@@ -2871,7 +2895,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 			MarketId:    market,
 			Id:          "234561",
 			Side:        types.Side_SIDE_BUY,
-			Price:       1,
+			Price:       num.NewUint(1),
 			PartyId:     "B",
 			Size:        100,
 			Remaining:   100,
@@ -2905,7 +2929,7 @@ func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 	cnfm, err := book.ob.SubmitOrder(netorder)
 	assert.NoError(t, err)
 	assert.Equal(t, types.Order_STATUS_FILLED, netorder.Status)
-	assert.Equal(t, 50, int(netorder.Price))
+	assert.Equal(t, 50, int(netorder.Price.Uint64()))
 	assert.Equal(t, 0, int(netorder.Remaining))
 	_ = cnfm
 }
@@ -2914,10 +2938,8 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
 
-	orders, err := book.ob.EnterAuction()
-
+	orders := book.ob.EnterAuction()
 	assert.Equal(t, 0, len(orders))
-	assert.Nil(t, err)
 	order1Id := "1000000000000000000000" //Must be 22 characters
 	order2Id := "1000000000000000000001" //Must be 22 characters
 
@@ -2927,7 +2949,7 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 		MarketId:    market,
 		Id:          order1Id,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "A",
 		Size:        100,
 		Remaining:   100,
@@ -2951,7 +2973,7 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 		MarketId:    market,
 		Id:          order2Id,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       num.NewUint(100),
 		PartyId:     "B",
 		Size:        20,
 		Remaining:   20,
@@ -2998,7 +3020,7 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 
 	// Get indicative auction price and volume
 	price, volume, side := book.ob.GetIndicativePriceAndVolume()
-	assert.Equal(t, price, uint64(100))
+	assert.Equal(t, price.Uint64(), uint64(100))
 	assert.Equal(t, volume, uint64(5))
 	assert.Equal(t, side, types.Side_SIDE_BUY)
 
@@ -3104,8 +3126,8 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	assert.NoError(t, err)
 	bestbid, err := book.ob.GetBestBidPrice()
 	assert.NoError(t, err)
-	assert.Equal(t, bestask, uint64(101))
-	assert.Equal(t, bestbid, uint64(100))
+	assert.Equal(t, bestask.Uint64(), uint64(101))
+	assert.Equal(t, bestbid.Uint64(), uint64(100))
 
 	bp1 := getOrder(t, book, market, "BuyPeg1", types.Side_SIDE_BUY, 100, "party01", 5)
 	bp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
@@ -3115,11 +3137,10 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	sp1 := getOrder(t, book, market, "SellPeg1", types.Side_SIDE_SELL, 100, "party01", 5)
 	sp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
 		Offset: +3}
-	book.ob.SubmitOrder(bp1)
+	book.ob.SubmitOrder(sp1)
 
 	// Leave auction and uncross the book
-	cancels, err := book.ob.EnterAuction()
-	assert.Nil(t, err)
+	cancels := book.ob.EnterAuction()
 	assert.Equal(t, len(cancels), 0)
 }
 

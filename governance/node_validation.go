@@ -1,14 +1,13 @@
 package governance
 
 import (
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-
-	"github.com/pkg/errors"
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (

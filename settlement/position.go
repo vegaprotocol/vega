@@ -2,7 +2,8 @@ package settlement
 
 import (
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 )
@@ -11,6 +12,11 @@ var (
 	ErrPartyDoesNotMatch = errors.New("event party and position party do not match")
 )
 
+// MarketPosition stub event for network position (used in MTM stuff)
+type npos struct {
+	price *num.Uint
+}
+
 // See positions.MarketPosition
 type pos struct {
 	// embed the type, we will copy the three main fields because those should be immutable
@@ -18,7 +24,7 @@ type pos struct {
 	events.MarketPosition
 	party   string
 	size    int64
-	price   uint64
+	price   *num.Uint
 	newSize int64 // track this so we can determine when a trader switches between long <> short
 }
 
@@ -32,7 +38,7 @@ func newPos(evt events.MarketPosition) *pos {
 		MarketPosition: evt,
 		party:          evt.Party(),
 		size:           evt.Size(),
-		price:          evt.Price(),
+		price:          evt.Price().Clone(),
 	}
 }
 
@@ -45,7 +51,7 @@ func (p *pos) update(evt events.MarketPosition) error {
 	// embed updated event
 	p.MarketPosition = evt
 	p.size = evt.Size()
-	p.price = evt.Price()
+	p.price = evt.Price().Clone()
 	return nil
 }
 
@@ -60,11 +66,42 @@ func (p pos) Size() int64 {
 }
 
 // Price - part of the MarketPosition interface, used to update position after SettlePreTrade
-func (p pos) Price() uint64 {
-	return p.price
+func (p pos) Price() *num.Uint {
+	return p.price.Clone()
 }
 
 // Transfer - part of the Transfer interface
 func (m mtmTransfer) Transfer() *types.Transfer {
+	if m.transfer == nil {
+		return nil
+	}
 	return m.transfer
+}
+
+func (npos) Party() string {
+	return types.NetworkParty
+}
+
+func (npos) Size() int64 {
+	return 0
+}
+
+func (npos) Buy() int64 {
+	return 0
+}
+
+func (npos) Sell() int64 {
+	return 0
+}
+
+func (n npos) Price() *num.Uint {
+	return n.price.Clone()
+}
+
+func (npos) VWBuy() *num.Uint {
+	return num.Zero()
+}
+
+func (npos) VWSell() *num.Uint {
+	return num.Zero()
 }

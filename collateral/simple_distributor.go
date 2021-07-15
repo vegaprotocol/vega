@@ -2,52 +2,63 @@ package collateral
 
 import (
 	"context"
-	"math"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type request struct {
-	amount  float64
+	amount  num.Decimal
+	amt     *num.Uint
 	request *types.Transfer
 }
 
 type simpleDistributor struct {
 	log             *logging.Logger
 	marketID        string
-	expectCollected uint64
-	collected       uint64
+	expectCollected *num.Uint
+	collected       *num.Uint
 	requests        []request
 	ts              int64
 }
 
 func (s *simpleDistributor) LossSocializationEnabled() bool {
-	return s.collected < s.expectCollected
+	return s.collected.LT(s.expectCollected)
 }
 
 func (s *simpleDistributor) Add(req *types.Transfer) {
+	col, exp := num.DecimalFromUint(s.collected), num.DecimalFromUint(s.expectCollected)
+	amount := num.DecimalFromUint(req.Amount.Amount).Mul(col.Div(exp)).Floor()
+	amt, _ := num.UintFromBig(amount.BigInt())
 	s.requests = append(s.requests, request{
-		amount:  float64(req.Amount.Amount) * (float64(s.collected) / float64(s.expectCollected)),
+		amount:  amount,
+		amt:     amt,
 		request: req,
 	})
 }
 
 func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
-	if s.expectCollected == s.collected {
+	if s.expectCollected.EQ(s.collected) {
 		return nil
 	}
 
 	var (
-		totalamount uint64
-		evts        = make([]events.Event, 0, len(s.requests))
-		evt         *events.LossSoc
+		total  = num.Zero()
+		evts   = make([]events.Event, 0, len(s.requests))
+		evt    *events.LossSoc
+		netReq *request
 	)
 	for _, v := range s.requests {
-		totalamount += uint64(math.Floor(v.amount))
-		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, int64(math.Floor(v.amount))-int64(v.request.Amount.Amount), s.ts)
-		v.request.Amount.Amount = uint64(math.Floor(v.amount))
+		total.AddSum(v.amt)
+		loss, _ := num.Zero().Delta(v.amt, v.request.Amount.Amount)
+		v.request.Amount.Amount = v.amt.Clone()
+		if v.request.Owner == types.NetworkParty {
+			netReq = &v
+			continue // network events are to be ignored
+		}
+		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
 			logging.Int64("amount", evt.AmountLost()),
@@ -55,36 +66,23 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		evts = append(evts, evt)
 	}
 
-	// TODO(): just rounding the stuff, needs to be done differently later
-	if totalamount != s.collected {
+	if total.NEQ(s.collected) {
+		mismatch, _ := total.Delta(s.collected, total)
+		if netReq != nil {
+			netReq.request.Amount.Amount.AddSum(mismatch)
+			return evts
+		}
 		// last one get the remaining bits
-		mismatch := s.collected - totalamount
-		s.requests[len(s.requests)-1].request.Amount.Amount += mismatch
+		s.requests[len(s.requests)-1].request.Amount.Amount.AddSum(mismatch)
+		// decAmt is negative
+		loss := mismatch.Sub(evt.AmountUint(), mismatch)
 		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),
 			evt.MarketID(),
-			evt.AmountLost()+int64(mismatch),
+			loss,
+			true,
 			s.ts)
 	}
-
 	return evts
-}
-
-type lossSocializationEvt struct {
-	market     string
-	party      string
-	amountLost int64
-}
-
-func (e *lossSocializationEvt) MarketID() string {
-	return e.market
-}
-
-func (e *lossSocializationEvt) PartyID() string {
-	return e.party
-}
-
-func (e *lossSocializationEvt) AmountLost() int64 {
-	return e.amountLost
 }

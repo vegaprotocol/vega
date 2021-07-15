@@ -60,4 +60,4 @@ Feature: Test mark to market settlement with insurance pool
 
     And the cumulated balance for all accounts should be worth "55122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "10122" for the market "ETH/DEC19"
+    And the insurance pool balance should be "10121" for the market "ETH/DEC19"

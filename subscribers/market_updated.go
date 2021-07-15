@@ -4,20 +4,22 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
 // NEE - MarketUpdatedEvent
 type MEE interface {
-	Market() types.Market
+	Proto() types.Market
 }
 
 type MarketUpdated struct {
 	*Base
 	store MarketStore
+	log   *logging.Logger
 }
 
-func NewMarketUpdatedSub(ctx context.Context, store MarketStore, ack bool) *MarketUpdated {
+func NewMarketUpdatedSub(ctx context.Context, store MarketStore, log *logging.Logger, ack bool) *MarketUpdated {
 	m := &MarketUpdated{
 		Base:  NewBase(ctx, 1, ack),
 		store: store,
@@ -45,8 +47,11 @@ func (m *MarketUpdated) loop(ctx context.Context) {
 func (m *MarketUpdated) Push(evts ...events.Event) {
 	batch := make([]types.Market, 0, len(evts))
 	for _, e := range evts {
-		if te, ok := e.(MEE); ok {
-			batch = append(batch, te.Market())
+		switch et := e.(type) {
+		case MEE:
+			batch = append(batch, et.Proto())
+		default:
+			m.log.Panic("Unknown event type in market updated subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 	if len(batch) > 0 {

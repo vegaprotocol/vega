@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // GetPeggedOrderCount returns the number of pegged orders in the market
@@ -84,42 +85,44 @@ func (m *Market) GetPeggedOrders(partyID string) []*types.Order {
 	return peggedOrders
 }
 
-// Returns the amount of assets in the bond account
-func (m *Market) GetBondAccountBalance(ctx context.Context, partyID, marketID, asset string) uint64 {
+// Returns the amount of assets in the bond account (no need to clone in these functions)
+func (m *Market) GetBondAccountBalance(ctx context.Context, partyID, marketID, asset string) *num.Uint {
 	bondAccount, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, marketID, asset)
 	if err == nil {
 		return bondAccount.Balance
 	}
-	return 0
+	return num.Zero()
 }
 
 // Returns the amount of assets in the general account
-func (m *Market) GetGeneralAccountBalance(partyID, asset string) uint64 {
+func (m *Market) GetGeneralAccountBalance(partyID, asset string) *num.Uint {
 	generalAccount, err := m.collateral.GetPartyGeneralAccount(partyID, asset)
 	if err == nil {
 		return generalAccount.Balance
 	}
-	return 0
+	return num.Zero()
 }
 
 // Returns the amount of assets in the margin account
-func (m *Market) GetMarginAccountBalance(partyID, marketID, asset string) uint64 {
+func (m *Market) GetMarginAccountBalance(partyID, marketID, asset string) *num.Uint {
 	marginAccount, err := m.collateral.GetPartyMarginAccount(marketID, partyID, asset)
 	if err == nil {
 		return marginAccount.Balance
 	}
-	return 0
+	return num.Zero()
 }
 
 // Get the total assets for a party
-func (m *Market) GetTotalAccountBalance(ctx context.Context, partyID, marketID, asset string) uint64 {
-	return m.GetGeneralAccountBalance(partyID, asset) +
-		m.GetMarginAccountBalance(partyID, marketID, asset) +
-		m.GetBondAccountBalance(ctx, partyID, marketID, asset)
+func (m *Market) GetTotalAccountBalance(ctx context.Context, partyID, marketID, asset string) *num.Uint {
+	return num.Sum(
+		m.GetGeneralAccountBalance(partyID, asset),
+		m.GetMarginAccountBalance(partyID, marketID, asset),
+		m.GetBondAccountBalance(ctx, partyID, marketID, asset),
+	)
 }
 
 // Return the current liquidity fee value for a market
-func (m *Market) GetLiquidityFee() float64 {
+func (m *Market) GetLiquidityFee() num.Decimal {
 	return m.fee.GetLiquidityFee()
 }
 
@@ -129,11 +132,6 @@ func (m *Market) ValidateOrder(order *types.Order) bool {
 	if err != nil {
 		return false
 	}
-	if order.Price != order2.Price ||
-		order.Size != order2.Size ||
-		order.Remaining != order2.Remaining ||
-		order.Status != order2.Status {
-		return false
-	}
-	return true
+	return (order.Price.EQ(order2.Price) && order.Size == order2.Size &&
+		order.Remaining == order2.Remaining && order.Status == order2.Status)
 }

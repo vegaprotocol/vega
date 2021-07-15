@@ -6,8 +6,8 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/products"
-	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/pkg/errors"
 )
@@ -20,11 +20,11 @@ var (
 
 // Instrument represent an instrument used in a market
 type Instrument struct {
-	ID               string
-	Code             string
-	Name             string
-	Metadata         *types.InstrumentMetadata
-	Product          products.Product
+	ID       string
+	Code     string
+	Name     string
+	Metadata *types.InstrumentMetadata
+	Product  products.Product
 
 	Quote string
 }
@@ -44,7 +44,7 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 		return nil, err
 	}
 	asset := instrument.Product.GetAsset()
-	riskModel, err := risk.NewModel(log, pti.RiskModel, asset)
+	riskModel, err := risk.NewModel(pti.RiskModel, asset)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate risk model")
 	}
@@ -63,11 +63,11 @@ func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrumen
 		return nil, errors.Wrap(err, "unable to instantiate product from instrument configuration")
 	}
 	return &Instrument{
-		ID:               pi.Id,
-		Code:             pi.Code,
-		Name:             pi.Name,
-		Metadata:         pi.Metadata,
-		Product:          product,
+		ID:       pi.Id,
+		Code:     pi.Code,
+		Name:     pi.Name,
+		Metadata: pi.Metadata,
+		Product:  product,
 	}, err
 }
 

@@ -3,24 +3,24 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Proposal struct {
 	*Base
-	p types.Proposal
+	p proto.Proposal
 }
 
 func NewProposalEvent(ctx context.Context, p types.Proposal) *Proposal {
-	cpy := p.DeepClone()
 	return &Proposal{
 		Base: newBase(ctx, ProposalEvent),
-		p:    *cpy,
+		p:    *p.IntoProto(),
 	}
 }
 
-func (p *Proposal) Proposal() types.Proposal {
+func (p *Proposal) Proposal() proto.Proposal {
 	return p.p
 }
 
@@ -38,7 +38,7 @@ func (p *Proposal) PartyID() string {
 	return p.p.PartyId
 }
 
-func (p Proposal) Proto() types.Proposal {
+func (p Proposal) Proto() proto.Proposal {
 	return p.p
 }
 

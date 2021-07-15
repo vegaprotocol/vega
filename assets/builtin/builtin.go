@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/assets/common"
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Builtin struct {
@@ -20,8 +21,12 @@ func New(id string, asset *types.AssetDetails) *Builtin {
 	}
 }
 
-func (b *Builtin) ProtoAsset() *types.Asset {
-	return b.asset
+func (b *Builtin) ProtoAsset() *proto.Asset {
+	return b.asset.IntoProto()
+}
+
+func (b Builtin) Type() *types.Asset {
+	return b.asset.DeepClone()
 }
 
 func (b *Builtin) GetAssetClass() common.AssetClass {

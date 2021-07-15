@@ -53,6 +53,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     When time is updated to "2020-10-16T00:00:07Z"
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+    And the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | horizon | min bound | max bound |
+      | 100000     | TRADING_MODE_CONTINUOUS | 5       | 99845     | 100156    |
+      | 100000     | TRADING_MODE_CONTINUOUS | 10      | 99711     | 100290    |
 
     # We've left opening auction, cancel the orders we had to place on the book to allow for this to happen
     And the traders cancel the following orders:
@@ -63,8 +67,8 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     # 1st trigger breached with non-persistent order -> auction with initial duration of 6s starts
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
-      | trader1 | ETH/DEC20 | sell | 1      | 99844 | 0                | TYPE_LIMIT | TIF_GTC | trader1_sell_1 |
-      | trader2 | ETH/DEC20 | buy  | 1      | 99844 | 0                | TYPE_LIMIT | TIF_GTC | ref-3          |
+      | trader1 | ETH/DEC20 | sell | 1      | 99843 | 0                | TYPE_LIMIT | TIF_GTC | trader1_sell_1 |
+      | trader2 | ETH/DEC20 | buy  | 1      | 99843 | 0                | TYPE_LIMIT | TIF_GTC | ref-3          |
 
     Then the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"

@@ -3,16 +3,16 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
 )
 
 type Party struct {
 	*Base
-	p types.Party
+	p proto.Party
 }
 
-func NewPartyEvent(ctx context.Context, p types.Party) *Party {
+func NewPartyEvent(ctx context.Context, p proto.Party) *Party {
 	cpy := p.DeepClone()
 	return &Party{
 		Base: newBase(ctx, PartyEvent),
@@ -24,11 +24,11 @@ func (p Party) IsParty(id string) bool {
 	return p.p.Id == id
 }
 
-func (p *Party) Party() types.Party {
+func (p *Party) Party() proto.Party {
 	return p.p
 }
 
-func (p Party) Proto() types.Party {
+func (p Party) Proto() proto.Party {
 	return p.p
 }
 

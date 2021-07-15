@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
@@ -14,14 +15,16 @@ type GovernanceDataSub struct {
 	proposals map[string]types.Proposal
 	byPID     map[string]*types.GovernanceData
 	all       []*types.GovernanceData
+	log       *logging.Logger
 }
 
-func NewGovernanceDataSub(ctx context.Context, ack bool) *GovernanceDataSub {
+func NewGovernanceDataSub(ctx context.Context, log *logging.Logger, ack bool) *GovernanceDataSub {
 	gd := &GovernanceDataSub{
 		Base:      NewBase(ctx, 10, ack),
 		proposals: map[string]types.Proposal{},
 		byPID:     map[string]*types.GovernanceData{},
 		all:       []*types.GovernanceData{},
+		log:       log,
 	}
 	if gd.isRunning() {
 		go gd.loop(gd.ctx)
@@ -65,6 +68,8 @@ func (g *GovernanceDataSub) Push(evts ...events.Event) {
 				delete(gd.YesParty, vote.PartyId)
 				gd.NoParty[vote.PartyId] = &vote
 			}
+		default:
+			g.log.Panic("Unknown event type in governance subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }

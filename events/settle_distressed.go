@@ -4,24 +4,25 @@ import (
 	"context"
 
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type SettleDistressed struct {
 	*Base
 	partyID  string
 	marketID string
-	margin   uint64
-	price    uint64
+	margin   *num.Uint
+	price    *num.Uint
 	ts       int64
 }
 
-func NewSettleDistressed(ctx context.Context, partyID, marketID string, price, margin uint64, ts int64) *SettleDistressed {
+func NewSettleDistressed(ctx context.Context, partyID, marketID string, price, margin *num.Uint, ts int64) *SettleDistressed {
 	return &SettleDistressed{
 		Base:     newBase(ctx, SettleDistressedEvent),
 		partyID:  partyID,
 		marketID: marketID,
-		margin:   margin,
-		price:    price,
+		margin:   margin.Clone(),
+		price:    price.Clone(),
 		ts:       ts,
 	}
 }
@@ -38,12 +39,12 @@ func (s SettleDistressed) MarketID() string {
 	return s.marketID
 }
 
-func (s SettleDistressed) Margin() uint64 {
-	return s.margin
+func (s SettleDistressed) Margin() *num.Uint {
+	return s.margin.Clone()
 }
 
-func (s SettleDistressed) Price() uint64 {
-	return s.price
+func (s SettleDistressed) Price() *num.Uint {
+	return s.price.Clone()
 }
 
 func (s SettleDistressed) Timestamp() int64 {
@@ -54,8 +55,8 @@ func (s SettleDistressed) Proto() eventspb.SettleDistressed {
 	return eventspb.SettleDistressed{
 		MarketId: s.marketID,
 		PartyId:  s.partyID,
-		Margin:   s.margin,
-		Price:    s.price,
+		Margin:   s.margin.Uint64(),
+		Price:    s.price.Uint64(),
 	}
 }
 

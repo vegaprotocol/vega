@@ -19,8 +19,9 @@ import (
 	"code.vegaprotocol.io/vega/netparams/dispatch"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
-	types "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -62,16 +63,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
 
-	collateral, err := collateral.New(
+	collateral := collateral.New(
 		log,
 		collateral.NewDefaultConfig(),
 		broker,
 		time.Time{},
 	)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	assets, err := assets.New(
 		log,
 		assets.NewDefaultConfig(),
@@ -130,7 +127,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	bstats := stats.NewBlockchain()
 
-	app, err := processor.NewApp(
+	app := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
 		func() {},
@@ -147,16 +144,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		bstats,
 		timeService,
 		topology,
-		nodeWallet,
 		netparams,
 		&processor.Oracle{
 			Engine:   oraclesM,
 			Adaptors: oraclesAdaptors,
 		},
 	)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)
 	if err != nil {
@@ -205,7 +198,7 @@ func uponGenesis(
 
 	for k, v := range state {
 		err := loadAsset(
-			k, v,
+			k, types.AssetDetailsFromProto(v),
 			assetSvc, collateral,
 		)
 		if err != nil {
@@ -213,14 +206,14 @@ func uponGenesis(
 		}
 	}
 
-	mktscfg := []types.Market{}
+	mktscfg := []ptypes.Market{}
 	for _, v := range markets {
 		f, err := configsFS.ReadFile(v)
 		if err != nil {
 			return err
 		}
 
-		mkt := types.Market{}
+		mkt := ptypes.Market{}
 		err = jsonpb.Unmarshal(strings.NewReader(string(f)), &mkt)
 		if err != nil {
 			return fmt.Errorf("unable to unmarshal market configuration, %w", err)
@@ -231,7 +224,7 @@ func uponGenesis(
 	// then we load the markets
 	for _, mkt := range mktscfg {
 		mkt := mkt
-		err = exec.SubmitMarket(ctx, &mkt)
+		err = exec.SubmitMarket(ctx, types.MarketFromProto(&mkt))
 		if err != nil {
 			log.Panic("Unable to submit market", logging.Error(err))
 		}
@@ -274,7 +267,7 @@ func loadAsset(
 		return fmt.Errorf("unable to enable asset: %v", err)
 	}
 
-	assetD := asset.ProtoAsset()
+	assetD := asset.Type()
 	if err := collateral.EnableAsset(context.Background(), *assetD); err != nil {
 		return fmt.Errorf("unable to enable asset in collateral: %v", err)
 	}

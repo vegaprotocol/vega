@@ -3,20 +3,20 @@ package events
 import (
 	"context"
 
-	types "code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/vega/proto"
 	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type RiskFactor struct {
 	*Base
-	r types.RiskFactor
+	r proto.RiskFactor
 }
 
 func NewRiskFactorEvent(ctx context.Context, r types.RiskFactor) *RiskFactor {
-	cpy := r.DeepClone()
 	return &RiskFactor{
 		Base: newBase(ctx, RiskFactorEvent),
-		r:    *cpy,
+		r:    *r.IntoProto(),
 	}
 }
 
@@ -24,11 +24,11 @@ func (r RiskFactor) MarketID() string {
 	return r.r.Market
 }
 
-func (r *RiskFactor) RiskFactor() types.RiskFactor {
+func (r *RiskFactor) RiskFactor() proto.RiskFactor {
 	return r.r
 }
 
-func (r RiskFactor) Proto() types.RiskFactor {
+func (r RiskFactor) Proto() proto.RiskFactor {
 	return r.r
 }
 

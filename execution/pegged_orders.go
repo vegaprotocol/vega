@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type PeggedOrders struct {
@@ -26,7 +27,7 @@ func (p *PeggedOrders) OnTimeUpdate(t time.Time) {
 func (p *PeggedOrders) Park(o *types.Order) {
 	o.UpdatedAt = p.currentTime
 	o.Status = types.Order_STATUS_PARKED
-	o.Price = 0
+	o.Price = num.Zero()
 }
 
 func (p *PeggedOrders) GetByID(id string) *types.Order {

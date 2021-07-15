@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -73,10 +74,10 @@ func (mr *MockMarketPositionMockRecorder) Party() *gomock.Call {
 }
 
 // Price mocks base method
-func (m *MockMarketPosition) Price() uint64 {
+func (m *MockMarketPosition) Price() *num.Uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Price")
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(*num.Uint)
 	return ret0
 }
 
@@ -115,10 +116,10 @@ func (mr *MockMarketPositionMockRecorder) Size() *gomock.Call {
 }
 
 // VWBuy mocks base method
-func (m *MockMarketPosition) VWBuy() uint64 {
+func (m *MockMarketPosition) VWBuy() *num.Uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VWBuy")
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(*num.Uint)
 	return ret0
 }
 
@@ -129,10 +130,10 @@ func (mr *MockMarketPositionMockRecorder) VWBuy() *gomock.Call {
 }
 
 // VWSell mocks base method
-func (m *MockMarketPosition) VWSell() uint64 {
+func (m *MockMarketPosition) VWSell() *num.Uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VWSell")
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(*num.Uint)
 	return ret0
 }
 
