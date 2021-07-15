@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/data-node/proto"
 )
 
@@ -15,6 +16,7 @@ type VoteSub struct {
 	filters []VoteFilter
 	stream  bool
 	update  chan struct{}
+	log     *logging.Logger
 }
 
 // VoteByPartyID filters votes cast by given party
@@ -30,7 +32,7 @@ func VoteByProposalID(id string) VoteFilter {
 	}
 }
 
-func NewVoteSub(ctx context.Context, stream, ack bool, filters ...VoteFilter) *VoteSub {
+func NewVoteSub(ctx context.Context, stream, ack bool, log *logging.Logger, filters ...VoteFilter) *VoteSub {
 	v := &VoteSub{
 		Base:    NewBase(ctx, 10, ack),
 		mu:      &sync.Mutex{},
@@ -38,6 +40,7 @@ func NewVoteSub(ctx context.Context, stream, ack bool, filters ...VoteFilter) *V
 		filters: filters,
 		stream:  stream,
 		update:  make(chan struct{}),
+		log:     log,
 	}
 	if v.isRunning() {
 		go v.loop(v.ctx)
@@ -65,9 +68,10 @@ func (v *VoteSub) Push(evts ...events.Event) {
 	}
 	add := make([]types.Vote, 0, len(evts))
 	for _, e := range evts {
-		te, ok := e.(VoteE)
-		if ok {
-			vote := te.Vote()
+		switch et := e.(type) {
+		case VoteE:
+			var ok bool = true
+			vote := et.Vote()
 			for _, f := range v.filters {
 				if !f(vote) {
 					ok = false
@@ -77,6 +81,8 @@ func (v *VoteSub) Push(evts ...events.Event) {
 			if ok {
 				add = append(add, vote)
 			}
+		default:
+			v.log.Panic("Unknown event type in vote subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 	if len(add) == 0 {

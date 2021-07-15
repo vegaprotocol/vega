@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/data-node/proto"
 )
 
@@ -22,13 +23,15 @@ type PartySub struct {
 	mu    sync.Mutex
 	store PartyStore
 	buf   []types.Party
+	log   *logging.Logger
 }
 
-func NewPartySub(ctx context.Context, store PartyStore, ack bool) *PartySub {
+func NewPartySub(ctx context.Context, store PartyStore, log *logging.Logger, ack bool) *PartySub {
 	a := &PartySub{
 		Base:  NewBase(ctx, 10, ack),
 		store: store,
 		buf:   []types.Party{},
+		log:   log,
 	}
 	if a.isRunning() {
 		go a.loop(a.ctx)
@@ -60,6 +63,8 @@ func (p *PartySub) Push(evts ...events.Event) {
 			p.mu.Unlock()
 		case TimeEvent:
 			p.flush()
+		default:
+			p.log.Panic("Unknown event type in party subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }

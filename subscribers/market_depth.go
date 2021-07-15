@@ -90,9 +90,11 @@ func (mdb *MarketDepthBuilder) loop(ctx context.Context) {
 // Push takes order messages and applied them to the makret depth structure
 func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
-		switch te := e.(type) {
+		switch et := e.(type) {
 		case OE:
-			mdb.updateMarketDepth(types.OrderFromProto(te.Order()))
+			mdb.updateMarketDepth(types.OrderFromProto(et.Order()))
+		default:
+			mdb.log.Panic("Unknown event type in market depth builder", logging.String("Type", et.Type().String()))
 		}
 	}
 }

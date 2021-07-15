@@ -92,7 +92,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		return
 	}
 	accountService := accounts.NewService(logger, conf.Accounts, accountStore)
-	accountSub := subscribers.NewAccountSub(ctx, accountStore, true)
+	accountSub := subscribers.NewAccountSub(ctx, accountStore, logger, true)
 
 	candleStore, err := storage.NewCandles(logger, conf.Storage, cancel)
 	if err != nil {
@@ -133,7 +133,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatalf("failed to create market service: %v", err)
 		return
 	}
-	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, true)
+	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, logger, true)
 
 	partyStore, err := storage.NewParties(conf.Storage)
 	if err != nil {
@@ -144,7 +144,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create party service: %v", err)
 	}
-	partySub := subscribers.NewPartySub(ctx, partyStore, true)
+	partySub := subscribers.NewPartySub(ctx, partyStore, logger, true)
 
 	riskStore := storage.NewRisks(logger, conf.Storage)
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
@@ -157,7 +157,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create trade service: %v", err)
 	}
-	transferSub := subscribers.NewTransferResponse(ctx, transferResponseStore, true)
+	transferSub := subscribers.NewTransferResponse(ctx, transferResponseStore, logger, true)
 
 	tradeStore, err := storage.NewTrades(logger, conf.Storage, cancel)
 	if err != nil {
@@ -168,7 +168,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	if err != nil {
 		t.Fatalf("failed to create trade service: %v", err)
 	}
-	tradeSub := subscribers.NewTradeSub(ctx, tradeStore, true)
+	tradeSub := subscribers.NewTradeSub(ctx, tradeStore, logger, true)
 
 	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
 
