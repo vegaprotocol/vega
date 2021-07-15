@@ -8,7 +8,7 @@ import (
 )
 
 // PartyStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/part_store_mock.go -package mocks code.vegaprotocol.io/vega/parties PartyStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/part_store_mock.go -package mocks code.vegaprotocol.io/data-node/parties PartyStore
 type PartyStore interface {
 	Post(party *types.Party) error
 	GetByID(id string) (*types.Party, error)

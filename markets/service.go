@@ -11,7 +11,7 @@ import (
 )
 
 // MarketStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/markets MarketStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/data-node/markets MarketStore
 type MarketStore interface {
 	Post(party *types.Market) error
 	GetByID(name string) (*types.Market, error)
@@ -19,7 +19,7 @@ type MarketStore interface {
 }
 
 // MarketDataStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/vega/markets MarketDataStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/data-node/markets MarketDataStore
 type MarketDataStore interface {
 	GetByID(string) (types.MarketData, error)
 	GetAll() []types.MarketData
@@ -28,14 +28,14 @@ type MarketDataStore interface {
 }
 
 // OrderStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/vega/markets OrderStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/order_store_mock.go -package mocks code.vegaprotocol.io/data-node/markets OrderStore
 type OrderStore interface {
 	Subscribe(orders chan<- []types.Order) uint64
 	Unsubscribe(id uint64) error
 }
 
 // MarketDepth ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/vega/markets MarketDepth
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_depth_mock.go -package mocks code.vegaprotocol.io/data-node/markets MarketDepth
 type MarketDepth interface {
 	GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error)
 	Subscribe(orders chan<- *types.MarketDepthUpdate) uint64

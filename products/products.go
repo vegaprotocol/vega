@@ -25,7 +25,7 @@ type OracleSpecPredicate func(spec oracles.OracleSpec) (bool, error)
 type SubscriptionID uint64
 
 // OracleEngine ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/products OracleEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/data-node/products OracleEngine
 type OracleEngine interface {
 	Subscribe(context.Context, oracles.OracleSpec, OnMatchedOracleData) SubscriptionID
 	Unsubscribe(context.Context, SubscriptionID)

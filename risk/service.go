@@ -18,7 +18,7 @@ var (
 )
 
 // RiskStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/vega/risk RiskStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/data-node/risk RiskStore
 type RiskStore interface {
 	GetMarginLevelsByID(partyID string, marketID string) ([]ptypes.MarginLevels, error)
 	GetMarketRiskFactors(marketID string) (ptypes.RiskFactor, error)
@@ -27,13 +27,13 @@ type RiskStore interface {
 }
 
 // MarketDataStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/vega/risk MarketDataStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_data_store_mock.go -package mocks code.vegaprotocol.io/data-node/risk MarketDataStore
 type MarketDataStore interface {
 	GetByID(string) (ptypes.MarketData, error)
 }
 
 // MarketStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/vega/risk MarketStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_store_mock.go -package mocks code.vegaprotocol.io/data-node/risk MarketStore
 type MarketStore interface {
 	GetByID(string) (*ptypes.Market, error)
 }

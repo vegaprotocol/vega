@@ -31,13 +31,13 @@ var (
 )
 
 // TradingServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/vega/gateway/graphql TradingServiceClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingServiceClient
 type TradingServiceClient interface {
 	protoapi.TradingServiceClient
 }
 
 // TradingDataServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_mock.go -package mocks code.vegaprotocol.io/vega/gateway/graphql TradingDataServiceClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_data_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingDataServiceClient
 type TradingDataServiceClient interface {
 	protoapi.TradingDataServiceClient
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // Plugin Exports functions for fetching assets
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/vega/assets Plugin
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/plugin_mock.go -package mocks code.vegaprotocol.io/data-node/assets Plugin
 type Plugin interface {
 	GetByID(string) (*types.Asset, error)
 	GetAll() []types.Asset

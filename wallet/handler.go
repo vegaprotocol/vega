@@ -18,7 +18,7 @@ var (
 )
 
 // Auth ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/auth_mock.go -package mocks code.vegaprotocol.io/vega/wallet Auth
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/auth_mock.go -package mocks code.vegaprotocol.io/data-node/wallet Auth
 type Auth interface {
 	NewSession(name string) (string, error)
 	VerifyToken(token string) (string, error)

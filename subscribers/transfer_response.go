@@ -11,7 +11,7 @@ import (
 )
 
 // TransferResponseStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/subscribers TransferResponseStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/data-node/subscribers TransferResponseStore
 type TransferResponseStore interface {
 	SaveBatch([]*types.TransferResponse) error
 }

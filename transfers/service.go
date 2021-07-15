@@ -11,7 +11,7 @@ import (
 )
 
 // TransferResponseStore represent an abstraction over a transfer response storage
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/vega/transfers TransferResponseStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_store_mock.go -package mocks code.vegaprotocol.io/data-node/transfers TransferResponseStore
 type TransferResponseStore interface {
 	Subscribe(c chan []*types.TransferResponse) uint64
 	Unsubscribe(id uint64) error
