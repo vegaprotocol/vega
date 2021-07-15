@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/data-node/proto"
 )
 
@@ -22,13 +23,15 @@ type AccountSub struct {
 	store AccountStore
 	mu    sync.Mutex
 	buf   map[string]*types.Account
+	log   *logging.Logger
 }
 
-func NewAccountSub(ctx context.Context, store AccountStore, ack bool) *AccountSub {
+func NewAccountSub(ctx context.Context, store AccountStore, log *logging.Logger, ack bool) *AccountSub {
 	a := &AccountSub{
 		Base:  NewBase(ctx, 10, ack),
 		store: store,
 		buf:   map[string]*types.Account{},
+		log:   log,
 	}
 	if a.isRunning() {
 		go a.loop(a.ctx)
@@ -65,6 +68,8 @@ func (a *AccountSub) Push(evts ...events.Event) {
 			a.buf[k] = &acc
 		case TimeEvent:
 			a.flush()
+		default:
+			a.log.Panic("Unknown event type in account subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 	a.mu.Unlock()

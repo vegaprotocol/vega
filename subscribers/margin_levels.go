@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/data-node/proto"
 )
 
@@ -21,13 +22,15 @@ type MarginLevelSub struct {
 	store Store
 	mu    sync.Mutex
 	buf   map[string]map[string]types.MarginLevels
+	log   *logging.Logger
 }
 
-func NewMarginLevelSub(ctx context.Context, store Store, ack bool) *MarginLevelSub {
+func NewMarginLevelSub(ctx context.Context, store Store, log *logging.Logger, ack bool) *MarginLevelSub {
 	m := MarginLevelSub{
 		Base:  NewBase(ctx, 10, ack),
 		store: store,
 		buf:   map[string]map[string]types.MarginLevels{},
+		log:   log,
 	}
 	if m.isRunning() {
 		go m.loop(m.ctx)
@@ -51,9 +54,9 @@ func (m *MarginLevelSub) loop(ctx context.Context) {
 
 func (m *MarginLevelSub) Push(evts ...events.Event) {
 	for _, e := range evts {
-		switch te := e.(type) {
+		switch et := e.(type) {
 		case MLE:
-			ml := te.MarginLevels()
+			ml := et.MarginLevels()
 			m.mu.Lock()
 			if _, ok := m.buf[ml.PartyId]; !ok {
 				m.buf[ml.PartyId] = map[string]types.MarginLevels{}
@@ -62,11 +65,14 @@ func (m *MarginLevelSub) Push(evts ...events.Event) {
 			m.mu.Unlock()
 		case TimeEvent:
 			m.flush()
+		default:
+			m.log.Panic("Unknown event type in margin level subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }
 
 func (m *MarginLevelSub) flush() {
+	m.log.Error("Margin level flush")
 	m.mu.Lock()
 	buf := m.buf
 	m.buf = map[string]map[string]types.MarginLevels{}
