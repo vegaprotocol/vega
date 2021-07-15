@@ -1,4 +1,3 @@
-@skip
 # Test volume and margin when LP volume is pushed inside price monitoring bounds
 # and the price monitoring bounds happen to be best bid/ask
 Feature: Test margin for lp near price monitoring boundaries
