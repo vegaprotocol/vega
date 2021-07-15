@@ -554,8 +554,8 @@ func TestEvents_Amending(t *testing.T) {
 	require.NoError(t, err)
 
 	amendment := &types.OrderAmendment{
-		OrderId:  o1.ID,
-		MarketId: o1.MarketID,
+		OrderID:  o1.ID,
+		MarketID: o1.MarketID,
 		Price:    num.NewUint(11),
 	}
 
@@ -634,8 +634,8 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	require.NoError(t, err)
 
 	amendment := &types.OrderAmendment{
-		OrderId:  o2.ID,
-		MarketId: o2.MarketID,
+		OrderID:  o2.ID,
+		MarketID: o2.MarketID,
 		Price:    num.NewUint(8),
 	}
 
@@ -702,8 +702,8 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	require.NoError(t, err)
 
 	amendment := &types.OrderAmendment{
-		OrderId:  o1.ID,
-		MarketId: o1.MarketID,
+		OrderID:  o1.ID,
+		MarketID: o1.MarketID,
 		Price:    num.NewUint(9),
 	}
 
@@ -759,8 +759,8 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 	require.NoError(t, err)
 
 	amendment := &types.OrderAmendment{
-		OrderId:  o3.ID,
-		MarketId: o3.MarketID,
+		OrderID:  o3.ID,
+		MarketID: o3.MarketID,
 		Price:    num.NewUint(10),
 	}
 
@@ -816,8 +816,8 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 	require.NoError(t, err)
 
 	amendment := &types.OrderAmendment{
-		OrderId:   o3.ID,
-		MarketId:  o3.MarketID,
+		OrderID:   o3.ID,
+		MarketID:  o3.MarketID,
 		Price:     num.NewUint(11),
 		SizeDelta: 5,
 	}
@@ -938,7 +938,7 @@ func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
 
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.05),
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(10),
 		Buys:             buys,
 		Sells:            sells,

@@ -1,5 +1,3 @@
-//lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
-
 package types
 
 import (
@@ -8,25 +6,25 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type LiquidityProvision_Status = proto.LiquidityProvision_Status
+type LiquidityProvisionStatus = proto.LiquidityProvision_Status
 
 const (
 	// The default value
-	LiquidityProvision_STATUS_UNSPECIFIED LiquidityProvision_Status = 0
+	LiquidityProvisionUnspecified LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_UNSPECIFIED
 	// The liquidity provision is active
-	LiquidityProvision_STATUS_ACTIVE LiquidityProvision_Status = 1
+	LiquidityProvisionStatusActive LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_ACTIVE
 	// The liquidity provision was stopped by the network
-	LiquidityProvision_STATUS_STOPPED LiquidityProvision_Status = 2
+	LiquidityProvisionStatusStopped LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_STOPPED
 	// The liquidity provision was cancelled by the liquidity provider
-	LiquidityProvision_STATUS_CANCELLED LiquidityProvision_Status = 3
+	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_CANCELLED
 	// The liquidity provision was invalid and got rejected
-	LiquidityProvision_STATUS_REJECTED LiquidityProvision_Status = 4
+	LiquidityProvisionStatusRejected LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_REJECTED
 	// The liquidity provision is valid and accepted by network, but orders aren't deployed
-	LiquidityProvision_STATUS_UNDEPLOYED LiquidityProvision_Status = 5
+	LiquidityProvisionStatusUndeployed LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_UNDEPLOYED
 	// The liquidity provision is valid and accepted by network
 	// but have never been deployed. I when it's possible to deploy them for the first time
 	// margin check fails, then they will be cancelled without any penalties.
-	LiquidityProvision_STATUS_PENDING LiquidityProvision_Status = 6
+	LiquidityProvisionStatusPending LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_PENDING
 )
 
 type TargetStakeParameters struct {
@@ -62,7 +60,7 @@ func (t TargetStakeParameters) DeepClone() *TargetStakeParameters {
 
 type LiquidityProvisionSubmission struct {
 	// Market identifier for the order, required field
-	MarketId string
+	MarketID string
 	// Specified as a unitless number that represents the amount of settlement asset of the market
 	CommitmentAmount *num.Uint
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
@@ -77,7 +75,7 @@ type LiquidityProvisionSubmission struct {
 
 func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvisionSubmission {
 	lps := &commandspb.LiquidityProvisionSubmission{
-		MarketId:         l.MarketId,
+		MarketId:         l.MarketID,
 		CommitmentAmount: l.CommitmentAmount.Uint64(),
 		Fee:              l.Fee.String(),
 		Sells:            make([]*proto.LiquidityOrder, 0, len(l.Sells)),
@@ -113,7 +111,7 @@ func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmi
 
 	l := LiquidityProvisionSubmission{
 		Fee:              fee,
-		MarketId:         p.MarketId,
+		MarketID:         p.MarketId,
 		CommitmentAmount: num.NewUint(p.CommitmentAmount),
 		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
 		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
@@ -146,9 +144,9 @@ func (l LiquidityProvisionSubmission) String() string {
 
 type LiquidityProvision struct {
 	// Unique identifier
-	Id string
+	ID string
 	// Unique party identifier for the creator of the provision
-	PartyId string
+	Party string
 	// Timestamp for when the order was created at, in nanoseconds since the epoch
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	CreatedAt int64
@@ -156,7 +154,7 @@ type LiquidityProvision struct {
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	UpdatedAt int64
 	// Market identifier for the order, required field
-	MarketId string
+	MarketID string
 	// Specified as a unitless number that represents the amount of settlement asset of the market
 	CommitmentAmount *num.Uint
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
@@ -168,7 +166,7 @@ type LiquidityProvision struct {
 	// Version of this liquidity provision order
 	Version string
 	// Status of this liquidity provision order
-	Status LiquidityProvision_Status
+	Status LiquidityProvisionStatus
 	// A reference shared between this liquidity provision and all it's orders
 	Reference string
 }
@@ -179,11 +177,11 @@ func (l LiquidityProvision) String() string {
 
 func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 	lp := &proto.LiquidityProvision{
-		Id:               l.Id,
-		PartyId:          l.PartyId,
+		Id:               l.ID,
+		PartyId:          l.Party,
 		CreatedAt:        l.CreatedAt,
 		UpdatedAt:        l.UpdatedAt,
-		MarketId:         l.MarketId,
+		MarketId:         l.MarketID,
 		CommitmentAmount: l.CommitmentAmount.Uint64(),
 		Fee:              l.Fee.String(),
 		Version:          l.Version,
@@ -195,7 +193,7 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 
 	for _, sell := range l.Sells {
 		lor := &proto.LiquidityOrderReference{
-			OrderId: sell.OrderId,
+			OrderId: sell.OrderID,
 			LiquidityOrder: &proto.LiquidityOrder{
 				Reference:  sell.LiquidityOrder.Reference,
 				Proportion: sell.LiquidityOrder.Proportion,
@@ -207,7 +205,7 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 
 	for _, buy := range l.Buys {
 		lor := &proto.LiquidityOrderReference{
-			OrderId: buy.OrderId,
+			OrderId: buy.OrderID,
 			LiquidityOrder: &proto.LiquidityOrder{
 				Reference:  buy.LiquidityOrder.Reference,
 				Proportion: buy.LiquidityOrder.Proportion,
@@ -224,9 +222,9 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) *LiquidityProvisio
 	l := LiquidityProvision{
 		CommitmentAmount: num.NewUint(p.CommitmentAmount),
 		CreatedAt:        p.CreatedAt,
-		Id:               p.Id,
-		MarketId:         p.MarketId,
-		PartyId:          p.PartyId,
+		ID:               p.Id,
+		MarketID:         p.MarketId,
+		Party:            p.PartyId,
 		Fee:              fee,
 		Reference:        p.Reference,
 		Status:           p.Status,
@@ -238,7 +236,7 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) *LiquidityProvisio
 
 	for _, sell := range p.Sells {
 		lor := &LiquidityOrderReference{
-			OrderId: sell.OrderId,
+			OrderID: sell.OrderId,
 			LiquidityOrder: &LiquidityOrder{
 				Reference:  sell.LiquidityOrder.Reference,
 				Proportion: sell.LiquidityOrder.Proportion,
@@ -250,7 +248,7 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) *LiquidityProvisio
 
 	for _, buy := range p.Buys {
 		lor := &LiquidityOrderReference{
-			OrderId: buy.OrderId,
+			OrderID: buy.OrderId,
 			LiquidityOrder: &LiquidityOrder{
 				Reference:  buy.LiquidityOrder.Reference,
 				Proportion: buy.LiquidityOrder.Proportion,
@@ -265,7 +263,7 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) *LiquidityProvisio
 
 type LiquidityOrderReference struct {
 	// Unique identifier of the pegged order generated by the core to fulfil this liquidity order
-	OrderId string
+	OrderID string
 	// The liquidity order from the original submission
 	LiquidityOrder *LiquidityOrder
 }
@@ -276,14 +274,14 @@ func (l LiquidityOrderReference) IntoProto() *proto.LiquidityOrderReference {
 		order = l.LiquidityOrder.IntoProto()
 	}
 	return &proto.LiquidityOrderReference{
-		OrderId:        l.OrderId,
+		OrderId:        l.OrderID,
 		LiquidityOrder: order,
 	}
 }
 
 func LiquidityOrderReferenceFromProto(p *proto.LiquidityOrderReference) *LiquidityOrderReference {
 	return &LiquidityOrderReference{
-		OrderId: p.OrderId,
+		OrderID: p.OrderId,
 		LiquidityOrder: &LiquidityOrder{
 			Reference:  p.LiquidityOrder.Reference,
 			Proportion: p.LiquidityOrder.Proportion,
@@ -379,7 +377,7 @@ func LiquidityProvisionSubmissionFromMarketCommitment(
 	market string,
 ) *LiquidityProvisionSubmission {
 	return &LiquidityProvisionSubmission{
-		MarketId:         market,
+		MarketID:         market,
 		CommitmentAmount: nmc.CommitmentAmount,
 		Fee:              nmc.Fee,
 		Sells:            nmc.Sells,

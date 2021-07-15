@@ -251,7 +251,7 @@ func (t TradableInstrument) IntoProto() *proto.TradableInstrument {
 
 func (t TradableInstrument) GetSimpleRiskModel() *SimpleRiskModel {
 	if t.rmt == SIMPLE_RISK_MODEL {
-		srm, ok := t.RiskModel.(*TradableInstrument_SimpleRiskModel)
+		srm, ok := t.RiskModel.(*TradableInstrumentSimpleRiskModel)
 		if !ok || srm == nil {
 			return nil
 		}
@@ -262,7 +262,7 @@ func (t TradableInstrument) GetSimpleRiskModel() *SimpleRiskModel {
 
 func (t TradableInstrument) GetLogNormalRiskModel() *LogNormalRiskModel {
 	if t.rmt == LOGNORMAL_RISK_MODEL {
-		lrm, ok := t.RiskModel.(*TradableInstrument_LogNormalRiskModel)
+		lrm, ok := t.RiskModel.(*TradableInstrumentLogNormalRiskModel)
 		if !ok || lrm == nil {
 			return nil
 		}

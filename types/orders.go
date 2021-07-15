@@ -42,8 +42,8 @@ func (p PriceLevels) IntoProto() []*proto.PriceLevel {
 }
 
 type OrderAmendment struct {
-	OrderId         string
-	MarketId        string
+	OrderID         string
+	MarketID        string
 	Price           *num.Uint
 	SizeDelta       int64
 	ExpiresAt       *int64 // timestamp
@@ -69,8 +69,8 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) *OrderAmendment {
 		peggedOffset = &po
 	}
 	return &OrderAmendment{
-		OrderId:         p.OrderId,
-		MarketId:        p.MarketId,
+		OrderID:         p.OrderId,
+		MarketID:        p.MarketId,
 		Price:           price,
 		SizeDelta:       p.SizeDelta,
 		ExpiresAt:       exp,
@@ -82,8 +82,8 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) *OrderAmendment {
 
 func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 	r := &commandspb.OrderAmendment{
-		OrderId:         o.OrderId,
-		MarketId:        o.MarketId,
+		OrderId:         o.OrderID,
+		MarketId:        o.MarketID,
 		SizeDelta:       o.SizeDelta,
 		TimeInForce:     o.TimeInForce,
 		PeggedReference: o.PeggedReference,
@@ -132,9 +132,9 @@ func (o OrderAmendment) String() string {
 }
 
 func (o OrderAmendment) GetOrderId() string {
-	return o.OrderId
+	return o.OrderID
 }
 
 func (o OrderAmendment) GetMarketId() string {
-	return o.MarketId
+	return o.MarketID
 }

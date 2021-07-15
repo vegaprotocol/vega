@@ -28,7 +28,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -153,7 +153,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -258,7 +258,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -284,7 +284,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(150000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
@@ -324,7 +324,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -350,7 +350,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",

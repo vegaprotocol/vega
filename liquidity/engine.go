@@ -183,15 +183,15 @@ func (e *Engine) GetLiquidityOrders(party string) []*types.Order {
 func (e *Engine) GetInactiveParties() map[string]struct{} {
 	ret := map[string]struct{}{}
 	for _, p := range e.provisions {
-		if p.Status != types.LiquidityProvision_STATUS_ACTIVE {
-			ret[p.PartyId] = struct{}{}
+		if p.Status != types.LiquidityProvisionStatusActive {
+			ret[p.Party] = struct{}{}
 		}
 	}
 	return ret
 }
 
 func (e *Engine) stopLiquidityProvision(
-	ctx context.Context, party string, status types.LiquidityProvision_Status,
+	ctx context.Context, party string, status types.LiquidityProvisionStatus,
 ) ([]*types.Order, error) {
 	lp := e.provisions[party]
 	if lp == nil {
@@ -232,7 +232,7 @@ func (e *Engine) IsLiquidityProvider(party string) bool {
 // RejectLiquidityProvision removes a parties commitment of liquidity
 func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
 	_, err := e.stopLiquidityProvision(
-		ctx, party, types.LiquidityProvision_STATUS_REJECTED)
+		ctx, party, types.LiquidityProvisionStatusRejected)
 	return err
 }
 
@@ -240,14 +240,14 @@ func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) err
 // Returns the liquidityOrders if any
 func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
 	return e.stopLiquidityProvision(
-		ctx, party, types.LiquidityProvision_STATUS_CANCELLED)
+		ctx, party, types.LiquidityProvisionStatusCancelled)
 }
 
 // StopLiquidityProvision removes a parties commitment of liquidity
 // Returns the liquidityOrders if any
 func (e *Engine) StopLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
 	return e.stopLiquidityProvision(
-		ctx, party, types.LiquidityProvision_STATUS_STOPPED)
+		ctx, party, types.LiquidityProvisionStatusStopped)
 }
 
 // ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.
@@ -285,11 +285,11 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
 	lp := &types.LiquidityProvision{
-		Id:               id,
+		ID:               id,
 		Fee:              lps.Fee,
-		MarketId:         lps.MarketId,
-		PartyId:          party,
-		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		MarketID:         lps.MarketID,
+		Party:            party,
+		Status:           types.LiquidityProvisionStatusRejected,
 		CreatedAt:        e.currentTime.UnixNano(),
 		CommitmentAmount: lps.CommitmentAmount.Clone(),
 		Reference:        lps.Reference,
@@ -330,12 +330,12 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	var (
 		now = e.currentTime.UnixNano()
 		lp  = &types.LiquidityProvision{
-			Id:        id,
-			MarketId:  lps.MarketId,
-			PartyId:   party,
+			ID:        id,
+			MarketID:  lps.MarketID,
+			Party:     party,
 			CreatedAt: now,
 			Fee:       lps.Fee,
-			Status:    types.LiquidityProvision_STATUS_REJECTED,
+			Status:    types.LiquidityProvisionStatusRejected,
 			Reference: lps.Reference,
 		}
 	)
@@ -352,7 +352,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	e.pendings[party] = struct{}{}
 	lp.UpdatedAt = now
 	lp.CommitmentAmount = lps.CommitmentAmount
-	lp.Status = types.LiquidityProvision_STATUS_PENDING
+	lp.Status = types.LiquidityProvisionStatusPending
 
 	e.buildLiquidityProvisionShapesReferences(lp, lps)
 
@@ -370,7 +370,7 @@ func (e *Engine) buildLiquidityProvisionShapesReferences(
 	for _, buy := range lps.Buys {
 		e.idGen.SetID(order)
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
-			OrderId:        order.ID,
+			OrderID:        order.ID,
 			LiquidityOrder: buy,
 		})
 	}
@@ -379,7 +379,7 @@ func (e *Engine) buildLiquidityProvisionShapesReferences(
 	for _, sell := range lps.Sells {
 		e.idGen.SetID(order)
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
-			OrderId:        order.ID,
+			OrderID:        order.ID,
 			LiquidityOrder: sell,
 		})
 	}
@@ -471,7 +471,7 @@ func (e *Engine) Update(
 	}
 
 	for _, lp := range e.provisions.Slice() {
-		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), lp.PartyId, repriceFn)
+		creates, cancels, err := e.createOrUpdateForParty(ctx, bestBidPrice.Clone(), bestAskPrice.Clone(), lp.Party, repriceFn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -517,7 +517,7 @@ func (e *Engine) createOrUpdateForParty(
 			Offset:    buy.LiquidityOrder.Offset,
 		}
 		order := &supplied.LiquidityOrder{
-			OrderID:    buy.OrderId,
+			OrderID:    buy.OrderID,
 			Proportion: uint64(buy.LiquidityOrder.Proportion),
 		}
 		if price, peggedO, err := repriceFn(pegged, types.SideBuy); err != nil {
@@ -536,7 +536,7 @@ func (e *Engine) createOrUpdateForParty(
 			Offset:    sell.LiquidityOrder.Offset,
 		}
 		order := &supplied.LiquidityOrder{
-			OrderID:    sell.OrderId,
+			OrderID:    sell.OrderID,
 			Proportion: uint64(sell.LiquidityOrder.Proportion),
 		}
 		if price, peggedO, err := repriceFn(pegged, types.SideSell); err != nil {
@@ -562,9 +562,9 @@ func (e *Engine) createOrUpdateForParty(
 
 		// set to undeployed if active basically as
 		// we want to keep it pending until it deployed for the first time
-		if lp.Status != types.LiquidityProvision_STATUS_UNDEPLOYED &&
-			lp.Status != types.LiquidityProvision_STATUS_PENDING {
-			lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
+		if lp.Status != types.LiquidityProvisionStatusUndeployed &&
+			lp.Status != types.LiquidityProvisionStatusPending {
+			lp.Status = types.LiquidityProvisionStatusUndeployed
 		}
 	} else {
 		// Create a slice shaped copy of the orders
@@ -587,7 +587,7 @@ func (e *Engine) createOrUpdateForParty(
 		needsCreateSells, needsUpdateSells = e.createOrdersFromShape(
 			party, sellsShape, types.SideSell)
 
-		lp.Status = types.LiquidityProvision_STATUS_ACTIVE
+		lp.Status = types.LiquidityProvisionStatusActive
 	}
 
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
@@ -652,7 +652,7 @@ func (e *Engine) undeployOrdersFromShape(
 			}
 
 			// then we can delete the order from our mapping
-			delete(lm, ref.OrderId)
+			delete(lm, ref.OrderID)
 		}
 	}
 
@@ -699,7 +699,7 @@ func (e *Engine) createOrdersFromShape(
 			}
 
 			// then we can delete the order from our mapping
-			delete(lm, ref.OrderId)
+			delete(lm, ref.OrderID)
 		}
 
 		// We either don't need this order anymore or
@@ -723,11 +723,11 @@ func (e *Engine) createOrdersFromShape(
 		// 	Reference: ref.LiquidityOrder.Reference,
 		// 	Offset:    ref.LiquidityOrder.Offset,
 		// }
-		order = e.buildOrder(side, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.Id)
-		order.ID = ref.OrderId
+		order = e.buildOrder(side, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.ID)
+		order.ID = ref.OrderID
 		newOrders = append(newOrders, order)
 		lm[order.ID] = order
-		ref.OrderId = order.ID
+		ref.OrderID = order.ID
 	}
 
 	return newOrders, toCancel

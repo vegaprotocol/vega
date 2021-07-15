@@ -78,7 +78,7 @@ func (l ProvisionsPerParty) Slice() LiquidityProvisions {
 		slice = append(slice, p)
 	}
 	// sorting by partyId to ensure any processing in a deterministic manner later on
-	sort.Slice(slice, func(i, j int) bool { return slice[i].PartyId < slice[j].PartyId })
+	sort.Slice(slice, func(i, j int) bool { return slice[i].Party < slice[j].Party })
 	return slice
 }
 

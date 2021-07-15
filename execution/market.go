@@ -1792,15 +1792,15 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 
 	asset, _ := m.mkt.GetAsset()
 	marginLevels := types.MarginLevels{
-		MarketId:  m.mkt.GetId(),
+		MarketID:  m.mkt.GetId(),
 		Asset:     asset,
 		Timestamp: m.currentTime.UnixNano(),
 	}
 
-	tradeEvts := make([]events.Event, 0, len(traders))
-	for i, trader := range traders {
+	tradeEvts := make([]events.Event, 0, len(parties))
+	for i, party := range parties {
 		tSide, nSide := types.SideSell, types.SideSell // one of them will have to sell
-		if trader.Size() < 0 {
+		if party.Size() < 0 {
 			tSide = types.SideBuy
 		} else {
 			nSide = types.SideBuy
@@ -1823,7 +1823,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 			Size:        order.Size,
 			Remaining:   0,
 			Status:      types.OrderStatusFilled,
-			Party:       trader.Party(),
+			Party:       party.Party(),
 			Side:        tSide,                     // assume sell, price is zero in that case anyway
 			Price:       settleOrder.Price.Clone(), // average price
 			CreatedAt:   m.currentTime.UnixNano(),
@@ -1869,8 +1869,8 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 		}
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, trade))
 
-		// 0 out margins levels for this party
-		marginLevels.PartyId = party.Party()
+		// 0 out margins levels for this trader
+		marginLevels.Party = party.Party()
 		m.broker.Send(events.NewMarginLevelsEvent(ctx, marginLevels))
 
 		if m.log.GetLevel() == logging.DebugLevel {
@@ -2103,7 +2103,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 	}
 
 	// explicitly/directly ordering an LP commitment order is not allowed
-	if m.liquidity.IsLiquidityOrder(party, orderAmendment.OrderId) {
+	if m.liquidity.IsLiquidityOrder(party, orderAmendment.OrderID) {
 		return nil, types.ErrEditNotAllowed
 	}
 	conf, updatedOrders, err := m.amendOrder(ctx, orderAmendment, party)
@@ -2141,7 +2141,7 @@ func (m *Market) amendOrder(
 
 	// Try and locate the existing order specified on the
 	// order book in the matching engine for this market
-	existingOrder, foundOnBook, err := m.getOrderByID(orderAmendment.OrderId)
+	existingOrder, foundOnBook, err := m.getOrderByID(orderAmendment.OrderID)
 	if err != nil {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Invalid order ID",

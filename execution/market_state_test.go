@@ -64,7 +64,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
 	amendment := &types.OrderAmendment{
-		OrderId:   o1.ID,
+		OrderID:   o1.ID,
 		Price:     num.NewUint(4000),
 		SizeDelta: 10,
 	}
@@ -75,7 +75,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 
 	// but can place liquidity submission
 	lpsub := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1),
 		Fee:              num.DecimalFromFloat(0.1),
 		Sells: []*types.LiquidityOrder{

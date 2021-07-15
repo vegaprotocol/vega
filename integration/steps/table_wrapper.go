@@ -447,18 +447,18 @@ func OrderStatus(rawValue string) (types.OrderStatus, error) {
 	return types.OrderStatus(ty), nil
 }
 
-func (r RowWrapper) MustLiquidityStatus(name string) types.LiquidityProvision_Status {
+func (r RowWrapper) MustLiquidityStatus(name string) types.LiquidityProvisionStatus {
 	s, err := LiquidityStatus(r.MustStr(name))
 	panicW(name, err)
 	return s
 }
 
-func LiquidityStatus(rawValue string) (types.LiquidityProvision_Status, error) {
+func LiquidityStatus(rawValue string) (types.LiquidityProvisionStatus, error) {
 	ty, ok := proto.LiquidityProvision_Status_value[rawValue]
 	if !ok {
-		return types.LiquidityProvision_Status(ty), fmt.Errorf("invalid liquidity provision status: %v", rawValue)
+		return types.LiquidityProvisionStatus(ty), fmt.Errorf("invalid liquidity provision status: %v", rawValue)
 	}
-	return types.LiquidityProvision_Status(ty), nil
+	return types.LiquidityProvisionStatus(ty), nil
 }
 
 func (r RowWrapper) MustTIF(name string) types.OrderTimeInForce {

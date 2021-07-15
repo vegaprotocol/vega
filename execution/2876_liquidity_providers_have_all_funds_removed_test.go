@@ -60,7 +60,7 @@ func TestIssue2876(t *testing.T) {
 	require.NoError(t, err)
 
 	lporder := types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Buys: []*types.LiquidityOrder{

@@ -28,7 +28,7 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 
 	// now we edit the order t make it GTC so it should not expire
 	amendment := &types.OrderAmendment{
-		OrderId:     o1.ID,
+		OrderID:     o1.ID,
 		TimeInForce: types.OrderTimeInForceGTC,
 	}
 

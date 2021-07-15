@@ -125,20 +125,20 @@ func testSubmissionCRUD(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := &types.LiquidityProvision{
-		Id:               "some-id-1",
-		MarketId:         tng.marketID,
-		PartyId:          party,
+		ID:               "some-id-1",
+		MarketID:         tng.marketID,
+		Party:            party,
 		Fee:              num.DecimalFromFloat(0.5),
 		CommitmentAmount: lps.CommitmentAmount.Clone(),
 		CreatedAt:        now.UnixNano(),
 		UpdatedAt:        now.UnixNano(),
-		Status:           types.LiquidityProvision_STATUS_PENDING,
+		Status:           types.LiquidityProvisionStatusPending,
 		Buys: []*types.LiquidityOrderReference{
-			{LiquidityOrder: buyShape[0], OrderId: "liquidity-order-1"},
+			{LiquidityOrder: buyShape[0], OrderID: "liquidity-order-1"},
 		},
 
 		Sells: []*types.LiquidityOrderReference{
-			{LiquidityOrder: sellShape[0], OrderId: "liquidity-order-2"},
+			{LiquidityOrder: sellShape[0], OrderID: "liquidity-order-2"},
 		},
 	}
 	// Create a submission should fire an event
@@ -151,7 +151,7 @@ func testSubmissionCRUD(t *testing.T) {
 	got := tng.engine.LiquidityProvisionByPartyID(party)
 	require.Equal(t, expected, got)
 
-	expected.Status = types.LiquidityProvision_STATUS_CANCELLED
+	expected.Status = types.LiquidityProvisionStatusCancelled
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
@@ -259,11 +259,11 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	require.NoError(t, err)
 
 	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		Id:               id,
-		MarketId:         tng.marketID,
-		PartyId:          party,
+		ID:               id,
+		MarketID:         tng.marketID,
+		Party:            party,
 		CreatedAt:        now.UnixNano(),
-		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		Status:           types.LiquidityProvisionStatusRejected,
 		Fee:              num.DecimalFromFloat(0.1),
 		CommitmentAmount: num.NewUint(10),
 		Sells:            []*types.LiquidityOrderReference{},
@@ -300,13 +300,13 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	require.NoError(t, err)
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		Id:               id,
+		ID:               id,
 		Fee:              num.DecimalFromFloat(0.2),
-		MarketId:         tng.marketID,
-		PartyId:          party,
+		MarketID:         tng.marketID,
+		Party:            party,
 		CreatedAt:        now.UnixNano(),
 		CommitmentAmount: num.NewUint(10),
-		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		Status:           types.LiquidityProvisionStatusRejected,
 		Buys:             []*types.LiquidityOrderReference{},
 		Sells: []*types.LiquidityOrderReference{
 			{
@@ -333,13 +333,13 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	lps, _ = types.LiquidityProvisionSubmissionFromProto(lpspb)
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		Id:               id,
-		MarketId:         tng.marketID,
+		ID:               id,
+		MarketID:         tng.marketID,
 		Fee:              num.DecimalFromFloat(0.3),
-		PartyId:          party,
+		Party:            party,
 		CreatedAt:        now.UnixNano(),
 		CommitmentAmount: num.NewUint(10),
-		Status:           types.LiquidityProvision_STATUS_REJECTED,
+		Status:           types.LiquidityProvisionStatusRejected,
 		Buys:             []*types.LiquidityOrderReference{},
 		Sells:            []*types.LiquidityOrderReference{},
 	})

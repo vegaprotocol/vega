@@ -47,8 +47,8 @@ func TestVersioning(t *testing.T) {
 
 	// Amend price up, check version moves to 2
 	amend := &types.OrderAmendment{
-		OrderId:  orderID,
-		MarketId: tm.market.GetID(),
+		OrderID:  orderID,
+		MarketID: tm.market.GetID(),
 		Price:    num.NewUint(price + 1),
 	}
 

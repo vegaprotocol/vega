@@ -31,7 +31,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	// now we edit the order t make it GTC so it should not expire
 	v10 := now.Add(10 * time.Second).UnixNano()
 	amendment := &types.OrderAmendment{
-		OrderId:     o1.ID,
+		OrderID:     o1.ID,
 		TimeInForce: types.OrderTimeInForceGTT,
 		ExpiresAt:   &v10,
 	}
@@ -45,7 +45,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 	// now we edit the order t make it GTC so it should not expire
 	v := now.Add(20 * time.Second).UnixNano()
 	amendment2 := &types.OrderAmendment{
-		OrderId:     o1.ID,
+		OrderID:     o1.ID,
 		TimeInForce: types.OrderTimeInForceGTT,
 		ExpiresAt:   &v,
 	}
@@ -58,7 +58,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 
 	// now we edit the order t make it GTC so it should not expire
 	amendment3 := &types.OrderAmendment{
-		OrderId:     o1.ID,
+		OrderID:     o1.ID,
 		TimeInForce: types.OrderTimeInForceGTC,
 	}
 

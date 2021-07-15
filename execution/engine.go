@@ -452,7 +452,7 @@ func (e *Engine) SubmitOrder(
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
-	timer := metrics.NewTimeCounter(amendment.MarketId, "execution", "AmendOrder")
+	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
 		e.notifyFailureOnError(ctx, returnedErr, amendment, party)
@@ -462,7 +462,7 @@ func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 		e.log.Debug("amend order", logging.OrderAmendment(amendment))
 	}
 
-	mkt, ok := e.markets[amendment.MarketId]
+	mkt, ok := e.markets[amendment.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
@@ -472,7 +472,7 @@ func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 		return nil, err
 	}
 
-	e.decrementOrderGaugeMetrics(amendment.MarketId, conf.Order, conf.PassiveOrdersAffected)
+	e.decrementOrderGaugeMetrics(amendment.MarketID, conf.Order, conf.PassiveOrdersAffected)
 
 	return conf, nil
 }
@@ -579,7 +579,7 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 }
 
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID string) (returnedErr error) {
-	timer := metrics.NewTimeCounter(sub.MarketId, "execution", "LiquidityProvisionSubmission")
+	timer := metrics.NewTimeCounter(sub.MarketID, "execution", "LiquidityProvisionSubmission")
 	defer func() {
 		timer.EngineTimeCounterAdd()
 		e.notifyFailureOnError(ctx, returnedErr, sub, party)
@@ -593,7 +593,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		)
 	}
 
-	mkt, ok := e.markets[sub.MarketId]
+	mkt, ok := e.markets[sub.MarketID]
 	if !ok {
 		return types.ErrInvalidMarketID
 	}

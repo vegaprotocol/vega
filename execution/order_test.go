@@ -51,8 +51,8 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	amend := &types.OrderAmendment{
-		MarketId: tm.market.GetID(),
-		OrderId:  orderAmend.ID,
+		MarketID: tm.market.GetID(),
+		OrderID:  orderAmend.ID,
 	}
 
 	one := num.NewUint(1)
@@ -144,8 +144,8 @@ func TestAmendCancelResubmit(t *testing.T) {
 	// Amend the price to force a cancel+resubmit to the order book
 
 	amend := &types.OrderAmendment{
-		OrderId:  orderID,
-		MarketId: confirmation.Order.MarketID,
+		OrderID:  orderID,
+		MarketID: confirmation.Order.MarketID,
 		Price:    num.NewUint(101),
 	}
 	amended, err := tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.Party)
@@ -153,8 +153,8 @@ func TestAmendCancelResubmit(t *testing.T) {
 	assert.NoError(t, err)
 
 	amend = &types.OrderAmendment{
-		OrderId:   orderID,
-		MarketId:  confirmation.Order.MarketID,
+		OrderID:   orderID,
+		MarketID:  confirmation.Order.MarketID,
 		Price:     num.NewUint(101),
 		SizeDelta: 1,
 	}
@@ -320,8 +320,8 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 
 	exp := int64(10000000010)
 	amend := &types.OrderAmendment{
-		OrderId:     buyConfirmation.Order.ID,
-		MarketId:    tm.market.GetID(),
+		OrderID:     buyConfirmation.Order.ID,
+		MarketID:    tm.market.GetID(),
 		ExpiresAt:   &exp,
 		TimeInForce: types.OrderTimeInForceGTT,
 	}
@@ -416,8 +416,8 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NoError(t, err)
 
 	amend := &types.OrderAmendment{
-		OrderId:  buyConfirmation.Order.ID,
-		MarketId: tm.market.GetID(),
+		OrderID:  buyConfirmation.Order.ID,
+		MarketID: tm.market.GetID(),
 		Price:    num.NewUint(20),
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party1)
@@ -460,8 +460,8 @@ func TestAmendWrongPartyID(t *testing.T) {
 
 	// Send an amend but use the wrong partyID
 	amend := &types.OrderAmendment{
-		OrderId:  confirmation.Order.ID,
-		MarketId: confirmation.Order.MarketID,
+		OrderID:  confirmation.Order.ID,
+		MarketID: confirmation.Order.MarketID,
 		Price:    num.NewUint(101),
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party2)
@@ -573,8 +573,8 @@ func TestPartialFilledWashTrade(t *testing.T) {
 func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif types.OrderTimeInForce, expiresAt int64) *types.OrderAmendment {
 
 	amend := &types.OrderAmendment{
-		OrderId:     orderID,
-		MarketId:    market,
+		OrderID:     orderID,
+		MarketID:    market,
 		SizeDelta:   sizeDelta,
 		TimeInForce: tif,
 	}
@@ -2667,7 +2667,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -2790,7 +2790,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "THIS-IS-LP",

@@ -126,8 +126,8 @@ func TestMargins(t *testing.T) {
 
 	// Amend size up
 	amend := &types.OrderAmendment{
-		OrderId:   orderID,
-		MarketId:  tm.market.GetID(),
+		OrderID:   orderID,
+		MarketID:  tm.market.GetID(),
 		SizeDelta: 10000,
 	}
 	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)
@@ -255,8 +255,8 @@ func TestPartialFillMargins(t *testing.T) {
 
 	// Attempt to amend it to the same size as the failed new order
 	amend := &types.OrderAmendment{
-		OrderId:   orderID,
-		MarketId:  tm.market.GetID(),
+		OrderID:   orderID,
+		MarketID:  tm.market.GetID(),
 		SizeDelta: 999,
 	}
 	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)

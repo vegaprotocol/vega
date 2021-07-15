@@ -67,8 +67,8 @@ func (e *Engine) AmendLiquidityProvision(
 	lp.Reference = lps.Reference
 	// only if it's active, we don't want to loose a PENDING
 	// status here.
-	if lp.Status == types.LiquidityProvision_STATUS_ACTIVE {
-		lp.Status = types.LiquidityProvision_STATUS_UNDEPLOYED
+	if lp.Status == types.LiquidityProvisionStatusActive {
+		lp.Status = types.LiquidityProvisionStatusUndeployed
 	}
 
 	e.buildLiquidityProvisionShapesReferences(lp, lps)

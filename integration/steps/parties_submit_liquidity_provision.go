@@ -27,7 +27,7 @@ func PartiesSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 		lp, ok := lps[id]
 		if !ok {
 			lp = &types.LiquidityProvisionSubmission{
-				MarketId:         row.MarketID(),
+				MarketID:         row.MarketID(),
 				CommitmentAmount: row.CommitmentAmount(),
 				Fee:              row.Fee(),
 				Sells:            []*types.LiquidityOrder{},

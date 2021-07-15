@@ -123,7 +123,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -180,7 +180,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -263,7 +263,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -360,7 +360,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -458,7 +458,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.0),
 		Buys: []*types.LiquidityOrder{
@@ -591,7 +591,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -696,7 +696,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	require.Equal(t, 0, len(confirmationBuy1.Trades))
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{

@@ -396,7 +396,7 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 					CollateralRelease: num.DecimalFromFloat(1.4),
 				},
 			},
-			RiskModel: &types.TradableInstrument_SimpleRiskModel{
+			RiskModel: &types.TradableInstrumentSimpleRiskModel{
 				SimpleRiskModel: &types.SimpleRiskModel{
 					Params: &types.SimpleModelParams{
 						FactorLong:           num.DecimalFromFloat(0.15),
@@ -442,7 +442,7 @@ func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id st
 
 	f, _ := num.DecimalFromString(fee)
 	lps := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(amount),
 		Fee:              f,
 		Buys:             buys,
@@ -800,7 +800,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 
 	// now try to amend and make sure monies are updated
 	amendedOrder := &types.OrderAmendment{
-		OrderId:     orderBuy.ID,
+		OrderID:     orderBuy.ID,
 		Price:       num.NewUint(200),
 		SizeDelta:   -50,
 		TimeInForce: types.OrderTimeInForceGTT,
@@ -856,7 +856,7 @@ func TestSetMarketID(t *testing.T) {
 						},
 					},
 				},
-				RiskModel: &types.TradableInstrument_LogNormalRiskModel{
+				RiskModel: &types.TradableInstrumentLogNormalRiskModel{
 					LogNormalRiskModel: &types.LogNormalRiskModel{
 						RiskAversionParameter: num.DecimalFromFloat(0.01),
 						Tau:                   num.DecimalFromFloat(1.0 / 365.25 / 24),
@@ -1444,7 +1444,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
 	amendedOrder := &types.OrderAmendment{
-		OrderId:     orderBuy2.ID,
+		OrderID:     orderBuy2.ID,
 		Price:       num.NewUint(auctionTriggeringPrice),
 		SizeDelta:   0,
 		TimeInForce: types.OrderTimeInForceGTC,
@@ -2182,7 +2182,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	require.NoError(t, err)
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -2274,7 +2274,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	require.Equal(t, 0, len(confirmationBuy.Trades))
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -2289,7 +2289,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	require.NoError(t, err)
 
 	lp2 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(100),
 		Fee:              num.DecimalFromFloat(0.06),
 		Buys: []*types.LiquidityOrder{
@@ -2330,7 +2330,7 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -2387,7 +2387,7 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -2503,7 +2503,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	require.Equal(t, mktData.BestOfferVolume, mktData.BestStaticOfferVolume)
 
 	lp1 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -2528,7 +2528,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeOfferPrev := mktData.BestOfferVolume - mktData.BestStaticOfferVolume
 	// Amend limit order
 	amendment := &types.OrderAmendment{
-		OrderId: confirmationBuy.Order.ID,
+		OrderID: confirmationBuy.Order.ID,
 		// SizeDelta: 9,
 		SizeDelta: 2,
 	}
@@ -3230,7 +3230,7 @@ func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderId: o1.ID,
+		OrderID: o1.ID,
 		Price:   num.NewUint(200),
 	}
 
@@ -3365,7 +3365,7 @@ func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList27
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderId: o3.ID,
+		OrderID: o3.ID,
 		Price:   num.NewUint(1002),
 	}
 
@@ -3448,7 +3448,7 @@ func TestOrderBook_Bug2747(t *testing.T) {
 	offset := int64(20)
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderId:         o1.ID,
+		OrderID:         o1.ID,
 		PeggedOffset:    &offset,
 		PeggedReference: types.PeggedReferenceBestAsk,
 	}
@@ -3514,7 +3514,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 
 	// Amend the pegged order from GTT to GTC
 	amendment := &types.OrderAmendment{
-		OrderId:     o2.ID,
+		OrderID:     o2.ID,
 		TimeInForce: types.OrderTimeInForceGTC,
 	}
 
@@ -3594,7 +3594,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 	exp := now.Add(5 * time.Second).UnixNano()
 	// Amend the pegged order so that is has an expiry
 	amendment := &types.OrderAmendment{
-		OrderId:     o2.ID,
+		OrderID:     o2.ID,
 		TimeInForce: types.OrderTimeInForceGTT,
 		ExpiresAt:   &exp,
 	}
@@ -3676,7 +3676,7 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 
 	// Amend the pegged order so that is has an expiry
 	amendment := &types.OrderAmendment{
-		OrderId: o2.ID,
+		OrderID: o2.ID,
 		Price:   num.NewUint(5000),
 	}
 
@@ -3743,7 +3743,7 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 	// Amend the pegged order so that is has an expiry
 	offset := int64(-6500)
 	amendment := &types.OrderAmendment{
-		OrderId:      o3.ID,
+		OrderID:      o3.ID,
 		PeggedOffset: &offset,
 	}
 
@@ -3807,7 +3807,7 @@ func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
 	// then amend
 	// Amend the pegged order so that is has an expiry
 	amendment := &types.OrderAmendment{
-		OrderId:     o1.ID,
+		OrderID:     o1.ID,
 		TimeInForce: types.OrderTimeInForceGTC,
 	}
 
@@ -3861,7 +3861,7 @@ func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderId:   o1.ID,
+		OrderID:   o1.ID,
 		Price:     num.NewUint(4000),
 		SizeDelta: 10,
 	}
@@ -3895,7 +3895,7 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderId:   o1.ID,
+		OrderID:   o1.ID,
 		SizeDelta: -1,
 	}
 
@@ -3930,7 +3930,7 @@ func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
-		OrderId:   o1.ID,
+		OrderID:   o1.ID,
 		SizeDelta: -10,
 	}
 
@@ -4040,7 +4040,7 @@ func TestMarket_LeaveAuctionRepricePeggedOrdersShouldFailIfNoMargin(t *testing.T
 
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.01),
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000000000),
 		Buys:             buys,
 		Sells:            sells,
@@ -4096,7 +4096,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 
 	lps := &types.LiquidityProvisionSubmission{
 		Fee:              num.DecimalFromFloat(0.01),
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000000000),
 		Buys:             buys,
 		Sells:            sells,
@@ -4138,7 +4138,7 @@ func TestOrderBook_ParkLiquidityProvisionOrders(t *testing.T) {
 	addAccount(tm, "party-A")
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -4174,7 +4174,7 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 
 	// Add a LPSubmission
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -4192,7 +4192,7 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 
 	// Remove the LPSubmission by setting the commitment to 0
 	lp2 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.Zero(),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -4263,7 +4263,7 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 
 	// Create a LP order for party-A
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(500),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -4552,7 +4552,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -4670,7 +4670,7 @@ func TestLPOrdersRollback(t *testing.T) {
 	tm.WithSubmittedOrders(t, orders...)
 
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(995000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Buys: []*types.LiquidityOrder{
@@ -4720,7 +4720,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		}
 
 		require.NotNil(t, found)
-		assert.Equal(t, types.LiquidityProvision_STATUS_REJECTED.String(), found.Status.String())
+		assert.Equal(t, types.LiquidityProvisionStatusRejected.String(), found.Status.String())
 	})
 
 	t.Run("ExpectedEventStatus", func(t *testing.T) {
@@ -4772,7 +4772,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -4891,7 +4891,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 
 	// Add a LPSubmission
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -4912,7 +4912,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 
 	// now we do a cancellation
 	lpCancel := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.Zero(),
 	}
 
@@ -4937,7 +4937,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -5060,7 +5060,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -5082,7 +5082,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	// this is our second stake provider
 	// small player
 	lp2 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -5134,7 +5134,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 
 	// now we do a cancellation
 	lpCancel := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.Zero(),
 	}
 
@@ -5157,7 +5157,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 			}
 		}
 		require.NotNil(t, found)
-		assert.Equal(t, types.LiquidityProvision_STATUS_CANCELLED.String(), found.Status.String())
+		assert.Equal(t, types.LiquidityProvisionStatusCancelled.String(), found.Status.String())
 	})
 
 	// now all our orders have been cancelled
@@ -5248,7 +5248,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -5371,7 +5371,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -5393,7 +5393,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 	// this is our second stake provider
 	// small player
 	lp2 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -5435,7 +5435,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -5558,7 +5558,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -5580,7 +5580,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	// this is our second stake provider
 	// small player
 	lp2 := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
@@ -5685,7 +5685,7 @@ func TestAverageEntryValuation(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -5716,7 +5716,7 @@ func TestAverageEntryValuation(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(8000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
@@ -5793,7 +5793,7 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -5817,7 +5817,7 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(150000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
@@ -5917,7 +5917,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
 
 	lp1sub := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: lp1Commitment,
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
@@ -5929,7 +5929,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	}
 
 	lp2sub := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: lp2Commitment,
 		Fee:              num.DecimalFromFloat(0.1),
 		Buys: []*types.LiquidityOrder{
@@ -6214,7 +6214,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, md.MarketTradingMode)
 
 	lp1sub := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(lp1Commitment),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
