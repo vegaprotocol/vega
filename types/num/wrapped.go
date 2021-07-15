@@ -5,7 +5,7 @@ type WrappedDecimal struct {
 	d Decimal
 }
 
-//NewWrappedDecimal returns a new instance of a decimal coupled with the Uint representaiton that has been chosen for it
+//NewWrappedDecimal returns a new instance of a decimal coupled with the Uint representation that has been chosen for it
 func NewWrappedDecimal(integerRepresentation *Uint, underlyingValue Decimal) WrappedDecimal {
 	return WrappedDecimal{u: integerRepresentation, d: underlyingValue}
 }
