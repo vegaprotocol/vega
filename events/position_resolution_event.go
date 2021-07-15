@@ -27,7 +27,7 @@ func NewPositionResolution(ctx context.Context, distressed, closed int, markPric
 
 // MarketEvent implement the MarketEvent interface
 func (p PosRes) MarketEvent() string {
-	return fmt.Sprintf("Market %s entered position resolution, %d traders were distressed, %d of which were closed out at mark price %d", p.marketID, p.distressed, p.closed, p.markPrice)
+	return fmt.Sprintf("Market %s entered position resolution, %d parties were distressed, %d of which were closed out at mark price %d", p.marketID, p.distressed, p.closed, p.markPrice)
 }
 
 func (p PosRes) MarketID() string {

@@ -34,7 +34,7 @@ func (m *Market) repricePeggedOrders(
 						logging.Error(err))
 				}
 
-				// Remove it from the trader position
+				// Remove it from the party position
 				_ = m.position.UnregisterOrder(order)
 			}
 

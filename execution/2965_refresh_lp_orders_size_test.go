@@ -42,13 +42,13 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 
 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
 	tm.StartOpeningAuction().
-		WithAccountAndAmount("trader-0", 1000000).
-		WithAccountAndAmount("trader-1", 1000000).
-		WithAccountAndAmount("trader-2", 10000000000).
+		WithAccountAndAmount("party-0", 1000000).
+		WithAccountAndAmount("party-1", 1000000).
+		WithAccountAndAmount("party-2", 10000000000).
 		// provide stake as well but will cancel
-		WithAccountAndAmount("trader-2-bis", 10000000000).
-		WithAccountAndAmount("trader-3", 1000000).
-		WithAccountAndAmount("trader-4", 1000000)
+		WithAccountAndAmount("party-2-bis", 10000000000).
+		WithAccountAndAmount("party-3", 1000000).
+		WithAccountAndAmount("party-4", 1000000)
 
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
 	tm.market.OnChainTimeUpdate(ctx, now)
@@ -61,12 +61,12 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		pegRef    types.PeggedReference
 		pegOffset int64
 	}{
-		{"trader-4", 1, types.Side_SIDE_BUY, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_BID, -2000},
-		{"trader-3", 1, types.Side_SIDE_SELL, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, 1000},
+		{"party-4", 1, types.Side_SIDE_BUY, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_BID, -2000},
+		{"party-3", 1, types.Side_SIDE_SELL, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, 1000},
 	}
-	traderA, traderB := orderParams[0], orderParams[1]
-	aOffset := num.NewUint(uint64(-traderA.pegOffset))
-	bOffset := num.NewUint(uint64(traderB.pegOffset))
+	partyA, partyB := orderParams[0], orderParams[1]
+	aOffset := num.NewUint(uint64(-partyA.pegOffset))
+	bOffset := num.NewUint(uint64(partyB.pegOffset))
 
 	tpl := OrderTemplate{
 		Type: types.Order_TYPE_LIMIT,
@@ -78,7 +78,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			Remaining:   20,
 			Price:       num.Sum(num.NewUint(5500), aOffset), // 3500
 			Side:        types.Side_SIDE_BUY,
-			PartyId:     "trader-0",
+			PartyId:     "party-0",
 			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
 		}),
 		tpl.New(types.Order{
@@ -86,7 +86,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			Remaining:   20,
 			Price:       num.Zero().Sub(num.NewUint(5000), bOffset), // 4000
 			Side:        types.Side_SIDE_SELL,
-			PartyId:     "trader-1",
+			PartyId:     "party-1",
 			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
 		}),
 		tpl.New(types.Order{
@@ -94,7 +94,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			Remaining:   10,
 			Price:       num.NewUint(5500),
 			Side:        types.Side_SIDE_BUY,
-			PartyId:     "trader-2",
+			PartyId:     "party-2",
 			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
 		}),
 		tpl.New(types.Order{
@@ -102,7 +102,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			Remaining:   100,
 			Price:       num.NewUint(5000),
 			Side:        types.Side_SIDE_SELL,
-			PartyId:     "trader-2",
+			PartyId:     "party-2",
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		}),
 		tpl.New(types.Order{
@@ -110,7 +110,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			Remaining:   100,
 			Price:       num.NewUint(3500),
 			Side:        types.Side_SIDE_BUY,
-			PartyId:     "trader-0",
+			PartyId:     "party-0",
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		}),
 		tpl.New(types.Order{
@@ -118,31 +118,31 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			Remaining:   20,
 			Price:       num.NewUint(8500),
 			Side:        types.Side_SIDE_BUY,
-			PartyId:     "trader-0",
+			PartyId:     "party-0",
 			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 		}),
 
 		// Pegged Orders
 		tpl.New(types.Order{
-			PartyId:     traderA.id,
-			Side:        traderA.side,
-			Size:        traderA.size,
-			Remaining:   traderA.size,
-			TimeInForce: traderA.tif,
+			PartyId:     partyA.id,
+			Side:        partyA.side,
+			Size:        partyA.size,
+			Remaining:   partyA.size,
+			TimeInForce: partyA.tif,
 			PeggedOrder: &types.PeggedOrder{
-				Reference: traderA.pegRef,
-				Offset:    traderA.pegOffset,
+				Reference: partyA.pegRef,
+				Offset:    partyA.pegOffset,
 			},
 		}),
 		tpl.New(types.Order{
-			PartyId:     traderB.id,
-			Side:        traderB.side,
-			Size:        traderB.size,
-			Remaining:   traderB.size,
-			TimeInForce: traderB.tif,
+			PartyId:     partyB.id,
+			Side:        partyB.side,
+			Size:        partyB.size,
+			Remaining:   partyB.size,
+			TimeInForce: partyB.tif,
 			PeggedOrder: &types.PeggedOrder{
-				Reference: traderB.pegRef,
-				Offset:    traderB.pegOffset,
+				Reference: partyB.pegRef,
+				Offset:    partyB.pegOffset,
 			},
 		}),
 	}
@@ -169,7 +169,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	// Leave the auction
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
 
-	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "trader-2", "id-lp"))
+	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", "id-lp"))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
@@ -180,7 +180,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		Remaining:   20,
 		Price:       num.NewUint(4235),
 		Side:        types.Side_SIDE_SELL,
-		PartyId:     "trader-0",
+		PartyId:     "party-0",
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
 	})
 
@@ -198,7 +198,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				if evt.Order().PartyId == "trader-2" &&
+				if evt.Order().PartyId == "party-2" &&
 					evt.Order().Id == "V0000000000-0000000010" {
 					found = append(found, types.OrderFromProto(evt.Order()))
 				}

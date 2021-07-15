@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-func TradersDepositTheFollowingAssets(
+func PartiesDepositTheFollowingAssets(
 	collateralEngine *collateral.Engine,
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
@@ -30,15 +30,15 @@ func TradersDepositTheFollowingAssets(
 			return err
 		}
 
-		_, err = broker.GetTraderGeneralAccount(row.Party(), row.Asset())
+		_, err = broker.GetPartyGeneralAccount(row.Party(), row.Asset())
 		if err != nil {
-			return errNoGeneralAccountForTrader(row, err)
+			return errNoGeneralAccountForParty(row, err)
 		}
 	}
 	return nil
 }
 
-func errNoGeneralAccountForTrader(party depositAssetRow, err error) error {
+func errNoGeneralAccountForParty(party depositAssetRow, err error) error {
 	return fmt.Errorf("party(%v) has no general account for asset(%v): %s",
 		party.Party(),
 		party.Asset(),
@@ -48,7 +48,7 @@ func errNoGeneralAccountForTrader(party depositAssetRow, err error) error {
 
 func parseDepositAssetTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"asset",
 		"amount",
 	}, []string{
@@ -61,7 +61,7 @@ type depositAssetRow struct {
 }
 
 func (r depositAssetRow) Party() string {
-	return r.row.MustStr("trader")
+	return r.row.MustStr("party")
 }
 
 func (r depositAssetRow) Asset() string {

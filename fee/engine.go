@@ -168,7 +168,7 @@ func (e *Engine) CalculateForContinuousMode(
 // trades which were produced from a market running in
 // in auction trading mode.
 // A list FeesTransfer is produced each containing fees transfer from a
-// single trader
+// single party
 func (e *Engine) CalculateForAuctionMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
@@ -216,7 +216,7 @@ func (e *Engine) CalculateForAuctionMode(
 // trades which were produced from a market running in
 // in auction trading mode.
 // A list FeesTransfer is produced each containing fees transfer from a
-// single trader
+// single party
 func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
@@ -251,7 +251,7 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 			sellerTotalFee, buyerTotalFee = totalFee, totalFee.Clone()
 
 		} else {
-			// set the aggressor to be the side of the trader
+			// set the aggressor to be the side of the party
 			// entering the later auction
 			v.Aggressor = types.Side_SIDE_SELL
 			if v.BuyerAuctionBatch > v.SellerAuctionBatch {
@@ -287,9 +287,9 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 }
 
 func (e *Engine) CalculateFeeForPositionResolution(
-	// the trade from the good traders which 0 out the network order
+	// the trade from the good parties which 0 out the network order
 	trades []*types.Trade,
-	// the positions of the traders being closed out.
+	// the positions of the parties being closed out.
 	closedMPs []events.MarketPosition,
 ) (events.FeesTransfer, map[string]*types.Fee) {
 	var (
@@ -301,7 +301,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		transfers        = []*types.Transfer{}
 	)
 
-	// first calculate the share of all distressedTraders
+	// first calculate the share of all distressedParties
 	for _, v := range closedMPs {
 		var size = v.Size()
 		if size < 0 {

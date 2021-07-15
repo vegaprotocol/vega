@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	// ErrBondSlashing - just indicates that we had to penalize the trader due to insufficient funds, and as such, we have to cancel their LP
+	// ErrBondSlashing - just indicates that we had to penalize the party due to insufficient funds, and as such, we have to cancel their LP
 	ErrBondSlashing = errors.New("bond slashing")
 )
 
@@ -40,7 +40,7 @@ func (m *Market) transferMargins(ctx context.Context, risk []events.Risk, closed
 func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk, distressed []events.MarketPosition) error {
 	evts := make([]events.Event, 0, len(risk))
 	mID := m.GetID()
-	// first, update the margin accounts for all traders who have enough balance
+	// first, update the margin accounts for all parties who have enough balance
 	for _, re := range risk {
 		tr, _, err := m.collateral.MarginUpdateOnOrder(ctx, mID, re)
 		if err != nil {
@@ -80,7 +80,7 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 	if err != nil {
 		return err
 	}
-	// if LP shortfall is not empty, this trader will have to pay the LP penalty
+	// if LP shortfall is not empty, this party will have to pay the LP penalty
 	responses := make([]*types.TransferResponse, 0, len(risk))
 	if tr != nil {
 		responses = append(responses, tr)

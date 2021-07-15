@@ -10,7 +10,7 @@ import (
 
 func TheOrdersShouldHaveTheFollowingStatus(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
 	for _, row := range parseOrderStatusTable(table) {
-		party := row.MustStr("trader")
+		party := row.MustStr("party")
 		reference := row.MustStr("reference")
 		status := row.MustOrderStatus("status")
 
@@ -33,7 +33,7 @@ func errInvalidOrderStatus(o types.Order, status types.Order_Status) error {
 
 func parseOrderStatusTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"reference",
 		"status",
 	}, []string{})

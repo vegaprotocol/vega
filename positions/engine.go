@@ -243,14 +243,14 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	return ret
 }
 
-// RemoveDistressed Removes positions for distressed traders, and returns the most up to date positions we have
-func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.MarketPosition {
-	ret := make([]events.MarketPosition, 0, len(traders))
-	for _, trader := range traders {
-		e.log.Warn("removing trader from positions engine",
-			logging.String("party-id", trader.Party()))
+// RemoveDistressed Removes positions for distressed parties, and returns the most up to date positions we have
+func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
+	ret := make([]events.MarketPosition, 0, len(parties))
+	for _, party := range parties {
+		e.log.Warn("removing party from positions engine",
+			logging.String("party-id", party.Party()))
 
-		party := trader.Party()
+		party := party.Party()
 		if current, ok := e.positions[party]; ok {
 			ret = append(ret, current)
 		}
@@ -258,9 +258,9 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 		delete(e.positions, party)
 		// remove from the slice
 		for i := range e.positionsCpy {
-			if e.positionsCpy[i].Party() == trader.Party() {
-				e.log.Warn("removing trader from positions engine (cpy slice)",
-					logging.String("party-id", trader.Party()))
+			if e.positionsCpy[i].Party() == party {
+				e.log.Warn("removing party from positions engine (cpy slice)",
+					logging.String("party-id", party))
 				e.positionsCpy = append(e.positionsCpy[:i], e.positionsCpy[i+1:]...)
 				break
 			}

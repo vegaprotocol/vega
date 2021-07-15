@@ -12,7 +12,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.DataTable) error {
+func PartiesSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.DataTable) error {
 	lps := map[string]*types.LiquidityProvisionSubmission{}
 	parties := map[string]string{}
 	keys := []string{}

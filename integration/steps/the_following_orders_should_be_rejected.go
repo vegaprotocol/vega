@@ -12,14 +12,14 @@ func TheFollowingOrdersShouldBeRejected(broker *stubs.BrokerStub, table *gherkin
 	var orderNotRejected []string
 	count := len(table.Rows) - 1
 	for _, row := range parseRejectedOrdersTable(table) {
-		trader := row.MustStr("trader")
+		party := row.MustStr("party")
 		marketID := row.MustStr("market id")
 		reason := row.MustStr("reason")
 
 		data := broker.GetOrderEvents()
 		for _, o := range data {
 			v := o.Order()
-			if v.PartyId == trader && v.MarketId == marketID {
+			if v.PartyId == party && v.MarketId == marketID {
 				if v.Status == types.Order_STATUS_REJECTED && v.Reason.String() == reason {
 					count -= 1
 					continue
@@ -42,7 +42,7 @@ func errOrderNotRejected(orderNotRejected []string) error {
 
 func parseRejectedOrdersTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"market id",
 		"reason",
 	}, []string{})

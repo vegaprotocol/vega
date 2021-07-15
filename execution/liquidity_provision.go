@@ -406,10 +406,10 @@ func (m *Market) cancelDistressedLiquidityProvision(
 			logging.Error(perr))
 		return nil, perr
 	}
-	orderUpdates, err := m.resolveClosedOutTraders(
+	orderUpdates, err := m.resolveClosedOutParties(
 		ctx, []events.Margin{margin}, order)
 	if err != nil {
-		m.log.Error("could not resolve out traders",
+		m.log.Error("could not resolve out parties",
 			logging.MarketID(mktID),
 			logging.PartyID(party),
 			logging.Error(err))
@@ -748,7 +748,7 @@ func (m *Market) cancelLiquidityProvision(
 
 	// is our party distressed?
 	// if yes, the orders have been cancelled by the resolve
-	// distressed traders flow.
+	// distressed parties flow.
 	if !isDistressed {
 		// now we cancel all existing orders
 		for _, order := range cancelOrders {
@@ -776,7 +776,7 @@ func (m *Market) cancelLiquidityProvision(
 	}
 
 	// now if our bondAccount is nil
-	// it just mean that the trader my have gone the distressed path
+	// it just mean that the party my have gone the distressed path
 	// also if the balance is already 0, let's not bother create a
 	// transfer request
 	if err == nil && !bondAcc.Balance.IsZero() {

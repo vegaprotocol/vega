@@ -12,7 +12,7 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 
 	for _, r := range parsePeggedOrdersStatesTable(table) {
 		row := peggedOrdersStatusAssertionRow{row: r}
-		trader := row.trader()
+		party := row.party()
 		marketID := row.marketID()
 		side := row.side()
 		volume := row.volume()
@@ -24,7 +24,7 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.PartyId != trader || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != volume || o.Price != price {
+			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != volume || o.Price != price {
 				continue
 			}
 			if o.PeggedOrder == nil {
@@ -37,7 +37,7 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 			break
 		}
 		if !match {
-			return errOrderEventsNotFound(trader, marketID, side, volume, price)
+			return errOrderEventsNotFound(party, marketID, side, volume, price)
 		}
 	}
 	return nil
@@ -45,7 +45,7 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 
 func parsePeggedOrdersStatesTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"market id",
 		"side",
 		"volume",
@@ -60,8 +60,8 @@ type peggedOrdersStatusAssertionRow struct {
 	row RowWrapper
 }
 
-func (r peggedOrdersStatusAssertionRow) trader() string {
-	return r.row.MustStr("trader")
+func (r peggedOrdersStatusAssertionRow) party() string {
+	return r.row.MustStr("party")
 }
 
 func (r peggedOrdersStatusAssertionRow) marketID() string {

@@ -9,12 +9,12 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheTradersShouldHaveTheFollowingMarginLevels(
+func ThePartiesShouldHaveTheFollowingMarginLevels(
 	broker *stubs.BrokerStub,
 	table *gherkin.DataTable,
 ) error {
 	for _, row := range parseExpectedMarginsTable(table) {
-		partyID := row.MustStr("trader")
+		partyID := row.MustStr("party")
 		marketID := row.MustStr("market id")
 		maintenance := row.MustU64("maintenance")
 		search := row.MustU64("search")
@@ -73,7 +73,7 @@ func errInvalidMargins(
 
 func parseExpectedMarginsTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"market id",
 		"maintenance",
 		"search",

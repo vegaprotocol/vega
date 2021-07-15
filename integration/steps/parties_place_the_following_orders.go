@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-func TradersPlaceTheFollowingOrders(
+func PartiesPlaceTheFollowingOrders(
 	exec *execution.Engine,
 	table *gherkin.DataTable,
 ) error {
@@ -56,7 +56,7 @@ func TradersPlaceTheFollowingOrders(
 
 func parseSubmitOrderTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"market id",
 		"side",
 		"volume",
@@ -88,7 +88,7 @@ func newSubmitOrderRow(r RowWrapper) submitOrderRow {
 }
 
 func (r submitOrderRow) Party() string {
-	return r.row.MustStr("trader")
+	return r.row.MustStr("party")
 }
 
 func (r submitOrderRow) MarketID() string {

@@ -54,7 +54,7 @@ type executionTestSetup struct {
 
 	positionPlugin *plugins.Positions
 
-	// save trader accounts state
+	// save party accounts state
 	markets []types.Market
 
 	block *helpers.Block

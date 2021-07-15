@@ -93,8 +93,8 @@ func i64ToS(n int64) string {
 	return strconv.FormatInt(n, 10)
 }
 
-func errOrderNotFound(reference string, trader string, err error) error {
-	return fmt.Errorf("order not found for trader(%s) with reference(%s): %v", trader, reference, err)
+func errOrderNotFound(reference string, party string, err error) error {
+	return fmt.Errorf("order not found for party(%s) with reference(%s): %v", party, reference, err)
 }
 
 func errMarketDataNotFound(marketID string, err error) error {
@@ -125,6 +125,6 @@ func (s SubmitOrderError) Error() string {
 
 func (s *SubmitOrderError) Unwrap() error { return s.Err }
 
-func errOrderEventsNotFound(trader, marketID string, side types.Side, size, price uint64) error {
-	return fmt.Errorf("no matching order event found %v, %v, %v, %v, %v", trader, marketID, side.String(), size, price)
+func errOrderEventsNotFound(party, marketID string, side types.Side, size, price uint64) error {
+	return fmt.Errorf("no matching order event found %v, %v, %v, %v, %v", party, marketID, side.String(), size, price)
 }

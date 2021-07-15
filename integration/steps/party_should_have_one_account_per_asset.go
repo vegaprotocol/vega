@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TraderShouldHaveOneAccountPerAsset(
+func PartyShouldHaveOneAccountPerAsset(
 	broker *stubs.BrokerStub,
 	owner string,
 ) error {
@@ -27,5 +27,5 @@ func TraderShouldHaveOneAccountPerAsset(
 }
 
 func errMultipleGeneralAccountForAsset(owner string, acc types.Account) error {
-	return fmt.Errorf("trader=%v have multiple account for asset=%v", owner, acc.Asset)
+	return fmt.Errorf("party=%v have multiple account for asset=%v", owner, acc.Asset)
 }

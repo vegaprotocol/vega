@@ -1,4 +1,4 @@
-Feature: Test trader accounts
+Feature: Test party accounts
 
   Background:
     Given the markets:
@@ -9,32 +9,32 @@ Feature: Test trader accounts
       | name             | value |
       | prices.ETH.value | 42    |
 
-  Scenario: a trader is added to the system. A general account is created for each asset
-    Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 100    |
-      | trader1 | VUSD  | 100    |
-    Then "trader1" should have one account per asset
-    And "trader1" should have one margin account per market
+  Scenario: a party is added to the system. A general account is created for each asset
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | ETH   | 100    |
+      | party1 | VUSD  | 100    |
+    Then "party1" should have one account per asset
+    And "party1" should have one margin account per market
 
-  Scenario: a trader deposit collateral onto Vega. The general account for this asset increase
-    Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 100    |
-      | trader1 | VUSD  | 100    |
-    Then "trader1" should have one account per asset
-    When the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount |
-      | trader1 | VUSD  | 200    |
-    Then "trader1" should have general account balance of "300" for asset "VUSD"
+  Scenario: a party deposit collateral onto Vega. The general account for this asset increase
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | ETH   | 100    |
+      | party1 | VUSD  | 100    |
+    Then "party1" should have one account per asset
+    When the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | VUSD  | 200    |
+    Then "party1" should have general account balance of "300" for asset "VUSD"
 
-  Scenario: a trader withdraw collateral onto Vega. The general account for this asset decrease
-    Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount |
-      | trader1 | ETH   | 100    |
-      | trader1 | VUSD  | 100    |
-    Then "trader1" should have one account per asset
-    When the traders withdraw the following assets:
-      | trader  | asset | amount |
-      | trader1 | VUSD  | 70     |
-    Then "trader1" should have general account balance of "30" for asset "VUSD"
+  Scenario: a party withdraw collateral onto Vega. The general account for this asset decrease
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | ETH   | 100    |
+      | party1 | VUSD  | 100    |
+    Then "party1" should have one account per asset
+    When the parties withdraw the following assets:
+      | party  | asset | amount |
+      | party1 | VUSD  | 70     |
+    Then "party1" should have general account balance of "30" for asset "VUSD"

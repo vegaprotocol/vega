@@ -12,17 +12,17 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value   |
       | prices.ETH.value | 9400000 |
-    And the traders deposit on asset's general account the following amount:
-      | trader     | asset | amount     |
-      | trader1    | ETH   | 1000000000 |
+    And the parties deposit on asset's general account the following amount:
+      | party     | asset | amount     |
+      | party1    | ETH   | 1000000000 |
       | sellSideMM | ETH   | 1000000000 |
       | buySideMM  | ETH   | 1000000000 |
       | aux        | ETH   | 1000000000 |
       | aux2       | ETH   | 1000000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the traders place the following orders:
-      | trader | market id | side | volume | price    | resulting trades | type       | tif     | reference      |
+    Then the parties place the following orders:
+      | party | market id | side | volume | price    | resulting trades | type       | tif     | reference      |
       | aux    | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-buy  |
       | aux    | ETH/DEC19 | sell | 1      | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-sell |
       | aux    | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1        |
@@ -32,20 +32,20 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     # setting mark price
-    And the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+    And the parties place the following orders:
+      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 10300000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     # setting order book
-    And the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+    And the parties place the following orders:
+      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 11     | 14000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | sellSideMM | ETH/DEC19 | sell | 100    | 25000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | sellSideMM | ETH/DEC19 | sell | 2      | 11200000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
 
-    Then the traders cancel the following orders:
-      | trader | reference      |
+    Then the parties cancel the following orders:
+      | party | reference      |
       | aux    | cancel-me-sell |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -54,60 +54,60 @@ Feature: CASE-3: Trader submits long order that will trade - new formula & zero 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     # placing test order
-    When the traders place the following orders:
-      | trader  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    And "trader1" should have general account balance of "542800000" for asset "ETH"
+    When the parties place the following orders:
+      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | buy  | 13     | 15000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    And "party1" should have general account balance of "542800000" for asset "ETH"
     And the following trades should be executed:
       | buyer   | price    | size | seller     |
-      | trader1 | 11200000 | 2    | sellSideMM |
-      | trader1 | 14000000 | 11   | sellSideMM |
+      | party1 | 11200000 | 2    | sellSideMM |
+      | party1 | 14000000 | 11   | sellSideMM |
 
     Then the following transfers should happen:
       | from   | to      | from account            | to account          | market id | amount  | asset |
-      | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
+      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 5600000 | ETH   |
 
-    Then the traders should have the following account balances:
-      | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 462800000 | 542800000 |
-    And the traders should have the following margin levels:
-      | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 115700000   | 370240000 | 462800000 | 578500000 |
-    And the traders should have the following profit and loss:
-      | trader  | volume | unrealised pnl | realised pnl |
-      | trader1 | 13     | 5600000        | 0            |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin    | general   |
+      | party1 | ETH   | ETH/DEC19 | 462800000 | 542800000 |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search    | initial   | release   |
+      | party1 | ETH/DEC19 | 115700000   | 370240000 | 462800000 | 578500000 |
+    And the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 13     | 5600000        | 0            |
 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 160
-    When the traders place the following orders:
-      | trader     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+    When the parties place the following orders:
+      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 16000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 16000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the following transfers should happen:
       | from   | to      | from account            | to account          | market id | amount   | asset |
-      | market | trader1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 26000000 | ETH   |
+      | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 26000000 | ETH   |
 
-    Then the traders should have the following account balances:
-      | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 488800000 | 542800000 |
-    And the traders should have the following margin levels:
-      | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
-    And the traders should have the following profit and loss:
-      | trader  | volume | unrealised pnl | realised pnl |
-      | trader1 | 13     | 31600000       | 0            |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin    | general   |
+      | party1 | ETH   | ETH/DEC19 | 488800000 | 542800000 |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search    | initial   | release   |
+      | party1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
+    And the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 13     | 31600000       | 0            |
 
     # CLOSEOUT ATTEMPT (FAILED, no buy-side in order book) BY TRADER
-    When the traders place the following orders:
-      | trader  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-    Then the traders should have the following account balances:
-      | trader  | asset | market id | margin    | general   |
-      | trader1 | ETH   | ETH/DEC19 | 587600000 | 444000000 |
-    And the traders should have the following margin levels:
-      | trader  | market id | maintenance | search    | initial   | release   |
-      | trader1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
-    And the traders should have the following profit and loss:
-      | trader  | volume | unrealised pnl | realised pnl |
-      | trader1 | 13     | 31600000       | 0            |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
+      | party1 | ETH/DEC19 | sell | 13     | 8000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin    | general   |
+      | party1 | ETH   | ETH/DEC19 | 587600000 | 444000000 |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | search    | initial   | release   |
+      | party1 | ETH/DEC19 | 146900000   | 470080000 | 587600000 | 734500000 |
+    And the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 13     | 31600000       | 0            |

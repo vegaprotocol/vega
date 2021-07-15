@@ -377,7 +377,7 @@ const (
 	Order_TYPE_LIMIT Order_Type = 1
 	// Used for Market orders
 	Order_TYPE_MARKET Order_Type = 2
-	// Used for orders where the initiating party is the network (with distressed traders)
+	// Used for orders where the initiating party is the network (with distressed parties)
 	Order_TYPE_NETWORK Order_Type = 3
 )
 

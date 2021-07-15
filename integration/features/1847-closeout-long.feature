@@ -13,8 +13,8 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts
-    Given the traders deposit on asset's general account the following amount:
-      | trader | asset | amount    |
+    Given the parties deposit on asset's general account the following amount:
+      | party | asset | amount    |
       | tt_4   | BTC   | 500000    |
       | tt_5   | BTC   | 100       |
       | tt_6   | BTC   | 100000000 |
@@ -24,8 +24,8 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
       | t2_aux | BTC   | 100000000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
-    Then the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_aux | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | tt_aux | ETH/DEC19 | sell | 1      | 200   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
       | t2_aux | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
@@ -33,8 +33,8 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     Then the opening auction period ends for market "ETH/DEC19"
 
     # place orders and generate trades
-    When the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type        | tif     | reference | expires in |
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type        | tif     | reference | expires in |
       | tt_10  | ETH/DEC19 | buy  | 5      | 100   | 0                | TYPE_LIMIT  | TIF_GTT | tt_10-1   | 3600       |
       | tt_11  | ETH/DEC19 | sell | 5      | 100   | 1                | TYPE_LIMIT  | TIF_GTT | tt_11-1   | 3600       |
       | tt_4   | ETH/DEC19 | buy  | 2      | 150   | 0                | TYPE_LIMIT  | TIF_GTC | tt_4-1    |            |
@@ -49,16 +49,16 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     And the mark price should be "100" for the market "ETH/DEC19"
 
     # checking margins
-    Then the traders should have the following account balances:
-      | trader | asset | market id | margin | general |
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin | general |
       | tt_5   | BTC   | ETH/DEC19 | 0      | 0       |
 
     # then we make sure the insurance pool collected the funds
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
     #check positions
-    Then the traders should have the following profit and loss:
-      | trader | volume | unrealised pnl | realised pnl |
+    Then the parties should have the following profit and loss:
+      | party | volume | unrealised pnl | realised pnl |
       | tt_4   | 4      | -200           | 0            |
       | tt_5   | 0      | 0              | -100         |
       | tt_6   | -4     | 200            | -27          |
