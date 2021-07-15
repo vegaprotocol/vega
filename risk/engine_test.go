@@ -123,7 +123,7 @@ func testMarginLevelsTS(t *testing.T) {
 	assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
 	// min = 15 so we go back to maintenance level
 	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
-	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, trans.Type)
+	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
 }
 
 func testMarginTopup(t *testing.T) {
@@ -154,7 +154,7 @@ func testMarginTopup(t *testing.T) {
 	assert.EqualValues(t, 20, trans.Amount.Amount.Uint64())
 	// min = 15 so we go back to maintenance level
 	assert.EqualValues(t, 15, trans.MinAmount.Uint64())
-	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_LOW, trans.Type)
+	assert.Equal(t, types.TransferTypeMarginLow, trans.Type)
 }
 
 func testMarginTopupOnOrderFailInsufficientFunds(t *testing.T) {
@@ -237,7 +237,7 @@ func testMarginOverflow(t *testing.T) {
 	trans := resp[0].Transfer()
 	assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
-	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, trans.Type)
+	assert.Equal(t, types.TransferTypeMarginHigh, trans.Type)
 }
 
 func testMarginOverflowAuctionEnd(t *testing.T) {
@@ -272,7 +272,7 @@ func testMarginOverflowAuctionEnd(t *testing.T) {
 	trans := resp[0].Transfer()
 	assert.EqualValues(t, 470, trans.Amount.Amount.Uint64())
 	// assert.Equal(t, riskMinamount-int64(evt.margin), trans.Amount.MinAmount)
-	assert.Equal(t, types.TransferType_TRANSFER_TYPE_MARGIN_HIGH, trans.Type)
+	assert.Equal(t, types.TransferTypeMarginHigh, trans.Type)
 }
 
 // implementation of the test from the specs

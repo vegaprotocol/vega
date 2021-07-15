@@ -626,7 +626,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	// if this is a builtin asset nothing needs to be done, just start the asset
 	// straight away
 	if asset.IsBuiltinAsset() {
-		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().Id)
+		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().ID)
 		if err != nil {
 			// this should not happen
 			app.log.Error("unable to get builtin asset enabled",

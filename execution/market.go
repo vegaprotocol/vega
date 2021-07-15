@@ -1762,7 +1762,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 			Amount: bacc.Balance, // no need to clone, bacc isn't used after this
 			Asset:  asset,
 		},
-		Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+		Type:      types.TransferTypeBondSlashing,
 		MinAmount: bacc.Balance.Clone(),
 	}
 	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, transfer)

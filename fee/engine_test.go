@@ -138,19 +138,19 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 			assert.Equal(t, num.NewUint(500), v.Amount.Amount)
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 			assert.Equal(t, num.NewUint(250), v.Amount.Amount)
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
@@ -218,16 +218,16 @@ func testCalcContinuousTrading(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}
@@ -279,16 +279,16 @@ func testCalcAuctionTrading(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}
@@ -342,16 +342,16 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}
@@ -396,16 +396,16 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}
@@ -473,16 +473,16 @@ func testCalcPositionResolution(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}

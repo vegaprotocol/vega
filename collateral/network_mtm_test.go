@@ -32,7 +32,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
 	assert.Nil(t, err)
-	err = eng.UpdateBalance(context.Background(), insurancePool.Id, num.Sum(price, price))
+	err = eng.UpdateBalance(context.Background(), insurancePool.ID, num.Sum(price, price))
 	assert.Nil(t, err)
 
 	// create party accounts
@@ -60,7 +60,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 				Amount: price,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
+			Type: types.TransferTypeMTMLoss,
 		},
 		{
 			Owner: moneyParty,
@@ -68,7 +68,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 				Amount: price,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
+			Type: types.TransferTypeMTMLoss,
 		},
 		{
 			Owner: party,
@@ -76,7 +76,7 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 				Amount: num.Sum(price, price), // one winning party
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
+			Type: types.TransferTypeMTMWin,
 		},
 	}
 
@@ -93,10 +93,10 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 		acc := ae.Account()
 		// we should never receive an event where an account is owned by the network
 		require.False(t, acc.Owner == types.NetworkParty)
-		if acc.Owner == party && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+		if acc.Owner == party && acc.Type == types.AccountTypeGeneral {
 			assert.Equal(t, acc.Balance, int64(833))
 		}
-		if acc.Owner == moneyParty && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+		if acc.Owner == moneyParty && acc.Type == types.AccountTypeGeneral {
 			assert.Equal(t, acc.Balance, int64(1666))
 		}
 	})
@@ -111,9 +111,9 @@ func testMTMWithNetworkNoLossSoc(t *testing.T) {
 	found := false // we should see a transfer from insurance to settlement
 	for _, r := range raw {
 		for _, tr := range r.Transfers {
-			if tr.FromAccount == insurancePool.Id {
+			if tr.FromAccount == insurancePool.ID {
 				to, _ := eng.GetAccountByID(tr.ToAccount)
-				require.Equal(t, types.AccountType_ACCOUNT_TYPE_SETTLEMENT, to.Type)
+				require.Equal(t, types.AccountTypeSettlement, to.Type)
 				require.True(t, tr.Amount.EQ(price))
 				found = true
 				break
@@ -134,7 +134,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	insurancePool, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
 	assert.Nil(t, err)
-	err = eng.UpdateBalance(context.Background(), insurancePool.Id, num.Zero().Div(price, num.NewUint(2)))
+	err = eng.UpdateBalance(context.Background(), insurancePool.ID, num.Zero().Div(price, num.NewUint(2)))
 	assert.Nil(t, err)
 
 	// create party accounts
@@ -162,7 +162,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 				Amount: price,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
+			Type: types.TransferTypeMTMLoss,
 		},
 		{
 			Owner: moneyParty,
@@ -170,7 +170,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 				Amount: price,
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MTM_LOSS,
+			Type: types.TransferTypeMTMLoss,
 		},
 		{
 			Owner: party,
@@ -178,7 +178,7 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 				Amount: num.Sum(price, price), // one winning party
 				Asset:  testMarketAsset,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MTM_WIN,
+			Type: types.TransferTypeMTMWin,
 		},
 	}
 
@@ -195,10 +195,10 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 		acc := ae.Account()
 		// we should never receive an event where an account is owned by the network
 		require.False(t, acc.Owner == types.NetworkParty)
-		if acc.Owner == party && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+		if acc.Owner == party && acc.Type == types.AccountTypeGeneral {
 			assert.Equal(t, acc.Balance, int64(833))
 		}
-		if acc.Owner == moneyParty && acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
+		if acc.Owner == moneyParty && acc.Type == types.AccountTypeGeneral {
 			assert.Equal(t, acc.Balance, int64(1666))
 		}
 	})
@@ -213,9 +213,9 @@ func testMTMWithNetworkLossSoc(t *testing.T) {
 	found := false // we should see a transfer from insurance to settlement
 	for _, r := range raw {
 		for _, tr := range r.Transfers {
-			if tr.FromAccount == insurancePool.Id {
+			if tr.FromAccount == insurancePool.ID {
 				to, _ := eng.GetAccountByID(tr.ToAccount)
-				require.Equal(t, types.AccountType_ACCOUNT_TYPE_SETTLEMENT, to.Type)
+				require.Equal(t, types.AccountTypeSettlement, to.Type)
 				found = true
 				require.False(t, tr.Amount.EQ(price)) // there wasn't enough balance to pay the full MTM share
 				require.True(t, tr.Amount.EQ(num.Zero().Div(price, num.NewUint(2))))

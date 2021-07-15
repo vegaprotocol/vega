@@ -59,7 +59,7 @@ func New(id string, asset *types.AssetDetails, w nodewallet.Wallet) (*ERC20, err
 
 	return &ERC20{
 		asset: &types.Asset{
-			Id:      id,
+			ID:      id,
 			Details: asset,
 		},
 		address: source.ContractAddress,
@@ -182,7 +182,7 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 		return nil, nil, err
 	}
 	addr := ethcmn.HexToAddress(b.address)
-	vegaAssetIDBytes, _ := hex.DecodeString(b.asset.Id)
+	vegaAssetIDBytes, _ := hex.DecodeString(b.asset.ID)
 	buf, err := args.Pack([]interface{}{addr, vegaAssetIDBytes, nonce, listAssetContractName}...)
 	if err != nil {
 		return nil, nil, err
@@ -226,7 +226,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 
 	var resp = "ok"
 	defer func() {
-		metrics.EthCallInc("validate_allowlist", b.asset.Id, resp)
+		metrics.EthCallInc("validate_allowlist", b.asset.ID, resp)
 	}()
 
 	iter, err := bf.FilterAssetListed(
@@ -362,7 +362,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 
 	var resp = "ok"
 	defer func() {
-		metrics.EthCallInc("validate_withdrawal", b.asset.Id, resp)
+		metrics.EthCallInc("validate_withdrawal", b.asset.ID, resp)
 	}()
 
 	iter, err := bf.FilterAssetWithdrawn(
@@ -416,7 +416,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 
 	var resp = "ok"
 	defer func() {
-		metrics.EthCallInc("validate_deposit", b.asset.Id, resp)
+		metrics.EthCallInc("validate_deposit", b.asset.ID, resp)
 	}()
 
 	iter, err := bf.FilterAssetDeposited(
@@ -478,7 +478,7 @@ func (b *ERC20) checkConfirmations(txBlock uint64) error {
 
 func (b *ERC20) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		b.asset.Id, b.asset.Details.Name, b.asset.Details.Symbol, b.asset.Details.TotalSupply,
+		b.asset.ID, b.asset.Details.Name, b.asset.Details.Symbol, b.asset.Details.TotalSupply,
 		b.asset.Details.Decimals)
 }
 

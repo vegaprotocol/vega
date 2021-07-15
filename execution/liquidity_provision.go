@@ -77,9 +77,9 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	// now we calculate the amount that needs to be moved into the account
 
 	amount, neg := num.Zero().Delta(sub.CommitmentAmount, bondAcc.Balance)
-	ty := types.TransferType_TRANSFER_TYPE_BOND_LOW
+	ty := types.TransferTypeBondLow
 	if neg {
-		ty = types.TransferType_TRANSFER_TYPE_BOND_HIGH
+		ty = types.TransferTypeBondHigh
 	}
 	transfer := &types.Transfer{
 		Owner: party,
@@ -112,10 +112,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		// ensure the amount is correct
 		transfer.Amount.Amount = amount
 		transfer.MinAmount = amount.Clone()
-		if transfer.Type == types.TransferType_TRANSFER_TYPE_BOND_HIGH {
-			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_LOW
+		if transfer.Type == types.TransferTypeBondHigh {
+			transfer.Type = types.TransferTypeBondLow
 		} else {
-			transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_HIGH
+			transfer.Type = types.TransferTypeBondHigh
 		}
 
 		tresp, newerr := m.collateral.BondUpdate(ctx, m.GetID(), transfer)
@@ -529,7 +529,7 @@ func (m *Market) rollBackMargin(
 			Amount: amount,
 			Asset:  asset,
 		},
-		Type:      types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+		Type:      types.TransferTypeMarginHigh,
 		MinAmount: amount.Clone(),
 	}
 
@@ -786,7 +786,7 @@ func (m *Market) cancelLiquidityProvision(
 				Amount: bondAcc.Balance,
 				Asset:  asset,
 			},
-			Type:      types.TransferType_TRANSFER_TYPE_BOND_HIGH,
+			Type:      types.TransferTypeBondHigh,
 			MinAmount: bondAcc.Balance.Clone(),
 		}
 
@@ -1132,9 +1132,9 @@ func (m *Market) ensureLiquidityProvisionBond(
 
 	// build our transfer to be sent to collateral
 	amount, neg := num.Zero().Delta(sub.CommitmentAmount, bondAcc.Balance)
-	ty := types.TransferType_TRANSFER_TYPE_BOND_LOW
+	ty := types.TransferTypeBondLow
 	if neg {
-		ty = types.TransferType_TRANSFER_TYPE_BOND_HIGH
+		ty = types.TransferTypeBondHigh
 	}
 	transfer := &types.Transfer{
 		Owner: party,
@@ -1156,10 +1156,10 @@ func (m *Market) ensureLiquidityProvisionBond(
 
 	// now we will use the actuall transfer as a rollback later on eventually
 	// so let's just change from HIGH to LOW and inverse
-	if transfer.Type == types.TransferType_TRANSFER_TYPE_BOND_HIGH {
-		transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_LOW
+	if transfer.Type == types.TransferTypeBondHigh {
+		transfer.Type = types.TransferTypeBondLow
 	} else {
-		transfer.Type = types.TransferType_TRANSFER_TYPE_BOND_HIGH
+		transfer.Type = types.TransferTypeBondHigh
 	}
 
 	return transfer, nil

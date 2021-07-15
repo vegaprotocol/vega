@@ -86,21 +86,21 @@ func testSettleExpiredSuccess(t *testing.T) {
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferTypeLoss,
 		},
 		{
 			Owner: data[2].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferTypeLoss,
 		},
 		{
 			Owner: data[0].party,
 			Amount: &types.FinancialAmount{
 				Amount: pr,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_WIN,
+			Type: types.TransferTypeWin,
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
@@ -163,21 +163,21 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferTypeLoss,
 		},
 		{
 			Owner: data[2].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferTypeLoss,
 		},
 		{
 			Owner: data[0].party,
 			Amount: &types.FinancialAmount{
 				Amount: pr,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_WIN,
+			Type: types.TransferTypeWin,
 		},
 	} // }}}
 
@@ -443,9 +443,15 @@ func testMarkToMarketOrdered(t *testing.T) {
 		assert.NotEmpty(t, transfers)
 		assert.Equal(t, 3, len(transfers))
 		// start with losses, end with wins
+<<<<<<< HEAD
 		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_LOSS, transfers[0].Transfer().Type)
 		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
 		assert.Equal(t, "party2", transfers[0].Party()) // we expect party2 to have a loss
+=======
+		assert.Equal(t, types.TransferTypeMTMLoss, transfers[0].Transfer().Type)
+		assert.Equal(t, types.TransferTypeMTMWin, transfers[len(transfers)-1].Transfer().Type)
+		assert.Equal(t, "trader2", transfers[0].Party()) // we expect trader2 to have a loss
+>>>>>>> b9b7283bf... more cleanups in the types package
 	}
 }
 
@@ -526,7 +532,7 @@ func testMTMNetworkZero(t *testing.T) {
 		assert.NotNil(t, v.Transfer())
 		if v.Party() == types.NetworkParty {
 			// network hás to lose
-			require.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_LOSS, v.Transfer().Type)
+			require.Equal(t, types.TransferTypeMTMLoss, v.Transfer().Type)
 			// network loss should be at the start of the slice
 			require.Equal(t, 0, i)
 			hasNetwork = true

@@ -37,13 +37,13 @@ var (
 
 var defaultCollateralAssets = []types.Asset{
 	{
-		Id: "ETH",
+		ID: "ETH",
 		Details: &types.AssetDetails{
 			Symbol: "ETH",
 		},
 	},
 	{
-		Id: "VOTE",
+		ID: "VOTE",
 		Details: &types.AssetDetails{
 			Name:        "VOTE",
 			Symbol:      "VOTE",
@@ -272,7 +272,7 @@ func getTestMarket2(
 
 	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), broker, now)
 	collateralEngine.EnableAsset(context.Background(), types.Asset{
-		Id: "ETH",
+		ID: "ETH",
 		Details: &types.AssetDetails{
 			Symbol:      "ETH",
 			TotalSupply: num.Zero(),
@@ -284,7 +284,7 @@ func getTestMarket2(
 
 	// add the token asset
 	tokAsset := types.Asset{
-		Id: "VOTE",
+		ID: "VOTE",
 		Details: &types.AssetDetails{
 			Name:        "VOTE",
 			Symbol:      "VOTE",
@@ -5226,7 +5226,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		// a single transfer response is required
 		require.Len(t, found, 1)
 		require.Len(t, found[0].Transfers, 1)
-		require.Equal(t, found[0].Transfers[0].Reference, types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE.String())
+		require.Equal(t, found[0].Transfers[0].Reference, types.TransferTypeLiquidityFeeDistribute.String())
 		require.Len(t, found[0].Balances, 1)
 		require.Equal(t, found[0].Balances[0].Account.Owner, "party-2")
 	})

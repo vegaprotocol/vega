@@ -561,8 +561,8 @@ func (r RowWrapper) MustAccount(name string) types.AccountType {
 func Account(name string) (types.AccountType, error) {
 	value := types.AccountType(proto.AccountType_value[name])
 
-	if value == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
-		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("invalid account type %s", name)
+	if value == types.AccountTypeUnspecified {
+		return types.AccountTypeUnspecified, fmt.Errorf("invalid account type %s", name)
 	}
 	return value, nil
 }
@@ -570,7 +570,7 @@ func Account(name string) (types.AccountType, error) {
 func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 	idBuf := make([]byte, 256)
 
-	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
+	if ty == types.AccountTypeGeneral {
 		marketID = ""
 	}
 

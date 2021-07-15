@@ -1893,7 +1893,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyGeneralAccount(pegged, tm.asset)
 		assert.NoError(t, err)
 		assert.NoError(t,
-			tm.collateralEngine.DecrementBalance(context.Background(), acc.Id, peggedInitialAmount.Clone()),
+			tm.collateralEngine.DecrementBalance(context.Background(), acc.ID, peggedInitialAmount.Clone()),
 		)
 
 		// then ensure balance is 0
@@ -2391,7 +2391,7 @@ func TestFeesNotPaidToUndeployedLPs(t *testing.T) {
 		case *events.TransferResponse:
 			for _, v := range evt.TransferResponses() {
 				// ensure no transfer is a LIQUIDITY_FEE_DISTRIBUTE
-				assert.NotEqual(t, types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE, v.Transfers[0].Type)
+				assert.NotEqual(t, types.TransferTypeLiquidityFeeDistribute, v.Transfers[0].Type)
 			}
 		}
 	}

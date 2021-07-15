@@ -34,7 +34,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 		amt := num.Min(bondShort, gen.Balance)
 		t := &types.Transfer{
 			Owner: party,
-			Type:  types.TransferType_TRANSFER_TYPE_BOND_LOW,
+			Type:  types.TransferTypeBondLow,
 			Amount: &types.FinancialAmount{
 				Asset:  asset,
 				Amount: amt,
