@@ -408,7 +408,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 	ctx := context.Background()
 
 	// Create a new party account with very little funding
-	addAccountWithAmount(tm, "party-A", 3000)
+	addAccountWithAmount(tm, "party-A", 5000)
 	addAccountWithAmount(tm, "party-B", 10000000)
 	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -479,7 +479,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	ctx := context.Background()
 
 	// Create a new party account with very little funding
-	addAccountWithAmount(tm, "party-A", 5000)
+	addAccountWithAmount(tm, "party-A", 7000)
 	addAccountWithAmount(tm, "party-B", 10000000)
 	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -1619,11 +1619,11 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 		}
 
 		expect := map[string]uint64{
-			"V0000000000-0000000001": 123,
+			"V0000000000-0000000001": 124,
 			"V0000000000-0000000002": 2,
 			"V0000000000-0000000003": 2,
 			"V0000000000-0000000004": 3,
-			"V0000000000-0000000005": 115,
+			"V0000000000-0000000005": 114,
 		}
 
 		for id, v := range found {

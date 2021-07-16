@@ -466,7 +466,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 		if transfer == nil {
 			continue
 		}
-		if transfer.Type == types.TransferType_TRANSFER_TYPE_WIN {
+		if transfer.Type == types.TransferTypeWin {
 			// we processed all losses break then
 			winidx = i
 			break
@@ -501,10 +501,10 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 
 		for _, bal := range res.Balances {
 			amountCollected.AddSum(bal.Balance)
-			if err := e.UpdateBalance(ctx, bal.Account.Id, bal.Balance); err != nil {
+			if err := e.UpdateBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
-					logging.String("account-id", bal.Account.Id),
+					logging.String("account-id", bal.Account.ID),
 					logging.Error(err),
 				)
 				return nil, err
@@ -523,7 +523,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 				e.log.Warn("loss socialization missing amount to be collected or used from insurance pool",
 					logging.String("party-id", transfer.Owner),
 					logging.BigUint("amount", delta),
-					logging.String("market-id", settle.MarketId))
+					logging.String("market-id", settle.MarketID))
 
 				brokerEvts = append(brokerEvts,
 					events.NewLossSocializationEvent(ctx, transfer.Owner, marketID, delta, false, e.currentTime))
@@ -562,7 +562,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 			logging.BigUint("expect-collected", expCollected),
 			logging.BigUint("collected", settle.Balance))
 		for _, transfer := range transfers[winidx:] {
-			if transfer != nil && transfer.Type == types.TransferType_TRANSFER_TYPE_WIN {
+			if transfer != nil && transfer.Type == types.TransferTypeWin {
 				distr.Add(transfer)
 			}
 		}
