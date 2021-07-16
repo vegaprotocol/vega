@@ -241,14 +241,10 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    |
 
-   # Then debug transfers
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
       | 1000       | TRADING_MODE_CONTINUOUS |  
-
-    # Then debug liquidity provision events
-    # Then debug orders
 
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
@@ -277,8 +273,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell  | 4     | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
 
-    #Then debug trades
-
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |  
       | 1002       | TRADING_MODE_CONTINUOUS |
@@ -291,8 +285,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | trader3a | 1002  | 2    | trader4 |
       | trader3b | 1002  | 1    | trader4 |
 
-     # Then debug transfers
-        
     # For trader3a-
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
@@ -304,6 +296,8 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 1002 = 2.004 = 3 (rounded up to nearest whole value)
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
+
+  Then debug transfers
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
@@ -334,8 +328,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
    # And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
 
     When the network moves ahead "11" blocks
-
-    # Then debug transfers
 
     And the following transfers should happen:
       | from   | to   | from account                | to account          | market id | amount | asset |
@@ -399,7 +391,7 @@ Scenario: WIP - Testing fees in continuous trading with two trades and insuffici
       | aux2     | ETH   | 100000000  |
       | trader3a | ETH   | 10000  |
       | trader3b | ETH   | 10000  |
-      | trader4  | ETH   | 630  |
+      | trader4  | ETH   | 1250  |
       | lp5      | ETH   | 100000000  |
 
     Then the traders place the following orders:
@@ -454,6 +446,7 @@ Scenario: WIP - Testing fees in continuous trading with two trades and insuffici
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
+     #| trader4 |          | ACCOUNT_TYPE_GENERAL    |ACCOUNT_TYPE_MARGIN               | ETH/DEC21 |  480   | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 |  6     | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  8     | ETH   |
@@ -470,7 +463,56 @@ Scenario: WIP - Testing fees in continuous trading with two trades and insuffici
       | trader      | asset | market id | margin | general |
       | trader3a    | ETH   | ETH/DEC21 | 678    | 9333    | 
       | trader3b    | ETH   | ETH/DEC21 | 339    | 9667    | 
-      | trader4     | ETH   | ETH/DEC21 | 605    | 0       |
+      #| trader4     | ETH   | ETH/DEC21 | 605    | 0       |
+      | trader4     | ETH   | ETH/DEC21 | 621    | 604      |
+   
+   # New Scenario
+    When the traders place the following orders:
+      | trader   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | trader3a | ETH/DEC21 | buy  | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | trader3a-buy-1 |
+      | trader4  | ETH/DEC21 | sell | 4      | 1003  | 0                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
+
+    Then the traders should have the following account balances:
+      | trader      | asset | market id | margin | general |
+      | trader3a    | ETH   | ETH/DEC21 | 1159   | 8852    |
+      | trader4     | ETH   | ETH/DEC21 | 1102   |   123   |
+
+      # reducing size
+    # And the traders amend the following orders:
+    #   | trader   | reference     | price | size delta | tif     |
+    #   | trader3a | trader3a-buy-1| 1002  | 0          | TIF_GTC |
+
+      And the traders amend the following orders:
+      | trader   | reference     | price | size delta | tif     |
+      | trader4 | trader4-sell-2| 1002  | 0          | TIF_GTC |
+
+ # matching the order now
+
+    Then the following trades should be executed:
+      # | buyer   | price | size | seller  | maker   | taker   |
+      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
+      # TODO to be implemented by Core Team
+      | buyer    | price | size | seller  |
+      | trader3a | 1002  | 2    | trader4 |
+      
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            |  
+      | 1002       | TRADING_MODE_CONTINUOUS |
+
+    Then debug transfers
+
+    And the following transfers should happen:
+      | from    | to       | from account            | to account                       | market id | amount | asset |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 |  6     | ETH   |
+      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  8     | ETH   |
+      | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |  
+      | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 |  6     | ETH   |
+     
+     Then the traders should have the following account balances:
+      | trader      | asset | market id | margin | general |
+      | trader3a    | ETH   | ETH/DEC21 | 1159   | 8852    |
+      | trader4     | ETH   | ETH/DEC21 | 1102   |  123     |
 
 Scenario: WIP - Testing fees in continuous trading with two trades and insufficient balance in their general and margin account, then the trade doesn't execute.
     
@@ -717,10 +759,11 @@ Scenario: Testing fees in opening auction session (with one trades and one liqui
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
+  Then debug transfers
 
 
 # TO DO -
-# Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep - Expand the above scenario
+# Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep
 # Scenario with insuffcient funds - Both Cont + Auction
 # During continuous trading, if a trade is matched and the aggressor / price taker has insufficient balance in their general (but margin covers it) account, then the trade fees gets executed in this order - Maker, IP, LP
 # During continuous trading, if a trade is matched and the aggressor / price taker has insufficient balance in their general (and margin) account, then the trade doesn't execute.
