@@ -66,8 +66,8 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 		log:             log,
 		marketID:        marketID,
 		cfgMu:           &sync.Mutex{},
-		buy:             &OrderBookSide{log: log, side: types.Side_SIDE_BUY},
-		sell:            &OrderBookSide{log: log, side: types.Side_SIDE_SELL},
+		buy:             &OrderBookSide{log: log, side: types.SideBuy},
+		sell:            &OrderBookSide{log: log, side: types.SideSell},
 		Config:          config,
 		ordersByID:      map[string]*types.Order{},
 		auction:         auction,
@@ -111,7 +111,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint,
 		vol    = volume
 		levels []*PriceLevel
 	)
-	if side == types.Side_SIDE_SELL {
+	if side == types.SideSell {
 		levels = b.sell.getLevels()
 	} else {
 		levels = b.buy.getLevels()
@@ -171,10 +171,10 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 
 	for _, uo := range uncrossedOrders {
 		if uo.Order.Remaining == 0 {
-			uo.Order.Status = types.Order_STATUS_FILLED
+			uo.Order.Status = types.OrderStatusFilled
 			// delete from lookup table
-			delete(b.ordersByID, uo.Order.Id)
-			delete(b.ordersPerParty[uo.Order.PartyId], uo.Order.Id)
+			delete(b.ordersByID, uo.Order.ID)
+			delete(b.ordersPerParty[uo.Order.Party], uo.Order.ID)
 		}
 
 		uo.Order.UpdatedAt = ts
@@ -182,11 +182,11 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 			po.UpdatedAt = ts
 			// also remove the orders from lookup tables
 			if uo.PassiveOrdersAffected[idx].Remaining == 0 {
-				uo.PassiveOrdersAffected[idx].Status = types.Order_STATUS_FILLED
+				uo.PassiveOrdersAffected[idx].Status = types.OrderStatusFilled
 
 				// delete from lookup table
-				delete(b.ordersByID, po.Id)
-				delete(b.ordersPerParty[po.PartyId], po.Id)
+				delete(b.ordersByID, po.ID)
+				delete(b.ordersPerParty[po.Party], po.ID)
 			}
 		}
 		for _, tr := range uo.Trades {
@@ -257,7 +257,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 		if l.price.LT(ba) {
 			for _, o := range l.orders {
 				// limit order && not just GFA found
-				if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				if o.Type == types.OrderTypeLimit && o.TimeInForce != types.OrderTimeInForceGFA {
 					buyMatch = true
 					break
 				}
@@ -269,7 +269,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 		l := b.sell.levels[i]
 		if l.price.GT(bb) {
 			for _, o := range l.orders {
-				if o.Type == types.Order_TYPE_LIMIT && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				if o.Type == types.OrderTypeLimit && o.TimeInForce != types.OrderTimeInForceGFA {
 					sellMatch = true
 					break
 				}
@@ -293,7 +293,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 			for _, o := range l.orders {
 				vol += o.Remaining
 				// we've filled the uncrossing volume, and found an order that is not GFA
-				if vol > v && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+				if vol > v && o.TimeInForce != types.OrderTimeInForceGFA {
 					buyMatch = true
 					break
 				}
@@ -318,7 +318,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 		}
 		for _, o := range l.orders {
 			vol += o.Remaining
-			if vol > v && o.TimeInForce != types.Order_TIME_IN_FORCE_GFA {
+			if vol > v && o.TimeInForce != types.OrderTimeInForceGFA {
 				sellMatch = true
 				break
 			}
@@ -336,7 +336,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 		if b.log.GetLevel() <= logging.DebugLevel {
 			b.log.Debug("could not get cumulative price levels", logging.Error(err))
 		}
-		return num.Zero(), 0, types.Side_SIDE_UNSPECIFIED
+		return num.Zero(), 0, types.SideUnspecified
 	}
 
 	// Pull out all prices that match that volume
@@ -366,11 +366,11 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 		ordersToFill -= int64(value.bidVolume)
 		if ordersToFill == 0 {
 			// Buys fill exactly, uncross from the buy side
-			uncrossSide = types.Side_SIDE_BUY
+			uncrossSide = types.SideBuy
 			break
 		} else if ordersToFill < 0 {
 			// Buys are not exact, uncross from the sell side
-			uncrossSide = types.Side_SIDE_SELL
+			uncrossSide = types.SideSell
 			break
 		}
 	}
@@ -443,7 +443,7 @@ func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 		uncrossingSide *OrderBookSide
 	)
 
-	if uncrossSide == types.Side_SIDE_BUY {
+	if uncrossSide == types.SideBuy {
 		uncrossingSide = b.buy
 	} else {
 		uncrossingSide = b.sell
@@ -479,7 +479,7 @@ func (b *OrderBook) uncrossBookSide(
 		// If the affected order is fully filled set the status
 		for _, affectedOrder := range affectedOrders {
 			if affectedOrder.Remaining == 0 {
-				affectedOrder.Status = types.Order_STATUS_FILLED
+				affectedOrder.Status = types.OrderStatusFilled
 			}
 		}
 		uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
@@ -536,17 +536,17 @@ func (b *OrderBook) CancelAllOrders(party string) ([]*types.OrderCancellationCon
 // not trust that the external world can provide these values reliably.
 func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationConfirmation, error) {
 	// Validate Market
-	if order.MarketId != b.marketID {
+	if order.MarketID != b.marketID {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Market ID mismatch",
 				logging.Order(*order),
 				logging.String("order-book", b.marketID))
 		}
-		return nil, types.OrderError_ORDER_ERROR_INVALID_MARKET_ID
+		return nil, types.OrderErrorInvalidMarketID
 	}
 
 	// Validate Order ID must be present
-	if err := validateOrderID(order.Id); err != nil {
+	if err := validateOrderID(order.ID); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Order ID missing or invalid",
 				logging.Order(*order),
@@ -561,7 +561,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	}
 
 	// Important to mark the order as cancelled (and no longer active)
-	order.Status = types.Order_STATUS_CANCELLED
+	order.Status = types.OrderStatusCancelled
 
 	result := &types.OrderCancellationConfirmation{
 		Order: order,
@@ -577,7 +577,7 @@ func (b *OrderBook) RemoveOrder(order *types.Order) error {
 	}
 
 	// Important to mark the order as parked (and no longer active)
-	order.Status = types.Order_STATUS_PARKED
+	order.Status = types.OrderStatusParked
 
 	return nil
 }
@@ -608,7 +608,7 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 		side     = b.sell
 		err      error
 	)
-	if amendedOrder.Side == types.Side_SIDE_BUY {
+	if amendedOrder.Side == types.SideBuy {
 		side = b.buy
 	}
 
@@ -625,7 +625,7 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	// update the order by ids mapping
-	b.ordersByID[amendedOrder.Id] = amendedOrder
+	b.ordersByID[amendedOrder.ID] = amendedOrder
 
 	if b.auction && reduceBy != 0 {
 		// reduce volume at price level
@@ -669,7 +669,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if err := b.validateOrder(order); err != nil {
 		return nil, err
 	}
-	if _, ok := b.ordersByID[order.Id]; ok {
+	if _, ok := b.ordersByID[order.ID]; ok {
 		b.log.Panic("an order in the book already exists with the same ID", logging.Order(*order))
 	}
 
@@ -686,7 +686,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	var lastTradedPrice = num.Zero()
 	var err error
 
-	order.BatchId = b.batchID
+	order.BatchID = b.batchID
 
 	if !b.auction {
 		// uncross with opposite
@@ -717,19 +717,19 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 
 	// Was the aggressive order fully filled?
 	if order.Remaining == 0 {
-		order.Status = types.Order_STATUS_FILLED
+		order.Status = types.OrderStatusFilled
 	}
 
 	// What is an Immediate or Cancel Order?
 	// An immediate or cancel order (IOC) is an order to buy or sell that executes all
 	// or part immediately and cancels any unfilled portion of the order.
-	if order.TimeInForce == types.Order_TIME_IN_FORCE_IOC && order.Remaining > 0 {
+	if order.TimeInForce == types.OrderTimeInForceIOC && order.Remaining > 0 {
 		// Stopped as not filled at all
 		if order.Remaining == order.Size {
-			order.Status = types.Order_STATUS_STOPPED
+			order.Status = types.OrderStatusStopped
 		} else {
 			// IOC so we set status as Cancelled.
-			order.Status = types.Order_STATUS_PARTIALLY_FILLED
+			order.Status = types.OrderStatusPartiallyFilled
 		}
 	}
 
@@ -737,39 +737,39 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// Fill or kill (FOK) is a type of time-in-force designation used in trading that instructs
 	// the protocol to execute an order immediately and completely or not at all.
 	// The order must be filled in its entirety or cancelled (killed).
-	if order.TimeInForce == types.Order_TIME_IN_FORCE_FOK && order.Remaining == order.Size {
+	if order.TimeInForce == types.OrderTimeInForceFOK && order.Remaining == order.Size {
 		// FOK and didnt trade at all we set status as Stopped
-		order.Status = types.Order_STATUS_STOPPED
+		order.Status = types.OrderStatusStopped
 	}
 
 	for idx := range impactedOrders {
 		if impactedOrders[idx].Remaining == 0 {
-			impactedOrders[idx].Status = types.Order_STATUS_FILLED
+			impactedOrders[idx].Status = types.OrderStatusFilled
 
 			// delete from lookup table
-			delete(b.ordersByID, impactedOrders[idx].Id)
-			delete(b.ordersPerParty[impactedOrders[idx].PartyId], impactedOrders[idx].Id)
+			delete(b.ordersByID, impactedOrders[idx].ID)
+			delete(b.ordersPerParty[impactedOrders[idx].Party], impactedOrders[idx].ID)
 		}
 	}
 
 	// if we did hit a wash trade, set the status to STOPPED
 	if err == ErrWashTrade {
 		if order.Size > order.Remaining {
-			order.Status = types.Order_STATUS_PARTIALLY_FILLED
+			order.Status = types.OrderStatusPartiallyFilled
 		} else {
-			order.Status = types.Order_STATUS_STOPPED
+			order.Status = types.OrderStatusStopped
 		}
-		order.Reason = types.OrderError_ORDER_ERROR_SELF_TRADING
+		order.Reason = types.OrderErrorSelfTrading
 	}
 
-	if order.Status == types.Order_STATUS_ACTIVE {
-		b.ordersByID[order.Id] = order
-		if orders, ok := b.ordersPerParty[order.PartyId]; !ok {
-			b.ordersPerParty[order.PartyId] = map[string]struct{}{
-				order.Id: {},
+	if order.Status == types.OrderStatusActive {
+		b.ordersByID[order.ID] = order
+		if orders, ok := b.ordersPerParty[order.Party]; !ok {
+			b.ordersPerParty[order.Party] = map[string]struct{}{
+				order.ID: {},
 			}
 		} else {
-			orders[order.Id] = struct{}{}
+			orders[order.ID] = struct{}{}
 		}
 	}
 
@@ -790,8 +790,8 @@ func (b *OrderBook) DeleteOrder(
 		}
 		return nil, types.ErrOrderRemovalFailure
 	}
-	delete(b.ordersByID, order.Id)
-	delete(b.ordersPerParty[order.PartyId], order.Id)
+	delete(b.ordersByID, order.ID)
+	delete(b.ordersPerParty[order.Party], order.ID)
 	// also add it to the indicative price and volume if in auction
 	if b.auction {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
@@ -847,7 +847,7 @@ func (b *OrderBook) RemoveDistressedOrders(
 				continue
 			}
 			// here we set the status of the order as stopped as the system triggered it as well.
-			confirm.Order.Status = types.Order_STATUS_STOPPED
+			confirm.Order.Status = types.OrderStatusStopped
 			rmorders = append(rmorders, confirm.Order)
 		}
 	}
@@ -855,14 +855,14 @@ func (b *OrderBook) RemoveDistressedOrders(
 }
 
 func (b OrderBook) getSide(orderSide types.Side) *OrderBookSide {
-	if orderSide == types.Side_SIDE_BUY {
+	if orderSide == types.SideBuy {
 		return b.buy
 	}
 	return b.sell
 }
 
 func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
-	if orderSide == types.Side_SIDE_BUY {
+	if orderSide == types.SideBuy {
 		return b.sell
 	}
 	return b.buy

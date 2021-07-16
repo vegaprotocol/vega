@@ -1,5 +1,3 @@
-//lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
-
 package types
 
 import (
@@ -13,7 +11,7 @@ type LogNormalModelParams struct {
 	Sigma num.Decimal
 }
 
-type TradableInstrument_LogNormalRiskModel struct {
+type TradableInstrumentLogNormalRiskModel struct {
 	LogNormalRiskModel *LogNormalRiskModel
 }
 
@@ -71,19 +69,19 @@ func (l LogNormalRiskModel) DeepClone() *LogNormalRiskModel {
 	return &cpy
 }
 
-func (t TradableInstrument_LogNormalRiskModel) IntoProto() *proto.TradableInstrument_LogNormalRiskModel {
+func (t TradableInstrumentLogNormalRiskModel) IntoProto() *proto.TradableInstrument_LogNormalRiskModel {
 	return &proto.TradableInstrument_LogNormalRiskModel{
 		LogNormalRiskModel: t.LogNormalRiskModel.IntoProto(),
 	}
 }
 
-func (TradableInstrument_LogNormalRiskModel) isTRM() {}
+func (TradableInstrumentLogNormalRiskModel) isTRM() {}
 
-func (t TradableInstrument_LogNormalRiskModel) trmIntoProto() interface{} {
+func (t TradableInstrumentLogNormalRiskModel) trmIntoProto() interface{} {
 	return t.IntoProto()
 }
 
-func (TradableInstrument_LogNormalRiskModel) rmType() rmType {
+func (TradableInstrumentLogNormalRiskModel) rmType() rmType {
 	return LOGNORMAL_RISK_MODEL
 }
 
@@ -119,8 +117,8 @@ type MarginLevels struct {
 	SearchLevel            *num.Uint
 	InitialMargin          *num.Uint
 	CollateralReleaseLevel *num.Uint
-	PartyId                string
-	MarketId               string
+	Party                  string
+	MarketID               string
 	Asset                  string
 	Timestamp              int64
 }
@@ -144,8 +142,8 @@ func (m MarginLevels) IntoProto() *proto.MarginLevels {
 		SearchLevel:            num.UintToUint64(m.SearchLevel),
 		InitialMargin:          num.UintToUint64(m.InitialMargin),
 		CollateralReleaseLevel: num.UintToUint64(m.CollateralReleaseLevel),
-		PartyId:                m.PartyId,
-		MarketId:               m.MarketId,
+		PartyId:                m.Party,
+		MarketId:               m.MarketID,
 		Asset:                  m.Asset,
 		Timestamp:              m.Timestamp,
 	}
@@ -218,8 +216,8 @@ func (s *ScalingFactors) Reset() {
 	*s = ScalingFactors{}
 }
 
-type TradableInstrument_SimpleRiskModel struct {
-	SimpleRiskModel *SimpleRiskModel `protobuf:"bytes,101,opt,name=simple_risk_model,json=simpleRiskModel,proto3,oneof"`
+type TradableInstrumentSimpleRiskModel struct {
+	SimpleRiskModel *SimpleRiskModel
 }
 
 type SimpleRiskModel struct {
@@ -256,11 +254,11 @@ func LogNormalParamsFromProto(p *proto.LogNormalModelParams) *LogNormalModelPara
 	}
 }
 
-func TradableInstrumentLogNormalFromProto(p *proto.TradableInstrument_LogNormalRiskModel) *TradableInstrument_LogNormalRiskModel {
+func TradableInstrumentLogNormalFromProto(p *proto.TradableInstrument_LogNormalRiskModel) *TradableInstrumentLogNormalRiskModel {
 	if p == nil {
 		return nil
 	}
-	return &TradableInstrument_LogNormalRiskModel{
+	return &TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(p.LogNormalRiskModel.RiskAversionParameter),
 			Tau:                   num.DecimalFromFloat(p.LogNormalRiskModel.Tau),
@@ -269,11 +267,11 @@ func TradableInstrumentLogNormalFromProto(p *proto.TradableInstrument_LogNormalR
 	}
 }
 
-func TradableInstrumentSimpleFromProto(p *proto.TradableInstrument_SimpleRiskModel) *TradableInstrument_SimpleRiskModel {
+func TradableInstrumentSimpleFromProto(p *proto.TradableInstrument_SimpleRiskModel) *TradableInstrumentSimpleRiskModel {
 	if p == nil {
 		return nil
 	}
-	return &TradableInstrument_SimpleRiskModel{
+	return &TradableInstrumentSimpleRiskModel{
 		SimpleRiskModel: &SimpleRiskModel{
 			Params: SimpleModelParamsFromProto(p.SimpleRiskModel.Params),
 		},
@@ -290,19 +288,19 @@ func SimpleModelParamsFromProto(p *proto.SimpleModelParams) *SimpleModelParams {
 	}
 }
 
-func (t TradableInstrument_SimpleRiskModel) IntoProto() *proto.TradableInstrument_SimpleRiskModel {
+func (t TradableInstrumentSimpleRiskModel) IntoProto() *proto.TradableInstrument_SimpleRiskModel {
 	return &proto.TradableInstrument_SimpleRiskModel{
 		SimpleRiskModel: t.SimpleRiskModel.IntoProto(),
 	}
 }
 
-func (TradableInstrument_SimpleRiskModel) isTRM() {}
+func (TradableInstrumentSimpleRiskModel) isTRM() {}
 
-func (t TradableInstrument_SimpleRiskModel) trmIntoProto() interface{} {
+func (t TradableInstrumentSimpleRiskModel) trmIntoProto() interface{} {
 	return t.IntoProto()
 }
 
-func (TradableInstrument_SimpleRiskModel) rmType() rmType {
+func (TradableInstrumentSimpleRiskModel) rmType() rmType {
 	return SIMPLE_RISK_MODEL
 }
 

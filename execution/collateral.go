@@ -57,8 +57,8 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 	evts = make([]events.Event, 0, len(rmorders))
 	for _, o := range rmorders {
 		// cancel order
-		o.Status = types.Order_STATUS_CANCELLED
-		o.Reason = types.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
+		o.Status = types.OrderStatusCancelled
+		o.Reason = types.OrderErrorInsufficientAssetBalance
 		// create event
 		evts = append(evts, events.NewOrderEvent(ctx, o))
 		// remove order from positions
@@ -115,7 +115,7 @@ func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*
 				Amount: penalty,
 				Asset:  asset,
 			},
-			Type:      types.TransferType_TRANSFER_TYPE_BOND_SLASHING,
+			Type:      types.TransferTypeBondSlashing,
 			MinAmount: num.Zero(),
 		})
 		if err != nil {

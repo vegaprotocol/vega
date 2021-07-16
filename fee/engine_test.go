@@ -122,7 +122,7 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	})
 	trades := []*types.Trade{
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      5,
@@ -138,19 +138,19 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 			assert.Equal(t, num.NewUint(500), v.Amount.Amount)
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 			assert.Equal(t, num.NewUint(250), v.Amount.Amount)
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 			assert.Equal(t, num.NewUint(125), v.Amount.Amount)
 		}
@@ -166,35 +166,35 @@ func testCalcContinuousTrading(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      10,
 			Price:     num.NewUint(10000),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party3",
 			Size:      1,
 			Price:     num.NewUint(10300),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party4",
 			Size:      7,
 			Price:     num.NewUint(10300),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      2,
 			Price:     num.NewUint(10500),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party5",
 			Size:      5,
@@ -218,16 +218,16 @@ func testCalcContinuousTrading(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}
@@ -248,7 +248,7 @@ func testCalcAuctionTrading(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "party2",
 			Size:      1,
@@ -279,16 +279,16 @@ func testCalcAuctionTrading(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}
@@ -309,7 +309,7 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor:          types.Side_SIDE_SELL,
+			Aggressor:          types.SideSell,
 			Seller:             "party1",
 			Buyer:              "party2",
 			Size:               1,
@@ -342,16 +342,16 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}
@@ -366,7 +366,7 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor:          types.Side_SIDE_SELL,
+			Aggressor:          types.SideSell,
 			Seller:             "party1",
 			Buyer:              "party2",
 			Size:               1,
@@ -396,16 +396,16 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}
@@ -420,14 +420,14 @@ func testCalcPositionResolution(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party1",
 			Buyer:     "network",
 			Size:      3,
 			Price:     num.NewUint(1000),
 		},
 		{
-			Aggressor: types.Side_SIDE_SELL,
+			Aggressor: types.SideSell,
 			Seller:    "party2",
 			Buyer:     "network",
 			Size:      2,
@@ -473,16 +473,16 @@ func testCalcPositionResolution(t *testing.T) {
 		pay, recv, infra, liquidity int
 	)
 	for _, v := range transfers {
-		if v.Type == types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY {
+		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY {
+		if v.Type == types.TransferTypeInfrastructureFeePay {
 			infra += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE {
+		if v.Type == types.TransferTypeMakerFeeReceive {
 			recv += 1
 		}
-		if v.Type == types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY {
+		if v.Type == types.TransferTypeMakerFeePay {
 			pay += 1
 		}
 	}

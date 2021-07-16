@@ -93,8 +93,8 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	// 3. get the asset and ID for this market
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
-	// 3-b. Get position for the party placing this order, if exists
-	if cPos, ok := m.position.GetPositionByPartyID(order.PartyId); ok {
+	// 3-b. Get position for the trader placing this order, if exists
+	if cPos, ok := m.position.GetPositionByPartyID(order.Party); ok {
 		e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
 		if err != nil {
 			return nil, nil, err
@@ -154,7 +154,7 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil, nil, nil
 	}
 	if evt != nil {
-		if m.liquidity.IsPending(order.PartyId) {
+		if m.liquidity.IsPending(order.Party) {
 			return nil, nil, ErrBondSlashing
 		}
 		return []events.Risk{risk}, []events.MarketPosition{evt}, nil

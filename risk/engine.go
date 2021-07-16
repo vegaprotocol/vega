@@ -186,10 +186,10 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 			continue
 		}
 
-		levels.PartyId = evt.Party()
+		levels.Party = evt.Party()
 		levels.Asset = asset // This is assuming there's a single asset at play here
 		levels.Timestamp = e.currTime
-		levels.MarketId = e.mktID
+		levels.MarketID = e.mktID
 
 		curMargin := evt.MarginBalance()
 		if num.Sum(curMargin, evt.GeneralBalance()).LT(levels.MaintenanceMargin) {
@@ -208,7 +208,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		amt := num.Zero().Sub(levels.InitialMargin, curMargin) // we know curBalace is less than initial
 		t := &types.Transfer{
 			Owner: evt.Party(),
-			Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
+			Type:  types.TransferTypeMarginLow,
 			Amount: &types.FinancialAmount{
 				Asset:  asset,
 				Amount: amt,
@@ -245,10 +245,10 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	}
 
 	// update other fields for the margins
-	margins.PartyId = evt.Party()
+	margins.Party = evt.Party()
 	margins.Asset = evt.Asset()
 	margins.Timestamp = e.currTime
-	margins.MarketId = e.mktID
+	margins.MarketID = e.mktID
 
 	curMarginBalance := evt.MarginBalance()
 
@@ -274,7 +274,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	// margin is < that InitialMargin so we create a transfer request to top it up.
 	trnsfr := &types.Transfer{
 		Owner: evt.Party(),
-		Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
+		Type:  types.TransferTypeMarginLow,
 		Amount: &types.FinancialAmount{
 			Asset:  evt.Asset(),
 			Amount: num.Zero().Sub(margins.InitialMargin, curMarginBalance),
@@ -328,8 +328,8 @@ func (e *Engine) UpdateMarginsOnSettlement(
 
 		// update other fields for the margins
 		margins.Timestamp = e.currTime
-		margins.MarketId = e.mktID
-		margins.PartyId = evt.Party()
+		margins.MarketID = e.mktID
+		margins.Party = evt.Party()
 		margins.Asset = evt.Asset()
 
 		if e.log.GetLevel() == logging.DebugLevel {
@@ -363,7 +363,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			// we try to reach the InitialMargin level
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
-				Type:  types.TransferType_TRANSFER_TYPE_MARGIN_LOW,
+				Type:  types.TransferTypeMarginLow,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
 					Amount: num.Zero().Sub(margins.InitialMargin, curMargin),
@@ -374,7 +374,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		} else { // case 3 -> release some collateral
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
-				Type:  types.TransferType_TRANSFER_TYPE_MARGIN_HIGH,
+				Type:  types.TransferTypeMarginHigh,
 				Amount: &types.FinancialAmount{
 					Asset:  evt.Asset(),
 					Amount: num.Zero().Sub(curMargin, margins.InitialMargin),

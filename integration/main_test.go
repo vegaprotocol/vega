@@ -104,7 +104,7 @@ func FeatureContext(s *godog.Suite) {
 			if err != nil {
 				return err
 			}
-			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), marketInsuranceAccount.Id, amount); err != nil {
+			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), marketInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
 		}
@@ -115,7 +115,7 @@ func FeatureContext(s *godog.Suite) {
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
 			assetInsuranceAccount := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
-			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.Id, amount); err != nil {
+			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
 		}

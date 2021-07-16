@@ -170,9 +170,9 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 			transfer:       nil,
 		}
 	}
-	typ := types.TransferType_TRANSFER_TYPE_MTM_WIN
+	typ := types.TransferTypeMTMWin
 	if neg {
-		typ = types.TransferType_TRANSFER_TYPE_MTM_LOSS
+		typ = types.TransferTypeMTMLoss
 	}
 	return &mtmTransfer{
 		MarketPosition: mpos,
@@ -340,10 +340,10 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 		)
 
 		if neg { // this is a loss transfer
-			settlePos.Type = types.TransferType_TRANSFER_TYPE_LOSS
+			settlePos.Type = types.TransferTypeLoss
 			aggregated = append(aggregated, settlePos)
 		} else { // this is a win transfer
-			settlePos.Type = types.TransferType_TRANSFER_TYPE_WIN
+			settlePos.Type = types.TransferTypeWin
 			owed = append(owed, settlePos)
 		}
 	}

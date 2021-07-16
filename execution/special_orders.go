@@ -24,7 +24,7 @@ func (m *Market) repricePeggedOrders(
 		if OrderReferenceCheck(*order).HasMoved(changes) {
 			// First if the order isn't parked, then
 			// we will just remove if from the orderbook
-			if order.Status != types.Order_STATUS_PARKED {
+			if order.Status != types.OrderStatusParked {
 				// Remove order if any volume remains,
 				// otherwise it's already been popped by the matching engine.
 				cancellation, err := m.matching.CancelOrder(order)
@@ -41,9 +41,9 @@ func (m *Market) repricePeggedOrders(
 			if price, err := m.getNewPeggedPrice(order); err != nil {
 				// Failed to reprice, if we are parked we do nothing,
 				// if not parked we need to park
-				if order.Status != types.Order_STATUS_PARKED {
+				if order.Status != types.OrderStatusParked {
 					order.UpdatedAt = m.currentTime.UnixNano()
-					order.Status = types.Order_STATUS_PARKED
+					order.Status = types.OrderStatusParked
 					order.Price = num.Zero()
 					m.broker.Send(events.NewOrderEvent(ctx, order))
 					parked = append(parked, order)
@@ -51,7 +51,7 @@ func (m *Market) repricePeggedOrders(
 			} else {
 				// Repriced so all good make sure status is correct
 				order.Price = price.Clone()
-				order.Status = types.Order_STATUS_PARKED
+				order.Status = types.OrderStatusParked
 				toSubmit = append(toSubmit, order)
 			}
 
@@ -74,8 +74,8 @@ func (m *Market) reSubmitPeggedOrders(
 		if err != nil {
 			m.log.Debug("could not re-submit a pegged order after repricing",
 				logging.MarketID(m.GetID()),
-				logging.PartyID(order.PartyId),
-				logging.OrderID(order.Id),
+				logging.PartyID(order.Party),
+				logging.OrderID(order.ID),
 				logging.Error(err))
 			// order could not be submitted, it's then been rejected
 			// we just completely remove it.
@@ -128,7 +128,7 @@ func (m *Market) repriceAllSpecialOrders(
 	for _, order := range lpOrders {
 		// Remove order if any volume remains,
 		// otherwise it's already been popped by the matching engine.
-		cancellation, err := m.cancelOrder(ctx, order.PartyId, order.Id)
+		cancellation, err := m.cancelOrder(ctx, order.Party, order.ID)
 		if cancellation == nil || err != nil {
 			m.log.Panic("could not remove liquidity order from the book",
 				logging.Order(*order),
@@ -246,24 +246,24 @@ func (m *Market) updateLPOrders(
 	// cancel them
 	var cancelEvts []events.Event
 	for _, order := range allOrders {
-		if _, ok := parties[order.PartyId]; ok {
+		if _, ok := parties[order.Party]; ok {
 			// party is distressed, not processing
 			continue
 		}
 
 		// these order were actually cancelled, just send the event
-		if _, ok := cancelIDs[order.Id]; ok {
+		if _, ok := cancelIDs[order.ID]; ok {
 			// cancelEvts = append(cancelEvts, events.NewOrderEvent(ctx, order))
 			// these orders were submitted exactly the same before,
 			// so there's no reason we would not be able to submit
 			// let's panic if an issue happen
 		} else {
 			// set the status to active again
-			order.Status = types.Order_STATUS_ACTIVE
+			order.Status = types.OrderStatusActive
 			conf, _, err := m.submitValidatedOrder(ctx, order)
 			if conf == nil || err != nil {
 				orders = append(orders, order)
-				parties[order.PartyId] = struct{}{}
+				parties[order.Party] = struct{}{}
 			} else if len(conf.Trades) > 0 {
 				m.log.Panic("submitting liquidity orders after a reprice should never trade",
 					logging.Order(*order))

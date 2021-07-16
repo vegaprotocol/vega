@@ -152,7 +152,7 @@ func TestMarketDeepClone(t *testing.T) {
 	me.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin = num.DecimalFromFloat(99.9)
 	me.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease = num.DecimalFromFloat(99.9)
 
-	risk := me.TradableInstrument.RiskModel.(*types.TradableInstrument_SimpleRiskModel)
+	risk := me.TradableInstrument.RiskModel.(*types.TradableInstrumentSimpleRiskModel)
 	risk.SimpleRiskModel.Params.FactorLong = num.DecimalFromFloat(99.9)
 	risk.SimpleRiskModel.Params.FactorShort = num.DecimalFromFloat(99.9)
 	risk.SimpleRiskModel.Params.MaxMoveUp = num.DecimalFromFloat(99.9)

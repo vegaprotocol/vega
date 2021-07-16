@@ -27,7 +27,7 @@ func PartiesSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 		lp, ok := lps[id]
 		if !ok {
 			lp = &types.LiquidityProvisionSubmission{
-				MarketId:         row.MarketID(),
+				MarketID:         row.MarketID(),
 				CommitmentAmount: row.CommitmentAmount(),
 				Fee:              row.Fee(),
 				Sells:            []*types.LiquidityOrder{},
@@ -43,7 +43,7 @@ func PartiesSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.Data
 			Proportion: row.Proportion(),
 			Offset:     row.Offset(),
 		}
-		if row.Side() == types.Side_SIDE_BUY {
+		if row.Side() == types.SideBuy {
 			lp.Buys = append(lp.Buys, lo)
 		} else {
 			lp.Sells = append(lp.Sells, lo)

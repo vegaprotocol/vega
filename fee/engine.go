@@ -103,12 +103,12 @@ func (e *Engine) CalculateForContinuousMode(
 	for _, v := range trades {
 		fee := e.calculateContinuousModeFees(v)
 		switch v.Aggressor {
-		case types.Side_SIDE_BUY:
+		case types.SideBuy:
 			v.BuyerFee = fee
 			v.SellerFee = types.NewFee()
 			aggressor = v.Buyer
 			maker = v.Seller
-		case types.Side_SIDE_SELL:
+		case types.SideSell:
 			v.SellerFee = fee
 			v.BuyerFee = types.NewFee()
 			aggressor = v.Seller
@@ -126,7 +126,7 @@ func (e *Engine) CalculateForContinuousMode(
 				Asset:  e.asset,
 				Amount: fee.MakerFee.Clone(),
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
+			Type: types.TransferTypeMakerFeePay,
 		})
 		// create a transfer for the maker
 		transfersRecv = append(transfersRecv, &types.Transfer{
@@ -135,7 +135,7 @@ func (e *Engine) CalculateForContinuousMode(
 				Asset:  e.asset,
 				Amount: fee.MakerFee.Clone(),
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE,
+			Type: types.TransferTypeMakerFeeReceive,
 		})
 	}
 
@@ -146,7 +146,7 @@ func (e *Engine) CalculateForContinuousMode(
 			Asset:  e.asset,
 			Amount: totalInfrastructureFeeAmount,
 		},
-		Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+		Type: types.TransferTypeInfrastructureFeePay,
 	})
 	// now create transfer for the liquidity
 	transfers = append(transfers, &types.Transfer{
@@ -155,7 +155,7 @@ func (e *Engine) CalculateForContinuousMode(
 			Asset:  e.asset,
 			Amount: totalLiquidityFeeAmount,
 		},
-		Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
+		Type: types.TransferTypeLiquidityFeePay,
 	})
 
 	return &feesTransfer{
@@ -253,9 +253,9 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 		} else {
 			// set the aggressor to be the side of the party
 			// entering the later auction
-			v.Aggressor = types.Side_SIDE_SELL
+			v.Aggressor = types.SideSell
 			if v.BuyerAuctionBatch > v.SellerAuctionBatch {
-				v.Aggressor = types.Side_SIDE_BUY
+				v.Aggressor = types.SideBuy
 			}
 			// fees are being assign to the trade directly
 			// no need to do add them there as well
@@ -365,7 +365,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 				Asset:  e.asset,
 				Amount: fees.MakerFee,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE,
+			Type: types.TransferTypeMakerFeeReceive,
 		})
 
 	}
@@ -417,7 +417,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 				Asset:  acc.Asset,
 			},
 			MinAmount: amount.Clone(),
-			Type:      types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE,
+			Type:      types.TransferTypeLiquidityFeeDistribute,
 		})
 	}
 
@@ -446,7 +446,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 					Asset:  e.asset,
 					Amount: makerFee.Clone(),
 				},
-				Type: types.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY,
+				Type: types.TransferTypeMakerFeePay,
 			},
 			{
 				Owner: party,
@@ -454,7 +454,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 					Asset:  e.asset,
 					Amount: infraFee.Clone(),
 				},
-				Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+				Type: types.TransferTypeInfrastructureFeePay,
 			},
 			{
 				Owner: party,
@@ -462,7 +462,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 					Asset:  e.asset,
 					Amount: liquiFee.Clone(),
 				},
-				Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
+				Type: types.TransferTypeLiquidityFeePay,
 			},
 		},
 		&types.Fee{
@@ -527,7 +527,7 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee *num.Uint, p stri
 				Asset:  e.asset,
 				Amount: infraFee.Clone(),
 			},
-			Type: types.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY,
+			Type: types.TransferTypeInfrastructureFeePay,
 		},
 		{
 			Owner: p,
@@ -535,7 +535,7 @@ func (e *Engine) getAuctionModeFeeTransfers(infraFee, liquiFee *num.Uint, p stri
 				Asset:  e.asset,
 				Amount: liquiFee.Clone(),
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY,
+			Type: types.TransferTypeLiquidityFeePay,
 		},
 	}
 }

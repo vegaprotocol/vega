@@ -23,7 +23,7 @@ func TestPositionsEngineAcceptanceCriteria(t *testing.T) {
 	t.Run("No open position, trades occur opening a short position", testNoOpenPositionsTradeOccurOpenLongAndShortPosition)
 	t.Run("Open position, trades occur that close it (take it to zero), in a separate transaction, trades occur and that open a new position", testOpenPosTradeOccurCloseThanOpenPositioAgain)
 	// NOTE: this will not be tested, as we do not remove a position from the engine when it reach 0
-	// Opening and closing positions for multiple parties, maintains position size for all open (non-zero) positions
+	// Opening and closing positions for multiple partys, maintains position size for all open (non-zero) positions
 	t.Run("Does not change position size for a wash trade (buyer = seller)", testWashTradeDoNotChangePosition)
 
 	//No active buy orders, a new buy order is added to the order book
@@ -50,15 +50,15 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 	buyer := "buyer_id"
 	seller := "seller_id"
 	cases := []struct {
-		trade               types.Trade
+		trade              types.Trade
 		expectedSizePartyA int64
 		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_id",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_id",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
 				Buyer:     buyer,
@@ -72,9 +72,9 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 		},
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_id",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_id",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      25,
 				Buyer:     buyer,
@@ -90,8 +90,8 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 
 	for _, c := range cases {
 		// call an update on the positions with the trade
-		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
@@ -114,15 +114,15 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 	partyA := "party_a"
 	partyB := "party_b"
 	cases := []struct {
-		trade               types.Trade
+		trade              types.Trade
 		expectedSizePartyA int64
 		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_i1",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_i1",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
 				Buyer:     partyA,
@@ -137,9 +137,9 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_id2",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_id2",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      5,
 				Buyer:     partyB,
@@ -155,8 +155,8 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 
 	for _, c := range cases {
 		// call an update on the positions with the trade
-		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
@@ -179,15 +179,15 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 	partyA := "party_a"
 	partyB := "party_b"
 	cases := []struct {
-		trade               types.Trade
+		trade              types.Trade
 		expectedSizePartyA int64
 		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_i1",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_i1",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
 				Buyer:     partyA,
@@ -202,9 +202,9 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_id2",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_id2",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
 				Buyer:     partyB,
@@ -219,8 +219,8 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
@@ -243,15 +243,15 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 	partyA := "party_a"
 	partyB := "party_b"
 	cases := []struct {
-		trade               types.Trade
+		trade              types.Trade
 		expectedSizePartyA int64
 		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_i1",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_i1",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
 				Buyer:     partyA,
@@ -266,9 +266,9 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 		// inverse buyer and seller, so it should reduce both position of 5
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_id2",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_id2",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      15,
 				Buyer:     partyB,
@@ -283,8 +283,8 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		// call an update on the positions with the trade
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
@@ -307,14 +307,14 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	partyA := "party_a"
 	partyB := "party_b"
 	c := struct {
-		trade               types.Trade
+		trade              types.Trade
 		expectedSizePartyA int64
 		expectedSizePartyB int64
 	}{
 		trade: types.Trade{
-			Type:      types.Trade_TYPE_DEFAULT,
-			Id:        "trade_i1",
-			MarketId:  "market_id",
+			Type:      types.TradeTypeDefault,
+			ID:        "trade_i1",
+			MarketID:  "market_id",
 			Price:     num.NewUint(100),
 			Size:      10,
 			Buyer:     partyA,
@@ -331,8 +331,8 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	// now create a trade an make sure the positions are created an correct
-	registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
-	registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
+	registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+	registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 	positions := engine.Update(&c.trade)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
@@ -356,18 +356,18 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 	partyB := "party_b"
 	partyC := "party_c"
 	cases := []struct {
-		trade               types.Trade
+		trade              types.Trade
 		expectedSizePartyA int64
 		expectedSizePartyB int64
 		expectedSizePartyC int64
-		posSize             int
+		posSize            int
 	}{
 		// first trade between A and B, open a new position
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_i1",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_i1",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
 				Buyer:     partyA,
@@ -379,14 +379,14 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 			expectedSizePartyA: +10,
 			expectedSizePartyB: -10,
 			expectedSizePartyC: 0,
-			posSize:             2,
+			posSize:            2,
 		},
 		// second trade between A and C, open C close A
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_id2",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_id2",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
 				Buyer:     partyC,
@@ -398,14 +398,14 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 			expectedSizePartyA: 0,
 			expectedSizePartyB: -10,
 			expectedSizePartyC: 10,
-			posSize:             3,
+			posSize:            3,
 		},
 		// last trade between A and B again, re-open A, decrease B
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_id3",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_id3",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      3,
 				Buyer:     partyB,
@@ -417,17 +417,17 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 			expectedSizePartyA: -3,
 			expectedSizePartyB: -7,
 			expectedSizePartyC: 10,
-			posSize:             3,
+			posSize:            3,
 		},
 	}
 
 	for _, c := range cases {
-		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
-		assert.Equal(t, c.posSize, len(pos), fmt.Sprintf("all pos trade: %v", c.trade.Id))
-		assert.Equal(t, 2, len(positions), fmt.Sprintf("chan trade: %v", c.trade.Id))
+		assert.Equal(t, c.posSize, len(pos), fmt.Sprintf("all pos trade: %v", c.trade.ID))
+		assert.Equal(t, 2, len(positions), fmt.Sprintf("chan trade: %v", c.trade.ID))
 		fmt.Printf("positions: %v\n", positions)
 
 		// check size of positions
@@ -450,15 +450,15 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 	partyA := "party_a"
 	partyB := "party_b"
 	cases := []struct {
-		trade               types.Trade
+		trade              types.Trade
 		expectedSizePartyA int64
 		expectedSizePartyB int64
 	}{
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_i1",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_i1",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      10,
 				Buyer:     partyA,
@@ -473,9 +473,9 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 		// party A trade with himsefl, no positions changes
 		{
 			trade: types.Trade{
-				Type:      types.Trade_TYPE_DEFAULT,
-				Id:        "trade_id2",
-				MarketId:  "market_id",
+				Type:      types.TradeTypeDefault,
+				ID:        "trade_id2",
+				MarketID:  "market_id",
 				Price:     num.NewUint(100),
 				Size:      30,
 				Buyer:     partyA,
@@ -490,8 +490,8 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		registerOrder(engine, types.Side_SIDE_BUY, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.Side_SIDE_SELL, c.trade.Seller, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		// call an update on the positions with the trade
 		positions := engine.Update(&c.trade)
 		pos := engine.Positions()
@@ -524,8 +524,8 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   partyA,
-				Side:      types.Side_SIDE_BUY,
+				Party:     partyA,
+				Side:      types.SideBuy,
 				Price:     num.Zero(),
 			},
 			expectedBuy:  10,
@@ -537,8 +537,8 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      16,
 				Remaining: 16,
-				PartyId:   partyB,
-				Side:      types.Side_SIDE_SELL,
+				Party:     partyB,
+				Side:      types.SideSell,
 				Price:     num.Zero(),
 			},
 			expectedBuy:  0,
@@ -550,8 +550,8 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      17,
 				Remaining: 17,
-				PartyId:   partyA,
-				Side:      types.Side_SIDE_BUY,
+				Party:     partyA,
+				Side:      types.SideBuy,
 				Price:     num.Zero(),
 			},
 			expectedBuy:  27,
@@ -563,8 +563,8 @@ func testNewOrderAddedToTheBook(t *testing.T) {
 			order: types.Order{
 				Size:      5,
 				Remaining: 5,
-				PartyId:   partyB,
-				Side:      types.Side_SIDE_SELL,
+				Party:     partyB,
+				Side:      types.SideSell,
 				Price:     num.Zero(),
 			},
 			expectedBuy:  0,
@@ -600,15 +600,15 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   partyA,
-				Side:      types.Side_SIDE_BUY,
+				Party:     partyA,
+				Side:      types.SideBuy,
 				Price:     num.Zero(),
 			},
 			{
 				Size:      16,
 				Remaining: 16,
-				PartyId:   partyB,
-				Side:      types.Side_SIDE_SELL,
+				Party:     partyB,
+				Side:      types.SideSell,
 				Price:     num.Zero(),
 			},
 		},
@@ -648,9 +648,9 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	// add a trade for a size of 3,
 	// potential buy should be 7, size 3
 	trade := types.Trade{
-		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        "trade_i1",
-		MarketId:  "market_id",
+		Type:      types.TradeTypeDefault,
+		ID:        "trade_i1",
+		MarketID:  "market_id",
 		Price:     num.NewUint(100),
 		Size:      3,
 		Buyer:     partyA,
@@ -695,15 +695,15 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   partyA,
-				Side:      types.Side_SIDE_BUY,
+				Party:     partyA,
+				Side:      types.SideBuy,
 				Price:     num.Zero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   partyB,
-				Side:      types.Side_SIDE_SELL,
+				Party:     partyB,
+				Side:      types.SideSell,
 				Price:     num.Zero(),
 			},
 		},
@@ -743,9 +743,9 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 	// add a trade for a size of 3,
 	// potential buy should be 7, size 3
 	trade := types.Trade{
-		Type:      types.Trade_TYPE_DEFAULT,
-		Id:        "trade_i1",
-		MarketId:  "market_id",
+		Type:      types.TradeTypeDefault,
+		ID:        "trade_i1",
+		MarketID:  "market_id",
 		Price:     num.NewUint(100),
 		Size:      10,
 		Buyer:     partyA,
@@ -790,15 +790,15 @@ func testOrderCancelled(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   partyA,
-				Side:      types.Side_SIDE_BUY,
+				Party:     partyA,
+				Side:      types.SideBuy,
 				Price:     num.Zero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   partyB,
-				Side:      types.Side_SIDE_SELL,
+				Party:     partyB,
+				Side:      types.SideSell,
 				Price:     num.Zero(),
 			},
 		},
@@ -850,15 +850,15 @@ func testOrderCancelled(t *testing.T) {
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   partyA,
-				Side:      types.Side_SIDE_BUY,
+				Party:     partyA,
+				Side:      types.SideBuy,
 				Price:     num.Zero(),
 			},
 			{
 				Size:      10,
 				Remaining: 10,
-				PartyId:   partyB,
-				Side:      types.Side_SIDE_SELL,
+				Party:     partyB,
+				Side:      types.SideSell,
 				Price:     num.Zero(),
 			},
 		},

@@ -31,8 +31,8 @@ type testEngine struct {
 
 type posValue struct {
 	party string
-	price  *num.Uint // absolute Mark price
-	size   int64
+	price *num.Uint // absolute Mark price
+	size  int64
 }
 
 type marginVal struct {
@@ -65,18 +65,18 @@ func testSettleExpiredSuccess(t *testing.T) {
 	data := []posValue{ // {{{2
 		{
 			party: "party1",
-			price:  pr, // winning
-			size:   10,
+			price: pr, // winning
+			size:  10,
 		},
 		{
 			party: "party2",
-			price:  pr, // losing
-			size:   -5,
+			price: pr, // losing
+			size:  -5,
 		},
 		{
 			party: "party3",
-			price:  pr, // losing
-			size:   -5,
+			price: pr, // losing
+			size:  -5,
 		},
 	}
 	half := num.NewUint(500)
@@ -86,21 +86,21 @@ func testSettleExpiredSuccess(t *testing.T) {
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferTypeLoss,
 		},
 		{
 			Owner: data[2].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferTypeLoss,
 		},
 		{
 			Owner: data[0].party,
 			Amount: &types.FinancialAmount{
 				Amount: pr,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_WIN,
+			Type: types.TransferTypeWin,
 		},
 	} // }}}
 	oraclePrice := num.NewUint(1100)
@@ -142,18 +142,18 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 	data := []posValue{ // {{{2
 		{
 			party: "party1",
-			price:  pr,
-			size:   10,
+			price: pr,
+			size:  10,
 		},
 		{
 			party: "party2",
-			price:  pr,
-			size:   -5,
+			price: pr,
+			size:  -5,
 		},
 		{
 			party: "party3",
-			price:  pr,
-			size:   -5,
+			price: pr,
+			size:  -5,
 		},
 	}
 	half := num.NewUint(500)
@@ -163,21 +163,21 @@ func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferTypeLoss,
 		},
 		{
 			Owner: data[2].party,
 			Amount: &types.FinancialAmount{
 				Amount: half,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_LOSS,
+			Type: types.TransferTypeLoss,
 		},
 		{
 			Owner: data[0].party,
 			Amount: &types.FinancialAmount{
 				Amount: pr,
 			},
-			Type: types.TransferType_TRANSFER_TYPE_WIN,
+			Type: types.TransferTypeWin,
 		},
 	} // }}}
 
@@ -220,8 +220,8 @@ func testSettleExpiryFail(t *testing.T) {
 	data := []posValue{
 		{
 			party: "party1",
-			price:  num.NewUint(1000),
-			size:   10,
+			price: num.NewUint(1000),
+			size:  10,
 		},
 	}
 	errExp := errors.New("product.Settle error")
@@ -238,8 +238,8 @@ func testMarkToMarketEmpty(t *testing.T) {
 	markPrice := num.NewUint(10000)
 	// there's only 1 trade to test here
 	data := posValue{
-		price:  markPrice,
-		size:   1,
+		price: markPrice,
+		size:  1,
 		party: "test",
 	}
 	engine := getTestEngine(t)
@@ -351,13 +351,13 @@ func testMarkToMarketOrdered(t *testing.T) {
 	pr := num.NewUint(10000)
 	positions := []posValue{
 		{
-			price:  pr,
-			size:   1,
+			price: pr,
+			size:  1,
 			party: "party1", // mocks will create 2 parties (long & short)
 		},
 		{
-			price:  pr.Clone(),
-			size:   -1,
+			price: pr.Clone(),
+			size:  -1,
 			party: "party2",
 		},
 	}
@@ -443,8 +443,8 @@ func testMarkToMarketOrdered(t *testing.T) {
 		assert.NotEmpty(t, transfers)
 		assert.Equal(t, 3, len(transfers))
 		// start with losses, end with wins
-		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_LOSS, transfers[0].Transfer().Type)
-		assert.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_WIN, transfers[len(transfers)-1].Transfer().Type)
+		assert.Equal(t, types.TransferTypeMTMLoss, transfers[0].Transfer().Type)
+		assert.Equal(t, types.TransferTypeMTMWin, transfers[len(transfers)-1].Transfer().Type)
 		assert.Equal(t, "party2", transfers[0].Party()) // we expect party2 to have a loss
 	}
 }
@@ -526,7 +526,7 @@ func testMTMNetworkZero(t *testing.T) {
 		assert.NotNil(t, v.Transfer())
 		if v.Party() == types.NetworkParty {
 			// network hás to lose
-			require.Equal(t, types.TransferType_TRANSFER_TYPE_MTM_LOSS, v.Transfer().Type)
+			require.Equal(t, types.TransferTypeMTMLoss, v.Transfer().Type)
 			// network loss should be at the start of the slice
 			require.Equal(t, 0, i)
 			hasNetwork = true
@@ -587,13 +587,13 @@ func TestConcurrent(t *testing.T) {
 		data := []posValue{
 			{
 				party: "testparty1",
-				price:  num.NewUint(1234),
-				size:   100,
+				price: num.NewUint(1234),
+				size:  100,
 			},
 			{
 				party: "testparty2",
-				price:  num.NewUint(1235),
-				size:   0,
+				price: num.NewUint(1235),
+				size:  0,
 			},
 		}
 		raw, evts := engine.getMockMarketPositions(data)

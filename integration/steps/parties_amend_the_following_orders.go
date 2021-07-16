@@ -35,8 +35,8 @@ func PartiesAmendTheFollowingOrders(
 		}
 
 		amend := types.OrderAmendment{
-			OrderId:     o.Id,
-			MarketId:    o.MarketId,
+			OrderID:     o.Id,
+			MarketID:    o.MarketId,
 			SizeDelta:   row.SizeDelta(),
 			TimeInForce: row.TimeInForce(),
 		}
@@ -91,7 +91,7 @@ func (r amendOrderRow) SizeDelta() int64 {
 	return r.row.MustI64("size delta")
 }
 
-func (r amendOrderRow) TimeInForce() types.Order_TimeInForce {
+func (r amendOrderRow) TimeInForce() types.OrderTimeInForce {
 	return r.row.MustTIF("tif")
 }
 

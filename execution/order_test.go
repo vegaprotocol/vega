@@ -22,13 +22,13 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	addAccount(tm, party1)
 
 	orderBuy := &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          "someid",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Status:      types.OrderStatusActive,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        100,
 		Price:       num.NewUint(100),
 		Remaining:   100,
@@ -44,15 +44,15 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Create a new order (generates one order message)
-	orderAmend.Id = "amendingorder"
+	orderAmend.ID = "amendingorder"
 	orderAmend.Reference = "amendingorderreference"
 	confirmation, err = tm.market.SubmitOrder(context.TODO(), &orderAmend)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	amend := &types.OrderAmendment{
-		MarketId: tm.market.GetID(),
-		OrderId:  orderAmend.Id,
+		MarketID: tm.market.GetID(),
+		OrderID:  orderAmend.ID,
 	}
 
 	one := num.NewUint(1)
@@ -83,7 +83,7 @@ func TestOrderBufferOutputCount(t *testing.T) {
 
 	// Amend TIME_IN_FORCE -> GTT (generates one order message)
 	amend.SizeDelta = 0
-	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
+	amend.TimeInForce = types.OrderTimeInForceGTT
 	exp := now.UnixNano() + 100000000000
 	amend.ExpiresAt = &exp
 	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
@@ -91,14 +91,14 @@ func TestOrderBufferOutputCount(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Amend TIME_IN_FORCE -> GTC (generates one order message)
-	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTC
+	amend.TimeInForce = types.OrderTimeInForceGTC
 	amend.ExpiresAt = nil
 	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	// Amend ExpiresAt (generates two order messages)
-	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
+	amend.TimeInForce = types.OrderTimeInForceGTT
 	exp = now.UnixNano() + 100000000000
 	amend.ExpiresAt = &exp
 	amendConf, err = tm.market.AmendOrder(context.TODO(), amend, party1)
@@ -121,13 +121,13 @@ func TestAmendCancelResubmit(t *testing.T) {
 	addAccount(tm, party1)
 
 	orderBuy := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        100,
 		Price:       num.NewUint(100),
 		Remaining:   100,
@@ -139,26 +139,26 @@ func TestAmendCancelResubmit(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	orderID := confirmation.Order.Id
+	orderID := confirmation.Order.ID
 
 	// Amend the price to force a cancel+resubmit to the order book
 
 	amend := &types.OrderAmendment{
-		OrderId:  orderID,
-		MarketId: confirmation.Order.MarketId,
+		OrderID:  orderID,
+		MarketID: confirmation.Order.MarketID,
 		Price:    num.NewUint(101),
 	}
-	amended, err := tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.PartyId)
+	amended, err := tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.Party)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
 	amend = &types.OrderAmendment{
-		OrderId:   orderID,
-		MarketId:  confirmation.Order.MarketId,
+		OrderID:   orderID,
+		MarketID:  confirmation.Order.MarketID,
 		Price:     num.NewUint(101),
 		SizeDelta: 1,
 	}
-	amended, err = tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.PartyId)
+	amended, err = tm.market.AmendOrder(context.TODO(), amend, confirmation.Order.Party)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 }
@@ -174,13 +174,13 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 	addAccount(tm, party2)
 
 	orderBuy := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        100,
 		Price:       num.NewUint(100),
 		Remaining:   100,
@@ -194,8 +194,8 @@ func TestCancelWithWrongPartyID(t *testing.T) {
 
 	// Now attempt to cancel it with the wrong partyID
 	cancelOrder := &types.OrderCancellation{
-		OrderId:  confirmation.Order.Id,
-		MarketId: confirmation.Order.MarketId,
+		OrderId:  confirmation.Order.ID,
+		MarketId: confirmation.Order.MarketID,
 	}
 	cancelconf, err := tm.market.CancelOrder(context.TODO(), party2, cancelOrder.OrderId)
 	assert.Nil(t, cancelconf)
@@ -221,21 +221,21 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 10000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 10000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
@@ -247,18 +247,18 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	orderBuy := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        100,
 		Price:       num.NewUint(10),
 		Remaining:   100,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party1-buy-order",
-		Type:        types.Order_TYPE_LIMIT,
+		Type:        types.OrderTypeLimit,
 	}
 	// Submit the original order
 	buyConfirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
@@ -266,18 +266,18 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	assert.NoError(t, err)
 
 	orderSell := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
-		Id:          "someid",
-		Side:        types.Side_SIDE_SELL,
-		PartyId:     party2,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		TimeInForce: types.OrderTimeInForceIOC,
+		ID:          "someid",
+		Side:        types.SideSell,
+		Party:       party2,
+		MarketID:    tm.market.GetID(),
 		Size:        50,
 		Price:       num.NewUint(10),
 		Remaining:   50,
 		CreatedAt:   now.UnixNano(),
 		Reference:   "party2-sell-order",
-		Type:        types.Order_TYPE_MARKET,
+		Type:        types.OrderTypeMarket,
 	}
 	// Submit an opposite order to partially fill
 	sellConfirmation, err := tm.market.SubmitOrder(context.TODO(), orderSell)
@@ -298,17 +298,17 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 
 	orderBuy := &types.Order{
 		CreatedAt:   10000000000,
-		Status:      types.Order_STATUS_ACTIVE,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Id:          "someid",
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        100,
 		Price:       num.NewUint(10),
 		Remaining:   100,
 		Reference:   "party1-buy-order",
-		Type:        types.Order_TYPE_LIMIT,
+		Type:        types.OrderTypeLimit,
 	}
 	// Submit the original order
 	buyConfirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
@@ -320,18 +320,18 @@ func TestExpireCancelGTCOrder(t *testing.T) {
 
 	exp := int64(10000000010)
 	amend := &types.OrderAmendment{
-		OrderId:     buyConfirmation.Order.Id,
-		MarketId:    tm.market.GetID(),
+		OrderID:     buyConfirmation.Order.ID,
+		MarketID:    tm.market.GetID(),
 		ExpiresAt:   &exp,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
+		TimeInForce: types.OrderTimeInForceGTT,
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party1)
 	assert.NotNil(t, amended)
 	assert.NoError(t, err)
 
 	// Validate that the mark price has been updated
-	assert.EqualValues(t, amended.Order.TimeInForce, types.Order_TIME_IN_FORCE_GTT)
-	assert.EqualValues(t, amended.Order.Status, types.Order_STATUS_EXPIRED)
+	assert.EqualValues(t, amended.Order.TimeInForce, types.OrderTimeInForceGTT)
+	assert.EqualValues(t, amended.Order.Status, types.OrderStatusExpired)
 	assert.EqualValues(t, amended.Order.CreatedAt, 10000000000)
 	assert.EqualValues(t, amended.Order.ExpiresAt, 10000000010)
 	assert.EqualValues(t, amended.Order.UpdatedAt, 10000000100)
@@ -356,21 +356,21 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 10000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 10000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 5),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 5),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 5),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 5),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
@@ -382,16 +382,16 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	orderBuy := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        20,
 		Price:       num.NewUint(5),
 		Remaining:   20,
 		Reference:   "party1-buy-order",
-		Type:        types.Order_TYPE_LIMIT,
+		Type:        types.OrderTypeLimit,
 	}
 	// Place an order
 	buyConfirmation, err := tm.market.SubmitOrder(context.Background(), orderBuy)
@@ -399,16 +399,16 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NoError(t, err)
 
 	orderSell := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		TimeInForce: types.Order_TIME_IN_FORCE_IOC,
-		Side:        types.Side_SIDE_SELL,
-		PartyId:     party2,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		TimeInForce: types.OrderTimeInForceIOC,
+		Side:        types.SideSell,
+		Party:       party2,
+		MarketID:    tm.market.GetID(),
 		Size:        10,
 		Price:       num.NewUint(5),
 		Remaining:   10,
 		Reference:   "party2-sell-order",
-		Type:        types.Order_TYPE_MARKET,
+		Type:        types.OrderTypeMarket,
 	}
 	// Partially fill the original order
 	sellConfirmation, err := tm.market.SubmitOrder(context.Background(), orderSell)
@@ -416,8 +416,8 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	assert.NoError(t, err)
 
 	amend := &types.OrderAmendment{
-		OrderId:  buyConfirmation.Order.Id,
-		MarketId: tm.market.GetID(),
+		OrderID:  buyConfirmation.Order.ID,
+		MarketID: tm.market.GetID(),
 		Price:    num.NewUint(20),
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party1)
@@ -441,12 +441,12 @@ func TestAmendWrongPartyID(t *testing.T) {
 	addAccount(tm, party2)
 
 	orderBuy := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        100,
 		Price:       num.NewUint(100),
 		Remaining:   100,
@@ -460,8 +460,8 @@ func TestAmendWrongPartyID(t *testing.T) {
 
 	// Send an amend but use the wrong partyID
 	amend := &types.OrderAmendment{
-		OrderId:  confirmation.Order.Id,
-		MarketId: confirmation.Order.MarketId,
+		OrderID:  confirmation.Order.ID,
+		MarketID: confirmation.Order.MarketID,
 		Price:    num.NewUint(101),
 	}
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party2)
@@ -490,21 +490,21 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 10000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 10000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 55),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 55),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 55),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 55),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -516,12 +516,12 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	orderSell1 := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Side:        types.Side_SIDE_SELL,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Side:        types.SideSell,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        15,
 		Price:       num.NewUint(55),
 		Remaining:   15,
@@ -533,12 +533,12 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	assert.NoError(t, err)
 
 	orderSell2 := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Side:        types.Side_SIDE_SELL,
-		PartyId:     party2,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Side:        types.SideSell,
+		Party:       party2,
+		MarketID:    tm.market.GetID(),
 		Size:        15,
 		Price:       num.NewUint(53),
 		Remaining:   15,
@@ -551,12 +551,12 @@ func TestPartialFilledWashTrade(t *testing.T) {
 
 	// This order should partially fill and then be rejected
 	orderBuy1 := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Side:        types.Side_SIDE_BUY,
-		PartyId:     party1,
-		MarketId:    tm.market.GetID(),
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
 		Size:        30,
 		Price:       num.NewUint(60),
 		Remaining:   30,
@@ -566,15 +566,15 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	confirmation, err = tm.market.SubmitOrder(context.Background(), orderBuy1)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
-	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARTIALLY_FILLED)
+	assert.Equal(t, confirmation.Order.Status, types.OrderStatusPartiallyFilled)
 	assert.Equal(t, confirmation.Order.Remaining, uint64(15))
 }
 
-func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif types.Order_TimeInForce, expiresAt int64) *types.OrderAmendment {
+func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif types.OrderTimeInForce, expiresAt int64) *types.OrderAmendment {
 
 	amend := &types.OrderAmendment{
-		OrderId:     orderID,
-		MarketId:    market,
+		OrderID:     orderID,
+		MarketID:    market,
 		SizeDelta:   sizeDelta,
 		TimeInForce: tif,
 	}
@@ -591,7 +591,7 @@ func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif 
 }
 
 func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
-	tif types.Order_TimeInForce, expiresAt int64, pass bool) {
+	tif types.OrderTimeInForce, expiresAt int64, pass bool) {
 	amend := getAmend(tm.market.GetID(), orderID, sizeDelta, price, tif, expiresAt)
 
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party)
@@ -601,15 +601,15 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	}
 }
 
-func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce,
+func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce,
 	expiresAt int64, side types.Side, party string, size uint64, price uint64) types.Order {
 	order := types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
+		Status:      types.OrderStatusActive,
 		Type:        orderType,
 		TimeInForce: tif,
 		Side:        side,
-		PartyId:     party,
-		MarketId:    tm.market.GetID(),
+		Party:       party,
+		MarketID:    tm.market.GetID(),
 		Size:        size,
 		Price:       num.NewUint(price),
 		Remaining:   size,
@@ -623,15 +623,15 @@ func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.Orde
 	return order
 }
 
-func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Order_Type, tif types.Order_TimeInForce, expiresAt int64, side types.Side, party string,
+func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce, expiresAt int64, side types.Side, party string,
 	size uint64, price uint64) string {
 	order := &types.Order{
-		Status:      types.Order_STATUS_ACTIVE,
+		Status:      types.OrderStatusActive,
 		Type:        orderType,
 		TimeInForce: tif,
 		Side:        side,
-		PartyId:     party,
-		MarketId:    tm.market.GetID(),
+		Party:       party,
+		MarketID:    tm.market.GetID(),
 		Size:        size,
 		Price:       num.NewUint(price),
 		Remaining:   size,
@@ -651,7 +651,7 @@ func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.Ord
 	//	*now = now.Add(time.Second)
 	//	tm.market.OnChainTimeUpdate(*now)
 
-	return confirmation.Order.Id
+	return confirmation.Order.ID
 }
 
 func TestAmendToFill(t *testing.T) {
@@ -663,11 +663,11 @@ func TestAmendToFill(t *testing.T) {
 	addAccount(tm, "party2")
 
 	// test_AmendMarketOrderFail
-	_ = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)      // 1 - a8
-	_ = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 110)      // 1 - a8
-	_ = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 120)      // 1 - a8
-	orderID := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party2", 40, 50) // 1 - a8
-	amendOrder(t, tm, "party2", orderID, 0, 500, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0, true)
+	_ = sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 100)      // 1 - a8
+	_ = sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 110)      // 1 - a8
+	_ = sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 120)      // 1 - a8
+	orderID := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party2", 40, 50) // 1 - a8
+	amendOrder(t, tm, "party2", orderID, 0, 500, types.OrderTimeInForceUnspecified, 0, true)
 }
 
 func TestAmendToLosePriorityThenCancel(t *testing.T) {
@@ -679,16 +679,16 @@ func TestAmendToLosePriorityThenCancel(t *testing.T) {
 	addAccount(tm, "party2")
 
 	// Create 2 orders at the same level
-	order1 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
-	_ = sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	order1 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 100)
+	_ = sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 100)
 
 	// Amend the first order to make it lose time priority
-	amendOrder(t, tm, "party1", order1, 1, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0, true)
+	amendOrder(t, tm, "party1", order1, 1, 0, types.OrderTimeInForceUnspecified, 0, true)
 
 	// Check we can cancel it
 	cancelconf, _ := tm.market.CancelOrder(context.TODO(), "party1", order1)
 	assert.NotNil(t, cancelconf)
-	assert.Equal(t, types.Order_STATUS_CANCELLED, cancelconf.Order.Status)
+	assert.Equal(t, types.OrderStatusCancelled, cancelconf.Order.Status)
 
 }
 
@@ -709,21 +709,21 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 10000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 10000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
@@ -735,22 +735,22 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	// test_AmendMarketOrderFail
-	orderID := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, mainParty, 10, 100)
-	amendOrder(t, tm, mainParty, orderID, 0, 0, types.Order_TIME_IN_FORCE_GFA, 0, false)
-	amendOrder(t, tm, mainParty, orderID, 0, 0, types.Order_TIME_IN_FORCE_GFN, 0, false)
+	orderID := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, mainParty, 10, 100)
+	amendOrder(t, tm, mainParty, orderID, 0, 0, types.OrderTimeInForceGFA, 0, false)
+	amendOrder(t, tm, mainParty, orderID, 0, 0, types.OrderTimeInForceGFN, 0, false)
 
-	orderID2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFN, 0, types.Side_SIDE_SELL, mainParty, 10, 100)
-	amendOrder(t, tm, mainParty, orderID2, 0, 0, types.Order_TIME_IN_FORCE_GTC, 0, false)
-	amendOrder(t, tm, mainParty, orderID2, 0, 0, types.Order_TIME_IN_FORCE_GFA, 0, false)
+	orderID2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGFN, 0, types.SideSell, mainParty, 10, 100)
+	amendOrder(t, tm, mainParty, orderID2, 0, 0, types.OrderTimeInForceGTC, 0, false)
+	amendOrder(t, tm, mainParty, orderID2, 0, 0, types.OrderTimeInForceGFA, 0, false)
 
 	// EnterAuction should actually trigger an auction here...
 	tm.mas.StartPriceAuction(now, &types.AuctionDuration{
 		Duration: closeSec / 10, // some time in the future, before closing
 	})
 	tm.market.EnterAuction(context.Background())
-	orderID3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GFA, 0, types.Side_SIDE_SELL, "party1", 10, 100)
-	amendOrder(t, tm, "party1", orderID3, 0, 0, types.Order_TIME_IN_FORCE_GTC, 0, false)
-	amendOrder(t, tm, "party1", orderID3, 0, 0, types.Order_TIME_IN_FORCE_GFN, 0, false)
+	orderID3 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGFA, 0, types.SideSell, "party1", 10, 100)
+	amendOrder(t, tm, "party1", orderID3, 0, 0, types.OrderTimeInForceGTC, 0, false)
+	amendOrder(t, tm, "party1", orderID3, 0, 0, types.OrderTimeInForceGFN, 0, false)
 }
 
 func TestPeggedOrders(t *testing.T) {
@@ -791,14 +791,14 @@ func testPeggedOrderRepriceCrashWhenNoLimitOrders(t *testing.T) {
 	addAccount(tm, "party1")
 	addAccount(tm, "party2")
 
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party2", 5, 9000)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 5, 9000)
 
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party2", 10, 0)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: +10}
 	_, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 5, 9000)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 5, 9000)
 }
 
 func testPeggedOrderUnpark(t *testing.T) {
@@ -818,10 +818,10 @@ func testPeggedOrderUnpark(t *testing.T) {
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -830,11 +830,11 @@ func testPeggedOrderUnpark(t *testing.T) {
 	}
 
 	// Create a single buy order to give this party a valid position
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 5, 11)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 5, 11)
 
 	// Add a pegged order which will park due to missing reference price
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 10}
 	_, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
@@ -843,7 +843,7 @@ func testPeggedOrderUnpark(t *testing.T) {
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
 	// Send a new order to set the BEST_ASK price and force the parked order to unpark
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party2", 5, 15)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 5, 15)
 
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
@@ -864,10 +864,10 @@ func testPeggedOrderAmendToMoveReference(t *testing.T) {
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -879,18 +879,18 @@ func testPeggedOrderAmendToMoveReference(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Place 2 orders to create valid reference prices
-	bestBidOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+	bestBidOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 110)
 
 	// Place a valid pegged order which will be added to the order book
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
 	_, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 
 	// Amend best bid price
-	amendOrder(t, tm, "party1", bestBidOrder, 0, 88, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0, true)
-	amendOrder(t, tm, "party1", bestBidOrder, 0, 86, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0, true)
+	amendOrder(t, tm, "party1", bestBidOrder, 0, 88, types.OrderTimeInForceUnspecified, 0, true)
+	amendOrder(t, tm, "party1", bestBidOrder, 0, 86, types.OrderTimeInForceUnspecified, 0, true)
 }
 
 func testPeggedOrderFilledOrder(t *testing.T) {
@@ -910,10 +910,10 @@ func testPeggedOrderFilledOrder(t *testing.T) {
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -925,17 +925,17 @@ func testPeggedOrderFilledOrder(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Place 2 orders to create valid reference prices
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 110)
 
 	// Place a valid pegged order which will be added to the order book
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
 	_, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 
 	// Place a sell MARKET order to fill the buy orders
-	sendOrder(t, tm, &now, types.Order_TYPE_MARKET, types.Order_TIME_IN_FORCE_IOC, 0, types.Side_SIDE_SELL, "party2", 2, 0)
+	sendOrder(t, tm, &now, types.OrderTypeMarket, types.OrderTimeInForceIOC, 0, types.SideSell, "party2", 2, 0)
 
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
@@ -958,10 +958,10 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -970,12 +970,12 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	}
 
 	// Place 2 orders to create valid reference prices
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 5)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 5)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 100)
 
 	// Place a valid pegged order which will be parked because it cannot be repriced
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 1)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 1)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
 	_, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 
@@ -983,7 +983,7 @@ func testParkedOrdersAreUnparkedWhenPossible(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 
 	// Send a higher buy price order to move the BEST BID price up
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 50)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 50)
 
 	// leave opening auction
 	now = now.Add(2 * time.Second)
@@ -1010,19 +1010,19 @@ func testPeggedOrdersLeavingAuction(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 100*time.Second)
 
 	// Place 2 orders to create valid reference prices
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 100)
 	// place 2 more orders that will result in a mark price being set
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party2", 1, 95)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party3", 1, 95)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 95)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party3", 1, 95)
 
 	// Pegged order must be a LIMIT order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -10}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, confirmation.Order.Status, types.OrderStatusParked)
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	// During an auction all pegged orders are parked so we don't add them to the list
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
@@ -1051,19 +1051,19 @@ func testPeggedOrdersEnteringAuction(t *testing.T) {
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 100*time.Second)
 	// Place 2 orders to create valid reference prices
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 100)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 100)
 	// place 2 more orders that will result in a mark price being set
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party2", 1, 95)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party3", 1, 95)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 1, 95)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party3", 1, 95)
 
 	// Pegged order must be a LIMIT order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -10}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, confirmation.Order.Status, types.OrderStatusParked)
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 
@@ -1081,11 +1081,11 @@ func testPeggedOrderAddWithNoMarketPrice(t *testing.T) {
 	addAccount(tm, "party1")
 
 	// Place a valid pegged order which will be parked
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, confirmation.Order.Status, types.OrderStatusParked)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
@@ -1106,10 +1106,10 @@ func testPeggedOrderAdd(t *testing.T) {
 	addAccount(tm, auxParty2)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -1120,17 +1120,17 @@ func testPeggedOrderAdd(t *testing.T) {
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
 
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 102)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 102)
 
 	// Place a valid pegged order which will be added to the order book
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, types.Order_STATUS_ACTIVE, confirmation.Order.Status)
+	assert.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 
@@ -1153,10 +1153,10 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	addAccount(tm, auxParty2)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -1167,15 +1167,15 @@ func testPeggedOrderWithReprice(t *testing.T) {
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
 
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 110)
 
 	md := tm.market.GetMarketData()
 	assert.True(t, md.MidPrice.EQ(num.NewUint(100)))
 	// Place a valid pegged order which will be added to the order book
 	// This order will cause the MID price to move and thus a reprice multiple times until it settles
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 	_, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 
@@ -1200,11 +1200,11 @@ func testPeggedOrderParkWhenInAuction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Pegged order must be a LIMIT order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, confirmation.Order.Status, types.OrderStatusParked)
 	assert.NoError(t, err)
 }
 
@@ -1222,20 +1222,20 @@ func testPeggedOrderUnparkAfterLeavingAuction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Pegged order must be a LIMIT order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, confirmation.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, confirmation.Order.Status, types.OrderStatusParked)
 	assert.NoError(t, err)
 
-	buy := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 90)
+	buy := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 90)
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &buy)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	require.NotNil(t, buy)
-	sell := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 110)
+	sell := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 110)
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &sell)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
@@ -1253,14 +1253,14 @@ func testPeggedOrderTypes(t *testing.T) {
 	addAccount(tm, "party1")
 
 	// Pegged order must be a LIMIT order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Not MARKET
-	order.Type = types.Order_TYPE_MARKET
+	order.Type = types.OrderTypeMarket
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
@@ -1275,8 +1275,8 @@ func testPeggedOrderCancelParked(t *testing.T) {
 	addAccount(tm, "party1")
 
 	// Pegged order will be parked as no reference prices
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
@@ -1291,18 +1291,18 @@ func testPeggedOrderTIFs(t *testing.T) {
 	addAccount(tm, "party1")
 
 	// Pegged order must be a LIMIT order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 
 	// Only allowed GTC
-	order.Type = types.Order_TYPE_LIMIT
-	order.TimeInForce = types.Order_TIME_IN_FORCE_GTC
+	order.Type = types.OrderTypeLimit
+	order.TimeInForce = types.OrderTimeInForceGTC
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// and GTT
-	order.TimeInForce = types.Order_TIME_IN_FORCE_GTT
+	order.TimeInForce = types.OrderTimeInForceGTT
 	order.ExpiresAt = now.UnixNano() + 1000000000
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
@@ -1310,13 +1310,13 @@ func testPeggedOrderTIFs(t *testing.T) {
 
 	// but not IOC
 	order.ExpiresAt = 0
-	order.TimeInForce = types.Order_TIME_IN_FORCE_IOC
+	order.TimeInForce = types.OrderTimeInForceIOC
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
 	// or FOK
-	order.TimeInForce = types.Order_TIME_IN_FORCE_FOK
+	order.TimeInForce = types.OrderTimeInForceFOK
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
@@ -1330,52 +1330,52 @@ func testPeggedOrderBuys(t *testing.T) {
 
 	addAccount(tm, "party1")
 
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 100)
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 100)
 
 	// BEST BID peg must be <= 0
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: 3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: 3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: 0}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: 0}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// MID peg must be < 0
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 0}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: 0}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: 3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// BEST ASK peg not allowed
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: -3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: -3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 0}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 0}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
@@ -1389,52 +1389,52 @@ func testPeggedOrderSells(t *testing.T) {
 
 	addAccount(tm, "party1")
 
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 100)
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 100)
 
 	// BEST BID peg not allowed
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: 3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: 3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: 0}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: 0}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
 	// MID peg must be > 0
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 0}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: 0}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: 3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
 	// BEST ASK peg must be >= 0
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: -3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: -3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 3}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 3}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 0}
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 0}
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
@@ -1451,20 +1451,20 @@ func testPeggedOrderParkWhenPriceBelowZero(t *testing.T) {
 		addAccount(tm, acc)
 	}
 
-	buy := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "buyer", 10, 4)
+	buy := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "buyer", 10, 4)
 	_, err := tm.market.SubmitOrder(ctx, &buy)
 	require.NoError(t, err)
 
-	sell := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "seller", 10, 8)
+	sell := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "seller", 10, 8)
 	_, err = tm.market.SubmitOrder(ctx, &sell)
 	require.NoError(t, err)
 
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "pegged", 10, 4)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "pegged", 10, 4)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -10}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.Equal(t,
-		types.Order_STATUS_PARKED.String(),
+		types.OrderStatusParked.String(),
 		confirmation.Order.Status.String(), "When pegged price below zero (MIDPRICE - OFFSET) <= 0")
 }
 
@@ -1479,22 +1479,22 @@ func testPeggedOrderParkWhenPriceRepricesBelowZero(t *testing.T) {
 		addAccount(tm, acc)
 	}
 
-	buy := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "buyer", 10, 4)
+	buy := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "buyer", 10, 4)
 	_, err := tm.market.SubmitOrder(ctx, &buy)
 	require.NoError(t, err)
 
-	sell := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "seller", 10, 8)
+	sell := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "seller", 10, 8)
 	_, err = tm.market.SubmitOrder(ctx, &sell)
 	require.NoError(t, err)
 
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "pegged", 10, 4)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -5}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "pegged", 10, 4)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -5}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 
-	amendOrder(t, tm, "buyer", buy.Id, 0, 1, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0, true)
+	amendOrder(t, tm, "buyer", buy.ID, 0, 1, types.OrderTimeInForceUnspecified, 0, true)
 
-	assert.Equal(t, types.Order_STATUS_PARKED.String(), confirmation.Order.Status.String())
+	assert.Equal(t, types.OrderStatusParked.String(), confirmation.Order.Status.String())
 }
 
 /*func TestPeggedOrderCrash(t *testing.T) {
@@ -1547,19 +1547,19 @@ func testPeggedOrderParkCancelAll(t *testing.T) {
 	addAccount(tm, "user")
 
 	// Send one normal order
-	limitOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user", 10, 100)
+	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user", 10, 100)
 	require.NotEmpty(t, limitOrder)
 
 	// Send one pegged order that is live
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user", 10, 0)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -5}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -5}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
 
 	// Send one pegged order that is parked
-	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user", 10, 0)
-	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -5}
+	order2 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user", 10, 0)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -5}
 	confirmation2, err := tm.market.SubmitOrder(ctx, &order2)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation2)
@@ -1583,22 +1583,22 @@ func testPeggedOrderExpiring2(t *testing.T) {
 	addAccount(tm, "user")
 
 	// Send one normal expiring order
-	limitOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, expire.UnixNano(), types.Side_SIDE_BUY, "user", 10, 100)
+	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTT, expire.UnixNano(), types.SideBuy, "user", 10, 100)
 	require.NotEmpty(t, limitOrder)
 
 	// Amend the expiry time
-	amendOrder(t, tm, "user", limitOrder, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, now.UnixNano(), true)
+	amendOrder(t, tm, "user", limitOrder, 0, 0, types.OrderTimeInForceUnspecified, now.UnixNano(), true)
 
 	// Send one pegged order that will be parked
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, expire.UnixNano(), types.Side_SIDE_BUY, "user", 10, 0)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -5}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTT, expire.UnixNano(), types.SideBuy, "user", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -5}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
 
 	// Send one pegged order that will also be parked (after additing liquidity monitoring to market all orders will be parked unless both best_bid and best_offer exist)
-	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, expire.UnixNano(), types.Side_SIDE_BUY, "user", 10, 0)
-	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -5}
+	order2 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTT, expire.UnixNano(), types.SideBuy, "user", 10, 0)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -5}
 	confirmation, err = tm.market.SubmitOrder(ctx, &order2)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
@@ -1639,21 +1639,21 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 100000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 100000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -1664,39 +1664,39 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
 
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "user1", 10, 0)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user1", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 10}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, uint64(7), tm.orderEventCount)
 
-	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "user2", 10, 0)
-	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: 15}
+	order2 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user2", 10, 0)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: 15}
 	confirmation2, err := tm.market.SubmitOrder(ctx, &order2)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation2)
 	assert.Equal(t, uint64(8), tm.orderEventCount)
 
-	order3 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user3", 10, 0)
-	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	order3 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user3", 10, 0)
+	order3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
 	confirmation3, err := tm.market.SubmitOrder(ctx, &order3)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation3)
 	assert.Equal(t, uint64(9), tm.orderEventCount)
 
-	order4 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user4", 10, 0)
-	order4.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -10}
+	order4 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user4", 10, 0)
+	order4.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -10}
 	confirmation4, err := tm.market.SubmitOrder(ctx, &order4)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation4)
 	assert.Equal(t, uint64(10), tm.orderEventCount)
 
-	limitOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "user5", 1000, 120)
+	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user5", 1000, 120)
 	require.NotEmpty(t, limitOrder)
 	assert.Equal(t, uint64(14), tm.orderEventCount)
 
-	limitOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user6", 1000, 80)
+	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user6", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
 	assert.Equal(t, uint64(17), tm.orderEventCount)
 }
@@ -1721,16 +1721,16 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 100000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 100000)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -1742,35 +1742,35 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Create a pegged parked order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user1", 10, 0)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user1", 10, 0)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_PARKED, confirmation.Order.Status)
+	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
 	assert.NotNil(t, confirmation)
 	assert.Equal(t, uint64(7), tm.orderEventCount)
 
 	// Send normal order to unpark the pegged order
-	limitOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user2", 1000, 120)
+	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user2", 1000, 120)
 	require.NotEmpty(t, limitOrder)
 	assert.Equal(t, uint64(9), tm.orderEventCount)
-	assert.Equal(t, types.Order_STATUS_ACTIVE, confirmation.Order.Status)
+	assert.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
 
 	// Cancel the normal order to park the pegged order
 	tm.market.CancelOrder(ctx, "user2", limitOrder)
-	require.Equal(t, types.Order_STATUS_PARKED, confirmation.Order.Status)
+	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
 	assert.Equal(t, uint64(11), tm.orderEventCount)
 
 	// Send a new normal order to unpark the pegged order
-	limitOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "user2", 1000, 80)
+	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user2", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
-	require.Equal(t, types.Order_STATUS_ACTIVE, confirmation.Order.Status)
+	require.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
 	assert.Equal(t, uint64(13), tm.orderEventCount)
 
 	// Fill that order to park the pegged order
-	limitOrder3 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "user1", 1000, 80)
+	limitOrder3 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user1", 1000, 80)
 	require.NotEmpty(t, limitOrder3)
-	require.Equal(t, types.Order_STATUS_PARKED, confirmation.Order.Status)
+	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
 	assert.Equal(t, uint64(16), tm.orderEventCount)
 }
 
@@ -1794,39 +1794,39 @@ func testPeggedOrderRepricing(t *testing.T) {
 		expectingError string
 	}{
 		{
-			reference:     types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
-			side:          types.Side_SIDE_BUY,
+			reference:     types.PeggedReferenceBestBid,
+			side:          types.SideBuy,
 			offset:        -3,
 			expectedPrice: num.NewUint(buyPrice - 3),
 		},
 		{
-			reference:      types.PeggedReference_PEGGED_REFERENCE_BEST_BID,
-			side:           types.Side_SIDE_BUY,
+			reference:      types.PeggedReferenceBestBid,
+			side:           types.SideBuy,
 			offset:         3,
 			expectedPrice:  num.Zero(),
 			expectingError: "can't have a positive offset on Buy orders",
 		},
 		{
-			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
-			side:          types.Side_SIDE_BUY,
+			reference:     types.PeggedReferenceMid,
+			side:          types.SideBuy,
 			offset:        -5,
 			expectedPrice: num.NewUint(midPrice - 5),
 		},
 		{
-			reference:     types.PeggedReference_PEGGED_REFERENCE_MID,
-			side:          types.Side_SIDE_SELL,
+			reference:     types.PeggedReferenceMid,
+			side:          types.SideSell,
 			offset:        5,
 			expectedPrice: num.NewUint(midPrice + 5),
 		},
 		{
-			reference:     types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
-			side:          types.Side_SIDE_SELL,
+			reference:     types.PeggedReferenceBestAsk,
+			side:          types.SideSell,
 			offset:        5,
 			expectedPrice: num.NewUint(sellPrice + 5),
 		},
 		{
-			reference:      types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
-			side:           types.Side_SIDE_SELL,
+			reference:      types.PeggedReferenceBestAsk,
+			side:           types.SideSell,
 			offset:         -5,
 			expectingError: "can't have a negative offset on Sell orders",
 			expectedPrice:  num.Zero(),
@@ -1848,10 +1848,10 @@ func testPeggedOrderRepricing(t *testing.T) {
 			addAccount(tm, auxParty2)
 
 			auxOrders := []*types.Order{
-				getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-				getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
-				getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-				getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+				getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+				getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
+				getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+				getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 			}
 			for _, o := range auxOrders {
 				conf, err := tm.market.SubmitOrder(ctx, o)
@@ -1863,11 +1863,11 @@ func testPeggedOrderRepricing(t *testing.T) {
 			tm.market.OnChainTimeUpdate(ctx, now)
 
 			// Create buy and sell orders
-			sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, buyPrice)
-			sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, sellPrice)
+			sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, buyPrice)
+			sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, sellPrice)
 
 			// Create pegged order
-			order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, test.side, "party1", 10, 0)
+			order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, test.side, "party1", 10, 0)
 			order.PeggedOrder = &types.PeggedOrder{Reference: test.reference, Offset: test.offset}
 			conf, err := tm.market.SubmitOrder(context.Background(), &order)
 			if msg := test.expectingError; msg != "" {
@@ -1890,8 +1890,8 @@ func testPeggedOrderExpiring(t *testing.T) {
 	addAccount(tm, "party")
 
 	// Create buy and sell orders
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party", 1, 100)
-	sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party", 1, 200)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party", 1, 100)
+	sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party", 1, 200)
 
 	// let's create N orders with different expiration time
 	expirations := []struct {
@@ -1905,8 +1905,8 @@ func testPeggedOrderExpiring(t *testing.T) {
 	for _, test := range expirations {
 		addAccount(tm, test.party)
 
-		order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, 0, types.Side_SIDE_BUY, test.party, 10, 150)
-		order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+		order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTT, 0, types.SideBuy, test.party, 10, 150)
+		order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
 		order.ExpiresAt = test.expiration.UnixNano()
 		_, err := tm.market.SubmitOrder(context.Background(), &order)
 		require.NoError(t, err)
@@ -1943,29 +1943,29 @@ func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
 	addAccount(tm, "party1")
 
 	// Place trades so we have a valid BEST_BID
-	buyOrder1 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 100)
+	buyOrder1 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 100)
 	require.NotNil(t, buyOrder1)
 
 	// Place the pegged order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Place a normal limit order behind the pegged order
-	buyOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
+	buyOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
 	require.NotNil(t, buyOrder2)
 
 	// Amend first order to move pegged
-	amendOrder(t, tm, "party1", buyOrder1, 0, 101, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0, true)
+	amendOrder(t, tm, "party1", buyOrder1, 0, 101, types.OrderTimeInForceUnspecified, 0, true)
 	// Amend again to make the pegged order reprice behind the second limit order
-	amendOrder(t, tm, "party1", buyOrder1, 0, 100, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0, true)
+	amendOrder(t, tm, "party1", buyOrder1, 0, 100, types.OrderTimeInForceUnspecified, 0, true)
 
 	// Try to delete the pegged order
-	cancelconf, _ := tm.market.CancelOrder(context.TODO(), "party1", order.Id)
+	cancelconf, _ := tm.market.CancelOrder(context.TODO(), "party1", order.ID)
 	assert.NotNil(t, cancelconf)
-	assert.Equal(t, types.Order_STATUS_CANCELLED, cancelconf.Order.Status)
+	assert.Equal(t, types.OrderStatusCancelled, cancelconf.Order.Status)
 }
 
 // If we amend an order that is parked and not in auction we need to see if the amendment has caused the
@@ -1986,13 +1986,13 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	addAccount(tm, auxParty2)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 10),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 10),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 10),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 10),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -2001,14 +2001,14 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	}
 
 	// Place the pegged order which will be parked
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -20}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we can reprice
-	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.ID, 0, 0, types.OrderTimeInForceUnspecified, 0)
 	off := int64(-5)
 	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
@@ -2037,20 +2037,20 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	addAccount(tm, "party1")
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
 
 	// Place the pegged order which will be parked
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -20}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -20}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we can reprice
-	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.ID, 0, 0, types.OrderTimeInForceUnspecified, 0)
 	off := int64(-15)
 	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
@@ -2074,20 +2074,20 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 	addAccount(tm, "party1")
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
 
 	// Place the pegged order
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.ID, 0, 0, types.OrderTimeInForceUnspecified, 0)
 	off := int64(-15)
 	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
@@ -2097,7 +2097,7 @@ func testPeggedOrderAmendForcesPark(t *testing.T) {
 	// Order should be parked
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
+	assert.Equal(t, types.OrderStatusParked, amended.Order.Status)
 }
 
 func testPeggedOrderAmendDuringAuction(t *testing.T) {
@@ -2115,27 +2115,27 @@ func testPeggedOrderAmendDuringAuction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
 
 	// Place the pegged order which will park it
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
+	amend := getAmend(tm.market.GetID(), confirmation.Order.ID, 0, 0, types.OrderTimeInForceUnspecified, 0)
 	off := int64(-5)
 	amend.PeggedOffset = &off
 	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
-	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
+	assert.Equal(t, types.OrderStatusParked, amended.Order.Status)
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
@@ -2156,8 +2156,8 @@ func testPeggedOrderAmendReference(t *testing.T) {
 	addAccount(tm, auxParty2)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 10),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 10),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 10),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 10),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -2165,32 +2165,32 @@ func testPeggedOrderAmendReference(t *testing.T) {
 		require.NotNil(t, conf)
 	}
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
 	// leave opening auction
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Place the pegged order which will park it
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
+	amend := getAmend(tm.market.GetID(), confirmation.Order.ID, 0, 0, types.OrderTimeInForceUnspecified, 0)
+	amend.PeggedReference = types.PeggedReferenceMid
 	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
-	assert.Equal(t, types.Order_STATUS_ACTIVE, amended.Order.Status)
+	assert.Equal(t, types.OrderStatusActive, amended.Order.Status)
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
+	assert.Equal(t, types.PeggedReferenceMid, amended.Order.PeggedOrder.Reference)
 }
 
 func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
@@ -2208,29 +2208,29 @@ func testPeggedOrderAmendReferenceInAuction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
 
 	// Place the pegged order which will park it
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
+	amend := getAmend(tm.market.GetID(), confirmation.Order.ID, 0, 0, types.OrderTimeInForceUnspecified, 0)
+	amend.PeggedReference = types.PeggedReferenceMid
 	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
-	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
+	assert.Equal(t, types.OrderStatusParked, amended.Order.Status)
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
+	assert.Equal(t, types.PeggedReferenceMid, amended.Order.PeggedOrder.Reference)
 }
 
 func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
@@ -2248,33 +2248,33 @@ func testPeggedOrderAmendMultipleInAuction(t *testing.T) {
 	tm.market.EnterAuction(ctx)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
 
 	// Place the pegged order which will park it
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
-	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
+	amend := getAmend(tm.market.GetID(), confirmation.Order.ID, 0, 0, types.OrderTimeInForceUnspecified, 0)
+	amend.PeggedReference = types.PeggedReferenceMid
+	amend.TimeInForce = types.OrderTimeInForceGTT
 	exp := int64(20000000000)
 	amend.ExpiresAt = &exp
 	amended, err := tm.market.AmendOrder(ctx, amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
-	assert.Equal(t, types.Order_STATUS_PARKED, amended.Order.Status)
+	assert.Equal(t, types.OrderStatusParked, amended.Order.Status)
 	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
-	assert.Equal(t, types.Order_TIME_IN_FORCE_GTT, amended.Order.TimeInForce)
+	assert.Equal(t, types.PeggedReferenceMid, amended.Order.PeggedOrder.Reference)
+	assert.Equal(t, types.OrderTimeInForceGTT, amended.Order.TimeInForce)
 }
 
 func testPeggedOrderAmendMultiple(t *testing.T) {
@@ -2293,8 +2293,8 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	addAccount(tm, auxParty2)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 10),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 10),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 10),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 10),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -2302,9 +2302,9 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 		require.NotNil(t, conf)
 	}
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 9)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 9)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 11)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 11)
 	require.NotNil(t, sellOrder)
 
 	// leave opening auction
@@ -2312,27 +2312,27 @@ func testPeggedOrderAmendMultiple(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Place the pegged order which will park it
-	order := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -3}
+	order := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -3}
 	confirmation, err := tm.market.SubmitOrder(context.Background(), &order)
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
 	// Amend offset so we cannot reprice
-	amend := getAmend(tm.market.GetID(), confirmation.Order.Id, 0, 0, types.Order_TIME_IN_FORCE_UNSPECIFIED, 0)
-	amend.PeggedReference = types.PeggedReference_PEGGED_REFERENCE_MID
-	amend.TimeInForce = types.Order_TIME_IN_FORCE_GTT
+	amend := getAmend(tm.market.GetID(), confirmation.Order.ID, 0, 0, types.OrderTimeInForceUnspecified, 0)
+	amend.PeggedReference = types.PeggedReferenceMid
+	amend.TimeInForce = types.OrderTimeInForceGTT
 	exp := int64(20000000000)
 	amend.ExpiresAt = &exp
 	amended, err := tm.market.AmendOrder(context.Background(), amend, "party1")
 	require.NotNil(t, amended)
 	assert.NoError(t, err)
 
-	assert.Equal(t, types.Order_STATUS_ACTIVE, amended.Order.Status)
+	assert.Equal(t, types.OrderStatusActive, amended.Order.Status)
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
-	assert.Equal(t, types.PeggedReference_PEGGED_REFERENCE_MID, amended.Order.PeggedOrder.Reference)
-	assert.Equal(t, types.Order_TIME_IN_FORCE_GTT, amended.Order.TimeInForce)
+	assert.Equal(t, types.PeggedReferenceMid, amended.Order.PeggedOrder.Reference)
+	assert.Equal(t, types.OrderTimeInForceGTT, amended.Order.TimeInForce)
 }
 
 func testPeggedOrderMidPriceCalc(t *testing.T) {
@@ -2351,13 +2351,13 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 	addAccount(tm, auxParty2)
 
 	// Place 2 trades so we have a valid BEST_BID+MID+BEST_ASK price
-	buyOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 90)
+	buyOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 90)
 	require.NotNil(t, buyOrder)
-	sellOrder := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1, 110)
+	sellOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1, 110)
 	require.NotNil(t, sellOrder)
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -2368,22 +2368,22 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Place the pegged orders
-	order1 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 10, 10)
-	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: -20}
+	order1 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 10, 10)
+	order1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -20}
 	confirmation1, err := tm.market.SubmitOrder(context.Background(), &order1)
 	require.NotNil(t, confirmation1)
 	assert.NoError(t, err)
 	assert.True(t, confirmation1.Order.Price.EQ(num.NewUint(80)))
 
-	order2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 10, 10)
-	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Offset: +20}
+	order2 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 10, 10)
+	order2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: +20}
 	confirmation2, err := tm.market.SubmitOrder(context.Background(), &order2)
 	require.NotNil(t, confirmation2)
 	assert.NoError(t, err)
 	assert.True(t, confirmation2.Order.Price.EQ(num.NewUint(120)))
 
 	// Make the mid price wonky (needs rounding)
-	buyOrder2 := sendOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1, 91)
+	buyOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1, 91)
 	require.NotNil(t, buyOrder2)
 
 	// Check the pegged orders have reprices properly
@@ -2407,49 +2407,49 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 100000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 100000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Move into auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 100})
 	tm.market.EnterAuction(ctx)
 
-	buyPeggedOrder := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party1", 1000000000000, 0)
-	buyPeggedOrder.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -10}
+	buyPeggedOrder := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1000000000000, 0)
+	buyPeggedOrder.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
 	confirmation1, err := tm.market.SubmitOrder(ctx, &buyPeggedOrder)
 	assert.NotNil(t, confirmation1)
-	assert.Equal(t, confirmation1.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, confirmation1.Order.Status, types.OrderStatusParked)
 	assert.NoError(t, err)
 
-	sellPeggedOrder := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party1", 1000000000000, 0)
-	sellPeggedOrder.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: +10}
+	sellPeggedOrder := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1000000000000, 0)
+	sellPeggedOrder.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: +10}
 	confirmation2, err := tm.market.SubmitOrder(ctx, &sellPeggedOrder)
 	assert.NotNil(t, confirmation2)
-	assert.Equal(t, confirmation2.Order.Status, types.Order_STATUS_PARKED)
+	assert.Equal(t, confirmation2.Order.Status, types.OrderStatusParked)
 	assert.NoError(t, err)
 
-	sellOrder1 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party2", 4, 2000)
+	sellOrder1 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 4, 2000)
 	confirmation3, err := tm.market.SubmitOrder(ctx, &sellOrder1)
 	assert.NotNil(t, confirmation3)
 	assert.NoError(t, err)
 
 	tm.market.LeaveAuction(ctx, closingAt)
 
-	buyOrder1 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_BUY, "party3", 100, 6500)
+	buyOrder1 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party3", 100, 6500)
 	confirmation4, err := tm.market.SubmitOrder(ctx, &buyOrder1)
 	assert.NotNil(t, confirmation4)
 	assert.NoError(t, err)
 
-	sellOrder2 := getOrder(t, tm, &now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, 0, types.Side_SIDE_SELL, "party4", 20, 7000)
+	sellOrder2 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party4", 20, 7000)
 	confirmation5, err := tm.market.SubmitOrder(ctx, &sellOrder2)
 	assert.NotNil(t, confirmation5)
 	assert.NoError(t, err)
@@ -2469,13 +2469,13 @@ func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	addAccount(tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order01", types.Side_SIDE_BUY, "aaa", 10, 100)
+	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideBuy, "aaa", 10, 100)
 	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NoError(t, err)
 	require.NotNil(t, o1conf)
 
-	cncl, err := tm.market.CancelOrder(ctx, o1.PartyId, o1.Id)
+	cncl, err := tm.market.CancelOrder(ctx, o1.Party, o1.ID)
 	require.NoError(t, err)
 	require.NotNil(t, cncl)
 	assert.Equal(t, 0, tm.market.GetPeggedExpiryOrderCount())
@@ -2496,7 +2496,7 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 	addAccount(tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order01", types.Side_SIDE_SELL, "aaa", 10, 100)
+	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideSell, "aaa", 10, 100)
 	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NoError(t, err)
@@ -2506,7 +2506,7 @@ func TestGTTExpiredNotFilled(t *testing.T) {
 	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(10*time.Second).UnixNano())
 	assert.NoError(t, err)
 	assert.Len(t, orders, 1)
-	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
+	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
 }
 
 func TestGTTExpiredPartiallyFilled(t *testing.T) {
@@ -2525,10 +2525,10 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	addAccount(tm, auxParty2)
 
 	auxOrders := []*types.Order{
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 1000000),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux1", types.Side_SIDE_SELL, auxParty, 1, 100),
-		getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "aux2", types.Side_SIDE_BUY, auxParty2, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1000000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty, 1, 100),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 100),
 	}
 	for _, o := range auxOrders {
 		conf, err := tm.market.SubmitOrder(ctx, o)
@@ -2544,27 +2544,27 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	// We probably don't need these orders anymore, but they don't do any harm
 	//Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
-	alwaysOnBid := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnBid", types.Side_SIDE_BUY, auxParty, 1, 1)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
-	alwaysOnAsk := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "alwaysOnAsk", types.Side_SIDE_SELL, auxParty, 1, 10000)
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 10000)
 	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
 	require.NotNil(t, conf)
 	require.NoError(t, err)
-	require.Equal(t, types.Order_STATUS_ACTIVE, conf.Order.Status)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// place expiring order
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order01", types.Side_SIDE_SELL, "aaa", 10, 100)
+	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideSell, "aaa", 10, 100)
 	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NoError(t, err)
 	require.NotNil(t, o1conf)
 
 	// add matching order
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order02", types.Side_SIDE_BUY, "bbb", 1, 100)
+	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order02", types.SideBuy, "bbb", 1, 100)
 	o2.ExpiresAt = now.Add(5 * time.Second).UnixNano()
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NoError(t, err)
@@ -2574,8 +2574,8 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	orders, err := tm.market.RemoveExpiredOrders(context.Background(), now.Add(10*time.Second).UnixNano())
 	assert.NoError(t, err)
 	assert.Len(t, orders, 1)
-	assert.Equal(t, types.Order_STATUS_EXPIRED, orders[0].Status)
-	assert.Equal(t, o1.Id, orders[0].Id)
+	assert.Equal(t, types.OrderStatusExpired, orders[0].Status)
+	assert.Equal(t, o1.ID, orders[0].ID)
 }
 
 func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
@@ -2590,58 +2590,58 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 
 	someTimeLater := now.Add(100 * time.Second)
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order01", types.Side_SIDE_SELL, "aaa", 1, 1)
+	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideSell, "aaa", 1, 1)
 	o1.ExpiresAt = someTimeLater.UnixNano()
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NoError(t, err)
 	require.NotNil(t, o1conf)
 
-	o2 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order02", types.Side_SIDE_SELL, "aaa", 99, 3298)
+	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order02", types.SideSell, "aaa", 99, 3298)
 	o2.ExpiresAt = someTimeLater.UnixNano() + 1
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NoError(t, err)
 	require.NotNil(t, o2conf)
 
-	o3 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order03", types.Side_SIDE_SELL, "aaa", 19, 771)
+	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order03", types.SideSell, "aaa", 19, 771)
 	o3.ExpiresAt = someTimeLater.UnixNano()
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NoError(t, err)
 	require.NotNil(t, o3conf)
 
-	o4 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order04", types.Side_SIDE_SELL, "aaa", 7, 1000)
+	o4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order04", types.SideSell, "aaa", 7, 1000)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NoError(t, err)
 	require.NotNil(t, o4conf)
 
-	o5 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order05", types.Side_SIDE_SELL, "aaa", 99999, 199)
+	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order05", types.SideSell, "aaa", 99999, 199)
 	o5.ExpiresAt = someTimeLater.UnixNano()
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NoError(t, err)
 	require.NotNil(t, o5conf)
 
-	o6 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order06", types.Side_SIDE_SELL, "aaa", 100, 100)
+	o6 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order06", types.SideSell, "aaa", 100, 100)
 	o6conf, err := tm.market.SubmitOrder(ctx, o6)
 	require.NoError(t, err)
 	require.NotNil(t, o6conf)
 
-	o7 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order07", types.Side_SIDE_SELL, "aaa", 9999, 41)
+	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order07", types.SideSell, "aaa", 9999, 41)
 	o7.ExpiresAt = someTimeLater.UnixNano() + 9999
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NoError(t, err)
 	require.NotNil(t, o7conf)
 
-	o8 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order08", types.Side_SIDE_SELL, "aaa", 1, 1)
+	o8 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order08", types.SideSell, "aaa", 1, 1)
 	o8.ExpiresAt = someTimeLater.UnixNano() - 9999
 	o8conf, err := tm.market.SubmitOrder(ctx, o8)
 	require.NoError(t, err)
 	require.NotNil(t, o8conf)
 
-	o9 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTC, "Order09", types.Side_SIDE_SELL, "aaa", 12, 65)
+	o9 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order09", types.SideSell, "aaa", 12, 65)
 	o9conf, err := tm.market.SubmitOrder(ctx, o9)
 	require.NoError(t, err)
 	require.NotNil(t, o9conf)
 
-	o10 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order10", types.Side_SIDE_SELL, "aaa", 1, 1)
+	o10 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order10", types.SideSell, "aaa", 1, 1)
 	o10.ExpiresAt = someTimeLater.UnixNano() - 1
 	o10conf, err := tm.market.SubmitOrder(ctx, o10)
 	require.NoError(t, err)
@@ -2667,7 +2667,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -2696,17 +2696,17 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		id        string
 		size      uint64
 		side      types.Side
-		tif       types.Order_TimeInForce
+		tif       types.OrderTimeInForce
 		pegRef    types.PeggedReference
 		pegOffset int64
 	}{
-		{"party-4", 1, types.Side_SIDE_BUY, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_BID, -2000},
-		{"party-3", 1, types.Side_SIDE_SELL, types.Order_TIME_IN_FORCE_GTC, types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, 1000},
+		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, -2000},
+		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, 1000},
 	}
 	partyA, partyB := orderParams[0], orderParams[1]
 
 	tpl := OrderTemplate{
-		Type: types.Order_TYPE_LIMIT,
+		Type: types.OrderTypeLimit,
 	}
 	var orders = []*types.Order{
 		// Limit Orders
@@ -2714,54 +2714,54 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 			Size:        20,
 			Remaining:   20,
 			Price:       num.NewUint(uint64(5500 + partyA.pegOffset)), // 3500
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     "party-0",
-			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+			Side:        types.SideBuy,
+			Party:       "party-0",
+			TimeInForce: types.OrderTimeInForceGFA,
 		}),
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
 			Price:       num.NewUint(uint64(5000 - partyB.pegOffset)), // 4000
-			Side:        types.Side_SIDE_SELL,
-			PartyId:     "party-1",
-			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+			Side:        types.SideSell,
+			Party:       "party-1",
+			TimeInForce: types.OrderTimeInForceGFA,
 		}),
 		tpl.New(types.Order{
 			Size:        10,
 			Remaining:   10,
 			Price:       num.NewUint(5500),
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     "party-2",
-			TimeInForce: types.Order_TIME_IN_FORCE_GFA,
+			Side:        types.SideBuy,
+			Party:       "party-2",
+			TimeInForce: types.OrderTimeInForceGFA,
 		}),
 		tpl.New(types.Order{
 			Size:        100,
 			Remaining:   100,
 			Price:       num.NewUint(5000),
-			Side:        types.Side_SIDE_SELL,
-			PartyId:     "party-2",
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			Side:        types.SideSell,
+			Party:       "party-2",
+			TimeInForce: types.OrderTimeInForceGTC,
 		}),
 		tpl.New(types.Order{
 			Size:        100,
 			Remaining:   100,
 			Price:       num.NewUint(3500),
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     "party-0",
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			Side:        types.SideBuy,
+			Party:       "party-0",
+			TimeInForce: types.OrderTimeInForceGTC,
 		}),
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
 			Price:       num.NewUint(8500),
-			Side:        types.Side_SIDE_BUY,
-			PartyId:     "party-0",
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			Side:        types.SideBuy,
+			Party:       "party-0",
+			TimeInForce: types.OrderTimeInForceGTC,
 		}),
 
 		// Pegged Orders
 		tpl.New(types.Order{
-			PartyId:     partyA.id,
+			Party:       partyA.id,
 			Side:        partyA.side,
 			Size:        partyA.size,
 			Remaining:   partyA.size,
@@ -2772,7 +2772,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 			},
 		}),
 		tpl.New(types.Order{
-			PartyId:     partyB.id,
+			Party:       partyB.id,
 			Side:        partyB.side,
 			Size:        partyB.size,
 			Remaining:   partyB.size,
@@ -2790,17 +2790,17 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lp := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "THIS-IS-LP",
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 1},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 13, Offset: -15},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
+			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
 		},
 	}
 
@@ -2813,13 +2813,13 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
 
 	newOrder := tpl.New(types.Order{
-		MarketId:    tm.market.GetID(),
+		MarketID:    tm.market.GetID(),
 		Size:        20,
 		Remaining:   20,
 		Price:       num.NewUint(10250),
-		Side:        types.Side_SIDE_SELL,
-		PartyId:     "party-2",
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		Side:        types.SideSell,
+		Party:       "party-2",
+		TimeInForce: types.OrderTimeInForceGTC,
 	})
 
 	tm.events = nil
@@ -2839,18 +2839,18 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		// the first order we try to place, the party does
 		// not have enough funds
 		expectedIds := map[string]bool{
-			newOrder.Id:  false,
-			orders[3].Id: false,
+			newOrder.ID:  false,
+			orders[3].ID: false,
 		}
 
 		require.Len(t, cancelCnf, len(expectedIds))
 
 		for _, o := range cancelCnf {
-			_, ok := expectedIds[o.Order.Id]
+			_, ok := expectedIds[o.Order.ID]
 			if !ok {
-				t.Errorf("unexpected cancelled order: %v", o.Order.Id)
+				t.Errorf("unexpected cancelled order: %v", o.Order.ID)
 			}
-			expectedIds[o.Order.Id] = true
+			expectedIds[o.Order.ID] = true
 		}
 
 		for id, ok := range expectedIds {

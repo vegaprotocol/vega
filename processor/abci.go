@@ -626,7 +626,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	// if this is a builtin asset nothing needs to be done, just start the asset
 	// straight away
 	if asset.IsBuiltinAsset() {
-		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().Id)
+		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().ID)
 		if err != nil {
 			// this should not happen
 			app.log.Error("unable to get builtin asset enabled",
@@ -638,7 +638,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 
 	// then instruct the notary to start getting signature from validators
-	if err := app.notary.StartAggregate(prop.Id, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
+	if err := app.notary.StartAggregate(prop.Id, types.NodeSignatureKindAssetNew); err != nil {
 		prop.State = types.Proposal_STATE_FAILED
 		app.log.Error("unable to enact proposal",
 			logging.ProposalID(prop.Id),

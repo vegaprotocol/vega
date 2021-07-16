@@ -14,30 +14,30 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectOrderID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000001",
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000002", // Invalid, must match original
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000002", // Invalid, must match original
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
@@ -50,30 +50,30 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectMarketID(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000001",
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketId:    "incorrectMarket", // Invalid, must match original
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    "incorrectMarket", // Invalid, must match original
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000001",
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
@@ -86,30 +86,30 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectSide(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000001",
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_SELL, // Invalid, must match original
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideSell, // Invalid, must match original
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000001",
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
@@ -122,30 +122,30 @@ func TestOrderBookSimple_CancelWrongOrderIncorrectPrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000001",
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(101), // Invalid, must match original
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000001",
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000001",
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.Error(t, err, types.ErrOrderRemovalFailure)
@@ -158,30 +158,30 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketId:    market,
-		PartyId:     "A",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    market,
+		Party:       "A",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        10,
 		Remaining:   10,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-		Type:        types.Order_TYPE_LIMIT,
-		Id:          "v0000000000000-0000001",
+		TimeInForce: types.OrderTimeInForceGTC,
+		Type:        types.OrderTypeLimit,
+		ID:          "v0000000000000-0000001",
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	order2 := types.Order{
-		MarketId:    market,                        // Must match
-		PartyId:     "B",                           // Does not matter
-		Side:        types.Side_SIDE_BUY,           // Must match
-		Price:       num.NewUint(100),              // Must match
-		Size:        10,                            // Does not matter
-		Remaining:   10,                            // Does not matter
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC, // Does not matter
-		Type:        types.Order_TYPE_LIMIT,        // Does not matter
-		Id:          "v0000000000000-0000001",      // Must match
+		MarketID:    market,                    // Must match
+		Party:       "B",                       // Does not matter
+		Side:        types.SideBuy,             // Must match
+		Price:       num.NewUint(100),          // Must match
+		Size:        10,                        // Does not matter
+		Remaining:   10,                        // Does not matter
+		TimeInForce: types.OrderTimeInForceGTC, // Does not matter
+		Type:        types.OrderTypeLimit,      // Does not matter
+		ID:          "v0000000000000-0000001",  // Must match
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.NoError(t, err)
