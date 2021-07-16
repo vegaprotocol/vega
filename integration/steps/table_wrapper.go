@@ -570,7 +570,7 @@ func Account(name string) (types.AccountType, error) {
 func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 	idBuf := make([]byte, 256)
 
-	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
+	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL || ty == types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE {
 		marketID = ""
 	}
 
