@@ -269,8 +269,8 @@ func testWithinMarket(t *testing.T) {
 	// before the fee distribution.
 	var (
 		originalBalance = esm.LiquidityFeeAccount().Balance.Clone()
-		party1Balance   = esm.PartyMarginAccount("party1").Balance.Clone()
-		party2Balance   = esm.PartyMarginAccount("party2").Balance.Clone()
+		party1Balance   = esm.PartyGeneralAccount("party1").Balance.Clone()
+		party2Balance   = esm.PartyGeneralAccount("party2").Balance.Clone()
 	)
 
 	curTime = curTime.Add(1 * time.Second)
@@ -282,7 +282,7 @@ func testWithinMarket(t *testing.T) {
 	// exp = originalBalance*(2/3)
 	exp := num.Zero().Mul(num.NewUint(2), originalBalance)
 	exp = exp.Div(exp, num.NewUint(3))
-	actual := num.Zero().Sub(esm.PartyMarginAccount("party1").Balance, party1Balance)
+	actual := num.Zero().Sub(esm.PartyGeneralAccount("party1").Balance, party1Balance)
 	assert.True(t,
 		exp.EQ(actual),
 		"party1 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
@@ -290,7 +290,7 @@ func testWithinMarket(t *testing.T) {
 
 	// exp = originalBalance*(1/3)
 	exp = num.Zero().Div(originalBalance, num.NewUint(3))
-	actual = num.Zero().Sub(esm.PartyMarginAccount("party2").Balance, party2Balance)
+	actual = num.Zero().Sub(esm.PartyGeneralAccount("party2").Balance, party2Balance)
 	assert.True(t,
 		exp.EQ(actual),
 		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
