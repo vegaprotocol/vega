@@ -31,6 +31,7 @@ type MarketPosition interface {
 type Product interface {
 	Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error)
 	GetAsset() string
+	SettlementPrice() (*num.Uint, error)
 }
 
 // Broker - the event bus broker, send events here
@@ -183,6 +184,21 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 				Amount: mtmShare,
 				Asset:  e.product.GetAsset()},
 		},
+	}
+}
+
+//ShouldSuspend checks if the market is the settlement is based on an oracle and the price is available before
+//the state is terminated
+func (e *Engine) ShouldSuspend(state types.Market_State) bool {
+	switch e.Config.FinalSettlement.Get() {
+	case FinalSettlementOracle:
+		_, err := e.product.SettlementPrice()
+		return err == nil && state != types.Market_STATE_TRADING_TERMINATED
+	case FinalSettlementMarkPrice:
+		return false
+	default:
+		// can't happen at this point but...
+		return false
 	}
 }
 
@@ -423,6 +439,10 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, 
 type lastMarkPriceSettlement struct {
 	markPrice *num.Uint
 	asset     string
+}
+
+func (l *lastMarkPriceSettlement) SettlementPrice() (*num.Uint, error) {
+	return l.markPrice, nil
 }
 
 func (l *lastMarkPriceSettlement) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, bool, error) {

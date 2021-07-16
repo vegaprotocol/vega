@@ -17,6 +17,9 @@ var (
 	// ErrOracleSpecAndBindingAreRequired is returned when the definition of the
 	// oracle spec or its binding is missing from the future definition.
 	ErrOracleSpecAndBindingAreRequired = errors.New("an oracle spec and an oracle spec binding are required")
+
+	// oracle price was not set yet
+	ErrOracleSettlementPriceNotSet = errors.New("settlement price is not set")
 )
 
 // Future represent a Future as describe by the market framework
@@ -42,13 +45,17 @@ type oracleData struct {
 
 func (d *oracleData) SettlementPrice() (*num.Uint, error) {
 	if !d.updated {
-		return nil, errors.New("settlement price is not set")
+		return nil, ErrOracleSettlementPriceNotSet
 	}
 	return d.settlementPrice.Clone(), nil
 }
 
 type oracleBinding struct {
 	settlementPriceProperty string
+}
+
+func (f *Future) SettlementPrice() (*num.Uint, error) {
+	return f.oracle.data.SettlementPrice()
 }
 
 // Settle a position against the future

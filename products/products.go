@@ -30,6 +30,7 @@ type Product interface {
 	Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error)
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
+	SettlementPrice() (*num.Uint, error)
 }
 
 // New instance a new product from a Market framework product configuration

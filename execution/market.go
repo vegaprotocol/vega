@@ -521,8 +521,24 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	// not even specced or implemented as of now...
 	// if the state of the market is just PROPOSED,
 	// we will just skip everything there as nothing apply.
-	if m.mkt.State == types.Market_STATE_PROPOSED {
+	// if the market is suspended - return
+	if m.mkt.State == types.Market_STATE_PROPOSED || m.mkt.State == types.Market_STATE_SUSPENDED {
 		return false
+	}
+
+	// if we're already in trading terminated state and the market is closed it means
+	// we didn't complete final settlement as oracle price was not available
+	// retry here
+	if m.mkt.State == types.Market_STATE_TRADING_TERMINATED && m.closed {
+		m.closeMarket(ctx, t)
+		return
+	}
+
+	// check with the settlment engine if we should suspend the market
+	if m.settlement.ShouldSuspend(m.mkt.State) {
+		m.mkt.State = types.Market_STATE_SUSPENDED
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		return
 	}
 
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
@@ -571,9 +587,12 @@ func (m *Market) updateMarketValueProxy() {
 	m.equityShares.WithMVP(m.lastMarketValueProxy)
 }
 
-func (m *Market) closeMarket(ctx context.Context, t time.Time) {
-	m.mkt.State = types.Market_STATE_TRADING_TERMINATED
-	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
+	// if market is not already terminated, switch to terminated and notify
+	if m.mkt.State != types.Market_STATE_TRADING_TERMINATED {
+		m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	}
 
 	// market is closed, final settlement
 	// call settlement and stuff
@@ -581,7 +600,8 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market close",
 			logging.Error(err))
-		return
+
+		return err
 	}
 
 	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
@@ -589,7 +609,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 		m.log.Error("Failed to get ledger movements after settling closed market",
 			logging.MarketID(m.GetID()),
 			logging.Error(err))
-		return
+		return err
 	}
 
 	// @TODO pass in correct context -> Previous or next block?
@@ -608,10 +628,13 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 		m.log.Error("Clear market error",
 			logging.MarketID(m.GetID()),
 			logging.Error(err))
-		return
+		return err
 	}
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
+	m.mkt.State = types.Market_STATE_SETTLED
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	return nil
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
