@@ -83,8 +83,6 @@ var (
 	ErrCannotStartOpeningAuctionForMarketNotInProposedState = errors.New("cannot start the opening auction for a market not in proposed state")
 	// ErrCannotRepriceDuringAuction
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
-
-	networkPartyID = types.NetworkParty
 )
 
 // PriceMonitor interface to handle price monitoring/auction triggers
@@ -1629,8 +1627,8 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		MarketID:    m.GetID(),
 		Remaining:   size,
 		Status:      types.OrderStatusActive,
-		Party:       networkPartyID, // network is not a party as such
-		Side:        types.SideSell, // assume sell, price is zero in that case anyway
+		Party:       types.NetworkParty, // network is not a party as such
+		Side:        types.SideSell,     // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   fmt.Sprintf("LS-%s", o.ID), // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.OrderTimeInForceFOK,  // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
@@ -1817,7 +1815,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 	order := types.Order{
 		MarketID:    marketID,
 		Status:      types.OrderStatusFilled,
-		Party:       networkPartyID,
+		Party:       types.NetworkParty,
 		Price:       settleOrder.Price.Clone(),
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
