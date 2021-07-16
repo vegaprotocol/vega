@@ -9,7 +9,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersWithdrawTheFollowingAssets(
+func PartiesWithdrawTheFollowingAssets(
 	collateral *collateral.Engine,
 	table *gherkin.DataTable,
 ) error {
@@ -30,14 +30,14 @@ func TradersWithdrawTheFollowingAssets(
 }
 
 func errCannotLockFundsForWithdrawal(row withdrawAssetRow, err error) error {
-	return fmt.Errorf("couldn't lock funds for withdrawal of amount(%d) for trader(%s), asset(%s): %s",
+	return fmt.Errorf("couldn't lock funds for withdrawal of amount(%d) for party(%s), asset(%s): %s",
 		row.Amount(), row.Party(), row.Asset(), err.Error(),
 	)
 }
 
 func parseWithdrawAssetTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"asset",
 		"amount",
 	}, []string{
@@ -50,7 +50,7 @@ type withdrawAssetRow struct {
 }
 
 func (r withdrawAssetRow) Party() string {
-	return r.row.MustStr("trader")
+	return r.row.MustStr("party")
 }
 
 func (r withdrawAssetRow) Asset() string {

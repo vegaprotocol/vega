@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetPriceLevel(t *testing.T) {
-	side := &OrderBookSide{side: types.Side_SIDE_SELL}
+	side := &OrderBookSide{side: types.SideSell}
 	assert.Equal(t, 0, len(side.levels))
 	side.getPriceLevel(num.NewUint(100))
 	assert.Equal(t, 1, len(side.levels))
@@ -24,16 +24,16 @@ func TestGetPriceLevel(t *testing.T) {
 }
 
 func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
-	side := &OrderBookSide{side: types.Side_SIDE_SELL}
+	side := &OrderBookSide{side: types.SideSell}
 	l := side.getPriceLevel(num.NewUint(100))
 	order := &types.Order{
-		MarketId:    "testOrderBook",
-		PartyId:     "A",
-		Side:        types.Side_SIDE_SELL,
+		MarketID:    "testOrderBook",
+		Party:       "A",
+		Side:        types.SideSell,
 		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		TimeInForce: types.OrderTimeInForceGTC,
 		CreatedAt:   0,
 	}
 
@@ -55,28 +55,28 @@ func TestUncross(t *testing.T) {
 	logger := logging.NewTestLogger()
 	defer logger.Sync()
 
-	side := &OrderBookSide{side: types.Side_SIDE_SELL}
+	side := &OrderBookSide{side: types.SideSell}
 	l := side.getPriceLevel(num.NewUint(100))
 	passiveOrder := &types.Order{
-		MarketId:    "testOrderBook",
-		PartyId:     "A",
-		Side:        types.Side_SIDE_SELL,
+		MarketID:    "testOrderBook",
+		Party:       "A",
+		Side:        types.SideSell,
 		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		TimeInForce: types.OrderTimeInForceGTC,
 		CreatedAt:   0,
 	}
 	l.addOrder(passiveOrder)
 
 	aggresiveOrder := &types.Order{
-		MarketId:    "testOrderBook",
-		PartyId:     "B",
-		Side:        types.Side_SIDE_BUY,
+		MarketID:    "testOrderBook",
+		Party:       "B",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(101),
 		Size:        100,
 		Remaining:   100,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		TimeInForce: types.OrderTimeInForceGTC,
 		CreatedAt:   0,
 	}
 	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder, true)

@@ -61,6 +61,9 @@ Tendermint
 testnet
 tradable
 traderbot
+uint
+uint256
+uint64
 unexported
 unparked
 vega

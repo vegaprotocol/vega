@@ -110,7 +110,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				exitPrice = e.ob.GetIndicativePrice()
 			} else {
 				svol, _ := slippageVolume.Float64()
-				exitPrice, err = e.ob.GetCloseoutPrice(uint64(svol), types.Side_SIDE_BUY)
+				exitPrice, err = e.ob.GetCloseoutPrice(uint64(svol), types.SideBuy)
 				if err != nil && e.log.GetLevel() == logging.DebugLevel {
 					e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
 						logging.Error(err))
@@ -151,7 +151,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				exitPrice = e.ob.GetIndicativePrice()
 			} else {
 				svol, _ := slippageVolume.Abs().Float64()
-				exitPrice, err = e.ob.GetCloseoutPrice(uint64(svol), types.Side_SIDE_SELL)
+				exitPrice, err = e.ob.GetCloseoutPrice(uint64(svol), types.SideSell)
 				if err != nil && e.log.GetLevel() == logging.DebugLevel {
 					e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
 						logging.Error(err))

@@ -23,11 +23,11 @@ const (
 type OrderReferenceCheck types.Order
 
 func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
-	return (o.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_MID &&
+	return (o.PeggedOrder.Reference == types.PeggedReferenceMid &&
 		changes&PriceMoveMid > 0) ||
-		(o.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_BID &&
+		(o.PeggedOrder.Reference == types.PeggedReferenceBestBid &&
 			changes&PriceMoveBestBid > 0) ||
-		(o.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_BEST_ASK &&
+		(o.PeggedOrder.Reference == types.PeggedReferenceBestAsk &&
 			changes&PriceMoveBestAsk > 0)
 }
 
@@ -40,8 +40,8 @@ func (m *Market) checkForReferenceMoves(
 
 	newBestBid, _ := m.getBestStaticBidPrice()
 	newBestAsk, _ := m.getBestStaticAskPrice()
-	newMidBuy, _ := m.getStaticMidPrice(types.Side_SIDE_BUY)
-	newMidSell, _ := m.getStaticMidPrice(types.Side_SIDE_SELL)
+	newMidBuy, _ := m.getStaticMidPrice(types.SideBuy)
+	newMidSell, _ := m.getStaticMidPrice(types.SideSell)
 
 	// Look for a move
 	var changes uint8

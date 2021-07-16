@@ -29,12 +29,12 @@ func TestTransferResponseDeepClone(t *testing.T) {
 			Balances: []*types.TransferBalance{
 				&types.TransferBalance{
 					Account: &types.Account{
-						Id:       "Id",
+						ID:       "Id",
 						Owner:    "Owner",
 						Balance:  num.NewUint(3000),
 						Asset:    "Asset",
-						MarketId: "MarketId",
-						Type:     types.AccountType_ACCOUNT_TYPE_BOND,
+						MarketID: "MarketId",
+						Type:     types.AccountTypeBond,
 					},
 					Balance: num.NewUint(4000),
 				},
@@ -54,8 +54,8 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	tr[0].Transfers[0].Type = "Changed"
 	tr[0].Balances[0].Account.Asset = "Changed"
 	tr[0].Balances[0].Account.Balance = num.NewUint(999)
-	tr[0].Balances[0].Account.Id = "Changed"
-	tr[0].Balances[0].Account.MarketId = "Changed"
+	tr[0].Balances[0].Account.ID = "Changed"
+	tr[0].Balances[0].Account.MarketID = "Changed"
 	tr[0].Balances[0].Account.Owner = "Changed"
 	tr[0].Balances[0].Account.Type = proto.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 	tr[0].Balances[0].Balance = num.NewUint(999)
@@ -69,8 +69,8 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	assert.NotEqual(t, tr[0].Transfers[0].Type, tr2[0].Transfers[0].Type)
 	assert.NotEqual(t, tr[0].Balances[0].Account.Asset, tr2[0].Balances[0].Account.Asset)
 	assert.NotEqual(t, tr[0].Balances[0].Account.Balance, tr2[0].Balances[0].Account.Balance)
-	assert.NotEqual(t, tr[0].Balances[0].Account.Id, tr2[0].Balances[0].Account.Id)
-	assert.NotEqual(t, tr[0].Balances[0].Account.MarketId, tr2[0].Balances[0].Account.MarketId)
+	assert.NotEqual(t, tr[0].Balances[0].Account.ID, tr2[0].Balances[0].Account.Id)
+	assert.NotEqual(t, tr[0].Balances[0].Account.MarketID, tr2[0].Balances[0].Account.MarketId)
 	assert.NotEqual(t, tr[0].Balances[0].Account.Owner, tr2[0].Balances[0].Account.Owner)
 	assert.NotEqual(t, tr[0].Balances[0].Account.Type, tr2[0].Balances[0].Account.Type)
 	assert.NotEqual(t, tr[0].Balances[0].Balance, tr2[0].Balances[0].Balance)

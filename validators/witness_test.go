@@ -30,7 +30,7 @@ func getTestWitness(t *testing.T) *testWitness {
 	tsvc := mocks.NewMockTimeService(ctrl)
 
 	now := time.Now()
-	tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	tsvc.EXPECT().GetTimeNow().Times(1).Return(now)
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	w := validators.NewWitness(
 		logging.NewTestLogger(), validators.NewDefaultConfig(), top, cmd, tsvc)

@@ -34,11 +34,11 @@ func (m *MockPriceMonitor) EXPECT() *MockPriceMonitorMockRecorder {
 }
 
 // GetValidPriceRange mocks base method
-func (m *MockPriceMonitor) GetValidPriceRange() (*num.Uint, *num.Uint) {
+func (m *MockPriceMonitor) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidPriceRange")
-	ret0, _ := ret[0].(*num.Uint)
-	ret1, _ := ret[1].(*num.Uint)
+	ret0, _ := ret[0].(num.WrappedDecimal)
+	ret1, _ := ret[1].(num.WrappedDecimal)
 	return ret0, ret1
 }
 

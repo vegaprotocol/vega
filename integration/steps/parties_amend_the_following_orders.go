@@ -21,7 +21,7 @@ func (o OrderAmendmentError) Error() string {
 	return fmt.Sprintf("%v: %v", o.OrderAmendment, o.Err)
 }
 
-func TradersAmendTheFollowingOrders(
+func PartiesAmendTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
 	table *gherkin.DataTable,
@@ -35,8 +35,8 @@ func TradersAmendTheFollowingOrders(
 		}
 
 		amend := types.OrderAmendment{
-			OrderId:     o.Id,
-			MarketId:    o.MarketId,
+			OrderID:     o.Id,
+			MarketID:    o.MarketId,
 			SizeDelta:   row.SizeDelta(),
 			TimeInForce: row.TimeInForce(),
 		}
@@ -64,7 +64,7 @@ type amendOrderRow struct {
 
 func parseAmendOrderTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"reference",
 		"price",
 		"size delta",
@@ -76,7 +76,7 @@ func parseAmendOrderTable(table *gherkin.DataTable) []RowWrapper {
 }
 
 func (r amendOrderRow) Party() string {
-	return r.row.MustStr("trader")
+	return r.row.MustStr("party")
 }
 
 func (r amendOrderRow) Reference() string {
@@ -91,7 +91,7 @@ func (r amendOrderRow) SizeDelta() int64 {
 	return r.row.MustI64("size delta")
 }
 
-func (r amendOrderRow) TimeInForce() types.Order_TimeInForce {
+func (r amendOrderRow) TimeInForce() types.OrderTimeInForce {
 	return r.row.MustTIF("tif")
 }
 

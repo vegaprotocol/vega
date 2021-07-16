@@ -1,5 +1,3 @@
-//lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
-
 package types
 
 import (
@@ -11,30 +9,30 @@ import (
 )
 
 type Order struct {
-	Id                   string
-	MarketId             string
-	PartyId              string
+	ID                   string
+	MarketID             string
+	Party                string
 	Side                 Side
 	Price                *num.Uint
 	Size                 uint64
 	Remaining            uint64
-	TimeInForce          Order_TimeInForce
-	Type                 Order_Type
+	TimeInForce          OrderTimeInForce
+	Type                 OrderType
 	CreatedAt            int64
-	Status               Order_Status
+	Status               OrderStatus
 	ExpiresAt            int64
 	Reference            string
 	Reason               OrderError
 	UpdatedAt            int64
 	Version              uint64
-	BatchId              uint64
+	BatchID              uint64
 	PeggedOrder          *PeggedOrder
-	LiquidityProvisionId string
+	LiquidityProvisionID string
 }
 
 func (o Order) IntoSubmission() *OrderSubmission {
 	sub := &OrderSubmission{
-		MarketId:    o.MarketId,
+		MarketId:    o.MarketID,
 		Size:        o.Size,
 		Side:        o.Side,
 		TimeInForce: o.TimeInForce,
@@ -80,7 +78,7 @@ func (o Orders) IntoProto() []*proto.Order {
 }
 
 func (o *Order) IsLiquidityOrder() bool {
-	return len(o.LiquidityProvisionId) > 0
+	return len(o.LiquidityProvisionID) > 0
 }
 
 func (o *Order) IntoProto() *proto.Order {
@@ -89,9 +87,9 @@ func (o *Order) IntoProto() *proto.Order {
 		pegged = o.PeggedOrder.IntoProto()
 	}
 	return &proto.Order{
-		Id:                   o.Id,
-		MarketId:             o.MarketId,
-		PartyId:              o.PartyId,
+		Id:                   o.ID,
+		MarketId:             o.MarketID,
+		PartyId:              o.Party,
 		Side:                 o.Side,
 		Price:                num.UintToUint64(o.Price),
 		Size:                 o.Size,
@@ -105,9 +103,9 @@ func (o *Order) IntoProto() *proto.Order {
 		Reason:               o.Reason,
 		UpdatedAt:            o.UpdatedAt,
 		Version:              o.Version,
-		BatchId:              o.BatchId,
+		BatchId:              o.BatchID,
 		PeggedOrder:          pegged,
-		LiquidityProvisionId: o.LiquidityProvisionId,
+		LiquidityProvisionId: o.LiquidityProvisionID,
 	}
 }
 
@@ -117,9 +115,9 @@ func OrderFromProto(o *proto.Order) *Order {
 		pegged = NewPeggedOrderFromProto(o.PeggedOrder)
 	}
 	return &Order{
-		Id:                   o.Id,
-		MarketId:             o.MarketId,
-		PartyId:              o.PartyId,
+		ID:                   o.Id,
+		MarketID:             o.MarketId,
+		Party:                o.PartyId,
 		Side:                 o.Side,
 		Price:                num.NewUint(o.Price),
 		Size:                 o.Size,
@@ -133,9 +131,9 @@ func OrderFromProto(o *proto.Order) *Order {
 		Reason:               o.Reason,
 		UpdatedAt:            o.UpdatedAt,
 		Version:              o.Version,
-		BatchId:              o.BatchId,
+		BatchID:              o.BatchId,
 		PeggedOrder:          pegged,
-		LiquidityProvisionId: o.LiquidityProvisionId,
+		LiquidityProvisionID: o.LiquidityProvisionId,
 	}
 }
 
@@ -157,18 +155,18 @@ func (o *Order) Update(t time.Time) *Order {
 // A persistent order is a Limit type order that might be
 // matched in the future.
 func (o *Order) IsPersistent() bool {
-	return (o.TimeInForce == Order_TIME_IN_FORCE_GTC ||
-		o.TimeInForce == Order_TIME_IN_FORCE_GTT ||
-		o.TimeInForce == Order_TIME_IN_FORCE_GFN ||
-		o.TimeInForce == Order_TIME_IN_FORCE_GFA) &&
-		o.Type == Order_TYPE_LIMIT &&
+	return (o.TimeInForce == OrderTimeInForceGTC ||
+		o.TimeInForce == OrderTimeInForceGTT ||
+		o.TimeInForce == OrderTimeInForceGFN ||
+		o.TimeInForce == OrderTimeInForceGFA) &&
+		o.Type == OrderTypeLimit &&
 		o.Remaining > 0
 }
 
 func (o *Order) IsExpireable() bool {
-	return (o.TimeInForce == Order_TIME_IN_FORCE_GFN ||
-		o.TimeInForce == Order_TIME_IN_FORCE_GTT ||
-		o.TimeInForce == Order_TIME_IN_FORCE_GFA) &&
+	return (o.TimeInForce == OrderTimeInForceGFN ||
+		o.TimeInForce == OrderTimeInForceGTT ||
+		o.TimeInForce == OrderTimeInForceGFA) &&
 		o.ExpiresAt > 0
 }
 
@@ -177,7 +175,7 @@ func (o *Order) IsExpireable() bool {
 // Basically any order which is never gonna
 // trade anymore
 func (o *Order) IsFinished() bool {
-	return o.Status != Order_STATUS_ACTIVE && o.Status != Order_STATUS_PARKED
+	return o.Status != OrderStatusActive && o.Status != OrderStatusParked
 }
 
 func (o *Order) HasTraded() bool {
@@ -236,8 +234,8 @@ func (o *OrderCancellationConfirmation) IntoProto() *proto.OrderCancellationConf
 }
 
 type Trade struct {
-	Id                 string
-	MarketId           string
+	ID                 string
+	MarketID           string
 	Price              *num.Uint
 	Size               uint64
 	Buyer              string
@@ -246,7 +244,7 @@ type Trade struct {
 	BuyOrder           string
 	SellOrder          string
 	Timestamp          int64
-	Type               Trade_Type
+	Type               TradeType
 	BuyerFee           *Fee
 	SellerFee          *Fee
 	BuyerAuctionBatch  uint64
@@ -254,14 +252,14 @@ type Trade struct {
 }
 
 func (t *Trade) SetIDs(aggressive, passive *Order, idx int) {
-	t.Id = fmt.Sprintf("%s-%010d", aggressive.Id, idx)
-	if aggressive.Side == Side_SIDE_BUY {
-		t.BuyOrder = aggressive.Id
-		t.SellOrder = passive.Id
+	t.ID = fmt.Sprintf("%s-%010d", aggressive.ID, idx)
+	if aggressive.Side == SideBuy {
+		t.BuyOrder = aggressive.ID
+		t.SellOrder = passive.ID
 		return
 	}
-	t.SellOrder = aggressive.Id
-	t.BuyOrder = passive.Id
+	t.SellOrder = aggressive.ID
+	t.BuyOrder = passive.ID
 
 }
 
@@ -274,8 +272,8 @@ func (t *Trade) IntoProto() *proto.Trade {
 		sellerFee = t.SellerFee.IntoProto()
 	}
 	return &proto.Trade{
-		Id:                 t.Id,
-		MarketId:           t.MarketId,
+		Id:                 t.ID,
+		MarketId:           t.MarketID,
 		Price:              num.UintToUint64(t.Price),
 		Size:               t.Size,
 		Buyer:              t.Buyer,
@@ -306,228 +304,228 @@ func (t Trades) IntoProto() []*proto.Trade {
 	return out
 }
 
-type Trade_Type = proto.Trade_Type
+type TradeType = proto.Trade_Type
 
 const (
 	// Default value, always invalid
-	Trade_TYPE_UNSPECIFIED Trade_Type = 0
+	TradeTypeUnspecified TradeType = proto.Trade_TYPE_UNSPECIFIED
 	// Normal trading between two parties
-	Trade_TYPE_DEFAULT Trade_Type = 1
+	TradeTypeDefault TradeType = proto.Trade_TYPE_DEFAULT
 	// Trading initiated by the network with another party on the book,
 	// which helps to zero-out the positions of one or more distressed parties
-	Trade_TYPE_NETWORK_CLOSE_OUT_GOOD Trade_Type = 2
+	TradeTypeNetworkCloseOutGood TradeType = proto.Trade_TYPE_NETWORK_CLOSE_OUT_GOOD
 	// Trading initiated by the network with another party off the book,
 	// with a distressed party in order to zero-out the position of the party
-	Trade_TYPE_NETWORK_CLOSE_OUT_BAD Trade_Type = 3
+	TradeTypeNetworkCloseOutBad TradeType = proto.Trade_TYPE_NETWORK_CLOSE_OUT_BAD
 )
 
 type PeggedReference = proto.PeggedReference
 
 const (
 	// Default value for PeggedReference, no reference given
-	PeggedReference_PEGGED_REFERENCE_UNSPECIFIED PeggedReference = 0
+	PeggedReferenceUnspecified PeggedReference = proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
 	// Mid price reference
-	PeggedReference_PEGGED_REFERENCE_MID PeggedReference = 1
+	PeggedReferenceMid PeggedReference = proto.PeggedReference_PEGGED_REFERENCE_MID
 	// Best bid price reference
-	PeggedReference_PEGGED_REFERENCE_BEST_BID PeggedReference = 2
+	PeggedReferenceBestBid PeggedReference = proto.PeggedReference_PEGGED_REFERENCE_BEST_BID
 	// Best ask price reference
-	PeggedReference_PEGGED_REFERENCE_BEST_ASK PeggedReference = 3
+	PeggedReferenceBestAsk PeggedReference = proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK
 )
 
-type Order_Status = proto.Order_Status
+type OrderStatus = proto.Order_Status
 
 const (
 	// Default value, always invalid
-	Order_STATUS_UNSPECIFIED Order_Status = 0
+	OrderStatusUnspecified OrderStatus = proto.Order_STATUS_UNSPECIFIED
 	// Used for active unfilled or partially filled orders
-	Order_STATUS_ACTIVE Order_Status = 1
+	OrderStatusActive OrderStatus = proto.Order_STATUS_ACTIVE
 	// Used for expired GTT orders
-	Order_STATUS_EXPIRED Order_Status = 2
+	OrderStatusExpired OrderStatus = proto.Order_STATUS_EXPIRED
 	// Used for orders cancelled by the party that created the order
-	Order_STATUS_CANCELLED Order_Status = 3
+	OrderStatusCancelled OrderStatus = proto.Order_STATUS_CANCELLED
 	// Used for unfilled FOK or IOC orders, and for orders that were stopped by the network
-	Order_STATUS_STOPPED Order_Status = 4
+	OrderStatusStopped OrderStatus = proto.Order_STATUS_STOPPED
 	// Used for closed fully filled orders
-	Order_STATUS_FILLED Order_Status = 5
+	OrderStatusFilled OrderStatus = proto.Order_STATUS_FILLED
 	// Used for orders when not enough collateral was available to fill the margin requirements
-	Order_STATUS_REJECTED Order_Status = 6
+	OrderStatusRejected OrderStatus = proto.Order_STATUS_REJECTED
 	// Used for closed partially filled IOC orders
-	Order_STATUS_PARTIALLY_FILLED Order_Status = 7
+	OrderStatusPartiallyFilled OrderStatus = proto.Order_STATUS_PARTIALLY_FILLED
 	// Order has been removed from the order book and has been parked, this applies to pegged orders only
-	Order_STATUS_PARKED Order_Status = 8
+	OrderStatusParked OrderStatus = proto.Order_STATUS_PARKED
 )
 
 type Side = proto.Side
 
 const (
 	// Default value, always invalid
-	Side_SIDE_UNSPECIFIED Side = 0
+	SideUnspecified Side = proto.Side_SIDE_UNSPECIFIED
 	// Buy order
-	Side_SIDE_BUY Side = 1
+	SideBuy Side = proto.Side_SIDE_BUY
 	// Sell order
-	Side_SIDE_SELL Side = 2
+	SideSell Side = proto.Side_SIDE_SELL
 )
 
-type Order_Type = proto.Order_Type
+type OrderType = proto.Order_Type
 
 const (
 	// Default value, always invalid
-	Order_TYPE_UNSPECIFIED Order_Type = 0
+	OrderTypeUnspecified OrderType = proto.Order_TYPE_UNSPECIFIED
 	// Used for Limit orders
-	Order_TYPE_LIMIT Order_Type = 1
+	OrderTypeLimit OrderType = proto.Order_TYPE_LIMIT
 	// Used for Market orders
-	Order_TYPE_MARKET Order_Type = 2
+	OrderTypeMarket OrderType = proto.Order_TYPE_MARKET
 	// Used for orders where the initiating party is the network (with distressed traders)
-	Order_TYPE_NETWORK Order_Type = 3
+	OrderTypeNetwork OrderType = proto.Order_TYPE_NETWORK
 )
 
-type Order_TimeInForce = proto.Order_TimeInForce
+type OrderTimeInForce = proto.Order_TimeInForce
 
 const (
 	// Default value for TimeInForce, can be valid for an amend
-	Order_TIME_IN_FORCE_UNSPECIFIED Order_TimeInForce = 0
+	OrderTimeInForceUnspecified OrderTimeInForce = proto.Order_TIME_IN_FORCE_UNSPECIFIED
 	// Good until cancelled
-	Order_TIME_IN_FORCE_GTC Order_TimeInForce = 1
+	OrderTimeInForceGTC OrderTimeInForce = proto.Order_TIME_IN_FORCE_GTC
 	// Good until specified time
-	Order_TIME_IN_FORCE_GTT Order_TimeInForce = 2
+	OrderTimeInForceGTT OrderTimeInForce = proto.Order_TIME_IN_FORCE_GTT
 	// Immediate or cancel
-	Order_TIME_IN_FORCE_IOC Order_TimeInForce = 3
+	OrderTimeInForceIOC OrderTimeInForce = proto.Order_TIME_IN_FORCE_IOC
 	// Fill or kill
-	Order_TIME_IN_FORCE_FOK Order_TimeInForce = 4
+	OrderTimeInForceFOK OrderTimeInForce = proto.Order_TIME_IN_FORCE_FOK
 	// Good for auction
-	Order_TIME_IN_FORCE_GFA Order_TimeInForce = 5
+	OrderTimeInForceGFA OrderTimeInForce = proto.Order_TIME_IN_FORCE_GFA
 	// Good for normal
-	Order_TIME_IN_FORCE_GFN Order_TimeInForce = 6
+	OrderTimeInForceGFN OrderTimeInForce = proto.Order_TIME_IN_FORCE_GFN
 )
 
 type OrderError = proto.OrderError
 
 const (
 	// Default value, no error reported
-	OrderError_ORDER_ERROR_UNSPECIFIED OrderError = 0
+	OrderErrorUnspecified OrderError = proto.OrderError_ORDER_ERROR_UNSPECIFIED
 	// Order was submitted for a market that does not exist
-	OrderError_ORDER_ERROR_INVALID_MARKET_ID OrderError = 1
+	OrderErrorInvalidMarketID OrderError = proto.OrderError_ORDER_ERROR_INVALID_MARKET_ID
 	// Order was submitted with an invalid identifier
-	OrderError_ORDER_ERROR_INVALID_ORDER_ID OrderError = 2
+	OrderErrorInvalidOrderID OrderError = proto.OrderError_ORDER_ERROR_INVALID_ORDER_ID
 	// Order was amended with a sequence number that was not previous version + 1
-	OrderError_ORDER_ERROR_OUT_OF_SEQUENCE OrderError = 3
+	OrderErrorOutOfSequence OrderError = proto.OrderError_ORDER_ERROR_OUT_OF_SEQUENCE
 	// Order was amended with an invalid remaining size (e.g. remaining greater than total size)
-	OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE OrderError = 4
+	OrderErrorInvalidRemainingSize OrderError = proto.OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE
 	// Node was unable to get Vega (blockchain) time
-	OrderError_ORDER_ERROR_TIME_FAILURE OrderError = 5
+	OrderErrorTimeFailure OrderError = proto.OrderError_ORDER_ERROR_TIME_FAILURE
 	// Failed to remove an order from the book
-	OrderError_ORDER_ERROR_REMOVAL_FAILURE OrderError = 6
+	OrderErrorRemovalFailure OrderError = proto.OrderError_ORDER_ERROR_REMOVAL_FAILURE
 	// An order with `TimeInForce.TIME_IN_FORCE_GTT` was submitted or amended
 	// with an expiration that was badly formatted or otherwise invalid
-	OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME OrderError = 7
+	OrderErrorInvalidExpirationDatetime OrderError = proto.OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
 	// Order was submitted or amended with an invalid reference field
-	OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE OrderError = 8
+	OrderErrorInvalidOrderReference OrderError = proto.OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE
 	// Order amend was submitted for an order field that cannot not be amended (e.g. order identifier)
-	OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED OrderError = 9
+	OrderErrorEditNotAllowed OrderError = proto.OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED
 	// Amend failure because amend details do not match original order
-	OrderError_ORDER_ERROR_AMEND_FAILURE OrderError = 10
+	OrderErrorAmendFailure OrderError = proto.OrderError_ORDER_ERROR_AMEND_FAILURE
 	// Order not found in an order book or store
-	OrderError_ORDER_ERROR_NOT_FOUND OrderError = 11
+	OrderErrorNotFound OrderError = proto.OrderError_ORDER_ERROR_NOT_FOUND
 	// Order was submitted with an invalid or missing party identifier
-	OrderError_ORDER_ERROR_INVALID_PARTY_ID OrderError = 12
+	OrderErrorInvalidParty OrderError = proto.OrderError_ORDER_ERROR_INVALID_PARTY_ID
 	// Order was submitted for a market that has closed
-	OrderError_ORDER_ERROR_MARKET_CLOSED OrderError = 13
+	OrderErrorMarketClosed OrderError = proto.OrderError_ORDER_ERROR_MARKET_CLOSED
 	// Order was submitted, but the party did not have enough collateral to cover the order
-	OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED OrderError = 14
+	OrderErrorMarginCheckFailed OrderError = proto.OrderError_ORDER_ERROR_MARGIN_CHECK_FAILED
 	// Order was submitted, but the party did not have an account for this asset
-	OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT OrderError = 15
+	OrderErrorMissingGeneralAccount OrderError = proto.OrderError_ORDER_ERROR_MISSING_GENERAL_ACCOUNT
 	// Unspecified internal error
-	OrderError_ORDER_ERROR_INTERNAL_ERROR OrderError = 16
+	OrderErrorInternalError OrderError = proto.OrderError_ORDER_ERROR_INTERNAL_ERROR
 	// Order was submitted with an invalid or missing size (e.g. 0)
-	OrderError_ORDER_ERROR_INVALID_SIZE OrderError = 17
+	OrderErrorInvalidSize OrderError = proto.OrderError_ORDER_ERROR_INVALID_SIZE
 	// Order was submitted with an invalid persistence for its type
-	OrderError_ORDER_ERROR_INVALID_PERSISTENCE OrderError = 18
+	OrderErrorInvalidPersistance OrderError = proto.OrderError_ORDER_ERROR_INVALID_PERSISTENCE
 	// Order was submitted with an invalid type field
-	OrderError_ORDER_ERROR_INVALID_TYPE OrderError = 19
+	OrderErrorInvalidType OrderError = proto.OrderError_ORDER_ERROR_INVALID_TYPE
 	// Order was stopped as it would have traded with another order submitted from the same party
-	OrderError_ORDER_ERROR_SELF_TRADING OrderError = 20
+	OrderErrorSelfTrading OrderError = proto.OrderError_ORDER_ERROR_SELF_TRADING
 	// Order was submitted, but the party did not have enough collateral to cover the fees for the order
-	OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES OrderError = 21
+	OrderErrorInsufficientFundsToPayFees OrderError = proto.OrderError_ORDER_ERROR_INSUFFICIENT_FUNDS_TO_PAY_FEES
 	// Order was submitted with an incorrect or invalid market type
-	OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE OrderError = 22
+	OrderErrorIncorrectMarketType OrderError = proto.OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE
 	// Order was submitted with invalid time in force
-	OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE OrderError = 23
+	OrderErrorInvalidTimeInForce OrderError = proto.OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE
 	// A GFN order has got to the market when it is in auction mode
-	OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION OrderError = 24
+	OrderErrorGFNOrderDuringAnAuction OrderError = proto.OrderError_ORDER_ERROR_GFN_ORDER_DURING_AN_AUCTION
 	// A GFA order has got to the market when it is in continuous trading mode
-	OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING OrderError = 25
+	OrderErrorGFAOrderDuringContinuousTrading OrderError = proto.OrderError_ORDER_ERROR_GFA_ORDER_DURING_CONTINUOUS_TRADING
 	// Attempt to amend order to GTT without ExpiryAt
-	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT OrderError = 26
+	OrderErrorCannotAmendToGTTWithoutExpiryAt OrderError = proto.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT
 	// Attempt to amend ExpiryAt to a value before CreatedAt
-	OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT OrderError = 27
+	OrderErrorExpiryAtBeforeCreatedAt OrderError = proto.OrderError_ORDER_ERROR_EXPIRYAT_BEFORE_CREATEDAT
 	// Attempt to amend to GTC without an ExpiryAt value
-	OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT OrderError = 28
+	OrderErrorCannotHaveGTCAndExpiryAt OrderError = proto.OrderError_ORDER_ERROR_CANNOT_HAVE_GTC_AND_EXPIRYAT
 	// Amending to FOK or IOC is invalid
-	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC OrderError = 29
+	OrderErrorCannotAmendToFOKOrIOC OrderError = proto.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_FOK_OR_IOC
 	// Amending to GFA or GFN is invalid
-	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN OrderError = 30
+	OrderErrorCannotAmendToGFAOrGFN OrderError = proto.OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GFA_OR_GFN
 	// Amending from GFA or GFN is invalid
-	OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN OrderError = 31
+	OrderErrorCannotAmendFromGFAOrGFN OrderError = proto.OrderError_ORDER_ERROR_CANNOT_AMEND_FROM_GFA_OR_GFN
 	// IOC orders are not allowed during auction
-	OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION OrderError = 32
+	OrderErrorCannotSendIOCOrderDuringAuction OrderError = proto.OrderError_ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
 	// FOK orders are not allowed during auction
-	OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION OrderError = 33
+	OrderErrorCannotSendFOKOrderDurinAuction OrderError = proto.OrderError_ORDER_ERROR_CANNOT_SEND_FOK_ORDER_DURING_AUCTION
 	// Pegged orders must be LIMIT orders
-	OrderError_ORDER_ERROR_MUST_BE_LIMIT_ORDER OrderError = 34
+	OrderErrorMustBeLimitOrder OrderError = proto.OrderError_ORDER_ERROR_MUST_BE_LIMIT_ORDER
 	// Pegged orders can only have TIF GTC or GTT
-	OrderError_ORDER_ERROR_MUST_BE_GTT_OR_GTC OrderError = 35
+	OrderErrorMustBeGTTOrGTC OrderError = proto.OrderError_ORDER_ERROR_MUST_BE_GTT_OR_GTC
 	// Pegged order must have a reference price
-	OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE OrderError = 36
+	OrderErrorWithoutReferencePrice OrderError = proto.OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE
 	// Buy pegged order cannot reference best ask price
-	OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE OrderError = 37
+	OrderErrorBuyCannotReferenceBestAskPrice OrderError = proto.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE
 	// Pegged order offset must be <= 0
-	OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO OrderError = 38
+	OrderErrorOffsetMustBeLessOrEqualToZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO
 	// Pegged order offset must be < 0
-	OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO OrderError = 39
+	OrderErrorOffsetMustBeLessThanZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO
 	// Pegged order offset must be >= 0
-	OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO OrderError = 40
+	OrderErrorOffsetMustBeGreaterOrEqualToZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO
 	// Sell pegged order cannot reference best bid price
-	OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE OrderError = 41
+	OrderErrorSellCannotReferenceBestBidPrice OrderError = proto.OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE
 	// Pegged order offset must be > zero
-	OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO OrderError = 42
+	OrderErrorOffsetMustBeGreaterThanZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO
 	// The party has an insufficient balance, or does not have
 	// a general account to submit the order (no deposits made
 	// for the required asset)
-	OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE OrderError = 43
+	OrderErrorInsufficientAssetBalance OrderError = proto.OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE
 	// Cannot amend a non pegged orders details
-	OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER OrderError = 44
+	OrderErrorCannotAmendPeggedOrderDetailsOnNonPeggedOrder OrderError = proto.OrderError_ORDER_ERROR_CANNOT_AMEND_PEGGED_ORDER_DETAILS_ON_NON_PEGGED_ORDER
 	// We are unable to re-price a pegged order because a market price is unavailable
-	OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER OrderError = 45
+	OrderErrorUnableToRepricePeggedOrder OrderError = proto.OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER
 	// It is not possible to amend the price of an existing pegged order
-	OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER OrderError = 46
+	OrderErrorUnableToAmendPriceOnPeggedOrder OrderError = proto.OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER
 	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds
-	OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS OrderError = 47
+	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = proto.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 )
 
 var (
-	ErrInvalidMarketID                             = OrderError_ORDER_ERROR_INVALID_MARKET_ID
-	ErrInvalidOrderID                              = OrderError_ORDER_ERROR_INVALID_ORDER_ID
-	ErrOrderOutOfSequence                          = OrderError_ORDER_ERROR_OUT_OF_SEQUENCE
-	ErrInvalidRemainingSize                        = OrderError_ORDER_ERROR_INVALID_REMAINING_SIZE
-	ErrOrderRemovalFailure                         = OrderError_ORDER_ERROR_REMOVAL_FAILURE
-	ErrInvalidExpirationDatetime                   = OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME
-	ErrEditNotAllowed                              = OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED
-	ErrOrderAmendFailure                           = OrderError_ORDER_ERROR_AMEND_FAILURE
-	ErrOrderNotFound                               = OrderError_ORDER_ERROR_NOT_FOUND
-	ErrInvalidPartyID                              = OrderError_ORDER_ERROR_INVALID_PARTY_ID
-	ErrInvalidSize                                 = OrderError_ORDER_ERROR_INVALID_SIZE
-	ErrInvalidPersistence                          = OrderError_ORDER_ERROR_INVALID_PERSISTENCE
-	ErrInvalidType                                 = OrderError_ORDER_ERROR_INVALID_TYPE
-	ErrInvalidTimeInForce                          = OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE
-	ErrPeggedOrderMustBeLimitOrder                 = OrderError_ORDER_ERROR_MUST_BE_LIMIT_ORDER
-	ErrPeggedOrderMustBeGTTOrGTC                   = OrderError_ORDER_ERROR_MUST_BE_GTT_OR_GTC
-	ErrPeggedOrderWithoutReferencePrice            = OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE
-	ErrPeggedOrderBuyCannotReferenceBestAskPrice   = OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE
-	ErrPeggedOrderOffsetMustBeLessOrEqualToZero    = OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO
-	ErrPeggedOrderOffsetMustBeLessThanZero         = OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO
-	ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero = OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO
-	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE
-	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO
+	ErrInvalidMarketID                             = OrderErrorInvalidMarketID
+	ErrInvalidOrderID                              = OrderErrorInvalidOrderID
+	ErrOrderOutOfSequence                          = OrderErrorOutOfSequence
+	ErrInvalidRemainingSize                        = OrderErrorInvalidRemainingSize
+	ErrOrderRemovalFailure                         = OrderErrorRemovalFailure
+	ErrInvalidExpirationDatetime                   = OrderErrorInvalidExpirationDatetime
+	ErrEditNotAllowed                              = OrderErrorEditNotAllowed
+	ErrOrderAmendFailure                           = OrderErrorAmendFailure
+	ErrOrderNotFound                               = OrderErrorNotFound
+	ErrInvalidPartyID                              = OrderErrorInvalidParty
+	ErrInvalidSize                                 = OrderErrorInvalidSize
+	ErrInvalidPersistence                          = OrderErrorInvalidPersistance
+	ErrInvalidType                                 = OrderErrorInvalidType
+	ErrInvalidTimeInForce                          = OrderErrorInvalidTimeInForce
+	ErrPeggedOrderMustBeLimitOrder                 = OrderErrorMustBeLimitOrder
+	ErrPeggedOrderMustBeGTTOrGTC                   = OrderErrorMustBeGTTOrGTC
+	ErrPeggedOrderWithoutReferencePrice            = OrderErrorWithoutReferencePrice
+	ErrPeggedOrderBuyCannotReferenceBestAskPrice   = OrderErrorBuyCannotReferenceBestAskPrice
+	ErrPeggedOrderOffsetMustBeLessOrEqualToZero    = OrderErrorOffsetMustBeLessOrEqualToZero
+	ErrPeggedOrderOffsetMustBeLessThanZero         = OrderErrorOffsetMustBeLessThanZero
+	ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero = OrderErrorOffsetMustBeGreaterOrEqualToZero
+	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderErrorSellCannotReferenceBestBidPrice
+	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderErrorOffsetMustBeGreaterThanZero
 )
 
 func IsOrderError(err error) (OrderError, bool) {

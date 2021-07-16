@@ -143,8 +143,8 @@ func (s *AbciTestSuite) testBeginCommitSuccess(_ *testing.T, app *processor.App,
 	proc.stat.EXPECT().IncHeight()
 
 	proc.ts.EXPECT().SetTimeNow(gomock.Any(), now).Times(1)
-	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
 		Header: tmtypes.Header{
 			Time: now,
@@ -180,8 +180,8 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(_ *testing.T, app *processor
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	proc.ts.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(2)
-	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
 		Header: tmtypes.Header{
 			Time: now,
@@ -190,8 +190,8 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(_ *testing.T, app *processor
 
 	// next block times
 	prev, now = now, now.Add(time.Second)
-	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
 		Header: tmtypes.Header{
 			Time: now,

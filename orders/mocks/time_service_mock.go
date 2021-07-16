@@ -34,12 +34,11 @@ func (m *MockTimeService) EXPECT() *MockTimeServiceMockRecorder {
 }
 
 // GetTimeNow mocks base method
-func (m *MockTimeService) GetTimeNow() (time.Time, error) {
+func (m *MockTimeService) GetTimeNow() time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTimeNow")
 	ret0, _ := ret[0].(time.Time)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // GetTimeNow indicates an expected call of GetTimeNow

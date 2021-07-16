@@ -48,15 +48,14 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 		cb = f
 	})
 
-	tim.EXPECT().GetTimeNow().Times(1).Return(initTime, nil)
+	tim.EXPECT().GetTimeNow().Times(1).Return(initTime)
 
 	cfg := evtforward.NewDefaultConfig()
 	// add the pubkeys
 	cfg.BlockchainQueueAllowlist = allowlist
-	evtfwd, err := evtforward.New(
+	evtfwd := evtforward.New(
 		logging.NewTestLogger(), cfg,
 		cmd, tim, top)
-	assert.NoError(t, err)
 
 	return &testEvtFwd{
 		EvtForwarder: evtfwd,

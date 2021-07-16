@@ -404,11 +404,11 @@ func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Acco
 	return types.Account{}, errors.New("account does not exist")
 }
 
-func (b *BrokerStub) GetTraderMarginAccount(trader, market string) (types.Account, error) {
+func (b *BrokerStub) GetPartyMarginAccount(party, market string) (types.Account, error) {
 	batch := b.GetAccountEvents()
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketId == market {
+		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_MARGIN && v.MarketId == market {
 			return v, nil
 		}
 	}
@@ -426,13 +426,13 @@ func (b *BrokerStub) GetMarketSettlementAccount(market string) (types.Account, e
 	return types.Account{}, errors.New("account does not exist")
 }
 
-// GetTraderGeneralAccount returns the latest event WRT the trader's general account
-func (b *BrokerStub) GetTraderGeneralAccount(trader, asset string) (ga types.Account, err error) {
+// GetPartyGeneralAccount returns the latest event WRT the party's general account
+func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
+		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_GENERAL && v.Asset == asset {
 			ga = v
 			err = nil
 		}
@@ -441,12 +441,12 @@ func (b *BrokerStub) GetTraderGeneralAccount(trader, asset string) (ga types.Acc
 	return
 }
 
-func (b *BrokerStub) GetTraderBondAccount(trader, asset string) (ba types.Account, err error) {
+func (b *BrokerStub) GetPartyBondAccount(party, asset string) (ba types.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
 	for _, e := range batch {
 		v := e.Account()
-		if v.Owner == trader && v.Type == types.AccountType_ACCOUNT_TYPE_BOND && v.Asset == asset {
+		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_BOND && v.Asset == asset {
 			// may not be the latest ballence, so keep iterating
 			ba = v
 			err = nil

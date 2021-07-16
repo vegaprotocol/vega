@@ -25,7 +25,7 @@ type pos struct {
 	party   string
 	size    int64
 	price   *num.Uint
-	newSize int64 // track this so we can determine when a trader switches between long <> short
+	newSize int64 // track this so we can determine when a party switches between long <> short
 }
 
 type mtmTransfer struct {

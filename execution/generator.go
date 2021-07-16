@@ -26,7 +26,7 @@ func (i *IDgenerator) NewBatch() {
 // SetID sets the ID on an order, and increments total order count
 func (i *IDgenerator) SetID(o *types.Order) {
 	i.orders++
-	o.Id = fmt.Sprintf("V%010d-%010d", i.batches, i.orders)
+	o.ID = fmt.Sprintf("V%010d-%010d", i.batches, i.orders)
 }
 
 // SetProposalID sets proposal ID and increments total proposal count

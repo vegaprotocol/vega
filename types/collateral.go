@@ -1,5 +1,3 @@
-//lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
-
 package types
 
 import (
@@ -8,11 +6,11 @@ import (
 )
 
 type Account struct {
-	Id       string
+	ID       string
 	Owner    string
 	Balance  *num.Uint
 	Asset    string
-	MarketId string
+	MarketID string
 	Type     AccountType
 }
 
@@ -28,11 +26,11 @@ func (a *Account) Clone() *Account {
 
 func (a *Account) IntoProto() *proto.Account {
 	return &proto.Account{
-		Id:       a.Id,
+		Id:       a.ID,
 		Owner:    a.Owner,
 		Balance:  num.UintToUint64(a.Balance),
 		Asset:    a.Asset,
-		MarketId: a.MarketId,
+		MarketId: a.MarketID,
 		Type:     a.Type,
 	}
 }
@@ -151,37 +149,37 @@ type AccountType = proto.AccountType
 
 const (
 	// Default value
-	AccountType_ACCOUNT_TYPE_UNSPECIFIED AccountType = 0
+	AccountTypeUnspecified AccountType = proto.AccountType_ACCOUNT_TYPE_UNSPECIFIED
 	// Insurance pool accounts contain insurance pool funds for a market
-	AccountType_ACCOUNT_TYPE_INSURANCE AccountType = 1
+	AccountTypeInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_INSURANCE
 	// Settlement accounts exist only during settlement or mark-to-market
-	AccountType_ACCOUNT_TYPE_SETTLEMENT AccountType = 2
+	AccountTypeSettlement AccountType = proto.AccountType_ACCOUNT_TYPE_SETTLEMENT
 	// Margin accounts contain margin funds for a party and each party will
 	// have multiple margin accounts, one for each market they have traded in
 	//
 	// Margin account funds will alter as margin requirements on positions change
-	AccountType_ACCOUNT_TYPE_MARGIN AccountType = 3
+	AccountTypeMargin AccountType = proto.AccountType_ACCOUNT_TYPE_MARGIN
 	// General accounts contains general funds for a party. A party will
 	// have multiple general accounts, one for each asset they want
 	// to trade with
 	//
 	// General accounts are where funds are initially deposited or withdrawn from,
 	// it is also the account where funds are taken to fulfil fees and initial margin requirements
-	AccountType_ACCOUNT_TYPE_GENERAL AccountType = 4
+	AccountTypeGeneral AccountType = proto.AccountType_ACCOUNT_TYPE_GENERAL
 	// Infrastructure accounts contain fees earned by providing infrastructure on Vega
-	AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE AccountType = 5
+	AccountTypeFeesInfrastructure AccountType = proto.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE
 	// Liquidity accounts contain fees earned by providing liquidity on Vega markets
-	AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY AccountType = 6
+	AccountTypeFeesLiquidity AccountType = proto.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY
 	// This account is created to hold fees earned by placing orders that sit on the book
-	// and are then matched with an incoming order to create a trade - These fees reward traders
+	// and are then matched with an incoming order to create a trade - These fees reward parties
 	// who provide the best priced liquidity that actually allows trading to take place
-	AccountType_ACCOUNT_TYPE_FEES_MAKER AccountType = 7
+	AccountTypeFeesMaker AccountType = proto.AccountType_ACCOUNT_TYPE_FEES_MAKER
 	// This account is created to lock funds to be withdrawn by parties
-	AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW AccountType = 8
+	AccountTypeLockWithdraw AccountType = proto.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW
 	// This account is created to maintain liquidity providers funds commitments
-	AccountType_ACCOUNT_TYPE_BOND AccountType = 9
+	AccountTypeBond AccountType = proto.AccountType_ACCOUNT_TYPE_BOND
 	// External account represents an external source (deposit/withdrawal)
-	AccountType_ACCOUNT_TYPE_EXTERNAL AccountType = 10
+	AccountTypeExternal AccountType = proto.AccountType_ACCOUNT_TYPE_EXTERNAL
 	// Global insurance pool accounts contain insurance funds for a asset - one insurance pool per asset
-	AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE AccountType = 11
+	AccountTypeGlobalInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE
 )

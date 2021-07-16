@@ -74,12 +74,12 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 
 func (ipv *IndicativePriceAndVolume) incrementLevelVolume(idx int, volume uint64, side types.Side) {
 	switch side {
-	case types.Side_SIDE_BUY:
+	case types.SideBuy:
 		if ipv.levels[idx].buypl == nil {
 			ipv.levels[idx].buypl = &ipvVolume{}
 		}
 		ipv.levels[idx].buypl.volume += volume
-	case types.Side_SIDE_SELL:
+	case types.SideSell:
 		if ipv.levels[idx].sellpl == nil {
 			ipv.levels[idx].sellpl = &ipvVolume{}
 		}
@@ -104,7 +104,7 @@ func (ipv *IndicativePriceAndVolume) AddVolumeAtPrice(price *num.Uint, volume ui
 
 func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64, side types.Side) {
 	switch side {
-	case types.Side_SIDE_BUY:
+	case types.SideBuy:
 		if ipv.levels[idx].buypl == nil {
 			ipv.log.Panic("cannot decrement volume from a non-existing level",
 				logging.String("side", side.String()),
@@ -112,7 +112,7 @@ func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64
 				logging.Uint64("volume", volume))
 		}
 		ipv.levels[idx].buypl.volume -= volume
-	case types.Side_SIDE_SELL:
+	case types.SideSell:
 		if ipv.levels[idx].sellpl == nil {
 			ipv.log.Panic("cannot decrement volume from a non-existing level",
 				logging.String("side", side.String()),

@@ -10,7 +10,7 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersCancelTheFollowingOrders(
+func PartiesCancelTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
 	table *gherkin.DataTable,
@@ -47,7 +47,7 @@ type cancelOrderRow struct {
 
 func parseCancelOrderTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"reference",
 	}, []string{
 		"error",
@@ -55,7 +55,7 @@ func parseCancelOrderTable(table *gherkin.DataTable) []RowWrapper {
 }
 
 func (r cancelOrderRow) Party() string {
-	return r.row.MustStr("trader")
+	return r.row.MustStr("party")
 }
 
 func (r cancelOrderRow) HasMarketID() bool {

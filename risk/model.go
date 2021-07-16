@@ -23,7 +23,7 @@ type Model interface {
 	CalculationInterval() time.Duration
 	CalculateRiskFactors(current *types.RiskResult) (bool, *types.RiskResult)
 	PriceRange(price, yearFraction, probability num.Decimal) (minPrice, maxPrice num.Decimal)
-	ProbabilityOfTrading(currentP, orderP, minP, maxP *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
+	ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
 	GetProjectionHorizon() num.Decimal
 }
 
@@ -34,9 +34,9 @@ func NewModel(prm interface{}, asset string) (Model, error) {
 	}
 
 	switch rm := prm.(type) {
-	case *types.TradableInstrument_LogNormalRiskModel:
+	case *types.TradableInstrumentLogNormalRiskModel:
 		return models.NewBuiltinFutures(rm.LogNormalRiskModel, asset)
-	case *types.TradableInstrument_SimpleRiskModel:
+	case *types.TradableInstrumentSimpleRiskModel:
 		return models.NewSimple(rm.SimpleRiskModel, asset)
 	default:
 		return nil, ErrUnimplementedRiskModel

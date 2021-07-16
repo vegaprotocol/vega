@@ -105,8 +105,8 @@ func (o OrderSubmission) String() string {
 
 func (o OrderSubmission) IntoOrder(party string) *Order {
 	return &Order{
-		MarketId:    o.MarketId,
-		PartyId:     party,
+		MarketID:    o.MarketId,
+		Party:       party,
 		Side:        o.Side,
 		Price:       o.Price,
 		Size:        o.Size,

@@ -3,6 +3,7 @@ package oracles
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -16,14 +17,21 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
+// TimeService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/oracles TimeService
+type TimeService interface {
+	NotifyOnTick(f func(context.Context, time.Time))
+}
+
 // Engine is responsible of broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
-	log         *logging.Logger
-	broker      Broker
-	CurrentTime time.Time
-
+	log           *logging.Logger
+	broker        Broker
+	CurrentTime   time.Time
+	buffer        []OracleData
 	subscriptions specSubscriptions
+	lock          sync.Mutex
 }
 
 // NewEngine creates a new oracle Engine.
@@ -32,31 +40,48 @@ func NewEngine(
 	conf Config,
 	currentTime time.Time,
 	broker Broker,
+	ts TimeService,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
-	return &Engine{
+	e := &Engine{
 		log:           log,
 		broker:        broker,
 		CurrentTime:   currentTime,
 		subscriptions: newSpecSubscriptions(),
 	}
+
+	ts.NotifyOnTick(e.UpdateCurrentTime)
+	return e
 }
 
 // UpdateCurrentTime listens to update of the current Vega time.
-func (e *Engine) UpdateCurrentTime(_ context.Context, ts time.Time) {
+func (e *Engine) UpdateCurrentTime(ctx context.Context, ts time.Time) {
 	e.CurrentTime = ts
+
+	e.lock.Lock()
+	for _, data := range e.buffer {
+		err := e.sendOracleUpdate(ctx, data)
+		if err != nil {
+			e.log.Debug("failed to send oracle update",
+				logging.Error(err),
+			)
+		}
+	}
+	e.buffer = nil
+	e.lock.Unlock()
 }
 
-// BroadcastData broadcasts the OracleData to products and risk models that are
-// interested in it. If no one is listening to this OracleData, it is discarded.
-func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
+func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
 	result, err := e.subscriptions.filterSubscribers(func(spec OracleSpec) (bool, error) {
 		return spec.MatchData(data)
 	})
 
 	if err != nil {
+		e.log.Debug("error in filtering subscribers",
+			logging.Error(err),
+		)
 		return err
 	}
 
@@ -71,6 +96,15 @@ func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 		e.sendOracleDataBroadcast(ctx, data, result.oracleSpecIDs)
 	}
 
+	return nil
+}
+
+// BroadcastData appends the OracleData to the buffer and is broadcast on chain time event
+// to products and risk models that are interested in it. If no one is listening to this OracleData, it is discarded.
+func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
+	e.lock.Lock()
+	e.buffer = append(e.buffer, data)
+	e.lock.Unlock()
 	return nil
 }
 

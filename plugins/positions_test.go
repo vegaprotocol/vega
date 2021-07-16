@@ -31,7 +31,7 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
-	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, num.NewUint(1000), []events.TradeSettlement{
+	ps := events.NewSettlePositionEvent(position.ctx, "party1", market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  -1,
 			price: num.NewUint(1000),
@@ -49,11 +49,11 @@ func TestMultipleTradesOfSameSize(t *testing.T) {
 	assert.Equal(t, ps.Price(), pp[0].AverageEntryPrice)
 }
 
-func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
+func TestMultipleTradesAndLossSocializationPartyNoOpenVolume(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
-	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, num.NewUint(1000), []events.TradeSettlement{
+	ps := events.NewSettlePositionEvent(position.ctx, "party1", market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  2,
 			price: num.NewUint(1000),
@@ -72,7 +72,7 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	assert.Equal(t, "1000", pp[0].RealisedPnl.String())
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -82,11 +82,11 @@ func TestMultipleTradesAndLossSocializationTraderNoOpenVolume(t *testing.T) {
 	assert.Equal(t, "0", pp[0].UnrealisedPnl.String())
 }
 
-func TestDistressedTraderUpdate(t *testing.T) {
+func TestDistressedPartyUpdate(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
-	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, num.NewUint(1000), []events.TradeSettlement{
+	ps := events.NewSettlePositionEvent(position.ctx, "party1", market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  2,
 			price: num.NewUint(1000),
@@ -106,7 +106,7 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	assert.Equal(t, "-600", pp[0].UnrealisedPnl.String())
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -114,8 +114,8 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	// with the changes, the RealisedPNL should be 700
 	assert.Equal(t, "-300", pp[0].RealisedPnl.String())
 	assert.Equal(t, "-600", pp[0].UnrealisedPnl.String())
-	// now assume this trader is distressed, and we've taken all their funds
-	sde := events.NewSettleDistressed(position.ctx, "trader1", market, num.Zero(), num.NewUint(100), 1)
+	// now assume this party is distressed, and we've taken all their funds
+	sde := events.NewSettleDistressed(position.ctx, "party1", market, num.Zero(), num.NewUint(100), 1)
 	position.Push(sde)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)
@@ -124,11 +124,11 @@ func TestDistressedTraderUpdate(t *testing.T) {
 	assert.Equal(t, "-1000", pp[0].RealisedPnl.String())
 }
 
-func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
+func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 	position := getPosPlugin(t)
 	defer position.Finish()
 	market := "market-id"
-	ps := events.NewSettlePositionEvent(position.ctx, "trader1", market, num.NewUint(1000), []events.TradeSettlement{
+	ps := events.NewSettlePositionEvent(position.ctx, "party1", market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
 			size:  2,
 			price: num.NewUint(1000),
@@ -148,7 +148,7 @@ func TestMultipleTradesAndLossSocializationTraderWithOpenVolume(t *testing.T) {
 	assert.Equal(t, "-600", pp[0].UnrealisedPnl.String())
 
 	// then we process the event for LossSocialization
-	lsevt := events.NewLossSocializationEvent(position.ctx, "trader1", market, num.NewUint(300), true, 1)
+	lsevt := events.NewLossSocializationEvent(position.ctx, "party1", market, num.NewUint(300), true, 1)
 	position.Push(lsevt)
 	pp, err = position.GetPositionsByMarket(market)
 	assert.NoError(t, err)

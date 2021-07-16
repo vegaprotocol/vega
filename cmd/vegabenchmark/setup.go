@@ -69,16 +69,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		broker,
 		time.Time{},
 	)
-	assets, err := assets.New(
+	assets := assets.New(
 		log,
 		assets.NewDefaultConfig(),
 		nodeWallet,
 		timeService,
 	)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	pubKey, err := hex.DecodeString(selfPubKey)
 	if err != nil {
 		return nil, nil, err

@@ -12,14 +12,14 @@ func TheFollowingOrdersShouldBeStopped(broker *stubs.BrokerStub, table *gherkin.
 	var orderNotStopped []string
 	count := len(table.Rows) - 1
 	for _, row := range parseStoppedOrdersTable(table) {
-		trader := row.MustStr("trader")
+		party := row.MustStr("party")
 		marketID := row.MustStr("market id")
 		reason := row.MustStr("reason")
 
 		data := broker.GetOrderEvents()
 		for _, o := range data {
 			v := o.Order()
-			if v.PartyId == trader && v.MarketId == marketID {
+			if v.PartyId == party && v.MarketId == marketID {
 				if v.Status == types.Order_STATUS_STOPPED && v.Reason.String() == reason {
 					count -= 1
 					continue
@@ -42,7 +42,7 @@ func errOrderNotStopped(orderNotRejected []string) error {
 
 func parseStoppedOrdersTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"market id",
 		"reason",
 	}, []string{})

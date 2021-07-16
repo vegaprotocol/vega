@@ -7,7 +7,7 @@ import (
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TraderShouldHaveOneMarginAccountPerMarket(
+func PartyShouldHaveOneMarginAccountPerMarket(
 	broker *stubs.BrokerStub,
 	owner string,
 ) error {
@@ -27,5 +27,5 @@ func TraderShouldHaveOneMarginAccountPerMarket(
 }
 
 func errMultipleMarginAccountForMarket(owner string, acc types.Account) error {
-	return fmt.Errorf("trader=%v have multiple account for market=%v", owner, acc.MarketId)
+	return fmt.Errorf("party=%v have multiple account for market=%v", owner, acc.MarketId)
 }

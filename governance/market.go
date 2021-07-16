@@ -117,13 +117,13 @@ func createInstrument(
 func assignRiskModel(definition *types.NewMarketConfiguration, target *types.TradableInstrument) error {
 	switch parameters := definition.RiskParameters.(type) {
 	case *types.NewMarketConfiguration_Simple:
-		target.RiskModel = &types.TradableInstrument_SimpleRiskModel{
+		target.RiskModel = &types.TradableInstrumentSimpleRiskModel{
 			SimpleRiskModel: &types.SimpleRiskModel{
 				Params: parameters.Simple,
 			},
 		}
 	case *types.NewMarketConfiguration_LogNormal:
-		target.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		target.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 			LogNormalRiskModel: parameters.LogNormal,
 		}
 	default:
@@ -372,7 +372,7 @@ func validateShape(
 			return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without a proportion")
 		}
 
-		if side == types.Side_SIDE_BUY {
+		if side == types.SideBuy {
 			switch lo.Reference {
 			case proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
 				return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")

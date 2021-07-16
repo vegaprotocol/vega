@@ -9,13 +9,13 @@ import (
 	"github.com/cucumber/godog/gherkin"
 )
 
-func TradersPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *gherkin.DataTable) error {
+func PartiesPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *gherkin.DataTable) error {
 	for _, r := range parseSubmitPeggedOrderTable(table) {
 		row := submitPeggedOrderRow{row: r}
 
 		orderSubmission := &types.OrderSubmission{
-			Type:        types.Order_TYPE_LIMIT,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			Type:        types.OrderTypeLimit,
+			TimeInForce: types.OrderTimeInForceGTC,
 			Side:        row.Side(),
 			MarketId:    row.MarketID(),
 			Size:        row.Volume(),
@@ -35,7 +35,7 @@ func TradersPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *gherkin
 
 func parseSubmitPeggedOrderTable(table *gherkin.DataTable) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"market id",
 		"side",
 		"volume",
@@ -52,7 +52,7 @@ type submitPeggedOrderRow struct {
 }
 
 func (r submitPeggedOrderRow) Party() string {
-	return r.row.MustStr("trader")
+	return r.row.MustStr("party")
 }
 
 func (r submitPeggedOrderRow) MarketID() string {

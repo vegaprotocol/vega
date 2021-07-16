@@ -20,7 +20,7 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	addAccount(tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	o1 := getMarketOrder(tm, now, types.Order_TYPE_LIMIT, types.Order_TIME_IN_FORCE_GTT, "Order01", types.Side_SIDE_BUY, "aaa", 1, 10)
+	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order01", types.SideBuy, "aaa", 1, 10)
 	o1.ExpiresAt = now.Add(5 * time.Second).UnixNano()
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NoError(t, err)
@@ -28,14 +28,14 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 
 	// now we edit the order t make it GTC so it should not expire
 	amendment := &types.OrderAmendment{
-		OrderId:     o1.Id,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		OrderID:     o1.ID,
+		TimeInForce: types.OrderTimeInForceGTC,
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa")
 	require.NotNil(t, amendConf)
 	require.NoError(t, err)
-	assert.Equal(t, types.Order_STATUS_ACTIVE, amendConf.Order.Status)
+	assert.Equal(t, types.OrderStatusActive, amendConf.Order.Status)
 
 	// now expire, and nothing should be returned
 	tm.market.OnChainTimeUpdate(context.Background(), now.Add(10*time.Second))

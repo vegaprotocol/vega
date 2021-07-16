@@ -29,7 +29,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -55,17 +55,17 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(70000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -86,17 +86,17 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
 	lpSmallerCommitment := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(60000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -124,8 +124,8 @@ func TestAmendDeployedCommitment(t *testing.T) {
 			}
 		}
 
-		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
+		expectedStatus := map[string]types.LiquidityProvisionStatus{
+			"liquidity-submission-1": types.LiquidityProvisionStatusActive,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -148,9 +148,9 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		require.Len(t, found, 8)
 
 		// reference -> status
-		expectedStatus := map[string]types.Order_Status{
-			"ref-lp-submission-1": types.Order_STATUS_CANCELLED,
-			"ref-lp-submission-2": types.Order_STATUS_ACTIVE,
+		expectedStatus := map[string]types.OrderStatus{
+			"ref-lp-submission-1": types.OrderStatusCancelled,
+			"ref-lp-submission-2": types.OrderStatusActive,
 		}
 
 		totalCancelled := 0
@@ -161,10 +161,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				expectedStatus[o.Reference].String(),
 				o.Status.String(),
 			)
-			if o.Status == types.Order_STATUS_CANCELLED {
+			if o.Status == types.OrderStatusCancelled {
 				totalCancelled += 1
 			}
-			if o.Status == types.Order_STATUS_ACTIVE {
+			if o.Status == types.OrderStatusActive {
 				totalActive += 1
 			}
 		}
@@ -177,17 +177,17 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
 	lpHigherCommitment := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(80000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-3",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -215,8 +215,8 @@ func TestAmendDeployedCommitment(t *testing.T) {
 			}
 		}
 
-		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
+		expectedStatus := map[string]types.LiquidityProvisionStatus{
+			"liquidity-submission-1": types.LiquidityProvisionStatusActive,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -239,9 +239,9 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		require.Len(t, found, 8)
 
 		// reference -> status
-		expectedStatus := map[string]types.Order_Status{
-			"ref-lp-submission-2": types.Order_STATUS_CANCELLED,
-			"ref-lp-submission-3": types.Order_STATUS_ACTIVE,
+		expectedStatus := map[string]types.OrderStatus{
+			"ref-lp-submission-2": types.OrderStatusCancelled,
+			"ref-lp-submission-3": types.OrderStatusActive,
 		}
 
 		totalCancelled := 0
@@ -252,10 +252,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				expectedStatus[o.Reference].String(),
 				o.Status.String(),
 			)
-			if o.Status == types.Order_STATUS_CANCELLED {
+			if o.Status == types.OrderStatusCancelled {
 				totalCancelled += 1
 			}
-			if o.Status == types.Order_STATUS_ACTIVE {
+			if o.Status == types.OrderStatusActive {
 				totalActive += 1
 			}
 		}
@@ -268,19 +268,19 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
 	lpDifferentShapeCommitment := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(80000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-3-bis",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -4},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -3},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -2},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -4},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -3},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -2},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -308,8 +308,8 @@ func TestAmendDeployedCommitment(t *testing.T) {
 			}
 		}
 
-		expectedStatus := map[string]types.LiquidityProvision_Status{
-			"liquidity-submission-1": types.LiquidityProvision_STATUS_ACTIVE,
+		expectedStatus := map[string]types.LiquidityProvisionStatus{
+			"liquidity-submission-1": types.LiquidityProvisionStatusActive,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -332,9 +332,9 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		require.Len(t, found, 10)
 
 		// reference -> status
-		expectedStatus := map[string]types.Order_Status{
-			"ref-lp-submission-3":     types.Order_STATUS_CANCELLED,
-			"ref-lp-submission-3-bis": types.Order_STATUS_ACTIVE,
+		expectedStatus := map[string]types.OrderStatus{
+			"ref-lp-submission-3":     types.OrderStatusCancelled,
+			"ref-lp-submission-3-bis": types.OrderStatusActive,
 		}
 
 		totalCancelled := 0
@@ -345,10 +345,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 				expectedStatus[o.Reference].String(),
 				o.Status.String(),
 			)
-			if o.Status == types.Order_STATUS_CANCELLED {
+			if o.Status == types.OrderStatusCancelled {
 				totalCancelled += 1
 			}
-			if o.Status == types.Order_STATUS_ACTIVE {
+			if o.Status == types.OrderStatusActive {
 				totalActive += 1
 			}
 		}
@@ -363,17 +363,17 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// this should result into an error, and the commitment staying
 	// untouched
 	lpTooSmallCommitment := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(30000), // required commitment is 50000
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-4",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -390,17 +390,17 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// this should result into an error, and the commitment staying
 	// untouched
 	lpTooHighCommitment := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(600000000000), // required commitment is 50000
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-5",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -417,7 +417,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// this should result into an error, and the commitment staying
 	// untouched
 	lpCancelCommitment := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.Zero(), // required commitment is 50000
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-6",
@@ -451,7 +451,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -477,17 +477,17 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(70000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -507,7 +507,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmissionCancel := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.Zero(),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
@@ -544,7 +544,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -570,17 +570,17 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(150000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -597,7 +597,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.Equal(t, num.NewUint(75129), acc.Balance)
+		assert.Equal(t, num.NewUint(67860), acc.Balance)
 	})
 
 	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
@@ -623,7 +623,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// only 4 cancellations
 		i := 0
 		for _, o := range found {
-			var expectedStatus = types.Order_STATUS_CANCELLED
+			var expectedStatus = types.OrderStatusCancelled
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -649,7 +649,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		require.Len(t, found, 4)
 
 		for _, o := range found {
-			var expectedStatus = types.Order_STATUS_ACTIVE
+			var expectedStatus = types.OrderStatusActive
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -674,7 +674,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 			MakerFee:          num.DecimalFromFloat(0.00025),
 		},
 	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 		LogNormalRiskModel: &types.LogNormalRiskModel{
 			RiskAversionParameter: num.DecimalFromFloat(0.001),
 			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
@@ -702,17 +702,17 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	// this is a log of stake, enough to cover all
 	// the required stake for the market
 	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(150000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 
@@ -734,7 +734,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		acc, err = tm.collateralEngine.GetPartyMarginAccount(
 			tm.market.GetID(), lpparty, tm.asset)
 		assert.NoError(t, err)
-		assert.True(t, acc.Balance.EQ(num.NewUint(368378)))
+		assert.True(t, acc.Balance.EQ(num.NewUint(336872)))
 	})
 
 	tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(2*time.Second))
@@ -760,7 +760,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		// 4 cancellations
 		i := 0
 		for _, o := range found {
-			var expectedStatus = types.Order_STATUS_CANCELLED
+			var expectedStatus = types.OrderStatusCancelled
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -771,17 +771,17 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 
 	// commitment is being updated during auction
 	lpSubmissionUpdate := &types.LiquidityProvisionSubmission{
-		MarketId:         tm.market.GetID(),
+		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
 		},
 	}
 

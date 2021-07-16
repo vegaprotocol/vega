@@ -31,7 +31,7 @@ var (
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
@@ -271,11 +271,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	if len(marketConfig.Id) == 0 {
 		return ErrNoMarketID
 	}
-	now, err := e.time.GetTimeNow()
-	if err != nil {
-		e.log.Error("Failed to get current Vega network time", logging.Error(err))
-		return err
-	}
+	now := e.time.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()
@@ -452,7 +448,7 @@ func (e *Engine) SubmitOrder(
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
 func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
-	timer := metrics.NewTimeCounter(amendment.MarketId, "execution", "AmendOrder")
+	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
 		e.notifyFailureOnError(ctx, returnedErr, amendment, party)
@@ -462,7 +458,7 @@ func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 		e.log.Debug("amend order", logging.OrderAmendment(amendment))
 	}
 
-	mkt, ok := e.markets[amendment.MarketId]
+	mkt, ok := e.markets[amendment.MarketID]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
@@ -472,7 +468,7 @@ func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 		return nil, err
 	}
 
-	e.decrementOrderGaugeMetrics(amendment.MarketId, conf.Order, conf.PassiveOrdersAffected)
+	e.decrementOrderGaugeMetrics(amendment.MarketID, conf.Order, conf.PassiveOrdersAffected)
 
 	return conf, nil
 }
@@ -483,7 +479,7 @@ func (e *Engine) decrementOrderGaugeMetrics(
 	passive []*types.Order,
 ) {
 	// order was active, not anymore -> decrement gauge
-	if order.Status != types.Order_STATUS_ACTIVE {
+	if order.Status != types.OrderStatusActive {
 		metrics.OrderGaugeAdd(-1, market)
 	}
 	var passiveCount int
@@ -533,7 +529,7 @@ func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string)
 	if err != nil {
 		return nil, err
 	}
-	if conf.Order.Status == types.Order_STATUS_CANCELLED {
+	if conf.Order.Status == types.OrderStatusCancelled {
 		metrics.OrderGaugeAdd(-1, market)
 	}
 	return []*types.OrderCancellationConfirmation{conf}, nil
@@ -550,7 +546,7 @@ func (e *Engine) cancelOrderByMarket(ctx context.Context, party, market string) 
 	}
 	var confirmed int
 	for _, conf := range confirmations {
-		if conf.Order.Status == types.Order_STATUS_CANCELLED {
+		if conf.Order.Status == types.OrderStatusCancelled {
 			confirmed += 1
 		}
 	}
@@ -569,7 +565,7 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 		confirmations = append(confirmations, confs...)
 		var confirmed int
 		for _, conf := range confs {
-			if conf.Order.Status == types.Order_STATUS_CANCELLED {
+			if conf.Order.Status == types.OrderStatusCancelled {
 				confirmed += 1
 			}
 		}
@@ -579,7 +575,7 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 }
 
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID string) (returnedErr error) {
-	timer := metrics.NewTimeCounter(sub.MarketId, "execution", "LiquidityProvisionSubmission")
+	timer := metrics.NewTimeCounter(sub.MarketID, "execution", "LiquidityProvisionSubmission")
 	defer func() {
 		timer.EngineTimeCounterAdd()
 		e.notifyFailureOnError(ctx, returnedErr, sub, party)
@@ -593,7 +589,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		)
 	}
 
-	mkt, ok := e.markets[sub.MarketId]
+	mkt, ok := e.markets[sub.MarketID]
 	if !ok {
 		return types.ErrInvalidMarketID
 	}

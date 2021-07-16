@@ -27,31 +27,31 @@ Feature: Test liquidity provider reward distribution
 
   Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
     # setup accounts
-    Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount     |
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
       | lp1     | ETH   | 1000000000 |
-      | trader1 | ETH   | 100000000  |
-      | trader2 | ETH   | 100000000  |
+      | party1 | ETH   | 100000000  |
+      | party2 | ETH   | 100000000  |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | lp1   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader1 | 1000  | 10   | trader2 |
+      | party1 | 1000  | 10   | party2 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
@@ -69,10 +69,10 @@ Feature: Test liquidity provider reward distribution
 
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
@@ -89,18 +89,18 @@ Feature: Test liquidity provider reward distribution
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     Then time is updated to "2019-11-30T00:20:05Z"
 
-    When the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 1                | TYPE_LIMIT | TIF_GTC | trader1-buy  |
-      | trader2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party1 | ETH/DEC21 | buy  | 40     | 1100  | 1                | TYPE_LIMIT | TIF_GTC | party1-buy  |
+      | party2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     # here we get only a trade for a volume of 15 as it's what was on the LP
-    # order, then the 25 remaining from trader1 are cancelled for self trade
+    # order, then the 25 remaining from party1 are cancelled for self trade
     And the following trades should be executed:
       | buyer   | price | size | seller |
-      | trader1 | 951   | 15   | lp1    |
+      | party1 | 951   | 15   | lp1    |
 
     # this is slightly different than expected, as the trades happen against the LP,
     # which is probably not what you expected initially
@@ -118,38 +118,38 @@ Feature: Test liquidity provider reward distribution
 
   Scenario: 2 LPs joining at start, equal commitments
 
-    Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount     |
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
       | lp1     | ETH   | 1000000000 |
       | lp2     | ETH   | 1000000000 |
-      | trader1 | ETH   | 100000000  |
-      | trader2 | ETH   | 100000000  |
+      | party1 | ETH   | 100000000  |
+      | party2 | ETH   | 100000000  |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | lp1   | ETH/DEC21 | 5000              | 0.001 | sell | MID              | 2          | 1      |
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | BID              | 1          | -2     |
       | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | buy  | MID              | 2          | -1     |
       | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | ASK              | 1          | 2      |
       | lp2 | lp2   | ETH/DEC21 | 5000              | 0.002 | sell | MID              | 2          | 1      |
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC21 | buy  | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader1 | 1000  | 90   | trader2 |
+      | party1 | 1000  | 90   | party2 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
@@ -171,16 +171,16 @@ Feature: Test liquidity provider reward distribution
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader2 | 951   | 8    | lp1     |
-      | trader2 | 951   | 8    | lp2     |
-      | trader2 | 1000  | 4    | trader1 |
+      | party2 | 951   | 8    | lp1     |
+      | party2 | 951   | 8    | lp2     |
+      | party2 | 1000  | 4    | party1 |
 
     And the accumulated liquidity fees should be "40" for the market "ETH/DEC21"
 
@@ -194,15 +194,15 @@ Feature: Test liquidity provider reward distribution
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 20     | ETH   |
 
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader1 | ETH/DEC21 | buy  | 40     | 1100  | 2                | TYPE_LIMIT | TIF_GTC | trader1-buy  |
-      | trader2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party1 | ETH/DEC21 | buy  | 40     | 1100  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy  |
+      | party2 | ETH/DEC21 | sell | 40     | 1100  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
 
     And the following trades should be executed:
       | buyer   | price | size | seller |
-      | trader1 | 951   | 8    | lp1    |
-      | trader1 | 951   | 8    | lp2    |
+      | party1 | 951   | 8    | lp1    |
+      | party1 | 951   | 8    | lp2    |
 
     And the accumulated liquidity fees should be "32" for the market "ETH/DEC21"
 
@@ -217,38 +217,38 @@ Feature: Test liquidity provider reward distribution
 
   Scenario: 2 LPs joining at start, unequal commitments
 
-    Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount     |
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
       | lp1     | ETH   | 1000000000 |
       | lp2     | ETH   | 1000000000 |
-      | trader1 | ETH   | 100000000  |
-      | trader2 | ETH   | 100000000  |
+      | party1 | ETH   | 100000000  |
+      | party2 | ETH   | 100000000  |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      |
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | -2     |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | -1     |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      |
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC21 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader1 | 1000  | 60   | trader2 |
+      | party1 | 1000  | 60   | party2 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
@@ -270,17 +270,17 @@ Feature: Test liquidity provider reward distribution
     # no fees in auction
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader2 | 951   | 12   | lp1     |
-      | trader2 | 1000  | 8    | trader1 |
+      | party2 | 951   | 12   | lp1     |
+      | party2 | 1000  | 8    | party1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -296,15 +296,15 @@ Feature: Test liquidity provider reward distribution
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader1-buy  |
-      | trader2 | ETH/DEC21 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader2-sell |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party1 | ETH/DEC21 | buy  | 40     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy  |
+      | party2 | ETH/DEC21 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-sell |
 
     And the following trades should be executed:
       | buyer   | price | size | seller |
-      | trader1 | 951   | 12   | lp1    |
-      | trader1 | 951   | 3    | lp2    |
+      | party1 | 951   | 12   | lp1    |
+      | party1 | 951   | 3    | lp2    |
 
     And the accumulated liquidity fees should be "15" for the market "ETH/DEC21"
 
@@ -321,39 +321,39 @@ Feature: Test liquidity provider reward distribution
 
   Scenario: 2 LPs joining at start, unequal commitments, 1 LP joining later
 
-    Given the traders deposit on asset's general account the following amount:
-      | trader  | asset | amount     |
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
       | lp1     | ETH   | 1000000000 |
       | lp2     | ETH   | 1000000000 |
       | lp3     | ETH   | 1000000000 |
-      | trader1 | ETH   | 100000000  |
-      | trader2 | ETH   | 100000000  |
+      | party1 | ETH   | 100000000  |
+      | party2 | ETH   | 100000000  |
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | -2     |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | -1     |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      |
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | BID              | 1          | -2     |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | buy  | MID              | 2          | -1     |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | ASK              | 1          | 2      |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.002 | sell | MID              | 2          | 1      |
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader1 | ETH/DEC21 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC21"
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader1 | 1000  | 60   | trader2 |
+      | party1 | 1000  | 60   | party2 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
@@ -376,15 +376,15 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | trader1-sell |
-      | trader2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | trader2-buy  |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
+      | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the following trades should be executed:
       | buyer   | price | size | seller  |
-      | trader2 | 951   | 12   | lp1     |
-      | trader2 | 1000  | 8    | trader1 |
+      | party2 | 951   | 12   | lp1     |
+      | party2 | 1000  | 8    | party1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -399,7 +399,7 @@ Feature: Test liquidity provider reward distribution
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-    And the traders submit the following liquidity provision:
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
       | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
@@ -412,16 +412,16 @@ Feature: Test liquidity provider reward distribution
       | lp2   | 0.1841            | 10000                   |
       | lp3   | 0.0791            | 116278                  |
 
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader1 | ETH/DEC21 | buy  | 40     | 1000  | 3                | TYPE_LIMIT | TIF_GTC |
-      | trader2 | ETH/DEC21 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 40     | 1000  | 3                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 40     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     And the following trades should be executed:
       | buyer   | price | size | seller |
-      | trader1 | 951   | 12   | lp1    |
-      | trader1 | 951   | 3    | lp2    |
-      | trader1 | 951   | 15   | lp3    |
+      | party1 | 951   | 12   | lp1    |
+      | party1 | 951   | 3    | lp2    |
+      | party1 | 951   | 15   | lp3    |
 
     And the accumulated liquidity fees should be "30" for the market "ETH/DEC21"
 

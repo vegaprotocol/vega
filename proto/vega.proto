@@ -154,7 +154,7 @@ message Order {
     TYPE_LIMIT = 1;
     // Used for Market orders
     TYPE_MARKET = 2;
-    // Used for orders where the initiating party is the network (with distressed traders)
+    // Used for orders where the initiating party is the network (with distressed parties)
     TYPE_NETWORK = 3;
 
     // Note: If adding an enum value, add a matching entry in:
@@ -725,7 +725,7 @@ enum AccountType {
   // Liquidity accounts contain fees earned by providing liquidity on Vega markets
   ACCOUNT_TYPE_FEES_LIQUIDITY = 6;
   // This account is created to hold fees earned by placing orders that sit on the book
-  // and are then matched with an incoming order to create a trade - These fees reward traders
+  // and are then matched with an incoming order to create a trade - These fees reward parties
   // who provide the best priced liquidity that actually allows trading to take place
   ACCOUNT_TYPE_FEES_MAKER = 7;
   // This account is created to lock funds to be withdrawn by parties
@@ -735,10 +735,10 @@ enum AccountType {
 
   // External account represents an external source (deposit/withdrawal)
   ACCOUNT_TYPE_EXTERNAL = 10;
-  
+
   // Global insurance account for the asset
   ACCOUNT_TYPE_GLOBAL_INSURANCE = 11;
-  
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)

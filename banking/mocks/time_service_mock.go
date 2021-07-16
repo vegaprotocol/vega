@@ -34,21 +34,6 @@ func (m *MockTimeService) EXPECT() *MockTimeServiceMockRecorder {
 	return m.recorder
 }
 
-// GetTimeNow mocks base method
-func (m *MockTimeService) GetTimeNow() (time.Time, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTimeNow")
-	ret0, _ := ret[0].(time.Time)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTimeNow indicates an expected call of GetTimeNow
-func (mr *MockTimeServiceMockRecorder) GetTimeNow() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTimeNow", reflect.TypeOf((*MockTimeService)(nil).GetTimeNow))
-}
-
 // NotifyOnTick mocks base method
 func (m *MockTimeService) NotifyOnTick(arg0 func(context.Context, time.Time)) {
 	m.ctrl.T.Helper()
