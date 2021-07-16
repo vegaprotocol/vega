@@ -8,9 +8,6 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: Check order events with larger pegged orders, and lower balance
 # setup accounts

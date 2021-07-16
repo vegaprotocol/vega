@@ -5,9 +5,6 @@ Feature: test for issue 1920
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: a trader place a new order in the system, margin are calculated, then the order is stopped, the margin is released
     Given the traders deposit on asset's general account the following amount:

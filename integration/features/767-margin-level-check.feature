@@ -5,9 +5,6 @@ Feature: Regression test for issue 767
     And the markets:
       | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: Traders place orders meeting the maintenance margin, but not the initial margin requirements, and can close out
     Given the traders deposit on asset's general account the following amount:

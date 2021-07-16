@@ -10,9 +10,6 @@ Feature: Test mark to market settlement
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: Order cannot be placed once the market is expired
     Given the traders deposit on asset's general account the following amount:
@@ -38,6 +35,10 @@ Feature: Test mark to market settlement
       | aux2   | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-6     |
 
     Then time is updated to "2020-01-01T01:01:01Z"
+    And the oracles broadcast data signed with "0xDEADBEEF":
+      | name             | value |
+      | prices.ETH.value | 42    |
+    Then time is updated to "2020-01-01T01:01:02Z"  
     When the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
@@ -94,7 +95,11 @@ Feature: Test mark to market settlement
       | aux1   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    And time is updated to "2020-01-01T01:01:01Z"
+    Then time is updated to "2020-01-01T01:01:01Z"
+    And the oracles broadcast data signed with "0xDEADBEEF":
+      | name             | value |
+      | prices.ETH.value | 42    |
+    Then time is updated to "2020-01-01T01:01:02Z"  
     And the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | trader1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
@@ -158,7 +163,12 @@ Scenario: Settlement happened when market is being closed - no loss socialisatio
       | aux1   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    And time is updated to "2020-01-01T01:01:01Z"
+    Then time is updated to "2020-01-01T01:01:01Z"
+    And the oracles broadcast data signed with "0xDEADBEEF":
+      | name             | value |
+      | prices.ETH.value | 42    |
+    Then time is updated to "2020-01-01T01:01:02Z"  
+
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 | 0      | 11676   |
@@ -219,7 +229,12 @@ Scenario: Settlement happened when market is being closed - loss socialisation i
       | aux1   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-    And time is updated to "2020-01-01T01:01:01Z"
+    Then time is updated to "2020-01-01T01:01:01Z"
+    And the oracles broadcast data signed with "0xDEADBEEF":
+      | name             | value |
+      | prices.ETH.value | 42    |
+    Then time is updated to "2020-01-01T01:01:02Z"  
+  
     And the traders should have the following account balances:
       | trader  | asset | market id | margin | general |
       | trader1 | ETH   | ETH/DEC19 | 0      | 11399   |
@@ -229,4 +244,3 @@ Scenario: Settlement happened when market is being closed - loss socialisation i
     # 500 were taken from the insurance pool to cover the losses of trader 2, still not enough to cover losses of (1000-42)*2 for trader2
     And the insurance pool balance should be "0" for the asset "ETH"
     And the insurance pool balance should be "500" for the market "ETH/DEC20"    
-

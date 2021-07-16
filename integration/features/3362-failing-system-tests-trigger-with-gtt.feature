@@ -14,10 +14,7 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | my-price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | name                           | value |
-      | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
+      | market.auction.minimumDuration | 1     |   
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Replicate test called test_TriggerWithMarketOrder

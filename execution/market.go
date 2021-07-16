@@ -501,7 +501,7 @@ func (m *Market) GetID() string {
 
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
-func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed bool) {
+func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "OnChainTimeUpdate")
 
 	m.mu.Lock()
@@ -529,16 +529,17 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 	// if we're already in trading terminated state and the market is closed it means
 	// we didn't complete final settlement as oracle price was not available
 	// retry here
-	if m.mkt.State == types.Market_STATE_TRADING_TERMINATED && m.closed {
+	if m.mkt.State == types.Market_STATE_TRADING_TERMINATED && t.After(m.closingAt) {
 		m.closeMarket(ctx, t)
-		return
+		m.closed = m.mkt.State == types.Market_STATE_SETTLED
+		return m.closed
 	}
 
 	// check with the settlment engine if we should suspend the market
 	if m.settlement.ShouldSuspend(m.mkt.State) {
 		m.mkt.State = types.Market_STATE_SUSPENDED
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		return
+		return false
 	}
 
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
@@ -550,9 +551,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		}
 	}
 
-	closed = t.After(m.closingAt)
-	m.closed = closed
-
 	// check auction, if any
 	m.checkAuction(ctx, t)
 
@@ -563,13 +561,14 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	m.updateMarketValueProxy()
 
-	if !closed {
+	if !t.After(m.closingAt) {
 		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
 	} else {
 		m.closeMarket(ctx, t)
 	}
 
-	return
+	m.closed = m.mkt.State == types.Market_STATE_SETTLED
+	return m.closed
 }
 
 func (m *Market) updateMarketValueProxy() {

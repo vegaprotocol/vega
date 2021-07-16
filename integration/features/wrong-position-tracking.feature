@@ -8,9 +8,6 @@ Feature: Test position tracking with auctions
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario:
     Given the traders deposit on asset's general account the following amount:

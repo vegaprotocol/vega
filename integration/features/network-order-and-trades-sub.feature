@@ -8,9 +8,6 @@ Feature: Ensure network trader are generated
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: Implement trade and order network
 # setup accounts

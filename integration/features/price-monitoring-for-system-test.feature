@@ -15,9 +15,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 6     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Scenario for the system test with opening auction

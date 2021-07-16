@@ -27,9 +27,7 @@ Feature: Test margin for lp near price monitoring boundaries
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 2021-12-31T23:59:59Z |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 100   |
+
     And the traders deposit on asset's general account the following amount:
       | trader  | asset | amount    |
       | lp1     | ETH   | 100000000 |
@@ -114,9 +112,6 @@ Feature: Test margin for lp near price monitoring boundaries
     And the markets:
       | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | oracle config          | maturity date        |
       | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 2022-03-31T23:59:59Z |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name              | value |
-      | prices.ETH2.value | 1000  |
     And the traders deposit on asset's general account the following amount:
       | trader  | asset | amount    |
       | lp1     | ETH2  | 100000000 |

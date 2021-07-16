@@ -15,9 +15,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 3600  |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: Auction triggered by 1st trigger (lower bound breached)
     Given the traders deposit on asset's general account the following amount:
