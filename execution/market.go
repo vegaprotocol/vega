@@ -539,7 +539,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 		m.closed = m.mkt.State == types.Market_STATE_SETTLED
 		return m.closed
 
-	} else if m.settlement.ShouldSuspend() { // check with the settlment engine if we should suspend the market
+	} else if m.settlement.ShouldSuspend() { // check with the settlement engine if we should suspend the market
 		if m.mkt.State != types.Market_STATE_SUSPENDED {
 			m.mkt.State = types.Market_STATE_SUSPENDED
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
