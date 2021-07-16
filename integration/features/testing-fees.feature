@@ -367,7 +367,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | from   | to   | from account                | to account          | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 2      | ETH   |
 
-Scenario: WIP - Testing fees in continuous trading with two trades and insufficient balance in their general (but margin covers it) account, then the trade fees gets executed in this order - Maker, IP, LP
+Scenario: WIP - Testing fees get collected when amended order trades
     
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
