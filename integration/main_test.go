@@ -226,6 +226,9 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^the trading mode should be "([^"]*)" for the market "([^"]*)"$`, func(tradingMode, marketID string) error {
 		return steps.TheTradingModeShouldBeForMarket(execsetup.executionEngine, marketID, tradingMode)
 	})
+	s.Step(`^the market state should be "([^"]*)" for the market "([^"]*)"$`, func(marketState, marketID string) error {
+		return steps.TheMarketStateShouldBeForMarket(execsetup.executionEngine, marketID, marketState)
+	})
 	s.Step(`^the insurance pool balance should be "([^"]*)" for the market "([^"]*)"$`, func(rawAmount, marketID string) error {
 		return steps.TheInsurancePoolBalanceShouldBeForTheMarket(execsetup.broker, rawAmount, marketID)
 	})

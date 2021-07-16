@@ -375,6 +375,10 @@ func (m *Market) Hash() []byte {
 	))
 }
 
+func (m *Market) GetMarketState() types.Market_State {
+	return m.mkt.State
+}
+
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume, _ := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume, _ := m.matching.BestOfferPriceAndVolume()
@@ -522,23 +526,24 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// if the state of the market is just PROPOSED,
 	// we will just skip everything there as nothing apply.
 	// if the market is suspended - return
-	if m.mkt.State == types.Market_STATE_PROPOSED || m.mkt.State == types.Market_STATE_SUSPENDED {
+	if m.mkt.State == types.Market_STATE_PROPOSED ||
+		m.mkt.State == types.Market_STATE_SUSPENDED { //TODO what do we want to do while in suspended state?
 		return false
 	}
 
 	// if we're already in trading terminated state and the market is closed it means
 	// we didn't complete final settlement as oracle price was not available
 	// retry here
-	if m.mkt.State == types.Market_STATE_TRADING_TERMINATED && t.After(m.closingAt) {
+	if m.mkt.State == types.Market_STATE_TRADING_TERMINATED {
 		m.closeMarket(ctx, t)
 		m.closed = m.mkt.State == types.Market_STATE_SETTLED
 		return m.closed
-	}
 
-	// check with the settlment engine if we should suspend the market
-	if m.settlement.ShouldSuspend(m.mkt.State) {
-		m.mkt.State = types.Market_STATE_SUSPENDED
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	} else if m.settlement.ShouldSuspend() { // check with the settlment engine if we should suspend the market
+		if m.mkt.State != types.Market_STATE_SUSPENDED {
+			m.mkt.State = types.Market_STATE_SUSPENDED
+			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		}
 		return false
 	}
 
@@ -564,6 +569,11 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	if !t.After(m.closingAt) {
 		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
 	} else {
+		// if market is not already terminated, switch to terminated and notify
+		if m.mkt.State != types.Market_STATE_TRADING_TERMINATED {
+			m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		}
 		m.closeMarket(ctx, t)
 	}
 
@@ -587,12 +597,6 @@ func (m *Market) updateMarketValueProxy() {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
-	// if market is not already terminated, switch to terminated and notify
-	if m.mkt.State != types.Market_STATE_TRADING_TERMINATED {
-		m.mkt.State = types.Market_STATE_TRADING_TERMINATED
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-	}
-
 	// market is closed, final settlement
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t, m.getCurrentMarkPrice())

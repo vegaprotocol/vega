@@ -189,11 +189,11 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 
 //ShouldSuspend checks if the market is the settlement is based on an oracle and the price is available before
 //the state is terminated
-func (e *Engine) ShouldSuspend(state types.Market_State) bool {
+func (e *Engine) ShouldSuspend() bool {
 	switch e.Config.FinalSettlement.Get() {
 	case FinalSettlementOracle:
 		_, err := e.product.SettlementPrice()
-		return err == nil && state != types.Market_STATE_TRADING_TERMINATED
+		return err == nil
 	case FinalSettlementMarkPrice:
 		return false
 	default:
