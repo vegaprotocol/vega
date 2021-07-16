@@ -11,7 +11,7 @@ import (
 func MarketOpeningAuctionPeriodEnds(timeStub *stubs.TimeStub, markets []types.Market, marketID string) error {
 	var mkt *types.Market
 	for _, m := range markets {
-		if m.Id == marketID {
+		if m.ID == marketID {
 			mkt = &m
 			break
 		}

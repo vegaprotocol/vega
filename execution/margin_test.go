@@ -63,7 +63,7 @@ func TestMargins(t *testing.T) {
 	// leave opening auction
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 	data := tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, data.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, data.MarketTradingMode)
 
 	order1 := &types.Order{
 		Status:      types.OrderStatusActive,

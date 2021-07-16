@@ -19,7 +19,7 @@ type MappedMD struct {
 	strMap  map[string]*string
 	tMap    map[string]*int64
 	i64Map  map[string]*int64
-	tm      *types.Market_TradingMode
+	tm      *types.MarketTradingMode
 	tr      *types.AuctionTrigger
 	et      *types.AuctionTrigger
 }

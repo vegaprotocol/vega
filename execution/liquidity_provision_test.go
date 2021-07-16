@@ -818,12 +818,12 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
 
-	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_OPENING, tm.market.GetMarketData().Trigger)
+	assert.Equal(t, types.AuctionTriggerOpening, tm.market.GetMarketData().Trigger)
 	// Leave the auction so we can uncross the book
 	now = now.Add(time.Second * 11)
 	tm.market.OnChainTimeUpdate(ctx, now)
 	// ensure we left auction
-	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, tm.market.GetMarketData().Trigger)
+	assert.Equal(t, types.AuctionTriggerUnspecified, tm.market.GetMarketData().Trigger)
 
 	// Move the price enough that we go into a price auction
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-B", 3, 3000)
@@ -832,7 +832,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we are in price auction
-	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_PRICE, tm.market.GetMarketData().Trigger)
+	assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
 	// Now try to submit a LP submission
 	buys := []*types.LiquidityOrder{
@@ -1014,7 +1014,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we are in price auction
-	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_PRICE, tm.market.GetMarketData().Trigger)
+	assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
 	// All pegged orders must be removed
 	// TODO assert.Equal(t, 0, tm.market.GetPeggedOrderCount())

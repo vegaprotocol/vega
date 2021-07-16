@@ -15,9 +15,9 @@ type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
 type MarketTradingConfigType int
 
 const (
-	MARKET_TRADING_CONFIG_UNDEFINED MarketTradingConfigType = iota
-	MARKET_TRADING_CONFIG_CONTINUOUS
-	MARKET_TRADING_CONFIG_DISCRETE
+	MarketTradingConfigUndefined MarketTradingConfigType = iota
+	MarketTradingConfigContinuous
+	MarketTradingConfigDiscrete
 )
 
 var (
@@ -56,61 +56,61 @@ func (m MarketTimestamps) IntoProto() *proto.MarketTimestamps {
 	}
 }
 
-type Market_TradingMode = proto.Market_TradingMode
+type MarketTradingMode = proto.Market_TradingMode
 
 const (
 	// Default value, this is invalid
-	Market_TRADING_MODE_UNSPECIFIED Market_TradingMode = 0
+	MarketTradingModeUnspecified MarketTradingMode = proto.Market_TRADING_MODE_UNSPECIFIED
 	// Normal trading
-	Market_TRADING_MODE_CONTINUOUS Market_TradingMode = 1
+	MarketTradingModeContinuous MarketTradingMode = proto.Market_TRADING_MODE_CONTINUOUS
 	// Auction trading (FBA)
-	Market_TRADING_MODE_BATCH_AUCTION Market_TradingMode = 2
+	MarketTradingModeBatchAuction MarketTradingMode = proto.Market_TRADING_MODE_BATCH_AUCTION
 	// Opening auction
-	Market_TRADING_MODE_OPENING_AUCTION Market_TradingMode = 3
+	MarketTradingModeOpeningAuction MarketTradingMode = proto.Market_TRADING_MODE_OPENING_AUCTION
 	// Auction triggered by monitoring
-	Market_TRADING_MODE_MONITORING_AUCTION Market_TradingMode = 4
+	MarketTradingModeMonitoringAuction MarketTradingMode = proto.Market_TRADING_MODE_MONITORING_AUCTION
 )
 
-type Market_State = proto.Market_State
+type MarketState = proto.Market_State
 
 const (
 	// Default value, invalid
-	Market_STATE_UNSPECIFIED Market_State = 0
+	MarketStateUnspecified MarketState = proto.Market_STATE_UNSPECIFIED
 	// The Governance proposal valid and accepted
-	Market_STATE_PROPOSED Market_State = 1
+	MarketStateProposed MarketState = proto.Market_STATE_PROPOSED
 	// Outcome of governance votes is to reject the market
-	Market_STATE_REJECTED Market_State = 2
+	MarketStateRejected MarketState = proto.Market_STATE_REJECTED
 	// Governance vote passes/wins
-	Market_STATE_PENDING Market_State = 3
+	MarketStatePending MarketState = proto.Market_STATE_PENDING
 	// Market triggers cancellation condition or governance
 	// votes to close before market becomes Active
-	Market_STATE_CANCELLED Market_State = 4
+	MarketStateCancelled MarketState = proto.Market_STATE_CANCELLED
 	// Enactment date reached and usual auction exit checks pass
-	Market_STATE_ACTIVE Market_State = 5
+	MarketStateActive MarketState = proto.Market_STATE_ACTIVE
 	// Price monitoring or liquidity monitoring trigger
-	Market_STATE_SUSPENDED Market_State = 6
+	MarketStateSuspended MarketState = proto.Market_STATE_SUSPENDED
 	// Governance vote (to close)
-	Market_STATE_CLOSED Market_State = 7
+	MarketStateClosed MarketState = proto.Market_STATE_CLOSED
 	// Defined by the product (i.e. from a product parameter,
 	// specified in market definition, giving close date/time)
-	Market_STATE_TRADING_TERMINATED Market_State = 8
+	MarketStateTradingTerminated MarketState = proto.Market_STATE_TRADING_TERMINATED
 	// Settlement triggered and completed as defined by product
-	Market_STATE_SETTLED Market_State = 9
+	MarketStateSettled MarketState = proto.Market_STATE_SETTLED
 )
 
 type AuctionTrigger = proto.AuctionTrigger
 
 const (
 	// Default value for AuctionTrigger, no auction triggered
-	AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED AuctionTrigger = 0
+	AuctionTriggerUnspecified AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
 	// Batch auction
-	AuctionTrigger_AUCTION_TRIGGER_BATCH AuctionTrigger = 1
+	AuctionTriggerBatch AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_BATCH
 	// Opening auction
-	AuctionTrigger_AUCTION_TRIGGER_OPENING AuctionTrigger = 2
+	AuctionTriggerOpening AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_OPENING
 	// Price monitoring trigger
-	AuctionTrigger_AUCTION_TRIGGER_PRICE AuctionTrigger = 3
+	AuctionTriggerPrice AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_PRICE
 	// Liquidity monitoring trigger
-	AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY AuctionTrigger = 4
+	AuctionTriggerLiquidity AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
 )
 
 type InstrumentMetadata struct {
@@ -275,55 +275,55 @@ func (t TradableInstrument) String() string {
 	return t.IntoProto().String()
 }
 
-type Market_Discrete struct {
+type MarketDiscrete struct {
 	Discrete *DiscreteTrading
 }
 
-func (m Market_Discrete) IntoProto() *proto.Market_Discrete {
+func (m MarketDiscrete) IntoProto() *proto.Market_Discrete {
 	return &proto.Market_Discrete{
 		Discrete: m.Discrete.IntoProto(),
 	}
 }
 
-func (Market_Discrete) istmc() {}
+func (MarketDiscrete) istmc() {}
 
-func (m Market_Discrete) tmcIntoProto() interface{} {
+func (m MarketDiscrete) tmcIntoProto() interface{} {
 	return m.IntoProto()
 }
 
-func MarketDiscreteFromProto(m *proto.Market_Discrete) *Market_Discrete {
-	return &Market_Discrete{
+func MarketDiscreteFromProto(m *proto.Market_Discrete) *MarketDiscrete {
+	return &MarketDiscrete{
 		Discrete: DiscreteTradingFromProto(m.Discrete),
 	}
 }
 
-func (Market_Discrete) tmcType() MarketTradingConfigType {
-	return MARKET_TRADING_CONFIG_DISCRETE
+func (MarketDiscrete) tmcType() MarketTradingConfigType {
+	return MarketTradingConfigDiscrete
 }
 
-type Market_Continuous struct {
+type MarketContinuous struct {
 	Continuous *ContinuousTrading
 }
 
-func MarketContinuousFromProto(c *proto.Market_Continuous) *Market_Continuous {
-	return &Market_Continuous{
+func MarketContinuousFromProto(c *proto.Market_Continuous) *MarketContinuous {
+	return &MarketContinuous{
 		Continuous: ContinuousTradingFromProto(c.Continuous),
 	}
 }
 
-func (m Market_Continuous) IntoProto() *proto.Market_Continuous {
+func (m MarketContinuous) IntoProto() *proto.Market_Continuous {
 	return &proto.Market_Continuous{
 		Continuous: m.Continuous.IntoProto(),
 	}
 }
 
-func (Market_Continuous) tmcType() MarketTradingConfigType {
-	return MARKET_TRADING_CONFIG_CONTINUOUS
+func (MarketContinuous) tmcType() MarketTradingConfigType {
+	return MarketTradingConfigContinuous
 }
 
-func (Market_Continuous) istmc() {}
+func (MarketContinuous) istmc() {}
 
-func (m Market_Continuous) tmcIntoProto() interface{} {
+func (m MarketContinuous) tmcIntoProto() interface{} {
 	return m.IntoProto()
 }
 
@@ -411,7 +411,7 @@ type iProto interface {
 }
 
 type Instrument struct {
-	Id       string
+	ID       string
 	Code     string
 	Name     string
 	Metadata *InstrumentMetadata
@@ -425,7 +425,7 @@ func InstrumentFromProto(i *proto.Instrument) *Instrument {
 		return nil
 	}
 	return &Instrument{
-		Id:       i.Id,
+		ID:       i.Id,
 		Code:     i.Code,
 		Name:     i.Name,
 		Metadata: InstrumentMetadataFromProto(i.Metadata),
@@ -436,7 +436,7 @@ func InstrumentFromProto(i *proto.Instrument) *Instrument {
 func (i Instrument) IntoProto() *proto.Instrument {
 	p := i.Product.iIntoProto()
 	r := &proto.Instrument{
-		Id:       i.Id,
+		Id:       i.ID,
 		Code:     i.Code,
 		Name:     i.Name,
 		Metadata: i.Metadata.IntoProto(),
@@ -467,7 +467,7 @@ type MarketData struct {
 	AuctionStart              int64
 	IndicativePrice           *num.Uint
 	IndicativeVolume          uint64
-	MarketTradingMode         Market_TradingMode
+	MarketTradingMode         MarketTradingMode
 	Trigger                   AuctionTrigger
 	ExtensionTrigger          AuctionTrigger
 	TargetStake               string
@@ -568,7 +568,7 @@ type istmc interface {
 }
 
 type Market struct {
-	Id                            string
+	ID                            string
 	TradableInstrument            *TradableInstrument
 	DecimalPlaces                 uint64
 	Fees                          *Fees
@@ -576,8 +576,8 @@ type Market struct {
 	TradingModeConfig             istmc
 	PriceMonitoringSettings       *PriceMonitoringSettings
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	TradingMode                   Market_TradingMode
-	State                         Market_State
+	TradingMode                   MarketTradingMode
+	State                         MarketState
 	MarketTimestamps              *MarketTimestamps
 	tmc                           MarketTradingConfigType
 	asset                         string
@@ -586,7 +586,7 @@ type Market struct {
 func MarketFromProto(mkt *proto.Market) *Market {
 	asset, _ := mkt.GetAsset()
 	m := &Market{
-		Id:                            mkt.Id,
+		ID:                            mkt.Id,
 		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
 		DecimalPlaces:                 mkt.DecimalPlaces,
 		Fees:                          FeesFromProto(mkt.Fees),
@@ -633,7 +633,7 @@ func (m Market) IntoProto() *proto.Market {
 		lms = m.LiquidityMonitoringParameters.IntoProto()
 	}
 	r := &proto.Market{
-		Id:                            m.Id,
+		Id:                            m.ID,
 		TradableInstrument:            ti,
 		DecimalPlaces:                 m.DecimalPlaces,
 		Fees:                          fees,
@@ -657,8 +657,8 @@ func (m Market) IntoProto() *proto.Market {
 	return r
 }
 
-func (m Market) GetId() string {
-	return m.Id
+func (m Market) GetID() string {
+	return m.ID
 }
 
 func (m *Market) getAsset() (string, error) {
@@ -686,25 +686,25 @@ func (m *Market) GetAsset() (string, error) {
 	return m.asset, nil
 }
 
-func (m Market) GetContinuous() *Market_Continuous {
-	if m.tmc == MARKET_TRADING_CONFIG_UNDEFINED && m.TradingModeConfig != nil {
+func (m Market) GetContinuous() *MarketContinuous {
+	if m.tmc == MarketTradingConfigUndefined && m.TradingModeConfig != nil {
 		m.tmc = m.TradingModeConfig.tmcType()
 	}
-	if m.tmc != MARKET_TRADING_CONFIG_CONTINUOUS {
+	if m.tmc != MarketTradingConfigContinuous {
 		return nil
 	}
-	r, _ := m.TradingModeConfig.(*Market_Continuous)
+	r, _ := m.TradingModeConfig.(*MarketContinuous)
 	return r
 }
 
-func (m Market) GetDiscrete() *Market_Discrete {
-	if m.tmc == MARKET_TRADING_CONFIG_UNDEFINED && m.TradingModeConfig != nil {
+func (m Market) GetDiscrete() *MarketDiscrete {
+	if m.tmc == MarketTradingConfigUndefined && m.TradingModeConfig != nil {
 		m.tmc = m.TradingModeConfig.tmcType()
 	}
-	if m.tmc != MARKET_TRADING_CONFIG_DISCRETE {
+	if m.tmc != MarketTradingConfigDiscrete {
 		return nil
 	}
-	r, _ := m.TradingModeConfig.(*Market_Discrete)
+	r, _ := m.TradingModeConfig.(*MarketDiscrete)
 	return r
 }
 

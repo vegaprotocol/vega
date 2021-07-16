@@ -90,11 +90,11 @@ func assignProduct(
 func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
 	switch mode := definition.TradingMode.(type) {
 	case *types.NewMarketConfiguration_Continuous:
-		target.TradingModeConfig = &types.Market_Continuous{
+		target.TradingModeConfig = &types.MarketContinuous{
 			Continuous: mode.Continuous,
 		}
 	case *types.NewMarketConfiguration_Discrete:
-		target.TradingModeConfig = &types.Market_Discrete{
+		target.TradingModeConfig = &types.MarketDiscrete{
 			Discrete: mode.Discrete,
 		}
 	default:
@@ -196,7 +196,7 @@ func createMarket(
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
-		Id:            marketID,
+		ID:            marketID,
 		DecimalPlaces: definition.Changes.DecimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{

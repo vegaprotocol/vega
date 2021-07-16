@@ -45,7 +45,7 @@ func submitMarkets(markets []types.Market, executionEngine *execution.Engine) er
 	for i := range markets {
 		err := executionEngine.SubmitMarket(context.Background(), &markets[i])
 		if err != nil {
-			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].Id, err)
+			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
 		}
 	}
 	return nil
@@ -125,14 +125,14 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	}
 
 	m := types.Market{
-		TradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
-		State:         types.Market_STATE_ACTIVE,
-		Id:            row.id(),
+		TradingMode:   types.MarketTradingModeContinuous,
+		State:         types.MarketStateActive,
+		ID:            row.id(),
 		DecimalPlaces: 2,
 		Fees:          types.FeesFromProto(fees),
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
-				Id:   fmt.Sprintf("Crypto/%s/Futures", row.id()),
+				ID:   fmt.Sprintf("Crypto/%s/Futures", row.id()),
 				Code: fmt.Sprintf("CRYPTO/%v", row.id()),
 				Name: fmt.Sprintf("%s future", row.id()),
 				Metadata: &types.InstrumentMetadata{
@@ -155,7 +155,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
 		},
 		OpeningAuction: openingAuction(row),
-		TradingModeConfig: &types.Market_Continuous{
+		TradingModeConfig: &types.MarketContinuous{
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: types.PriceMonitoringSettingsFromProto(priceMonitoring),

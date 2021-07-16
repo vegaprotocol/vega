@@ -11,15 +11,15 @@ import (
 
 type GovernanceData = proto.GovernanceData
 
-type Vote_Value = proto.Vote_Value
+type VoteValue = proto.Vote_Value
 
 const (
 	// Default value, always invalid
-	Vote_VALUE_UNSPECIFIED Vote_Value = 0
+	VoteValueUnspecified VoteValue = proto.Vote_VALUE_UNSPECIFIED
 	// A vote against the proposal
-	Vote_VALUE_NO Vote_Value = 1
+	VoteValueNo VoteValue = proto.Vote_VALUE_NO
 	// A vote in favour of the proposal
-	Vote_VALUE_YES Vote_Value = 2
+	VoteValueYes VoteValue = proto.Vote_VALUE_YES
 )
 
 type ProposalError = proto.ProposalError
@@ -81,25 +81,25 @@ const (
 	ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT ProposalError = 26
 )
 
-type Proposal_State = proto.Proposal_State
+type ProposalState = proto.Proposal_State
 
 const (
 	// Default value, always invalid
-	Proposal_STATE_UNSPECIFIED Proposal_State = 0
+	ProposalStateUnspecified ProposalState = proto.Proposal_STATE_UNSPECIFIED
 	// Proposal enactment has failed - even though proposal has passed, its execution could not be performed
-	Proposal_STATE_FAILED Proposal_State = 1
+	ProposalStateFailed ProposalState = proto.Proposal_STATE_FAILED
 	// Proposal is open for voting
-	Proposal_STATE_OPEN Proposal_State = 2
+	ProposalStateOpen ProposalState = proto.Proposal_STATE_OPEN
 	// Proposal has gained enough support to be executed
-	Proposal_STATE_PASSED Proposal_State = 3
+	ProposalStatePassed ProposalState = proto.Proposal_STATE_PASSED
 	// Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements)
-	Proposal_STATE_REJECTED Proposal_State = 4
+	ProposalStateRejected ProposalState = proto.Proposal_STATE_REJECTED
 	// Proposal didn't get enough votes (either failing to gain required participation or majority level)
-	Proposal_STATE_DECLINED Proposal_State = 5
+	ProposalStateDeclined ProposalState = proto.Proposal_STATE_DECLINED
 	// Proposal enacted
-	Proposal_STATE_ENACTED Proposal_State = 6
+	ProposalStateEnacted ProposalState = proto.Proposal_STATE_ENACTED
 	// Waiting for node validation of the proposal
-	Proposal_STATE_WAITING_FOR_NODE_VOTE Proposal_State = 7
+	ProposalStateWaitingForNodeVote ProposalState = proto.Proposal_STATE_WAITING_FOR_NODE_VOTE
 )
 
 type Proposal_Terms_TYPE int
@@ -118,7 +118,7 @@ type Vote struct {
 	// ProposalID is the proposal identifier concerned by the vote.
 	ProposalID string
 	// Value is the actual position of the vote: yes or no.
-	Value Vote_Value
+	Value VoteValue
 	// Timestamp is the date and time (in nanoseconds) at which the vote has
 	// been casted.
 	Timestamp int64
@@ -132,21 +132,21 @@ type Vote struct {
 
 type VoteSubmission struct {
 	// The ID of the proposal to vote for.
-	ProposalId string
+	ProposalID string
 	// The actual value of the vote
-	Value Vote_Value
+	Value VoteValue
 }
 
 func NewVoteSubmissionFromProto(p *commandspb.VoteSubmission) *VoteSubmission {
 	return &VoteSubmission{
-		ProposalId: p.ProposalId,
+		ProposalID: p.ProposalId,
 		Value:      p.Value,
 	}
 }
 
 func (v VoteSubmission) IntoProto() *commandspb.VoteSubmission {
 	return &commandspb.VoteSubmission{
-		ProposalId: v.ProposalId,
+		ProposalId: v.ProposalID,
 		Value:      v.Value,
 	}
 }
@@ -188,10 +188,10 @@ func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
 }
 
 type Proposal struct {
-	Id           string
+	ID           string
 	Reference    string
-	PartyId      string
-	State        Proposal_State
+	Party        string
+	State        ProposalState
 	Timestamp    int64
 	Terms        *ProposalTerms
 	Reason       ProposalError
@@ -212,9 +212,9 @@ func (p Proposal) IntoProto() *proto.Proposal {
 		terms = p.Terms.IntoProto()
 	}
 	return &proto.Proposal{
-		Id:           p.Id,
+		Id:           p.ID,
 		Reference:    p.Reference,
-		PartyId:      p.PartyId,
+		PartyId:      p.Party,
 		State:        p.State,
 		Timestamp:    p.Timestamp,
 		Terms:        terms,
