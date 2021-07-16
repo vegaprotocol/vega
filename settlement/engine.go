@@ -3,6 +3,7 @@ package settlement
 import (
 	"context"
 	"errors"
+	"sort"
 	"sync"
 	"time"
 
@@ -309,7 +310,15 @@ func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
 	// parties who are in profit should be appended (collect first).
 	// The split won't always be 50-50, but it's a reasonable approximation
 	owed := make([]*types.Transfer, 0, len(e.pos)/2)
-	for party, pos := range e.pos {
+	// ensure we iterate over the positions in the same way by getting all the parties (keys)
+	// and sort them
+	keys := make([]string, 0, len(e.pos))
+	for p := range e.pos {
+		keys = append(keys, p)
+	}
+	sort.Strings(keys)
+	for _, party := range keys {
+		pos := e.pos[party]
 		// this is possible now, with the Mark to Market stuff, it's possible we've settled any and all positions for a given party
 		if pos.size == 0 {
 			continue
