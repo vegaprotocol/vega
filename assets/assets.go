@@ -47,7 +47,7 @@ type Service struct {
 	nw NodeWallet
 }
 
-func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Service, error) {
+func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -59,7 +59,7 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) (*Servi
 		nw:            nw,
 	}
 	ts.NotifyOnTick(s.onTick)
-	return s, nil
+	return s
 }
 
 // ReloadConf updates the internal configuration

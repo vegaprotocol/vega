@@ -94,14 +94,9 @@ func NewEngine(
 	witness Witness,
 	netp NetParams,
 	now time.Time,
-) (*Engine, error) {
+) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
-	// ensure params are set
-	nodeValidation, err := NewNodeValidation(log, assets, now, witness)
-	if err != nil {
-		return nil, err
-	}
 
 	return &Engine{
 		Config:                 cfg,
@@ -109,11 +104,11 @@ func NewEngine(
 		log:                    log,
 		currentTime:            now,
 		activeProposals:        []*proposal{},
-		nodeProposalValidation: nodeValidation,
+		nodeProposalValidation: NewNodeValidation(log, assets, now, witness),
 		broker:                 broker,
 		assets:                 assets,
 		netp:                   netp,
-	}, nil
+	}
 }
 
 // ReloadConf updates the internal configuration of the governance engine

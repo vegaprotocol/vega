@@ -17,8 +17,8 @@ func NewTimeStub() *TimeStub {
 	}
 }
 
-func (t *TimeStub) GetTimeNow() (time.Time, error) {
-	return t.now, nil
+func (t *TimeStub) GetTimeNow() time.Time {
+	return t.now
 }
 
 func (t *TimeStub) SetTime(newNow time.Time) {

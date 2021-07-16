@@ -35,12 +35,11 @@ func (m *MockTimeService) EXPECT() *MockTimeServiceMockRecorder {
 }
 
 // GetTimeLastBatch mocks base method
-func (m *MockTimeService) GetTimeLastBatch() (time.Time, error) {
+func (m *MockTimeService) GetTimeLastBatch() time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTimeLastBatch")
 	ret0, _ := ret[0].(time.Time)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // GetTimeLastBatch indicates an expected call of GetTimeLastBatch
@@ -50,12 +49,11 @@ func (mr *MockTimeServiceMockRecorder) GetTimeLastBatch() *gomock.Call {
 }
 
 // GetTimeNow mocks base method
-func (m *MockTimeService) GetTimeNow() (time.Time, error) {
+func (m *MockTimeService) GetTimeNow() time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTimeNow")
 	ret0, _ := ret[0].(time.Time)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // GetTimeNow indicates an expected call of GetTimeNow

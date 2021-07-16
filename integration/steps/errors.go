@@ -17,24 +17,22 @@ type ErroneousRow interface {
 	Reference() string
 }
 
-func DebugTxErrors(broker *stubs.BrokerStub, log *logging.Logger) error {
+func DebugTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DEBUGGING ALL TRANSACTION ERRORS")
 	data := broker.GetTxErrors()
 	for _, e := range data {
 		p := e.Proto()
 		log.Infof("TxError: %s\n", p.String())
 	}
-	return nil
 }
 
-func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) error {
+func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DEBUGGING LP SUBMISSION ERRORS")
 	data := broker.GetLPSErrors()
 	for _, e := range data {
 		p := e.Proto()
 		log.Infof("LP Submission error: %s - LP: %#v\n", p.String(), p.GetLiquidityProvisionSubmission)
 	}
-	return nil
 }
 
 func checkExpectedError(row ErroneousRow, returnedErr error) error {

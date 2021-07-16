@@ -31,7 +31,7 @@ var (
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/execution TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
@@ -271,11 +271,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	if len(marketConfig.Id) == 0 {
 		return ErrNoMarketID
 	}
-	now, err := e.time.GetTimeNow()
-	if err != nil {
-		e.log.Error("Failed to get current Vega network time", logging.Error(err))
-		return err
-	}
+	now := e.time.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	asset, err := marketConfig.GetAsset()

@@ -49,8 +49,8 @@ func (s *Svc) SetTimeNow(ctx context.Context, t time.Time) {
 }
 
 // GetTimeNow returns the current time in vega
-func (s *Svc) GetTimeNow() (time.Time, error) {
-	return s.currentTimestamp, nil
+func (s *Svc) GetTimeNow() time.Time {
+	return s.currentTimestamp
 }
 
 // NotifyOnTick allows other services to register a callback function
@@ -62,8 +62,8 @@ func (s *Svc) NotifyOnTick(f func(context.Context, time.Time)) {
 }
 
 // GetTimeLastBatch returns the previous vega time
-func (s *Svc) GetTimeLastBatch() (time.Time, error) {
-	return s.previousTimestamp, nil
+func (s *Svc) GetTimeLastBatch() time.Time {
+	return s.previousTimestamp
 }
 
 func (s *Svc) notify(ctx context.Context, t time.Time) {

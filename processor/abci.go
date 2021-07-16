@@ -219,20 +219,11 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	ctx = contextutil.WithBlockHeight(contextutil.WithTraceID(context.Background(), hash), req.Header.Height)
 
 	now := req.Header.Time
+
 	app.time.SetTimeNow(ctx, now)
-
 	app.rates.NextBlock()
-
-	var err error
-	if app.currentTimestamp, err = app.time.GetTimeNow(); err != nil {
-		app.cancel()
-		return
-	}
-
-	if app.previousTimestamp, err = app.time.GetTimeLastBatch(); err != nil {
-		app.cancel()
-		return
-	}
+	app.currentTimestamp = app.time.GetTimeNow()
+	app.previousTimestamp = app.time.GetTimeLastBatch()
 
 	app.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
