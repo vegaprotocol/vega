@@ -961,12 +961,6 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), openEnd)
 	now = openEnd
 
-	md := tm.market.GetMarketData()
-	fmt.Printf("Market price: %s\nOpen interest: %v\n", md.MarkPrice, md.OpenInterest)
-	for _, b := range md.PriceMonitoringBounds {
-		fmt.Printf("Price bound: %s - %s\n", b.MinValidPrice.String(), b.MaxValidPrice.String())
-	}
-
 	orderBuy1 := &types.Order{
 		Type:        types.OrderTypeLimit,
 		TimeInForce: types.OrderTimeInForceGTT,

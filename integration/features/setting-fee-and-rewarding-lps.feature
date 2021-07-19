@@ -81,8 +81,8 @@ Feature: Test liquidity provider reward distribution
     Then time is updated to "2019-11-30T00:10:05Z"
 
     Then the following transfers should happen:
-      | from   | to  | from account                | to account          | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 20     | ETH   |
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 20     | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
@@ -110,8 +110,8 @@ Feature: Test liquidity provider reward distribution
     Then time is updated to "2019-11-30T00:30:05Z"
 
     Then the following transfers should happen:
-      | from   | to  | from account                | to account          | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 15     | ETH   |
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 15     | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
@@ -189,9 +189,9 @@ Feature: Test liquidity provider reward distribution
 
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
-      | from   | to  | from account                | to account          | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 20     | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 20     | ETH   |
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 20     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 20     | ETH   |
 
 
     Then the parties place the following orders:
@@ -211,9 +211,9 @@ Feature: Test liquidity provider reward distribution
 
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
-      | from   | to  | from account                | to account          | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 16     | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 16     | ETH   |
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 16     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 16     | ETH   |
 
   Scenario: 2 LPs joining at start, unequal commitments
 
@@ -289,9 +289,9 @@ Feature: Test liquidity provider reward distribution
 
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
-      | from   | to  | from account                | to account          | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 16     | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 4      | ETH   |
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 16     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 4      | ETH   |
 
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
@@ -313,9 +313,9 @@ Feature: Test liquidity provider reward distribution
 
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
-      | from   | to  | from account                | to account          | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 12     | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 3      | ETH   |
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 12     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 3      | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
@@ -393,9 +393,9 @@ Feature: Test liquidity provider reward distribution
 
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
-      | from   | to  | from account                | to account          | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 16     | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 4      | ETH   |
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 16     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 4      | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
@@ -430,9 +430,9 @@ Feature: Test liquidity provider reward distribution
 
     # these are different from the tests, but again, we end up with a 2/3 vs 1/3 fee share here.
     Then the following transfers should happen:
-      | from   | to  | from account                | to account          | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 22     | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5      | ETH   |
-      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 3      | ETH   |
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 22     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 3      | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
