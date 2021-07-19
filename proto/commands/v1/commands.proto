@@ -129,7 +129,7 @@ message DelegateSubmission {
 }
 
 // A command to submit an instruction to undelete stake from a node
-message UndelegateAtEpochEnd {
+message UndelegateAtEpochEndSubmission {
   // The ID for the node to undelegate from
   string node_id = 1 [(validator.field) = {string_not_empty : true}];
   // The amount of stake to undelegate
