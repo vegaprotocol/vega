@@ -87,12 +87,12 @@ func (s *Svc) consume() {
 				return
 			}
 			s.mu.Lock()
-			partiesLPs, ok := s.marketsLPs[lp.MarketId]
+			partiesLPs, ok := s.marketsLPs[lp.MarketID]
 			if !ok {
 				partiesLPs = map[string]types.LiquidityProvision{}
-				s.marketsLPs[lp.MarketId] = partiesLPs
+				s.marketsLPs[lp.MarketID] = partiesLPs
 			}
-			partiesLPs[lp.PartyId] = lp
+			partiesLPs[lp.Party] = lp
 			s.mu.Unlock()
 		}
 	}
