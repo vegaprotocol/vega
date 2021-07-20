@@ -862,10 +862,8 @@ Scenario: WIP - Testing fees in opening auction session (with one trades and one
       | trader4  | ETH   | ETH/DEC21 | 7140   | 3260    |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             |ß
+      | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
-
-  Then debug transfers
 
 Scenario: WIP - Negative fees - couldn't submit market(ETH/DEC21): unable to instantiate fee engine: fee factors must be positive
     
