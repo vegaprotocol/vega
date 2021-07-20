@@ -132,9 +132,7 @@ func (c *Client) Genesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
 	return res.Genesis, nil
 }
 
-func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func (c *Client) GenesisValidators(ctx context.Context) ([]*tmtypes.Validator, error) {
 	gen, err := c.Genesis(ctx)
 	if err != nil {
 		return nil, err
