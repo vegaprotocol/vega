@@ -110,22 +110,22 @@ func (c *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 }
 
 // Health returns the result of the health endpoint of the chain
-func (c *Client) Health() (*tmctypes.ResultHealth, error) {
-	return c.tmclt.Health(context.Background())
+func (c *Client) Health(ctx context.Context) (*tmctypes.ResultHealth, error) {
+	return c.tmclt.Health(ctx)
 }
 
-func (c *Client) Validators() ([]*tmtypes.Validator, error) {
+func (c *Client) Validators(ctx context.Context) ([]*tmtypes.Validator, error) {
 	page := 0
 	perPage := 100
-	res, err := c.tmclt.Validators(context.Background(), nil, &page, &perPage)
+	res, err := c.tmclt.Validators(ctx, nil, &page, &perPage)
 	if err != nil {
 		return nil, err
 	}
 	return res.Validators, nil
 }
 
-func (c *Client) Genesis() (*tmtypes.GenesisDoc, error) {
-	res, err := c.tmclt.Genesis(context.Background())
+func (c *Client) Genesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
+	res, err := c.tmclt.Genesis(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,9 @@ func (c *Client) Genesis() (*tmtypes.GenesisDoc, error) {
 }
 
 func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
-	gen, err := c.Genesis()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	gen, err := c.Genesis(ctx)
 	if err != nil {
 		return nil, err
 	}
