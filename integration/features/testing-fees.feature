@@ -676,7 +676,7 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
       | trader3  | ETH   | 10000000   |
-      | trader4  | ETH   | 8        |
+      | trader4  | ETH   | 178        |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -773,45 +773,15 @@ Scenario: WIP - Testing fees in opening auction session (with one trades and one
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 1    | trader4 |
 
-    # Then debug liquidity provision events
-    # Then debug trades
-    Then debug transfers
-
      Then the traders should have the following account balances:
       | trader   | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 843    | 9157    |
       | trader4  | ETH   | ETH/DEC21 | 1318   | 8682    |
       # why the margins are different for both traders
-
-  # For trader3a-
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 1 * 1002= 1002= 2
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 1002 = 2.004 = 3(rounded up)
-    # maker_fee =  0 in auction
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up)
-
-    # And the following transfers should happen:
-    #   | from     | to       | from account            | to account                       | market id | amount | asset |
-    #   | trader4  |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  2     | ETH   |
-    #   | trader4  | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
-    #   | trader3a |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  2     | ETH   |
-    #   | trader3a | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
-
-
-    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25
-    # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
-    # Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
       
-  #   # And the accumulated infrastructure fee should be "8" for the market "ETH/DEC21"
-  #  # And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
-  #   When the network moves ahead "11" blocks
+      #Scenario: Triggering Liquidity auction
 
-  #   And the following transfers should happen:
-  #     | from   | to   | from account                | to account          | market id | amount | asset |
-  #     | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 2      | ETH   |
-
-  #Scenario: Testing fees when trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended, the markets trading mode is TRADING_MODE_MONITORING_AUCTION and the trigger is AUCTION_TRIGGER_LIQUIDITY (with one trades and one liquidity providers with 10 s liquidity fee distribution timestep);(each side of a trade is debited 1/2 IF & LP)
-
-    Then the traders place the following orders:
+      Then the traders place the following orders:
       | trader   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -834,10 +804,6 @@ Scenario: WIP - Testing fees in opening auction session (with one trades and one
     Then the following trades should be executed:
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 3    | trader4 |
-
-    # Then debug liquidity provision events
-    # Then debug trades
-    Then debug transfers
 
     # For trader3a & 4- Sharing IF and LP
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 3 * 1002= 3006
@@ -877,10 +843,6 @@ Scenario: WIP - Testing fees in opening auction session (with one trades and one
       | buyer    | price | size | seller  |
       | trader3a | 900   | 1    | trader4 |
 
-    # Then debug liquidity provision events
-    # Then debug trades
-    Then debug transfers
-
     # For trader3a & 4- Sharing IF and LP
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 1 * 900 = 900
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 900 = 1.800 = 2(rounded up)
@@ -900,7 +862,7 @@ Scenario: WIP - Testing fees in opening auction session (with one trades and one
       | trader4  | ETH   | ETH/DEC21 | 7140   | 3260    |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             |
+      | trading mode            | auction trigger             |ß
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
   Then debug transfers
@@ -971,6 +933,8 @@ Scenario: WIP - Negative fees - couldn't submit market(ETH/DEC21): unable to ins
 
 # During auction trading, if a trade is matched and the aggressor / price taker has insufficient balance in their general (but margin covers it) account, then the trade fees gets executed in this order - Maker(0), IP, LP
 # During auction trading, if a trade is matched and the aggressor / price taker has insufficient balance in their general (+ margin if needed) account, then the trade fees gets executed in this order - Maker(0), IP, LP
+
+# WIP - Testing fees in opening auction session (with one trades and one liquidity providers with 10 s liquidity fee distribution timestep) (each side of a trade is debited 1/2 IF & LP)
 
 # Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee.
 # Changing parameters (via governance votes) does change the fees being collected appropriately even if the market is already running.
