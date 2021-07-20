@@ -487,8 +487,6 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWb
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.4 h1:DQuhQpB1tVlglWS2hLQ5OV6B5r8aGxSrPc5Qo6uTN78=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
-github.com/oasisprotocol/curve25519-voi v0.0.0-20210528083545-b12728c4e0d8 h1:MSfqXIiv6mJvRDv4IKTijuvMjbtU3TQDlFvPOmrIQ60=
-github.com/oasisprotocol/curve25519-voi v0.0.0-20210528083545-b12728c4e0d8/go.mod h1:QSDKNT2Cn6ziMI2mWvUZSMTj5vhIQIvgJc5RQ2VpYkQ=<<<<<<< HEAD
 github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84 h1:VGE87qI0pfuQ23PLPiXpXIdk4gVGFZpq5H5A2f1dZcY=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84/go.mod h1:TLJifjWF6eotcfzDjKZsDqWJ+73Uvj/N85MvVyrvynM=
 github.com/oklog/oklog v0.3.2/go.mod h1:FCV+B7mhrz4o+ueLpx+KqkyXRGMWOYEvfiXtdGtbWGs=
