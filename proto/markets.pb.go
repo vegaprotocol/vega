@@ -4,12 +4,11 @@
 package proto
 
 import (
-	fmt "fmt"
-	math "math"
-
 	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

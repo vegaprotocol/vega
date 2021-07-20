@@ -210,7 +210,7 @@
             "schema": {
               "$ref": "#/definitions/v1PrepareProposalSubmissionResponse"
             }
-           }
+          }
         },
         "parameters": [
           {
@@ -5089,10 +5089,10 @@
         },
         "trading_termination_property": {
           "type": "string",
-          "description": "the name of the property in the oracle data that signals termination of trading"
+          "title": "the name of the property in the oracle data that signals termination of trading"
         }
       },
-      "description": "OracleSpecToFutureBinding tells on which property oracle data should be\nused as settlement price and which to use the trading terminated trigger"
+      "title": "OracleSpecToFutureBinding tells on which property oracle data should be\nused as settlement price and which to use the trading terminated trigger"
     },
     "vegaOrder": {
       "type": "object",
