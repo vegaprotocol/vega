@@ -4,11 +4,12 @@
 package proto
 
 import (
-	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	fmt "fmt"
+	math "math"
+
+	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	proto "github.com/golang/protobuf/proto"
 	_ "github.com/mwitkow/go-proto-validators"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -283,7 +284,7 @@ type Future struct {
 	OracleSpecForSettlementPrice *v1.OracleSpec `protobuf:"bytes,5,opt,name=oracle_spec_for_settlement_price,json=oracleSpecForSettlementPrice,proto3" json:"oracle_spec_for_settlement_price,omitempty"`
 	// the oracle spec describing the trading termination oracle filter
 	OracleSpecForTradingTermination *v1.OracleSpec `protobuf:"bytes,6,opt,name=oracle_spec_for_trading_termination,json=oracleSpecForTradingTermination,proto3" json:"oracle_spec_for_trading_termination,omitempty"`
-	// The binding between the oracle spec and the oracle specs
+	// The binding between the oracle spec and the oracle data
 	OracleSpecBinding    *OracleSpecToFutureBinding `protobuf:"bytes,7,opt,name=oracle_spec_binding,json=oracleSpecBinding,proto3" json:"oracle_spec_binding,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
