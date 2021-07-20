@@ -136,7 +136,9 @@ func NewApp(
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
-		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData)
+		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
+		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
+		HandleDeliverTx(txn.UndelegateAtEpochEndCommand, app.DeliverUndelegateAtEpochEnd)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -687,4 +689,22 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	// just so we are sure all netparams updates are dispatches one by one
 	// in a deterministic order
 	app.netp.DispatchChanges(ctx)
+}
+
+func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.DelegateSubmission{}
+	if err := tx.Unmarshal(ce); err != nil {
+		return err
+	}
+
+	return errors.New("unimplemented")
+}
+
+func (app *App) DeliverUndelegateAtEpochEnd(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.UndelegateAtEpochEndSubmission{}
+	if err := tx.Unmarshal(ce); err != nil {
+		return err
+	}
+
+	return errors.New("unimplemented")
 }
