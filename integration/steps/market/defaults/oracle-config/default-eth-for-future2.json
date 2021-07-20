@@ -3,12 +3,12 @@
   "settlementAsset": "",
   "quoteName": "",
   "oracleSpecForSettlementPrice": {
-    "id": "1",
+    "id": "5",
     "createdAt": "0",
     "updatedAt": "0",
     "pubKeys": [
-      "0xDEADBEEF",
-      "0xCAFEDOOD"
+      "0xAEAEAEAE",
+      "0xEAEAEAEA"
     ],
     "filters": [
       {
@@ -23,12 +23,12 @@
     "status": "STATUS_UNSPECIFIED"
   },
   "oracleSpecForTradingTermination": {
-    "id": "2",
+    "id": "6",
     "createdAt": "0",
     "updatedAt": "0",
     "pubKeys": [
-      "0xDEADBEEF",
-      "0xCAFEDOOD"
+      "0xAEAEAEAE",
+      "0xEAEAEAEA"
     ],
     "filters": [
       {

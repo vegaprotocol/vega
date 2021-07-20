@@ -29,26 +29,32 @@ type Future struct {
 }
 
 type oracle struct {
-	spec           *oracles.OracleSpec
-	subscriptionID oracles.SubscriptionID
-	binding        oracleBinding
-	data           oracleData
+	settlementPriceSubscriptionID   oracles.SubscriptionID
+	tradingTerminatedSubscriptionID oracles.SubscriptionID
+	binding                         oracleBinding
+	data                            oracleData
 }
 
 type oracleData struct {
-	updated         bool
-	settlementPrice *num.Uint
+	settlementPrice   *num.Uint
+	tradingTerminated bool
 }
 
 func (d *oracleData) SettlementPrice() (*num.Uint, error) {
-	if !d.updated {
+	if d.settlementPrice == nil {
 		return nil, errors.New("settlement price is not set")
 	}
 	return d.settlementPrice.Clone(), nil
 }
 
+// IsTradingTerminated returns true when oracle has signalled termination of trading
+func (d *oracleData) IsTradingTerminated() bool {
+	return d.tradingTerminated
+}
+
 type oracleBinding struct {
-	settlementPriceProperty string
+	settlementPriceProperty    string
+	tradingTerminationProperty string
 }
 
 // Settle a position against the future
@@ -78,9 +84,31 @@ func (f *Future) Value(markPrice *num.Uint) (*num.Uint, error) {
 	return markPrice.Clone(), nil
 }
 
+// IsTradingTerminated - returns true when the oracle has signalled terminated market
+func (f *Future) IsTradingTerminated() bool {
+	return f.oracle.data.IsTradingTerminated()
+}
+
 // GetAsset return the asset used by the future
 func (f *Future) GetAsset() string {
 	return f.SettlementAsset
+}
+
+func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.OracleData) error {
+	if f.log.GetLevel() == logging.DebugLevel {
+		f.log.Debug("new oracle data received", data.Debug()...)
+	}
+	tradingTerminated, err := data.GetBoolean(f.oracle.binding.tradingTerminationProperty)
+	if err != nil {
+		f.log.Error(
+			"could not parse the property acting as trading Terminated",
+			logging.Error(err),
+		)
+		return err
+	}
+
+	f.oracle.data.tradingTerminated = tradingTerminated
+	return nil
 }
 
 func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleData) error {
@@ -98,7 +126,6 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	}
 
 	f.oracle.data.settlementPrice = settlementPrice
-	f.oracle.data.updated = true
 
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug(
@@ -116,12 +143,8 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, errors.Wrap(err, "invalid maturity time format")
 	}
 
-	if f.OracleSpec == nil || f.OracleSpecBinding == nil {
+	if f.OracleSpecForSettlementPrice == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
 		return nil, ErrOracleSpecAndBindingAreRequired
-	}
-	oracleSpec, err := oracles.NewOracleSpec(*f.OracleSpec)
-	if err != nil {
-		return nil, err
 	}
 
 	oracleBinding, err := newOracleBinding(f)
@@ -129,8 +152,22 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, err
 	}
 
-	if !oracleSpec.CanBindProperty(oracleBinding.settlementPriceProperty) {
+	oracleSpecForSettlementPrice, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementPrice)
+	if err != nil {
+		return nil, err
+	}
+
+	if !oracleSpecForSettlementPrice.CanBindProperty(oracleBinding.settlementPriceProperty) {
 		return nil, errors.New("bound settlement price property is not filtered by oracle spec")
+	}
+
+	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.OracleSpecForTradingTermination)
+	if err != nil {
+		return nil, err
+	}
+
+	if !oracleSpecForTerminatedMarket.CanBindProperty(oracleBinding.tradingTerminationProperty) {
+		return nil, errors.New("bound trading termination property is not filtered by oracle spec")
 	}
 
 	future := &Future{
@@ -139,17 +176,21 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		QuoteName:       f.QuoteName,
 		Maturity:        maturity,
 		oracle: oracle{
-			spec:    oracleSpec,
 			binding: oracleBinding,
 		},
 	}
 
-	future.oracle.subscriptionID = oe.Subscribe(ctx, *oracleSpec, future.updateSettlementPrice)
+	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
+	future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminated)
 
 	if log.GetLevel() == logging.DebugLevel {
 		log.Debug(
-			"future subscribed to oracle engine",
-			logging.Uint64("subscription ID", uint64(future.oracle.subscriptionID)),
+			"future subscribed to oracle engine for settlement price",
+			logging.Uint64("subscription ID", uint64(future.oracle.settlementPriceSubscriptionID)),
+		)
+		log.Debug(
+			"future subscribed to oracle engine for market termination event",
+			logging.Uint64("subscription ID", uint64(future.oracle.tradingTerminatedSubscriptionID)),
 		)
 	}
 
@@ -161,8 +202,13 @@ func newOracleBinding(f *types.Future) (oracleBinding, error) {
 	if len(settlementPriceProperty) == 0 {
 		return oracleBinding{}, errors.New("binding for settlement price cannot be blank")
 	}
+	tradingTerminationProperty := strings.TrimSpace(f.OracleSpecBinding.TradingTerminationProperty)
+	if len(tradingTerminationProperty) == 0 {
+		return oracleBinding{}, errors.New("binding for trading termination market cannot be blank")
+	}
 
 	return oracleBinding{
-		settlementPriceProperty: settlementPriceProperty,
+		settlementPriceProperty:    settlementPriceProperty,
+		tradingTerminationProperty: tradingTerminationProperty,
 	}, nil
 }

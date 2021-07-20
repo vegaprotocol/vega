@@ -534,7 +534,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		}
 	}
 
-	closed = t.After(m.closingAt)
+	closed = m.tradableInstrument.Instrument.Product.IsTradingTerminated()
 	m.closed = closed
 
 	// check auction, if any

@@ -133,11 +133,12 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:          row.maturityDate(),
-						SettlementAsset:   row.asset(),
-						QuoteName:         row.quoteName(),
-						OracleSpec:        oracleConfig.Spec,
-						OracleSpecBinding: types.OracleSpecToFutureBindingFromProto(oracleConfig.Binding),
+						Maturity:                        row.maturityDate(),
+						SettlementAsset:                 row.asset(),
+						QuoteName:                       row.quoteName(),
+						OracleSpecForSettlementPrice:    oracleConfig.SettlementPriceSpec,
+						OracleSpecForTradingTermination: oracleConfig.TradingTerminationSpec,
+						OracleSpecBinding:               types.OracleSpecToFutureBindingFromProto(oracleConfig.Binding),
 					},
 				},
 			},

@@ -59,8 +59,11 @@ func (o OracleSpecToFutureBinding) DeepClone() *OracleSpecToFutureBinding {
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
-	if f.OracleSpec != nil {
-		f.OracleSpec = f.OracleSpec.DeepClone()
+	if f.OracleSpecForSettlementPrice != nil {
+		f.OracleSpecForSettlementPrice = f.OracleSpecForSettlementPrice.DeepClone()
+	}
+	if f.OracleSpecForTradingTermination != nil {
+		f.OracleSpecForTradingTermination = f.OracleSpecForTradingTermination.DeepClone()
 	}
 	if f.OracleSpecBinding != nil {
 		f.OracleSpecBinding = f.OracleSpecBinding.DeepClone()
@@ -340,8 +343,11 @@ func (m MarketData) DeepClone() *MarketData {
 }
 
 func (f Future) DeepClone() *Future {
-	if f.OracleSpec != nil {
-		f.OracleSpec = f.OracleSpec.DeepClone()
+	if f.OracleSpecForSettlementPrice != nil {
+		f.OracleSpecForSettlementPrice = f.OracleSpecForSettlementPrice.DeepClone()
+	}
+	if f.OracleSpecForTradingTermination != nil {
+		f.OracleSpecForTradingTermination = f.OracleSpecForTradingTermination.DeepClone()
 	}
 	if f.OracleSpecBinding != nil {
 		f.OracleSpecBinding = f.OracleSpecBinding.DeepClone()

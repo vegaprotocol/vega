@@ -97,6 +97,7 @@ type testMarket struct {
 	events           []events.Event
 	orderEvents      []events.Event
 	mktCfg           *types.Market
+	oracleEngine     *oracles.Engine
 
 	// Options
 	Assets []types.Asset
@@ -288,6 +289,7 @@ func getTestMarket2(
 	})
 
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker, timeService)
+	tm.oracleEngine = oracleEngine
 
 	// add the token asset
 	tokAsset := types.Asset{
@@ -378,7 +380,8 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 						Maturity:        closingAt.Format(time.RFC3339),
 						SettlementAsset: "ETH",
 						QuoteName:       "USD",
-						OracleSpec: &oraclesv1.OracleSpec{
+						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
+							Id:      "1",
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*oraclesv1.Filter{
 								{
@@ -390,8 +393,22 @@ func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSetti
 								},
 							},
 						},
+						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+							Id:      "2",
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "trading.terminated",
+										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
+							},
+						},
 						OracleSpecBinding: &types.OracleSpecToFutureBinding{
-							SettlementPriceProperty: "prices.ETH.value",
+							SettlementPriceProperty:    "prices.ETH.value",
+							TradingTerminationProperty: "trading.terminated",
 						},
 					},
 				},
@@ -494,7 +511,13 @@ func TestMarketClosing(t *testing.T) {
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 
-	// check account gets updated
+	properties := map[string]string{}
+	properties["trading.terminated"] = "true"
+	tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    properties,
+	})
+	tm.oracleEngine.UpdateCurrentTime(context.Background(), closingAt.Add(1*time.Second))
 	closed := tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
 	assert.True(t, closed)
 	assert.Equal(t, types.Market_STATE_TRADING_TERMINATED, tm.market.State())
@@ -609,6 +632,14 @@ func TestMarketWithTradeClosing(t *testing.T) {
 
 	// update collateral time first, normally done by execution engine
 	futureTime := closingAt.Add(1 * time.Second)
+	properties := map[string]string{}
+	properties["trading.terminated"] = "true"
+	tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    properties,
+	})
+	tm.oracleEngine.UpdateCurrentTime(context.Background(), futureTime)
+
 	tm.collateralEngine.OnChainTimeUpdate(context.Background(), futureTime)
 	closed := tm.market.OnChainTimeUpdate(context.Background(), futureTime)
 	assert.True(t, closed)
@@ -845,7 +876,8 @@ func TestSetMarketID(t *testing.T) {
 						Future: &types.Future{
 							Maturity:        "2019-12-31T23:59:59Z",
 							SettlementAsset: "Ethereum/Ether",
-							OracleSpec: &oraclesv1.OracleSpec{
+							OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
+								Id:      "1",
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*oraclesv1.Filter{
 									{
@@ -857,8 +889,22 @@ func TestSetMarketID(t *testing.T) {
 									},
 								},
 							},
+							OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+								Id:      "2",
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "trading.terminated",
+											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
+								},
+							},
 							OracleSpecBinding: &types.OracleSpecToFutureBinding{
-								SettlementPriceProperty: "prices.ETH.value",
+								SettlementPriceProperty:    "prices.ETH.value",
+								TradingTerminationProperty: "trading.terminated",
 							},
 						},
 					},

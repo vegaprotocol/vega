@@ -16,6 +16,7 @@ var (
 	defaultOracleConfigs         embed.FS
 	defaultOracleConfigFileNames = []string{
 		"defaults/oracle-config/default-eth-for-future.json",
+		"defaults/oracle-config/default-eth-for-future2.json",
 		"defaults/oracle-config/default-usd-for-future.json",
 	}
 )
@@ -25,8 +26,9 @@ type oracleConfigs struct {
 }
 
 type OracleConfig struct {
-	Spec    *oraclesv1.OracleSpec
-	Binding *types.OracleSpecToFutureBinding
+	SettlementPriceSpec    *oraclesv1.OracleSpec
+	TradingTerminationSpec *oraclesv1.OracleSpec
+	Binding                *types.OracleSpecToFutureBinding
 }
 
 func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
@@ -40,7 +42,7 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default oracle config %s: %v", name, err))
 		}
-		if err := specs.Add(name, future.OracleSpec, future.OracleSpecBinding); err != nil {
+		if err := specs.Add(name, future.OracleSpecForSettlementPrice, future.OracleSpecForTradingTermination, future.OracleSpecBinding); err != nil {
 			panic(fmt.Errorf("failed to add default oracle config %s: %v", name, err))
 		}
 	}
@@ -50,12 +52,14 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 
 func (f *oracleConfigs) Add(
 	name string,
-	spec *oraclesv1.OracleSpec,
+	settlementPriceSpec *oraclesv1.OracleSpec,
+	tradingTerminationSpec *oraclesv1.OracleSpec,
 	binding *types.OracleSpecToFutureBinding,
 ) error {
 	f.config[name] = &OracleConfig{
-		Spec:    spec,
-		Binding: binding,
+		SettlementPriceSpec:    settlementPriceSpec,
+		TradingTerminationSpec: tradingTerminationSpec,
+		Binding:                binding,
 	}
 	return nil
 }
