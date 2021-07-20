@@ -1,5 +1,3 @@
-//lint:file-ignore ST1003 Ignore underscores in names, this is straight copied from the proto package to ease introducing the domain types
-
 package types
 
 import (
@@ -7,20 +5,20 @@ import (
 )
 
 type Delegate struct {
-	NodeId string
+	NodeID string
 	Amount uint64
 }
 
 func NewDelegateFromProto(p *commandspb.DelegateSubmission) *Delegate {
 	return &Delegate{
-		NodeId: p.NodeId,
+		NodeID: p.NodeId,
 		Amount: p.Amount,
 	}
 }
 
 func (d Delegate) IntoProto() *commandspb.DelegateSubmission {
 	return &commandspb.DelegateSubmission{
-		NodeId: d.NodeId,
+		NodeId: d.NodeID,
 		Amount: d.Amount,
 	}
 }
@@ -30,20 +28,20 @@ func (d Delegate) String() string {
 }
 
 type UndelegateAtEpochEnd struct {
-	NodeId string
+	NodeID string
 	Amount uint64
 }
 
 func NewUndelegateAtEpochEndFromProto(p *commandspb.UndelegateAtEpochEndSubmission) *UndelegateAtEpochEnd {
 	return &UndelegateAtEpochEnd{
-		NodeId: p.NodeId,
+		NodeID: p.NodeId,
 		Amount: p.Amount,
 	}
 }
 
 func (u UndelegateAtEpochEnd) IntoProto() *commandspb.UndelegateAtEpochEndSubmission {
 	return &commandspb.UndelegateAtEpochEndSubmission{
-		NodeId: u.NodeId,
+		NodeId: u.NodeID,
 		Amount: u.Amount,
 	}
 }

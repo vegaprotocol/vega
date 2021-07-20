@@ -33,6 +33,9 @@ message InputData {
     ChainEvent chain_event = 2004;
     // Oracles
     OracleDataSubmission oracle_data_submission = 3001;
+    // Delegation
+    DelegateSubmission delegate_submission = 4001;
+    UndelegateAtEpochEndSubmission undelegate_at_epoch_end_submission = 4002;
   }
 }
 

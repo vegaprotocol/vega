@@ -27,5 +27,8 @@ message SubmitTransactionRequest {
     commands.v1.ChainEvent chain_event = 2004;
     // Oracle commands
     commands.v1.OracleDataSubmission oracle_data_submission = 3001;
+    // Delegation
+    commands.v1.DelegateSubmission delegate_submission = 4001;
+    commands.v1.UndelegateAtEpochEndSubmission undelegate_at_epoch_end_submission = 4002;
   }
 }

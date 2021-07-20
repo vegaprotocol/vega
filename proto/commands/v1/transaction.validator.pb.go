@@ -101,6 +101,20 @@ func (this *InputData) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetCommand().(*InputData_DelegateSubmission); ok {
+		if oneOfNester.DelegateSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.DelegateSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("DelegateSubmission", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetCommand().(*InputData_UndelegateAtEpochEndSubmission); ok {
+		if oneOfNester.UndelegateAtEpochEndSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UndelegateAtEpochEndSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("UndelegateAtEpochEndSubmission", err)
+			}
+		}
+	}
 	return nil
 }
 func (this *Transaction) Validate() error {
