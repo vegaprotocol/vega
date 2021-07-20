@@ -1199,12 +1199,8 @@ func (e *Engine) getFeeTransferRequest(
 		treq.ToAccount = []*types.Account{liquiFee}
 		return treq, nil
 	case types.TransferTypeLiquidityFeeDistribute:
-		margin, err := getMargin()
-		if err != nil {
-			return nil, err
-		}
 		treq.FromAccount = []*types.Account{liquiFee}
-		treq.ToAccount = []*types.Account{margin}
+		treq.ToAccount = []*types.Account{general}
 		return treq, nil
 	case types.TransferTypeMakerFeePay:
 		margin, err := getMargin()

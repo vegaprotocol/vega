@@ -423,6 +423,8 @@ github.com/nats-io/nkeys v0.1.3/go.mod h1:xpnFELMwJABBLVhffcfd1MZx6VsNRFpEugbxzi
 github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OSON2c=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20210528083545-b12728c4e0d8 h1:MSfqXIiv6mJvRDv4IKTijuvMjbtU3TQDlFvPOmrIQ60=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20210528083545-b12728c4e0d8/go.mod h1:QSDKNT2Cn6ziMI2mWvUZSMTj5vhIQIvgJc5RQ2VpYkQ=
+github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84 h1:VGE87qI0pfuQ23PLPiXpXIdk4gVGFZpq5H5A2f1dZcY=
+github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84/go.mod h1:TLJifjWF6eotcfzDjKZsDqWJ+73Uvj/N85MvVyrvynM=
 github.com/oklog/oklog v0.3.2/go.mod h1:FCV+B7mhrz4o+ueLpx+KqkyXRGMWOYEvfiXtdGtbWGs=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
