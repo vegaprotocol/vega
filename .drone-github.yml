@@ -200,8 +200,10 @@ steps:
     depends_on:
       - fetch
     when:
-      branch:
-        - feature/3506-update-tendermint
+      ref:
+        - refs/heads/master
+        - refs/heads/develop
+        - refs/tags/*
 
   - name: deploy_devnet
     image: docker.pkg.github.com/vegaprotocol/devops-infra/cipipeline:1.16.2
@@ -245,7 +247,7 @@ steps:
       - build-branch
     when:
       branch:
-        - feature/3506-update-tendermint
+        - develop
       event:
         - push
 
@@ -282,7 +284,7 @@ steps:
       - deploy_devnet
     when:
       branch:
-        - feature/3506-update-tendermint
+        - develop
       event:
         - push
 
