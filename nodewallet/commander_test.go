@@ -5,12 +5,14 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/nodewallet/mocks"
 	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +39,7 @@ func getTestCommander(t *testing.T) *testCommander {
 	chain := mocks.NewMockChain(ctrl)
 	bstats := mocks.NewMockBlockchainStats(ctrl)
 	wal := &stubWallet{chain: string(nodewallet.Vega)}
-	cmd, err := nodewallet.NewCommander(chain, wal, bstats)
+	cmd, err := nodewallet.NewCommander(logging.NewTestLogger(), chain, wal, bstats)
 	assert.NoError(t, err)
 	return &testCommander{
 		Commander: cmd,
@@ -52,6 +54,7 @@ func getTestCommander(t *testing.T) *testCommander {
 
 func TestCommand(t *testing.T) {
 	t.Run("Signed command - success", testSignedCommandSuccess)
+	t.Run("Signed command - failure", testSignedCommandFailure)
 	t.Run("SetChain - dummy test for completeness", testSetChain)
 }
 
@@ -74,9 +77,35 @@ func testSignedCommandSuccess(t *testing.T) {
 
 	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
 	commander.chain.EXPECT().SubmitTransactionV2(
-		ctx, gomock.Any(), gomock.Any()).Times(1)
+		ctx, gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
-	assert.NoError(t, commander.Command(ctx, cmd, payload))
+	ok := make(chan bool)
+	commander.Command(ctx, cmd, payload, func(b bool) {
+		ok <- b
+	})
+	assert.True(t, <-ok)
+}
+
+func testSignedCommandFailure(t *testing.T) {
+	commander := getTestCommander(t)
+	defer commander.Finish()
+
+	cmd := txn.NodeVoteCommand
+	payload := &commandspb.NodeVote{
+		PubKey:    []byte("my-pub-key"),
+		Reference: "test",
+	}
+	ctx := context.Background()
+
+	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
+	commander.chain.EXPECT().SubmitTransactionV2(
+		ctx, gomock.Any(), gomock.Any()).Times(1).Return(errors.New("bad bad"))
+
+	ok := make(chan bool)
+	commander.Command(ctx, cmd, payload, func(b bool) {
+		ok <- b
+	})
+	assert.False(t, <-ok)
 }
 
 func (t *testCommander) Finish() {

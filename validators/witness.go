@@ -32,7 +32,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message) error
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
@@ -100,12 +100,16 @@ func (r *res) voteCount() int {
 }
 
 type Witness struct {
-	log       *logging.Logger
-	cfg       Config
+	log *logging.Logger
+	cfg Config
+	now time.Time
+	top ValidatorTopology
+	cmd Commander
+
 	resources map[string]*res
-	now       time.Time
-	top       ValidatorTopology
-	cmd       Commander
+	// handle sending transaction errors
+	needResendMu  sync.Mutex
+	needResendRes map[string]struct{}
 }
 
 func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
@@ -117,12 +121,13 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 	log.SetLevel(cfg.Level.Get())
 
 	return &Witness{
-		log:       log,
-		cfg:       cfg,
-		now:       tsvc.GetTimeNow(),
-		cmd:       cmd,
-		top:       top,
-		resources: map[string]*res{},
+		log:           log,
+		cfg:           cfg,
+		now:           tsvc.GetTimeNow(),
+		cmd:           cmd,
+		top:           top,
+		resources:     map[string]*res{},
+		needResendRes: map[string]struct{}{},
 	}
 }
 
@@ -287,18 +292,35 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 
 		// if we are a validator, and the resource was validated
 		// then we try to send our vote.
-		if isValidator && state == validated {
+		if isValidator && state == validated || w.needResend(k) {
 			nv := &commandspb.NodeVote{
 				PubKey:    w.top.SelfVegaPubKey(),
 				Reference: v.res.GetID(),
 			}
-			err := w.cmd.Command(ctx, txn.NodeVoteCommand, nv)
-			if err != nil {
-				w.log.Error("unable to send command", logging.Error(err))
-				continue
-			}
+			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
 		}
+	}
+}
+
+func (w *Witness) needResend(res string) bool {
+	w.needResendMu.Lock()
+	defer w.needResendMu.Unlock()
+	if _, ok := w.needResendRes[res]; ok {
+		delete(w.needResendRes, res)
+		return true
+	}
+	return false
+}
+
+func (w *Witness) onCommandSent(res string) func(bool) {
+	return func(success bool) {
+		if success {
+			return
+		}
+		w.needResendMu.Lock()
+		defer w.needResendMu.Unlock()
+		w.needResendRes[res] = struct{}{}
 	}
 }
