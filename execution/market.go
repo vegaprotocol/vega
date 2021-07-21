@@ -750,10 +750,22 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 	// Send an event bus update
 	m.broker.Send(event)
+
+	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
+		m.mkt.State = types.Market_STATE_SUSPENDED
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	}
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
+	defer func() {
+		if !m.as.InAuction() && m.mkt.State == types.Market_STATE_SUSPENDED {
+			m.mkt.State = types.Market_STATE_ACTIVE
+			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		}
+	}()
+
 	// Change market type to continuous trading
 	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.currentTime)
 	if err != nil {

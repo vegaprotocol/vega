@@ -65,6 +65,8 @@ Feature: Price monitoring test for issue 2668
       | party1 | ETH/DEC20 | sell | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 6640000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
+    # enter price monitoring auction
+    Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC20"
     And the mark price should be "6630000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
@@ -77,7 +79,9 @@ Feature: Price monitoring test for issue 2668
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     # T0 + 15min01s (opening auction, price monitoring + extension due to time update + another period)
-    Then time is updated to "2020-10-16T00:15:01Z"
+    When time is updated to "2020-10-16T00:15:01Z"
+    # leave auction
+    Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC20"
 
     # the order was GTC, so after the auction this trade can now happen
     And the mark price should be "6640000" for the market "ETH/DEC20"
@@ -110,7 +114,7 @@ Feature: Price monitoring test for issue 2668
     And the mark price should be "5670000" for the market "ETH/DEC20"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
+    
     When the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC20 | sell | 1      | 4850000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -134,8 +138,9 @@ Feature: Price monitoring test for issue 2668
       | party1 | ETH/DEC20 | sell | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC20 | buy  | 1      | 4840000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
+    #price monitoring auction started
+    Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC20"
     And the mark price should be "6630000" for the market "ETH/DEC20"
-
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     # T0 + 10min
@@ -146,10 +151,10 @@ Feature: Price monitoring test for issue 2668
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     # T0 + 15min01s
-    Then time is updated to "2020-10-16T00:15:01Z"
-
+    When time is updated to "2020-10-16T00:15:01Z"
+    # leave auction
+    Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC20"
     And the mark price should be "4840000" for the market "ETH/DEC20"
-
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
   Scenario: Upper bound breached (scale prices down by 10000)
@@ -203,8 +208,9 @@ Feature: Price monitoring test for issue 2668
       | party2 | ETH/DEC20 | buy  | 1      | 665   | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the mark price should be "663" for the market "ETH/DEC20"
-
+    # enter price monitoring auction
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC20"
 
     # T0 + 10min
     Then time is updated to "2020-10-16T00:10:00Z"
@@ -214,8 +220,8 @@ Feature: Price monitoring test for issue 2668
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     # T0 + 15min01s
-    Then time is updated to "2020-10-16T00:15:01Z"
-
+    When time is updated to "2020-10-16T00:15:01Z"
+    # leave auction
+    Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC20"
     And the mark price should be "665" for the market "ETH/DEC20"
-
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"

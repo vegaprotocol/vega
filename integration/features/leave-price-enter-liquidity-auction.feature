@@ -42,6 +42,8 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party0 | ETH/DEC19 | buy  | 1      | 99844 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-3    |
 
     And time is updated to "2019-11-30T00:00:03Z"
+      # enter price monitoring auction
+    Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
     Then the parties cancel the following orders:
@@ -53,7 +55,10 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party1 | ETH/DEC19 | sell | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-4    |
       | party0 | ETH/DEC19 | buy  | 1      | 100291 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-4    |
 
-    And time is updated to "2019-11-30T00:00:20Z"
+    When time is updated to "2019-11-30T00:00:20Z"
+    # leave auction
+    Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
+
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "100291" for the market "ETH/DEC19"
 
@@ -65,6 +70,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party  | market id | side | volume | pegged reference | offset |
       | party3 | ETH/DEC19 | buy  | 3      | BID              | -900   |
 
+    Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
     Then the parties place the following orders:
@@ -72,10 +78,12 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party0 | ETH/DEC19 | buy  | 5      | 108500 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-5    |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
+    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
 
     And time is updated to "2019-11-30T00:00:22Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
+    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -83,3 +91,4 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 
     And time is updated to "2019-11-30T00:10:00Z"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
+    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"

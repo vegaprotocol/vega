@@ -45,7 +45,10 @@ Feature: Ensure we can enter and leave liquidity auction
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 20     | 120   | 1                | TYPE_LIMIT | TIF_GTC | t1-1      |
 
+   # enter price monitoring auction
+    Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
+    
 
 # now we move add back some volume
     When the parties place the following orders:
@@ -54,5 +57,6 @@ Feature: Ensure we can enter and leave liquidity auction
 
 # now update the time to get the market out of auction
     Given time is updated to "2019-12-01T00:00:00Z"
-
+     # leave price monitoring auction
+    Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
