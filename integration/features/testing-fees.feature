@@ -733,7 +733,7 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
       | trader3  | ETH   | 10000000   |
-      | trader4  | ETH   | 178        |
+      | trader4  | ETH   | 189        |
       # | lp5      | ETH   | 100000000  |
 
     Then the traders place the following orders:
@@ -772,17 +772,16 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
 
     Then the following trades should be executed:
       | buyer    | price | size | seller  |
-      | trader3a | 1002  | 2    | trader4 |
-      | trader3b | 1002  | 1    | trader4 |
+      | trader3 | 1002  | 1    | trader4 |
 
-      # Then debug transfers
+     Then debug transfers
     And the following transfers should happen:
       | from    | to       | from account             | to account                       | market id | amount | asset |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 3      | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  5     | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2     | ETH   |
       | market  | trader3  | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
-    # | market  | aux1     | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  5     | ETH   |
+    # | market  | aux1     | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  2     | ETH   |
 
     Then the traders should have the following margin levels:
       | trader  | market id | maintenance | search | initial | release |
@@ -790,17 +789,17 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
 
     Then the traders should have the following account balances:
       | trader      | asset | market id | margin | general |
-      | trader3     | ETH   | ETH/DEC21 | 339    | 9999667 |
-      | trader4     | ETH   | ETH/DEC21 | 178    | 0       |
+      | trader3     | ETH   | ETH/DEC21 | 240    | 9999766 |
+      | trader4     | ETH   | ETH/DEC21 | 179    | 0       |
 
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "2" for the market "ETH/DEC21"
 
     When the network moves ahead "11" blocks
 
     And the following transfers should happen:
       | from   | to   | from account                | to account          | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5      | ETH   |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 2      | ETH   |
 
 Scenario: WIP - Testing fees in auctions session with each side of a trade debited 1/2 IF & LP
     
