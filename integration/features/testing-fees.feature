@@ -230,8 +230,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | aux2    | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux1    | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2    | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
-      # | aux1    | ETH/DEC21 | buy  | 105    | 910   | 0                | TYPE_LIMIT | TIF_GTC |
-      # | aux2    | ETH/DEC21 | sell | 92     | 1090  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the traders submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
@@ -255,14 +253,14 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
-    
+
     Then the traders should have the following account balances:
       | trader      | asset | market id | margin | general  |
-      | trader3a    | ETH   | ETH/DEC21 | 480    | 9520 |
-      | trader3b    | ETH   | ETH/DEC21 | 240    | 9760 |
+      | trader3a    | ETH   | ETH/DEC21 | 480    | 9531 |
+      | trader3b    | ETH   | ETH/DEC21 | 240    | 9766 |
     
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |  
