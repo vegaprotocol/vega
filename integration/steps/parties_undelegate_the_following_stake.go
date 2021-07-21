@@ -1,8 +1,6 @@
 package steps
 
 import (
-	"fmt"
-
 	"github.com/cucumber/godog/gherkin"
 
 	"code.vegaprotocol.io/vega/execution"
@@ -21,7 +19,7 @@ func PartiesUndelegateTheFollowingStake(
 			Amount: row.Amount(),
 		}
 
-		fmt.Println("Undelegate type", undelegateStake)
+		_ = undelegateStake
 
 		/*		resp, err := exec.Undelegate(context.Background(), &undelegateStake)
 				if err := checkExpectedError(row, err); err != nil {

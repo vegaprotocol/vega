@@ -1,8 +1,6 @@
 package steps
 
 import (
-	"fmt"
-
 	"github.com/cucumber/godog/gherkin"
 
 	"code.vegaprotocol.io/vega/execution"
@@ -21,8 +19,7 @@ func PartiesDelegateTheFollowingStake(
 			Amount: row.Amount(),
 		}
 
-		fmt.Println("Delegate type", delegateStake)
-
+		_ = delegateStake
 		/*		resp, err := exec.Delegate(context.Background(), &delegateStake)
 				if err := checkExpectedError(row, err); err != nil {
 					return err
