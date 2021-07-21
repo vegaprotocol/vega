@@ -170,11 +170,9 @@ func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) ba
 		Logger:                  log.Named(badgerNamedLogger),
 
 		Compression:              cfg.Compression,
-		EventLogging:             cfg.EventLogging,
 		BlockSize:                cfg.BlockSize,
 		BloomFalsePositive:       cfg.BloomFalsePositive,
 		KeepL0InMemory:           cfg.KeepL0InMemory,
-		MaxCacheSize:             cfg.MaxCacheSize,
 		VerifyValueChecksum:      cfg.VerifyValueChecksum,
 		ChecksumVerificationMode: cfg.ChecksumVerificationMode,
 	}

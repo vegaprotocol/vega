@@ -199,8 +199,8 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	vators := make([][]byte, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
-		if len(v.PubKey.Data) > 0 {
-			vators = append(vators, v.PubKey.Data)
+		if len(v.PubKey.GetEd25519()) > 0 {
+			vators = append(vators, v.PubKey.GetEd25519())
 		}
 	}
 

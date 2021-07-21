@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	htypes "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 type AbciTestSuite struct {
@@ -146,7 +147,7 @@ func (s *AbciTestSuite) testBeginCommitSuccess(_ *testing.T, app *processor.App,
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmtypes.Header{
+		Header: htypes.Header{
 			Time: now,
 		},
 	})
@@ -183,7 +184,7 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(_ *testing.T, app *processor
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmtypes.Header{
+		Header: htypes.Header{
 			Time: now,
 		},
 	})
@@ -193,7 +194,7 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(_ *testing.T, app *processor
 	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
 	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmtypes.Header{
+		Header: htypes.Header{
 			Time: now,
 		},
 	})

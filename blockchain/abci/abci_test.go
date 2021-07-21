@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
+	htypes "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 type testTx struct {
@@ -141,7 +142,7 @@ func TestABCICheckTx(t *testing.T) {
 // beginBlockN is a helper function that will move the blockchain to a given
 // block number by calling BeginBlock with the right parameter.
 func beginBlockN(app *abci.App, n int) {
-	header := types.Header{Height: int64(n)}
+	header := htypes.Header{Height: int64(n)}
 	app.BeginBlock(types.RequestBeginBlock{
 		Header: header,
 	})

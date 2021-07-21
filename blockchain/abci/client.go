@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	ErrEmptyClientAddr     = errors.New("abci client addr is empty in config")
+	ErrEmptyClientAddr = errors.New("abci client addr is empty in config")
 )
 
 type Client struct {
@@ -46,13 +46,13 @@ func NewClient(addr string) (*Client, error) {
 
 func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) error {
 	// Fire off the transaction for consensus
-	_, err := c.tmclt.BroadcastTxAsync(bytes)
+	_, err := c.tmclt.BroadcastTxAsync(ctx, bytes)
 	return err
 }
 
 func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) error {
 	// Fire off the transaction for consensus
-	r, err := c.tmclt.BroadcastTxSync(bytes)
+	r, err := c.tmclt.BroadcastTxSync(ctx, bytes)
 	if err != nil {
 		return err
 	} else if r.Code != 0 {
@@ -63,7 +63,7 @@ func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) error {
 
 func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) error {
 	// Fire off the transaction for consensus
-	r, err := c.tmclt.BroadcastTxCommit(bytes)
+	r, err := c.tmclt.BroadcastTxCommit(ctx, bytes)
 	if err != nil {
 		return err
 	} else if r.CheckTx.Code != 0 {
@@ -74,7 +74,7 @@ func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) error 
 
 // GetGenesisTime retrieves the genesis time from the blockchain
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
-	res, err := c.tmclt.Genesis()
+	res, err := c.tmclt.Genesis(ctx)
 	if err != nil {
 		return vegatime.Now(), err
 	}
@@ -83,7 +83,7 @@ func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err
 
 // GetChainID retrieves the chainID from the blockchain
 func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
-	res, err := c.tmclt.Genesis()
+	res, err := c.tmclt.Genesis(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -92,17 +92,17 @@ func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
 
 // GetStatus returns the current status of the chain
 func (c *Client) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
-	return c.tmclt.Status()
+	return c.tmclt.Status(ctx)
 }
 
 // GetNetworkInfo return information of the current network
 func (c *Client) GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error) {
-	return c.tmclt.NetInfo()
+	return c.tmclt.NetInfo(ctx)
 }
 
 // GetUnconfirmedTxCount return the current count of unconfirmed transactions
 func (c *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
-	res, err := c.tmclt.NumUnconfirmedTxs()
+	res, err := c.tmclt.NumUnconfirmedTxs(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -110,30 +110,30 @@ func (c *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 }
 
 // Health returns the result of the health endpoint of the chain
-func (c *Client) Health() (*tmctypes.ResultHealth, error) {
-	return c.tmclt.Health()
+func (c *Client) Health(ctx context.Context) (*tmctypes.ResultHealth, error) {
+	return c.tmclt.Health(ctx)
 }
 
-func (c *Client) Validators() ([]*tmtypes.Validator, error) {
+func (c *Client) Validators(ctx context.Context) ([]*tmtypes.Validator, error) {
 	page := 0
 	perPage := 100
-	res, err := c.tmclt.Validators(nil, page, perPage)
+	res, err := c.tmclt.Validators(ctx, nil, &page, &perPage)
 	if err != nil {
 		return nil, err
 	}
 	return res.Validators, nil
 }
 
-func (c *Client) Genesis() (*tmtypes.GenesisDoc, error) {
-	res, err := c.tmclt.Genesis()
+func (c *Client) Genesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
+	res, err := c.tmclt.Genesis(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return res.Genesis, nil
 }
 
-func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
-	gen, err := c.Genesis()
+func (c *Client) GenesisValidators(ctx context.Context) ([]*tmtypes.Validator, error) {
+	gen, err := c.Genesis(ctx)
 	if err != nil {
 		return nil, err
 	}
