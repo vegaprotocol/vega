@@ -1,11 +1,25 @@
+/* properties of scmVars (example): 
+    - GIT_BRANCH:PR-40-head
+    - GIT_COMMIT:05a1c6fbe7d1ff87cfc40a011a63db574edad7e6
+    - GIT_PREVIOUS_COMMIT:5d02b46fdb653f789e799ff6ad304baccc32cbf9
+    - GIT_PREVIOUS_SUCCESSFUL_COMMIT:5d02b46fdb653f789e799ff6ad304baccc32cbf9
+    - GIT_URL:https://github.com/vegaprotocol/data-node.git
+*/
+def scmVars = null
+def versionHash = 'UNKNOWN'
+
+
 pipeline {
-    agent any
+    agent { label 'general' }
     options {
         skipDefaultCheckout true
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
         string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
+    }
+    environment {
+        GO111MODULE = 'on'
     }
 
     stages {
@@ -21,7 +35,10 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                checkout scm
+                                script {
+                                    scmVars = checkout(scm)
+                                    versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
+                                }
                             }
                         }
                     }
@@ -48,30 +65,56 @@ pipeline {
         }
 
         stage('Compile vega core') {
+            environment {
+                CGO_ENABLED  = 0
+                LDFLAGS      = "-X main.CLIVersion=\"${scmVars.GIT_BRANCH}\" -X main.CLIVersionHash=\"${versionHash}\""
+            }
             parallel {
-                stage('[TODO] for Linux') {
+                stage('Linux build') {
+                    environment {
+                        GOOS         = 'linux'
+                        GOARCH       = 'amd64'
+                        OUTPUT       = './cmd/vega/vega-linux-amd64'
+                    }
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Compile Vega Core for Linux'
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                // quick check
+                                sh 'file ${OUTPUT}'
+                                sh '${OUTPUT} version'
                             }
                         }
                     }
                 }
-                stage('[TODO] for MacOS') {
+                stage('MacOS build') {
+                    environment {
+                        GOOS         = 'darwin'
+                        GOARCH       = 'amd64'
+                        OUTPUT       = './cmd/vega/vega-darwin-amd64'
+                    }
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Compile Vega Core for MacOS'
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                // quick check
+                                sh 'file ${OUTPUT}'
                             }
                         }
                     }
                 }
-                stage('[TODO] for Windows') {
+                stage('Windows build') {
+                    environment {
+                        GOOS         = 'windows'
+                        GOARCH       = 'amd64'
+                        OUTPUT       = './cmd/vega/vega-windows-amd64'
+                    }
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Compile Vega Core for Windows'
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                // quick check
+                                sh 'file ${OUTPUT}'
                             }
                         }
                     }
