@@ -54,5 +54,5 @@ func (r delegationRow) NodeID() string {
 }
 
 func (r delegationRow) Amount() uint64 {
-	return r.row.MustU64("market id")
+	return r.row.MustU64("amount")
 }
