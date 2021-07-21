@@ -15,9 +15,6 @@ Feature: Replicate failing system tests after changes to price monitoring (trigg
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
 
   Scenario: Replicate test called test_TriggerWithMarketOrder

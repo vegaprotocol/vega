@@ -11,9 +11,6 @@ Feature: Long close-out test (see ln 293 of system-tests/grpc/trading/tradesTest
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 100   |
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
     # setup accounts

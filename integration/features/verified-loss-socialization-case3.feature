@@ -8,9 +8,6 @@ Feature: Test loss socialization case 3
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: case 3 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 # setup accounts

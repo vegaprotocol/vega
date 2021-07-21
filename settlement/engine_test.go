@@ -44,8 +44,6 @@ type marginVal struct {
 func TestMarketExpiry(t *testing.T) {
 	t.Run("Settle at market expiry - success", testSettleExpiredSuccess)
 	t.Run("Settle at market expiry - error", testSettleExpiryFail)
-	t.Run("Settle at market expiry with mark price - success", testSettleExpiredSuccessWithMarkPrice)
-	t.Run("Settle at market expiry - failure invalid method", testSettleExpiredSuccessErrorInvalidSettlementMethod)
 }
 
 func TestMarkToMarket(t *testing.T) {
@@ -124,7 +122,7 @@ func testSettleExpiredSuccess(t *testing.T) {
 	// ensure positions are set
 	engine.Update(positions)
 	// now settle:
-	got, err := engine.Settle(time.Now(), num.Zero())
+	got, err := engine.Settle(time.Now())
 	assert.NoError(t, err)
 	assert.Equal(t, len(expect), len(got))
 	for i, p := range got {
@@ -132,85 +130,6 @@ func testSettleExpiredSuccess(t *testing.T) {
 		assert.Equal(t, e.Type, p.Type)
 		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
 	}
-}
-
-func testSettleExpiredSuccessWithMarkPrice(t *testing.T) {
-	engine := getTestEngine(t)
-	defer engine.Finish()
-	// these are mark prices, product will provide the actual value
-	pr := num.NewUint(1000)
-	data := []posValue{ // {{{2
-		{
-			party: "party1",
-			price: pr,
-			size:  10,
-		},
-		{
-			party: "party2",
-			price: pr,
-			size:  -5,
-		},
-		{
-			party: "party3",
-			price: pr,
-			size:  -5,
-		},
-	}
-	half := num.NewUint(500)
-	expect := []*types.Transfer{
-		{
-			Owner: data[1].party,
-			Amount: &types.FinancialAmount{
-				Amount: half,
-			},
-			Type: types.TransferTypeLoss,
-		},
-		{
-			Owner: data[2].party,
-			Amount: &types.FinancialAmount{
-				Amount: half,
-			},
-			Type: types.TransferTypeLoss,
-		},
-		{
-			Owner: data[0].party,
-			Amount: &types.FinancialAmount{
-				Amount: pr,
-			},
-			Type: types.TransferTypeWin,
-		},
-	} // }}}
-
-	// settlement price at markPrice
-	markPrice := num.NewUint(1100)
-	// set the FinalSettlement to the MarkPrice method
-	engine.Engine.Config.FinalSettlement.FinalSettlement = settlement.FinalSettlementMarkPrice
-
-	positions := engine.getExpiryPositions(data...)
-	engine.prod.EXPECT().GetAsset().Return("ETH").AnyTimes()
-	// ensure positions are set
-	engine.Update(positions)
-	// now settle:
-	got, err := engine.Settle(time.Now(), markPrice)
-	assert.NoError(t, err)
-	assert.Equal(t, len(expect), len(got))
-	for i, p := range got {
-		e := expect[i]
-		assert.Equal(t, e.Type, p.Type)
-		assert.Equal(t, e.Amount.Amount, p.Amount.Amount)
-	}
-}
-
-func testSettleExpiredSuccessErrorInvalidSettlementMethod(t *testing.T) {
-	engine := getTestEngine(t)
-	defer engine.Finish()
-	// settlement price at markPrice
-	markPrice := num.NewUint(1100)
-	// set the FinalSettlement to the MarkPrice method
-	engine.Engine.Config.FinalSettlement.FinalSettlement = "not a settlement"
-	// now settle:
-	_, err := engine.Settle(time.Now(), markPrice)
-	assert.Error(t, err)
 }
 
 func testSettleExpiryFail(t *testing.T) {
@@ -228,7 +147,7 @@ func testSettleExpiryFail(t *testing.T) {
 	positions := engine.getExpiryPositions(data...)
 	engine.prod.EXPECT().Settle(data[0].price, data[0].size).Times(1).Return(nil, false, errExp)
 	engine.Update(positions)
-	empty, err := engine.Settle(time.Now(), num.Zero())
+	empty, err := engine.Settle(time.Now())
 	assert.Empty(t, empty)
 	assert.Error(t, err)
 	assert.Equal(t, errExp, err)
@@ -618,7 +537,7 @@ func TestConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			// Settle requires posMu
-			_, err := engine.Settle(now, num.Zero())
+			_, err := engine.Settle(now)
 			assert.NoError(t, err)
 		}()
 	}

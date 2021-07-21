@@ -31,6 +31,7 @@ type Product interface {
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 	IsTradingTerminated() bool
+	SettlementPrice() (*num.Uint, error)
 }
 
 // New instance a new product from a Market framework product configuration

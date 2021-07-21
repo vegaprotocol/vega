@@ -15,9 +15,6 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 60    |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction.
     Given the parties deposit on asset's general account the following amount:

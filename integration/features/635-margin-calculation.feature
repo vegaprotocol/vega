@@ -8,9 +8,6 @@ Feature: Regression test for issue 596
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   @ignore
   Scenario: Traded out position but monies left in margin account

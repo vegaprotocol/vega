@@ -8,9 +8,6 @@ Feature: Position resolution case 4
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
 # setup accounts

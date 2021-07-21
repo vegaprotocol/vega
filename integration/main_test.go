@@ -118,7 +118,9 @@ func FeatureContext(s *godog.Suite) {
 		}
 		return nil
 	})
-
+	s.Step(`^the market state should be "([^"]*)" for the market "([^"]*)"$`, func(marketState, marketID string) error {
+		return steps.TheMarketStateShouldBeForMarket(execsetup.executionEngine, marketID, marketState)
+	})
 	s.Step(`^the following network parameters are set:$`, func(table *gherkin.DataTable) error {
 		return steps.TheFollowingNetworkParametersAreSet(execsetup.netParams, table)
 	})
