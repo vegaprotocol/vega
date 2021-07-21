@@ -12,7 +12,7 @@ func PartiesUndelegateTheFollowingStake(
 	table *gherkin.DataTable,
 ) error {
 	for _, r := range parseUndelegationTable(table) {
-		row := newDelegationRow(r)
+		row := newUndelegationRow(r)
 
 		undelegateStake := types.UndelegateAtEpochEnd{
 			NodeID: row.NodeID(),
