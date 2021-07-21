@@ -200,60 +200,6 @@
         ]
       }
     },
-    "/governance/prepare/proposal": {
-      "post": {
-        "summary": "Prepare a governance proposal",
-        "operationId": "PrepareProposalSubmission",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1PrepareProposalSubmissionResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1PrepareProposalSubmissionRequest"
-            }
-          }
-        ],
-        "tags": [
-          "TradingService"
-        ]
-      }
-    },
-    "/governance/prepare/vote": {
-      "post": {
-        "summary": "Prepare a governance vote",
-        "operationId": "PrepareVoteSubmission",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1PrepareVoteSubmissionResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1PrepareVoteSubmissionRequest"
-            }
-          }
-        ],
-        "tags": [
-          "TradingService"
-        ]
-      }
-    },
     "/governance/proposal/reference/{reference}": {
       "get": {
         "summary": "Get governance data (proposals and votes) for a proposal located by reference",
@@ -373,33 +319,6 @@
         ],
         "tags": [
           "TradingDataService"
-        ]
-      }
-    },
-    "/liquidity-provisions/prepare/submit": {
-      "post": {
-        "summary": "Prepare a liquidity provision request",
-        "operationId": "PrepareLiquidityProvision",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1PrepareLiquidityProvisionResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1PrepareLiquidityProvisionRequest"
-            }
-          }
-        ],
-        "tags": [
-          "TradingService"
         ]
       }
     },
@@ -906,87 +825,6 @@
         ]
       }
     },
-    "/orders/prepare/amend": {
-      "post": {
-        "summary": "Prepare an amend order request",
-        "operationId": "PrepareAmendOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1PrepareAmendOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1PrepareAmendOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "TradingService"
-        ]
-      }
-    },
-    "/orders/prepare/cancel": {
-      "post": {
-        "summary": "Prepare a cancel order request",
-        "operationId": "PrepareCancelOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1PrepareCancelOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1PrepareCancelOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "TradingService"
-        ]
-      }
-    },
-    "/orders/prepare/submit": {
-      "post": {
-        "summary": "Prepare a submit order request",
-        "operationId": "PrepareSubmitOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1PrepareSubmitOrderResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1PrepareSubmitOrderRequest"
-            }
-          }
-        ],
-        "tags": [
-          "TradingService"
-        ]
-      }
-    },
     "/orders/{order_id}/trades": {
       "get": {
         "summary": "Get a list of Trades by Order",
@@ -1103,33 +941,6 @@
         },
         "tags": [
           "TradingDataService"
-        ]
-      }
-    },
-    "/parties/prepare/withdraw": {
-      "post": {
-        "summary": "Request a withdrawal",
-        "operationId": "PrepareWithdraw",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1PrepareWithdrawResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1PrepareWithdrawRequest"
-            }
-          }
-        ],
-        "tags": [
-          "TradingService"
         ]
       }
     },
@@ -1506,33 +1317,6 @@
         ]
       }
     },
-    "/transaction": {
-      "post": {
-        "summary": "Submit a signed transaction",
-        "operationId": "SubmitTransaction",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1SubmitTransactionResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1SubmitTransactionRequest"
-            }
-          }
-        ],
-        "tags": [
-          "TradingService"
-        ]
-      }
-    },
     "/withdrawals/party/{party_id}": {
       "get": {
         "summary": "Get withdrawals for a party",
@@ -1664,53 +1448,6 @@
       "default": "VALUE_UNSPECIFIED",
       "description": "- VALUE_UNSPECIFIED: Default value, always invalid\n - VALUE_NO: A vote against the proposal\n - VALUE_YES: A vote in favour of the proposal",
       "title": "Vote value"
-    },
-    "commandsv1Signature": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "type": "string",
-          "description": "The bytes of the signature (hex-encoded)."
-        },
-        "algo": {
-          "type": "string",
-          "description": "The algorithm used to create the signature."
-        },
-        "version": {
-          "type": "integer",
-          "format": "int64",
-          "description": "The version of the signature used to create the signature."
-        }
-      },
-      "description": "A signature to be authenticate a transaction and to be verified by the vega\nnetwork."
-    },
-    "commandsv1Transaction": {
-      "type": "object",
-      "properties": {
-        "input_data": {
-          "type": "string",
-          "format": "byte",
-          "description": "One of the set of Vega commands (proto marshalled)."
-        },
-        "signature": {
-          "$ref": "#/definitions/commandsv1Signature",
-          "description": "The signature of the inputData."
-        },
-        "address": {
-          "type": "string",
-          "description": "The address of the sender (hex-encoded). Not supported yet."
-        },
-        "pub_key": {
-          "type": "string",
-          "description": "The public key of the sender (hex-encoded)."
-        },
-        "version": {
-          "type": "integer",
-          "format": "int64",
-          "description": "A version of the transaction, to be used in the future in case we want to\nimplement changes to the Transaction format."
-        }
-      },
-      "description": "Represents a transaction to be sent to Vega."
     },
     "protobufAny": {
       "type": "object",
@@ -2011,37 +1748,6 @@
           "$ref": "#/definitions/vegaCandle"
         }
       }
-    },
-    "v1ChainEvent": {
-      "type": "object",
-      "properties": {
-        "tx_id": {
-          "type": "string",
-          "title": "The identifier of the transaction in which the events happened, usually a hash"
-        },
-        "nonce": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Arbitrary one-time integer used to prevent replay attacks"
-        },
-        "builtin": {
-          "$ref": "#/definitions/vegaBuiltinAssetEvent",
-          "title": "Built-in asset event"
-        },
-        "erc20": {
-          "$ref": "#/definitions/vegaERC20Event",
-          "title": "Ethereum ERC20 event"
-        },
-        "btc": {
-          "$ref": "#/definitions/vegaBTCEvent",
-          "title": "Bitcoin BTC event"
-        },
-        "validator": {
-          "$ref": "#/definitions/vegaValidatorEvent",
-          "title": "Validator event"
-        }
-      },
-      "title": "An event forwarded to the Vega network to provide information on events happening on other networks"
     },
     "v1Condition": {
       "type": "object",
@@ -3083,175 +2789,6 @@
         }
       }
     },
-    "v1PrepareAmendOrderRequest": {
-      "type": "object",
-      "properties": {
-        "amendment": {
-          "$ref": "#/definitions/v1OrderAmendment",
-          "title": "An order amendment"
-        }
-      },
-      "title": "Request to amend an existing order"
-    },
-    "v1PrepareAmendOrderResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "description": "Blob is an encoded representation of the order amendment ready to sign using the Vega Wallet and then submit as a transaction."
-        }
-      },
-      "title": "Response for preparing an order amendment"
-    },
-    "v1PrepareCancelOrderRequest": {
-      "type": "object",
-      "properties": {
-        "cancellation": {
-          "$ref": "#/definitions/v1OrderCancellation",
-          "title": "An order cancellation"
-        }
-      },
-      "title": "Request to cancel an existing order"
-    },
-    "v1PrepareCancelOrderResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "Blob is an encoded representation of the order cancellation ready to sign using the Vega Wallet and then submit as a transaction"
-        }
-      },
-      "title": "Response for preparing an order cancellation"
-    },
-    "v1PrepareLiquidityProvisionRequest": {
-      "type": "object",
-      "properties": {
-        "submission": {
-          "$ref": "#/definitions/v1LiquidityProvisionSubmission",
-          "title": "Submission, required field"
-        }
-      },
-      "title": "Request to prepare liquiditity provision"
-    },
-    "v1PrepareLiquidityProvisionResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "A blob is an encoded representation of the liquidity provision message ready to sign using the Vega Wallet and then submit as a transaction"
-        }
-      },
-      "title": "Response to a liquidity provision request"
-    },
-    "v1PrepareProposalSubmissionRequest": {
-      "type": "object",
-      "properties": {
-        "submission": {
-          "$ref": "#/definitions/v1ProposalSubmission"
-        }
-      },
-      "title": "Request to prepare a governance proposal"
-    },
-    "v1PrepareProposalSubmissionResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "A blob is an encoded representation of the proposal ready to sign using the Vega Wallet and then submit as a transaction"
-        },
-        "submission": {
-          "$ref": "#/definitions/v1ProposalSubmission",
-          "title": "A copy of the prepared proposal"
-        }
-      },
-      "title": "Response to prepare a governance proposal"
-    },
-    "v1PrepareSubmitOrderRequest": {
-      "type": "object",
-      "properties": {
-        "submission": {
-          "$ref": "#/definitions/v1OrderSubmission",
-          "title": "An order submission"
-        }
-      },
-      "title": "Request to submit a new order"
-    },
-    "v1PrepareSubmitOrderResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "Blob is an encoded representation of the order submission ready to sign using the Vega Wallet and then submit as a transaction"
-        },
-        "submit_id": {
-          "type": "string",
-          "title": "Submission identifier (order reference)"
-        }
-      },
-      "title": "Response for preparing an order submission"
-    },
-    "v1PrepareVoteSubmissionRequest": {
-      "type": "object",
-      "properties": {
-        "submission": {
-          "$ref": "#/definitions/v1VoteSubmission",
-          "title": "Vote, required field"
-        }
-      },
-      "title": "Request to prepare a governance vote"
-    },
-    "v1PrepareVoteSubmissionResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "A blob is an encoded representation of the vote ready to sign using the Vega Wallet and then submit as a transaction"
-        },
-        "submission": {
-          "$ref": "#/definitions/v1VoteSubmission",
-          "title": "A copy of the prepared vote"
-        }
-      },
-      "title": "Response to prepare a governance vote"
-    },
-    "v1PrepareWithdrawRequest": {
-      "type": "object",
-      "properties": {
-        "withdraw": {
-          "$ref": "#/definitions/v1WithdrawSubmission",
-          "title": "An asset withdrawal"
-        }
-      },
-      "title": "Request for preparing a withdrawal"
-    },
-    "v1PrepareWithdrawResponse": {
-      "type": "object",
-      "properties": {
-        "blob": {
-          "type": "string",
-          "format": "byte",
-          "title": "Blob is an encoded representation of the withdrawal ready to sign using the Vega Wallet and then submit as a transaction"
-        }
-      },
-      "title": "Response for preparing a withdrawal"
-    },
-    "v1PropagateChainEventResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean",
-          "title": "Success will be true if the event was accepted by the node,\n**Important** - success does not mean that the event is confirmed by consensus"
-        }
-      },
-      "title": "Response for a new event sent by the blockchain queue to be propagated on Vega"
-    },
     "v1Property": {
       "type": "object",
       "properties": {
@@ -3357,66 +2894,6 @@
         }
       },
       "title": "A settle position event contains position settlement information for a party"
-    },
-    "v1SubmitTransactionRequest": {
-      "type": "object",
-      "properties": {
-        "tx": {
-          "$ref": "#/definitions/vegaSignedBundle",
-          "title": "A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain"
-        },
-        "type": {
-          "$ref": "#/definitions/v1SubmitTransactionRequestType",
-          "title": "Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response"
-        }
-      },
-      "title": "Request for submitting a transaction on Vega"
-    },
-    "v1SubmitTransactionRequestType": {
-      "type": "string",
-      "enum": [
-        "TYPE_UNSPECIFIED",
-        "TYPE_ASYNC",
-        "TYPE_SYNC",
-        "TYPE_COMMIT"
-      ],
-      "default": "TYPE_UNSPECIFIED",
-      "description": "- TYPE_ASYNC: The transaction will be submitted without waiting for response\n - TYPE_SYNC: The transaction will be submitted, and blocking until the\ntendermint mempool return a response\n - TYPE_COMMIT: The transaction will submitted, and blocking until the tendermint\nnetwork will have committed it into a block",
-      "title": "Blockchain transaction type"
-    },
-    "v1SubmitTransactionResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean",
-          "title": "Success will be true if the transaction was accepted by the node,\n**Important** - success does not mean that the event is confirmed by consensus"
-        }
-      },
-      "title": "Response for submitting a transaction on Vega"
-    },
-    "v1SubmitTransactionV2RequestType": {
-      "type": "string",
-      "enum": [
-        "TYPE_UNSPECIFIED",
-        "TYPE_ASYNC",
-        "TYPE_SYNC",
-        "TYPE_COMMIT"
-      ],
-      "default": "TYPE_UNSPECIFIED",
-      "description": "- TYPE_ASYNC: The transaction will be submitted without waiting for response\n - TYPE_SYNC: The transaction will be submitted, and blocking until the\ntendermint mempool return a response\n - TYPE_COMMIT: The transaction will submitted, and blocking until the tendermint\nnetwork will have committed it into a block",
-      "title": "Blockchain transaction type"
-    },
-    "v1SubmitTransactionV2Response": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean",
-          "format": "boolean",
-          "title": "Success will be true if the transaction was accepted by the node,\n**Important** - success does not mean that the event is confirmed by consensus"
-        }
-      },
-      "title": "Response for submitting a transaction v2 on Vega"
     },
     "v1TimeUpdate": {
       "type": "object",
@@ -3658,16 +3135,6 @@
       "description": "- ACCOUNT_TYPE_UNSPECIFIED: Default value\n - ACCOUNT_TYPE_INSURANCE: Insurance pool accounts contain insurance pool funds for a market\n - ACCOUNT_TYPE_SETTLEMENT: Settlement accounts exist only during settlement or mark-to-market\n - ACCOUNT_TYPE_MARGIN: Margin accounts contain margin funds for a party and each party will\nhave multiple margin accounts, one for each market they have traded in\n\nMargin account funds will alter as margin requirements on positions change\n - ACCOUNT_TYPE_GENERAL: General accounts contains general funds for a party. A party will\nhave multiple general accounts, one for each asset they want\nto trade with\n\nGeneral accounts are where funds are initially deposited or withdrawn from,\nit is also the account where funds are taken to fulfil fees and initial margin requirements\n - ACCOUNT_TYPE_FEES_INFRASTRUCTURE: Infrastructure accounts contain fees earned by providing infrastructure on Vega\n - ACCOUNT_TYPE_FEES_LIQUIDITY: Liquidity accounts contain fees earned by providing liquidity on Vega markets\n - ACCOUNT_TYPE_FEES_MAKER: This account is created to hold fees earned by placing orders that sit on the book\nand are then matched with an incoming order to create a trade - These fees reward traders\nwho provide the best priced liquidity that actually allows trading to take place\n - ACCOUNT_TYPE_LOCK_WITHDRAW: This account is created to lock funds to be withdrawn by parties\n - ACCOUNT_TYPE_BOND: This account is created to maintain liquidity providers funds commitments\n - ACCOUNT_TYPE_EXTERNAL: External account represents an external source (deposit/withdrawal)",
       "title": "Various collateral/account types as used by Vega"
     },
-    "vegaAddValidator": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/definitions/vegaIdentifier",
-          "title": "The identifier of the validator"
-        }
-      },
-      "title": "A message to notify when a new validator is being added to the Vega network"
-    },
     "vegaAsset": {
       "type": "object",
       "properties": {
@@ -3746,80 +3213,6 @@
       "description": "- AUCTION_TRIGGER_UNSPECIFIED: Default value for AuctionTrigger, no auction triggered\n - AUCTION_TRIGGER_BATCH: Batch auction\n - AUCTION_TRIGGER_OPENING: Opening auction\n - AUCTION_TRIGGER_PRICE: Price monitoring trigger\n - AUCTION_TRIGGER_LIQUIDITY: Liquidity monitoring trigger",
       "title": "Auction triggers indicate what condition triggered an auction (if market is in auction mode)"
     },
-    "vegaBTCDeposit": {
-      "type": "object",
-      "properties": {
-        "vega_asset_id": {
-          "type": "string",
-          "title": "The Vega network internal identifier of the asset"
-        },
-        "source_btc_address": {
-          "type": "string",
-          "title": "The BTC wallet initiating the deposit"
-        },
-        "target_party_id": {
-          "type": "string",
-          "title": "The Vega party identifier (pub-key) which is the target of the deposit"
-        }
-      },
-      "title": "A Bitcoin deposit into Vega"
-    },
-    "vegaBTCEvent": {
-      "type": "object",
-      "properties": {
-        "index": {
-          "type": "string",
-          "format": "uint64",
-          "title": "The index of the transaction"
-        },
-        "block": {
-          "type": "string",
-          "format": "uint64",
-          "title": "The block in which the transaction happened"
-        },
-        "deposit": {
-          "$ref": "#/definitions/vegaBTCDeposit",
-          "title": "Deposit BTC asset"
-        },
-        "withdrawal": {
-          "$ref": "#/definitions/vegaBTCWithdrawal",
-          "title": "Withdraw BTC asset"
-        }
-      },
-      "title": "An event from the Bitcoin network"
-    },
-    "vegaBTCWithdrawal": {
-      "type": "object",
-      "properties": {
-        "vega_asset_id": {
-          "type": "string",
-          "title": "The vega network internal identifier of the asset"
-        },
-        "source_party_id": {
-          "type": "string",
-          "title": "The party identifier (pub-key) initiating the withdrawal"
-        },
-        "target_btc_address": {
-          "type": "string",
-          "title": "Target Bitcoin wallet address"
-        },
-        "reference_nonce": {
-          "type": "string",
-          "title": "The nonce reference of the transaction"
-        }
-      },
-      "title": "A Bitcoin withdrawal from Vega"
-    },
-    "vegaBitcoinAddress": {
-      "type": "object",
-      "properties": {
-        "address": {
-          "type": "string",
-          "title": "A Bitcoin address"
-        }
-      },
-      "title": "Used as a wrapper for a Bitcoin address (wallet)"
-    },
     "vegaBuiltinAsset": {
       "type": "object",
       "properties": {
@@ -3829,58 +3222,6 @@
         }
       },
       "title": "A Vega internal asset"
-    },
-    "vegaBuiltinAssetDeposit": {
-      "type": "object",
-      "properties": {
-        "vega_asset_id": {
-          "type": "string",
-          "title": "A Vega network internal asset identifier"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "A Vega party identifier (pub-key)"
-        },
-        "amount": {
-          "type": "string",
-          "format": "uint64",
-          "title": "The amount to be deposited"
-        }
-      },
-      "title": "A deposit for a Vega built-in asset"
-    },
-    "vegaBuiltinAssetEvent": {
-      "type": "object",
-      "properties": {
-        "deposit": {
-          "$ref": "#/definitions/vegaBuiltinAssetDeposit",
-          "title": "Built-in asset deposit"
-        },
-        "withdrawal": {
-          "$ref": "#/definitions/vegaBuiltinAssetWithdrawal",
-          "title": "Built-in asset withdrawal"
-        }
-      },
-      "title": "An event related to a Vega built-in asset"
-    },
-    "vegaBuiltinAssetWithdrawal": {
-      "type": "object",
-      "properties": {
-        "vega_asset_id": {
-          "type": "string",
-          "title": "A Vega network internal asset identifier"
-        },
-        "party_id": {
-          "type": "string",
-          "title": "A Vega network party identifier (pub-key)"
-        },
-        "amount": {
-          "type": "string",
-          "format": "uint64",
-          "title": "The amount to be withdrawn"
-        }
-      },
-      "title": "A withdrawal for a Vega built-in asset"
     },
     "vegaCandle": {
       "type": "object",
@@ -4013,98 +3354,6 @@
       },
       "title": "An ERC20 token based asset, living on the ethereum network"
     },
-    "vegaERC20AssetDelist": {
-      "type": "object",
-      "properties": {
-        "vega_asset_id": {
-          "type": "string",
-          "title": "The Vega network internal identifier of the asset"
-        }
-      },
-      "title": "An asset deny-listing for an ERC20 token"
-    },
-    "vegaERC20AssetList": {
-      "type": "object",
-      "properties": {
-        "vega_asset_id": {
-          "type": "string",
-          "title": "The Vega network internal identifier of the asset"
-        }
-      },
-      "title": "An asset allow-listing for an ERC20 token"
-    },
-    "vegaERC20Deposit": {
-      "type": "object",
-      "properties": {
-        "vega_asset_id": {
-          "type": "string",
-          "title": "The vega network internal identifier of the asset"
-        },
-        "source_ethereum_address": {
-          "type": "string",
-          "title": "The Ethereum wallet that initiated the deposit"
-        },
-        "target_party_id": {
-          "type": "string",
-          "title": "The Vega party identifier (pub-key) which is the target of the deposit"
-        },
-        "amount": {
-          "type": "string",
-          "title": "The amount to be deposited"
-        }
-      },
-      "title": "An asset deposit for an ERC20 token"
-    },
-    "vegaERC20Event": {
-      "type": "object",
-      "properties": {
-        "index": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Index of the transaction"
-        },
-        "block": {
-          "type": "string",
-          "format": "uint64",
-          "title": "The block in which the transaction was added"
-        },
-        "asset_list": {
-          "$ref": "#/definitions/vegaERC20AssetList",
-          "title": "List an ERC20 asset"
-        },
-        "asset_delist": {
-          "$ref": "#/definitions/vegaERC20AssetDelist",
-          "title": "De-list an ERC20 asset"
-        },
-        "deposit": {
-          "$ref": "#/definitions/vegaERC20Deposit",
-          "title": "Deposit ERC20 asset"
-        },
-        "withdrawal": {
-          "$ref": "#/definitions/vegaERC20Withdrawal",
-          "title": "Withdraw ERC20 asset"
-        }
-      },
-      "title": "An event related to an ERC20 token"
-    },
-    "vegaERC20Withdrawal": {
-      "type": "object",
-      "properties": {
-        "vega_asset_id": {
-          "type": "string",
-          "title": "The Vega network internal identifier of the asset"
-        },
-        "target_ethereum_address": {
-          "type": "string",
-          "title": "The target Ethereum wallet address"
-        },
-        "reference_nonce": {
-          "type": "string",
-          "title": "The reference nonce used for the transaction"
-        }
-      },
-      "title": "An asset withdrawal for an ERC20 token"
-    },
     "vegaErc20WithdrawExt": {
       "type": "object",
       "properties": {
@@ -4114,16 +3363,6 @@
         }
       },
       "title": "An extension of data required for the withdraw submissions"
-    },
-    "vegaEthereumAddress": {
-      "type": "object",
-      "properties": {
-        "address": {
-          "type": "string",
-          "title": "An Ethereum address"
-        }
-      },
-      "title": "Used as a wrapper for an Ethereum address (wallet/contract)"
     },
     "vegaFee": {
       "type": "object",
@@ -4263,20 +3502,6 @@
         }
       },
       "title": "Governance data"
-    },
-    "vegaIdentifier": {
-      "type": "object",
-      "properties": {
-        "ethereum_address": {
-          "$ref": "#/definitions/vegaEthereumAddress",
-          "title": "Ethereum network"
-        },
-        "bitcoin_address": {
-          "$ref": "#/definitions/vegaBitcoinAddress",
-          "title": "Bitcoin network"
-        }
-      },
-      "title": "Used as a wrapper type on any possible network address supported by Vega"
     },
     "vegaInstrument": {
       "type": "object",
@@ -5531,16 +4756,6 @@
       },
       "title": "Terms for a governance proposal on Vega"
     },
-    "vegaRemoveValidator": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/definitions/vegaIdentifier",
-          "title": "The identifier of the validator"
-        }
-      },
-      "title": "A message to notify when a validator is being removed from the Vega network"
-    },
     "vegaRiskFactor": {
       "type": "object",
       "properties": {
@@ -5592,41 +4807,6 @@
       "default": "SIDE_UNSPECIFIED",
       "description": "- SIDE_UNSPECIFIED: Default value, always invalid\n - SIDE_BUY: Buy order\n - SIDE_SELL: Sell order",
       "title": "A side relates to the direction of an order, to Buy, or Sell"
-    },
-    "vegaSignature": {
-      "type": "object",
-      "properties": {
-        "sig": {
-          "type": "string",
-          "format": "byte",
-          "title": "The bytes of the signature"
-        },
-        "algo": {
-          "type": "string",
-          "title": "The algorithm used to create the signature"
-        },
-        "version": {
-          "type": "integer",
-          "format": "int64",
-          "title": "The version of the signature used to create the signature"
-        }
-      },
-      "title": "A signature to be authenticate a transaction\nand to be verified by the vega network"
-    },
-    "vegaSignedBundle": {
-      "type": "object",
-      "properties": {
-        "tx": {
-          "type": "string",
-          "format": "byte",
-          "title": "Transaction payload (proto marshalled)"
-        },
-        "sig": {
-          "$ref": "#/definitions/vegaSignature",
-          "title": "The signature authenticating the transaction"
-        }
-      },
-      "title": "A bundle of a transaction and it's signature"
     },
     "vegaSimpleModelParams": {
       "type": "object",
@@ -5849,24 +5029,6 @@
         }
       },
       "title": "Update network configuration on Vega"
-    },
-    "vegaValidatorEvent": {
-      "type": "object",
-      "properties": {
-        "source_id": {
-          "type": "string",
-          "title": "The source identifier of the event"
-        },
-        "add": {
-          "$ref": "#/definitions/vegaAddValidator",
-          "title": "Add a new validator"
-        },
-        "rm": {
-          "$ref": "#/definitions/vegaRemoveValidator",
-          "title": "Remove an existing validator"
-        }
-      },
-      "title": "An event related to validator management with foreign networks"
     },
     "vegaVote": {
       "type": "object",

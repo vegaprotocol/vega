@@ -9,13 +9,13 @@ import (
 	"strconv"
 	"time"
 
-	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/grpc"
 
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/data-node/proto"
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
 	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	"code.vegaprotocol.io/data-node/vegatime"
@@ -30,10 +30,10 @@ var (
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
-// TradingServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingServiceClient
-type TradingServiceClient interface {
-	protoapi.TradingServiceClient
+// TradingProxyServiceClient ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingProxyServiceClient
+type TradingProxyServiceClient interface {
+	protoapiv1.TradingProxyServiceClient
 }
 
 // TradingDataServiceClient ...
@@ -46,26 +46,26 @@ type TradingDataServiceClient interface {
 type VegaResolverRoot struct {
 	gateway.Config
 
-	log               *logging.Logger
-	tradingClient     TradingServiceClient
-	tradingDataClient TradingDataServiceClient
-	r                 allResolver
+	log                *logging.Logger
+	tradingProxyClient TradingProxyServiceClient
+	tradingDataClient  TradingDataServiceClient
+	r                  allResolver
 }
 
 // NewResolverRoot instantiate a graphql root resolver
 func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,
-	tradingClient TradingServiceClient,
+	tradingClient TradingProxyServiceClient,
 	tradingDataClient TradingDataServiceClient,
 ) *VegaResolverRoot {
 
 	return &VegaResolverRoot{
-		log:               log,
-		Config:            config,
-		tradingClient:     tradingClient,
-		tradingDataClient: tradingDataClient,
-		r:                 allResolver{log, tradingDataClient},
+		log:                log,
+		Config:             config,
+		tradingProxyClient: tradingClient,
+		tradingDataClient:  tradingDataClient,
+		r:                  allResolver{log, tradingDataClient},
 	}
 }
 
@@ -1593,71 +1593,36 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 
 type myMutationResolver VegaResolverRoot
 
-func (r *myMutationResolver) PrepareWithdrawal(
-	ctx context.Context,
-	amount, asset string,
-	erc20Details *Erc20WithdrawalDetailsInput,
-) (*PreparedWithdrawal, error) {
-	var ext *types.WithdrawExt
-	if erc20Details != nil {
-		ext = erc20Details.IntoProtoExt()
-	}
-
-	amountU, err := safeStringUint64(amount)
-	if err != nil {
-		return nil, err
-	}
-
-	req := protoapi.PrepareWithdrawRequest{
-		Withdraw: &commandspb.WithdrawSubmission{
-			Asset:  asset,
-			Amount: amountU,
-			Ext:    ext,
-		},
-	}
-
-	res, err := r.tradingClient.PrepareWithdraw(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-
-	return &PreparedWithdrawal{
-		Blob: base64.StdEncoding.EncodeToString(res.Blob),
-	}, nil
-}
-
 func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
 
-	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
+	pty := protoapiv1.SubmitTransactionRequest_TYPE_ASYNC
 	if ty != nil {
 		switch *ty {
 		case SubmitTransactionTypeSync:
-			pty = protoapi.SubmitTransactionRequest_TYPE_SYNC
+			pty = protoapiv1.SubmitTransactionRequest_TYPE_SYNC
 		case SubmitTransactionTypeCommit:
-			pty = protoapi.SubmitTransactionRequest_TYPE_COMMIT
+			pty = protoapiv1.SubmitTransactionRequest_TYPE_COMMIT
 		}
 	}
 
-	decodedData, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return nil, err
-	}
-	decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
-	if err != nil {
-		return nil, err
-	}
-	req := &protoapi.SubmitTransactionRequest{
-		Tx: &types.SignedBundle{
-			Tx: decodedData,
-			Sig: &types.Signature{
-				Sig:     decodedSig,
-				Version: uint32(sig.Version),
-				Algo:    sig.Algo,
-			},
-		},
+	// decodedData, err := base64.StdEncoding.DecodeString(data)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// tx := &commandspb.Transaction{
+	// 	InputData: decodedData,
+	// }
+
+	req := &protoapiv1.SubmitTransactionRequest{
+		// Tx: TODO - Finish transaction,
 		Type: pty,
 	}
-	res, err := r.tradingClient.SubmitTransaction(ctx, req)
+	res, err := r.tradingProxyClient.SubmitTransaction(ctx, req)
 	if err != nil {
 		r.log.Error("Failed to submit transaction", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1667,295 +1632,6 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 		Success: res.Success,
 	}, nil
 }
-
-func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrderInput) (*PreparedSubmitOrder, error) {
-
-	orderSubmission := &commandspb.OrderSubmission{}
-
-	var (
-		p   uint64
-		err error
-	)
-
-	// We need to convert strings to uint64 (JS doesn't yet support uint64)
-	if price != nil {
-		p, err = safeStringUint64(*price)
-		if err != nil {
-			return nil, err
-		}
-	}
-	orderSubmission.Price = p
-	s, err := safeStringUint64(size)
-	if err != nil {
-		return nil, err
-	}
-	orderSubmission.Size = s
-	if len(market) <= 0 {
-		return nil, errors.New("market missing or empty")
-	}
-	orderSubmission.MarketId = market
-
-	if orderSubmission.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
-		return nil, err
-	}
-	if orderSubmission.Side, err = convertSideToProto(side); err != nil {
-		return nil, err
-	}
-	if orderSubmission.Type, err = convertOrderTypeToProto(ty); err != nil {
-		return nil, err
-	}
-
-	if po != nil {
-		pegreference, err := convertPeggedReferenceToProto(po.Reference)
-		if err != nil {
-			return nil, err
-		}
-		offset, err := safeStringInt64(po.Offset)
-		if err != nil {
-			return nil, err
-		}
-		orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: pegreference,
-			Offset: offset}
-	}
-
-	// GTT must have an expiration value
-	if orderSubmission.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
-		var expiresAt time.Time
-		expiresAt, err = vegatime.Parse(*expiration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
-		}
-
-		// move to pure timestamps or convert an RFC format shortly
-		orderSubmission.ExpiresAt = expiresAt.UnixNano()
-	}
-	if reference != nil {
-		orderSubmission.Reference = *reference
-	}
-
-	req := protoapi.PrepareSubmitOrderRequest{
-		Submission: orderSubmission,
-	}
-
-	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	resp, err := r.tradingClient.PrepareSubmitOrder(ctx, &req)
-	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return &PreparedSubmitOrder{
-		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
-	}, nil
-}
-
-func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, market *string) (*PreparedCancelOrder, error) {
-	order := &commandspb.OrderCancellation{}
-	if market != nil {
-		order.MarketId = *market
-	}
-	if id != nil {
-		order.OrderId = *id
-	}
-
-	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
-
-	req := protoapi.PrepareCancelOrderRequest{
-		Cancellation: order,
-	}
-	pendingOrder, err := r.tradingClient.PrepareCancelOrder(ctx, &req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-	return &PreparedCancelOrder{
-		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
-	}, nil
-
-}
-
-func (r *myMutationResolver) PrepareProposal(
-	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
-	var ref string
-	if reference != nil {
-		ref = *reference
-	}
-
-	terms, err := proposalTerms.IntoProto()
-	if err != nil {
-		return nil, err
-	}
-
-	pendingProposal, err := r.tradingClient.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
-		Submission: &commandspb.ProposalSubmission{
-			Reference: ref,
-			Terms:     terms,
-		},
-	})
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-	return &PreparedProposal{
-		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
-		PendingProposal: &types.GovernanceData{
-			Proposal: &types.Proposal{
-				Reference: ref,
-				Terms:     terms,
-				PartyId:   partyID,
-				State:     types.Proposal_STATE_OPEN,
-			},
-		},
-	}, nil
-}
-
-func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, partyID, proposalID string) (*PreparedVote, error) {
-	_, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
-	if err != nil {
-		return nil, err
-	}
-	protoValue, err := convertVoteValueToProto(value)
-	if err != nil {
-		return nil, err
-	}
-	req := &protoapi.PrepareVoteSubmissionRequest{
-		Submission: &commandspb.VoteSubmission{
-			Value:      protoValue,
-			ProposalId: proposalID,
-		},
-	}
-	resp, err := r.tradingClient.PrepareVoteSubmission(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return &PreparedVote{
-		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
-		Vote: &ProposalVote{
-			Vote: &types.Vote{
-				Value:      req.Submission.Value,
-				PartyId:    partyID,
-				ProposalId: proposalID,
-			},
-			ProposalID: resp.Submission.ProposalId,
-		},
-	}, nil
-}
-
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id, price, size string,
-	expiration *string, tif OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
-	order := &commandspb.OrderAmendment{}
-
-	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	if len(id) == 0 {
-		return nil, errors.New("id missing or empty")
-	}
-	order.OrderId = id
-
-	var err error
-	priceValue, err := strconv.ParseUint(price, 10, 64)
-	if err != nil {
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("unable to convert price from string in order amend", logging.Error(err))
-		}
-		return nil, errors.New("invalid price, could not convert to unsigned int")
-	}
-	order.Price = &types.Price{Value: priceValue}
-
-	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
-	if err != nil {
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("unable to convert size from string in order amend", logging.Error(err))
-		}
-		return nil, errors.New("invalid size, could not convert to unsigned int")
-	}
-
-	order.TimeInForce, err = convertOrderTimeInForceToProto(tif)
-	if err != nil {
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("unable to parse time in force in order amend", logging.Error(err))
-		}
-		return nil, errors.New("invalid time in force, could not convert to vega time in force")
-	}
-
-	if expiration != nil {
-		expiresAt, err := vegatime.Parse(*expiration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
-		}
-		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = &types.Timestamp{Value: expiresAt.UnixNano()}
-	}
-
-	if peggedOffset != nil {
-		po, err := strconv.ParseInt(*peggedOffset, 10, 64)
-		if err != nil {
-			if r.log.GetLevel() == logging.DebugLevel {
-				r.log.Debug("unable to parse pegged offset in order amend", logging.Error(err))
-			}
-			return nil, errors.New("invalid pegged offset, could not convert to proto pegged offset")
-		}
-		order.PeggedOffset = &wrapperspb.Int64Value{Value: po}
-	}
-
-	order.PeggedReference, err = convertPeggedReferenceToProto(*peggedReference)
-	if err != nil {
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("unable to parse pegged reference in order amend", logging.Error(err))
-		}
-		return nil, errors.New("invalid pegged reference, could not convert to proto pegged reference")
-	}
-
-	req := protoapi.PrepareAmendOrderRequest{
-		Amendment: order,
-	}
-	pendingOrder, err := r.tradingClient.PrepareAmendOrder(ctx, &req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-	return &PreparedAmendOrder{
-		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
-	}, nil
-}
-
-func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, maybeRef *string) (*PreparedLiquidityProvision, error) {
-	if commitmentAmount < 0 {
-		return nil, errors.New("commitmentAmount can't be negative")
-	}
-
-	pBuys, err := LiquidityOrderInputs(buys).IntoProto()
-	if err != nil {
-		return nil, err
-	}
-
-	pSells, err := LiquidityOrderInputs(sells).IntoProto()
-	if err != nil {
-		return nil, err
-	}
-
-	var ref string
-	if maybeRef != nil {
-		ref = *maybeRef
-	}
-
-	req := &protoapi.PrepareLiquidityProvisionRequest{
-		Submission: &commandspb.LiquidityProvisionSubmission{
-			MarketId:         marketID,
-			CommitmentAmount: uint64(commitmentAmount),
-			Fee:              fee,
-			Buys:             pBuys,
-			Sells:            pSells,
-			Reference:        ref,
-		},
-	}
-	resp, err := r.tradingClient.PrepareLiquidityProvision(ctx, req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-
-	return &PreparedLiquidityProvision{
-		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
-	}, nil
-}
-
-// END: Mutation Resolver
 
 // BEGIN: Subscription Resolver
 

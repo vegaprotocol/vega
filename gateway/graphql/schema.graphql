@@ -9,108 +9,6 @@ schema {
 "Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data."
 type Mutation {
   """
-  Send a submit order request to be prepared, and returns a blob of the transaction to submit.
-  The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
-  """
-  prepareOrderSubmit(
-    "ID of the market to place the order"
-    marketId: ID!
-    "Price of the asset"
-    price: String
-    "Size of the order"
-    size: String!
-    "Side of the order (Buy or Sell)"
-    side: Side!
-    "TimeInForce of the order"
-    timeInForce: OrderTimeInForce!
-    "expiration of the the order"
-    expiration: String
-    "type of the order"
-    type: OrderType!
-    "client reference for the order"
-    reference: String
-    "pegged order details"
-    peggedOrder: PeggedOrderInput
-  ): PreparedSubmitOrder!
-
-  """
-  Send a cancel order request to be prepared. Returns a pending order + blob of the transaction to submit.
-  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
-  """
-  prepareOrderCancel(
-    "ID of the order to cancel"
-    id: ID
-    "ID of the market where to find the order"
-    marketId: ID
-  ): PreparedCancelOrder!
-
-  """
-  Send an amend order request to be prepared. Returns a pending order + blob of the transaction to submit.
-  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
-  """
-  prepareOrderAmend(
-    "ID of the order to amend"
-    id: ID!
-    "New price for this order"
-    price: String!
-    "New size for this order"
-    sizeDelta: String!
-    "New expiration time"
-    expiration: String
-    "Time in force"
-    timeInForce: OrderTimeInForce!
-    "The reference point for pegged orders"
-    peggedReference: PeggedReference
-    "The offset from the reference price for pegged orders"
-    peggedOffset: String
-  ): PreparedAmendOrder!
-
-  """
-  Prepare a proposal so it can be sent into the network.
-  Returns a pending proposal along with a transaction blob ready for submission.
-  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
-  """
-  prepareProposal(
-    "ID of the party which created this proposal"
-    partyId: ID!
-    "A UUID reference for the caller to aid in tracking operations on VEGA"
-    reference: String
-    "Terms of the proposal"
-    proposalTerms: ProposalTermsInput!
-  ): PreparedProposal!
-
-  """
-  Prepare a vote so it can be signed and submitted.
-  Returns a pending vote with a transaction blob for signing.
-  No validation other than the vote value being correct is done.
-  """
-  prepareVote(
-    "vote value"
-    value: VoteValue!
-    "the party casting the vote"
-    partyId: ID!
-    "the proposal voted on"
-    proposalId: ID!
-  ): PreparedVote!
-
-  """
-  Prepare a withdrawal so it can be signed and submitted.
-  Returns a pending withdrawSubmission with a transaction blob for signing.
-  """
-  prepareWithdrawal(
-    "The amount to be withdrawn"
-    amount: String!
-    "The asset from which we want to withdraw funds"
-    asset: String!
-
-    """
-    ERC20 specific details to process the withdrawal
-    nullable as not required by all kind of withdrawals
-    """
-    erc20Details: Erc20WithdrawalDetailsInput
-  ): PreparedWithdrawal!
-
-  """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
   """
@@ -122,22 +20,6 @@ type Mutation {
     "The way to send the transaction"
     type: SubmitTransactionType
   ): TransactionSubmitted!
-
-  "Prepare a Liquidity provision order so it can be signed and submitted"
-  prepareLiquidityProvision(
-    "Market identifier for the order"
-    marketId: ID!
-    "Specified as a unitless number that represents the amount of settlement asset of the market."
-    commitmentAmount: Int!
-    "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
-    fee: String!
-    "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
-    sells: [LiquidityOrderInput!]!
-    "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
-    buys: [LiquidityOrderInput!]!
-    "A reference for the order created from this liquidity provision"
-    reference: String
-  ): PreparedLiquidityProvision!
 }
 
 "The way the transaction is sent to the blockchain"

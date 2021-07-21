@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
@@ -27,6 +28,8 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	coreprotoapi "code.vegaprotocol.io/vega/proto/api"
+	"google.golang.org/grpc"
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
@@ -197,6 +200,14 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService)
+
+	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
+	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	l.coreTradingServiceClient = coreprotoapi.NewTradingServiceClient(conn)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {

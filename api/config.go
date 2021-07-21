@@ -13,12 +13,14 @@ const namedLogger = "api.grpc"
 
 // Config represents the configuration of the api package
 type Config struct {
-	Level           encoding.LogLevel `long:"log-level"`
-	Timeout         encoding.Duration `long:"timeout"`
-	Port            int               `long:"port"`
-	IP              string            `long:"ip"`
-	StreamRetries   int               `long:"stream-retries"`
-	DisableTxCommit bool              `long:"disable-tx-commit"`
+	Level            encoding.LogLevel `long:"log-level"`
+	Timeout          encoding.Duration `long:"timeout"`
+	Port             int               `long:"port"`
+	IP               string            `long:"ip"`
+	StreamRetries    int               `long:"stream-retries"`
+	DisableTxCommit  bool              `long:"disable-tx-commit"`
+	CoreNodeIP       string            `long:"core-node-ip"`
+	CoreNodeGRPCPort int               `long:"core-node-grpc-port"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -28,9 +30,11 @@ func NewDefaultConfig() Config {
 		Level:   encoding.LogLevel{Level: logging.InfoLevel},
 		Timeout: encoding.Duration{Duration: 5000 * time.Millisecond},
 
-		IP:              "0.0.0.0",
-		Port:            3002,
-		StreamRetries:   3,
-		DisableTxCommit: true,
+		IP:               "0.0.0.0",
+		Port:             3002,
+		StreamRetries:    3,
+		DisableTxCommit:  true,
+		CoreNodeIP:       "127.0.0.1",
+		CoreNodeGRPCPort: 3004,
 	}
 }

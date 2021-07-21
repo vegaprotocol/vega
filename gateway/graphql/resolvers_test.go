@@ -225,7 +225,7 @@ type testResolver struct {
 	resolverRoot
 	log               *logging.Logger
 	ctrl              *gomock.Controller
-	tradingClient     *mocks.MockTradingServiceClient
+	tradingClient     *mocks.MockTradingProxyServiceClient
 	tradingDataClient *mocks.MockTradingDataServiceClient
 }
 
@@ -233,7 +233,7 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	conf := gateway.NewDefaultConfig()
-	tradingClient := mocks.NewMockTradingServiceClient(ctrl)
+	tradingClient := mocks.NewMockTradingProxyServiceClient(ctrl)
 	tradingDataClient := mocks.NewMockTradingDataServiceClient(ctrl)
 	resolver := gql.NewResolverRoot(
 		log,

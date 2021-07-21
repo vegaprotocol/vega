@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -38,9 +39,10 @@ import (
 type GRPCServer struct {
 	Config
 
-	log   *logging.Logger
-	srv   *grpc.Server
-	stats *stats.Stats
+	log                      *logging.Logger
+	srv                      *grpc.Server
+	stats                    *stats.Stats
+	coreTradingServiceClient TradingServiceClient
 
 	accountsService         *accounts.Svc
 	candleService           *candles.Svc
@@ -61,6 +63,7 @@ type GRPCServer struct {
 	depositService          *plugins.Deposit
 	netParamsService        *netparams.Service
 	oracleService           *oracles.Service
+	tradingProxySvc         *tradingProxyService
 	tradingDataService      *tradingDataService
 
 	marketDepthService *subscribers.MarketDepthBuilder
@@ -75,6 +78,7 @@ func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
 	stats *stats.Stats,
+	tradingServiceClient TradingServiceClient,
 	timeService *vegatime.Svc,
 	marketService MarketService,
 	partyService *parties.Svc,
@@ -102,31 +106,32 @@ func NewGRPCServer(
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &GRPCServer{
-		log:                     log,
-		Config:                  config,
-		stats:                   stats,
-		orderService:            orderService,
-		liquidityService:        liquidityService,
-		tradeService:            tradeService,
-		candleService:           candleService,
-		timeService:             timeService,
-		marketService:           marketService,
-		partyService:            partyService,
-		accountsService:         accountsService,
-		transferResponseService: transferResponseService,
-		riskService:             riskService,
-		governanceService:       governanceService,
-		notaryService:           notaryService,
-		assetService:            assetService,
-		feeService:              feeService,
-		eventService:            eventService,
-		withdrawalService:       withdrawalService,
-		depositService:          depositService,
-		marketDepthService:      marketDepthService,
-		netParamsService:        netParamsService,
-		oracleService:           oracleService,
-		ctx:                     ctx,
-		cfunc:                   cfunc,
+		log:                      log,
+		Config:                   config,
+		stats:                    stats,
+		coreTradingServiceClient: tradingServiceClient,
+		orderService:             orderService,
+		liquidityService:         liquidityService,
+		tradeService:             tradeService,
+		candleService:            candleService,
+		timeService:              timeService,
+		marketService:            marketService,
+		partyService:             partyService,
+		accountsService:          accountsService,
+		transferResponseService:  transferResponseService,
+		riskService:              riskService,
+		governanceService:        governanceService,
+		notaryService:            notaryService,
+		assetService:             assetService,
+		feeService:               feeService,
+		eventService:             eventService,
+		withdrawalService:        withdrawalService,
+		depositService:           depositService,
+		marketDepthService:       marketDepthService,
+		netParamsService:         netParamsService,
+		oracleService:            oracleService,
+		ctx:                      ctx,
+		cfunc:                    cfunc,
 	}
 }
 
@@ -209,6 +214,14 @@ func (g *GRPCServer) Start() {
 
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
 	g.srv = grpc.NewServer(intercept)
+
+	tradingProxySvc := &tradingProxyService{
+		log:                  g.log,
+		conf:                 g.Config,
+		tradingServiceClient: g.coreTradingServiceClient,
+	}
+	g.tradingProxySvc = tradingProxySvc
+	protoapiv1.RegisterTradingProxyServiceServer(g.srv, tradingProxySvc)
 
 	tradingDataSvc := &tradingDataService{
 		log:                     g.log,
