@@ -40,8 +40,8 @@ type undelegationRow struct {
 	row RowWrapper
 }
 
-func newUndelegationRow(r RowWrapper) delegationRow {
-	row := delegationRow{
+func newUndelegationRow(r RowWrapper) undelegationRow {
+	row := undelegationRow{
 		row: r,
 	}
 	return row
