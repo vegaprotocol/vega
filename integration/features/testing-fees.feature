@@ -669,7 +669,7 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
       | trader3  | ETH   | 10000000   |
-      | trader4  | ETH   | 178        |
+      | trader4  | ETH   | 188        |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -703,7 +703,7 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
     Then the traders should have the following account balances:
       | trader      | asset | market id | margin | general |
       | trader3     | ETH   | ETH/DEC21 | 339    | 9999667 |
-      | trader4     | ETH   | ETH/DEC21 | 178    | 0       |
+      | trader4     | ETH   | ETH/DEC21 | 179    | 0       |
 
 Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account, then the trade doesn't execute. See if it needs to be expand to inclued LP
 
