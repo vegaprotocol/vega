@@ -2,10 +2,19 @@ Feature: Test settlement at expiry
 
   Background:
     Given time is updated to "2019-11-30T00:00:00Z"
+
+    And the oracle spec for settlement price filtering data from "0xCAFECAFE" named "ethDec20Oracle":
+      | property         | type           | binding            |
+      | prices.ETH.value | TYPE_INTEGER   | settlement price   |  
+
+    And the oracle spec for trading termination filtering data from "0xCAFECAFE" named "ethDec20Oracle":
+      | property         | type           | binding             |
+      | trading.terminated | TYPE_BOOLEAN | trading terminated  |  
+
     And the markets:
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future2 |
+      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle |
 
     And the following network parameters are set:
       | name                           | value |
