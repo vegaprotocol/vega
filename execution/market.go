@@ -542,12 +542,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 			return m.closed
 		}
 		return false
-	} else if settlementPrice != nil { // check with the settlement engine if we should suspend the market
-		if m.mkt.State != types.Market_STATE_SUSPENDED {
-			m.mkt.State = types.Market_STATE_SUSPENDED
-			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		}
-		return false
 	}
 
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
