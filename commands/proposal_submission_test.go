@@ -95,6 +95,7 @@ func TestCheckProposalSubmission(t *testing.T) {
 	t.Run("Submitting a future market change with wrong maturity date format fails", testNewFutureMarketChangeSubmissionWithWrongMaturityDateFormatFails)
 	t.Run("Submitting a future market change with right maturity date format succeeds", testNewFutureMarketChangeSubmissionWithRightMaturityDateFormatSucceeds)
 	t.Run("Submitting a future market change without oracle spec fails", testNewFutureMarketChangeSubmissionWithoutOracleSpecFails)
+	t.Run("Submitting a future market change without either of the required oracle spec fails", testNewFutureMarketChangeSubmissionMissingSingleOracleSpecFails)
 	t.Run("Submitting a future market change with oracle spec succeeds", testNewFutureMarketChangeSubmissionWithOracleSpecSucceeds)
 	t.Run("Submitting a future market change without pub-keys fails", testNewFutureMarketChangeSubmissionWithoutPubKeysFails)
 	t.Run("Submitting a future market change with wrong pub-keys fails", testNewFutureMarketChangeSubmissionWithWrongPubKeysFails)
@@ -112,10 +113,11 @@ func TestCheckProposalSubmission(t *testing.T) {
 	t.Run("Submitting a future market change with filter with condition operator succeeds", testNewFutureMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds)
 	t.Run("Submitting a future market change with filter without condition value fails", testNewFutureMarketChangeSubmissionWithFilterWithoutConditionValueFails)
 	t.Run("Submitting a future market change with filter with condition value succeeds", testNewFutureMarketChangeSubmissionWithFilterWithConditionValueSucceeds)
-	t.Run("Submitting a future market change without oracle spec fails", testNewFutureMarketChangeSubmissionWithoutOracleSpecBindingFails)
+	t.Run("Submitting a future market change without oracle spec bindings fails", testNewFutureMarketChangeSubmissionWithoutOracleSpecBindingFails)
 	t.Run("Submitting a future market change with oracle spec binding succeeds", testNewFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds)
 	t.Run("Submitting a future market change without settlement price property fails", testNewFutureMarketChangeSubmissionWithoutSettlementPricePropertyFails)
-	t.Run("Submitting a future market change with settlement price property succeeds", testNewFutureMarketChangeSubmissionWithSettlementPricePropertySucceeds)
+	t.Run("Submitting a future market change without trading termination property fails", testNewFutureMarketChangeSubmissionWithoutTradingTerminationPropertyFails)
+	t.Run("Submitting a future market change with settlement price and trading termination properties succeeds", testNewFutureMarketChangeSubmissionWithSettlementPricePropertySucceeds)
 	t.Run("Submitting a continuous trading market change without continuous trading mode fails", testNewContinuousTradingMarketChangeSubmissionWithoutContinuousTradingModeFails)
 	t.Run("Submitting a continuous trading market change with continuous trading mode succeeds", testNewContinuousTradingMarketChangeSubmissionWithContinuousTradingModeSucceeds)
 	t.Run("Submitting a discrete trading market change without discrete trading mode fails", testNewDiscreteTradingMarketChangeSubmissionWithoutDiscreteTradingModeFails)
@@ -1756,6 +1758,40 @@ func testNewFutureMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
 	})
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_settlement_price"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_for_trading_termination"), commands.ErrIsRequired)
+
+}
+
+func testNewFutureMarketChangeSubmissionMissingSingleOracleSpecFails(t *testing.T) {
+	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "oracle_spec_for_settlement_price")
+	testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t, "oracle_spec_for_trading_termination")
+}
+
+func testNewFutureMarketChangeSubmissionWithoutEitherOracleSpecFails(t *testing.T, oracleSpecName string) {
+	future := &types.FutureProduct{}
+	if oracleSpecName == "oracle_spec_for_settlement_price" {
+		future.OracleSpecForTradingTermination = &oraclespb.OracleSpecConfiguration{}
+	} else {
+		future.OracleSpecForSettlementPrice = &oraclespb.OracleSpecConfiguration{}
+	}
+
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewMarket{
+				NewMarket: &types.NewMarket{
+					Changes: &types.NewMarketConfiguration{
+						Instrument: &types.InstrumentConfiguration{
+							Product: &types.InstrumentConfiguration_Future{
+								Future: &types.FutureProduct{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future."+oracleSpecName), commands.ErrIsRequired)
 }
 
 func testNewFutureMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) {
@@ -2423,7 +2459,19 @@ func testNewFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds(t *testing
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding"), commands.ErrIsRequired)
 }
 
-func testNewFutureMarketChangeSubmissionWithoutSettlementPricePropertyFails(t *testing.T) {
+func testNewFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t *testing.T, property string) {
+
+	var binding *types.OracleSpecToFutureBinding
+	if property == "settlement_price_property" {
+		binding = &types.OracleSpecToFutureBinding{
+			SettlementPriceProperty: "",
+		}
+	} else {
+		binding = &types.OracleSpecToFutureBinding{
+			TradingTerminationProperty: "",
+		}
+	}
+
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_NewMarket{
@@ -2432,9 +2480,7 @@ func testNewFutureMarketChangeSubmissionWithoutSettlementPricePropertyFails(t *t
 						Instrument: &types.InstrumentConfiguration{
 							Product: &types.InstrumentConfiguration_Future{
 								Future: &types.FutureProduct{
-									OracleSpecBinding: &types.OracleSpecToFutureBinding{
-										SettlementPriceProperty: "",
-									},
+									OracleSpecBinding: binding,
 								},
 							},
 						},
@@ -2444,7 +2490,15 @@ func testNewFutureMarketChangeSubmissionWithoutSettlementPricePropertyFails(t *t
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding."+property), commands.ErrIsRequired)
+}
+
+func testNewFutureMarketChangeSubmissionWithoutTradingTerminationPropertyFails(t *testing.T) {
+	testNewFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t, "trading_termination_property")
+}
+
+func testNewFutureMarketChangeSubmissionWithoutSettlementPricePropertyFails(t *testing.T) {
+	testNewFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t, "settlement_price_property")
 }
 
 func testNewFutureMarketChangeSubmissionWithSettlementPricePropertySucceeds(t *testing.T) {

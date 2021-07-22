@@ -538,10 +538,9 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 		// if we now have settlement price - try to settle and close the market
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
-			m.closed = m.mkt.State == types.Market_STATE_SETTLED
-			return m.closed
 		}
-		return false
+		m.closed = m.mkt.State == types.Market_STATE_SETTLED
+		return m.closed
 	}
 
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
@@ -567,12 +566,11 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	if !closed {
 		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
 	} else {
-		// if market is not already terminated, switch to terminated and notify
-		if m.mkt.State != types.Market_STATE_TRADING_TERMINATED {
-			m.mkt.State = types.Market_STATE_TRADING_TERMINATED
-			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		if settlementPrice != nil {
+			m.closeMarket(ctx, t)
 		}
-		m.closeMarket(ctx, t)
 	}
 
 	m.closed = m.mkt.State == types.Market_STATE_SETTLED

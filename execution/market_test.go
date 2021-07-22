@@ -519,8 +519,29 @@ func TestMarketClosing(t *testing.T) {
 	})
 	tm.oracleEngine.UpdateCurrentTime(context.Background(), closingAt.Add(1*time.Second))
 	closed := tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
+
+	// there's not settlement price yet
+	assert.False(t, closed)
+	assert.Equal(t, types.Market_STATE_TRADING_TERMINATED, tm.market.State())
+
+	// let time pass still no settlement price
+	tm.oracleEngine.UpdateCurrentTime(context.Background(), closingAt.Add(2*time.Second))
+	closed = tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
+	assert.False(t, closed)
+	assert.Equal(t, types.Market_STATE_TRADING_TERMINATED, tm.market.State())
+
+	// let the oracle update settlement price
+	delete(properties, "trading.terminated")
+	properties["prices.ETH.value"] = "100"
+	tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
+		PubKeys: []string{"0xDEADBEEF"},
+		Data:    properties,
+	})
+	tm.oracleEngine.UpdateCurrentTime(context.Background(), closingAt.Add(3*time.Second))
+	closed = tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(3*time.Second))
 	assert.True(t, closed)
 	assert.Equal(t, types.Market_STATE_SETTLED, tm.market.State())
+
 }
 
 func TestMarketNotActive(t *testing.T) {
@@ -623,6 +644,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		t.Fail()
 	}
 	fmt.Printf("%s\n", orderBuy.String())
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	_, err = tm.market.SubmitOrder(context.Background(), orderSell)
 	assert.Nil(t, err)
@@ -634,15 +656,16 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	futureTime := closingAt.Add(1 * time.Second)
 	properties := map[string]string{}
 	properties["trading.terminated"] = "true"
+	properties["prices.ETH.value"] = "100"
 	tm.oracleEngine.BroadcastData(context.Background(), oracles.OracleData{
 		PubKeys: []string{"0xDEADBEEF"},
 		Data:    properties,
 	})
 	tm.oracleEngine.UpdateCurrentTime(context.Background(), futureTime)
-
 	tm.collateralEngine.OnChainTimeUpdate(context.Background(), futureTime)
 	closed := tm.market.OnChainTimeUpdate(context.Background(), futureTime)
 	assert.True(t, closed)
+
 }
 
 func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
@@ -684,6 +707,8 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
+
 }
 
 func TestMarketGetMarginOnFailNoFund(t *testing.T) {
@@ -833,7 +858,7 @@ func TestMarketGetMarginOnAmendOrderCancelReplace(t *testing.T) {
 	if err != nil {
 		t.Fail()
 	}
-
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	t.Log("amending order now")
 
 	// now try to amend and make sure monies are updated
@@ -1085,6 +1110,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell2)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	require.Empty(t, confirmationSell.Trades)
 
@@ -1095,6 +1121,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	assert.False(t, closed)
 
 	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuciton)
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
 	assert.False(t, closed)
 }
 
@@ -1208,6 +1235,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 
 	auctionEnd := tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd, "we are in auction?") // Not in auction
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
 
 	orderSell2 := &types.Order{
 		Type:        types.OrderTypeLimit,
@@ -1243,6 +1271,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 		Reference:   "party1-buy-order-2",
 	}
 	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy2)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
 
@@ -1291,9 +1320,11 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	require.Empty(t, confirmationBuy.Trades)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
-	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd)           // In auction
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	closed = tm.market.OnChainTimeUpdate(context.Background(), afterAuction)
+	require.Equal(t, tm.market.State(), types.Market_STATE_ACTIVE)
 	assert.False(t, closed)
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
@@ -1384,6 +1415,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	require.NotNil(t, conf)
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
@@ -1404,6 +1436,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	}
 	// increase time, so we can leave opening auction
 	tm.market.OnChainTimeUpdate(context.Background(), openEnd)
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
 	now = openEnd
 
 	orderSell1 := &types.Order{
@@ -1500,6 +1533,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	conf, err = tm.market.AmendOrder(context.Background(), amendedOrder, party1)
 	require.NoError(t, err)
 	require.NotNil(t, conf)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
@@ -1727,6 +1761,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	confirmationBuy, err = tm.market.SubmitOrder(context.Background(), orderBuy2)
 	assert.NotNil(t, confirmationBuy)
 	assert.NoError(t, err)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	require.Empty(t, confirmationSell.Trades)
 
@@ -1738,8 +1773,10 @@ func TestTriggerByMarketOrder(t *testing.T) {
 
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // Still in auction
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State())
 
 	closed = tm.market.OnChainTimeUpdate(context.Background(), auctionEndTime.Add(time.Nanosecond))
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State()) // left auction
 	assert.False(t, closed)
 
 	md := tm.market.GetMarketData()
@@ -1932,6 +1969,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	confirmationSell, err = tm.market.SubmitOrder(context.Background(), orderSell2)
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	require.Empty(t, confirmationSell.Trades)
 
@@ -1939,6 +1977,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.NotNil(t, md)
 	auctionEnd = md.AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State())
 
 	require.Empty(t, md.PriceMonitoringBounds)
 
@@ -1949,6 +1988,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.NotNil(t, md)
 	auctionEnd = md.AuctionEnd
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State())
 
 	require.Empty(t, md.PriceMonitoringBounds)
 
@@ -1959,6 +1999,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.NotNil(t, md)
 	auctionEnd = md.AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
 
 	require.Equal(t, 2, len(md.PriceMonitoringBounds))
 	require.True(t, expectedPmRange1.MinValidPrice.EQ(pmBounds[0].MinValidPrice))
@@ -2296,6 +2337,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		Reference:   "party2-sell-order-1",
 	}
 	confirmationSell, err := tm.market.SubmitOrder(context.Background(), orderSell1)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	require.NotNil(t, confirmationSell)
 	require.NoError(t, err)
 
@@ -2823,6 +2865,7 @@ func TestOrderBook_Crash2651(t *testing.T) {
 	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
 	require.Equal(t, 3, tm.market.GetPeggedOrderCount())
 	require.Equal(t, 3, tm.market.GetParkedOrderCount())
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // still in auction
 
 	o12 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order12", types.SideSell, "613f", 22, 9023)
 	o12conf, err := tm.market.SubmitOrder(ctx, o12)
@@ -3268,6 +3311,7 @@ func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "aaa", 1, 0)
 	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 	now = now.Add(time.Second * 1)
@@ -3392,6 +3436,7 @@ func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList27
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order03", types.SideBuy, "party-C", 6, 1001)
 	o3.ExpiresAt = now.Add(60 * time.Second).UnixNano()
@@ -3489,6 +3534,7 @@ func TestOrderBook_Bug2747(t *testing.T) {
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-A", 100, 0)
 	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -15}
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
@@ -3877,6 +3923,7 @@ func TestOrderBook_CancelAll2771(t *testing.T) {
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	assert.Equal(t, o1conf.Order.Status, types.OrderStatusParked)
 
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideSell, "party-A", 1, 0)
@@ -3905,6 +3952,7 @@ func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	assert.NotNil(t, o1conf)
 	assert.NoError(t, err)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
@@ -3933,6 +3981,7 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	assert.NotNil(t, o1conf)
 	assert.NoError(t, err)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideSell, "party-A", 1, 0)
 	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 10}
@@ -3968,6 +4017,7 @@ func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	assert.NotNil(t, o1conf)
 	assert.NoError(t, err)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideSell, "party-A", 105, 0)
 	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 100}
@@ -4055,6 +4105,7 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	// Move into a price monitoring auction so that the pegged orders are parked and the other orders are cancelled
 	tm.market.StartPriceAuction(now)
 	tm.market.EnterAuction(ctx)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	require.Equal(t, 1, tm.market.GetPeggedOrderCount())
 	require.Equal(t, 1, tm.market.GetParkedOrderCount())
@@ -4162,6 +4213,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 
 	// Remove an order to invalidate reference prices and force pegged orders to park
 	tm.market.CancelOrder(ctx, o1.Party, o1.ID)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	// 1 live orders, 1 normal
 	// all LP have been removed as cannot be repriced.
@@ -6086,6 +6138,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	sellOrder4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "sellOrder4", types.SideSell, party2, 1, matchingPrice)
 	sellConf4, err := tm.market.SubmitOrder(ctx, sellOrder4)
 
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusActive, sellConf4.Order.Status)
 	require.Equal(t, 0, len(sellConf4.Trades))
@@ -6103,6 +6156,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	// progress time so liquidity auction ends
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State()) // left auction
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
@@ -6130,6 +6184,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	conf, err := tm.market.CancelOrder(ctx, buyOrder1.Party, buyOrder1.ID)
 	require.NoError(t, err)
 	require.NotNil(t, conf)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	//Submitting an order on buy side so that best_bid does exist should stop an auction
 	md = tm.market.GetMarketData()
@@ -6151,6 +6206,8 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	// progress time to end auction
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State()) // left auction
+
 	//Submitting an order on buy side so that best_bid does exist should stop an auction
 	md = tm.market.GetMarketData()
 	require.Equal(t, buyOrder5.Size, md.BestStaticBidVolume)
@@ -6168,6 +6225,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusFilled, buyConf6.Order.Status)
 	require.Equal(t, 1, len(buyConf6.Trades))
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, zero, md.BestStaticOfferVolume)
@@ -6206,6 +6264,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State()) // left auction
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, sellOrder5.Size, md.BestStaticOfferVolume)
@@ -6301,6 +6360,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 
 	sellOrder3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "sellOrder3", types.SideSell, party2, 1, buyOrder1.Price.Uint64())
 	sellConf3, err := tm.market.SubmitOrder(ctx, sellOrder3)
+	require.Equal(t, types.Market_STATE_SUSPENDED, tm.market.State()) // enter auction
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusFilled, sellConf3.Order.Status)
 
@@ -6334,6 +6394,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 	// we have to wait for the auction to end
 	now = now.Add(2 * time.Second)
 	tm.market.OnChainTimeUpdate(ctx, now)
+	require.Equal(t, types.Market_STATE_ACTIVE, tm.market.State()) // left auction
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)

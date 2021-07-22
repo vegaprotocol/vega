@@ -12,6 +12,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func changeOracleSpec(spec *v1.OracleSpec) {
+	spec.Id = "Changed"
+	spec.CreatedAt = 999
+	spec.UpdatedAt = 999
+	spec.PubKeys[0] = "Changed"
+	spec.Filters[0].Key.Name = "Changed"
+	spec.Filters[0].Key.Type = v1.PropertyKey_TYPE_UNSPECIFIED
+	spec.Filters[0].Conditions[0].Operator = v1.Condition_OPERATOR_UNSPECIFIED
+	spec.Filters[0].Conditions[0].Value = "Changed"
+	spec.Status = v1.OracleSpec_STATUS_UNSPECIFIED
+}
+
+func assertSpecsNotEqual(t *testing.T, spec1 *v1.OracleSpec, spec2 *v1.OracleSpec) {
+	assert.NotEqual(t, spec1.Id, spec2.Id)
+	assert.NotEqual(t, spec1.CreatedAt, spec2.CreatedAt)
+	assert.NotEqual(t, spec1.UpdatedAt, spec2.UpdatedAt)
+	assert.NotEqual(t, spec1.PubKeys[0], spec2.PubKeys[0])
+	assert.NotEqual(t, spec1.Filters[0].Key.Name, spec2.Filters[0].Key.Name)
+	assert.NotEqual(t, spec1.Filters[0].Key.Type, spec2.Filters[0].Key.Type)
+	assert.NotEqual(t, spec1.Filters[0].Conditions[0].Operator, spec2.Filters[0].Conditions[0].Operator)
+	assert.NotEqual(t, spec1.Filters[0].Conditions[0].Value, spec2.Filters[0].Conditions[0].Value)
+	assert.NotEqual(t, spec1.Status, spec2.Status)
+}
+
 func TestMarketDeepClone(t *testing.T) {
 	ctx := context.Background()
 
@@ -52,7 +76,7 @@ func TestMarketDeepClone(t *testing.T) {
 							Status: v1.OracleSpec_STATUS_ACTIVE,
 						},
 						OracleSpecForTradingTermination: &v1.OracleSpec{
-							Id:        "Id",
+							Id:        "Id2",
 							CreatedAt: 1000,
 							UpdatedAt: 2000,
 							PubKeys:   []string{"PubKey "},
@@ -161,16 +185,11 @@ func TestMarketDeepClone(t *testing.T) {
 	future.Future.Maturity = "Changed"
 	future.Future.SettlementAsset = "Changed"
 	future.Future.QuoteName = "Changed"
-	future.Future.OracleSpecForSettlementPrice.Id = "Changed"
-	future.Future.OracleSpecForSettlementPrice.CreatedAt = 999
-	future.Future.OracleSpecForSettlementPrice.UpdatedAt = 999
-	future.Future.OracleSpecForSettlementPrice.PubKeys[0] = "Changed"
-	future.Future.OracleSpecForSettlementPrice.Filters[0].Key.Name = "Changed"
-	future.Future.OracleSpecForSettlementPrice.Filters[0].Key.Type = v1.PropertyKey_TYPE_UNSPECIFIED
-	future.Future.OracleSpecForSettlementPrice.Filters[0].Conditions[0].Operator = v1.Condition_OPERATOR_UNSPECIFIED
-	future.Future.OracleSpecForSettlementPrice.Filters[0].Conditions[0].Value = "Changed"
-	future.Future.OracleSpecForSettlementPrice.Status = v1.OracleSpec_STATUS_UNSPECIFIED
+	changeOracleSpec(future.Future.OracleSpecForSettlementPrice)
+	changeOracleSpec(future.Future.OracleSpecForTradingTermination)
 	future.Future.OracleSpecBinding.SettlementPriceProperty = "Changed"
+	future.Future.OracleSpecBinding.TradingTerminationProperty = "Changed"
+
 	me.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel = num.DecimalFromFloat(99.9)
 	me.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin = num.DecimalFromFloat(99.9)
 	me.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease = num.DecimalFromFloat(99.9)
@@ -223,16 +242,11 @@ func TestMarketDeepClone(t *testing.T) {
 	assert.NotEqual(t, future.Future.Maturity, future2.Future.Maturity)
 	assert.NotEqual(t, future.Future.SettlementAsset, future2.Future.SettlementAsset)
 	assert.NotEqual(t, future.Future.QuoteName, future2.Future.QuoteName)
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.Id, future2.Future.OracleSpecForSettlementPrice.Id)
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.CreatedAt, future2.Future.OracleSpecForSettlementPrice.CreatedAt)
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.UpdatedAt, future2.Future.OracleSpecForSettlementPrice.UpdatedAt)
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.PubKeys[0], future2.Future.OracleSpecForSettlementPrice.PubKeys[0])
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.Filters[0].Key.Name, future2.Future.OracleSpecForSettlementPrice.Filters[0].Key.Name)
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.Filters[0].Key.Type, future2.Future.OracleSpecForSettlementPrice.Filters[0].Key.Type)
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.Filters[0].Conditions[0].Operator, future2.Future.OracleSpecForSettlementPrice.Filters[0].Conditions[0].Operator)
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.Filters[0].Conditions[0].Value, future2.Future.OracleSpecForSettlementPrice.Filters[0].Conditions[0].Value)
-	assert.NotEqual(t, future.Future.OracleSpecForSettlementPrice.Status, future2.Future.OracleSpecForSettlementPrice.Status)
+	assertSpecsNotEqual(t, future.Future.OracleSpecForSettlementPrice, future2.Future.OracleSpecForSettlementPrice)
+	assertSpecsNotEqual(t, future.Future.OracleSpecForTradingTermination, future2.Future.OracleSpecForTradingTermination)
+	assert.NotEqual(t, future.Future.OracleSpecBinding.TradingTerminationProperty, future2.Future.OracleSpecBinding.TradingTerminationProperty)
 	assert.NotEqual(t, future.Future.OracleSpecBinding.SettlementPriceProperty, future2.Future.OracleSpecBinding.SettlementPriceProperty)
+
 	assert.NotEqual(t, me.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel, me2.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)
 	assert.NotEqual(t, me.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin, me2.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)
 	assert.NotEqual(t, me.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease, me2.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)
