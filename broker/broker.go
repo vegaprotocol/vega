@@ -2,10 +2,12 @@ package broker
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 // Subscriber interface allows pushing values to subscribers, can be set to
@@ -53,18 +55,33 @@ type Broker struct {
 	eChans map[events.Type]chan []events.Event
 
 	seqGen *gen
+
+	socketReceiver *SocketReceiver
 }
 
 // New creates a new base broker
-func New(ctx context.Context) *Broker {
-	return &Broker{
-		ctx:    ctx,
-		tSubs:  map[events.Type]map[int]*subscription{},
-		subs:   map[int]subscription{},
-		keys:   []int{},
-		eChans: map[events.Type]chan []events.Event{},
-		seqGen: newGen(),
+func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, error) {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
+	socketReceiver, err := NewSocketReceiver(log, &config.SocketConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
 	}
+
+	b := &Broker{
+		ctx:            ctx,
+		tSubs:          map[events.Type]map[int]*subscription{},
+		subs:           map[int]subscription{},
+		keys:           []int{},
+		eChans:         map[events.Type]chan []events.Event{},
+		seqGen:         newGen(),
+		socketReceiver: socketReceiver,
+	}
+
+	go b.receiveSocket()
+
+	return b, nil
 }
 
 func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
@@ -178,7 +195,7 @@ func (b *Broker) SendBatch(events []events.Event) {
 
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
-	b.startSending(event.Type(), b.seqGen.setSequence(event))
+	b.startSending(event.Type(), []events.Event{event})
 }
 
 // simplified version for better performance - unfortunately, we'll still need to copy the map
@@ -307,5 +324,15 @@ func (b *Broker) rmSubs(keys ...int) {
 		}
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
+	}
+}
+
+func (b *Broker) receiveSocket() {
+	eventCh := make(chan events.Event)
+	go b.socketReceiver.Receive(b.ctx, eventCh)
+	for e := range eventCh {
+		if e != nil {
+			b.Send(e)
+		}
 	}
 }

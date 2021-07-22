@@ -181,7 +181,10 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
 
-	eventBroker = broker.New(ctx)
+	eventBroker, err = broker.New(ctx, logger, conf.Broker)
+	if err != nil {
+		t.Fatalf("failed to create broker: %v", err)
+	}
 	eventBroker.SubscribeBatch(
 		accountSub,
 		transferSub,

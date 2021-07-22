@@ -12,7 +12,8 @@ import (
 	"code.vegaprotocol.io/data-node/broker/mocks"
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/events"
-	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/data-node/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -35,8 +36,9 @@ type evt struct {
 func getBroker(t *testing.T) *brokerTst {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig())
 	return &brokerTst{
-		Broker: broker.New(ctx),
+		Broker: broker,
 		cfunc:  cfunc,
 		ctx:    ctx,
 		ctrl:   ctrl,
