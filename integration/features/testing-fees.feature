@@ -401,7 +401,7 @@ Scenario: Testing fees get collected when amended order trades
       | trader   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4 | ETH/DEC21 | sell  | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell  | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |  
