@@ -145,7 +145,7 @@ func (w *Witness) ReloadConf(cfg Config) {
 	w.cfg = cfg
 }
 
-func (w Witness) Stop() {
+func (w *Witness) Stop() {
 	// cancelling all context of checks which might be running
 	for _, v := range w.resources {
 		v.cfunc()
@@ -226,7 +226,7 @@ func newBackoff(ctx context.Context, maxElapsedTime time.Duration) backoff.BackO
 	return backoff.WithContext(bo, ctx)
 }
 
-func (w Witness) start(ctx context.Context, r *res) {
+func (w *Witness) start(ctx context.Context, r *res) {
 	backff := newBackoff(ctx, r.checkUntil.Sub(w.now))
 	f := func() error {
 		w.log.Debug("Checking the resource",
