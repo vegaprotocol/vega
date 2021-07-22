@@ -2331,3 +2331,31 @@ func (e *Engine) GetAssetInsurancePoolAccount(asset string) *types.Account {
 	globalInsuranceAcc := e.accs[globalInsuranceID]
 	return globalInsuranceAcc
 }
+
+func (e *Engine) CreateAssetRewardPoolAccount(ctx context.Context, asset string) (string, error) {
+	if !e.AssetExists(asset) {
+		return "", ErrInvalidAssetID
+	}
+
+	accountID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalReward)
+	if _, ok := e.accs[accountID]; !ok {
+		acc := types.Account{
+			ID:       accountID,
+			Asset:    asset,
+			MarketID: noMarket,
+			Balance:  num.Zero(),
+			Owner:    "",
+			Type:     types.AccountTypeGlobalReward,
+		}
+		e.accs[accountID] = &acc
+		e.addAccountToHashableSlice(&acc)
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
+		e.broker.Send(events.NewAccountEvent(ctx, acc))
+	}
+	return accountID, nil
+}
+
+func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {
+	rewardAccID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalReward)
+	return e.GetAccountByID(rewardAccID)
+}
