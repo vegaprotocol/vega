@@ -9,7 +9,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	ptypes "code.vegaprotocol.io/data-node/proto"
+	ptypes "code.vegaprotocol.io/data-node/proto/vega"
 	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/types/num"
 )

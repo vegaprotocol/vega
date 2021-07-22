@@ -8,7 +8,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
-	ptypes "code.vegaprotocol.io/data-node/proto"
+	ptypes "code.vegaprotocol.io/data-node/proto/vega"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/types"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 )
 
 var (

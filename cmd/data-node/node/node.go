@@ -27,7 +27,8 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
+	vegaprotoapi "code.vegaprotocol.io/data-node/proto/vega/api"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
@@ -35,7 +36,6 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
-	coreprotoapi "code.vegaprotocol.io/vega/proto/api"
 )
 
 type AccountStore interface {
@@ -82,7 +82,7 @@ type NodeCommand struct {
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
 
-	coreTradingServiceClient coreprotoapi.TradingServiceClient
+	coreTradingServiceClient vegaprotoapi.TradingServiceClient
 
 	broker *broker.Broker
 

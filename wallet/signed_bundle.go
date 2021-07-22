@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 )
 
 // here we implement Marhsalling for the SignedBundle

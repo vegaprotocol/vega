@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	"code.vegaprotocol.io/data-node/wallet/crypto"
 )
 
 var (
-	ErrPubKeyDoesNotExist = errors.New("public key does not exist")
+	ErrPubKeyDoesNotExist   = errors.New("public key does not exist")
 	ErrPubKeyAlreadyTainted = errors.New("public key is already tainted")
 )
 

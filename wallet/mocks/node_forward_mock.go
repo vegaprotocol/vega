@@ -6,7 +6,7 @@ package mocks
 
 import (
 	api "code.vegaprotocol.io/data-node/proto/api"
-	v1 "code.vegaprotocol.io/data-node/proto/commands/v1"
+	v1 "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	wallet "code.vegaprotocol.io/data-node/wallet"
 	context "context"
 	gomock "github.com/golang/mock/gomock"

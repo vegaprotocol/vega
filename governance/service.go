@@ -8,8 +8,8 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/commands"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	proto "code.vegaprotocol.io/data-node/proto/vega"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	"code.vegaprotocol.io/data-node/subscribers"
 
 	uuid "github.com/satori/go.uuid"

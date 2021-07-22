@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/commands"
-	"code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	proto "code.vegaprotocol.io/data-node/proto/vega"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -99,9 +99,7 @@ func newBuiltInChainEvent() *commandspb.ChainEvent {
 		TxId:  "my ID",
 		Nonce: RandomPositiveU64(),
 		Event: &commandspb.ChainEvent_Builtin{
-			Builtin: &proto.BuiltinAssetEvent{
-
-			},
+			Builtin: &proto.BuiltinAssetEvent{},
 		},
 	}
 }

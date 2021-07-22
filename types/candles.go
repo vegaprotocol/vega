@@ -1,6 +1,6 @@
 package types
 
-import "code.vegaprotocol.io/data-node/proto"
+import proto "code.vegaprotocol.io/data-node/proto/vega"
 
 type Candle = proto.Candle
 type Interval = proto.Interval

@@ -10,7 +10,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/events"
 	apipb "code.vegaprotocol.io/data-node/proto/api"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
 	"code.vegaprotocol.io/data-node/types"
 )
 

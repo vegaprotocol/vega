@@ -1,7 +1,7 @@
 package api_test
 
 import (
-	"code.vegaprotocol.io/data-node/proto"
+	proto "code.vegaprotocol.io/data-node/proto/vega"
 	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/types/num"
 )

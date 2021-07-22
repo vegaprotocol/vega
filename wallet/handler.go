@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/data-node/proto/wallet/v1"
 	"code.vegaprotocol.io/data-node/wallet/crypto"
 
@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrPubKeyIsTainted      = errors.New("public key is tainted")
+	ErrPubKeyIsTainted = errors.New("public key is tainted")
 )
 
 // Auth ...

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/commands"
-	types "code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
-	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	types "code.vegaprotocol.io/data-node/proto/vega"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
+	oraclespb "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 	"github.com/stretchr/testify/assert"
 )
 

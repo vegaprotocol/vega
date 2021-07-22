@@ -10,8 +10,8 @@ import (
 
 	"code.vegaprotocol.io/data-node/events"
 	apipb "code.vegaprotocol.io/data-node/proto/api"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
-	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
+	oraclespb "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 )
 
 func TestGetSpecs(t *testing.T) {

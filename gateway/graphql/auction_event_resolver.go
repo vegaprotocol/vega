@@ -3,8 +3,8 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/data-node/proto"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	types "code.vegaprotocol.io/data-node/proto/vega"
+	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
 	"code.vegaprotocol.io/data-node/vegatime"
 )
 

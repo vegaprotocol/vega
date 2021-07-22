@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 )
 
 type AssetDetails struct {

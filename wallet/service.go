@@ -13,9 +13,9 @@ import (
 	"code.vegaprotocol.io/data-node/commands"
 	vhttp "code.vegaprotocol.io/data-node/http"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/proto/api"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	types "code.vegaprotocol.io/data-node/proto/vega"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/data-node/proto/wallet/v1"
 
 	"github.com/golang/protobuf/jsonpb"

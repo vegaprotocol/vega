@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/commands"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +34,6 @@ func testOracleDataSubmissionWithPayloadSucceeds(t *testing.T) {
 	})
 	assert.NotContains(t, err.Get("oracle_data_submission.payload"), commands.ErrIsRequired)
 }
-
 
 func testOracleDataSubmissionWithoutSourceFails(t *testing.T) {
 	err := checkOracleDataSubmission(&commandspb.OracleDataSubmission{})

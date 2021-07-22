@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/netparams/checks"
-	"code.vegaprotocol.io/data-node/proto"
+	proto "code.vegaprotocol.io/data-node/proto/vega"
 )
 
 const (

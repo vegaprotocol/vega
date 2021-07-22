@@ -3,7 +3,7 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 )
 
 type updateMarketResolver VegaResolverRoot

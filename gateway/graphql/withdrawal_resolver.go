@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 	"code.vegaprotocol.io/data-node/vegatime"
 )
 

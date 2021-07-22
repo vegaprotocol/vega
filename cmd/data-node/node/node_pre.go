@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
+	vegaprotoapi "code.vegaprotocol.io/data-node/proto/vega/api"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
@@ -28,7 +29,6 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
-	coreprotoapi "code.vegaprotocol.io/vega/proto/api"
 	"google.golang.org/grpc"
 )
 
@@ -207,7 +207,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.coreTradingServiceClient = coreprotoapi.NewTradingServiceClient(conn)
+	l.coreTradingServiceClient = vegaprotoapi.NewTradingServiceClient(conn)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {

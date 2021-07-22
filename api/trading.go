@@ -6,16 +6,14 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
-	protocommandsv1 "code.vegaprotocol.io/data-node/proto/commands/v1"
-	coreprotoapi "code.vegaprotocol.io/vega/proto/api"
-	coreprotocommandsv1 "code.vegaprotocol.io/vega/proto/commands/v1"
+	vegaprotoapi "code.vegaprotocol.io/data-node/proto/vega/api"
 )
 
 const defaultRequestTimeout = time.Second * 5
 
 // TradingServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/api TradingServiceClient
-type TradingServiceClient = coreprotoapi.TradingServiceClient
+type TradingServiceClient = vegaprotoapi.TradingServiceClient
 
 // trading service acts as a proxy to the trading service in core node
 type tradingProxyService struct {
@@ -43,42 +41,25 @@ func (s *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoa
 	return coreToInternalSubmitTransactionResponse(coreResp), nil
 }
 
-func coreToInternalSubmitTransactionResponse(res *coreprotoapi.SubmitTransactionV2Response) *protoapiv1.SubmitTransactionResponse {
+func coreToInternalSubmitTransactionResponse(res *vegaprotoapi.SubmitTransactionV2Response) *protoapiv1.SubmitTransactionResponse {
 	return (*protoapiv1.SubmitTransactionResponse)(res)
 }
 
-func internalToCoreSubmitTransactionRequest(req *protoapiv1.SubmitTransactionRequest) *coreprotoapi.SubmitTransactionV2Request {
+func internalToCoreSubmitTransactionRequest(req *protoapiv1.SubmitTransactionRequest) *vegaprotoapi.SubmitTransactionV2Request {
 	requestType, ok := internalToCoreTransactionRequestType[req.Type]
 	if !ok {
-		requestType = coreprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED
+		requestType = vegaprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED
 	}
 
-	return &coreprotoapi.SubmitTransactionV2Request{
-		Tx:   internalToCoreTransacation(req.Tx),
+	return &vegaprotoapi.SubmitTransactionV2Request{
+		Tx:   req.Tx,
 		Type: requestType,
 	}
 }
 
-func internalToCoreTransacation(tx *protocommandsv1.Transaction) *coreprotocommandsv1.Transaction {
-	coreTx := &coreprotocommandsv1.Transaction{
-		InputData: tx.InputData,
-		Signature: (*coreprotocommandsv1.Signature)(tx.Signature),
-		Version:   tx.Version,
-	}
-
-	switch from := tx.From.(type) {
-	case *protocommandsv1.Transaction_Address:
-		coreTx.From = &coreprotocommandsv1.Transaction_Address{Address: from.Address}
-	case *protocommandsv1.Transaction_PubKey:
-		coreTx.From = &coreprotocommandsv1.Transaction_PubKey{PubKey: from.PubKey}
-	}
-
-	return coreTx
-}
-
-var internalToCoreTransactionRequestType = map[protoapiv1.SubmitTransactionRequest_Type]coreprotoapi.SubmitTransactionV2Request_Type{
-	protoapiv1.SubmitTransactionRequest_TYPE_UNSPECIFIED: coreprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED,
-	protoapiv1.SubmitTransactionRequest_TYPE_ASYNC:       coreprotoapi.SubmitTransactionV2Request_TYPE_ASYNC,
-	protoapiv1.SubmitTransactionRequest_TYPE_SYNC:        coreprotoapi.SubmitTransactionV2Request_TYPE_SYNC,
-	protoapiv1.SubmitTransactionRequest_TYPE_COMMIT:      coreprotoapi.SubmitTransactionV2Request_TYPE_COMMIT,
+var internalToCoreTransactionRequestType = map[protoapiv1.SubmitTransactionRequest_Type]vegaprotoapi.SubmitTransactionV2Request_Type{
+	protoapiv1.SubmitTransactionRequest_TYPE_UNSPECIFIED: vegaprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED,
+	protoapiv1.SubmitTransactionRequest_TYPE_ASYNC:       vegaprotoapi.SubmitTransactionV2Request_TYPE_ASYNC,
+	protoapiv1.SubmitTransactionRequest_TYPE_SYNC:        vegaprotoapi.SubmitTransactionV2Request_TYPE_SYNC,
+	protoapiv1.SubmitTransactionRequest_TYPE_COMMIT:      vegaprotoapi.SubmitTransactionV2Request_TYPE_COMMIT,
 }

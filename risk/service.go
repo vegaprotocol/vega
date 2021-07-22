@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
 
-	ptypes "code.vegaprotocol.io/data-node/proto"
+	ptypes "code.vegaprotocol.io/data-node/proto/vega"
 )
 
 var (

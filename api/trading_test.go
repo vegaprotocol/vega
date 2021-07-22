@@ -35,9 +35,9 @@ import (
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
 
-	types "code.vegaprotocol.io/data-node/proto"
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	types "code.vegaprotocol.io/data-node/proto/vega"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

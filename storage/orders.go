@@ -9,7 +9,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/golang/protobuf/proto"

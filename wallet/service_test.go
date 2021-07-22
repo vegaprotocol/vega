@@ -16,7 +16,7 @@ import (
 	vhttp "code.vegaprotocol.io/data-node/http"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/proto/api"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	"code.vegaprotocol.io/data-node/wallet"
 	"code.vegaprotocol.io/data-node/wallet/crypto"
 	"code.vegaprotocol.io/data-node/wallet/mocks"

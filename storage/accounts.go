@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/golang/protobuf/proto"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
 )
 
 // Time event indicating a change in block time (ie time update)

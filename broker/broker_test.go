@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/data-node/broker/mocks"
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/events"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

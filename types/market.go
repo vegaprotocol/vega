@@ -5,8 +5,8 @@ package types
 import (
 	"errors"
 
-	"code.vegaprotocol.io/data-node/proto"
-	v1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	proto "code.vegaprotocol.io/data-node/proto/vega"
+	v1 "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 	"code.vegaprotocol.io/data-node/types/num"
 )
 

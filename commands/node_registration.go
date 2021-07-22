@@ -1,6 +1,6 @@
 package commands
 
-import commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+import commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 
 func CheckNodeRegistration(cmd *commandspb.NodeRegistration) error {
 	return checkNodeRegistration(cmd).ErrorOrNil()

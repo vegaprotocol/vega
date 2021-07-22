@@ -13,11 +13,11 @@ import (
 
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
 	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
-	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	types "code.vegaprotocol.io/data-node/proto/vega"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
+	oraclespb "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 	"code.vegaprotocol.io/data-node/vegatime"
 )
 

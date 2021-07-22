@@ -3,8 +3,8 @@
 package types
 
 import (
-	"code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	proto "code.vegaprotocol.io/data-node/proto/vega"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	"code.vegaprotocol.io/data-node/types/num"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )

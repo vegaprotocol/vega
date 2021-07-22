@@ -4,7 +4,7 @@ import (
 	"context"
 
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	"code.vegaprotocol.io/data-node/proto/oracles/v1"
+	v1 "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 	"code.vegaprotocol.io/data-node/vegatime"
 )
 

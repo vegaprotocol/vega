@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/commands"
-	types "code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	types "code.vegaprotocol.io/data-node/proto/vega"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
 )

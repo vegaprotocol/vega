@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 )
 
 type allResolver struct {

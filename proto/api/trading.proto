@@ -2,16 +2,16 @@ syntax = "proto3";
 
 option go_package = "code.vegaprotocol.io/data-node/proto/api";
 
-import "vega.proto";
-import "markets.proto";
-import "governance.proto";
-import "assets.proto";
-import "events/v1/events.proto";
-import "oracles/v1/spec.proto";
-import "oracles/v1/data.proto";
-import "commands/v1/commands.proto";
-import "commands/v1/transaction.proto";
-import "commands/v1/validator_commands.proto";
+import "vega/vega.proto";
+import "vega/markets.proto";
+import "vega/governance.proto";
+import "vega/assets.proto";
+import "vega/events/v1/events.proto";
+import "vega/oracles/v1/spec.proto";
+import "vega/oracles/v1/data.proto";
+import "vega/commands/v1/commands.proto";
+import "vega/commands/v1/transaction.proto";
+import "vega/commands/v1/validator_commands.proto";
 
 package api.v1;
 

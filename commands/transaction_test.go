@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/commands"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	"code.vegaprotocol.io/data-node/wallet/crypto"
 	"github.com/stretchr/testify/assert"
 )

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/oracles"
-	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	oraclespb "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -104,7 +104,7 @@ func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
 		},
 		Filters: []*oraclespb.Filter{
 			{
-				Key:        &oraclespb.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},

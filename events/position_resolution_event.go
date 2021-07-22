@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
 )
 
 type PosRes struct {

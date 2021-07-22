@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/logging"
-	ptypes "code.vegaprotocol.io/data-node/proto"
+	ptypes "code.vegaprotocol.io/data-node/proto/vega"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/risk/mocks"
 

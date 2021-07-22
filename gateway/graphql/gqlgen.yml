@@ -29,7 +29,7 @@ models:
   MarginLevels:
     model: code.vegaprotocol.io/data-node/proto.MarginLevels
   NodeSignature:
-    model: code.vegaprotocol.io/data-node/proto/commands/v1.NodeSignature
+    model: code.vegaprotocol.io/data-node/proto/vega/commands/v1.NodeSignature
   ProposalEvent:
     model: code.vegaprotocol.io/data-node/proto.Proposal
   RiskFactor:
@@ -128,21 +128,21 @@ models:
   OracleSpecToFutureBinding:
     model: code.vegaprotocol.io/data-node/proto.OracleSpecToFutureBinding
   OracleSpecConfiguration:
-    model: code.vegaprotocol.io/data-node/proto/oracles/v1.OracleSpecConfiguration
+    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.OracleSpecConfiguration
   OracleSpec:
-    model: code.vegaprotocol.io/data-node/proto/oracles/v1.OracleSpec
+    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.OracleSpec
   Filter:
-    model: code.vegaprotocol.io/data-node/proto/oracles/v1.Filter
+    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.Filter
   PropertyKey:
-    model: code.vegaprotocol.io/data-node/proto/oracles/v1.PropertyKey
+    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.PropertyKey
   Condition:
-    model: code.vegaprotocol.io/data-node/proto/oracles/v1.Condition
+    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.Condition
   OracleData:
-    model: code.vegaprotocol.io/data-node/proto/oracles/v1.OracleData
+    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.OracleData
   Property:
-    model: code.vegaprotocol.io/data-node/proto/oracles/v1.Property
+    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.Property
   AuctionEvent:
-    model: code.vegaprotocol.io/data-node/proto/events/v1.AuctionEvent
+    model: code.vegaprotocol.io/data-node/proto/vega/events/v1.AuctionEvent
   FeeFactors:
     model: code.vegaprotocol.io/data-node/proto.FeeFactors
   Fees:

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/events"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/data-node/proto/vega"
 	"code.vegaprotocol.io/data-node/subscribers"
 
 	"github.com/pkg/errors"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	oraclespb "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 )
 
 var (

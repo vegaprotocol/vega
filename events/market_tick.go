@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
 )
 
 type MarketTick struct {
