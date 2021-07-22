@@ -44,6 +44,7 @@ require (
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/apm/module/apmhttp v1.8.0
+	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	google.golang.org/genproto v0.0.0-20210611144927-798beca9d670 // indirect

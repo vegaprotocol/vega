@@ -1,11 +1,18 @@
 package broker
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"sync"
 	"time"
 
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Subscriber interface allows pushing values to subscribers, can be set to
@@ -34,6 +41,13 @@ type BrokerI interface {
 	Unsubscribe(k int)
 }
 
+// SocketSenderI is an interface to send serialized events over a socket.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_sender_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketSenderI
+type SocketSenderI interface {
+	Send(r io.Reader) error
+	Close() error
+}
+
 type subscription struct {
 	Subscriber
 	required bool
@@ -53,18 +67,34 @@ type Broker struct {
 	eChans map[events.Type]chan []events.Event
 
 	seqGen *gen
+
+	log *logging.Logger
+
+	config       Config
+	socketSender SocketSenderI
 }
 
 // New creates a new base broker
-func New(ctx context.Context) *Broker {
-	return &Broker{
-		ctx:    ctx,
-		tSubs:  map[events.Type]map[int]*subscription{},
-		subs:   map[int]subscription{},
-		keys:   []int{},
-		eChans: map[events.Type]chan []events.Event{},
-		seqGen: newGen(),
+func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, error) {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
+	socketSender, err := NewSocketSender(log, &config.SocketConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialise underlying socket sender %w", err)
 	}
+
+	return &Broker{
+		ctx:          ctx,
+		log:          log,
+		tSubs:        map[events.Type]map[int]*subscription{},
+		subs:         map[int]subscription{},
+		keys:         []int{},
+		eChans:       map[events.Type]chan []events.Event{},
+		seqGen:       newGen(),
+		config:       config,
+		socketSender: socketSender,
+	}, nil
 }
 
 func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
@@ -179,11 +209,20 @@ func (b *Broker) SendBatch(events []events.Event) {
 	}
 	evts := b.seqGen.setSequence(events...)
 	b.startSending(events[0].Type(), evts)
+
+	if b.config.SocketConfig.Enabled {
+		go b.sendSocket(evts)
+	}
 }
 
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
-	b.startSending(event.Type(), b.seqGen.setSequence(event))
+	evt := b.seqGen.setSequence(event)
+	b.startSending(event.Type(), evt)
+
+	if b.config.SocketConfig.Enabled {
+		go b.sendSocket(evt)
+	}
 }
 
 // simplified version for better performance - unfortunately, we'll still need to copy the map
@@ -312,5 +351,29 @@ func (b *Broker) rmSubs(keys ...int) {
 		}
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
+	}
+}
+
+type streamEvt interface {
+	events.Event
+	StreamMessage() *eventspb.BusEvent
+}
+
+func (b *Broker) sendSocket(evts []events.Event) {
+	for _, evt := range evts {
+		se, _ := evt.(streamEvt)
+		be := se.StreamMessage()
+
+		rawBytes, err := proto.Marshal(be)
+		if err != nil {
+			if err != nil {
+				b.log.Errorf("fail to marshall event: %v", err)
+			}
+
+			err = b.socketSender.Send(bytes.NewReader(rawBytes))
+			if err != nil {
+				b.log.Errorf("fail to send event over socket: %v", err)
+			}
+		}
 	}
 }

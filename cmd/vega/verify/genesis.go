@@ -62,10 +62,15 @@ func verifyGenesis(r *reporter, bs []byte) string {
 	if g.AppState.NetworkParameters == nil {
 		r.Err("app_state.network_parameters is missing")
 	} else {
+		broker, err := broker.New(context.Background(), logging.NewTestLogger(), broker.NewDefaultConfig())
+		if err != nil {
+			r.Err("unable to initialize broker, %v", err)
+			return ""
+		}
 		netp := netparams.New(
 			logging.NewTestLogger(),
 			netparams.NewDefaultConfig(),
-			broker.New(context.Background()),
+			broker,
 		)
 		// first check for no missing keys
 		for k := range netparams.AllKeys {
