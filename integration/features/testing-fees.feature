@@ -14,7 +14,7 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
       | 0.2  | 0.1   | 100          | -100         | 0.1                    |
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator         | auction duration | fees          | price monitoring | oracle config          | maturity date        |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          | maturity date        |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2019-12-31T23:59:59Z |
 
     # setup accounts
@@ -375,12 +375,12 @@ Scenario: Testing fees get collected when amended order trades
 
     # setup accounts
     Given the traders deposit on asset's general account the following amount:
-      | trader   | asset | amount     |
-      | aux1     | ETH   | 100000000  |
-      | aux2     | ETH   | 100000000  |
-      | trader3a | ETH   | 10000  |
-      | trader3b | ETH   | 10000  |
-      | trader4  | ETH   | 1250  |
+      | trader   | asset | amount    |
+      | aux1     | ETH   | 100000000 |
+      | aux2     | ETH   | 100000000 |
+      | trader3a | ETH   | 10000     |
+      | trader3b | ETH   | 10000     |
+      | trader4  | ETH   | 1250      |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1089,12 +1089,16 @@ Scenario: WIP - Testing fees in auction session trading with insufficient balanc
 Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account, then the trade doesn't execute. - To Be deleted once confiscation convo is concluded.
 
 Scenario: WIP - Testing fees in continuous trading during position resolution.
-    
-    Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
-      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
 
-    Given the traders deposit on asset's general account the following amount:
+    Given the fees configuration named "fees-config-1":
+      | maker fee | infrastructure fee |
+      | 0.005     | 0.002              |
+    
+    And the markets:
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          | maturity date        |
+      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1| default-none     | default-eth-for-future | 2019-12-31T23:59:59Z |
+
+    And the traders deposit on asset's general account the following amount:
       | trader   | asset | amount        |
       | aux1     | ETH   | 1000000000000 |
       | aux2     | ETH   | 1000000000000 |
@@ -1103,10 +1107,11 @@ Scenario: WIP - Testing fees in continuous trading during position resolution.
 
     Then the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux2   | ETH/DEC21| buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | aux1   | ETH/DEC21| sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      | aux2   | ETH/DEC21| buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | aux1   | ETH/DEC21| sell | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
       | aux2   | ETH/DEC21| buy  | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
+    
     Then the opening auction period ends for market "ETH/DEC21"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "180" for the market "ETH/DEC21"
@@ -1122,10 +1127,16 @@ Scenario: WIP - Testing fees in continuous trading during position resolution.
       | trader3a | ETH/DEC21 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3b | ETH/DEC21 | sell | 300    | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
+    Then the following trades should be executed:
+      | buyer | price | size | seller   |
+      | aux2  | 190   | 50   | trader3a |
+      | aux2  | 180   | 50   | trader3a |
+      | aux2  | 180   | 300  | trader3b |
+
     Then the traders should have the following margin levels:
       | trader   | market id | maintenance | search | initial | release |
       | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
-      | trader3b | ETH/DEC21 | 7500        | 24000   | 30000   | 37500   |
+      | trader3b | ETH/DEC21 | 7500        | 24000  | 30000   | 37500   |
 
     Then the traders cancel the following orders:
       | trader | reference       |
@@ -1134,20 +1145,37 @@ Scenario: WIP - Testing fees in continuous trading during position resolution.
     When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1   | ETH/DEC21 | sell | 500    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
-
-    When the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1   | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2   | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    
+    And the traders place the following orders:
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | aux1   | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1           |
+      | aux2   | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2           |
 
     And the mark price should be "300" for the market "ETH/DEC21"
 
-    Then debug trades
-
     Then the traders should have the following profit and loss:
       | trader   | volume | unrealised pnl | realised pnl |
-      | trader3a | 0      | 0              | -10000       |
-      | trader3b | 0      | 0              | -30000       |
+      | trader3a | 0      | 0              | -9870        |
+      | trader3b | 0      | 0              | -29622       |
+
+    # trade_value_for_fee_purposes for trader 3a = size_of_trade * price_of_trade = 50 *190 = 9500 And 50 * 180 = 9000
+    # maker_fee for trader 3a =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9500 = 47.5 = 48 (rounded up to nearest whole value) And 0.005 * 9000 = 45 
+    # infrastructure_fee for trader 3a = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9500 = 19 And 0.002 * 9000 = 18 + 19 = 37
+    # trade_value_for_fee_purposes for trader 3b = size_of_trade * price_of_trade = 300 *180 = 54000
+    # maker_fee for trader 3b =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 54000 = 270
+    # infrastructure_fee for trader 3b = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 54000 = 108
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0
+
+      And the following transfers should happen:
+      | from     | to       | from account             | to account                       | market id | amount | asset |
+      | trader3a | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 48     | ETH   |
+      | trader3a | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 45     | ETH   |
+      | trader3a |          | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 37     | ETH   |
+      | trader3b | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 270    | ETH   |
+      | trader3b |          | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 108    | ETH   |
+      | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 48     | ETH   | 
+      | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 45     | ETH   | 
+      | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 270    | ETH   |
 
     Then the traders should have the following account balances:
       | trader   | asset | market id | margin | general |
@@ -1155,15 +1183,6 @@ Scenario: WIP - Testing fees in continuous trading during position resolution.
       | trader3b | ETH   | ETH/DEC21 | 0      | 0       |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-
-    When the traders place the following orders:
-      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux2   | ETH/DEC21 | buy  | 50     | 350   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
-      | aux2   | ETH/DEC21 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
-      | aux1   | ETH/DEC21 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
-
-
-  
 
 # TO DO -
 # Testing fees in continuous trading with two trades and one liquidity providers with 10 & 0s liquidity fee distribution timestep
@@ -1174,12 +1193,11 @@ Scenario: WIP - Testing fees in continuous trading during position resolution.
 
 # During auction trading, if a trade is matched and the aggressor / price taker has insufficient balance in their general (but margin covers it) account, then the trade fees gets executed in this order - Maker(0), IP, LP
 # During auction trading, if a trade is matched and the aggressor / price taker has insufficient balance in their general (+ margin if needed) account, then the trade fees gets executed in this order - Maker(0), IP, LP
+# Fees calculations during Position Resolution on pro rated basis
+# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid.
 
 # Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance.
 # Changing parameters (via governance votes) does change the fees being collected appropriately even if the market is already running - Use
 	# MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
 	# MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee" 
 # Last 3 API points ? - check and raise issues in ticket on Core Board
-
-# Fees calculations during Position Resolution on pro rated basis
-# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid.
