@@ -1095,59 +1095,64 @@ Scenario: WIP - Testing fees in continuous trading during position resolution.
       | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
 
     Given the traders deposit on asset's general account the following amount:
-      | trader           | asset | amount        |
-      | aux1        | ETH   | 1000000000000 |
-      | aux2       | ETH   | 1000000000000 |
-      | trader3 | ETH   | 10000         |
+      | trader   | asset | amount        |
+      | aux1     | ETH   | 1000000000000 |
+      | aux2     | ETH   | 1000000000000 |
+      | trader3a | ETH   | 10000         |
+      | trader3b | ETH   | 30000         |
 
     Then the traders place the following orders:
-      | trader     | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux2 | ETH/DEC21| buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
-      | aux1  | ETH/DEC21| sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
-      | aux1  | ETH/DEC21| sell | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
-      | aux2 | ETH/DEC21| buy  | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux2   | ETH/DEC21| buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
+      | aux1   | ETH/DEC21| sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      | aux1   | ETH/DEC21| sell | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
+      | aux2   | ETH/DEC21| buy  | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
     Then the opening auction period ends for market "ETH/DEC21"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "180" for the market "ETH/DEC21"
 
     When the traders place the following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-      | aux1 | ETH/DEC21| sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-      | aux2  | ETH/DEC21| buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-      | aux2  | ETH/DEC21| buy  | 50     | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | aux1   | ETH/DEC21 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | aux2   | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+      | aux2   | ETH/DEC21 | buy  | 350    | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
     When the traders place the following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | trader3 | ETH/DEC21| sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader3a | ETH/DEC21 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader3b | ETH/DEC21 | sell | 300    | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     Then the traders should have the following margin levels:
-      | trader           | market id | maintenance | search | initial | release |
-      | trader3 | ETH/DEC21| 2000        | 6400   | 8000    | 10000   |
+      | trader   | market id | maintenance | search | initial | release |
+      | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
+      | trader3b | ETH/DEC21 | 7500        | 24000   | 30000   | 37500   |
 
     Then the traders cancel the following orders:
-      | trader           | reference       |
-      | aux1 | sell-provider-1 |
+      | trader | reference       |
+      | aux1   | sell-provider-1 |
 
     When the traders place the following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-      | aux1 | ETH/DEC21| sell | 150    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | aux1   | ETH/DEC21 | sell | 500    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
 
     When the traders place the following orders:
-      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1 | ETH/DEC21| sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC21| buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1   | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2   | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "300" for the market "ETH/DEC21"
 
     Then debug trades
 
     Then the traders should have the following profit and loss:
-      | trader           | volume | unrealised pnl | realised pnl |
-      | trader3 | 0      | 0              | -10000       |
+      | trader   | volume | unrealised pnl | realised pnl |
+      | trader3a | 0      | 0              | -10000       |
+      | trader3b | 0      | 0              | -30000       |
 
     Then the traders should have the following account balances:
-      | trader           | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21| 0      | 0       |
+      | trader   | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
+      | trader3b | ETH   | ETH/DEC21 | 0      | 0       |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
