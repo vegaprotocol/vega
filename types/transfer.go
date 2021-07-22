@@ -86,4 +86,6 @@ const (
 	TransferTypeDeposit TransferType = proto.TransferType_TRANSFER_TYPE_DEPOSIT
 	// Bond slashing
 	TransferTypeBondSlashing TransferType = proto.TransferType_TRANSFER_TYPE_BOND_SLASHING
+	// Stake reward
+	TransferTypeRewardPayout TransferType = proto.TransferType_TRANSFER_TYPE_STAKE_REWARD
 )
