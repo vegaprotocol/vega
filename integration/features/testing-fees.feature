@@ -1086,6 +1086,80 @@ Scenario: WIP - Testing fees in auctions session trading with insufficient balan
 
 Scenario: WIP - Testing fees in auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead.
 
+Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account, then the trade doesn't execute. - To Be deleted once confiscation convo is concluded.
+
+Scenario: WIP - Testing fees in continuous trading during position resolution.
+    
+    Given the markets:
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
+      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+
+    Given the traders deposit on asset's general account the following amount:
+      | trader           | asset | amount        |
+      | aux1        | ETH   | 1000000000000 |
+      | aux2       | ETH   | 1000000000000 |
+      | trader3 | ETH   | 10000         |
+
+    Then the traders place the following orders:
+      | trader     | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux2 | ETH/DEC21| buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
+      | aux1  | ETH/DEC21| sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      | aux1  | ETH/DEC21| sell | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
+      | aux2 | ETH/DEC21| buy  | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
+    Then the opening auction period ends for market "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the mark price should be "180" for the market "ETH/DEC21"
+
+    When the traders place the following orders:
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | aux1 | ETH/DEC21| sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | aux2  | ETH/DEC21| buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+      | aux2  | ETH/DEC21| buy  | 50     | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
+
+    When the traders place the following orders:
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader3 | ETH/DEC21| sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+
+    Then the traders should have the following margin levels:
+      | trader           | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC21| 2000        | 6400   | 8000    | 10000   |
+
+    Then the traders cancel the following orders:
+      | trader           | reference       |
+      | aux1 | sell-provider-1 |
+
+    When the traders place the following orders:
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | aux1 | ETH/DEC21| sell | 150    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
+
+    When the traders place the following orders:
+      | trader           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1 | ETH/DEC21| sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC21| buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+    And the mark price should be "300" for the market "ETH/DEC21"
+
+    Then debug trades
+
+    Then the traders should have the following profit and loss:
+      | trader           | volume | unrealised pnl | realised pnl |
+      | trader3 | 0      | 0              | -10000       |
+
+    Then the traders should have the following account balances:
+      | trader           | asset | market id | margin | general |
+      | trader3 | ETH   | ETH/DEC21| 0      | 0       |
+
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
+
+    When the traders place the following orders:
+      | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux2   | ETH/DEC21 | buy  | 50     | 350   | 1                | TYPE_LIMIT | TIF_FOK | ref-1     |
+      | aux2   | ETH/DEC21 | buy  | 1      | 350   | 0                | TYPE_LIMIT | TIF_FOK | ref-2     |
+      | aux1   | ETH/DEC21 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_FOK | ref-3     |
+
+
+  
+
 # TO DO -
 # Testing fees in continuous trading with two trades and one liquidity providers with 10 & 0s liquidity fee distribution timestep
 # During continuous trading, if a trade is matched and the aggressor / price taker has insufficient balance in their general (but margin covers it) account, then the trade fees gets executed in this order - Maker, IP, LP
