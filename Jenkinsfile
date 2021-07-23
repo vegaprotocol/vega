@@ -26,8 +26,8 @@ pipeline {
                     dir('data-node') {
                         script {
                             scmVars = checkout(scm)
-                            version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo unknown").trim()
                             versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
+                            version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
                         }
                     }
                 }
