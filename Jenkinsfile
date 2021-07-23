@@ -6,6 +6,7 @@
     - GIT_URL:https://github.com/vegaprotocol/data-node.git
 */
 def scmVars = null
+def version = 'UNKNOWN'
 def versionHash = 'UNKNOWN'
 
 
@@ -25,6 +26,7 @@ pipeline {
                     dir('data-node') {
                         script {
                             scmVars = checkout(scm)
+                            version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null").trim()
                             versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
                         }
                     }
@@ -35,7 +37,7 @@ pipeline {
         stage('Compile data-node') {
             environment {
                 CGO_ENABLED  = 0
-                LDFLAGS      = "-X main.CLIVersion=\"${scmVars.GIT_BRANCH}\" -X main.CLIVersionHash=\"${versionHash}\""
+                LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
             parallel {
                 stage('Linux build') {
