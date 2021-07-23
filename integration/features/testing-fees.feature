@@ -1083,7 +1083,7 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: WIP - Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead.
+Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead.
 
     Given the following network parameters are set:
       | name                                                | value |
@@ -1187,7 +1187,7 @@ Scenario: WIP - Testing fees in Liquidity auction session trading with insuffici
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead
+Scenario: Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead
     
   Given the following network parameters are set:
       | name                                                | value |
@@ -1221,8 +1221,8 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | trader   | asset | amount     |
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
-      | trader3a | ETH   | 5000       |
-      | trader4  | ETH   | 7261       |
+      | trader3a | ETH   | 3500       |
+      | trader4  | ETH   | 5500       |
 
     Then the traders place the following orders:
       | trader   | market id | side  | volume | price | resulting trades | type       | tif     |
@@ -1250,8 +1250,8 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
 
     Then the traders place the following orders:
       | trader   | market id  | side  | volume | price | resulting trades | type       | tif     |
-      | trader3a | ETH/DEC21  | buy   | 3      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21  | sell  | 3      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader3a | ETH/DEC21  | buy   | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21  | sell  | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger       |
@@ -1261,31 +1261,31 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
 
     Then the following trades should be executed:
       | buyer    | price | size | seller  |
-      | trader3a | 900   | 3    | trader4 |
+      | trader3a | 900   | 2    | trader4 |
 
     # For trader3a & 4- Sharing IF and LP
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 3 * 900 = 2700
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 2 * 2700
+    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 900 = 1800
+    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 2 * 900
     # maker_fee =  0 in auction
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 2700 = 2.7 = 3/2 = 1.5 = 2 (rounded up)
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1800 = 1.8 = 2/2 = 1
 
     Then debug transfers
 
     And the following transfers should happen:
       | from     | to       | from account            | to account                       | market id | amount | asset |
-      | trader4  |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  2700  | ETH   |
-      | trader4  | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  2     | ETH   |
-      | trader3a |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  2700  | ETH   |
-      | trader3a | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  2     | ETH   |
+      | trader4  |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  1800  | ETH   |
+      | trader4  | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
+      | trader3a |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  1800  | ETH   |
+      | trader3a | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
 
     Then the traders should have the following margin levels:
       | trader  | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 4760        | 5236   | 5712    | 6664    |
+      | trader4 | ETH/DEC21 | 3570        | 3927   | 4284    | 4998    |
 
     Then the traders should have the following account balances:
       | trader   | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
-      | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
+      | trader3a | ETH   | ETH/DEC21 | 1597   | 0       |
+      | trader4  | ETH   | ETH/DEC21 | 3801   | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -1327,6 +1327,7 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | aux2     | ETH   | 100000000  |
       | trader3a | ETH   | 5000       |
       | trader4  | ETH   | 7261       |
+      # If the trader4 balance is changed to 7465 then the trade goes ahead.
 
     Then the traders place the following orders:
       | trader   | market id | side  | volume | price | resulting trades | type       | tif     |
@@ -1498,7 +1499,7 @@ Scenario: Testing fees in continuous trading during position resolution
 # Fees are collected in one case of amends: you amend the price so far that it causes an immediate trade - Issue # 3777 
 # During all 3 Auction sessions, fees are spilt 1/2 for IF and LP. Maker = 0
 # During auction trading, when insufficient balance in their general account but margin covers the fees
-# During auction trading, when insufficient balance in their general (+ margin) account, then the trade still goes ahead, (fees gets executed in this order - Maker(0), IP, LP) - Its getting confiscated
+# During auction trading, when insufficient balance in their general (+ margin) account, then the trade still goes ahead, (fees gets executed in this order - Maker(0), IP, LP)
 # Fees calculations during Position Resolution when the fees could be paid.
 
 # Last 3 API points ? - check and raise issues in ticket on Core Board - Start working 
