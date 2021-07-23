@@ -4228,13 +4228,17 @@
           "type": "string",
           "title": "Quote name of the instrument"
         },
-        "oracle_spec": {
+        "oracle_spec_for_settlement_price": {
           "$ref": "#/definitions/v1OracleSpec",
-          "title": "The oracle spec describing the oracle data of interest"
+          "title": "The oracle spec describing the settlement price oracle filter"
+        },
+        "oracle_spec_for_trading_termination": {
+          "$ref": "#/definitions/v1OracleSpec",
+          "title": "the oracle spec describing the trading termination oracle filter"
         },
         "oracle_spec_binding": {
           "$ref": "#/definitions/vegaOracleSpecToFutureBinding",
-          "title": "The binding between the oracle spec and the settlement price"
+          "title": "The binding between the oracle spec and the oracle data"
         }
       },
       "title": "Future product definition"
@@ -4254,9 +4258,13 @@
           "type": "string",
           "title": "Product quote name"
         },
-        "oracle_spec": {
+        "oracle_spec_for_settlement_price": {
           "$ref": "#/definitions/v1OracleSpecConfiguration",
-          "title": "The oracle spec describing the oracle data of interest"
+          "title": "The oracle spec describing the oracle data of settlement price"
+        },
+        "oracle_spec_for_trading_termination": {
+          "$ref": "#/definitions/v1OracleSpecConfiguration",
+          "title": "The oracle spec describing the oracle data of trading termination"
         },
         "oracle_spec_binding": {
           "$ref": "#/definitions/vegaOracleSpecToFutureBinding",
@@ -5078,9 +5086,13 @@
         "settlement_price_property": {
           "type": "string",
           "description": "settlement_price_property holds the name of the property in the oracle data\nthat should be used as settlement price.\nIf it is set to \"prices.BTC.value\", then the Future will use the value of\nthis property as settlement price."
+        },
+        "trading_termination_property": {
+          "type": "string",
+          "title": "the name of the property in the oracle data that signals termination of trading"
         }
       },
-      "description": "OracleSpecToFutureBinding tells on which property oracle data should be\nused as settlement price."
+      "title": "OracleSpecToFutureBinding tells on which property oracle data should be\nused as settlement price and which to use the trading terminated trigger"
     },
     "vegaOrder": {
       "type": "object",

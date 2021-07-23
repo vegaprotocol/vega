@@ -8,7 +8,7 @@ import (
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
-func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table *gherkin.DataTable) error {
+func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *gherkin.DataTable) error {
 	pubKeys := StrSlice(rawPubKeys, ",")
 
 	binding := &types.OracleSpecToFutureBinding{}
@@ -28,10 +28,14 @@ func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table 
 		if row.destination() == "settlement price" {
 			binding.SettlementPriceProperty = row.propertyName()
 		}
+		if row.destination() == "trading termination" {
+			binding.TradingTerminationProperty = row.propertyName()
+		}
 	}
 
 	return config.OracleConfigs.Add(
 		name,
+		specType,
 		&oraclesv1.OracleSpec{
 			PubKeys: pubKeys,
 			Filters: filters,

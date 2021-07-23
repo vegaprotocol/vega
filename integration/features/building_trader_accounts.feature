@@ -5,9 +5,6 @@ Feature: Test party accounts
       | id           | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19    | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 0                | default-none | default-none     | default-eth-for-future |
       | GBPUSD/DEC19 | USD        | VUSD  | default-simple-risk-model-3 | default-margin-calculator | 0                | default-none | default-none     | default-usd-for-future |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: a party is added to the system. A general account is created for each asset
     Given the parties deposit on asset's general account the following amount:

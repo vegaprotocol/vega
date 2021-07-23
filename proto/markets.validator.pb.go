@@ -34,9 +34,14 @@ func (this *DiscreteTrading) Validate() error {
 	return nil
 }
 func (this *Future) Validate() error {
-	if this.OracleSpec != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OracleSpec); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("OracleSpec", err)
+	if this.OracleSpecForSettlementPrice != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OracleSpecForSettlementPrice); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("OracleSpecForSettlementPrice", err)
+		}
+	}
+	if this.OracleSpecForTradingTermination != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OracleSpecForTradingTermination); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("OracleSpecForTradingTermination", err)
 		}
 	}
 	if this.OracleSpecBinding != nil {

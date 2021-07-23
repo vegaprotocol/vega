@@ -2,7 +2,6 @@ package settlement
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"sync"
 	"time"
@@ -32,6 +31,7 @@ type MarketPosition interface {
 type Product interface {
 	Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error)
 	GetAsset() string
+	SettlementPrice() (*num.Uint, error)
 }
 
 // Broker - the event bus broker, send events here
@@ -107,9 +107,9 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 }
 
 // Settle run settlement over all the positions
-func (e *Engine) Settle(t time.Time, lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
+func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
-	positions, err := e.settleAll(lastMarkPrice)
+	positions, err := e.settleAll()
 	if err != nil {
 		e.log.Error(
 			"Something went wrong trying to settle positions",
@@ -284,26 +284,11 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	e.broker.SendBatch(devts)
 }
 
-func (e *Engine) getSettlementProduct(lastMarkPrice *num.Uint) (Product, error) {
-	switch e.Config.FinalSettlement.Get() {
-	case FinalSettlementOracle:
-		return e.product, nil
-	case FinalSettlementMarkPrice:
-		return &lastMarkPriceSettlement{lastMarkPrice, e.product.GetAsset()}, nil
-	default:
-		// can't happen at this point but...
-		return nil, errors.New("invalid configuration: unknow final settlement")
-	}
-}
-
 // simplified settle call
-func (e *Engine) settleAll(lastMarkPrice *num.Uint) ([]*types.Transfer, error) {
+func (e *Engine) settleAll() ([]*types.Transfer, error) {
 	e.mu.Lock()
 
-	settleProd, err := e.getSettlementProduct(lastMarkPrice)
-	if err != nil {
-		return nil, err
-	}
+	settleProd := e.product
 
 	// there should be as many positions as there are parties (obviously)
 	aggregated := make([]*types.Transfer, 0, len(e.pos))
@@ -427,26 +412,4 @@ func calcMTM(markPrice, price *num.Uint, size int64, trades []*pos) (*num.Uint, 
 		}
 	}
 	return mtmShare, sign
-}
-
-type lastMarkPriceSettlement struct {
-	markPrice *num.Uint
-	asset     string
-}
-
-func (l *lastMarkPriceSettlement) Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, bool, error) {
-	amt, neg := num.Zero().Delta(l.markPrice, entryPrice)
-	if netPosition < 0 {
-		netPosition *= -1
-		neg = !neg
-	}
-	amt = amt.Mul(amt, num.NewUint(uint64(netPosition)))
-	return &types.FinancialAmount{
-		Asset:  l.asset,
-		Amount: amt,
-	}, neg, nil
-}
-
-func (l *lastMarkPriceSettlement) GetAsset() string {
-	return l.asset
 }

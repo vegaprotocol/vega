@@ -205,19 +205,21 @@ type ComplexityRoot struct {
 	}
 
 	Future struct {
-		Maturity          func(childComplexity int) int
-		OracleSpec        func(childComplexity int) int
-		OracleSpecBinding func(childComplexity int) int
-		QuoteName         func(childComplexity int) int
-		SettlementAsset   func(childComplexity int) int
+		Maturity                        func(childComplexity int) int
+		OracleSpecBinding               func(childComplexity int) int
+		OracleSpecForSettlementPrice    func(childComplexity int) int
+		OracleSpecForTradingTermination func(childComplexity int) int
+		QuoteName                       func(childComplexity int) int
+		SettlementAsset                 func(childComplexity int) int
 	}
 
 	FutureProduct struct {
-		Maturity          func(childComplexity int) int
-		OracleSpec        func(childComplexity int) int
-		OracleSpecBinding func(childComplexity int) int
-		QuoteName         func(childComplexity int) int
-		SettlementAsset   func(childComplexity int) int
+		Maturity                        func(childComplexity int) int
+		OracleSpecBinding               func(childComplexity int) int
+		OracleSpecForSettlementPrice    func(childComplexity int) int
+		OracleSpecForTradingTermination func(childComplexity int) int
+		QuoteName                       func(childComplexity int) int
+		SettlementAsset                 func(childComplexity int) int
 	}
 
 	Instrument struct {
@@ -476,7 +478,8 @@ type ComplexityRoot struct {
 	}
 
 	OracleSpecToFutureBinding struct {
-		SettlementPriceProperty func(childComplexity int) int
+		SettlementPriceProperty    func(childComplexity int) int
+		TradingTerminationProperty func(childComplexity int) int
 	}
 
 	Order struct {
@@ -1675,19 +1678,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Future.Maturity(childComplexity), true
 
-	case "Future.oracleSpec":
-		if e.complexity.Future.OracleSpec == nil {
-			break
-		}
-
-		return e.complexity.Future.OracleSpec(childComplexity), true
-
 	case "Future.oracleSpecBinding":
 		if e.complexity.Future.OracleSpecBinding == nil {
 			break
 		}
 
 		return e.complexity.Future.OracleSpecBinding(childComplexity), true
+
+	case "Future.oracleSpecForSettlementPrice":
+		if e.complexity.Future.OracleSpecForSettlementPrice == nil {
+			break
+		}
+
+		return e.complexity.Future.OracleSpecForSettlementPrice(childComplexity), true
+
+	case "Future.oracleSpecForTradingTermination":
+		if e.complexity.Future.OracleSpecForTradingTermination == nil {
+			break
+		}
+
+		return e.complexity.Future.OracleSpecForTradingTermination(childComplexity), true
 
 	case "Future.quoteName":
 		if e.complexity.Future.QuoteName == nil {
@@ -1710,19 +1720,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FutureProduct.Maturity(childComplexity), true
 
-	case "FutureProduct.oracleSpec":
-		if e.complexity.FutureProduct.OracleSpec == nil {
-			break
-		}
-
-		return e.complexity.FutureProduct.OracleSpec(childComplexity), true
-
 	case "FutureProduct.oracleSpecBinding":
 		if e.complexity.FutureProduct.OracleSpecBinding == nil {
 			break
 		}
 
 		return e.complexity.FutureProduct.OracleSpecBinding(childComplexity), true
+
+	case "FutureProduct.oracleSpecForSettlementPrice":
+		if e.complexity.FutureProduct.OracleSpecForSettlementPrice == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.OracleSpecForSettlementPrice(childComplexity), true
+
+	case "FutureProduct.oracleSpecForTradingTermination":
+		if e.complexity.FutureProduct.OracleSpecForTradingTermination == nil {
+			break
+		}
+
+		return e.complexity.FutureProduct.OracleSpecForTradingTermination(childComplexity), true
 
 	case "FutureProduct.quoteName":
 		if e.complexity.FutureProduct.QuoteName == nil {
@@ -2948,6 +2965,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OracleSpecToFutureBinding.SettlementPriceProperty(childComplexity), true
+
+	case "OracleSpecToFutureBinding.tradingTerminationProperty":
+		if e.complexity.OracleSpecToFutureBinding.TradingTerminationProperty == nil {
+			break
+		}
+
+		return e.complexity.OracleSpecToFutureBinding.TradingTerminationProperty(childComplexity), true
 
 	case "Order.createdAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -5620,8 +5644,12 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle spec describing the oracle data of interest."
-  oracleSpec: OracleSpec!
+  "The oracle spec describing the oracle data of interest for settlement price."
+  oracleSpecForSettlementPrice: OracleSpec!
+
+  "The oracle spec describing the oracle data of interest for trading termination."
+  oracleSpecForTradingTermination: OracleSpec!
+
 
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBinding!
@@ -5629,10 +5657,11 @@ type Future {
 
 """
 OracleSpecToFutureBinding tells on which property oracle data should be
-used as settlement price.
+used as settlement price and trading termination.
 """
 type OracleSpecToFutureBinding {
   settlementPriceProperty: String!
+  tradingTerminationProperty: String!
 }
 
 """
@@ -6864,8 +6893,10 @@ input FutureProductInput {
   settlementAsset: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-  "The oracle spec describing the oracle data of interest."
-  oracleSpec: OracleSpecConfigurationInput!
+  "The oracle spec describing the oracle data of interest for settlement price."
+  oracleSpecForSettlementPrice: OracleSpecConfigurationInput!
+  "The oracle spec describing the oracle data of interest for trading termination."
+  oracleSpecForTradingTermination: OracleSpecConfigurationInput!
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBindingInput!
 }
@@ -6876,6 +6907,7 @@ used as settlement price.
 """
 input OracleSpecToFutureBindingInput {
   settlementPriceProperty: String!
+  tradingTerminationProperty: String!
 }
 
 """
@@ -6937,9 +6969,13 @@ type FutureProduct {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
   """
-  Describes the oracle data that an instrument wants to get from the oracle engine.
+  Describes the oracle data that an instrument wants to get from the oracle engine for settlement price.
   """
-  oracleSpec: OracleSpecConfiguration!
+  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  """
+  Describes the oracle data that an instrument wants to get from the oracle engine for trading termination.
+  """
+  oracleSpecForTradingTermination: OracleSpecConfiguration!
   """
   OracleSpecToFutureBinding tells on which property oracle data should be
   used as settlement price.
@@ -11205,7 +11241,7 @@ func (ec *executionContext) _Future_quoteName(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Future_oracleSpec(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
+func (ec *executionContext) _Future_oracleSpecForSettlementPrice(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11222,7 +11258,41 @@ func (ec *executionContext) _Future_oracleSpec(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OracleSpec, nil
+		return obj.OracleSpecForSettlementPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v11.OracleSpec)
+	fc.Result = res
+	return ec.marshalNOracleSpec2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleSpec(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Future_oracleSpecForTradingTermination(ctx context.Context, field graphql.CollectedField, obj *proto.Future) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Future",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleSpecForTradingTermination, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -11375,7 +11445,7 @@ func (ec *executionContext) _FutureProduct_quoteName(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FutureProduct_oracleSpec(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
+func (ec *executionContext) _FutureProduct_oracleSpecForSettlementPrice(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -11392,7 +11462,41 @@ func (ec *executionContext) _FutureProduct_oracleSpec(ctx context.Context, field
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OracleSpec, nil
+		return obj.OracleSpecForSettlementPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v11.OracleSpecConfiguration)
+	fc.Result = res
+	return ec.marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotoᚋoraclesᚋv1ᚐOracleSpecConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FutureProduct_oracleSpecForTradingTermination(ctx context.Context, field graphql.CollectedField, obj *proto.FutureProduct) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FutureProduct",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleSpecForTradingTermination, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16932,6 +17036,40 @@ func (ec *executionContext) _OracleSpecToFutureBinding_settlementPriceProperty(c
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.SettlementPriceProperty, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OracleSpecToFutureBinding_tradingTerminationProperty(ctx context.Context, field graphql.CollectedField, obj *proto.OracleSpecToFutureBinding) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "OracleSpecToFutureBinding",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TradingTerminationProperty, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26205,9 +26343,15 @@ func (ec *executionContext) unmarshalInputFutureProductInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "oracleSpec":
+		case "oracleSpecForSettlementPrice":
 			var err error
-			it.OracleSpec, err = ec.unmarshalNOracleSpecConfigurationInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx, v)
+			it.OracleSpecForSettlementPrice, err = ec.unmarshalNOracleSpecConfigurationInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "oracleSpecForTradingTermination":
+			var err error
+			it.OracleSpecForTradingTermination, err = ec.unmarshalNOracleSpecConfigurationInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -26556,6 +26700,12 @@ func (ec *executionContext) unmarshalInputOracleSpecToFutureBindingInput(ctx con
 		case "settlementPriceProperty":
 			var err error
 			it.SettlementPriceProperty, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "tradingTerminationProperty":
+			var err error
+			it.TradingTerminationProperty, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -28168,8 +28318,13 @@ func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "oracleSpec":
-			out.Values[i] = ec._Future_oracleSpec(ctx, field, obj)
+		case "oracleSpecForSettlementPrice":
+			out.Values[i] = ec._Future_oracleSpecForSettlementPrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "oracleSpecForTradingTermination":
+			out.Values[i] = ec._Future_oracleSpecForTradingTermination(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -28224,8 +28379,13 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "oracleSpec":
-			out.Values[i] = ec._FutureProduct_oracleSpec(ctx, field, obj)
+		case "oracleSpecForSettlementPrice":
+			out.Values[i] = ec._FutureProduct_oracleSpecForSettlementPrice(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "oracleSpecForTradingTermination":
+			out.Values[i] = ec._FutureProduct_oracleSpecForTradingTermination(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -30402,6 +30562,11 @@ func (ec *executionContext) _OracleSpecToFutureBinding(ctx context.Context, sel 
 			out.Values[i] = graphql.MarshalString("OracleSpecToFutureBinding")
 		case "settlementPriceProperty":
 			out.Values[i] = ec._OracleSpecToFutureBinding_settlementPriceProperty(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "tradingTerminationProperty":
+			out.Values[i] = ec._OracleSpecToFutureBinding_tradingTerminationProperty(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

@@ -268,9 +268,14 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 			mkt := mkt
 
 			// hot fix: attribute an ID to oracle spec to avoid blank ID
-			spec := mkt.TradableInstrument.Instrument.GetFuture().OracleSpec
-			specWithID := oraclepb.NewOracleSpec(spec.PubKeys, spec.Filters)
-			mkt.TradableInstrument.Instrument.GetFuture().OracleSpec = specWithID
+			specForSettlementPrice := mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice
+			specForSettlementPriceWithID := oraclepb.NewOracleSpec(specForSettlementPrice.PubKeys, specForSettlementPrice.Filters)
+
+			specForTradingTermination := mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination
+			specForTradingTerminationWithID := oraclepb.NewOracleSpec(specForTradingTermination.PubKeys, specForTradingTermination.Filters)
+
+			mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice = specForSettlementPriceWithID
+			mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination = specForTradingTerminationWithID
 			// end of hot fix
 
 			err = l.executionEngine.SubmitMarket(l.ctx, types.MarketFromProto(&mkt))

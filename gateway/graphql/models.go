@@ -194,8 +194,10 @@ type FutureProductInput struct {
 	SettlementAsset string `json:"settlementAsset"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
-	// The oracle spec describing the oracle data of interest.
-	OracleSpec *OracleSpecConfigurationInput `json:"oracleSpec"`
+	// The oracle spec describing the oracle data of interest for settlement price.
+	OracleSpecForSettlementPrice *OracleSpecConfigurationInput `json:"oracleSpecForSettlementPrice"`
+	// The oracle spec describing the oracle data of interest for trading termination.
+	OracleSpecForTradingTermination *OracleSpecConfigurationInput `json:"oracleSpecForTradingTermination"`
 	// The binding between the oracle spec and the settlement price
 	OracleSpecBinding *OracleSpecToFutureBindingInput `json:"oracleSpecBinding"`
 }
@@ -383,7 +385,8 @@ type OracleSpecConfigurationInput struct {
 // OracleSpecToFutureBindingInput tells on which property oracle data should be
 // used as settlement price.
 type OracleSpecToFutureBindingInput struct {
-	SettlementPriceProperty string `json:"settlementPriceProperty"`
+	SettlementPriceProperty    string `json:"settlementPriceProperty"`
+	TradingTerminationProperty string `json:"tradingTerminationProperty"`
 }
 
 // An estimate of the fee to be paid by the order

@@ -2,8 +2,8 @@
   "maturity": "",
   "settlementAsset": "",
   "quoteName": "",
-  "oracleSpec": {
-    "id": "",
+  "oracleSpecForSettlementPrice": {
+    "id": "1",
     "createdAt": "0",
     "updatedAt": "0",
     "pubKeys": [
@@ -21,7 +21,27 @@
     ],
     "status": "STATUS_UNSPECIFIED"
   },
+  "oracleSpecForTradingTermination": {
+    "id": "2",
+    "createdAt": "0",
+    "updatedAt": "0",
+    "pubKeys": [
+      "0xBADCAFFE"
+    ],
+    "filters": [
+      {
+        "key": {
+          "name": "trading.terminated",
+          "type": "TYPE_BOOLEAN"
+        },
+        "conditions": [
+        ]
+      }
+    ],
+    "status": "STATUS_UNSPECIFIED"
+  },
   "oracleSpecBinding": {
-    "settlementPriceProperty": "prices.USD.value"
+    "settlementPriceProperty": "prices.USD.value",
+    "tradingTerminationProperty": "trading.terminated"
   }
 }

@@ -8,9 +8,6 @@ Feature: Close a filled order twice
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value |
-      | prices.ETH.value | 42    |
 
   Scenario: Traders place an order, a trade happens, and orders are cancelled after being filled
 # setup accounts

@@ -84,7 +84,7 @@ func getTestMarket() *types.Market {
 					Future: &types.Future{
 						Maturity:        "2019-12-31",
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpec: &oraclesv1.OracleSpec{
+						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*oraclesv1.Filter{
 								{
@@ -96,8 +96,21 @@ func getTestMarket() *types.Market {
 								},
 							},
 						},
+						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "trading.terminated",
+										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
+							},
+						},
 						OracleSpecBinding: &types.OracleSpecToFutureBinding{
-							SettlementPriceProperty: "prices.ETH.value",
+							SettlementPriceProperty:    "prices.ETH.value",
+							TradingTerminationProperty: "trading.terminated",
 						},
 					},
 				},

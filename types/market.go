@@ -342,30 +342,33 @@ type Instrument_Future struct {
 }
 
 type Future struct {
-	Maturity          string
-	SettlementAsset   string
-	QuoteName         string
-	OracleSpec        *v1.OracleSpec
-	OracleSpecBinding *OracleSpecToFutureBinding
+	Maturity                        string
+	SettlementAsset                 string
+	QuoteName                       string
+	OracleSpecForSettlementPrice    *v1.OracleSpec
+	OracleSpecForTradingTermination *v1.OracleSpec
+	OracleSpecBinding               *OracleSpecToFutureBinding
 }
 
 func FutureFromProto(f *proto.Future) *Future {
 	return &Future{
-		Maturity:          f.Maturity,
-		SettlementAsset:   f.SettlementAsset,
-		QuoteName:         f.QuoteName,
-		OracleSpec:        f.OracleSpec.DeepClone(),
-		OracleSpecBinding: OracleSpecToFutureBindingFromProto(f.OracleSpecBinding),
+		Maturity:                        f.Maturity,
+		SettlementAsset:                 f.SettlementAsset,
+		QuoteName:                       f.QuoteName,
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecBinding:               OracleSpecToFutureBindingFromProto(f.OracleSpecBinding),
 	}
 }
 
 func (f Future) IntoProto() *proto.Future {
 	return &proto.Future{
-		Maturity:          f.Maturity,
-		SettlementAsset:   f.SettlementAsset,
-		QuoteName:         f.QuoteName,
-		OracleSpec:        f.OracleSpec.DeepClone(),
-		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
+		Maturity:                        f.Maturity,
+		SettlementAsset:                 f.SettlementAsset,
+		QuoteName:                       f.QuoteName,
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecBinding:               f.OracleSpecBinding.IntoProto(),
 	}
 }
 

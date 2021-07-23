@@ -6,9 +6,6 @@ Feature: CASE-2: Trader submits long order that will trade - new formula & low e
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value   |
-      | prices.ETH.value | 9400000 |
     And the parties deposit on asset's general account the following amount:
       | party     | asset | amount     |
       | party1    | ETH   | 1000000000 |

@@ -668,6 +668,14 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
+func (e *Engine) GetMarketState(mktID string) (types.Market_State, error) {
+	mkt, ok := e.markets[mktID]
+	if !ok {
+		return types.Market_STATE_UNSPECIFIED, types.ErrInvalidMarketID
+	}
+	return mkt.GetMarketState(), nil
+}
+
 func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
 	mkt, ok := e.markets[mktID]
 	if !ok {

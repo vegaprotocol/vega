@@ -987,7 +987,7 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 							Maturity:        "2030-06-30T22:59:59Z",
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
-							OracleSpec: &oraclesv1.OracleSpecConfiguration{
+							OracleSpecForSettlementPrice: &oraclesv1.OracleSpecConfiguration{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*oraclesv1.Filter{
 									{
@@ -999,8 +999,21 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 									},
 								},
 							},
+							OracleSpecForTradingTermination: &oraclesv1.OracleSpecConfiguration{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "trading.terminated",
+											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
+								},
+							},
 							OracleSpecBinding: &types.OracleSpecToFutureBinding{
-								SettlementPriceProperty: "prices.ETH.value",
+								SettlementPriceProperty:    "prices.ETH.value",
+								TradingTerminationProperty: "trading.terminated",
 							},
 						},
 					},

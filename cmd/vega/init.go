@@ -258,7 +258,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 							QuoteName:       skel.quoteName,
 							Maturity:        skel.maturity.Format("2006-01-02T15:04:05Z"),
 							SettlementAsset: skel.settlementAsset,
-							OracleSpec: &oraclesv1.OracleSpec{
+							OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*oraclesv1.Filter{
 									{
@@ -270,8 +270,21 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 									},
 								},
 							},
+							OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "trading.terminated",
+											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
+								},
+							},
 							OracleSpecBinding: &proto.OracleSpecToFutureBinding{
-								SettlementPriceProperty: "prices.ETH.value",
+								SettlementPriceProperty:    "prices.ETH.value",
+								TradingTerminationProperty: "trading.terminated",
 							},
 						},
 					},

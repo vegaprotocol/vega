@@ -9,9 +9,6 @@ Feature: CASE-4: Trader submits short order that will trade - new formula & high
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-    And the oracles broadcast data signed with "0xDEADBEEF":
-      | name             | value   |
-      | prices.ETH.value | 9400000 |
     And the parties deposit on asset's general account the following amount:
       | party     | asset | amount     |
       | party1    | ETH   | 1000000000 |

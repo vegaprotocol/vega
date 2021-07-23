@@ -375,6 +375,10 @@ func (m *Market) Hash() []byte {
 	))
 }
 
+func (m *Market) GetMarketState() types.Market_State {
+	return m.mkt.State
+}
+
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume, _ := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume, _ := m.matching.BestOfferPriceAndVolume()
@@ -501,7 +505,7 @@ func (m *Market) GetID() string {
 
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
-func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed bool) {
+func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "OnChainTimeUpdate")
 
 	m.mu.Lock()
@@ -525,6 +529,20 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 		return false
 	}
 
+	// if we're already in trading terminated state and the market is closed it means
+	// we didn't complete final settlement as oracle price was not available
+	// retry here
+	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
+
+	if m.mkt.State == types.Market_STATE_TRADING_TERMINATED {
+		// if we now have settlement price - try to settle and close the market
+		if settlementPrice != nil {
+			m.closeMarket(ctx, t)
+		}
+		m.closed = m.mkt.State == types.Market_STATE_SETTLED
+		return m.closed
+	}
+
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
 	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
 		m.lastEquityShareDistributed = t
@@ -533,9 +551,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 			m.log.Panic("liquidity fee distribution error", logging.Error(err))
 		}
 	}
-
-	closed = t.After(m.closingAt)
-	m.closed = closed
 
 	// check auction, if any
 	m.checkAuction(ctx, t)
@@ -547,13 +562,19 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) (closed boo
 
 	m.updateMarketValueProxy()
 
+	closed := m.tradableInstrument.Instrument.Product.IsTradingTerminated()
 	if !closed {
 		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
 	} else {
-		m.closeMarket(ctx, t)
+		m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		if settlementPrice != nil {
+			m.closeMarket(ctx, t)
+		}
 	}
 
-	return
+	m.closed = m.mkt.State == types.Market_STATE_SETTLED
+	return m.closed
 }
 
 func (m *Market) updateMarketValueProxy() {
@@ -571,17 +592,15 @@ func (m *Market) updateMarketValueProxy() {
 	m.equityShares.WithMVP(m.lastMarketValueProxy)
 }
 
-func (m *Market) closeMarket(ctx context.Context, t time.Time) {
-	m.mkt.State = types.Market_STATE_TRADING_TERMINATED
-	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-
+func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// market is closed, final settlement
 	// call settlement and stuff
-	positions, err := m.settlement.Settle(t, m.getCurrentMarkPrice())
+	positions, err := m.settlement.Settle(t)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market close",
 			logging.Error(err))
-		return
+
+		return err
 	}
 
 	transfers, err := m.collateral.FinalSettlement(ctx, m.GetID(), positions)
@@ -589,7 +608,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 		m.log.Error("Failed to get ledger movements after settling closed market",
 			logging.MarketID(m.GetID()),
 			logging.Error(err))
-		return
+		return err
 	}
 
 	// @TODO pass in correct context -> Previous or next block?
@@ -608,10 +627,13 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) {
 		m.log.Error("Clear market error",
 			logging.MarketID(m.GetID()),
 			logging.Error(err))
-		return
+		return err
 	}
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
+	m.mkt.State = types.Market_STATE_SETTLED
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	return nil
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
@@ -720,10 +742,22 @@ func (m *Market) EnterAuction(ctx context.Context) {
 
 	// Send an event bus update
 	m.broker.Send(event)
+
+	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
+		m.mkt.State = types.Market_STATE_SUSPENDED
+		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	}
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
+	defer func() {
+		if !m.as.InAuction() && m.mkt.State == types.Market_STATE_SUSPENDED {
+			m.mkt.State = types.Market_STATE_ACTIVE
+			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		}
+	}()
+
 	// Change market type to continuous trading
 	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.currentTime)
 	if err != nil {

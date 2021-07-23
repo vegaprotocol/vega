@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/steps/market"
+	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -99,10 +100,19 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
-	oracleConfig, err := config.OracleConfigs.Get(row.oracleConfig())
+	oracleConfigForSettlement, err := config.OracleConfigs.Get(row.oracleConfig(), "settlement price")
 	if err != nil {
 		panic(err)
 	}
+
+	oracleConfigForTradingTermination, err := config.OracleConfigs.Get(row.oracleConfig(), "trading termination")
+	if err != nil {
+		panic(err)
+	}
+
+	var binding proto.OracleSpecToFutureBinding
+	binding.SettlementPriceProperty = oracleConfigForSettlement.Binding.SettlementPriceProperty
+	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
 
 	priceMonitoring, err := config.PriceMonitoring.Get(row.priceMonitoring())
 	if err != nil {
@@ -133,11 +143,12 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:          row.maturityDate(),
-						SettlementAsset:   row.asset(),
-						QuoteName:         row.quoteName(),
-						OracleSpec:        oracleConfig.Spec,
-						OracleSpecBinding: types.OracleSpecToFutureBindingFromProto(oracleConfig.Binding),
+						Maturity:                        row.maturityDate(),
+						SettlementAsset:                 row.asset(),
+						QuoteName:                       row.quoteName(),
+						OracleSpecForSettlementPrice:    oracleConfigForSettlement.Spec,
+						OracleSpecForTradingTermination: oracleConfigForTradingTermination.Spec,
+						OracleSpecBinding:               types.OracleSpecToFutureBindingFromProto(&binding),
 					},
 				},
 			},

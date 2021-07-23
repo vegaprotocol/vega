@@ -28,9 +28,14 @@ func (this *FutureProduct) Validate() error {
 	if this.QuoteName == "" {
 		return github_com_mwitkow_go_proto_validators.FieldError("QuoteName", fmt.Errorf(`value '%v' must not be an empty string`, this.QuoteName))
 	}
-	if this.OracleSpec != nil {
-		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OracleSpec); err != nil {
-			return github_com_mwitkow_go_proto_validators.FieldError("OracleSpec", err)
+	if this.OracleSpecForSettlementPrice != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OracleSpecForSettlementPrice); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("OracleSpecForSettlementPrice", err)
+		}
+	}
+	if this.OracleSpecForTradingTermination != nil {
+		if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(this.OracleSpecForTradingTermination); err != nil {
+			return github_com_mwitkow_go_proto_validators.FieldError("OracleSpecForTradingTermination", err)
 		}
 	}
 	if this.OracleSpecBinding != nil {
