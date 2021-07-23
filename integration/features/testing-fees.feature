@@ -268,8 +268,8 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
-      # | buyer   | price | size | seller  | maker   | taker   |
-      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
+      # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
+      # | trader3a | 1002  | 2    | trader4 | trader3 | trader4 | 30        | 11         | 11        |
       # TODO to be implemented by Core Team
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 2    | trader4 |
@@ -287,7 +287,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
-  Then debug transfers
+    Then debug transfers
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
@@ -334,7 +334,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
     
     And the traders place the following orders: 
       | trader   | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3a | ETH/DEC21 | buy  | 1      | 1002  | 1               | TYPE_LIMIT | TIF_GTC |
+      | trader3a | ETH/DEC21 | buy  | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
     # For trader4 -
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 1 * 1002 = 1002
@@ -1327,7 +1327,7 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | aux2     | ETH   | 100000000  |
       | trader3a | ETH   | 5000       |
       | trader4  | ETH   | 7261       |
-      # If the trader4 balance is changed to 7465 then the trade goes ahead.
+      # If the trader4 balance is changed to 7465 then the trade goes ahead as the account balance goes below maintenance level.
 
     Then the traders place the following orders:
       | trader   | market id | side  | volume | price | resulting trades | type       | tif     |
