@@ -22,6 +22,7 @@ func NewDefaultConfig() Config {
 		SocketConfig: SocketConfig{
 			DialTimeout: encoding.Duration{Duration: 2 * time.Minute},
 			Timeout:     encoding.Duration{Duration: 5 * time.Second},
+			IP:          "0.0.0.0",
 			Port:        3005,
 			Enabled:     true,
 		},
@@ -31,6 +32,7 @@ func NewDefaultConfig() Config {
 type SocketConfig struct {
 	DialTimeout encoding.Duration `long:"dial-timeout" description:" "`
 	Timeout     encoding.Duration `long:"timeout" description:" "`
+	IP          string            `long:"ip" description:" "`
 	Port        int               `long:"port" description:" "`
 	Enabled     encoding.Bool     `long:"enabled" description:"Enabled socket streaming of bus events"`
 }

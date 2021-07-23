@@ -41,9 +41,9 @@ type BrokerI interface {
 	Unsubscribe(k int)
 }
 
-// SocketSenderI is an interface to send serialized events over a socket.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_sender_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketSenderI
-type SocketSenderI interface {
+// SocketClient is an interface to send serialized events over a socket.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_sender_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketClient
+type SocketClient interface {
 	Send(r io.Reader) error
 	Close() error
 }
@@ -71,7 +71,7 @@ type Broker struct {
 	log *logging.Logger
 
 	config       Config
-	socketSender SocketSenderI
+	socketClient SocketClient
 }
 
 // New creates a new base broker
@@ -79,7 +79,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	socketSender, err := NewSocketSender(log, &config.SocketConfig)
+	socketClient, err := NewSocketClient(log, &config.SocketConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialise underlying socket sender %w", err)
 	}
@@ -93,7 +93,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 		eChans:       map[events.Type]chan []events.Event{},
 		seqGen:       newGen(),
 		config:       config,
-		socketSender: socketSender,
+		socketClient: socketClient,
 	}, nil
 }
 
@@ -370,7 +370,7 @@ func (b *Broker) sendSocket(evts []events.Event) {
 				b.log.Errorf("fail to marshall event: %v", err)
 			}
 
-			err = b.socketSender.Send(bytes.NewReader(rawBytes))
+			err = b.socketClient.Send(bytes.NewReader(rawBytes))
 			if err != nil {
 				b.log.Errorf("fail to send event over socket: %v", err)
 			}

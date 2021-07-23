@@ -18,43 +18,42 @@ const (
 	dialRetryInterval = 5 * time.Second
 )
 
-// SocketSender sends events sent to this broker over a socket to a remote broker.
+// socketClient sends events sent to this broker over a socket to a remote broker.
 // This is used to stream events from a non-validating core node to a data node.
 // The sender will try to connect to the receiver address indefinitely.
-type SocketSender struct {
+type socketClient struct {
 	log  *logging.Logger
 	sock protocol.Socket
 }
 
-func NewSocketSender(log *logging.Logger, config *SocketConfig) (*SocketSender, error) {
+func NewSocketClient(log *logging.Logger, config *SocketConfig) (SocketClient, error) {
 	var sock mangos.Socket
 	var err error
 
 	if !config.Enabled {
-		return &SocketSender{}, nil
+		return &socketClient{}, nil
 	}
 
 	if sock, err = push.NewSocket(); err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
 	}
 
-	addr := fmt.Sprintf("tcp://127.0.0.1:%d", config.Port)
-RETRY_LOOP:
-	for {
+	addr := fmt.Sprintf("tcp://%s:%d", config.IP, config.Port)
+	ticker := time.NewTicker(dialRetryInterval)
+	for range ticker.C {
 		if err = sock.Dial(addr); err != nil {
 			log.Error(fmt.Sprintf("failed to connect to %v, retrying", addr), logging.Error(err))
-			time.Sleep(dialRetryInterval)
-			continue RETRY_LOOP
+			continue
 		}
-
-		return &SocketSender{
-			log:  log,
-			sock: sock,
-		}, nil
 	}
+
+	return &socketClient{
+		log:  log,
+		sock: sock,
+	}, nil
 }
 
-func (s SocketSender) Send(r io.Reader) error {
+func (s socketClient) Send(r io.Reader) error {
 	buf, _ := ioutil.ReadAll(r)
 	if err := s.sock.Send(buf); err != nil {
 		return fmt.Errorf("failed to send on socket: %w", err)
@@ -62,6 +61,6 @@ func (s SocketSender) Send(r io.Reader) error {
 	return nil
 }
 
-func (s SocketSender) Close() error {
+func (s socketClient) Close() error {
 	return s.sock.Close()
 }
