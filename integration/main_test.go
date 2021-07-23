@@ -23,7 +23,6 @@ var (
 )
 
 func init() {
-	// godog.BindFlags("godog.", flag.CommandLine, &gdOpts)
 	godog.BindCommandLineFlags("godog.", &gdOpts)
 	pflag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
 }
@@ -31,11 +30,6 @@ func init() {
 func TestMain(m *testing.M) {
 	pflag.Parse()
 	gdOpts.Paths = pflag.Args()
-
-	// if features != "" {
-	// 	paths := strings.Split(features, ",")
-	// 	gdOpts.Paths = paths
-	// }
 
 	status := godog.TestSuite{
 		Name:                 "godogs",
@@ -50,20 +44,9 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(status)
-
-	// status := godog.RunWithOptions("godogs", func(s *godog.Suite) {
-	// 	FeatureContext(s)
-	// }, gdOpts)
-
-	// if st := m.Run(); st > status {
-	// 	status = st
-	// }
-	// os.Exit(status)
 }
 
-func InitializeTestSuite(ctx *godog.TestSuiteContext) {
-	// ctx.BeforeSuite(func() { Godogs = 0 })
-}
+func InitializeTestSuite(ctx *godog.TestSuiteContext) {}
 
 func InitializeScenario(s *godog.ScenarioContext) {
 	s.BeforeScenario(func(*godog.Scenario) {
@@ -99,8 +82,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`the oracle spec for "([^"]*)" filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys, specType string, name string, table *godog.Table) error {
 		return steps.TheOracleSpec(marketConfig, name, specType, pubKeys, table)
 	})
-	s.Step(`the oracle spec filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys, name string, table *godog.Table) error {
-		return steps.TheOracleSpec(marketConfig, name, pubKeys, table)
+	s.Step(`the oracle spec for "([^"]*)" filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys, specType string, name string, table *godog.Table) error {
+		return steps.TheOracleSpec(marketConfig, name, specType, pubKeys, table)
 	})
 	s.Step(`the price monitoring updated every "([^"]*)" seconds named "([^"]*)":$`, func(updateFrequency, name string, table *godog.Table) error {
 		return steps.ThePriceMonitoring(marketConfig, name, updateFrequency, table)
