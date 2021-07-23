@@ -3,13 +3,13 @@ package steps
 import (
 	"errors"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godog.Table) error {
 	evts := broker.GetLPEvents()
 	evtByID := func(id string) *types.LiquidityProvision {
 		found := &types.LiquidityProvision{}
@@ -40,7 +40,7 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 	return nil
 }
 
-func parseLiquidityProvisionStatesTable(table *gherkin.DataTable) []RowWrapper {
+func parseLiquidityProvisionStatesTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
 		"party",

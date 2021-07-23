@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
 type MappedMD struct {
@@ -26,7 +26,7 @@ type MappedMD struct {
 
 type ErrStack []error
 
-func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *gherkin.DataTable) error {
+func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *godog.Table) error {
 	actual, err := engine.GetMarketData(mID)
 	if err != nil {
 		return err
@@ -166,7 +166,7 @@ func cmpPriceBounds(expect *MappedMD, got types.MarketData) []error {
 	return errs
 }
 
-func getPriceBounds(data *gherkin.DataTable) (ret []*types.PriceMonitoringBounds) {
+func getPriceBounds(data *godog.Table) (ret []*types.PriceMonitoringBounds) {
 	for _, row := range ParseTable(data) {
 		h, ok := row.I64B("horizon")
 		if !ok {
@@ -184,7 +184,7 @@ func getPriceBounds(data *gherkin.DataTable) (ret []*types.PriceMonitoringBounds
 	return ret
 }
 
-func getLPFeeShare(data *gherkin.DataTable) (ret []*types.LiquidityProviderFeeShare) {
+func getLPFeeShare(data *godog.Table) (ret []*types.LiquidityProviderFeeShare) {
 	for _, r := range ParseTable(data) {
 		avg, ok := r.StrB("average entry valuation")
 		if !ok {
@@ -199,7 +199,7 @@ func getLPFeeShare(data *gherkin.DataTable) (ret []*types.LiquidityProviderFeeSh
 	return ret
 }
 
-func (m *MappedMD) parseSpecial(data *gherkin.DataTable) {
+func (m *MappedMD) parseSpecial(data *godog.Table) {
 	todo := map[string]struct{}{
 		"trading mode":      {},
 		"auction trigger":   {},
@@ -229,7 +229,7 @@ func (m *MappedMD) parseSpecial(data *gherkin.DataTable) {
 }
 
 // parses the data, and returns a slice of keys for the values that were provided
-func (m *MappedMD) parseU64(data *gherkin.DataTable) []string {
+func (m *MappedMD) parseU64(data *godog.Table) []string {
 	set := make([]string, 0, len(m.u64Map))
 	for _, r := range ParseTable(data) {
 		for k, ptr := range m.u64Map {
@@ -244,7 +244,7 @@ func (m *MappedMD) parseU64(data *gherkin.DataTable) []string {
 	return set
 }
 
-func (m *MappedMD) parseTimes(data *gherkin.DataTable) []string {
+func (m *MappedMD) parseTimes(data *godog.Table) []string {
 	// already set start based off of the value in the map
 	// does some trickery WRT auction end time, so we can check if the auction duration is N seconds
 	end, start := int64(0), *m.tMap["auction start"]
@@ -268,7 +268,7 @@ func (m *MappedMD) parseTimes(data *gherkin.DataTable) []string {
 	return set
 }
 
-func (m *MappedMD) parseI64(data *gherkin.DataTable) []string {
+func (m *MappedMD) parseI64(data *godog.Table) []string {
 	set := make([]string, 0, len(m.i64Map))
 	for _, r := range ParseTable(data) {
 		for k, ptr := range m.i64Map {
@@ -283,7 +283,7 @@ func (m *MappedMD) parseI64(data *gherkin.DataTable) []string {
 	return set
 }
 
-func (m *MappedMD) parseStr(data *gherkin.DataTable) []string {
+func (m *MappedMD) parseStr(data *godog.Table) []string {
 	set := make([]string, 0, len(m.strMap))
 	for _, r := range ParseTable(data) {
 		for k, ptr := range m.strMap {

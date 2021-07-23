@@ -3,7 +3,7 @@ package steps
 import (
 	"fmt"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
@@ -11,7 +11,7 @@ import (
 
 func ThePartiesShouldHaveTheFollowingMarginLevels(
 	broker *stubs.BrokerStub,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, row := range parseExpectedMarginsTable(table) {
 		partyID := row.MustStr("party")
@@ -71,7 +71,7 @@ func errInvalidMargins(
 	)
 }
 
-func parseExpectedMarginsTable(table *gherkin.DataTable) []RowWrapper {
+func parseExpectedMarginsTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"market id",

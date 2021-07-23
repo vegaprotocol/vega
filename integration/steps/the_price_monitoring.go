@@ -1,13 +1,13 @@
 package steps
 
 import (
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/integration/steps/market"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency string, table *gherkin.DataTable) error {
+func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency string, table *godog.Table) error {
 	updateFrequency, err := I64(rawUpdateFrequency)
 	if err != nil {
 		panicW("update frequency", err)
@@ -35,7 +35,7 @@ func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency s
 	)
 }
 
-func parsePriceMonitoringTable(table *gherkin.DataTable) []RowWrapper {
+func parsePriceMonitoringTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"horizon",
 		"probability",

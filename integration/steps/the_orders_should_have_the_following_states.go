@@ -2,10 +2,10 @@ package steps
 
 import (
 	"code.vegaprotocol.io/vega/integration/stubs"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godog.Table) error {
 	data := broker.GetOrderEvents()
 
 	for _, row := range parseOrdersStatesTable(table) {
@@ -32,7 +32,7 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *gher
 	return nil
 }
 
-func parseOrdersStatesTable(table *gherkin.DataTable) []RowWrapper {
+func parseOrdersStatesTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"market id",

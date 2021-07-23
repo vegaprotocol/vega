@@ -1,13 +1,13 @@
 package steps
 
 import (
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/integration/steps/market"
 	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheFeesConfiguration(config *market.Config, name string, table *gherkin.DataTable) error {
+func TheFeesConfiguration(config *market.Config, name string, table *godog.Table) error {
 	row := feesConfigRow{row: parseFeesConfigTable(table)}
 
 	return config.FeesConfig.Add(name, &types.Fees{
@@ -18,7 +18,7 @@ func TheFeesConfiguration(config *market.Config, name string, table *gherkin.Dat
 	})
 }
 
-func parseFeesConfigTable(table *gherkin.DataTable) RowWrapper {
+func parseFeesConfigTable(table *godog.Table) RowWrapper {
 	return StrictParseFirstRow(table, []string{
 		"maker fee",
 		"infrastructure fee",

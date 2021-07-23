@@ -10,7 +10,9 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.0.0
-	github.com/cucumber/godog v0.8.1
+	github.com/cucumber/gherkin-go v5.1.0+incompatible // indirect
+	github.com/cucumber/godog v0.11.0
+	github.com/cucumber/messages-go/v10 v10.0.3 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/ethereum/go-ethereum v1.9.20
@@ -37,6 +39,7 @@ require (
 	github.com/shopspring/decimal v1.2.0
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.1.2
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.11
 	github.com/vektah/gqlparser/v2 v2.0.1
