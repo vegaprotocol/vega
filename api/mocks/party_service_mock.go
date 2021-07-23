@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockPartyService) EXPECT() *MockPartyServiceMockRecorder {
 }
 
 // GetAll mocks base method
-func (m *MockPartyService) GetAll(arg0 context.Context) ([]*proto.Party, error) {
+func (m *MockPartyService) GetAll(arg0 context.Context) ([]*vega.Party, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", arg0)
-	ret0, _ := ret[0].([]*proto.Party)
+	ret0, _ := ret[0].([]*vega.Party)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockPartyServiceMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 }
 
 // GetByID mocks base method
-func (m *MockPartyService) GetByID(arg0 context.Context, arg1 string) (*proto.Party, error) {
+func (m *MockPartyService) GetByID(arg0 context.Context, arg1 string) (*vega.Party, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
-	ret0, _ := ret[0].(*proto.Party)
+	ret0, _ := ret[0].(*vega.Party)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

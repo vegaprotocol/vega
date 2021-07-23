@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/proto/api"
+	api "code.vegaprotocol.io/data-node/proto/api"
 	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 	"github.com/cenkalti/backoff/v4"
 	"google.golang.org/grpc"

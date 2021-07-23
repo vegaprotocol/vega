@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockOrderService) EXPECT() *MockOrderServiceMockRecorder {
 }
 
 // GetAllVersionsByOrderID mocks base method
-func (m *MockOrderService) GetAllVersionsByOrderID(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*proto.Order, error) {
+func (m *MockOrderService) GetAllVersionsByOrderID(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllVersionsByOrderID", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].([]*proto.Order)
+	ret0, _ := ret[0].([]*vega.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockOrderServiceMockRecorder) GetAllVersionsByOrderID(arg0, arg1, arg2
 }
 
 // GetByMarket mocks base method
-func (m *MockOrderService) GetByMarket(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*proto.Order, error) {
+func (m *MockOrderService) GetByMarket(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarket", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].([]*proto.Order)
+	ret0, _ := ret[0].([]*vega.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -65,10 +65,10 @@ func (mr *MockOrderServiceMockRecorder) GetByMarket(arg0, arg1, arg2, arg3, arg4
 }
 
 // GetByMarketAndID mocks base method
-func (m *MockOrderService) GetByMarketAndID(arg0 context.Context, arg1, arg2 string) (*proto.Order, error) {
+func (m *MockOrderService) GetByMarketAndID(arg0 context.Context, arg1, arg2 string) (*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarketAndID", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*proto.Order)
+	ret0, _ := ret[0].(*vega.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -80,10 +80,10 @@ func (mr *MockOrderServiceMockRecorder) GetByMarketAndID(arg0, arg1, arg2 interf
 }
 
 // GetByOrderID mocks base method
-func (m *MockOrderService) GetByOrderID(arg0 context.Context, arg1 string, arg2 uint64) (*proto.Order, error) {
+func (m *MockOrderService) GetByOrderID(arg0 context.Context, arg1 string, arg2 uint64) (*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByOrderID", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*proto.Order)
+	ret0, _ := ret[0].(*vega.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -95,10 +95,10 @@ func (mr *MockOrderServiceMockRecorder) GetByOrderID(arg0, arg1, arg2 interface{
 }
 
 // GetByParty mocks base method
-func (m *MockOrderService) GetByParty(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*proto.Order, error) {
+func (m *MockOrderService) GetByParty(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByParty", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].([]*proto.Order)
+	ret0, _ := ret[0].([]*vega.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -110,10 +110,10 @@ func (mr *MockOrderServiceMockRecorder) GetByParty(arg0, arg1, arg2, arg3, arg4 
 }
 
 // GetByReference mocks base method
-func (m *MockOrderService) GetByReference(arg0 context.Context, arg1 string) (*proto.Order, error) {
+func (m *MockOrderService) GetByReference(arg0 context.Context, arg1 string) (*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByReference", arg0, arg1)
-	ret0, _ := ret[0].(*proto.Order)
+	ret0, _ := ret[0].(*vega.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -139,10 +139,10 @@ func (mr *MockOrderServiceMockRecorder) GetOrderSubscribersCount() *gomock.Call 
 }
 
 // ObserveOrders mocks base method
-func (m *MockOrderService) ObserveOrders(arg0 context.Context, arg1 int, arg2, arg3 *string) (<-chan []proto.Order, uint64) {
+func (m *MockOrderService) ObserveOrders(arg0 context.Context, arg1 int, arg2, arg3 *string) (<-chan []vega.Order, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveOrders", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(<-chan []proto.Order)
+	ret0, _ := ret[0].(<-chan []vega.Order)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }

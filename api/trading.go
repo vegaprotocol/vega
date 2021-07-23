@@ -13,7 +13,9 @@ const defaultRequestTimeout = time.Second * 5
 
 // TradingServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/api TradingServiceClient
-type TradingServiceClient = vegaprotoapi.TradingServiceClient
+type TradingServiceClient interface {
+	vegaprotoapi.TradingServiceClient
+}
 
 // trading service acts as a proxy to the trading service in core node
 type tradingProxyService struct {
@@ -32,17 +34,15 @@ func (s *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoa
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	coreReq := internalToCoreSubmitTransactionRequest(req)
-	coreResp, err := s.tradingServiceClient.SubmitTransactionV2(ctx, coreReq)
+	vegaReq := internalToCoreSubmitTransactionRequest(req)
+	vegaResp, err := s.tradingServiceClient.SubmitTransactionV2(ctx, vegaReq)
 	if err != nil {
 		return nil, err
 	}
 
-	return coreToInternalSubmitTransactionResponse(coreResp), nil
-}
-
-func coreToInternalSubmitTransactionResponse(res *vegaprotoapi.SubmitTransactionV2Response) *protoapiv1.SubmitTransactionResponse {
-	return (*protoapiv1.SubmitTransactionResponse)(res)
+	return &protoapiv1.SubmitTransactionResponse{
+		Success: vegaResp.Success,
+	}, nil
 }
 
 func internalToCoreSubmitTransactionRequest(req *protoapiv1.SubmitTransactionRequest) *vegaprotoapi.SubmitTransactionV2Request {

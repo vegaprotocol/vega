@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockNetParamsService) EXPECT() *MockNetParamsServiceMockRecorder {
 }
 
 // GetAll mocks base method
-func (m *MockNetParamsService) GetAll() []proto.NetworkParameter {
+func (m *MockNetParamsService) GetAll() []vega.NetworkParameter {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]proto.NetworkParameter)
+	ret0, _ := ret[0].([]vega.NetworkParameter)
 	return ret0
 }
 

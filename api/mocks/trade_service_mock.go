@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockTradeService) EXPECT() *MockTradeServiceMockRecorder {
 }
 
 // GetByMarket mocks base method
-func (m *MockTradeService) GetByMarket(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*proto.Trade, error) {
+func (m *MockTradeService) GetByMarket(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*vega.Trade, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarket", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].([]*proto.Trade)
+	ret0, _ := ret[0].([]*vega.Trade)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockTradeServiceMockRecorder) GetByMarket(arg0, arg1, arg2, arg3, arg4
 }
 
 // GetByOrderID mocks base method
-func (m *MockTradeService) GetByOrderID(arg0 context.Context, arg1 string) ([]*proto.Trade, error) {
+func (m *MockTradeService) GetByOrderID(arg0 context.Context, arg1 string) ([]*vega.Trade, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByOrderID", arg0, arg1)
-	ret0, _ := ret[0].([]*proto.Trade)
+	ret0, _ := ret[0].([]*vega.Trade)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -65,10 +65,10 @@ func (mr *MockTradeServiceMockRecorder) GetByOrderID(arg0, arg1 interface{}) *go
 }
 
 // GetByParty mocks base method
-func (m *MockTradeService) GetByParty(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool, arg5 *string) ([]*proto.Trade, error) {
+func (m *MockTradeService) GetByParty(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool, arg5 *string) ([]*vega.Trade, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByParty", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].([]*proto.Trade)
+	ret0, _ := ret[0].([]*vega.Trade)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -80,10 +80,10 @@ func (mr *MockTradeServiceMockRecorder) GetByParty(arg0, arg1, arg2, arg3, arg4,
 }
 
 // GetPositionsByParty mocks base method
-func (m *MockTradeService) GetPositionsByParty(arg0 context.Context, arg1, arg2 string) ([]*proto.Position, error) {
+func (m *MockTradeService) GetPositionsByParty(arg0 context.Context, arg1, arg2 string) ([]*vega.Position, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPositionsByParty", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]*proto.Position)
+	ret0, _ := ret[0].([]*vega.Position)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -123,10 +123,10 @@ func (mr *MockTradeServiceMockRecorder) GetTradeSubscribersCount() *gomock.Call 
 }
 
 // ObservePositions mocks base method
-func (m *MockTradeService) ObservePositions(arg0 context.Context, arg1 int, arg2, arg3 string) (<-chan *proto.Position, uint64) {
+func (m *MockTradeService) ObservePositions(arg0 context.Context, arg1 int, arg2, arg3 string) (<-chan *vega.Position, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObservePositions", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(<-chan *proto.Position)
+	ret0, _ := ret[0].(<-chan *vega.Position)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }
@@ -138,10 +138,10 @@ func (mr *MockTradeServiceMockRecorder) ObservePositions(arg0, arg1, arg2, arg3 
 }
 
 // ObserveTrades mocks base method
-func (m *MockTradeService) ObserveTrades(arg0 context.Context, arg1 int, arg2, arg3 *string) (<-chan []proto.Trade, uint64) {
+func (m *MockTradeService) ObserveTrades(arg0 context.Context, arg1 int, arg2, arg3 *string) (<-chan []vega.Trade, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveTrades", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(<-chan []proto.Trade)
+	ret0, _ := ret[0].(<-chan []vega.Trade)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }

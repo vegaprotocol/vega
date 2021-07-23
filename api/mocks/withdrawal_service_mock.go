@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockWithdrawalService) EXPECT() *MockWithdrawalServiceMockRecorder {
 }
 
 // GetByID mocks base method
-func (m *MockWithdrawalService) GetByID(arg0 string) (proto.Withdrawal, error) {
+func (m *MockWithdrawalService) GetByID(arg0 string) (vega.Withdrawal, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
-	ret0, _ := ret[0].(proto.Withdrawal)
+	ret0, _ := ret[0].(vega.Withdrawal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -49,10 +49,10 @@ func (mr *MockWithdrawalServiceMockRecorder) GetByID(arg0 interface{}) *gomock.C
 }
 
 // GetByParty mocks base method
-func (m *MockWithdrawalService) GetByParty(arg0 string, arg1 bool) []proto.Withdrawal {
+func (m *MockWithdrawalService) GetByParty(arg0 string, arg1 bool) []vega.Withdrawal {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByParty", arg0, arg1)
-	ret0, _ := ret[0].([]proto.Withdrawal)
+	ret0, _ := ret[0].([]vega.Withdrawal)
 	return ret0
 }
 

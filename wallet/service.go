@@ -13,10 +13,10 @@ import (
 	"code.vegaprotocol.io/data-node/commands"
 	vhttp "code.vegaprotocol.io/data-node/http"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/proto/api"
+	api "code.vegaprotocol.io/data-node/proto/api"
 	types "code.vegaprotocol.io/data-node/proto/vega"
 	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/data-node/proto/wallet/v1"
+	walletpb "code.vegaprotocol.io/data-node/proto/vega/wallet/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"

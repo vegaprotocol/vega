@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -36,6 +35,8 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 
 	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	vegaprotoapi "code.vegaprotocol.io/data-node/proto/api"
+	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
 	types "code.vegaprotocol.io/data-node/proto/vega"
 	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
 
@@ -65,25 +66,17 @@ func (v voteStub) Filter(filters ...subscribers.VoteFilter) []*types.Vote {
 func waitForNode(t *testing.T, ctx context.Context, conn *grpc.ClientConn) {
 	const maxSleep = 2000 // milliseconds
 
-	req := &protoapi.PrepareSubmitOrderRequest{
-		Submission: &commandspb.OrderSubmission{
-			Type:     types.Order_TYPE_LIMIT,
-			MarketId: "nonexistantmarket",
-		},
-	}
+	c := protoapi.NewTradingDataServiceClient(conn)
 
-	c := protoapi.NewTradingServiceClient(conn)
 	sleepTime := 10 // milliseconds
 	for sleepTime < maxSleep {
-		_, err := c.PrepareSubmitOrder(ctx, req)
+		_, err := c.GetProposals(ctx, &protoapi.GetProposalsRequest{})
 		if err == nil {
-			t.Fatalf("Expected some sort of error, but got none.")
-		}
-		fmt.Println(err.Error())
-
-		if strings.Contains(err.Error(), "InvalidArgument") {
 			return
 		}
+
+		fmt.Println(err)
+
 		fmt.Printf("Sleeping for %d milliseconds\n", sleepTime)
 		time.Sleep(time.Duration(sleepTime) * time.Millisecond)
 		sleepTime *= 2
@@ -99,7 +92,7 @@ func getTestGRPCServer(
 	port int,
 	startAndWait bool,
 ) (
-	g GRPCServer, tidy func(),
+	tidy func(),
 	conn *grpc.ClientConn, mockTradingServiceClient *mocks.MockTradingServiceClient,
 	err error,
 ) {
@@ -256,7 +249,7 @@ func getTestGRPCServer(
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
 
-	g = api.NewGRPCServer(
+	g := api.NewGRPCServer(
 		logger,
 		conf.API,
 		stats.New(logger, conf.Stats, "ver", "hash"),
@@ -309,39 +302,99 @@ func getTestGRPCServer(
 	return
 }
 
-func TestPrepareProposal(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5)*time.Second)
+func TestSubmitTransaction(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	g, tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
-	if err != nil {
-		t.Fatalf("Failed to get test gRPC server: %s", err.Error())
-	}
-	defer tidy()
+	t.Run("proxy call is successful", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		if err != nil {
+			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+		}
+		defer tidy()
 
-	req := &protoapi.PrepareProposalSubmissionRequest{
-		Submission: &commandspb.ProposalSubmission{
-			Terms: &types.ProposalTerms{
-				Change: &types.ProposalTerms_UpdateNetworkParameter{
-					UpdateNetworkParameter: &types.UpdateNetworkParameter{
-						Changes: &types.NetworkParameter{
-							Key:   "key",
-							Value: "value",
-						},
-					},
+		req := &protoapiv1.SubmitTransactionRequest{
+			Type: protoapiv1.SubmitTransactionRequest_TYPE_UNSPECIFIED,
+			Tx: &commandspb.Transaction{
+				InputData: []byte("input data"),
+				Signature: &commandspb.Signature{
+					Value:   "value",
+					Algo:    "algo",
+					Version: 1,
 				},
 			},
-		},
-	}
+		}
 
-	mockTradingServiceClient.EXPECT().PrepareProposalSubmission(ctx, req).Times(1).Return()
+		expectedRes := &protoapiv1.SubmitTransactionResponse{Success: true}
 
-	client := protoapi.NewTradingServiceClient(conn)
-	assert.NotNil(t, client)
+		vegaReq := &vegaprotoapi.SubmitTransactionV2Request{
+			Type: vegaprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED,
+			Tx: &commandspb.Transaction{
+				InputData: []byte("input data"),
+				Signature: &commandspb.Signature{
+					Value:   "value",
+					Algo:    "algo",
+					Version: 1,
+				},
+			},
+		}
 
-	proposal, err := client.PrepareProposalSubmission(ctx, req)
-	assert.NoError(t, err)
-	assert.Nil(t, proposal)
+		mockTradingServiceClient.EXPECT().
+			SubmitTransactionV2(gomock.Any(), vegaReq).
+			Return(&vegaprotoapi.SubmitTransactionV2Response{Success: true}, nil)
 
-	g.Stop()
+		proxyClient := protoapiv1.NewTradingProxyServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedRes, actualResp)
+	})
+
+	t.Run("proxy propagates an error", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		if err != nil {
+			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+		}
+		defer tidy()
+
+		req := &protoapiv1.SubmitTransactionRequest{
+			Type: protoapiv1.SubmitTransactionRequest_TYPE_COMMIT,
+			Tx: &commandspb.Transaction{
+				InputData: []byte("input data"),
+				Signature: &commandspb.Signature{
+					Value:   "value",
+					Algo:    "algo",
+					Version: 1,
+				},
+			},
+		}
+
+		vegaReq := &vegaprotoapi.SubmitTransactionV2Request{
+			Type: vegaprotoapi.SubmitTransactionV2Request_TYPE_COMMIT,
+			Tx: &commandspb.Transaction{
+				InputData: []byte("input data"),
+				Signature: &commandspb.Signature{
+					Value:   "value",
+					Algo:    "algo",
+					Version: 1,
+				},
+			},
+		}
+
+		mockTradingServiceClient.EXPECT().
+			SubmitTransactionV2(gomock.Any(), vegaReq).
+			Return(nil, errors.New("Critical error"))
+
+		proxyClient := protoapiv1.NewTradingProxyServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, actualResp)
+		assert.Contains(t, err.Error(), "Critical error")
+	})
 }

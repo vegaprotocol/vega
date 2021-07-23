@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockRiskService) EXPECT() *MockRiskServiceMockRecorder {
 }
 
 // EstimateMargin mocks base method
-func (m *MockRiskService) EstimateMargin(arg0 context.Context, arg1 *proto.Order) (*proto.MarginLevels, error) {
+func (m *MockRiskService) EstimateMargin(arg0 context.Context, arg1 *vega.Order) (*vega.MarginLevels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EstimateMargin", arg0, arg1)
-	ret0, _ := ret[0].(*proto.MarginLevels)
+	ret0, _ := ret[0].(*vega.MarginLevels)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockRiskServiceMockRecorder) EstimateMargin(arg0, arg1 interface{}) *g
 }
 
 // GetMarginLevelsByID mocks base method
-func (m *MockRiskService) GetMarginLevelsByID(arg0, arg1 string) ([]proto.MarginLevels, error) {
+func (m *MockRiskService) GetMarginLevelsByID(arg0, arg1 string) ([]vega.MarginLevels, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarginLevelsByID", arg0, arg1)
-	ret0, _ := ret[0].([]proto.MarginLevels)
+	ret0, _ := ret[0].([]vega.MarginLevels)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,10 +79,10 @@ func (mr *MockRiskServiceMockRecorder) GetMarginLevelsSubscribersCount() *gomock
 }
 
 // ObserveMarginLevels mocks base method
-func (m *MockRiskService) ObserveMarginLevels(arg0 context.Context, arg1 int, arg2, arg3 string) (<-chan []proto.MarginLevels, uint64) {
+func (m *MockRiskService) ObserveMarginLevels(arg0 context.Context, arg1 int, arg2, arg3 string) (<-chan []vega.MarginLevels, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveMarginLevels", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(<-chan []proto.MarginLevels)
+	ret0, _ := ret[0].(<-chan []vega.MarginLevels)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }

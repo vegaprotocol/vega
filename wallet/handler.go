@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/data-node/proto/wallet/v1"
+	walletpb "code.vegaprotocol.io/data-node/proto/vega/wallet/v1"
 	"code.vegaprotocol.io/data-node/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"

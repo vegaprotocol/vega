@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"net/http"
 
-	"code.vegaprotocol.io/data-node/proto/api"
+	api "code.vegaprotocol.io/data-node/proto/api"
 	typespb "code.vegaprotocol.io/data-node/proto/vega"
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"

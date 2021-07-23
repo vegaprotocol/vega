@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockFeeService) EXPECT() *MockFeeServiceMockRecorder {
 }
 
 // EstimateFee mocks base method
-func (m *MockFeeService) EstimateFee(arg0 context.Context, arg1 *proto.Order) (*proto.Fee, error) {
+func (m *MockFeeService) EstimateFee(arg0 context.Context, arg1 *vega.Order) (*vega.Fee, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EstimateFee", arg0, arg1)
-	ret0, _ := ret[0].(*proto.Fee)
+	ret0, _ := ret[0].(*vega.Fee)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

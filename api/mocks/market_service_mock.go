@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockMarketService) EXPECT() *MockMarketServiceMockRecorder {
 }
 
 // GetAll mocks base method
-func (m *MockMarketService) GetAll(arg0 context.Context) ([]*proto.Market, error) {
+func (m *MockMarketService) GetAll(arg0 context.Context) ([]*vega.Market, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", arg0)
-	ret0, _ := ret[0].([]*proto.Market)
+	ret0, _ := ret[0].([]*vega.Market)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockMarketServiceMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 }
 
 // GetByID mocks base method
-func (m *MockMarketService) GetByID(arg0 context.Context, arg1 string) (*proto.Market, error) {
+func (m *MockMarketService) GetByID(arg0 context.Context, arg1 string) (*vega.Market, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
-	ret0, _ := ret[0].(*proto.Market)
+	ret0, _ := ret[0].(*vega.Market)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -65,10 +65,10 @@ func (mr *MockMarketServiceMockRecorder) GetByID(arg0, arg1 interface{}) *gomock
 }
 
 // GetDepth mocks base method
-func (m *MockMarketService) GetDepth(arg0 context.Context, arg1 string, arg2 uint64) (*proto.MarketDepth, error) {
+func (m *MockMarketService) GetDepth(arg0 context.Context, arg1 string, arg2 uint64) (*vega.MarketDepth, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDepth", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*proto.MarketDepth)
+	ret0, _ := ret[0].(*vega.MarketDepth)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -80,10 +80,10 @@ func (mr *MockMarketServiceMockRecorder) GetDepth(arg0, arg1, arg2 interface{}) 
 }
 
 // GetMarketDataByID mocks base method
-func (m *MockMarketService) GetMarketDataByID(arg0 string) (proto.MarketData, error) {
+func (m *MockMarketService) GetMarketDataByID(arg0 string) (vega.MarketData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketDataByID", arg0)
-	ret0, _ := ret[0].(proto.MarketData)
+	ret0, _ := ret[0].(vega.MarketData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -123,10 +123,10 @@ func (mr *MockMarketServiceMockRecorder) GetMarketDepthSubscribersCount() *gomoc
 }
 
 // GetMarketsData mocks base method
-func (m *MockMarketService) GetMarketsData() []proto.MarketData {
+func (m *MockMarketService) GetMarketsData() []vega.MarketData {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketsData")
-	ret0, _ := ret[0].([]proto.MarketData)
+	ret0, _ := ret[0].([]vega.MarketData)
 	return ret0
 }
 
@@ -137,10 +137,10 @@ func (mr *MockMarketServiceMockRecorder) GetMarketsData() *gomock.Call {
 }
 
 // ObserveDepth mocks base method
-func (m *MockMarketService) ObserveDepth(arg0 context.Context, arg1 int, arg2 string) (<-chan *proto.MarketDepth, uint64) {
+func (m *MockMarketService) ObserveDepth(arg0 context.Context, arg1 int, arg2 string) (<-chan *vega.MarketDepth, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveDepth", arg0, arg1, arg2)
-	ret0, _ := ret[0].(<-chan *proto.MarketDepth)
+	ret0, _ := ret[0].(<-chan *vega.MarketDepth)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }
@@ -152,10 +152,10 @@ func (mr *MockMarketServiceMockRecorder) ObserveDepth(arg0, arg1, arg2 interface
 }
 
 // ObserveDepthUpdates mocks base method
-func (m *MockMarketService) ObserveDepthUpdates(arg0 context.Context, arg1 int, arg2 string) (<-chan *proto.MarketDepthUpdate, uint64) {
+func (m *MockMarketService) ObserveDepthUpdates(arg0 context.Context, arg1 int, arg2 string) (<-chan *vega.MarketDepthUpdate, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveDepthUpdates", arg0, arg1, arg2)
-	ret0, _ := ret[0].(<-chan *proto.MarketDepthUpdate)
+	ret0, _ := ret[0].(<-chan *vega.MarketDepthUpdate)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }
@@ -167,10 +167,10 @@ func (mr *MockMarketServiceMockRecorder) ObserveDepthUpdates(arg0, arg1, arg2 in
 }
 
 // ObserveMarketsData mocks base method
-func (m *MockMarketService) ObserveMarketsData(arg0 context.Context, arg1 int, arg2 string) (<-chan []proto.MarketData, uint64) {
+func (m *MockMarketService) ObserveMarketsData(arg0 context.Context, arg1 int, arg2 string) (<-chan []vega.MarketData, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveMarketsData", arg0, arg1, arg2)
-	ret0, _ := ret[0].(<-chan []proto.MarketData)
+	ret0, _ := ret[0].(<-chan []vega.MarketData)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }

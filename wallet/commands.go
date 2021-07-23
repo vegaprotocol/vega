@@ -2,7 +2,7 @@ package wallet
 
 import (
 	"code.vegaprotocol.io/data-node/commands"
-	walletpb "code.vegaprotocol.io/data-node/proto/wallet/v1"
+	walletpb "code.vegaprotocol.io/data-node/proto/vega/wallet/v1"
 )
 
 func CheckSubmitTransactionRequest(req walletpb.SubmitTransactionRequest) commands.Errors {

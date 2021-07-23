@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/data-node/proto/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockTransferResponseService) EXPECT() *MockTransferResponseServiceMockR
 }
 
 // ObserveTransferResponses mocks base method
-func (m *MockTransferResponseService) ObserveTransferResponses(arg0 context.Context, arg1 int) (<-chan []*proto.TransferResponse, uint64) {
+func (m *MockTransferResponseService) ObserveTransferResponses(arg0 context.Context, arg1 int) (<-chan []*vega.TransferResponse, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveTransferResponses", arg0, arg1)
-	ret0, _ := ret[0].(<-chan []*proto.TransferResponse)
+	ret0, _ := ret[0].(<-chan []*vega.TransferResponse)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }
