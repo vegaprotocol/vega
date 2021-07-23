@@ -79,6 +79,12 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`the fees configuration named "([^"]*)":$`, func(name string, table *gherkin.DataTable) error {
 		return steps.TheFeesConfiguration(marketConfig, name, table)
 	})
+	s.Step(`^the oracle spec for settlement price filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *gherkin.DataTable) error {
+		return steps.TheOracleSpec(marketConfig, name, "settlement price", pubKeys, table)
+	})
+	s.Step(`^the oracle spec for trading termination filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys string, name string, table *gherkin.DataTable) error {
+		return steps.TheOracleSpec(marketConfig, name, "trading termination", pubKeys, table)
+	})
 	s.Step(`the oracle spec for "([^"]*)" filtering data from "([^"]*)" named "([^"]*)":$`, func(pubKeys, specType string, name string, table *gherkin.DataTable) error {
 		return steps.TheOracleSpec(marketConfig, name, specType, pubKeys, table)
 	})
