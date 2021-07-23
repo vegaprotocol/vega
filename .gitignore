@@ -1,6 +1,6 @@
 # Vega specific entries
 cmd/*/*-dbg
-cmd/vega/vega*
+cmd/data-node/data-node*
 cmd/vegabenchmark/vegabenchmark*
 data/
 .DS_Store

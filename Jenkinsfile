@@ -42,12 +42,12 @@ pipeline {
                     environment {
                         GOOS         = 'linux'
                         GOARCH       = 'amd64'
-                        OUTPUT       = './cmd/vega/vega-linux-amd64'
+                        OUTPUT       = './cmd/data-node/data-node-linux-amd64'
                     }
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                                 sh '${OUTPUT} version'
@@ -59,12 +59,12 @@ pipeline {
                     environment {
                         GOOS         = 'darwin'
                         GOARCH       = 'amd64'
-                        OUTPUT       = './cmd/vega/vega-darwin-amd64'
+                        OUTPUT       = './cmd/data-node/data-node-darwin-amd64'
                     }
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                             }
@@ -75,12 +75,12 @@ pipeline {
                     environment {
                         GOOS         = 'windows'
                         GOARCH       = 'amd64'
-                        OUTPUT       = './cmd/vega/vega-windows-amd64'
+                        OUTPUT       = './cmd/data-node/data-node-windows-amd64'
                     }
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                             }
