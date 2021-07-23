@@ -1,14 +1,14 @@
 package steps
 
 import (
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/integration/steps/market"
 	types "code.vegaprotocol.io/vega/proto"
 	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
-func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *gherkin.DataTable) error {
+func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {
 	pubKeys := StrSlice(rawPubKeys, ",")
 
 	binding := &types.OracleSpecToFutureBinding{}
@@ -44,7 +44,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 	)
 }
 
-func parseOracleSpecTable(table *gherkin.DataTable) []RowWrapper {
+func parseOracleSpecTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"property",
 		"type",

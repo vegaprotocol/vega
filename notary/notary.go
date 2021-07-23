@@ -34,7 +34,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message) error
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
 }
 
 // Notary will aggregate all signatures of a node for
@@ -163,9 +163,9 @@ func (n *Notary) SendSignature(ctx context.Context, id string, sig []byte, kind 
 		Sig:  sig,
 		Kind: kind,
 	}
-	if err := n.cmd.Command(ctx, txn.NodeSignatureCommand, nsig); err != nil {
-		// do nothing for now, we'll need a retry mechanism for this and all command soon
-		n.log.Error("unable to send command for notary", logging.Error(err))
-	}
+
+	//  may need to figure out retries with this one.
+	n.cmd.Command(ctx, txn.NodeSignatureCommand, nsig, nil)
+
 	return nil
 }

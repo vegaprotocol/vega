@@ -5,10 +5,10 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func ThePriceMonitoringBoundsForTheMarketShouldBe(engine *execution.Engine, marketID string, table *gherkin.DataTable) error {
+func ThePriceMonitoringBoundsForTheMarketShouldBe(engine *execution.Engine, marketID string, table *godog.Table) error {
 	marketData, err := engine.GetMarketData(marketID)
 	if err != nil {
 		return errMarketDataNotFound(marketID, err)
@@ -40,7 +40,7 @@ func errMissingPriceMonitoringBounds(market string, expected types.PriceMonitori
 	return fmt.Errorf("missing price monitoring bounds for market %s  want %v", market, expected)
 }
 
-func parsePriceMonitoringBoundsTable(table *gherkin.DataTable) []RowWrapper {
+func parsePriceMonitoringBoundsTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"min bound",
 		"max bound",

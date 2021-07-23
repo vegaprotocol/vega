@@ -38,7 +38,7 @@ func TestMarketDataDeepClone(t *testing.T) {
 		TargetStake:           "18000",
 		SuppliedStake:         "19000",
 		PriceMonitoringBounds: []*types.PriceMonitoringBounds{
-			&types.PriceMonitoringBounds{
+			{
 				MinValidPrice: num.NewUint(20000),
 				MaxValidPrice: num.NewUint(21000),
 				Trigger: &types.PriceMonitoringTrigger{
@@ -51,7 +51,7 @@ func TestMarketDataDeepClone(t *testing.T) {
 		},
 		MarketValueProxy: "MVP",
 		LiquidityProviderFeeShare: []*types.LiquidityProviderFeeShare{
-			&types.LiquidityProviderFeeShare{
+			{
 				Party:                 "Party",
 				EquityLikeShare:       "25000",
 				AverageEntryValuation: "26000",

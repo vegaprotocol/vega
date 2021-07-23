@@ -3,7 +3,7 @@ package steps
 import (
 	"fmt"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
@@ -11,7 +11,7 @@ import (
 
 func PartiesShouldHaveTheFollowingAccountBalances(
 	broker *stubs.BrokerStub,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, r := range parseAccountBalancesTable(table) {
 		row := accountBalancesRow{row: r}
@@ -91,7 +91,7 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 	)
 }
 
-func parseAccountBalancesTable(table *gherkin.DataTable) []RowWrapper {
+func parseAccountBalancesTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"asset",

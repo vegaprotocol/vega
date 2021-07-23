@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
@@ -24,7 +24,7 @@ func (o OrderAmendmentError) Error() string {
 func PartiesAmendTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, r := range parseAmendOrderTable(table) {
 		row := amendOrderRow{row: r}
@@ -62,7 +62,7 @@ type amendOrderRow struct {
 	row RowWrapper
 }
 
-func parseAmendOrderTable(table *gherkin.DataTable) []RowWrapper {
+func parseAmendOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"reference",

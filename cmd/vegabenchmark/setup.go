@@ -41,7 +41,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	commander := mocks.NewMockCommander(ctrl)
 	commander.EXPECT().
-		Command(gomock.Any(), gomock.Any(), gomock.Any()).
+		Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes().
 		Return(nil)
 

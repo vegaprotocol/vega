@@ -6,10 +6,10 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	types "code.vegaprotocol.io/vega/proto"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine *execution.Engine, marketID string, table *gherkin.DataTable) error {
+func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine *execution.Engine, marketID string, table *godog.Table) error {
 	marketData, err := engine.GetMarketData(marketID)
 	if err != nil {
 		return errMarketDataNotFound(marketID, err)
@@ -48,7 +48,7 @@ func errMissingLPFeeShare(market string, expected types.LiquidityProviderFeeShar
 	return fmt.Errorf("missing fee share for market %s got %#v, want %#v", market, expected, got)
 }
 
-func parseLiquidityFeeSharesTable(table *gherkin.DataTable) []RowWrapper {
+func parseLiquidityFeeSharesTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"equity like share",

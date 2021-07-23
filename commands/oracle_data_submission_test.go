@@ -35,7 +35,6 @@ func testOracleDataSubmissionWithPayloadSucceeds(t *testing.T) {
 	assert.NotContains(t, err.Get("oracle_data_submission.payload"), commands.ErrIsRequired)
 }
 
-
 func testOracleDataSubmissionWithoutSourceFails(t *testing.T) {
 	err := checkOracleDataSubmission(&commandspb.OracleDataSubmission{})
 	assert.Contains(t, err.Get("oracle_data_submission.source"), commands.ErrIsRequired)

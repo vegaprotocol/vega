@@ -22,4 +22,3 @@ func RemoteAddr(r *http.Request) (string, error) {
 
 	return ip, nil
 }
-

@@ -12,7 +12,7 @@ import (
 
 var (
 	//go:embed defaults/margin-calculator/*.json
-	defaultMarginCalculators          embed.FS
+	defaultMarginCalculators         embed.FS
 	defaultMarginCalculatorFileNames = []string{
 		"defaults/margin-calculator/default-margin-calculator.json",
 		"defaults/margin-calculator/default-overkill-margin-calculator.json",

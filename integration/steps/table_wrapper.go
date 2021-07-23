@@ -12,13 +12,14 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
+	"github.com/cucumber/messages-go/v10"
 )
 
 // StrictParseFirstRow parses and verifies, table integrity and returns only the
 // first row. This is suitable of table that act more as object than actual
 // table.
-func StrictParseFirstRow(table *gherkin.DataTable, required, optional []string) RowWrapper {
+func StrictParseFirstRow(table *godog.Table, required, optional []string) RowWrapper {
 	rows := StrictParseTable(table, required, optional)
 
 	if len(rows) > 1 {
@@ -29,7 +30,7 @@ func StrictParseFirstRow(table *gherkin.DataTable, required, optional []string) 
 }
 
 // StrictParseTable parses and verifies the table integrity.
-func StrictParseTable(dt *gherkin.DataTable, required, optional []string) []RowWrapper {
+func StrictParseTable(dt *godog.Table, required, optional []string) []RowWrapper {
 	tableLen := len(dt.Rows)
 	if tableLen < 1 {
 		panic("A table is required.")
@@ -61,11 +62,11 @@ func StrictParseTable(dt *gherkin.DataTable, required, optional []string) []RowW
 
 // ParseTable parses the table without verifying its integrity.
 // Prefer the use of StrictParseTable().
-func ParseTable(dt *gherkin.DataTable) []RowWrapper {
+func ParseTable(dt *godog.Table) []RowWrapper {
 	return StrictParseTable(dt, []string{}, []string{})
 }
 
-func verifyTableIntegrity(required, optional []string, header *gherkin.TableRow) error {
+func verifyTableIntegrity(required, optional []string, header *messages.PickleStepArgument_PickleTable_PickleTableRow) error {
 	cols, err := newColumns(required, optional)
 	if err != nil {
 		return err

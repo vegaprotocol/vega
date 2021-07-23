@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
 func TheFollowingTradesShouldBeExecuted(
 	broker *stubs.BrokerStub,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	var err error
 	for _, row := range parseExecutedTradesTable(table) {
@@ -36,7 +36,7 @@ func TheFollowingTradesShouldBeExecuted(
 	return err
 }
 
-func parseExecutedTradesTable(table *gherkin.DataTable) []RowWrapper {
+func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"buyer",
 		"seller",

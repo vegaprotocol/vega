@@ -99,9 +99,7 @@ func newBuiltInChainEvent() *commandspb.ChainEvent {
 		TxId:  "my ID",
 		Nonce: RandomPositiveU64(),
 		Event: &commandspb.ChainEvent_Builtin{
-			Builtin: &proto.BuiltinAssetEvent{
-
-			},
+			Builtin: &proto.BuiltinAssetEvent{},
 		},
 	}
 }

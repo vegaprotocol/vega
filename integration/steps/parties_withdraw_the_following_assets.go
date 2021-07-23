@@ -6,12 +6,12 @@ import (
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
 func PartiesWithdrawTheFollowingAssets(
 	collateral *collateral.Engine,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, r := range parseWithdrawAssetTable(table) {
 		row := withdrawAssetRow{row: r}
@@ -35,7 +35,7 @@ func errCannotLockFundsForWithdrawal(row withdrawAssetRow, err error) error {
 	)
 }
 
-func parseWithdrawAssetTable(table *gherkin.DataTable) []RowWrapper {
+func parseWithdrawAssetTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"asset",

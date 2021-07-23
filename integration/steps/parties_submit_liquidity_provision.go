@@ -9,10 +9,10 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func PartiesSubmitLiquidityProvision(exec *execution.Engine, table *gherkin.DataTable) error {
+func PartiesSubmitLiquidityProvision(exec *execution.Engine, table *godog.Table) error {
 	lps := map[string]*types.LiquidityProvisionSubmission{}
 	parties := map[string]string{}
 	keys := []string{}
@@ -79,7 +79,7 @@ func errSubmittingLiquidityProvision(lp *types.LiquidityProvisionSubmission, par
 	return fmt.Errorf("failed to submit [%v] for party %s and id %s: %v", lp, party, id, err)
 }
 
-func parseSubmitLiquidityProvisionTable(table *gherkin.DataTable) []RowWrapper {
+func parseSubmitLiquidityProvisionTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
 		"party",

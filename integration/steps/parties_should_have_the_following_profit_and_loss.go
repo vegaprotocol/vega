@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/types"
@@ -13,7 +13,7 @@ import (
 
 func PartiesHaveTheFollowingProfitAndLoss(
 	positionService *plugins.Positions,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, r := range parseProfitAndLossTable(table) {
 		row := pnlRow{row: r}
@@ -82,7 +82,7 @@ func errCannotGetPositionForParty(party string, err error) error {
 	return fmt.Errorf("error getting party position, party(%v), err(%v)", party, err)
 }
 
-func parseProfitAndLossTable(table *gherkin.DataTable) []RowWrapper {
+func parseProfitAndLossTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"volume",
