@@ -661,11 +661,10 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		Sig:  sig,
 		Kind: commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
-	if err := app.cmd.Command(ctx, txn.NodeSignatureCommand, payload); err != nil {
-		// do nothing for now, we'll need a retry mechanism for this and all command soon
-		app.log.Error("unable to send command for notary",
-			logging.Error(err))
-	}
+
+	// no callbacks needed there, core should retry if nothging
+	// is received back at some point
+	app.cmd.Command(ctx, txn.NodeSignatureCommand, payload, nil)
 }
 
 func (app *App) enactMarket(ctx context.Context, prop *types.Proposal) {
