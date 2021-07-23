@@ -634,66 +634,7 @@ Scenario: Testing fees to confirm fees are collected first and then margin
       | trader3     | ETH   | ETH/DEC21 | 339    | 9999667 |
       | trader4     | ETH   | ETH/DEC21 | 205    | 0       |
 
-Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account, then the trade doesn't execute. - To Be deleted once confiscation convo is concluded.
-    
-    Given the fees configuration named "fees-config-1":
-      | maker fee | infrastructure fee |
-      | 0.005     | 0.002              |
-    And the price monitoring updated every "1000" seconds named "price-monitoring":
-      | horizon | probability | auction extension |
-      | 1       | 0.99        | 3                 |
-    
-    When the simple risk model named "simple-risk-model-1":
-      | long | short | max move up | min move down | probability of trading |
-      | 0.2  | 0.1   | 100          | -100         | 0.1                    |
-
-    And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          | maturity date        |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2019-12-31T23:59:59Z |
-
-    # setup accounts
-    Given the traders deposit on asset's general account the following amount:
-      | trader   | asset | amount     |
-      | aux1     | ETH   | 100000000  |
-      | aux2     | ETH   | 100000000  |
-      | trader3  | ETH   | 10000000   |
-      | trader4  | ETH   | 188        |
-
-    Then the traders place the following orders:
-      | trader  | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1    | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
-
-    Then the opening auction period ends for market "ETH/DEC21"
-    And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | 
-      | 1000       | TRADING_MODE_CONTINUOUS | 
- 
-    When the traders place the following orders:
-      | trader   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
-      | trader3  | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
-      | trader4  | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
-
-    Then debug transfers
-
-    And the following transfers should happen:
-      | from    | to       | from account             | to account                       | market id | amount | asset |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
-      | trader4 |          | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 3      | ETH   |
-      | market  | trader3  | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
-
-    Then the traders should have the following margin levels:
-      | trader  | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 179         | 196    | 214     | 250     |
-
-    Then the traders should have the following account balances:
-      | trader      | asset | market id | margin | general |
-      | trader3     | ETH   | ETH/DEC21 | 339    | 9999667 |
-      | trader4     | ETH   | ETH/DEC21 | 179    | 0       |
-
-Scenario: Testing fees in continuous trading when insufficient balance in their general and margin account, then the trade doesn't execute ( with LP)
+Scenario: Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade doesn't execute
 
  Given the following network parameters are set:
       | name                                                | value |
@@ -721,7 +662,7 @@ Scenario: Testing fees in continuous trading when insufficient balance in their 
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
       | trader3  | ETH   | 10000000   |
-      | trader4  | ETH   | 189        |
+      | trader4  | ETH   | 190        |
 
     Then the traders place the following orders:
       | trader  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -767,8 +708,7 @@ Scenario: Testing fees in continuous trading when insufficient balance in their 
       | trader4 |          | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 3      | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
       | market  | trader3  | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
-    # | market  | aux1     | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  2     | ETH   |
-
+    
     Then the traders should have the following margin levels:
       | trader  | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 179         | 196    | 214     | 250     |
@@ -776,7 +716,7 @@ Scenario: Testing fees in continuous trading when insufficient balance in their 
     Then the traders should have the following account balances:
       | trader      | asset | market id | margin | general |
       | trader3     | ETH   | ETH/DEC21 | 240    | 9999766 |
-      | trader4     | ETH   | ETH/DEC21 | 178    | 0       |
+      | trader4     | ETH   | ETH/DEC21 | 179    | 0       |
 
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "2" for the market "ETH/DEC21"
@@ -1455,12 +1395,7 @@ Scenario: Testing fees in continuous trading during position resolution
 # During auction trading, when insufficient balance in their general (+ margin) account, then the trade still goes ahead, (fees gets executed in this order - Maker(0), IP, LP) - Its getting confiscated
 # Fees calculations during Position Resolution when the fees could be paid.
 
-# Fees calculations during Position Resolution on pro rated basis
-# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid.
-
-# Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance.
+# Last 3 API points ? - check and raise issues in ticket on Core Board - Start working 
 # Changing parameters (via governance votes) does change the fees being collected appropriately even if the market is already running - Use
 	# MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
 	# MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee" 
-# Last 3 API points ? - check and raise issues in ticket on Core Board
-
