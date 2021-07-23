@@ -14,14 +14,14 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 )
 
-// SocketReceiver receives events from a remote broker.
+// SocketServer receives events from a remote broker.
 // This is used by the data node to receive events from a non-validating core node.
-type SocketReceiver struct {
+type SocketServer struct {
 	log  *logging.Logger
 	sock protocol.Socket
 }
 
-func NewSocketReceiver(log *logging.Logger, config *SocketConfig) (*SocketReceiver, error) {
+func NewSocketReceiver(log *logging.Logger, config *SocketConfig) (*SocketServer, error) {
 	sock, err := pull.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
@@ -33,14 +33,14 @@ func NewSocketReceiver(log *logging.Logger, config *SocketConfig) (*SocketReceiv
 		return nil, fmt.Errorf("failed to listen on %v: %w", addr, err)
 	}
 
-	return &SocketReceiver{
+	return &SocketServer{
 		log:  log,
 		sock: sock,
 	}, nil
 
 }
 
-func (s SocketReceiver) Receive(ctx context.Context, ch chan events.Event) {
+func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 	var err error
 	var msg []byte
 
@@ -61,6 +61,6 @@ func (s SocketReceiver) Receive(ctx context.Context, ch chan events.Event) {
 	}
 }
 
-func (s SocketReceiver) Close() error {
+func (s SocketServer) Close() error {
 	return s.sock.Close()
 }
