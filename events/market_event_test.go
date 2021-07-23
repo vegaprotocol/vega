@@ -60,13 +60,13 @@ func TestMarketDeepClone(t *testing.T) {
 							UpdatedAt: 2000,
 							PubKeys:   []string{"PubKey "},
 							Filters: []*v1.Filter{
-								&v1.Filter{
+								{
 									Key: &v1.PropertyKey{
 										Name: "Name",
 										Type: v1.PropertyKey_TYPE_DECIMAL,
 									},
 									Conditions: []*v1.Condition{
-										&v1.Condition{
+										{
 											Operator: v1.Condition_OPERATOR_EQUALS,
 											Value:    "Value",
 										},
@@ -143,7 +143,7 @@ func TestMarketDeepClone(t *testing.T) {
 		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
 			Parameters: &proto.PriceMonitoringParameters{
 				Triggers: []*proto.PriceMonitoringTrigger{
-					&proto.PriceMonitoringTrigger{
+					{
 						Horizon:          1000,
 						Probability:      123.45,
 						AuctionExtension: 2000,

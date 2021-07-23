@@ -20,13 +20,13 @@ func TestOracleSpecDeepClone(t *testing.T) {
 			"PubKey1", "PubKey2",
 		},
 		Filters: []*oraclespb.Filter{
-			&oraclespb.Filter{
+			{
 				Key: &oraclespb.PropertyKey{
 					Name: "Name",
 					Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 				},
 				Conditions: []*oraclespb.Condition{
-					&oraclespb.Condition{
+					{
 						Operator: oraclespb.Condition_OPERATOR_EQUALS,
 						Value:    "Value",
 					},

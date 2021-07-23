@@ -104,7 +104,7 @@ func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
 		},
 		Filters: []*oraclespb.Filter{
 			{
-				Key:        &oraclespb.PropertyKey{
+				Key: &oraclespb.PropertyKey{
 					Name: "",
 					Type: oraclespb.PropertyKey_TYPE_INTEGER,
 				},

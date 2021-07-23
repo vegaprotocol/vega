@@ -15,9 +15,9 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	ctx := context.Background()
 
 	tr := []*types.TransferResponse{
-		&types.TransferResponse{
+		{
 			Transfers: []*types.LedgerEntry{
-				&types.LedgerEntry{
+				{
 					FromAccount: "FromAccount",
 					ToAccount:   "ToAccount",
 					Amount:      num.NewUint(1000),
@@ -27,7 +27,7 @@ func TestTransferResponseDeepClone(t *testing.T) {
 				},
 			},
 			Balances: []*types.TransferBalance{
-				&types.TransferBalance{
+				{
 					Account: &types.Account{
 						ID:       "Id",
 						Owner:    "Owner",

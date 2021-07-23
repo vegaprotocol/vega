@@ -62,4 +62,3 @@ func (d configDir) Remove() {
 		panic(err)
 	}
 }
-
