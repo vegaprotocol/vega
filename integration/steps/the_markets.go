@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
@@ -18,7 +18,7 @@ func TheMarkets(
 	config *market.Config,
 	executionEngine *execution.Engine,
 	collateralEngine *collateral.Engine,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) ([]types.Market, error) {
 	var markets []types.Market
 	for _, row := range parseMarketsTable(table) {
@@ -190,7 +190,7 @@ func openingAuction(row marketRow) *types.AuctionDuration {
 	return auction
 }
 
-func parseMarketsTable(table *gherkin.DataTable) []RowWrapper {
+func parseMarketsTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
 		"quote name",

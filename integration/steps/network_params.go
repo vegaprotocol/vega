@@ -4,12 +4,12 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/netparams"
 )
 
-func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *gherkin.DataTable) error {
+func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *godog.Table) error {
 	ctx := context.Background()
 	for _, row := range parseNetworkParametersTable(table) {
 		name := row.MustStr("name")
@@ -51,7 +51,7 @@ func TheFollowingNetworkParametersAreSet(netParams *netparams.Store, table *gher
 	return nil
 }
 
-func parseNetworkParametersTable(table *gherkin.DataTable) []RowWrapper {
+func parseNetworkParametersTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"name",
 		"value",

@@ -7,13 +7,13 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/types"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
 func PartiesCancelTheFollowingOrders(
 	broker *stubs.BrokerStub,
 	exec *execution.Engine,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, r := range parseCancelOrderTable(table) {
 		row := cancelOrderRow{row: r}
@@ -45,7 +45,7 @@ type cancelOrderRow struct {
 	row RowWrapper
 }
 
-func parseCancelOrderTable(table *gherkin.DataTable) []RowWrapper {
+func parseCancelOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"reference",

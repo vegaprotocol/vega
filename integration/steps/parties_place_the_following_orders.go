@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
@@ -14,7 +14,7 @@ import (
 
 func PartiesPlaceTheFollowingOrders(
 	exec *execution.Engine,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, r := range parseSubmitOrderTable(table) {
 		row := newSubmitOrderRow(r)
@@ -54,7 +54,7 @@ func PartiesPlaceTheFollowingOrders(
 	return nil
 }
 
-func parseSubmitOrderTable(table *gherkin.DataTable) []RowWrapper {
+func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"market id",

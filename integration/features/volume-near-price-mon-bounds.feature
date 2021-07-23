@@ -207,6 +207,6 @@ Feature: Test margin for lp near price monitoring boundaries
       | buy  | 899      | 0      |
 
 
-    And the traders should have the following margin levels:
+    And the parties should have the following margin levels:
       | party | market id  | maintenance | search   | initial  | release   |
       | lp1    | ETH2/MAR22 | 80237809    | 88261589 | 96285370 | 112332932 |

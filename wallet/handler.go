@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrPubKeyIsTainted      = errors.New("public key is tainted")
+	ErrPubKeyIsTainted = errors.New("public key is tainted")
 )
 
 // Auth ...

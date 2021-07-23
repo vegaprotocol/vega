@@ -5,10 +5,10 @@ import (
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func TheFollowingOrdersShouldBeStopped(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheFollowingOrdersShouldBeStopped(broker *stubs.BrokerStub, table *godog.Table) error {
 	var orderNotStopped []string
 	count := len(table.Rows) - 1
 	for _, row := range parseStoppedOrdersTable(table) {
@@ -40,7 +40,7 @@ func errOrderNotStopped(orderNotRejected []string) error {
 	return fmt.Errorf("orders with reference %v were not stopped", orderNotRejected)
 }
 
-func parseStoppedOrdersTable(table *gherkin.DataTable) []RowWrapper {
+func parseStoppedOrdersTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"market id",

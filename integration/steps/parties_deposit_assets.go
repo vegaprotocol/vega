@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/integration/stubs"
@@ -14,7 +14,7 @@ import (
 func PartiesDepositTheFollowingAssets(
 	collateralEngine *collateral.Engine,
 	broker *stubs.BrokerStub,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	ctx := context.Background()
 
@@ -46,7 +46,7 @@ func errNoGeneralAccountForParty(party depositAssetRow, err error) error {
 	)
 }
 
-func parseDepositAssetTable(table *gherkin.DataTable) []RowWrapper {
+func parseDepositAssetTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"asset",

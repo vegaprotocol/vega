@@ -6,10 +6,10 @@ import (
 	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/vega/proto"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func TheOrderBookOfMarketShouldHaveTheFollowingVolumes(broker *stubs.BrokerStub, marketID string, table *gherkin.DataTable, ) error {
+func TheOrderBookOfMarketShouldHaveTheFollowingVolumes(broker *stubs.BrokerStub, marketID string, table *godog.Table) error {
 	for _, row := range parseOrderBookTable(table) {
 		volume := row.MustU64("volume")
 		price := row.MustU64("price")
@@ -31,7 +31,7 @@ func TheOrderBookOfMarketShouldHaveTheFollowingVolumes(broker *stubs.BrokerStub,
 	return nil
 }
 
-func parseOrderBookTable(table *gherkin.DataTable) []RowWrapper {
+func parseOrderBookTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"volume",
 		"price",

@@ -6,10 +6,10 @@ import (
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func PartiesPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *gherkin.DataTable) error {
+func PartiesPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *godog.Table) error {
 	for _, r := range parseSubmitPeggedOrderTable(table) {
 		row := submitPeggedOrderRow{row: r}
 
@@ -33,7 +33,7 @@ func PartiesPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *gherkin
 	return nil
 }
 
-func parseSubmitPeggedOrderTable(table *gherkin.DataTable) []RowWrapper {
+func parseSubmitPeggedOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"market id",
