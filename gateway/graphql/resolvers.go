@@ -1594,7 +1594,6 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 type myMutationResolver VegaResolverRoot
 
 func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
-
 	pty := protoapiv1.SubmitTransactionRequest_TYPE_ASYNC
 	if ty != nil {
 		switch *ty {
@@ -1605,21 +1604,24 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 		}
 	}
 
-	// decodedData, err := base64.StdEncoding.DecodeString(data)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// tx := &commandspb.Transaction{
-	// 	InputData: decodedData,
-	// }
+	decodedData, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return nil, err
+	}
+	decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
+	if err != nil {
+		return nil, err
+	}
 
 	req := &protoapiv1.SubmitTransactionRequest{
-		// Tx: TODO - Finish transaction,
+		Tx: &commandspb.Transaction{
+			InputData: decodedData,
+			Signature: &commandspb.Signature{
+				Value:   string(decodedSig),
+				Algo:    sig.Algo,
+				Version: uint32(sig.Version),
+			},
+		},
 		Type: pty,
 	}
 	res, err := r.tradingProxyClient.SubmitTransaction(ctx, req)

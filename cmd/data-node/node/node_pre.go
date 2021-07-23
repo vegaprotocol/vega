@@ -207,7 +207,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.coreTradingServiceClient = vegaprotoapi.NewTradingServiceClient(conn)
+	l.vegaTradingServiceClient = vegaprotoapi.NewTradingServiceClient(conn)
 
 	// start services
 	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {

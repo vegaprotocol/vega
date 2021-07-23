@@ -82,7 +82,7 @@ type NodeCommand struct {
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
 
-	coreTradingServiceClient vegaprotoapi.TradingServiceClient
+	vegaTradingServiceClient vegaprotoapi.TradingServiceClient
 
 	broker *broker.Broker
 
@@ -170,7 +170,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.Log,
 		l.conf.API,
 		l.stats,
-		l.coreTradingServiceClient,
+		l.vegaTradingServiceClient,
 		l.timeService,
 		l.marketService,
 		l.partyService,

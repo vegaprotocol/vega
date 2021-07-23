@@ -42,7 +42,7 @@ type GRPCServer struct {
 	log                      *logging.Logger
 	srv                      *grpc.Server
 	stats                    *stats.Stats
-	coreTradingServiceClient TradingServiceClient
+	vegaTradingServiceClient TradingServiceClient
 
 	accountsService         *accounts.Svc
 	candleService           *candles.Svc
@@ -109,7 +109,7 @@ func NewGRPCServer(
 		log:                      log,
 		Config:                   config,
 		stats:                    stats,
-		coreTradingServiceClient: tradingServiceClient,
+		vegaTradingServiceClient: tradingServiceClient,
 		orderService:             orderService,
 		liquidityService:         liquidityService,
 		tradeService:             tradeService,
@@ -218,7 +218,7 @@ func (g *GRPCServer) Start() {
 	tradingProxySvc := &tradingProxyService{
 		log:                  g.log,
 		conf:                 g.Config,
-		tradingServiceClient: g.coreTradingServiceClient,
+		tradingServiceClient: g.vegaTradingServiceClient,
 	}
 	g.tradingProxySvc = tradingProxySvc
 	protoapiv1.RegisterTradingProxyServiceServer(g.srv, tradingProxySvc)

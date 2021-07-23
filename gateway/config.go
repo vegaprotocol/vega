@@ -49,21 +49,21 @@ func NewDefaultConfig() Config {
 		GraphQL: GraphqlServiceConfig{
 			ServerConfig: ServerConfig{
 				IP:   "0.0.0.0",
-				Port: 3004,
+				Port: 3008,
 			},
 			Enabled: true,
 		},
 		REST: RESTGatewayServiceConfig{
 			ServerConfig: ServerConfig{
 				IP:   "0.0.0.0",
-				Port: 3003,
+				Port: 3009,
 			},
 			Enabled:    true,
 			APMEnabled: true,
 		},
 		Node: ServerConfig{
 			IP:   "0.0.0.0",
-			Port: 3002,
+			Port: 3007,
 		},
 		SubscriptionRetries:      3,
 		GraphQLPlaygroundEnabled: true,

@@ -31,10 +31,10 @@ func NewDefaultConfig() Config {
 		Timeout: encoding.Duration{Duration: 5000 * time.Millisecond},
 
 		IP:               "0.0.0.0",
-		Port:             3002,
+		Port:             3007,
 		StreamRetries:    3,
 		DisableTxCommit:  true,
 		CoreNodeIP:       "127.0.0.1",
-		CoreNodeGRPCPort: 3004,
+		CoreNodeGRPCPort: 3002,
 	}
 }
