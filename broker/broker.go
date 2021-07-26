@@ -10,6 +10,8 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 )
 
+const defaultEventChannelBufferSize = 256
+
 // Subscriber interface allows pushing values to subscribers, can be set to
 // a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/subscriber_mock.go -package mocks code.vegaprotocol.io/data-node/broker Subscriber
@@ -56,7 +58,7 @@ type Broker struct {
 
 	seqGen *gen
 
-	socketReceiver *SocketReceiver
+	socketServer *SocketServer
 }
 
 // New creates a new base broker
@@ -64,19 +66,19 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	socketReceiver, err := NewSocketReceiver(log, &config.SocketConfig)
+	socketServer, err := NewSocketServer(log, &config.SocketConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
 	}
 
 	b := &Broker{
-		ctx:            ctx,
-		tSubs:          map[events.Type]map[int]*subscription{},
-		subs:           map[int]subscription{},
-		keys:           []int{},
-		eChans:         map[events.Type]chan []events.Event{},
-		seqGen:         newGen(),
-		socketReceiver: socketReceiver,
+		ctx:          ctx,
+		tSubs:        map[events.Type]map[int]*subscription{},
+		subs:         map[int]subscription{},
+		keys:         []int{},
+		eChans:       map[events.Type]chan []events.Event{},
+		seqGen:       newGen(),
+		socketServer: socketServer,
 	}
 
 	go b.receiveSocket()
@@ -328,8 +330,8 @@ func (b *Broker) rmSubs(keys ...int) {
 }
 
 func (b *Broker) receiveSocket() {
-	eventCh := make(chan events.Event)
-	go b.socketReceiver.Receive(b.ctx, eventCh)
+	eventCh := make(chan events.Event, defaultEventChannelBufferSize)
+	go b.socketServer.Receive(b.ctx, eventCh)
 	for e := range eventCh {
 		if e != nil {
 			b.Send(e)
