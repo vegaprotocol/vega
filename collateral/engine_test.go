@@ -2212,7 +2212,7 @@ func TestRewardDepositBadAssetOK(t *testing.T) {
 
 	// Now try a different asset
 	_, err := eng.Engine.Deposit(ctx, rewardsId, testAsset2, num.NewUint(333))
-	assert.NoError(t, err)
+	assert.Error(t, err)
 }
 
 func TestWithdrawalOK(t *testing.T) {
