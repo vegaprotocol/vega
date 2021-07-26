@@ -23,6 +23,7 @@ import (
 const (
 	testMarketID    = "7CPSHJB35AIQBTNMIE6NLFPZGHOYRQ3D"
 	testMarketAsset = "BTC"
+	rewardsId       = "0x00000000000000000000000000000000"
 )
 
 type testEngine struct {
@@ -2161,6 +2162,57 @@ func TestClearMarketNoMargin(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, len(responses), 0)
+}
+
+func TestRewardDepositOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID)
+	defer eng.Finish()
+	ctx := context.Background()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Attempt to deposit collateral that should go into the global asset reward account
+	_, err := eng.Engine.Deposit(ctx, rewardsId, testMarketAsset, num.NewUint(100))
+	assert.NoError(t, err)
+
+	rewardAcct, err := eng.Engine.GetGlobalRewardAccount(testMarketAsset)
+	assert.Equal(t, num.NewUint(100), rewardAcct.Balance)
+
+	// Add 400 more to the reward account
+	_, err = eng.Engine.Deposit(ctx, rewardsId, testMarketAsset, num.NewUint(400))
+	assert.NoError(t, err)
+
+	rewardAcct, err = eng.Engine.GetGlobalRewardAccount(testMarketAsset)
+	assert.Equal(t, num.NewUint(500), rewardAcct.Balance)
+}
+
+func TestNonRewardDepositOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID)
+	defer eng.Finish()
+	ctx := context.Background()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Attempt to deposit collateral that should go into the global asset reward account
+	_, err := eng.Engine.Deposit(ctx, "OtherParty", testMarketAsset, num.NewUint(100))
+	assert.NoError(t, err)
+
+	rewardAcct, err := eng.Engine.GetGlobalRewardAccount(testMarketAsset)
+	assert.Nil(t, rewardAcct)
+	assert.Error(t, err)
+}
+
+func TestRewardDepositBadAssetOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID)
+	defer eng.Finish()
+	ctx := context.Background()
+	testAsset2 := "VEGA"
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Now try a different asset
+	_, err := eng.Engine.Deposit(ctx, rewardsId, testAsset2, num.NewUint(333))
+	assert.NoError(t, err)
 }
 
 func TestWithdrawalOK(t *testing.T) {

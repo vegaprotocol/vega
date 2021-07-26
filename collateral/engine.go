@@ -20,8 +20,9 @@ const (
 	initialAccountSize = 4096
 	// use weird character here, maybe non-displayable ones in the future
 	// if needed
-	systemOwner = "*"
-	noMarket    = "!"
+	systemOwner   = "*"
+	noMarket      = "!"
+	rewardPartyID = "0x00000000000000000000000000000000"
 )
 
 var (
@@ -1290,7 +1291,7 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 }
 
 // getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
-func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
+func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
 	var (
 		asset = p.Amount.Asset
 		err   error
@@ -1432,8 +1433,23 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 		req.FromAccount = []*types.Account{
 			eacc,
 		}
-		req.ToAccount = []*types.Account{
-			mEvt.general,
+
+		// Look for the special case where we are topping up the reward account
+		if p.Owner == rewardPartyID {
+			rewardAcctId, err := e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
+			if err != nil {
+				return nil, errors.New("unable to get the global reward account")
+			}
+			rewardAcct, err := e.GetAccountByID(rewardAcctId)
+
+			req.ToAccount = []*types.Account{
+				rewardAcct,
+			}
+
+		} else {
+			req.ToAccount = []*types.Account{
+				mEvt.general,
+			}
 		}
 		req.Amount = p.Amount.Amount.Clone()
 		req.MinAmount = p.Amount.Amount.Clone()
@@ -1443,6 +1459,20 @@ func (e *Engine) getTransferRequest(_ context.Context, p *types.Transfer, settle
 		}
 		req.ToAccount = []*types.Account{
 			eacc,
+		}
+		req.Amount = p.Amount.Amount.Clone()
+		req.MinAmount = p.Amount.Amount.Clone()
+
+	case types.TransferTypeRewardPayout:
+		rewardAcct, err := e.GetGlobalRewardAccount(asset)
+		if err != nil {
+			return nil, errors.New("unable to get the global reward account")
+		}
+		req.FromAccount = []*types.Account{
+			rewardAcct,
+		}
+		req.ToAccount = []*types.Account{
+			mEvt.general,
 		}
 		req.Amount = p.Amount.Amount.Clone()
 		req.MinAmount = p.Amount.Amount.Clone()
@@ -2191,10 +2221,17 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
 	}
-	// this will get or create the account basically
-	accID, err := e.CreatePartyGeneralAccount(ctx, partyID, asset)
-	if err != nil {
-		return nil, err
+	var accID string
+	var err error
+	// Look for the special reward party
+	if partyID == rewardPartyID {
+		accID, err = e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
+	} else {
+		// this will get or create the account basically
+		accID, err = e.CreatePartyGeneralAccount(ctx, partyID, asset)
+		if err != nil {
+			return nil, err
+		}
 	}
 	acc, _ := e.GetAccountByID(accID)
 	transf := types.Transfer{
@@ -2206,6 +2243,7 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 		Type:      types.TransferTypeDeposit,
 		MinAmount: amount.Clone(),
 	}
+
 	// @TODO -> again, is this safe?
 	mEvt := marginUpdate{
 		general: acc,
@@ -2332,7 +2370,7 @@ func (e *Engine) GetAssetInsurancePoolAccount(asset string) *types.Account {
 	return globalInsuranceAcc
 }
 
-func (e *Engine) CreateAssetRewardPoolAccount(ctx context.Context, asset string) (string, error) {
+func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error) {
 	if !e.AssetExists(asset) {
 		return "", ErrInvalidAssetID
 	}
