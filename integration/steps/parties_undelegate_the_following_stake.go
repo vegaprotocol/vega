@@ -1,7 +1,7 @@
 package steps
 
 import (
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
@@ -9,7 +9,7 @@ import (
 
 func PartiesUndelegateTheFollowingStake(
 	exec *execution.Engine,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, r := range parseUndelegationTable(table) {
 		row := newUndelegationRow(r)
@@ -29,7 +29,7 @@ func PartiesUndelegateTheFollowingStake(
 	return nil
 }
 
-func parseUndelegationTable(table *gherkin.DataTable) []RowWrapper {
+func parseUndelegationTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"node id",
 		"amount",

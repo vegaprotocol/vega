@@ -1,7 +1,7 @@
 package steps
 
 import (
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
@@ -9,7 +9,7 @@ import (
 
 func PartiesDelegateTheFollowingStake(
 	exec *execution.Engine,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	for _, r := range parseDelegationTable(table) {
 		row := newDelegationRow(r)
@@ -28,7 +28,7 @@ func PartiesDelegateTheFollowingStake(
 	return nil
 }
 
-func parseDelegationTable(table *gherkin.DataTable) []RowWrapper {
+func parseDelegationTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"node id",
 		"amount",
