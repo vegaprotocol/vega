@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
@@ -14,6 +15,11 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 )
 
+const (
+	defaultMaxRetries    = 10
+	defaultRetryInternal = 50 * time.Millisecond
+)
+
 // SocketServer receives events from a remote broker.
 // This is used by the data node to receive events from a non-validating core node.
 type SocketServer struct {
@@ -21,7 +27,7 @@ type SocketServer struct {
 	sock protocol.Socket
 }
 
-func NewSocketReceiver(log *logging.Logger, config *SocketConfig) (*SocketServer, error) {
+func NewSocketServer(log *logging.Logger, config *SocketConfig) (*SocketServer, error) {
 	sock, err := pull.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
@@ -44,20 +50,41 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 	var err error
 	var msg []byte
 
+	retryCount := defaultMaxRetries
 	for {
 		msg, err = s.sock.Recv()
 		if err != nil {
 			s.log.Error("failed to receive message", logging.Error(err))
+			switch err {
+			case protocol.ErrRecvTimeout:
+				if retryCount > 0 {
+					retryCount--
+					time.Sleep(defaultRetryInternal)
+					s.log.Warningf("socket receive timeout, retrying", logging.Int("retry-count", retryCount))
+					continue
+				}
+			default:
+				s.log.Fatal("failed to receive event from socket", logging.Error(err))
+			}
+			continue
 		}
 
 		var be eventspb.BusEvent
 		err = proto.Unmarshal(msg, &be)
 		if err != nil {
-			s.log.Error("failed to receive message", logging.Error(err))
+			s.log.Fatal("failed to unmarshal event received", logging.Error(err))
 		}
 
-		evt, _ := be.GetEvent().(events.Event)
+		evt, ok := be.GetEvent().(events.Event)
+		if !ok {
+			s.log.Fatal("failed to convert event received", logging.Error(err))
+		}
+
+		s.log.Infof("%v", evt)
+
 		ch <- evt
+
+		retryCount = defaultMaxRetries
 	}
 }
 
