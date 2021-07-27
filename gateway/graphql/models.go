@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/protos/vega"
 )
 
 // One of the possible asset sources
@@ -247,7 +247,7 @@ type LiquidityOrderInput struct {
 // The equity like share of liquidity fee for each liquidity provider
 type LiquidityProviderFeeShare struct {
 	// The liquidity provider party id
-	Party *proto.Party `json:"party"`
+	Party *vega.Party `json:"party"`
 	// The share own by this liquidity provider (float)
 	EquityLikeShare string `json:"equityLikeShare"`
 	// the average entry valuation of the liqidity provider for the market
@@ -286,9 +286,9 @@ func (LossSocialization) IsEvent() {}
 // The MM commitments for this market
 type MarketDataCommitments struct {
 	// a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
-	Sells []*proto.LiquidityOrderReference `json:"sells"`
+	Sells []*vega.LiquidityOrderReference `json:"sells"`
 	// a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec.
-	Buys []*proto.LiquidityOrderReference `json:"buys"`
+	Buys []*vega.LiquidityOrderReference `json:"buys"`
 }
 
 type MarketEvent struct {
@@ -396,7 +396,7 @@ type OrderEstimate struct {
 	// The total estimated amount of fee if the order was to trade
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
-	MarginLevels *proto.MarginLevels `json:"marginLevels"`
+	MarginLevels *vega.MarginLevels `json:"marginLevels"`
 }
 
 // Create an order linked to an index rather than a price
@@ -440,7 +440,7 @@ type PreparedProposal struct {
 	// Raw transaction data to sign & submit
 	Blob string `json:"blob"`
 	// The pending proposal
-	PendingProposal *proto.GovernanceData `json:"pendingProposal"`
+	PendingProposal *vega.GovernanceData `json:"pendingProposal"`
 }
 
 type PreparedSubmitOrder struct {
@@ -558,14 +558,14 @@ type ProposalTermsInput struct {
 
 type ProposalVote struct {
 	// Cast vote
-	Vote *proto.Vote `json:"vote"`
+	Vote *vega.Vote `json:"vote"`
 	// Proposal casting the vote on
 	ProposalID string `json:"proposalId"`
 }
 
 type ProposalVoteSide struct {
 	// All votes casted for this side
-	Votes []*proto.Vote `json:"votes"`
+	Votes []*vega.Vote `json:"votes"`
 	// Total number of votes casted for this side
 	TotalNumber string `json:"totalNumber"`
 	// Total weight of governance token from the votes casted for this side
@@ -669,7 +669,7 @@ type TransactionSubmitted struct {
 
 type TransferBalance struct {
 	// Account involved in transfer
-	Account *proto.Account `json:"account"`
+	Account *vega.Account `json:"account"`
 	// The new balance of the account
 	Balance int `json:"balance"`
 }

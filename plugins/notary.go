@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/events"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/pkg/errors"

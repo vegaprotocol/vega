@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	walletpb "code.vegaprotocol.io/vega/proto/wallet/v1"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet"
 	"code.vegaprotocol.io/vega/wallet/mocks"
 	"github.com/stretchr/testify/require"

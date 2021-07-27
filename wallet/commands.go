@@ -1,8 +1,8 @@
 package wallet
 
 import (
-	"code.vegaprotocol.io/vega/commands"
-	walletpb "code.vegaprotocol.io/vega/proto/wallet/v1"
+	"code.vegaprotocol.io/protos/commands"
+	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 )
 
 func CheckSubmitTransactionRequest(req walletpb.SubmitTransactionRequest) commands.Errors {

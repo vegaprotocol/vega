@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/commands"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/protos/commands"
+	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/protos/vega/api"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"github.com/golang/protobuf/proto"
 

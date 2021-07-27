@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/protos/vega"
 )
 
 type newMarketCommitmentResolver VegaResolverRoot

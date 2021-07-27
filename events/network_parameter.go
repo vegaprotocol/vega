@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/proto"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	proto "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 type NetworkParameter struct {

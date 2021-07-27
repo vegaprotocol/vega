@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 
 	"code.vegaprotocol.io/vega/crypto"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 	"github.com/golang/protobuf/proto"
 )
 

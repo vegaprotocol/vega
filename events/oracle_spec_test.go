@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"github.com/stretchr/testify/assert"
 )
 

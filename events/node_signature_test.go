@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 
 	"github.com/stretchr/testify/assert"
 )
