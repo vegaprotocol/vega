@@ -95,7 +95,7 @@ pipeline {
         stage('Build docker image') {
             steps {
                 retry(3) {
-                    withCredentials([usernamePassword(credentialsId: 'vega-ci-bot-token-jenkins', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: 'github-vega-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh label: 'Log in to a Docker registry', script: '''
                             echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
                         '''
