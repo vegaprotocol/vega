@@ -1,4 +1,4 @@
-/* properties of scmVars (example): 
+/* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
     - GIT_COMMIT:05a1c6fbe7d1ff87cfc40a011a63db574edad7e6
     - GIT_PREVIOUS_COMMIT:5d02b46fdb653f789e799ff6ad304baccc32cbf9
@@ -146,11 +146,12 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] unit tests') {
+                stage('unit tests') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run unit tests'
+			    	sh 'go test -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
+			    	junit 'vega-unit-test-report.xml'
                             }
                         }
                     }
