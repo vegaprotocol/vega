@@ -123,7 +123,7 @@ steps:
       - failed=""
       - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
           make retest || exit 1 ;
-          for target in gqlgen_check print_check proto_check race vet ;
+          for target in gqlgen_check print_check race vet ;
           do
             echo "$$COL_CYAN$$target$$COL_RESET" ;
             make "$$target" || failed="$$failed $$target" ;
@@ -131,13 +131,10 @@ steps:
         else
           echo "No Go files changed. Skipping go tests" ;
         fi
-      - for target in codeowners_check buflint misspell staticcheck; do
+      - for target in codeowners_check misspell staticcheck; do
           echo "$$COL_CYAN$$target$$COL_RESET" ;
           make "$$target" || failed="$$failed $$target" ;
         done
-      - /usr/local/bin/check-rest-endpoints.py
-          --bindings gateway/rest/grpc-rest-bindings.yml
-          --swagger proto/api/trading.swagger.json || failed="$$failed rest_check"
       - difflint "$$DRONE_COMMIT_BEFORE" "$$DRONE_COMMIT_AFTER" || failed="$$failed multilint"
       - if test -n "$$failed" ; then echo "Failed checks:$$failed" ; exit 1 ; fi ; echo "$${COL_GREEN}OK$$COL_RESET"
     depends_on:
