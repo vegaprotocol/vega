@@ -179,7 +179,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega/integration') {
-                                sh 'godog --format=junit:vega-integration-report.xml'
+                                sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
                                 junit 'vega-integration-report.xml'
                             }
                         }
@@ -271,7 +271,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega/integration') {
-                                sh 'godog --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
+                                sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
                                 junit 'specs-internal-qa-scenarios-report.xml'
                             }
                         }
