@@ -136,6 +136,25 @@ pipeline {
         }
 
         stage('Run checks') {
+	    // these stages are run in sequence as they delete and recreate files
+	    stage('check gqlgen') {
+                steps {
+                    retry(3) {
+                        dir('vega') {
+                            sh 'make gqlgen_check'
+                        }
+                    }
+                }
+            }
+            stage('check proto') {
+                steps {
+                    retry(3) {
+                        dir('vega') {
+                            sh 'make proto_check'
+                        }
+                    }
+                }
+            }
             parallel {
                 stage('[TODO] markdown verification') {
                     steps {
@@ -166,38 +185,11 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] check gqlgen') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run check gqlgen'
-                            }
-                        }
-                    }
-                }
                 stage('check print') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'find -name vendor -prune -o \
-                                      -name cmd -prune -o \
-                                      -name "*_test.go" -prune -o \
-                                      -name "flags.go" -prune -o \
-                                      -name "*.go" -print0 | \
-                                      xargs -0 grep -E "^([^/]|/[^/])*fmt.Print" | \
-                                      tee "$$f" && \
-                                    count="$$(wc -l <"$$f")" && \
-                                    rm -f "$$f" && \
-                                    if test "$$count" -gt 0 ; then exit 1 ; fi'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] check proto') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run check proto'
+                                sh 'make print_check'
                             }
                         }
                     }
