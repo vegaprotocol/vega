@@ -1,14 +1,10 @@
 package broker
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"sync"
 	"time"
-
-	"github.com/golang/protobuf/proto"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -41,9 +37,9 @@ type BrokerI interface {
 }
 
 // SocketClient is an interface to send serialized events over a socket.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_sender_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketClient
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_sender_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketSenderI
 type SocketClient interface {
-	Send(r io.Reader) error
+	Send(events []events.Event)
 	Close() error
 }
 
@@ -78,10 +74,16 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	socketClient, err := NewSocketClient(log, &config.SocketConfig)
+	socketClient, err := NewSocketClient(ctx, log, &config.SocketConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialise underlying socket sender %w", err)
+		return nil, fmt.Errorf("failed to initialise underlying socket client: %w", err)
 	}
+
+	go func() {
+		if err := socketClient.Close(); err != nil {
+			log.Error(fmt.Sprintf("failed to close socket"), logging.Error(err))
+		}
+	}()
 
 	return &Broker{
 		ctx:          ctx,
@@ -137,6 +139,10 @@ func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
 }
 
 func (b *Broker) startSending(t events.Type, evts []events.Event) {
+	if b.config.SocketConfig.Enabled {
+		b.streamSocket(evts)
+	}
+
 	b.mu.Lock()
 	ch, ok := b.eChans[t]
 	if !ok {
@@ -208,20 +214,11 @@ func (b *Broker) SendBatch(events []events.Event) {
 	}
 	evts := b.seqGen.setSequence(events...)
 	b.startSending(events[0].Type(), evts)
-
-	if b.config.SocketConfig.Enabled {
-		go b.sendSocket(evts)
-	}
 }
 
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
-	evt := b.seqGen.setSequence(event)
-	b.startSending(event.Type(), evt)
-
-	if b.config.SocketConfig.Enabled {
-		go b.sendSocket(evt)
-	}
+	b.startSending(event.Type(), b.seqGen.setSequence(event))
 }
 
 // simplified version for better performance - unfortunately, we'll still need to copy the map
@@ -353,16 +350,6 @@ func (b *Broker) rmSubs(keys ...int) {
 	}
 }
 
-func (b *Broker) sendSocket(evts []events.Event) {
-	for _, evt := range evts {
-		rawBytes, err := proto.Marshal(evt.StreamMessage())
-		if err != nil {
-			b.log.Errorf("fail to marshall event: %v", err)
-		}
-
-		err = b.socketSender.Send(bytes.NewReader(rawBytes))
-		if err != nil {
-			b.log.Errorf("fail to send event over socket: %v", err)
-		}
-	}
+func (b *Broker) streamSocket(evts []events.Event) {
+	b.socketClient.Send(evts)
 }
