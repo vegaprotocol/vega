@@ -243,7 +243,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'staticcheck -checks 'all,-SA1019,-ST1000,-ST1021' ./...'
+                                sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
                             }
                         }
                     }
