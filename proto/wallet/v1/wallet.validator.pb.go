@@ -67,6 +67,20 @@ func (this *SubmitTransactionRequest) Validate() error {
 			}
 		}
 	}
+	if oneOfNester, ok := this.GetCommand().(*SubmitTransactionRequest_DelegateSubmission); ok {
+		if oneOfNester.DelegateSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.DelegateSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("DelegateSubmission", err)
+			}
+		}
+	}
+	if oneOfNester, ok := this.GetCommand().(*SubmitTransactionRequest_UndelegateAtEpochEndSubmission); ok {
+		if oneOfNester.UndelegateAtEpochEndSubmission != nil {
+			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.UndelegateAtEpochEndSubmission); err != nil {
+				return github_com_mwitkow_go_proto_validators.FieldError("UndelegateAtEpochEndSubmission", err)
+			}
+		}
+	}
 	if oneOfNester, ok := this.GetCommand().(*SubmitTransactionRequest_NodeRegistration); ok {
 		if oneOfNester.NodeRegistration != nil {
 			if err := github_com_mwitkow_go_proto_validators.CallValidatorIfExists(oneOfNester.NodeRegistration); err != nil {

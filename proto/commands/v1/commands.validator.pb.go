@@ -102,3 +102,15 @@ func (this *VoteSubmission) Validate() error {
 	}
 	return nil
 }
+func (this *DelegateSubmission) Validate() error {
+	if this.NodeId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("NodeId", fmt.Errorf(`value '%v' must not be an empty string`, this.NodeId))
+	}
+	return nil
+}
+func (this *UndelegateAtEpochEndSubmission) Validate() error {
+	if this.NodeId == "" {
+		return github_com_mwitkow_go_proto_validators.FieldError("NodeId", fmt.Errorf(`value '%v' must not be an empty string`, this.NodeId))
+	}
+	return nil
+}
