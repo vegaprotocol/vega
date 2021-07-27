@@ -65,6 +65,15 @@ pipeline {
                         }
                     }
                 }
+                stage('specs-internal') {
+                    steps {
+                        retry(3) {
+                            dir('specs-internal') {
+                                git branch: 'master', credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/specs-internal.git'
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -146,11 +155,12 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] integration tests') {
+                stage('vega/integration tests') {
                     steps {
                         retry(3) {
-                            dir('vega') {
-                                echo 'Run integration tests'
+                            dir('vega/integration') {
+                                sh 'godog --format=junit:vega-integration-report.xml'
+                                junit 'vega-integration-report.xml'
                             }
                         }
                     }
@@ -263,11 +273,12 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] feature (integration) tests from specs-internal repo') {
+                stage('specs-internal qa-scenarios') {
                     steps {
                         retry(3) {
-                            dir('vega') {
-                                echo 'Run feature (integration) tests from specs-internal repo'
+                            dir('vega/integration') {
+                                sh 'godog --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
+                                junit 'specs-internal-qa-scenarios-report.xml'
                             }
                         }
                     }
