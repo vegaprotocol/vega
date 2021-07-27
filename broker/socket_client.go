@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,12 +27,12 @@ type socketClient struct {
 	sock protocol.Socket
 }
 
-func NewSocketClient(log *logging.Logger, config *SocketConfig) (SocketClient, error) {
+func NewSocketClient(ctx context.Context, log *logging.Logger, config *SocketConfig) (SocketClient, error) {
 	var sock mangos.Socket
 	var err error
 
 	if !config.Enabled {
-		return &socketClient{}, nil
+		return nil, nil
 	}
 
 	if sock, err = push.NewSocket(); err != nil {
@@ -40,17 +41,24 @@ func NewSocketClient(log *logging.Logger, config *SocketConfig) (SocketClient, e
 
 	addr := fmt.Sprintf("tcp://%s:%d", config.IP, config.Port)
 	ticker := time.NewTicker(dialRetryInterval)
-	for range ticker.C {
-		if err = sock.Dial(addr); err != nil {
-			log.Error(fmt.Sprintf("failed to connect to %v, retrying", addr), logging.Error(err))
-			continue
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, nil
+		case <-time.After(config.DialTimeout.Get()):
+			return nil, fmt.Errorf("dial timeout connecting to %v: %w", addr, err)
+		case <-ticker.C:
+			if err = sock.Dial(addr); err != nil {
+				log.Error(fmt.Sprintf("failed to connect to %v, retrying", addr), logging.Error(err))
+			} else {
+				ticker.Stop()
+				return &socketClient{
+					log:  log,
+					sock: sock,
+				}, nil
+			}
 		}
 	}
-
-	return &socketClient{
-		log:  log,
-		sock: sock,
-	}, nil
 }
 
 func (s socketClient) Send(r io.Reader) error {
