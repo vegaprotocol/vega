@@ -625,6 +625,11 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: l.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
 		},
+		// TODO ONCE WE HAVE A HANDLER FOR EPOCH TIMES
+		netparams.WatchParam{
+			Param: netparams.ValidatorsEpochLength,
+			// Watcher:
+		},
 	)
 }
 

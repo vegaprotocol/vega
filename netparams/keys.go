@@ -65,6 +65,9 @@ const (
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
+
+	// length of epoch in seconds
+	ValidatorsEpochLength = "validators.epoch.length"
 )
 
 var AllKeys = map[string]struct{}{
@@ -119,4 +122,5 @@ var AllKeys = map[string]struct{}{
 	MarketLiquidityProvisionShapesMaxSize:                 {},
 	MarketProbabilityOfTradingTauScaling:                  {},
 	MarketMinProbabilityOfTradingForLPOrders:              {},
+	ValidatorsEpochLength:                                 {},
 }
