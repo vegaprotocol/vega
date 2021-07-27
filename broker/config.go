@@ -24,7 +24,7 @@ func NewDefaultConfig() Config {
 			Timeout:     encoding.Duration{Duration: 5 * time.Second},
 			IP:          "0.0.0.0",
 			Port:        3005,
-			Enabled:     true,
+			Enabled:     false,
 		},
 	}
 }
