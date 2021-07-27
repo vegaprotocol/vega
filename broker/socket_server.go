@@ -23,11 +23,13 @@ const (
 // SocketServer receives events from a remote broker.
 // This is used by the data node to receive events from a non-validating core node.
 type SocketServer struct {
+	ctx context.Context
+
 	log  *logging.Logger
 	sock protocol.Socket
 }
 
-func NewSocketServer(log *logging.Logger, config *SocketConfig) (*SocketServer, error) {
+func NewSocketServer(ctx context.Context, log *logging.Logger, config *SocketConfig) (*SocketServer, error) {
 	sock, err := pull.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
@@ -40,6 +42,7 @@ func NewSocketServer(log *logging.Logger, config *SocketConfig) (*SocketServer, 
 	}
 
 	return &SocketServer{
+		ctx:  ctx,
 		log:  log,
 		sock: sock,
 	}, nil
@@ -54,7 +57,6 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 	for {
 		msg, err = s.sock.Recv()
 		if err != nil {
-			s.log.Error("failed to receive message", logging.Error(err))
 			switch err {
 			case protocol.ErrRecvTimeout:
 				if retryCount > 0 {
@@ -62,8 +64,10 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 					time.Sleep(defaultRetryInternal)
 					s.log.Warningf("timeout receiving from socket, retrying", logging.Int("retry-count", retryCount))
 				}
+			case protocol.ErrClosed:
+				s.log.Fatal("event socket closed", logging.Error(err))
 			default:
-				s.log.Fatal("failed to receive event from socket", logging.Error(err))
+				s.log.Error("failed to receive message", logging.Error(err))
 			}
 			continue
 		}
@@ -82,5 +86,6 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 }
 
 func (s SocketServer) Close() error {
+	<-s.ctx.Done()
 	return s.sock.Close()
 }

@@ -66,10 +66,15 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	socketServer, err := NewSocketServer(log, &config.SocketConfig)
+	socketServer, err := NewSocketServer(ctx, log, &config.SocketConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
 	}
+	go func() {
+		if err := socketServer.Close(); err != nil {
+			log.Fatal("failed to close socket server", logging.Error(err))
+		}
+	}()
 
 	b := &Broker{
 		ctx:          ctx,
@@ -333,7 +338,10 @@ func (b *Broker) receiveSocket() {
 	eventCh := make(chan events.Event, defaultEventChannelBufferSize)
 	go b.socketServer.Receive(b.ctx, eventCh)
 	for e := range eventCh {
-		if e != nil {
+		select {
+		case <-b.ctx.Done():
+			return
+		default:
 			b.Send(e)
 		}
 	}
