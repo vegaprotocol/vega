@@ -193,20 +193,21 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] test again with a race flag') {
+                stage('test again with a race flag') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run test again with a race flag'
+				sh 'go test -race -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
+				junit 'vega-unit-test-race-report.xml'
                             }
                         }
                     }
                 }
-                stage('[TODO] vet') {
+                stage('go vet') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run vet'
+                                sh 'go vet ./...'
                             }
                         }
                     }
@@ -220,11 +221,11 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] buf lint') {
+                stage('buf lint') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run buf lint'
+                                sh 'buf lint'
                             }
                         }
                     }
@@ -238,11 +239,11 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] static check') {
+                stage('static check') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run static check'
+                                sh 'staticcheck -checks 'all,-SA1019,-ST1000,-ST1021' ./...'
                             }
                         }
                     }
