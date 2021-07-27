@@ -42,3 +42,10 @@ func (r RiskFactor) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func RiskFactorEventFromStream(ctx context.Context, be *eventspb.BusEvent) *RiskFactor {
+	return &RiskFactor{
+		Base: newBaseFromStream(ctx, RiskFactorEvent, be),
+		r:    *be.GetRiskFactor(),
+	}
+}

@@ -54,3 +54,10 @@ func (t TransferResponse) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func TransferResponseEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferResponse {
+	return &TransferResponse{
+		Base:      newBaseFromStream(ctx, TransferResponses, be),
+		responses: be.GetTransferResponses().Responses,
+	}
+}

@@ -53,6 +53,7 @@ type Event interface {
 	TraceID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
+	StreamMessage() *eventspb.BusEvent
 }
 
 const (
@@ -206,6 +207,15 @@ func newBase(ctx context.Context, t Type) *Base {
 		ctx:     ctx,
 		traceID: tID,
 		blockNr: h,
+		et:      t,
+	}
+}
+
+func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
+	evtCtx := contextutil.WithTraceID(ctx, be.Block)
+	return &Base{
+		ctx:     evtCtx,
+		traceID: be.Block,
 		et:      t,
 	}
 }

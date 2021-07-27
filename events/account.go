@@ -50,3 +50,10 @@ func (a Acc) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func AccountEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Acc {
+	return &Acc{
+		Base: newBaseFromStream(ctx, AccountEvent, be),
+		a:    *be.GetAccount(),
+	}
+}

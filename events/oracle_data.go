@@ -39,3 +39,10 @@ func (o OracleData) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func OracleDataEventFromStream(ctx context.Context, be *eventspb.BusEvent) *OracleData {
+	return &OracleData{
+		Base: newBaseFromStream(ctx, OracleDataEvent, be),
+		o:    *be.GetOracleData(),
+	}
+}

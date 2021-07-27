@@ -45,3 +45,10 @@ func (w Withdrawal) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func WithdrawalEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Withdrawal {
+	return &Withdrawal{
+		Base: newBaseFromStream(ctx, WithdrawalEvent, be),
+		w:    *be.GetWithdrawal(),
+	}
+}
