@@ -1436,11 +1436,11 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 
 		// Look for the special case where we are topping up the reward account
 		if p.Owner == rewardPartyID {
-			rewardAcctId, err := e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
+			rewardAcctID, err := e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
 			if err != nil {
 				return nil, errors.New("unable to get the global reward account")
 			}
-			rewardAcct, err := e.GetAccountByID(rewardAcctId)
+			rewardAcct, _ := e.GetAccountByID(rewardAcctID)
 
 			req.ToAccount = []*types.Account{
 				rewardAcct,
@@ -2226,6 +2226,9 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 	// Look for the special reward party
 	if partyID == rewardPartyID {
 		accID, err = e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		// this will get or create the account basically
 		accID, err = e.CreatePartyGeneralAccount(ctx, partyID, asset)

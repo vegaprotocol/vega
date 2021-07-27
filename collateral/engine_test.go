@@ -23,7 +23,7 @@ import (
 const (
 	testMarketID    = "7CPSHJB35AIQBTNMIE6NLFPZGHOYRQ3D"
 	testMarketAsset = "BTC"
-	rewardsId       = "0x00000000000000000000000000000000"
+	rewardsID       = "0x00000000000000000000000000000000"
 )
 
 type testEngine struct {
@@ -2172,17 +2172,19 @@ func TestRewardDepositOK(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Attempt to deposit collateral that should go into the global asset reward account
-	_, err := eng.Engine.Deposit(ctx, rewardsId, testMarketAsset, num.NewUint(100))
+	_, err := eng.Engine.Deposit(ctx, rewardsID, testMarketAsset, num.NewUint(100))
 	assert.NoError(t, err)
 
 	rewardAcct, err := eng.Engine.GetGlobalRewardAccount(testMarketAsset)
+	assert.NoError(t, err)
 	assert.Equal(t, num.NewUint(100), rewardAcct.Balance)
 
 	// Add 400 more to the reward account
-	_, err = eng.Engine.Deposit(ctx, rewardsId, testMarketAsset, num.NewUint(400))
+	_, err = eng.Engine.Deposit(ctx, rewardsID, testMarketAsset, num.NewUint(400))
 	assert.NoError(t, err)
 
 	rewardAcct, err = eng.Engine.GetGlobalRewardAccount(testMarketAsset)
+	assert.NoError(t, err)
 	assert.Equal(t, num.NewUint(500), rewardAcct.Balance)
 }
 
@@ -2211,7 +2213,7 @@ func TestRewardDepositBadAssetOK(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	// Now try a different asset
-	_, err := eng.Engine.Deposit(ctx, rewardsId, testAsset2, num.NewUint(333))
+	_, err := eng.Engine.Deposit(ctx, rewardsID, testAsset2, num.NewUint(333))
 	assert.Error(t, err)
 }
 
