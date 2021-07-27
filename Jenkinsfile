@@ -14,6 +14,7 @@ pipeline {
     agent { label 'general' }
     options {
         skipDefaultCheckout true
+        parallelsAlwaysFailFast()
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
@@ -21,6 +22,7 @@ pipeline {
     }
     environment {
         GO111MODULE = 'on'
+        SLACK_MESSAGE = "Vega Core CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
     }
 
     stages {
@@ -312,6 +314,18 @@ pipeline {
             steps {
                 echo 'Build version because this commit is tagged...'
                 echo 'and publish it'
+            }
+        }
+    }
+    post {
+        success {
+            retry(3) {
+                slackSend(channel: "#tradingcore-notify", color: "good", message: ":white_check_mark: ${SLACK_MESSAGE}")
+            }
+        }
+        failure {
+            retry(3) {
+                slackSend(channel: "#tradingcore-notify", color: "danger", message: ":red_circle: ${SLACK_MESSAGE}")
             }
         }
     }
