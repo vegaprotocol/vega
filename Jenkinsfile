@@ -146,15 +146,6 @@ pipeline {
                     }
                 }
             }
-            stage('check proto') {
-                steps {
-                    retry(3) {
-                        dir('vega') {
-                            sh 'make proto_check'
-                        }
-                    }
-                }
-            }
             parallel {
                 stage('[TODO] markdown verification') {
                     steps {
