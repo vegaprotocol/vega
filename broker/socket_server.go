@@ -60,8 +60,7 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 				if retryCount > 0 {
 					retryCount--
 					time.Sleep(defaultRetryInternal)
-					s.log.Warningf("socket receive timeout, retrying", logging.Int("retry-count", retryCount))
-					continue
+					s.log.Warningf("timeout receiving from socket, retrying", logging.Int("retry-count", retryCount))
 				}
 			default:
 				s.log.Fatal("failed to receive event from socket", logging.Error(err))
@@ -75,13 +74,7 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 			s.log.Fatal("failed to unmarshal event received", logging.Error(err))
 		}
 
-		evt, ok := be.GetEvent().(events.Event)
-		if !ok {
-			s.log.Fatal("failed to convert event received", logging.Error(err))
-		}
-
-		s.log.Infof("%v", evt)
-
+		evt := toEvent(ctx, &be)
 		ch <- evt
 
 		retryCount = defaultMaxRetries
