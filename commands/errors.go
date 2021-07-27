@@ -24,6 +24,7 @@ var (
 	ErrCannotAmendToGFN      = errors.New("cannot amend to time in force GFN")
 	ErrNonGTTOrderWithExpiry = errors.New("non GTT order with expiry")
 	ErrGTTOrderWithNoExpiry  = errors.New("GTT order without expiry")
+	ErrIsMismatching         = errors.New("is mismatching")
 )
 
 type Errors map[string][]error

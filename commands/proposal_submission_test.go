@@ -117,6 +117,8 @@ func TestCheckProposalSubmission(t *testing.T) {
 	t.Run("Submitting a future market change with oracle spec binding succeeds", testNewFutureMarketChangeSubmissionWithOracleSpecBindingSucceeds)
 	t.Run("Submitting a future market change without settlement price property fails", testNewFutureMarketChangeSubmissionWithoutSettlementPricePropertyFails)
 	t.Run("Submitting a future market change without trading termination property fails", testNewFutureMarketChangeSubmissionWithoutTradingTerminationPropertyFails)
+	t.Run("Submitting a future market change with a mismatch between binding property name and filter fails", testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
+	t.Run("Submitting a future market change with match between binding property name and filter succeeds", testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
 	t.Run("Submitting a future market change with settlement price and trading termination properties succeeds", testNewFutureMarketChangeSubmissionWithSettlementPricePropertySucceeds)
 	t.Run("Submitting a continuous trading market change without continuous trading mode fails", testNewContinuousTradingMarketChangeSubmissionWithoutContinuousTradingModeFails)
 	t.Run("Submitting a continuous trading market change with continuous trading mode succeeds", testNewContinuousTradingMarketChangeSubmissionWithContinuousTradingModeSucceeds)
@@ -2499,6 +2501,71 @@ func testNewFutureMarketChangeSubmissionWithoutTradingTerminationPropertyFails(t
 
 func testNewFutureMarketChangeSubmissionWithoutSettlementPricePropertyFails(t *testing.T) {
 	testNewFutureMarketChangeSubmissionMissingOracleBindingPropertyFails(t, "settlement_price_property")
+}
+
+func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds(t *testing.T) {
+	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &types.OracleSpecToFutureBinding{SettlementPriceProperty: "key1"}, "settlement_price_property", "key1")
+	testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &types.OracleSpecToFutureBinding{TradingTerminationProperty: "key2"}, "settlement_price_property", "key2")
+}
+
+func testNewFutureMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *types.OracleSpecToFutureBinding, bindingName string, bindingKey string) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewMarket{
+				NewMarket: &types.NewMarket{
+					Changes: &types.NewMarketConfiguration{
+						Instrument: &types.InstrumentConfiguration{
+							Product: &types.InstrumentConfiguration_Future{
+								Future: &types.FutureProduct{
+									OracleSpecForSettlementPrice: &oraclespb.OracleSpecConfiguration{
+										Filters: []*oraclespb.Filter{
+											{
+												Key: &oraclespb.PropertyKey{
+													Name: bindingKey,
+												},
+											}, {
+												Key: &oraclespb.PropertyKey{},
+											},
+										},
+									},
+									OracleSpecBinding: binding,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding."+bindingName), commands.ErrIsMismatching)
+}
+
+func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *types.OracleSpecToFutureBinding, bindingName string) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewMarket{
+				NewMarket: &types.NewMarket{
+					Changes: &types.NewMarketConfiguration{
+						Instrument: &types.InstrumentConfiguration{
+							Product: &types.InstrumentConfiguration_Future{
+								Future: &types.FutureProduct{
+									OracleSpecBinding: binding,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding."+bindingName), commands.ErrIsMismatching)
+}
+
+func testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails(t *testing.T) {
+	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &types.OracleSpecToFutureBinding{SettlementPriceProperty: "My property"}, "settlement_price_property")
+	testNewFutureMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &types.OracleSpecToFutureBinding{TradingTerminationProperty: "My property"}, "trading_termination_property")
 }
 
 func testNewFutureMarketChangeSubmissionWithSettlementPricePropertySucceeds(t *testing.T) {

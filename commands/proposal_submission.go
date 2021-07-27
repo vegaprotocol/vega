@@ -374,14 +374,35 @@ func checkOracleSpec(spec *oraclespb.OracleSpecConfiguration, name string) Error
 	return errs
 }
 
+func isBindingMatchingSpec(spec *oraclespb.OracleSpecConfiguration, bindingProperty string) bool {
+	bindingPropertyFound := false
+	if spec != nil && spec.Filters != nil {
+		for _, filter := range spec.Filters {
+			if filter.Key != nil && filter.Key.Name == bindingProperty {
+				bindingPropertyFound = true
+			}
+		}
+	}
+	return bindingPropertyFound
+}
+
 func checkOracleBinding(future *types.FutureProduct) Errors {
 	errs := NewErrors()
 	if future.OracleSpecBinding != nil {
 		if len(future.OracleSpecBinding.SettlementPriceProperty) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsRequired)
+		} else {
+			if !isBindingMatchingSpec(future.OracleSpecForSettlementPrice, future.OracleSpecBinding.SettlementPriceProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.settlement_price_property", ErrIsMismatching)
+			}
 		}
+
 		if len(future.OracleSpecBinding.TradingTerminationProperty) == 0 {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.trading_termination_property", ErrIsRequired)
+		} else {
+			if !isBindingMatchingSpec(future.OracleSpecForTradingTermination, future.OracleSpecBinding.TradingTerminationProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding.trading_termination_property", ErrIsMismatching)
+			}
 		}
 	} else {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.oracle_spec_binding", ErrIsRequired)
