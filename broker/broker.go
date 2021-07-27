@@ -8,11 +8,10 @@ import (
 	"sync"
 	"time"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"github.com/golang/protobuf/proto"
+
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-
-	"github.com/golang/protobuf/proto"
 )
 
 // Subscriber interface allows pushing values to subscribers, can be set to
@@ -354,26 +353,16 @@ func (b *Broker) rmSubs(keys ...int) {
 	}
 }
 
-type streamEvt interface {
-	events.Event
-	StreamMessage() *eventspb.BusEvent
-}
-
 func (b *Broker) sendSocket(evts []events.Event) {
 	for _, evt := range evts {
-		se, _ := evt.(streamEvt)
-		be := se.StreamMessage()
-
-		rawBytes, err := proto.Marshal(be)
+		rawBytes, err := proto.Marshal(evt.StreamMessage())
 		if err != nil {
-			if err != nil {
-				b.log.Errorf("fail to marshall event: %v", err)
-			}
+			b.log.Errorf("fail to marshall event: %v", err)
+		}
 
-			err = b.socketClient.Send(bytes.NewReader(rawBytes))
-			if err != nil {
-				b.log.Errorf("fail to send event over socket: %v", err)
-			}
+		err = b.socketSender.Send(bytes.NewReader(rawBytes))
+		if err != nil {
+			b.log.Errorf("fail to send event over socket: %v", err)
 		}
 	}
 }
