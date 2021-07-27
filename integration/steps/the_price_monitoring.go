@@ -4,7 +4,7 @@ import (
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/integration/steps/market"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency string, table *godog.Table) error {

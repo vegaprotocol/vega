@@ -7,7 +7,7 @@ import (
 	"github.com/jinzhu/copier"
 
 	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 var (

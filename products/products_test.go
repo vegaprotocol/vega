@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/products/mocks"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"

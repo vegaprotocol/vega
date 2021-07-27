@@ -2,7 +2,7 @@ package assets
 
 import (
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 // Plugin Exports functions for fetching assets
