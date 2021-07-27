@@ -45,6 +45,7 @@ func (m MarketCreated) MarketProto() eventspb.MarketEvent {
 	return eventspb.MarketEvent{
 		MarketId: m.m.ID,
 		Payload:  m.MarketEvent(),
+		Market:   &m.m,
 	}
 }
 
