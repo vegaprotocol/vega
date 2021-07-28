@@ -94,6 +94,10 @@ func (s socketClient) Send(evts []events.Event) {
 }
 
 func (s socketClient) Close() error {
+	if s.config.Enabled {
+		return nil
+	}
+
 	<-s.ctx.Done()
 	return s.sock.Close()
 }
