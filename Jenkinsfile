@@ -107,11 +107,11 @@ pipeline {
                             sh label: 'Log in to a Docker registry', script: '''
                                 echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
                             '''
-                            sh label: 'Build docker image', script: '''
+                            sh label: 'Build and push docker image', script: '''
                                 mkdir -p docker/bin
                                 find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
                                     cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
-                                    done
+                                done
                                 tmptag="$(openssl rand -hex 10)"
                                 ls -al docker/bin
                                 docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
@@ -157,7 +157,6 @@ pipeline {
                                 ls -al docker/bin
                                 docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
                                 rm -rf docker/bin
-                                docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag"
                                 docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag"
                             '''
                         }
