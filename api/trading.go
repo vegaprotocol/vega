@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"time"
 
+	"code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
@@ -14,7 +15,6 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -381,7 +381,7 @@ func verifySignature(
 	sig []byte,
 	pubKey string,
 ) error {
-	validator, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
+	validator, err := crypto.NewSignatureAlgorithm(crypto.Ed25519, 1)
 	if err != nil {
 		if log != nil {
 			log.Error("unable to instantiate new algorithm", logging.Error(err))

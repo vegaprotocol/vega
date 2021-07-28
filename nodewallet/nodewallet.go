@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet/eth"
@@ -28,7 +29,7 @@ type Wallet interface {
 	Sign([]byte) ([]byte, error)
 	Algo() string
 	Version() uint32
-	PubKeyOrAddress() []byte
+	PubKeyOrAddress() crypto.PublicKeyOrAddress
 }
 
 type ETHWallet interface {
@@ -204,6 +205,7 @@ func DevInit(path, devKeyPath, passphrase string) error {
 		Path:       ethWalletPath,
 		Passphrase: passphrase,
 	})
+
 	// generate the vega keys
 	vegaWalletPath, err := vega.DevInit(devKeyPath, passphrase)
 	if err != nil {

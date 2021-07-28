@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"errors"
 
+	"code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/wallet/crypto"
 )
 
 var (
@@ -15,7 +15,7 @@ var (
 
 func verifyBundle(log *logging.Logger, tx *types.Transaction, bundle *types.SignedBundle) error {
 	// build new signature algorithm using the algo from the sig
-	validator, err := crypto.NewSignatureAlgorithm(bundle.Sig.Algo)
+	validator, err := crypto.NewSignatureAlgorithm(bundle.Sig.Algo, bundle.Sig.Version)
 	if err != nil {
 		if log != nil {
 			log.Error("unable to instantiate new algorithm", logging.Error(err))

@@ -75,7 +75,7 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 		return fmt.Errorf("invalid root directory path: %w", err)
 	}
 
-	nodePass, err := nodeWalletCmd.Passphrase.Get("node wallet")
+	nodePass, err := nodeWalletCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (opts *nodeWalletVerify) Execute(_ []string) error {
 		return fmt.Errorf("invalid root directory path: %w", err)
 	}
 
-	pass, err := nodeWalletCmd.Passphrase.Get("node wallet")
+	pass, err := nodeWalletCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}

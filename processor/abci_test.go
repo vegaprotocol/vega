@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	vegacrypto "code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
@@ -17,7 +18,6 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
-	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
@@ -42,6 +42,7 @@ func (s *AbciTestSuite) signedTx(t *testing.T, tx *types.Transaction, key crypto
 		Tx: txBytes,
 		Sig: &types.Signature{
 			Algo: s.sig.Name(),
+			Version: s.sig.Version(),
 			Sig:  sig,
 		},
 	}

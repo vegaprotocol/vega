@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/vega/wallet"
+	"code.vegaprotocol.io/go-wallet/wallet"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,24 +16,28 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 	defer closer()
 	ctx := context.Background()
 
+	// Initialise the wallet
+	_, err = suite.RunMain(ctx, "wallet init --no-version-check --root-path %s", path)
+	require.NoError(t, err)
+
 	// Generate a Key pair
-	_, err = suite.RunMain(ctx, "wallet genkey -r %s -p %s/passphrase --name test", path, path)
+	_, err = suite.RunMain(ctx, "wallet key generate --no-version-check --root-path %s --passphrase %s/passphrase --name test", path, path)
 	require.NoError(t, err)
 
 	// List the wallet and keep it
-	w := suite.WalletList(t, path)
-	require.NotEmpty(t, w.Keypairs)
-	pub := w.Keypairs[0].Pub
+	keyPairs := suite.ListKeyPairs(t, path)
+	require.NotEmpty(t, keyPairs)
+	pub := keyPairs[0].PublicKey()
 
 	t.Run("Sign/Verify", func(t *testing.T) {
 		// Sign and retrieve the signature (base64 encoded)
-		out, err = suite.RunMain(ctx, "wallet sign -r %s -p %s/passphrase --name test -m aG9sYQo= -k %s", path, path, pub)
+		out, err = suite.RunMain(ctx, "wallet sign --no-version-check --root-path %s --passphrase %s/passphrase --name test -m aG9sYQo= -k %s", path, path, pub)
 		require.NoError(t, err)
 		sig := out
 
 		// Verify
 		t.Run("Verify", func(t *testing.T) {
-			out, err = suite.RunMain(ctx, "wallet verify -r %s -p %s/passphrase --name test -m aG9sYQo= -k %s -s %s", path, path, pub, sig)
+			out, err = suite.RunMain(ctx, "wallet verify --no-version-check --root-path %s --passphrase %s/passphrase --name test -m aG9sYQo= -k %s -s %s", path, path, pub, sig)
 			require.NoError(t, err)
 			require.Equal(t, "true\n", string(out))
 		})
@@ -40,12 +45,12 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 
 	// Meta
 	t.Run("Meta", func(t *testing.T) {
-		_, err = suite.RunMain(ctx, "wallet meta -r %s -p %s/passphrase --name test -k %s -m primary:true;asset:BTC", path, path, pub)
+		_, err = suite.RunMain(ctx, "wallet key meta --no-version-check --root-path %s --passphrase %s/passphrase --name test -k %s -m primary:true;asset:BTC", path, path, pub)
 		require.NoError(t, err)
-		w := suite.WalletList(t, path)
-		require.NotEmpty(t, w.Keypairs)
+		keyPairs := suite.ListKeyPairs(t, path)
+		require.NotEmpty(t, keyPairs)
 
-		meta := w.Keypairs[0].Meta
+		meta := keyPairs[0].Meta()
 		require.Len(t, meta, 2)
 
 		assert.Equal(t, meta[0].Key, "primary")
@@ -56,15 +61,16 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 	})
 }
 
-// WalletList runs the `wallet list` command and returns the wallet.
-func (suite *CommandSuite) WalletList(t *testing.T, path string) *wallet.Wallet {
+func (suite *CommandSuite) ListKeyPairs(t *testing.T, path string) []wallet.HDKeyPair {
 	ctx := context.Background()
 
-	out, err := suite.RunMain(ctx, "wallet list -r %s -p %s/passphrase --name test", path, path)
+	out, err := suite.RunMain(ctx, "wallet key list --no-version-check --root-path %s --passphrase %s/passphrase --name test", path, path)
 	require.NoError(t, err)
 
-	var w wallet.Wallet
-	require.NoError(t, json.Unmarshal(out, &w))
+	w := []wallet.HDKeyPair{}
+	// out[23:] is done to skip the `List of all your keys:` prefixing the key
+	// pairs list. It will be remove when the CLI support JSON output.
+	require.NoError(t, json.Unmarshal(out[23:], &w))
 
-	return &w
+	return w
 }

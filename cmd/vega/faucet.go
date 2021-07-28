@@ -40,15 +40,23 @@ func Faucet(ctx context.Context, parser *flags.Parser) error {
 type faucetInit struct {
 	config.RootPathFlag
 	config.PassphraseFlag
-	Force bool `short:"f" long:"force" description:"Erase existing configuratio at specified path"`
+	Force bool `short:"f" long:"force" description:"Erase existing configuration at specified path"`
+	Help  bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *faucetInit) Execute(_ []string) error {
+	if opts.Help {
+		return &flags.Error{
+			Type:    flags.ErrHelp,
+			Message: "vega faucet init subcommand help",
+		}
+	}
+
 	logDefaultConfig := logging.NewDefaultConfig()
 	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
 
-	pass, err := opts.Passphrase.Get("faucet")
+	pass, err := opts.PassphraseFile.Get("faucet")
 	if err != nil {
 		return err
 	}
@@ -68,6 +76,8 @@ type faucetRun struct {
 	config.PassphraseFlag
 
 	faucet.Config
+
+	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *faucetRun) Execute(_ []string) error {
@@ -85,7 +95,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 		return err
 	}
 
-	pass, err := opts.Passphrase.Get("faucet")
+	pass, err := opts.PassphraseFile.Get("faucet")
 	if err != nil {
 		return err
 	}

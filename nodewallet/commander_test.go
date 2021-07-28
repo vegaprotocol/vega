@@ -2,9 +2,11 @@ package nodewallet_test
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/nodewallet/mocks"
@@ -125,8 +127,8 @@ func (s stubWallet) Version() uint32 {
 	return 1
 }
 
-func (s stubWallet) PubKeyOrAddress() []byte {
-	return s.key
+func (s stubWallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
+	return crypto.NewPublicKeyOrAddress(hex.EncodeToString(s.key), s.key)
 }
 
 func (s stubWallet) Sign(_ []byte) ([]byte, error) {
