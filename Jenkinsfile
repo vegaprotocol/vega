@@ -161,7 +161,6 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-				sh 'go test -v ./...'
 				sh 'go test -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
                                 junit 'vega-unit-test-report.xml'
                             }
@@ -191,7 +190,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go test -race -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
+                                sh 'go test -race -v ./... 2>&1 | go-junit-report > vega-unit-test-race-report.xml'
                                 junit 'vega-unit-test-race-report.xml'
                             }
                         }
