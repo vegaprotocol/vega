@@ -15,20 +15,16 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 )
 
-const (
-	defaultMaxRetries    = 10
-	defaultRetryInternal = 50 * time.Millisecond
-)
-
 // SocketServer receives events from a remote broker.
 // This is used by the data node to receive events from a non-validating core node.
 type SocketServer struct {
 	ctx context.Context
 
-	log  *logging.Logger
-	sock protocol.Socket
+	log    *logging.Logger
+	config *SocketConfig
 
-	quit chan struct{}
+	sock   protocol.Socket
+	quit   chan struct{}
 }
 
 func NewSocketServer(ctx context.Context, log *logging.Logger, config *SocketConfig) (*SocketServer, error) {
@@ -56,7 +52,7 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 	var msg []byte
 
 	var be eventspb.BusEvent
-	retryCount := defaultMaxRetries
+	retryCount := s.config.MaxRetries
 	for {
 		msg, err = s.sock.Recv()
 		if err != nil {
@@ -64,7 +60,7 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 			case protocol.ErrRecvTimeout:
 				if retryCount > 0 {
 					retryCount--
-					time.Sleep(defaultRetryInternal)
+					time.Sleep(s.config.RetryInternal.Get())
 					s.log.Warningf("timeout receiving from socket, retrying", logging.Int("retry-count", retryCount))
 					continue
 				}
@@ -89,7 +85,7 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 		evt := toEvent(ctx, &be)
 		ch <- evt
 
-		retryCount = defaultMaxRetries
+		retryCount = s.config.MaxRetries
 	}
 }
 
