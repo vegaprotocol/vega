@@ -118,7 +118,7 @@ pipeline {
                                 ls -al docker/bin
                                 docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
                                 rm -rf docker/bin
-                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"f
+                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
                                 docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
                                 docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
                             '''
