@@ -250,7 +250,7 @@ func getTestGRPCServer(
 	gov, vote := govStub{}, voteStub{}
 	broker, err := broker.New(ctx, logger, conf.Broker)
 	if err != nil {
-		err = errors.Wrap(err, "failed to create broker")
+		err = fmt.Errorf("failed to create broker: %w", err)
 		return
 	}
 
