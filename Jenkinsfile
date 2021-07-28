@@ -77,6 +77,16 @@ pipeline {
             }
         }
 
+        stage('go mod download deps') {
+            steps {
+		retry(3) {
+		    dir('vega') {
+			sh 'go mod download'
+		    }
+		}
+            }
+        }
+
         stage('Compile vega core') {
             environment {
                 CGO_ENABLED  = 0
