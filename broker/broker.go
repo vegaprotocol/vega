@@ -59,6 +59,7 @@ type Broker struct {
 	seqGen *gen
 
 	socketServer *SocketServer
+	quit         chan struct{}
 }
 
 // New creates a new base broker
@@ -84,6 +85,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 		eChans:       map[events.Type]chan []events.Event{},
 		seqGen:       newGen(),
 		socketServer: socketServer,
+		quit:         make(chan struct{}),
 	}
 
 	go b.receiveSocket()
@@ -337,12 +339,16 @@ func (b *Broker) rmSubs(keys ...int) {
 func (b *Broker) receiveSocket() {
 	eventCh := make(chan events.Event, defaultEventChannelBufferSize)
 	go b.socketServer.Receive(b.ctx, eventCh)
-	for e := range eventCh {
+	for {
 		select {
+		case <-b.socketServer.Quit():
+			close(eventCh)
+			return
 		case <-b.ctx.Done():
 			return
-		default:
+		case e := <-eventCh:
 			b.Send(e)
+		default:
 		}
 	}
 }

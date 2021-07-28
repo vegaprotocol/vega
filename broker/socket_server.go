@@ -27,6 +27,8 @@ type SocketServer struct {
 
 	log  *logging.Logger
 	sock protocol.Socket
+
+	quit chan struct{}
 }
 
 func NewSocketServer(ctx context.Context, log *logging.Logger, config *SocketConfig) (*SocketServer, error) {
@@ -45,14 +47,15 @@ func NewSocketServer(ctx context.Context, log *logging.Logger, config *SocketCon
 		ctx:  ctx,
 		log:  log,
 		sock: sock,
+		quit: make(chan struct{}),
 	}, nil
-
 }
 
 func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 	var err error
 	var msg []byte
 
+	var be eventspb.BusEvent
 	retryCount := defaultMaxRetries
 	for {
 		msg, err = s.sock.Recv()
@@ -63,16 +66,21 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 					retryCount--
 					time.Sleep(defaultRetryInternal)
 					s.log.Warningf("timeout receiving from socket, retrying", logging.Int("retry-count", retryCount))
+					continue
 				}
+				s.log.Error("socket timeout, stopping event stream", logging.Error(err))
+				close(s.quit)
+				return
 			case protocol.ErrClosed:
-				s.log.Fatal("event socket closed", logging.Error(err))
+				s.log.Error("socket closed, stopping event stream", logging.Error(err))
+				close(s.quit)
+				return
 			default:
 				s.log.Error("failed to receive message", logging.Error(err))
 			}
 			continue
 		}
 
-		var be eventspb.BusEvent
 		err = proto.Unmarshal(msg, &be)
 		if err != nil {
 			s.log.Fatal("failed to unmarshal event received", logging.Error(err))
@@ -85,7 +93,14 @@ func (s SocketServer) Receive(ctx context.Context, ch chan events.Event) {
 	}
 }
 
+func (s *SocketServer) Quit() <-chan struct{} {
+	return s.quit
+}
+
 func (s SocketServer) Close() error {
-	<-s.ctx.Done()
+	select {
+	case <-s.ctx.Done():
+	case <-s.quit:
+	}
 	return s.sock.Close()
 }
