@@ -553,13 +553,13 @@ func TradingMode(name string) (types.MarketTradingMode, error) {
 	return types.MarketTradingMode(ty), nil
 }
 
-func MarketState(name string) (types.Market_State, error) {
+func MarketState(name string) (types.MarketState, error) {
 	ty, ok := proto.Market_State_value[name]
 
 	if !ok {
-		return types.Market_STATE_UNSPECIFIED, fmt.Errorf("couldn't find %s as market state", name)
+		return types.MarketStateUnspecified, fmt.Errorf("couldn't find %s as market state", name)
 	}
-	return types.Market_State(ty), nil
+	return types.MarketState(ty), nil
 }
 
 func (r RowWrapper) MustAccount(name string) types.AccountType {
