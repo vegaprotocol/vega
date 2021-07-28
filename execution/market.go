@@ -373,7 +373,7 @@ func (m *Market) Hash() []byte {
 	))
 }
 
-func (m *Market) GetMarketState() types.Market_State {
+func (m *Market) GetMarketState() types.MarketState {
 	return m.mkt.State
 }
 
@@ -532,12 +532,12 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// retry here
 	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
 
-	if m.mkt.State == types.Market_STATE_TRADING_TERMINATED {
+	if m.mkt.State == types.MarketStateTradingTerminated {
 		// if we now have settlement price - try to settle and close the market
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
 		}
-		m.closed = m.mkt.State == types.Market_STATE_SETTLED
+		m.closed = m.mkt.State == types.MarketStateSettled
 		return m.closed
 	}
 
@@ -564,14 +564,14 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	if !closed {
 		m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	} else {
-		m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+		m.mkt.State = types.MarketStateTradingTerminated
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
 		}
 	}
 
-	m.closed = m.mkt.State == types.Market_STATE_SETTLED
+	m.closed = m.mkt.State == types.MarketStateSettled
 	return m.closed
 }
 
@@ -630,7 +630,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	}
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
-	m.mkt.State = types.Market_STATE_SETTLED
+	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil
 }
@@ -743,7 +743,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	m.broker.Send(event)
 
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
-		m.mkt.State = types.Market_STATE_SUSPENDED
+		m.mkt.State = types.MarketStateSuspended
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	}
 }
@@ -751,8 +751,8 @@ func (m *Market) EnterAuction(ctx context.Context) {
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
-		if !m.as.InAuction() && m.mkt.State == types.Market_STATE_SUSPENDED {
-			m.mkt.State = types.Market_STATE_ACTIVE
+		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
+			m.mkt.State = types.MarketStateActive
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		}
 	}()
