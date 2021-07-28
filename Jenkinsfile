@@ -81,7 +81,7 @@ pipeline {
             steps {
 		retry(3) {
 		    dir('vega') {
-			sh 'go mod download'
+			sh 'go mod download -x'
 		    }
 		}
             }
@@ -102,7 +102,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                                 sh '${OUTPUT} version'
@@ -119,7 +119,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                             }
@@ -135,7 +135,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                             }
