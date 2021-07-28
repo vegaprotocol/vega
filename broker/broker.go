@@ -37,7 +37,7 @@ type BrokerI interface {
 }
 
 // SocketClient is an interface to send serialized events over a socket.
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_sender_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketSenderI
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_client_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketClient
 type SocketClient interface {
 	Send(events []events.Event)
 	Close() error
