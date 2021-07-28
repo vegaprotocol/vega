@@ -137,7 +137,7 @@ type NodeCommand struct {
 	VersionHash string
 }
 
-func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWalletPassphrase string, args []string) error {
+func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, args []string) error {
 	l.cfgwatchr = cfgwatchr
 
 	l.conf, l.configPath = cfgwatchr.Get(), rootPath
