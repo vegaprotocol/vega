@@ -1,4 +1,4 @@
-/* properties of scmVars (example): 
+/* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
     - GIT_COMMIT:05a1c6fbe7d1ff87cfc40a011a63db574edad7e6
     - GIT_PREVIOUS_COMMIT:5d02b46fdb653f789e799ff6ad304baccc32cbf9
@@ -135,6 +135,17 @@ pipeline {
             }
         }
 
+	// these stages are run in sequence as they delete and recreate files
+	stage('check gqlgen') {
+            steps {
+                retry(3) {
+                    dir('vega') {
+                        sh 'make gqlgen_check'
+                    }
+                }
+            }
+        }
+
         stage('Run checks') {
             parallel {
                 stage('[TODO] markdown verification') {
@@ -146,11 +157,12 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] unit tests') {
+                stage('unit tests') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run unit tests'
+				sh 'go test -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
+                                junit 'vega-unit-test-report.xml'
                             }
                         }
                     }
@@ -159,71 +171,45 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega/integration') {
-                                sh 'godog --format=junit:vega-integration-report.xml'
+                                sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
                                 junit 'vega-integration-report.xml'
                             }
                         }
                     }
                 }
-                stage('[TODO] check gqlgen') {
+                stage('check print') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run check gqlgen'
+                                sh 'make print_check'
                             }
                         }
                     }
                 }
-                stage('[TODO] check print') {
+                stage('test again with a race flag') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run check print'
+                                sh 'go test -race -v ./... 2>&1 | go-junit-report > vega-unit-test-race-report.xml'
+                                junit 'vega-unit-test-race-report.xml'
                             }
                         }
                     }
                 }
-                stage('[TODO] check proto') {
+                stage('go vet') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run check proto'
+                                sh 'go vet ./...'
                             }
                         }
                     }
                 }
-                stage('[TODO] test again with a race flag') {
+                stage('buf lint') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run test again with a race flag'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] vet') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run vet'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] code owner') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run code owner'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] buf lint') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run buf lint'
+                                sh 'buf lint'
                             }
                         }
                     }
@@ -237,20 +223,11 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] static check') {
+                stage('static check') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run static check'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] swagger diff verification') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run swagger diff verification'
+                                sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
                             }
                         }
                     }
@@ -277,7 +254,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega/integration') {
-                                sh 'godog --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
+                                sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
                                 junit 'specs-internal-qa-scenarios-report.xml'
                             }
                         }
