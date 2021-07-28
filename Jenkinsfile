@@ -135,17 +135,18 @@ pipeline {
             }
         }
 
-        stage('Run checks') {
 	    // these stages are run in sequence as they delete and recreate files
 	    stage('check gqlgen') {
-                steps {
-                    retry(3) {
-                        dir('vega') {
-                            sh 'make gqlgen_check'
-                        }
+            steps {
+                retry(3) {
+                    dir('vega') {
+                        sh 'make gqlgen_check'
                     }
                 }
             }
+        }
+
+        stage('Run checks') {
             parallel {
                 stage('[TODO] markdown verification') {
                     steps {
@@ -160,8 +161,8 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-			    	sh 'go test -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
-			    	junit 'vega-unit-test-report.xml'
+                                sh 'go test -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
+                                junit 'vega-unit-test-report.xml'
                             }
                         }
                     }
@@ -189,8 +190,8 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-				sh 'go test -race -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
-				junit 'vega-unit-test-race-report.xml'
+                                sh 'go test -race -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
+                                junit 'vega-unit-test-race-report.xml'
                             }
                         }
                     }
