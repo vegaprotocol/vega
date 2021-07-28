@@ -135,8 +135,8 @@ pipeline {
             }
         }
 
-	    // these stages are run in sequence as they delete and recreate files
-	    stage('check gqlgen') {
+	// these stages are run in sequence as they delete and recreate files
+	stage('check gqlgen') {
             steps {
                 retry(3) {
                     dir('vega') {
@@ -228,15 +228,6 @@ pipeline {
                         retry(3) {
                             dir('vega') {
                                 sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] swagger diff verification') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run swagger diff verification'
                             }
                         }
                     }
