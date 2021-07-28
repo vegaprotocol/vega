@@ -235,7 +235,7 @@ pipeline {
 
 	stage('Run tests') {
 	    parallel {
-                stage('test again with a race flag') {
+                stage('unit tests with race') {
                     steps {
                         retry(3) {
                             dir('vega') {
