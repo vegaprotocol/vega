@@ -74,16 +74,19 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	socketClient, err := NewSocketClient(ctx, log, &config.SocketConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialise underlying socket client: %w", err)
-	}
-
-	go func() {
-		if err := socketClient.Close(); err != nil {
-			log.Error(fmt.Sprintf("failed to close socket"), logging.Error(err))
+	var socketClient SocketClient
+	if config.SocketConfig.Enabled {
+		socketClient, err := NewSocketClient(ctx, log, &config.SocketConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialise underlying socket client: %w", err)
 		}
-	}()
+
+		go func() {
+			if err := socketClient.Close(); err != nil {
+				log.Error("failed to close socket client", logging.Error(err))
+			}
+		}()
+	}
 
 	return &Broker{
 		ctx:          ctx,

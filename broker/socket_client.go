@@ -15,11 +15,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-const (
-	dialRetryInterval             = 5 * time.Second
-	defaultEventChannelBufferSize = 10000000
-)
-
 // SocketClient stream events sent to this broker over a socket to a remote broker.
 // This is used to send events from a non-validating core node to a data node.
 type socketClient struct {
@@ -38,10 +33,6 @@ type socketClient struct {
 }
 
 func NewSocketClient(ctx context.Context, log *logging.Logger, config *SocketConfig) (SocketClient, error) {
-	if !config.Enabled {
-		return nil, nil
-	}
-
 	sock, err := push.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
@@ -54,8 +45,8 @@ func NewSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 		config: config,
 		sock:   sock,
 
-		eventCh:  make(chan []events.Event, defaultEventChannelBufferSize),
-		socketCh: make(chan []byte, defaultEventChannelBufferSize),
+		eventCh:  make(chan []events.Event, config.EventChannelBufferSize),
+		socketCh: make(chan []byte, config.SocketChannelBufferSize),
 		errCh:    make(chan error),
 	}
 
@@ -68,10 +59,12 @@ func NewSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 	return &s, nil
 }
 
-func (s socketClient) connect() error {
-	var err error
+func (s *socketClient) connect() error {
 	addr := fmt.Sprintf("tcp://%s:%d", "0.0.0.0", s.config.Port)
-	ticker := time.NewTicker(dialRetryInterval)
+
+	ticker := time.NewTicker(s.config.DialRetryInterval.Get())
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-s.ctx.Done():
@@ -79,30 +72,25 @@ func (s socketClient) connect() error {
 		case <-time.After(s.config.DialTimeout.Get()):
 			return fmt.Errorf("timeout connecting to %v", addr)
 		case <-ticker.C:
-			if err = s.sock.Dial(addr); err != nil {
+			if err := s.sock.Dial(addr); err != nil {
 				s.log.Error(fmt.Sprintf("failed to connect to %v, retrying", addr), logging.Error(err))
 			} else {
-				ticker.Stop()
 				return nil
 			}
 		}
 	}
 }
 
-func (s socketClient) Send(evts []events.Event) {
+func (s *socketClient) Send(evts []events.Event) {
 	s.eventCh <- evts
 }
 
-func (s socketClient) Close() error {
-	if s.config.Enabled {
-		return nil
-	}
-
+func (s *socketClient) Close() error {
 	<-s.ctx.Done()
 	return s.sock.Close()
 }
 
-func (s socketClient) reconnect() error {
+func (s *socketClient) reconnect() error {
 	s.reconnectMu.Lock()
 	s.reconnecting = true
 	s.reconnectMu.Unlock()
@@ -113,21 +101,24 @@ func (s socketClient) reconnect() error {
 	}()
 
 	addr := fmt.Sprintf("tcp://%s:%d", "0.0.0.0", s.config.Port)
-	s.log.Warningf(fmt.Sprintf("connection lost to %v, will retry to connect", addr))
+	s.log.Warningf("connection lost, will retry to connect", logging.String("peer", addr))
 
 	return s.connect()
 }
 
-func (s socketClient) stream() {
+func (s *socketClient) stream() {
+	defer func() {
+		close(s.socketCh)
+		close(s.eventCh)
+		close(s.errCh)
+	}()
+
 	for {
 		select {
 		case <-s.ctx.Done():
-			close(s.socketCh)
-			close(s.eventCh)
-			close(s.errCh)
 			return
 		case err := <-s.errCh:
-			s.log.Error(fmt.Sprintf("terminating event streaming"), logging.Error(err))
+			s.log.Error("terminating event streaming", logging.Error(err))
 			return
 		case msg := <-s.socketCh:
 			if err := s.sock.Send(msg); err != nil {
@@ -136,18 +127,17 @@ func (s socketClient) stream() {
 				case protocol.ErrClosed:
 					s.errCh <- s.reconnect()
 				default:
-					s.log.Error(fmt.Sprintf("failed to send on socket"), logging.Error(err))
+					s.log.Error("failed to send on socket", logging.Error(err))
 				}
 			}
 		case evts := <-s.eventCh:
 			for _, evt := range evts {
 				msg, err := proto.Marshal(evt.StreamMessage())
 				if err != nil {
-					s.errCh <- fmt.Errorf("fail to marshal event: %v", err)
+					s.errCh <- fmt.Errorf("fail to marshal event: %w", err)
 				}
 				s.socketCh <- msg
 			}
-		default:
 		}
 	}
 }

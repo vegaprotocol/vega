@@ -9,6 +9,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/contextutil"
@@ -657,4 +658,8 @@ func (e evt) Sequence() uint64 {
 
 func (e evt) TraceID() string {
 	return e.id
+}
+
+func (e evt) StreamMessage() *eventspb.BusEvent {
+	return nil
 }
