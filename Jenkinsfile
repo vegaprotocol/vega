@@ -194,11 +194,11 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] misspell') {
+                stage('lint misspell') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run misspell'
+                                sh 'golangci-lint run --disable-all --enable misspell'
                             }
                         }
                     }
