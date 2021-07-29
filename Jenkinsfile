@@ -194,7 +194,7 @@ pipeline {
                         }
                     }
                 }
-                stage('lint misspell') {
+                stage('misspell') {
                     steps {
                         retry(3) {
                             dir('vega') {
@@ -221,11 +221,11 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] markdown verification') {
+                stage('markdown spellcheck') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run markdown verification'
+                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
                             }
                         }
                     }
