@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
+	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -23,7 +23,7 @@ import (
 const (
 	testMarketID    = "7CPSHJB35AIQBTNMIE6NLFPZGHOYRQ3D"
 	testMarketAsset = "BTC"
-	rewardsID       = "0x00000000000000000000000000000000"
+	rewardsID       = "0000000000000000000000000000000000000000000000000000000000000000"
 )
 
 type testEngine struct {

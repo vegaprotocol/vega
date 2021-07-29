@@ -22,7 +22,7 @@ const (
 	// if needed
 	systemOwner   = "*"
 	noMarket      = "!"
-	rewardPartyID = "0x00000000000000000000000000000000"
+	rewardPartyID = "0000000000000000000000000000000000000000000000000000000000000000"
 )
 
 var (
