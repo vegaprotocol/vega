@@ -179,7 +179,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	leaveAuction(tm, ctx, &now)
 
 	md := tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
@@ -207,7 +207,7 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we are in a price auction
-	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_PRICE, tm.market.GetMarketData().Trigger)
+	assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
 	// Check we have the right amount of events
 	// assert.Equal(t, uint64(8), tm.orderEventCount)
@@ -244,7 +244,7 @@ func TestEvents_CloseOutParty(t *testing.T) {
 	leaveAuction(tm, ctx, &now)
 
 	md := tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
@@ -254,7 +254,7 @@ func TestEvents_CloseOutParty(t *testing.T) {
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 	md = tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	// Fill some of it to set the mark price
 	o4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order04", types.SideBuy, "party-B", 10, 2)
@@ -288,7 +288,7 @@ func TestEvents_CloseOutParty(t *testing.T) {
 	require.NoError(t, err)
 
 	md = tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode, "market not continuous: %s (trigger: %s)", md.MarketTradingMode, md.Trigger)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode, "market not continuous: %s (trigger: %s)", md.MarketTradingMode, md.Trigger)
 
 	// Check we have the right amount of events
 	assert.Equal(t, uint64(14), tm.orderEventCount)
@@ -324,7 +324,7 @@ func TestEvents_CloseOutPartyWithPeggedOrder(t *testing.T) {
 	leaveAuction(tm, ctx, &now)
 
 	md := tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
@@ -369,7 +369,7 @@ func TestEvents_CloseOutPartyWithPeggedOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	md = tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	// Check we have the right amount of events
 	// assert.Equal(t, uint64(15), tm.orderEventCount)
@@ -451,7 +451,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	leaveAuction(tm, ctx, &now)
 
 	md := tm.market.GetMarketData()
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, md.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
 	assert.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
@@ -483,7 +483,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check we are in a price auction
-	assert.Equal(t, types.AuctionTrigger_AUCTION_TRIGGER_PRICE, tm.market.GetMarketData().Trigger)
+	assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
 	// Check we have the right amount of events
 	assert.Equal(t, uint64(10), tm.orderEventCount)

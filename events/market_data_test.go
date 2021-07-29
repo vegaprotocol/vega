@@ -81,8 +81,8 @@ func TestMarketDataDeepClone(t *testing.T) {
 	md.AuctionStart = 999
 	md.IndicativePrice = num.NewUint(999)
 	md.IndicativeVolume = 999
-	md.MarketTradingMode = types.Market_TRADING_MODE_UNSPECIFIED
-	md.Trigger = types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
+	md.MarketTradingMode = types.MarketTradingModeUnspecified
+	md.Trigger = types.AuctionTriggerUnspecified
 	md.TargetStake = "999"
 	md.SuppliedStake = "999"
 	md.PriceMonitoringBounds[0].MinValidPrice = num.NewUint(999)

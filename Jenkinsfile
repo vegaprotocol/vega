@@ -21,6 +21,7 @@ pipeline {
         string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
     }
     environment {
+        CGO_ENABLED = 0
         GO111MODULE = 'on'
         SLACK_MESSAGE = "Vega Core CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
     }
@@ -89,7 +90,6 @@ pipeline {
 
         stage('Compile vega core') {
             environment {
-                CGO_ENABLED  = 0
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
             parallel {
@@ -239,8 +239,18 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-				sh 'go test -v -race ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+				sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
                                 junit 'vega-unit-test-race-report.xml'
+                            }
+                        }
+                    }
+                }
+                stage('unit tests') {
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+				sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                                junit 'vega-unit-test-report.xml'
                             }
                         }
                     }

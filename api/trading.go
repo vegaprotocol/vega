@@ -286,7 +286,7 @@ func (s *tradingService) PrepareVoteSubmission(ctx context.Context, req *protoap
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 
-	if req.Submission.Value == types.Vote_VALUE_UNSPECIFIED {
+	if req.Submission.Value == types.VoteValueUnspecified {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 

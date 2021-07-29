@@ -26,11 +26,11 @@ func NewMarketUpdatedEvent(ctx context.Context, m types.Market) *MarketUpdated {
 
 // MarketEvent -> is needs to be logged as a market event
 func (m MarketUpdated) MarketEvent() string {
-	return fmt.Sprintf("Market ID %s updated (%s)", m.m.Id, m.pm.String())
+	return fmt.Sprintf("Market ID %s updated (%s)", m.m.ID, m.pm.String())
 }
 
 func (m MarketUpdated) MarketID() string {
-	return m.m.Id
+	return m.m.ID
 }
 
 func (m MarketUpdated) Market() types.Market {
@@ -43,7 +43,7 @@ func (m MarketUpdated) Proto() proto.Market {
 
 func (m MarketUpdated) MarketProto() eventspb.MarketEvent {
 	return eventspb.MarketEvent{
-		MarketId: m.m.Id,
+		MarketId: m.m.ID,
 		Payload:  m.MarketEvent(),
 	}
 }

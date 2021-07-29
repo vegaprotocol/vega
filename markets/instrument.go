@@ -63,7 +63,7 @@ func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrumen
 		return nil, errors.Wrap(err, "unable to instantiate product from instrument configuration")
 	}
 	return &Instrument{
-		ID:       pi.Id,
+		ID:       pi.ID,
 		Code:     pi.Code,
 		Name:     pi.Name,
 		Metadata: pi.Metadata,

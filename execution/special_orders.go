@@ -17,7 +17,7 @@ func (m *Market) repricePeggedOrders(
 	ctx context.Context,
 	changes uint8,
 ) (parked []*types.Order, toSubmit []*types.Order) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "repricePeggedOrders")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "repricePeggedOrders")
 
 	// Go through all the pegged orders and remove from the order book
 	for _, order := range m.peggedOrders.orders {

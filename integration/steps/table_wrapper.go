@@ -533,33 +533,33 @@ func (r RowWrapper) MustAuctionTrigger(name string) types.AuctionTrigger {
 func AuctionTrigger(name string) (types.AuctionTrigger, error) {
 	at, ok := proto.AuctionTrigger_value[name]
 	if !ok {
-		return types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, fmt.Errorf("couldn't find %s as auction trigger", name)
+		return types.AuctionTriggerUnspecified, fmt.Errorf("couldn't find %s as auction trigger", name)
 	}
 	return types.AuctionTrigger(at), nil
 }
 
-func (r RowWrapper) MustTradingMode(name string) types.Market_TradingMode {
+func (r RowWrapper) MustTradingMode(name string) types.MarketTradingMode {
 	ty, err := TradingMode(r.MustStr(name))
 	panicW(name, err)
 	return ty
 }
 
-func TradingMode(name string) (types.Market_TradingMode, error) {
+func TradingMode(name string) (types.MarketTradingMode, error) {
 	ty, ok := proto.Market_TradingMode_value[name]
 
 	if !ok {
-		return types.Market_TRADING_MODE_UNSPECIFIED, fmt.Errorf("couldn't find %s as trading_mode", name)
+		return types.MarketTradingModeUnspecified, fmt.Errorf("couldn't find %s as trading_mode", name)
 	}
-	return types.Market_TradingMode(ty), nil
+	return types.MarketTradingMode(ty), nil
 }
 
-func MarketState(name string) (types.Market_State, error) {
+func MarketState(name string) (types.MarketState, error) {
 	ty, ok := proto.Market_State_value[name]
 
 	if !ok {
-		return types.Market_STATE_UNSPECIFIED, fmt.Errorf("couldn't find %s as market state", name)
+		return types.MarketStateUnspecified, fmt.Errorf("couldn't find %s as market state", name)
 	}
-	return types.Market_State(ty), nil
+	return types.MarketState(ty), nil
 }
 
 func (r RowWrapper) MustAccount(name string) types.AccountType {

@@ -157,7 +157,7 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 
 func getValidInstrumentProto() *types.Instrument {
 	return &types.Instrument{
-		Id:   "Crypto/BTCUSD/Futures/Dec19",
+		ID:   "Crypto/BTCUSD/Futures/Dec19",
 		Code: "FX:BTCUSD/DEC19",
 		Name: "December 2019 BTC vs USD future",
 		Metadata: &types.InstrumentMetadata{

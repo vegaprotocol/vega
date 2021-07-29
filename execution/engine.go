@@ -228,13 +228,13 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 		return err
 	}
 
-	mkt := e.markets[marketConfig.Id]
+	mkt := e.markets[marketConfig.ID]
 	// publish market data anyway initially
 	e.publishMarketInfos(ctx, mkt)
 
 	// now we try to submit the liquidity
 	if err := mkt.SubmitLiquidityProvision(ctx, lp, party, lpID); err != nil {
-		e.removeMarket(marketConfig.Id)
+		e.removeMarket(marketConfig.ID)
 		return err
 	}
 
@@ -252,7 +252,7 @@ func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	// here straight away we start the OPENING_AUCTION
-	mkt := e.markets[marketConfig.Id]
+	mkt := e.markets[marketConfig.ID]
 	_ = mkt.StartOpeningAuction(ctx)
 
 	e.publishMarketInfos(ctx, mkt)
@@ -268,7 +268,7 @@ func (e *Engine) publishMarketInfos(ctx context.Context, mkt *Market) {
 
 // SubmitMarket will submit a new market configuration to the network
 func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) error {
-	if len(marketConfig.Id) == 0 {
+	if len(marketConfig.ID) == 0 {
 		return ErrNoMarketID
 	}
 	now := e.time.GetTimeNow()
@@ -280,15 +280,15 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 	if !e.collateral.AssetExists(asset) {
 		e.log.Error("unable to create a market with an invalid asset",
-			logging.MarketID(marketConfig.Id),
+			logging.MarketID(marketConfig.ID),
 			logging.AssetID(asset))
 	}
 
 	// set a fake tick size to the continuous trading if it's continuous
 	switch tmod := marketConfig.TradingModeConfig.(type) {
-	case *types.Market_Continuous:
+	case *types.MarketContinuous:
 		tmod.Continuous.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
-	case *types.Market_Discrete:
+	case *types.MarketDiscrete:
 		tmod.Discrete.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	}
 
@@ -313,18 +313,18 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
-			logging.MarketID(marketConfig.Id),
+			logging.MarketID(marketConfig.ID),
 			logging.Error(err),
 		)
 		return err
 	}
 
-	e.markets[marketConfig.Id] = mkt
+	e.markets[marketConfig.ID] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)
 
 	// we ignore the response, this cannot fail as the asset
 	// is already proven to exists a few line before
-	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.Id, asset)
+	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.ID, asset)
 
 	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
 		return err
@@ -668,10 +668,10 @@ func (e *Engine) removeExpiredOrders(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
-func (e *Engine) GetMarketState(mktID string) (types.Market_State, error) {
+func (e *Engine) GetMarketState(mktID string) (types.MarketState, error) {
 	mkt, ok := e.markets[mktID]
 	if !ok {
-		return types.Market_STATE_UNSPECIFIED, types.ErrInvalidMarketID
+		return types.MarketStateUnspecified, types.ErrInvalidMarketID
 	}
 	return mkt.GetMarketState(), nil
 }

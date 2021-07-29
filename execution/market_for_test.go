@@ -53,7 +53,7 @@ func (m *Market) TSCalc() TargetStakeCalculator {
 	return m.tsCalc
 }
 
-func (m *Market) State() types.Market_State {
+func (m *Market) State() types.MarketState {
 	return m.mkt.State
 }
 
