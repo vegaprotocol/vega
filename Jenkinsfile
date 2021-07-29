@@ -115,7 +115,7 @@ pipeline {
                                 done
                                 tmptag="$(openssl rand -hex 10)"
                                 imagetag=$BRANCH_NAME
-                                if [ $BRANCH_NAME == "develop" ]; then
+                                if [[ $BRANCH_NAME == "develop" ]]; then
                                     imagetag=edge
                                 fi
                                 ls -al docker/bin
