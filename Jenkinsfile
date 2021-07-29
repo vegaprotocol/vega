@@ -115,9 +115,7 @@ pipeline {
                                 done
                                 tmptag="$(openssl rand -hex 10)"
                                 imagetag=$BRANCH_NAME
-                                if [[ "$BRANCH_NAME" == "develop" ]]; then
-                                    imagetag=edge
-                                fi
+                                [ "$BRANCH_NAME" == "develop" ] && imagetag=edge
                                 ls -al docker/bin
                                 docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
                                 rm -rf docker/bin
