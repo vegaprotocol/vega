@@ -98,7 +98,6 @@ pipeline {
             when {
                 anyOf {
                     branch 'develop';
-                    branch 'main';
                     buildingTag();
                 }
             }
@@ -115,12 +114,16 @@ pipeline {
                                     cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
                                 done
                                 tmptag="$(openssl rand -hex 10)"
+                                imagetag=$BRANCH_NAME
+                                if [ $BRANCH_NAME == "develop" ]; then
+                                    imagetag=edge
+                                fi
                                 ls -al docker/bin
                                 docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
                                 rm -rf docker/bin
-                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
-                                docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
-                                docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
+                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:$imagetag"
+                                docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:$imagetag"
+                                docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$imagetag"
                             '''
                         }
                     }
