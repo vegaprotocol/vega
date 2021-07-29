@@ -7,7 +7,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/golang/protobuf/proto"
 	"go.nanomsg.org/mangos/v3/protocol"
@@ -42,6 +42,7 @@ func NewSocketServer(ctx context.Context, log *logging.Logger, config *SocketCon
 	return &SocketServer{
 		ctx:  ctx,
 		log:  log,
+		config: config,
 		sock: sock,
 		quit: make(chan struct{}),
 	}, nil

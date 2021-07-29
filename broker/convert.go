@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/events"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {

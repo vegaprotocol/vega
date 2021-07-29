@@ -13,7 +13,8 @@ import (
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -635,4 +636,8 @@ func (e evt) Sequence() uint64 {
 
 func (e evt) TraceID() string {
 	return e.id
+}
+
+func (e evt) StreamMessage() *eventspb.BusEvent {
+	return nil
 }
