@@ -194,6 +194,10 @@ type FutureProductInput struct {
 	SettlementAsset string `json:"settlementAsset"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
+	// The oracle spec describing the oracle data of interest for settlement price.
+	OracleSpecForSettlementPrice *OracleSpecConfigurationInput `json:"oracleSpecForSettlementPrice"`
+	// The oracle spec describing the oracle data of interest for trading termination.
+	OracleSpecForTradingTermination *OracleSpecConfigurationInput `json:"oracleSpecForTradingTermination"`
 	// The binding between the oracle spec and the settlement price
 	OracleSpecBinding *OracleSpecToFutureBindingInput `json:"oracleSpecBinding"`
 }
@@ -381,7 +385,8 @@ type OracleSpecConfigurationInput struct {
 // OracleSpecToFutureBindingInput tells on which property oracle data should be
 // used as settlement price.
 type OracleSpecToFutureBindingInput struct {
-	SettlementPriceProperty string `json:"settlementPriceProperty"`
+	SettlementPriceProperty    string `json:"settlementPriceProperty"`
+	TradingTerminationProperty string `json:"tradingTerminationProperty"`
 }
 
 // An estimate of the fee to be paid by the order
@@ -405,11 +410,11 @@ type PeggedOrderInput struct {
 type PositionResolution struct {
 	// the market ID where position resolution happened
 	MarketID string `json:"marketId"`
-	// number of distressed traders on market
+	// number of distressed partys on market
 	Distressed int `json:"distressed"`
-	// number of traders closed out
+	// number of partys closed out
 	Closed int `json:"closed"`
-	// the mark price at which traders were distressed/closed out
+	// the mark price at which partys were distressed/closed out
 	MarkPrice int `json:"markPrice"`
 }
 
@@ -588,7 +593,7 @@ type SettleDistressed struct {
 	MarketID string `json:"marketId"`
 	// the party who closed out
 	PartyID string `json:"partyId"`
-	// the margin taken from distressed trader
+	// the margin taken from distressed party
 	Margin int `json:"margin"`
 	// the price at which position was closed out
 	Price int `json:"price"`
@@ -698,11 +703,13 @@ type AccountType string
 const (
 	// Insurance pool account - only for 'system' party
 	AccountTypeInsurance AccountType = "Insurance"
+	// Global insurance pool account for an asset
+	AccountTypeGlobalInsurance AccountType = "GlobalInsurance"
 	// Settlement - only for 'system' party
 	AccountTypeSettlement AccountType = "Settlement"
-	// Margin - The leverage account for traders
+	// Margin - The leverage account for partys
 	AccountTypeMargin AccountType = "Margin"
-	// General account - the account containing 'unused' collateral for traders
+	// General account - the account containing 'unused' collateral for partys
 	AccountTypeGeneral AccountType = "General"
 	// Infrastructure fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
@@ -716,6 +723,7 @@ const (
 
 var AllAccountType = []AccountType{
 	AccountTypeInsurance,
+	AccountTypeGlobalInsurance,
 	AccountTypeSettlement,
 	AccountTypeMargin,
 	AccountTypeGeneral,
@@ -727,7 +735,7 @@ var AllAccountType = []AccountType{
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
+	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
 		return true
 	}
 	return false
@@ -1649,7 +1657,7 @@ const (
 	OrderTypeMarket OrderType = "Market"
 	// mentioned in ticket, but as yet unused order type
 	OrderTypeLimit OrderType = "Limit"
-	// Used for distressed traders, an order placed by the network to close out distressed traders
+	// Used for distressed partys, an order placed by the network to close out distressed partys
 	// similar to Market order, only no party is attached to the order.
 	OrderTypeNetwork OrderType = "Network"
 )

@@ -130,7 +130,7 @@ type Subscription {
 
   "Subscribe to the margin changes"
   margins(
-    "id of the trader we want to subscribe for margin updates"
+    "id of the party we want to subscribe for margin updates"
     partyId: ID!
     "market we want to listen to margin updates (nil if we want updates for all markets)"
     marketId: ID
@@ -163,24 +163,24 @@ type Subscription {
   ): [BusEvent!]
 }
 
-"Margins for a given a trader"
+"Margins for a given a party"
 type MarginLevels {
-  "market in which the margin is required for this trader"
+  "market in which the margin is required for this party"
   market: Market!
   "asset for the current margins"
   asset: Asset!
-  "id of the trader for this margin"
+  "id of the party for this margin"
   party: Party!
   "minimal margin for the position to be maintained in the network (unsigned int actually)"
   maintenanceLevel: String!
   "if the margin is between maintenance and search, the network will initiate a collateral search (unsigned int actually)"
   searchLevel: String!
-  "this is the minimal margin required for a trader to place a new order on the network (unsigned int actually)"
+  "this is the minimal margin required for a party to place a new order on the network (unsigned int actually)"
   initialLevel: String!
 
   """
-  If the margin of the trader is greater than this level, then collateral will be released from the margin account into
-  the general account of the trader for the given asset.
+  If the margin of the party is greater than this level, then collateral will be released from the margin account into
+  the general account of the party for the given asset.
   """
   collateralReleaseLevel: String!
 
@@ -676,8 +676,12 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
- # "The oracle spec describing the oracle data of interest."
- # oracleSpec: OracleSpec!
+  "The oracle spec describing the oracle data of interest for settlement price."
+  oracleSpecForSettlementPrice: OracleSpec!
+
+  "The oracle spec describing the oracle data of interest for trading termination."
+  oracleSpecForTradingTermination: OracleSpec!
+
 
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBinding!
@@ -685,10 +689,11 @@ type Future {
 
 """
 OracleSpecToFutureBinding tells on which property oracle data should be
-used as settlement price.
+used as settlement price and trading termination.
 """
 type OracleSpecToFutureBinding {
   settlementPriceProperty: String!
+  tradingTerminationProperty: String!
 }
 
 """
@@ -1215,7 +1220,7 @@ type Party {
 }
 
 """
-An individual trader at any point in time is considered net long or net short. This refers to their Open Volume,
+An individual party at any point in time is considered net long or net short. This refers to their Open Volume,
 calculated using FIFO. This volume is signed as either negative for LONG positions and positive for SHORT positions. A
 single trade may end up "splitting" with some of its volume matched into closed volume and some of its volume
 remaining as open volume. This is why we don't refer to positions being comprised of trades, rather of volume.
@@ -1269,7 +1274,7 @@ type Order {
   "Number of contracts remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
 
-  "The trader who place the order (probably stored internally as the trader's public key)"
+  "The party who place the order (probably stored internally as the party's public key)"
   party: Party!
 
   "RFC3339Nano formatted date and time for when the order was created (timestamp)"
@@ -1287,7 +1292,7 @@ type Order {
   "Trades relating to this order"
   trades: [Trade!]
 
-  "Type the order type (defaults to TRADER)"
+  "Type the order type (defaults to PARTY)"
   type: OrderType
 
   "Reason for the order to be rejected"
@@ -1779,7 +1784,7 @@ enum OrderType {
   Limit
 
   """
-  Used for distressed traders, an order placed by the network to close out distressed traders
+  Used for distressed partys, an order placed by the network to close out distressed partys
   similar to Market order, only no party is attached to the order.
   """
   Network
@@ -1862,11 +1867,13 @@ enum Interval {
 enum AccountType {
   "Insurance pool account - only for 'system' party"
   Insurance
+  "Global insurance pool account for an asset"
+  GlobalInsurance
   "Settlement - only for 'system' party"
   Settlement
-  "Margin - The leverage account for traders"
+  "Margin - The leverage account for partys"
   Margin
-  "General account - the account containing 'unused' collateral for traders"
+  "General account - the account containing 'unused' collateral for partys"
   General
   "Infrastructure fee account - the account where all infrastructure fees are collected"
   FeeInfrastructure
@@ -1918,8 +1925,10 @@ input FutureProductInput {
   settlementAsset: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-  #"The oracle spec describing the oracle data of interest."
-  #oracleSpec: OracleSpecConfigurationInput!
+  "The oracle spec describing the oracle data of interest for settlement price."
+  oracleSpecForSettlementPrice: OracleSpecConfigurationInput!
+  "The oracle spec describing the oracle data of interest for trading termination."
+  oracleSpecForTradingTermination: OracleSpecConfigurationInput!
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBindingInput!
 }
@@ -1930,6 +1939,7 @@ used as settlement price.
 """
 input OracleSpecToFutureBindingInput {
   settlementPriceProperty: String!
+  tradingTerminationProperty: String!
 }
 
 """
@@ -1990,10 +2000,14 @@ type FutureProduct {
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-#  """
-#  Describes the oracle data that an instrument wants to get from the oracle engine.
-#  """
-#  oracleSpec: OracleSpecConfiguration!
+  """
+  Describes the oracle data that an instrument wants to get from the oracle engine for settlement price.
+  """
+  oracleSpecForSettlementPrice: OracleSpecConfiguration!
+  """
+  Describes the oracle data that an instrument wants to get from the oracle engine for trading termination.
+  """
+  oracleSpecForTradingTermination: OracleSpecConfiguration!
   """
   OracleSpecToFutureBinding tells on which property oracle data should be
   used as settlement price.
@@ -2472,11 +2486,11 @@ type TransferResponses {
 type PositionResolution {
   "the market ID where position resolution happened"
   marketId: ID!
-  "number of distressed traders on market"
+  "number of distressed partys on market"
   distressed: Int!
-  "number of traders closed out"
+  "number of partys closed out"
   closed: Int!
-  "the mark price at which traders were distressed/closed out"
+  "the mark price at which partys were distressed/closed out"
   markPrice: Int!
 }
 
@@ -2512,7 +2526,7 @@ type SettleDistressed {
   marketId: ID!
   "the party who closed out"
   partyId: ID!
-  "the margin taken from distressed trader"
+  "the margin taken from distressed party"
   margin: Int!
   "the price at which position was closed out"
   price: Int!

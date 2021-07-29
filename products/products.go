@@ -34,8 +34,10 @@ type OracleEngine interface {
 // Product is the interface provided by all product in vega
 type Product interface {
 	Settle(entryPrice *num.Uint, netPosition int64) (*types.FinancialAmount, error)
-	Value(markPrice *num.Uint) (*num.Uint, error)
+	Value(markPrice *num.Uint) (*num.Uint, bool, error)
 	GetAsset() string
+	IsTradingTerminated() bool
+	SettlementPrice() (*num.Uint, error)
 }
 
 // New instance a new product from a Market framework product configuration

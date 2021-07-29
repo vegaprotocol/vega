@@ -36,8 +36,8 @@ import (
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
-	vegaprotoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 
 	"github.com/golang/mock/gomock"

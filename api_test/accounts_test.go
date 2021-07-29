@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/data-node/events"
-	apipb "code.vegaprotocol.io/protos/data-node/api"
-	pb "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/types/num"
+	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
+	pb "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 func TestGetPartyAccounts(t *testing.T) {

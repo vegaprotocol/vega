@@ -912,11 +912,12 @@ type InstrumentConfiguration_Future struct {
 }
 
 type FutureProduct struct {
-	Maturity          string
-	SettlementAsset   string
-	QuoteName         string
-	OracleSpec        *v1.OracleSpecConfiguration
-	OracleSpecBinding *OracleSpecToFutureBinding
+	Maturity                        string
+	SettlementAsset                 string
+	QuoteName                       string
+	OracleSpecForSettlementPrice    *v1.OracleSpecConfiguration
+	OracleSpecForTradingTermination *v1.OracleSpecConfiguration
+	OracleSpecBinding               *OracleSpecToFutureBinding
 }
 
 func (i InstrumentConfiguration_Future) DeepClone() icProd {
@@ -964,10 +965,11 @@ func InstrumentConfigurationFromProto(
 	case *proto.InstrumentConfiguration_Future:
 		r.Product = &InstrumentConfiguration_Future{
 			Future: &FutureProduct{
-				Maturity:        pr.Future.Maturity,
-				SettlementAsset: pr.Future.SettlementAsset,
-				QuoteName:       pr.Future.QuoteName,
-				// OracleSpec:      pr.Future.OracleSpec.DeepClone(),
+				Maturity:                        pr.Future.Maturity,
+				SettlementAsset:                 pr.Future.SettlementAsset,
+				QuoteName:                       pr.Future.QuoteName,
+				OracleSpecForSettlementPrice:    pr.Future.OracleSpecForSettlementPrice.DeepClone(),
+				OracleSpecForTradingTermination: pr.Future.OracleSpecForTradingTermination.DeepClone(),
 				OracleSpecBinding: OracleSpecToFutureBindingFromProto(
 					pr.Future.OracleSpecBinding),
 			},
@@ -990,21 +992,24 @@ func (InstrumentConfiguration_Future) isInstrumentConfiguration_Product() {}
 
 func (f FutureProduct) IntoProto() *proto.FutureProduct {
 	return &proto.FutureProduct{
-		Maturity:        f.Maturity,
-		SettlementAsset: f.SettlementAsset,
-		QuoteName:       f.QuoteName,
-		//OracleSpec:        f.OracleSpec.DeepClone(),
+		Maturity:                        f.Maturity,
+		SettlementAsset:                 f.SettlementAsset,
+		QuoteName:                       f.QuoteName,
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+
 		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
 	}
 }
 
 func (f FutureProduct) DeepClone() *FutureProduct {
 	return &FutureProduct{
-		Maturity:          f.Maturity,
-		SettlementAsset:   f.SettlementAsset,
-		QuoteName:         f.QuoteName,
-		OracleSpec:        f.OracleSpec.DeepClone(),
-		OracleSpecBinding: f.OracleSpecBinding.DeepClone(),
+		Maturity:                        f.Maturity,
+		SettlementAsset:                 f.SettlementAsset,
+		QuoteName:                       f.QuoteName,
+		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
+		OracleSpecForTradingTermination: f.OracleSpecForTradingTermination.DeepClone(),
+		OracleSpecBinding:               f.OracleSpecBinding.DeepClone(),
 	}
 }
 

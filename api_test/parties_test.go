@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/data-node/events"
-	apipb "code.vegaprotocol.io/protos/data-node/api"
+	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
 	pb "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
