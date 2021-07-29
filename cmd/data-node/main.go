@@ -44,6 +44,7 @@ func Main(ctx context.Context) error {
 	parser := flags.NewParser(&config.Empty{}, flags.PrintErrors|flags.PassDoubleDash)
 
 	if err := Register(ctx, parser,
+		Init,
 		Gateway,
 		Node,
 		Version,
