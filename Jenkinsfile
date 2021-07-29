@@ -77,6 +77,16 @@ pipeline {
             }
         }
 
+        stage('go mod download deps') {
+            steps {
+		retry(3) {
+		    dir('vega') {
+			sh 'go mod download -x'
+		    }
+		}
+            }
+        }
+
         stage('Compile vega core') {
             environment {
                 CGO_ENABLED  = 0
@@ -92,7 +102,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                                 sh '${OUTPUT} version'
@@ -109,7 +119,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                             }
@@ -125,7 +135,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                             }
@@ -136,7 +146,7 @@ pipeline {
         }
 
 	// these stages are run in sequence as they delete and recreate files
-	stage('check gqlgen') {
+	stage('Run gqlgen codgen checks') {
             steps {
                 retry(3) {
                     dir('vega') {
@@ -146,52 +156,22 @@ pipeline {
             }
         }
 
-        stage('Run checks') {
+        stage('Run linters') {
             parallel {
-                stage('[TODO] markdown verification') {
+                stage('buf lint') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run markdown verification'
+                                sh 'buf lint'
                             }
                         }
                     }
                 }
-                stage('unit tests') {
+                stage('static check') {
                     steps {
                         retry(3) {
                             dir('vega') {
-				sh 'go test -v ./... 2>&1 | go-junit-report > vega-unit-test-report.xml'
-                                junit 'vega-unit-test-report.xml'
-                            }
-                        }
-                    }
-                }
-                stage('vega/integration tests') {
-                    steps {
-                        retry(3) {
-                            dir('vega/integration') {
-                                sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
-                                junit 'vega-integration-report.xml'
-                            }
-                        }
-                    }
-                }
-                stage('check print') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'make print_check'
-                            }
-                        }
-                    }
-                }
-                stage('test again with a race flag') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'go test -race -v ./... 2>&1 | go-junit-report > vega-unit-test-race-report.xml'
-                                junit 'vega-unit-test-race-report.xml'
+                                sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
                             }
                         }
                     }
@@ -205,11 +185,11 @@ pipeline {
                         }
                     }
                 }
-                stage('buf lint') {
+                stage('check print') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'buf lint'
+                                sh 'make print_check'
                             }
                         }
                     }
@@ -219,15 +199,6 @@ pipeline {
                         retry(3) {
                             dir('vega') {
                                 echo 'Run misspell'
-                            }
-                        }
-                    }
-                }
-                stage('static check') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
                             }
                         }
                     }
@@ -246,6 +217,40 @@ pipeline {
                         retry(3) {
                             dir('vega') {
                                 echo 'Run more linting on multiple file format (sh, py, yaml....)'
+                            }
+                        }
+                    }
+                }
+                stage('[TODO] markdown verification') {
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+                                echo 'Run markdown verification'
+                            }
+                        }
+                    }
+                }
+	    }
+	}
+
+	stage('Run tests') {
+	    parallel {
+                stage('unit tests with race') {
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+				sh 'go test -v -race ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                                junit 'vega-unit-test-race-report.xml'
+                            }
+                        }
+                    }
+                }
+                stage('vega/integration tests') {
+                    steps {
+                        retry(3) {
+                            dir('vega/integration') {
+                                sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
+                                junit 'vega-integration-report.xml'
                             }
                         }
                     }
