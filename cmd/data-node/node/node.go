@@ -27,7 +27,8 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/protos/vega"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
@@ -80,6 +81,8 @@ type NodeCommand struct {
 	partyStore            *storage.Party
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
+
+	vegaTradingServiceClient vegaprotoapi.TradingServiceClient
 
 	broker *broker.Broker
 
@@ -167,6 +170,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.Log,
 		l.conf.API,
 		l.stats,
+		l.vegaTradingServiceClient,
 		l.timeService,
 		l.marketService,
 		l.partyService,

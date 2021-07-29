@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/proto"
+	proto "code.vegaprotocol.io/protos/vega"
 )
 
 type Storage interface {

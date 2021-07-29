@@ -21,7 +21,6 @@ type testSvc struct {
 	bus   *mocks.MockEventBus
 	gov   *mocks.MockGovernanceDataSub
 	votes *mocks.MockVoteSub
-	netp  *mocks.MockNetParams
 }
 
 func newTestService(t *testing.T) *testSvc {
@@ -29,7 +28,6 @@ func newTestService(t *testing.T) *testSvc {
 	bus := mocks.NewMockEventBus(ctrl)
 	gov := mocks.NewMockGovernanceDataSub(ctrl)
 	votes := mocks.NewMockVoteSub(ctrl)
-	netp := mocks.NewMockNetParams(ctrl)
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
@@ -40,9 +38,8 @@ func newTestService(t *testing.T) *testSvc {
 		bus:   bus,
 		gov:   gov,
 		votes: votes,
-		netp:  netp,
 	}
-	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), bus, gov, votes, netp)
+	result.Svc = governance.NewService(logging.NewTestLogger(), governance.NewDefaultConfig(), bus, gov, votes)
 	assert.NotNil(t, result.Svc)
 	return result
 }

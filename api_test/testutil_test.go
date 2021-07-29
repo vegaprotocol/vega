@@ -17,7 +17,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
-	"code.vegaprotocol.io/data-node/api/mocks"
+	apimocks "code.vegaprotocol.io/data-node/api/mocks"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
@@ -34,8 +34,6 @@ import (
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
-	types "code.vegaprotocol.io/data-node/proto"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
@@ -43,10 +41,11 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	types "code.vegaprotocol.io/protos/vega"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/golang/mock/gomock"
-	tmp2p "github.com/tendermint/tendermint/p2p"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
 )
 
@@ -71,18 +70,11 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	conf.API.Port = port
 
 	mockCtrl := gomock.NewController(t)
-	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
-	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
-	blockchainClient.EXPECT().GetStatus(gomock.Any()).AnyTimes().Return(&tmctypes.ResultStatus{
-		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.8"},
-		SyncInfo:      tmctypes.SyncInfo{},
-		ValidatorInfo: tmctypes.ValidatorInfo{},
-	}, nil)
-	blockchainClient.EXPECT().GetUnconfirmedTxCount(gomock.Any()).AnyTimes().Return(0, nil)
-	blockchainClient.EXPECT().GetNetworkInfo(gomock.Any()).AnyTimes().Return(&tmctypes.ResultNetInfo{
-		Listening: true,
-		NPeers:    1,
-	}, nil)
+
+	mockTradingServiceClient := apimocks.NewMockTradingServiceClient(mockCtrl)
+	mockTradingServiceClient.EXPECT().
+		SubmitTransactionV2(gomock.Any(), gomock.Any()).
+		Return(&vegaprotoapi.SubmitTransactionV2Response{}, nil)
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -206,6 +198,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		logger,
 		conf.API,
 		stats.New(logger, conf.Stats, "ver", "hash"),
+		mockTradingServiceClient,
 		timeService,
 		marketService,
 		partyService,

@@ -3,7 +3,7 @@
 package types
 
 import (
-	"code.vegaprotocol.io/data-node/proto"
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/types/num"
 )
 

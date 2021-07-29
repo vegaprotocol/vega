@@ -41,7 +41,7 @@ func main() {
 }
 
 func Main(ctx context.Context) error {
-	parser := flags.NewParser(&config.Empty{}, flags.PrintErrors|flags.PassDoubleDash)
+	parser := flags.NewParser(&config.Empty{}, flags.Default)
 
 	if err := Register(ctx, parser,
 		Init,
@@ -54,9 +54,11 @@ func Main(ctx context.Context) error {
 	}
 
 	if _, err := parser.Parse(); err != nil {
-		switch err.(type) {
+		switch t := err.(type) {
 		case *flags.Error:
-			parser.WriteHelp(os.Stdout)
+			if t.Type != flags.ErrHelp {
+				parser.WriteHelp(os.Stdout)
+			}
 		}
 		return err
 	}

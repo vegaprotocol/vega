@@ -86,26 +86,6 @@ ineffectassign: ## Check for ineffectual assignments
 	@ia="$$(env GO111MODULE=auto ineffassign . | grep -v '_test\.go:')" ; \
 	if test "$$(echo -n "$$ia" | wc -l | awk '{print $$1}')" -gt 0 ; then echo "$$ia" ; exit 1 ; fi
 
-.PHONY: proto
-proto: ## build proto definitions
-	@./proto/generate.sh
-
-.PHONY: proto_check
-proto_check: ## proto: Check committed files match just-generated files
-	@make proto_clean 1>/dev/null
-	@make proto 1>/dev/null
-	@files="$$(git diff --name-only proto/)" ; \
-	if test -n "$$files" ; then \
-		echo "Committed files do not match just-generated files:" $$files ; \
-		test -n "$(CI)" && git diff proto/ ; \
-		exit 1 ; \
-	fi
-
-.PHONY: proto_clean
-proto_clean:
-	@find proto -name '*.pb.go' -o -name '*.pb.gw.go' -o -name '*.validator.pb.go' -o -name '*.swagger.json' \
-		| xargs -r rm
-
 # Misc Targets
 
 codeowners_check:

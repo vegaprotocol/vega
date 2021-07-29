@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
-	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
 type OracleData struct {

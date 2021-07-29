@@ -9,9 +9,9 @@ import (
 	gql "code.vegaprotocol.io/data-node/gateway/graphql"
 	"code.vegaprotocol.io/data-node/gateway/graphql/mocks"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	oraclesv1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -84,7 +84,7 @@ func getTestMarket() *types.Market {
 					Future: &types.Future{
 						Maturity:        "2019-12-31",
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpec: &oraclesv1.OracleSpec{
+						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*oraclesv1.Filter{
 								{
@@ -96,8 +96,21 @@ func getTestMarket() *types.Market {
 								},
 							},
 						},
+						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "trading.terminated",
+										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
+							},
+						},
 						OracleSpecBinding: &types.OracleSpecToFutureBinding{
-							SettlementPriceProperty: "prices.ETH.value",
+							SettlementPriceProperty:    "prices.ETH.value",
+							TradingTerminationProperty: "trading.terminated",
 						},
 					},
 				},
@@ -223,30 +236,30 @@ type resolverRoot interface {
 
 type testResolver struct {
 	resolverRoot
-	log               *logging.Logger
-	ctrl              *gomock.Controller
-	tradingClient     *mocks.MockTradingServiceClient
-	tradingDataClient *mocks.MockTradingDataServiceClient
+	log                *logging.Logger
+	ctrl               *gomock.Controller
+	tradingProxyClient *mocks.MockTradingProxyServiceClient
+	tradingDataClient  *mocks.MockTradingDataServiceClient
 }
 
 func buildTestResolverRoot(t *testing.T) *testResolver {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	conf := gateway.NewDefaultConfig()
-	tradingClient := mocks.NewMockTradingServiceClient(ctrl)
+	tradingProxyClient := mocks.NewMockTradingProxyServiceClient(ctrl)
 	tradingDataClient := mocks.NewMockTradingDataServiceClient(ctrl)
 	resolver := gql.NewResolverRoot(
 		log,
 		conf,
-		tradingClient,
+		tradingProxyClient,
 		tradingDataClient,
 	)
 	return &testResolver{
-		resolverRoot:      resolver,
-		log:               log,
-		ctrl:              ctrl,
-		tradingClient:     tradingClient,
-		tradingDataClient: tradingDataClient,
+		resolverRoot:       resolver,
+		log:                log,
+		ctrl:               ctrl,
+		tradingProxyClient: tradingProxyClient,
+		tradingDataClient:  tradingDataClient,
 	}
 }
 

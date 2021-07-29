@@ -10,7 +10,6 @@ import (
 )
 
 type NodeCmd struct {
-	config.Passphrase `long:"nodewallet-passphrase"`
 	config.RootPathFlag
 
 	config.Config

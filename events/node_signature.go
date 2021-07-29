@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 // NodeSignature ...

@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 
-	ptypes "code.vegaprotocol.io/data-node/proto"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	ptypes "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/data-node/types"
 )
 

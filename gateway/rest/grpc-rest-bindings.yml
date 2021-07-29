@@ -6,7 +6,7 @@ name: api.v1.trading
 title: Vega Trading API
 
 apis:
-  - name: TradingService
+  - name: TradingProxyService
   - name: TradingDataService
 
 http:
@@ -48,20 +48,11 @@ http:
 
 
     # transaction bundles
-    - selector: api.v1.TradingService.SubmitTransaction
+    - selector: api.v1.TradingProxyService.SubmitTransaction
       post: '/transaction'
       body: "*"
 
     # Orders
-    - selector: api.v1.TradingService.PrepareSubmitOrder
-      post: '/orders/prepare/submit'
-      body: "*"
-    - selector: api.v1.TradingService.PrepareCancelOrder
-      post: '/orders/prepare/cancel'
-      body: "*"
-    - selector: api.v1.TradingService.PrepareAmendOrder
-      post: '/orders/prepare/amend'
-      body: "*"
     - selector: api.v1.TradingDataService.OrderByReference
       get: '/orders/{reference}'
     - selector: api.v1.TradingDataService.OrderVersionsByID
@@ -99,10 +90,6 @@ http:
     - selector: api.v1.TradingDataService.MarginLevels
       get: '/parties/{party_id}/markets/{market_id}/margin'
 
-    - selector: api.v1.TradingService.PrepareWithdraw
-      post: '/parties/prepare/withdraw'
-      body: '*'
-
     # governance stuff by party
     - selector: api.v1.TradingDataService.GetProposalsByParty
       get: '/parties/{party_id}/proposals'
@@ -123,14 +110,6 @@ http:
     - selector: api.v1.TradingDataService.Deposits
       get: '/parties/{party_id}/deposits'
 
-    # Governance
-    - selector: api.v1.TradingService.PrepareProposalSubmission
-      post: '/governance/prepare/proposal'
-      body: "*"
-    - selector: api.v1.TradingService.PrepareVoteSubmission
-      post: '/governance/prepare/vote'
-      body: "*"
-
     # Governance queries
     - selector: api.v1.TradingDataService.GetProposalByID
       get: '/governance/proposal/{proposal_id}'
@@ -145,9 +124,6 @@ http:
 
 
     # LiquidityProvision
-    - selector: api.v1.TradingService.PrepareLiquidityProvision
-      post: '/liquidity-provisions/prepare/submit'
-      body: "*"
     - selector: api.v1.TradingDataService.LiquidityProvisions
       get: '/liquidity-provisions/party/{party}/market/{market}'
 
