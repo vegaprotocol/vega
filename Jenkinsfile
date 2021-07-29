@@ -94,12 +94,9 @@ pipeline {
             }
         }
 
-        stage('Build docker image') {
+        stage('Build docker image tag') {
             when {
-                anyOf {
-                    branch 'develop';
-                    buildingTag();
-                }
+                buildingTag()
             }
             steps {
                 retry(3) {
@@ -114,14 +111,53 @@ pipeline {
                                     cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
                                 done
                                 tmptag="$(openssl rand -hex 10)"
-                                imagetag=$BRANCH_NAME
-                                if test "$BRANCH_NAME" == "develop"; then imagetag=edge; fi;
                                 ls -al docker/bin
                                 docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
                                 rm -rf docker/bin
-                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:$imagetag"
-                                docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:$imagetag"
-                                docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$imagetag"
+                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
+                                docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
+                                docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
+                            '''
+                        }
+                    }
+                }
+            }
+            post {
+                always  {
+                    retry(3) {
+                        script {
+                            sh label: 'Log out from the Docker registry', script: '''
+                                docker logout docker.pkg.github.com
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build docker image develop') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                retry(3) {
+                    dir('data-node') {
+                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                            sh label: 'Log in to a Docker registry', script: '''
+                                echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
+                            '''
+                            sh label: 'Build and push docker image', script: '''
+                                mkdir -p docker/bin
+                                find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
+                                    cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
+                                done
+                                tmptag="$(openssl rand -hex 10)"
+                                ls -al docker/bin
+                                docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
+                                rm -rf docker/bin
+                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:edge"
+                                docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:edge"
+                                docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:edge"
                             '''
                         }
                     }
