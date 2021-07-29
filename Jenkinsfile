@@ -80,11 +80,11 @@ pipeline {
 
         stage('go mod download deps') {
             steps {
-		retry(3) {
-		    dir('vega') {
-			sh 'go mod download -x'
-		    }
-		}
+                retry(3) {
+                    dir('vega') {
+                        sh 'go mod download -x'
+                    }
+                }
             }
         }
 
@@ -145,8 +145,8 @@ pipeline {
             }
         }
 
-	// these stages are run in sequence as they delete and recreate files
-	stage('Run gqlgen codgen checks') {
+        // these stages are run in sequence as they delete and recreate files
+        stage('Run gqlgen codgen checks') {
             steps {
                 retry(3) {
                     dir('vega') {
@@ -230,17 +230,17 @@ pipeline {
                         }
                     }
                 }
-	    }
-	}
+            }
+        }
 
-	stage('Run tests') {
-	    parallel {
+        stage('Run tests') {
+            parallel {
                 stage('unit tests with race') {
                     steps {
                         retry(3) {
                             dir('vega') {
-				sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
-                                junit 'vega-unit-test-race-report.xml'
+                                sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                                junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                             }
                         }
                     }
@@ -249,8 +249,8 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-				sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
-                                junit 'vega-unit-test-report.xml'
+                                sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                                junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
                             }
                         }
                     }
@@ -260,7 +260,7 @@ pipeline {
                         retry(3) {
                             dir('vega/integration') {
                                 sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
-                                junit 'vega-integration-report.xml'
+                                junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
                             }
                         }
                     }
@@ -270,7 +270,7 @@ pipeline {
                         retry(3) {
                             dir('vega/integration') {
                                 sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
-                                junit 'specs-internal-qa-scenarios-report.xml'
+                                junit checksName: 'Specs Tests (specs-internal)', testResults: 'specs-internal-qa-scenarios-report.xml'
                             }
                         }
                     }
