@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/data-node/events"
-	apipb "code.vegaprotocol.io/data-node/proto/api"
-	pb "code.vegaprotocol.io/data-node/proto/vega"
-	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
+	apipb "code.vegaprotocol.io/protos/data-node/api"
+	pb "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 func TestObserveTransferResponses(t *testing.T) {

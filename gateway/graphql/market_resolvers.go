@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/data-node/logging"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/vegatime"
 )
 

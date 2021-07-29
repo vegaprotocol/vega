@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 // NoopCandle is a package internal data struct that implements the CandleStore interface.

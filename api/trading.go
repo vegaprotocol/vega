@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
-	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
-	vegaprotoapi "code.vegaprotocol.io/data-node/proto/vega/api"
+	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 )
 
 const defaultRequestTimeout = time.Second * 5

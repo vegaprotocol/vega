@@ -10,13 +10,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"code.vegaprotocol.io/data-node/commands"
+	"code.vegaprotocol.io/protos/commands"
 	vhttp "code.vegaprotocol.io/data-node/http"
 	"code.vegaprotocol.io/data-node/logging"
-	api "code.vegaprotocol.io/data-node/proto/api"
-	types "code.vegaprotocol.io/data-node/proto/vega"
-	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
-	walletpb "code.vegaprotocol.io/data-node/proto/vega/wallet/v1"
+	api "code.vegaprotocol.io/protos/data-node/api"
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"

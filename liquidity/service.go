@@ -5,11 +5,11 @@ import (
 	"errors"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/commands"
+	"code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto/vega"
-	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/data-node/subscribers"
 	uuid "github.com/satori/go.uuid"
 )

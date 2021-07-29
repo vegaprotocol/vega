@@ -5,9 +5,9 @@ package types
 import (
 	"errors"
 
-	proto "code.vegaprotocol.io/data-node/proto/vega"
-	v1 "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 	"code.vegaprotocol.io/data-node/types/num"
+	proto "code.vegaprotocol.io/protos/vega"
+	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
 type LiquidityProviderFeeShare = proto.LiquidityProviderFeeShare
@@ -345,20 +345,20 @@ type Future struct {
 
 func FutureFromProto(f *proto.Future) *Future {
 	return &Future{
-		Maturity:          f.Maturity,
-		SettlementAsset:   f.SettlementAsset,
-		QuoteName:         f.QuoteName,
-		OracleSpec:        f.OracleSpec.DeepClone(),
+		Maturity:        f.Maturity,
+		SettlementAsset: f.SettlementAsset,
+		QuoteName:       f.QuoteName,
+		// OracleSpec:        f.OracleSpec.DeepClone(),
 		OracleSpecBinding: OracleSpecToFutureBindingFromProto(f.OracleSpecBinding),
 	}
 }
 
 func (f Future) IntoProto() *proto.Future {
 	return &proto.Future{
-		Maturity:          f.Maturity,
-		SettlementAsset:   f.SettlementAsset,
-		QuoteName:         f.QuoteName,
-		OracleSpec:        f.OracleSpec.DeepClone(),
+		Maturity:        f.Maturity,
+		SettlementAsset: f.SettlementAsset,
+		QuoteName:       f.QuoteName,
+		//OracleSpec:        f.OracleSpec.DeepClone(),
 		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
 	}
 }

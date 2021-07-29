@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	proto "code.vegaprotocol.io/protos/vega"
 )
 
 type myTradableInstrumentResolver VegaResolverRoot

@@ -13,8 +13,8 @@ import (
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
 	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"

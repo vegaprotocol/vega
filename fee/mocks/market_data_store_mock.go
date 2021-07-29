@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockMarketDataStore) EXPECT() *MockMarketDataStoreMockRecorder {
 }
 
 // GetByID mocks base method
-func (m *MockMarketDataStore) GetByID(arg0 string) (proto.MarketData, error) {
+func (m *MockMarketDataStore) GetByID(arg0 string) (vega.MarketData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
-	ret0, _ := ret[0].(proto.MarketData)
+	ret0, _ := ret[0].(vega.MarketData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -5,7 +5,7 @@ import (
 
 	cfgencoding "code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"
@@ -169,12 +169,12 @@ func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) ba
 		LogRotatesToFlush:       2,
 		Logger:                  log.Named(badgerNamedLogger),
 
-		Compression:              cfg.Compression,
-		EventLogging:             cfg.EventLogging,
-		BlockSize:                cfg.BlockSize,
-		BloomFalsePositive:       cfg.BloomFalsePositive,
-		KeepL0InMemory:           cfg.KeepL0InMemory,
-		MaxCacheSize:             cfg.MaxCacheSize,
+		Compression: cfg.Compression,
+		// EventLogging:             cfg.EventLogging,
+		BlockSize:          cfg.BlockSize,
+		BloomFalsePositive: cfg.BloomFalsePositive,
+		KeepL0InMemory:     cfg.KeepL0InMemory,
+		// MaxCacheSize:             cfg.MaxCacheSize,
 		VerifyValueChecksum:      cfg.VerifyValueChecksum,
 		ChecksumVerificationMode: cfg.ChecksumVerificationMode,
 	}

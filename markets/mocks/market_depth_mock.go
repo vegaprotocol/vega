@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,10 +35,10 @@ func (m *MockMarketDepth) EXPECT() *MockMarketDepthMockRecorder {
 }
 
 // GetMarketDepth mocks base method
-func (m *MockMarketDepth) GetMarketDepth(arg0 context.Context, arg1 string, arg2 uint64) (*proto.MarketDepth, error) {
+func (m *MockMarketDepth) GetMarketDepth(arg0 context.Context, arg1 string, arg2 uint64) (*vega.MarketDepth, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketDepth", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*proto.MarketDepth)
+	ret0, _ := ret[0].(*vega.MarketDepth)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,7 +50,7 @@ func (mr *MockMarketDepthMockRecorder) GetMarketDepth(arg0, arg1, arg2 interface
 }
 
 // Subscribe mocks base method
-func (m *MockMarketDepth) Subscribe(arg0 chan<- *proto.MarketDepthUpdate) uint64 {
+func (m *MockMarketDepth) Subscribe(arg0 chan<- *vega.MarketDepthUpdate) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
 	ret0, _ := ret[0].(uint64)

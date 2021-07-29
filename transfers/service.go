@@ -7,7 +7,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 // TransferResponseStore represent an abstraction over a transfer response storage

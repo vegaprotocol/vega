@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockAccountStore) EXPECT() *MockAccountStoreMockRecorder {
 }
 
 // GetFeeInfrastructureAccounts mocks base method
-func (m *MockAccountStore) GetFeeInfrastructureAccounts(arg0 string) ([]*proto.Account, error) {
+func (m *MockAccountStore) GetFeeInfrastructureAccounts(arg0 string) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFeeInfrastructureAccounts", arg0)
-	ret0, _ := ret[0].([]*proto.Account)
+	ret0, _ := ret[0].([]*vega.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -49,10 +49,10 @@ func (mr *MockAccountStoreMockRecorder) GetFeeInfrastructureAccounts(arg0 interf
 }
 
 // GetMarketAccounts mocks base method
-func (m *MockAccountStore) GetMarketAccounts(arg0, arg1 string) ([]*proto.Account, error) {
+func (m *MockAccountStore) GetMarketAccounts(arg0, arg1 string) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketAccounts", arg0, arg1)
-	ret0, _ := ret[0].([]*proto.Account)
+	ret0, _ := ret[0].([]*vega.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +64,10 @@ func (mr *MockAccountStoreMockRecorder) GetMarketAccounts(arg0, arg1 interface{}
 }
 
 // GetPartyAccounts mocks base method
-func (m *MockAccountStore) GetPartyAccounts(arg0, arg1, arg2 string, arg3 proto.AccountType) ([]*proto.Account, error) {
+func (m *MockAccountStore) GetPartyAccounts(arg0, arg1, arg2 string, arg3 vega.AccountType) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPartyAccounts", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*proto.Account)
+	ret0, _ := ret[0].([]*vega.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,7 +79,7 @@ func (mr *MockAccountStoreMockRecorder) GetPartyAccounts(arg0, arg1, arg2, arg3 
 }
 
 // Subscribe mocks base method
-func (m *MockAccountStore) Subscribe(arg0 chan []*proto.Account) uint64 {
+func (m *MockAccountStore) Subscribe(arg0 chan []*vega.Account) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
 	ret0, _ := ret[0].(uint64)

@@ -7,59 +7,59 @@ model:
 
 models:
   Order:
-    model: code.vegaprotocol.io/data-node/proto.Order
+    model: code.vegaprotocol.io/protos/vega.Order
   Trade:
-    model: code.vegaprotocol.io/data-node/proto.Trade
+    model: code.vegaprotocol.io/protos/vega.Trade
   PriceLevel:
-    model: code.vegaprotocol.io/data-node/proto.PriceLevel
+    model: code.vegaprotocol.io/protos/vega.PriceLevel
   MarketDepth:
-    model: code.vegaprotocol.io/data-node/proto.MarketDepth
+    model: code.vegaprotocol.io/protos/vega.MarketDepth
   MarketDepthUpdate:
-    model: code.vegaprotocol.io/data-node/proto.MarketDepthUpdate
+    model: code.vegaprotocol.io/protos/vega.MarketDepthUpdate
   Candle:
-    model: code.vegaprotocol.io/data-node/proto.Candle
+    model: code.vegaprotocol.io/protos/vega.Candle
   Position:
-    model: code.vegaprotocol.io/data-node/proto.Position
+    model: code.vegaprotocol.io/protos/vega.Position
   Account:
-    model: code.vegaprotocol.io/data-node/proto.Account
+    model: code.vegaprotocol.io/protos/vega.Account
   Statistics:
-    model: code.vegaprotocol.io/data-node/proto.Statistics
+    model: code.vegaprotocol.io/protos/vega.Statistics
   MarketData:
-    model: code.vegaprotocol.io/data-node/proto.MarketData
+    model: code.vegaprotocol.io/protos/vega.MarketData
   MarginLevels:
-    model: code.vegaprotocol.io/data-node/proto.MarginLevels
+    model: code.vegaprotocol.io/protos/vega.MarginLevels
   NodeSignature:
-    model: code.vegaprotocol.io/data-node/proto/vega/commands/v1.NodeSignature
+    model: code.vegaprotocol.io/protos/vega/commands/v1.NodeSignature
   ProposalEvent:
-    model: code.vegaprotocol.io/data-node/proto.Proposal
+    model: code.vegaprotocol.io/protos/vega.Proposal
   RiskFactor:
-    model: code.vegaprotocol.io/data-node/proto.RiskFactor
+    model: code.vegaprotocol.io/protos/vega.RiskFactor
   NetworkParameter:
-    model: code.vegaprotocol.io/data-node/proto.NetworkParameter
+    model: code.vegaprotocol.io/protos/vega.NetworkParameter
   LiquidityOrder:
-    model: code.vegaprotocol.io/data-node/proto.LiquidityOrder
+    model: code.vegaprotocol.io/protos/vega.LiquidityOrder
   LiquidityProvision:
-    model: code.vegaprotocol.io/data-node/proto.LiquidityProvision
+    model: code.vegaprotocol.io/protos/vega.LiquidityProvision
   LiquidityOrderReference:
-    model: code.vegaprotocol.io/data-node/proto.LiquidityOrderReference
+    model: code.vegaprotocol.io/protos/vega.LiquidityOrderReference
   Future:
-    model: code.vegaprotocol.io/data-node/proto.Future
+    model: code.vegaprotocol.io/protos/vega.Future
   TradableInstrument:
-    model: code.vegaprotocol.io/data-node/proto.TradableInstrument
+    model: code.vegaprotocol.io/protos/vega.TradableInstrument
   SimpleRiskModel:
-    model: code.vegaprotocol.io/data-node/proto.SimpleRiskModel
+    model: code.vegaprotocol.io/protos/vega.SimpleRiskModel
   SimpleRiskModelParams:
-    model: code.vegaprotocol.io/data-node/proto.SimpleModelParams
+    model: code.vegaprotocol.io/protos/vega.SimpleModelParams
   LogNormalRiskModel:
-    model: code.vegaprotocol.io/data-node/proto.LogNormalRiskModel
+    model: code.vegaprotocol.io/protos/vega.LogNormalRiskModel
   LogNormalModelParams:
-    model: code.vegaprotocol.io/data-node/proto.LogNormalModelParams
+    model: code.vegaprotocol.io/protos/vega.LogNormalModelParams
   Instrument:
-    model: code.vegaprotocol.io/data-node/proto.Instrument
+    model: code.vegaprotocol.io/protos/vega.Instrument
   InstrumentMetadata:
-    model: code.vegaprotocol.io/data-node/proto.InstrumentMetadata
+    model: code.vegaprotocol.io/protos/vega.InstrumentMetadata
   Market:
-    model: code.vegaprotocol.io/data-node/proto.Market
+    model: code.vegaprotocol.io/protos/vega.Market
     fields:
       orders:
         resolver: true
@@ -78,7 +78,7 @@ models:
       liquidityProvisions:
         resolver: true
   Party:
-    model: code.vegaprotocol.io/data-node/proto.Party
+    model: code.vegaprotocol.io/protos/vega.Party
     fields:
       orders:
         resolver: true
@@ -91,67 +91,67 @@ models:
       margins:
         resolver: true
   Proposal:
-    model: code.vegaprotocol.io/data-node/proto.GovernanceData
+    model: code.vegaprotocol.io/protos/vega.GovernanceData
     fields:
       votes:
         resolver: true
   ProposalTerms:
-    model: code.vegaprotocol.io/data-node/proto.ProposalTerms
+    model: code.vegaprotocol.io/protos/vega.ProposalTerms
   NewMarket:
-    model: code.vegaprotocol.io/data-node/proto.NewMarket
+    model: code.vegaprotocol.io/protos/vega.NewMarket
   NewMarketCommitment:
-    model: code.vegaprotocol.io/data-node/proto.NewMarketCommitment
+    model: code.vegaprotocol.io/protos/vega.NewMarketCommitment
   NewAsset:
-    model: code.vegaprotocol.io/data-node/proto.NewAsset
+    model: code.vegaprotocol.io/protos/vega.NewAsset
   UpdateMarket:
-    model: code.vegaprotocol.io/data-node/proto.UpdateMarket
+    model: code.vegaprotocol.io/protos/vega.UpdateMarket
   UpdateNetworkParameter:
-    model: code.vegaprotocol.io/data-node/proto.UpdateNetworkParameter
+    model: code.vegaprotocol.io/protos/vega.UpdateNetworkParameter
   InstrumentConfiguration:
-    model: code.vegaprotocol.io/data-node/proto.InstrumentConfiguration
+    model: code.vegaprotocol.io/protos/vega.InstrumentConfiguration
   FutureProduct:
-    model: code.vegaprotocol.io/data-node/proto.FutureProduct
+    model: code.vegaprotocol.io/protos/vega.FutureProduct
   Asset:
-    model: code.vegaprotocol.io/data-node/proto.Asset
+    model: code.vegaprotocol.io/protos/vega.Asset
     fields:
       infrastructureFeeAccount:
         resolver: true
   Deposit:
-    model: code.vegaprotocol.io/data-node/proto.Deposit
+    model: code.vegaprotocol.io/protos/vega.Deposit
   Withdrawal:
-    model: code.vegaprotocol.io/data-node/proto.Withdrawal
+    model: code.vegaprotocol.io/protos/vega.Withdrawal
     fields:
       txHash:
         resolver: true
   PeggedOrder:
-    model: code.vegaprotocol.io/data-node/proto.PeggedOrder
+    model: code.vegaprotocol.io/protos/vega.PeggedOrder
   OracleSpecToFutureBinding:
-    model: code.vegaprotocol.io/data-node/proto.OracleSpecToFutureBinding
+    model: code.vegaprotocol.io/protos/vega.OracleSpecToFutureBinding
   OracleSpecConfiguration:
-    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.OracleSpecConfiguration
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.OracleSpecConfiguration
   OracleSpec:
-    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.OracleSpec
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.OracleSpec
   Filter:
-    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.Filter
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.Filter
   PropertyKey:
-    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.PropertyKey
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.PropertyKey
   Condition:
-    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.Condition
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.Condition
   OracleData:
-    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.OracleData
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.OracleData
   Property:
-    model: code.vegaprotocol.io/data-node/proto/vega/oracles/v1.Property
+    model: code.vegaprotocol.io/protos/vega/oracles/v1.Property
   AuctionEvent:
-    model: code.vegaprotocol.io/data-node/proto/vega/events/v1.AuctionEvent
+    model: code.vegaprotocol.io/protos/vega/events/v1.AuctionEvent
   FeeFactors:
-    model: code.vegaprotocol.io/data-node/proto.FeeFactors
+    model: code.vegaprotocol.io/protos/vega.FeeFactors
   Fees:
-    model: code.vegaprotocol.io/data-node/proto.Fees
+    model: code.vegaprotocol.io/protos/vega.Fees
   ScalingFactors:
-    model: code.vegaprotocol.io/data-node/proto.ScalingFactors
+    model: code.vegaprotocol.io/protos/vega.ScalingFactors
   MarginCalculator:
-    model: code.vegaprotocol.io/data-node/proto.MarginCalculator
+    model: code.vegaprotocol.io/protos/vega.MarginCalculator
   Vote:
-    model: code.vegaprotocol.io/data-node/proto.Vote
+    model: code.vegaprotocol.io/protos/vega.Vote
   MarketTimestamps:
-    model: code.vegaprotocol.io/data-node/proto.MarketTimestamps
+    model: code.vegaprotocol.io/protos/vega.MarketTimestamps

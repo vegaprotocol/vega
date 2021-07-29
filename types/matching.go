@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/types/num"
 )
 

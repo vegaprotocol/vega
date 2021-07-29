@@ -3,10 +3,10 @@
 package types
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
-	commandspb "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
-	v1 "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
 	"code.vegaprotocol.io/data-node/types/num"
+	proto "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
 type GovernanceData = proto.GovernanceData
@@ -967,7 +967,7 @@ func InstrumentConfigurationFromProto(
 				Maturity:        pr.Future.Maturity,
 				SettlementAsset: pr.Future.SettlementAsset,
 				QuoteName:       pr.Future.QuoteName,
-				OracleSpec:      pr.Future.OracleSpec.DeepClone(),
+				// OracleSpec:      pr.Future.OracleSpec.DeepClone(),
 				OracleSpecBinding: OracleSpecToFutureBindingFromProto(
 					pr.Future.OracleSpecBinding),
 			},
@@ -990,10 +990,10 @@ func (InstrumentConfiguration_Future) isInstrumentConfiguration_Product() {}
 
 func (f FutureProduct) IntoProto() *proto.FutureProduct {
 	return &proto.FutureProduct{
-		Maturity:          f.Maturity,
-		SettlementAsset:   f.SettlementAsset,
-		QuoteName:         f.QuoteName,
-		OracleSpec:        f.OracleSpec.DeepClone(),
+		Maturity:        f.Maturity,
+		SettlementAsset: f.SettlementAsset,
+		QuoteName:       f.QuoteName,
+		//OracleSpec:        f.OracleSpec.DeepClone(),
 		OracleSpecBinding: f.OracleSpecBinding.IntoProto(),
 	}
 }

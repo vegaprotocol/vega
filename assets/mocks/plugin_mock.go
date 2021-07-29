@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockPlugin) EXPECT() *MockPluginMockRecorder {
 }
 
 // GetAll mocks base method
-func (m *MockPlugin) GetAll() []proto.Asset {
+func (m *MockPlugin) GetAll() []vega.Asset {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]proto.Asset)
+	ret0, _ := ret[0].([]vega.Asset)
 	return ret0
 }
 
@@ -48,10 +48,10 @@ func (mr *MockPluginMockRecorder) GetAll() *gomock.Call {
 }
 
 // GetByID mocks base method
-func (m *MockPlugin) GetByID(arg0 string) (*proto.Asset, error) {
+func (m *MockPlugin) GetByID(arg0 string) (*vega.Asset, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
-	ret0, _ := ret[0].(*proto.Asset)
+	ret0, _ := ret[0].(*vega.Asset)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

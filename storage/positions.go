@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 // MarketBucket ...

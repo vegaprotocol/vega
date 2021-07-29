@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/data-node/proto/vega"
-	v1 "code.vegaprotocol.io/data-node/proto/vega/commands/v1"
+	vega "code.vegaprotocol.io/protos/vega"
+	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"

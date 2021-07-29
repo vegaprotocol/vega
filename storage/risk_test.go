@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/logging"
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/storage"
 
 	"github.com/stretchr/testify/assert"

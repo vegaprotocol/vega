@@ -8,8 +8,8 @@ import (
 
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"

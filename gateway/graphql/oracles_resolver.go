@@ -3,8 +3,8 @@ package gql
 import (
 	"context"
 
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	v1 "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/data-node/vegatime"
 )
 

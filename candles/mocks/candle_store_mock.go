@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
 	storage "code.vegaprotocol.io/data-node/storage"
+	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -37,10 +37,10 @@ func (m *MockCandleStore) EXPECT() *MockCandleStoreMockRecorder {
 }
 
 // GetCandles mocks base method
-func (m *MockCandleStore) GetCandles(arg0 context.Context, arg1 string, arg2 time.Time, arg3 proto.Interval) ([]*proto.Candle, error) {
+func (m *MockCandleStore) GetCandles(arg0 context.Context, arg1 string, arg2 time.Time, arg3 vega.Interval) ([]*vega.Candle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCandles", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*proto.Candle)
+	ret0, _ := ret[0].([]*vega.Candle)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

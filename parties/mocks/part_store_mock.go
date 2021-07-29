@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockPartyStore) EXPECT() *MockPartyStoreMockRecorder {
 }
 
 // GetAll mocks base method
-func (m *MockPartyStore) GetAll() ([]*proto.Party, error) {
+func (m *MockPartyStore) GetAll() ([]*vega.Party, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]*proto.Party)
+	ret0, _ := ret[0].([]*vega.Party)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -49,10 +49,10 @@ func (mr *MockPartyStoreMockRecorder) GetAll() *gomock.Call {
 }
 
 // GetByID mocks base method
-func (m *MockPartyStore) GetByID(arg0 string) (*proto.Party, error) {
+func (m *MockPartyStore) GetByID(arg0 string) (*vega.Party, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
-	ret0, _ := ret[0].(*proto.Party)
+	ret0, _ := ret[0].(*vega.Party)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,7 +64,7 @@ func (mr *MockPartyStoreMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
 }
 
 // Post mocks base method
-func (m *MockPartyStore) Post(arg0 *proto.Party) error {
+func (m *MockPartyStore) Post(arg0 *vega.Party) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
 	ret0, _ := ret[0].(error)

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockMarketStore) EXPECT() *MockMarketStoreMockRecorder {
 }
 
 // GetAll mocks base method
-func (m *MockMarketStore) GetAll() ([]*proto.Market, error) {
+func (m *MockMarketStore) GetAll() ([]*vega.Market, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]*proto.Market)
+	ret0, _ := ret[0].([]*vega.Market)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -49,10 +49,10 @@ func (mr *MockMarketStoreMockRecorder) GetAll() *gomock.Call {
 }
 
 // GetByID mocks base method
-func (m *MockMarketStore) GetByID(arg0 string) (*proto.Market, error) {
+func (m *MockMarketStore) GetByID(arg0 string) (*vega.Market, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
-	ret0, _ := ret[0].(*proto.Market)
+	ret0, _ := ret[0].(*vega.Market)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,7 +64,7 @@ func (mr *MockMarketStoreMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
 }
 
 // Post mocks base method
-func (m *MockMarketStore) Post(arg0 *proto.Market) error {
+func (m *MockMarketStore) Post(arg0 *vega.Market) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
 	ret0, _ := ret[0].(error)

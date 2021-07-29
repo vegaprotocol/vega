@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strconv"
 
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	types "code.vegaprotocol.io/data-node/proto/vega"
-	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
-	oraclesv1 "code.vegaprotocol.io/data-node/proto/vega/oracles/v1"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
 var (
@@ -185,10 +185,10 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 			return nil, errors.New("FutureProduct.Maturity: string cannot be empty")
 		}
 
-		spec, err := i.FutureProduct.OracleSpec.IntoProto()
-		if err != nil {
-			return nil, err
-		}
+		// spec, err := i.FutureProduct.OracleSpec.IntoProto()
+		// if err != nil {
+		// 	return nil, err
+		// }
 
 		binding, err := i.FutureProduct.OracleSpecBinding.IntoProto()
 		if err != nil {
@@ -197,10 +197,10 @@ func (i *InstrumentConfigurationInput) IntoProto() (*types.InstrumentConfigurati
 
 		result.Product = &types.InstrumentConfiguration_Future{
 			Future: &types.FutureProduct{
-				SettlementAsset:   i.FutureProduct.SettlementAsset,
-				Maturity:          i.FutureProduct.Maturity,
-				QuoteName:         i.FutureProduct.QuoteName,
-				OracleSpec:        spec,
+				SettlementAsset: i.FutureProduct.SettlementAsset,
+				Maturity:        i.FutureProduct.Maturity,
+				QuoteName:       i.FutureProduct.QuoteName,
+				// OracleSpec:        spec,
 				OracleSpecBinding: binding,
 			},
 		}

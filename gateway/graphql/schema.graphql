@@ -676,8 +676,8 @@ type Future {
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
 
-  "The oracle spec describing the oracle data of interest."
-  oracleSpec: OracleSpec!
+ # "The oracle spec describing the oracle data of interest."
+ # oracleSpec: OracleSpec!
 
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBinding!
@@ -1918,8 +1918,8 @@ input FutureProductInput {
   settlementAsset: String!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-  "The oracle spec describing the oracle data of interest."
-  oracleSpec: OracleSpecConfigurationInput!
+  #"The oracle spec describing the oracle data of interest."
+  #oracleSpec: OracleSpecConfigurationInput!
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBindingInput!
 }
@@ -1990,10 +1990,10 @@ type FutureProduct {
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
   quoteName: String!
-  """
-  Describes the oracle data that an instrument wants to get from the oracle engine.
-  """
-  oracleSpec: OracleSpecConfiguration!
+#  """
+#  Describes the oracle data that an instrument wants to get from the oracle engine.
+#  """
+#  oracleSpec: OracleSpecConfiguration!
   """
   OracleSpecToFutureBinding tells on which property oracle data should be
   used as settlement price.

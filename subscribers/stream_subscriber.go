@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/events"
-	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 type EventFilter func(events.Event) bool

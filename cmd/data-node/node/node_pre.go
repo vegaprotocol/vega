@@ -21,7 +21,7 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	vegaprotoapi "code.vegaprotocol.io/data-node/proto/vega/api"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"

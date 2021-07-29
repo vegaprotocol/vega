@@ -1,7 +1,7 @@
 package subscribers
 
 import (
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 type ProposalType int

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,10 +34,10 @@ func (m *MockMarketDataStore) EXPECT() *MockMarketDataStoreMockRecorder {
 }
 
 // GetAll mocks base method
-func (m *MockMarketDataStore) GetAll() []proto.MarketData {
+func (m *MockMarketDataStore) GetAll() []vega.MarketData {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]proto.MarketData)
+	ret0, _ := ret[0].([]vega.MarketData)
 	return ret0
 }
 
@@ -48,10 +48,10 @@ func (mr *MockMarketDataStoreMockRecorder) GetAll() *gomock.Call {
 }
 
 // GetByID mocks base method
-func (m *MockMarketDataStore) GetByID(arg0 string) (proto.MarketData, error) {
+func (m *MockMarketDataStore) GetByID(arg0 string) (vega.MarketData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
-	ret0, _ := ret[0].(proto.MarketData)
+	ret0, _ := ret[0].(vega.MarketData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -63,7 +63,7 @@ func (mr *MockMarketDataStoreMockRecorder) GetByID(arg0 interface{}) *gomock.Cal
 }
 
 // Subscribe mocks base method
-func (m *MockMarketDataStore) Subscribe(arg0 chan<- []proto.MarketData) uint64 {
+func (m *MockMarketDataStore) Subscribe(arg0 chan<- []vega.MarketData) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
 	ret0, _ := ret[0].(uint64)

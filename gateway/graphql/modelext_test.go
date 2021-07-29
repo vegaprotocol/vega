@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	gql "code.vegaprotocol.io/data-node/gateway/graphql"
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	proto "code.vegaprotocol.io/protos/vega"
 
 	"github.com/stretchr/testify/assert"
 )

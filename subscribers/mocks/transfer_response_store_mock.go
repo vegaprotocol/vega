@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,7 +34,7 @@ func (m *MockTransferResponseStore) EXPECT() *MockTransferResponseStoreMockRecor
 }
 
 // SaveBatch mocks base method
-func (m *MockTransferResponseStore) SaveBatch(arg0 []*proto.TransferResponse) error {
+func (m *MockTransferResponseStore) SaveBatch(arg0 []*vega.TransferResponse) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveBatch", arg0)
 	ret0, _ := ret[0].(error)

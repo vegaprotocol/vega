@@ -27,8 +27,8 @@ import (
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
 
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	protoapiv1 "code.vegaprotocol.io/data-node/proto/api/v1"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"

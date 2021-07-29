@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/contextutil"
-	eventspb "code.vegaprotocol.io/data-node/proto/vega/events/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/pkg/errors"
 )

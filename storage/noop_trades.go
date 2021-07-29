@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/pkg/errors"
 )

@@ -3,7 +3,7 @@ package gql
 import (
 	"context"
 
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 type myInstrumentConfigurationResolver VegaResolverRoot

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,7 +34,7 @@ func (m *MockOrderStore) EXPECT() *MockOrderStoreMockRecorder {
 }
 
 // Subscribe mocks base method
-func (m *MockOrderStore) Subscribe(arg0 chan<- []proto.Order) uint64 {
+func (m *MockOrderStore) Subscribe(arg0 chan<- []vega.Order) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
 	ret0, _ := ret[0].(uint64)

@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/markets/mocks"
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

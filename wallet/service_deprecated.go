@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"net/http"
 
-	api "code.vegaprotocol.io/data-node/proto/api"
-	typespb "code.vegaprotocol.io/data-node/proto/vega"
+	api "code.vegaprotocol.io/protos/data-node/api"
+	typespb "code.vegaprotocol.io/protos/vega"
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"google.golang.org/grpc/status"

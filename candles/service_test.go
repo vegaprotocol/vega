@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	types "code.vegaprotocol.io/data-node/proto/vega"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/candles/mocks"
