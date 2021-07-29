@@ -1326,8 +1326,8 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
       | trader3a | ETH   | 5000       |
-      | trader4  | ETH   | 7261       |
-      # If the trader4 balance is changed to 7465 then the trade goes ahead as the account balance goes below maintenance level.
+      | trader4  | ETH   | 7465       |
+      # If the trader4 balance is changed to from 7261 to 7465 then the trade goes ahead as the account balance goes above maintenance level after paying fees.
 
     Then the traders place the following orders:
       | trader   | market id | side  | volume | price | resulting trades | type       | tif     |
