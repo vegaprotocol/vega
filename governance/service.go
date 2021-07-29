@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/broker"
-	"code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/subscribers"
+	"code.vegaprotocol.io/protos/commands"
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/data-node/subscribers"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -19,20 +19,20 @@ var (
 	ErrProposalNotFound = errors.New("proposal not found")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/data-node EventBus
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/data-node/governance EventBus
 type EventBus interface {
 	Subscribe(s broker.Subscriber) int
 	Unsubscribe(id int)
 }
 
 // GovernanceDataSub - the subscriber that will be aggregating all governance data, used in non-stream calls
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_sub_mock.go -package mocks code.vegaprotocol.io/data-node GovernanceDataSub
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_sub_mock.go -package mocks code.vegaprotocol.io/data-node/governance GovernanceDataSub
 type GovernanceDataSub interface {
 	Filter(uniqueVotes bool, filters ...subscribers.ProposalFilter) []*proto.GovernanceData
 }
 
 // VoteSub - subscriber containing all votes, which we can filter out
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_sub_mock.go -package mocks code.vegaprotocol.io/data-node VoteSub
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_sub_mock.go -package mocks code.vegaprotocol.io/data-node/governance VoteSub
 type VoteSub interface {
 	Filter(filters ...subscribers.VoteFilter) []*proto.Vote
 }

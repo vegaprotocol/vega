@@ -34,9 +34,9 @@ import (
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
 
-	protoapi "code.vegaprotocol.io/protos/data-node/api"
-	vegaprotoapi "code.vegaprotocol.io/protos/data-node/api"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
+	vegaprotoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 

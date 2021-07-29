@@ -3,7 +3,7 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.0.0-20210729092715-539ea1158e10 // indirect
+	code.vegaprotocol.io/protos v0.0.0-20210729134731-59b61c04a76e // indirect
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/vega v0.40.0
 	dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9 // indirect
@@ -158,4 +158,3 @@ require (
 )
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
-replace code.vegaprotocol.io/protos => ../protos
