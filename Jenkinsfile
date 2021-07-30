@@ -232,7 +232,7 @@ pipeline {
                             '''
                             sh label: 'Upload artifacts', script: '''
                                 for bin in ${PLATFORMS}; do
-                                    echo gh release ./cmd/${CMD}/${CMD}-$bin
+                                    echo gh release upload $BRANCH_NAME ./cmd/${CMD}/${CMD}-$bin
                                 done
                             '''
                         }
