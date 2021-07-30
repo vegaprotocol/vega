@@ -215,6 +215,43 @@ pipeline {
             }
         }
 
+        stage('Upload artifacts') {
+            when {
+                buildingTag()
+            }
+            steps {
+                environment {
+                    PLATFORMS = 'windows-amd64 darwin-amd64 linux-amd64'
+                    CMD       = "data-node"
+                }
+                retry(3) {
+                    dir('data-node') {
+                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                            sh label: 'Log in to a Gihub with CI', script: '''
+                                echo ${PASSWORD} | gh auth login --with-token -h github.com
+                            '''
+                            sh label: 'Upload artifacts', script: '''
+                                for bin in ${PLATFORMS}; do
+                                    echo gh release ./cmd/${CMD}/${CMD}-$bin
+                                done
+                            '''
+                        }
+                    }
+                }
+            }
+            post {
+                always  {
+                    retry(3) {
+                        script {
+                            sh label: 'Log out from Github', script: '''
+                                echo "yes" | gh auth logout -h github.com
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Run checks') {
             parallel {
                 stage('[TODO] markdown verification') {
