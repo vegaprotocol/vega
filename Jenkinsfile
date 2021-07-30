@@ -219,11 +219,11 @@ pipeline {
             when {
                 buildingTag()
             }
+            environment {
+                PLATFORMS = 'windows-amd64 darwin-amd64 linux-amd64'
+                CMD       = "data-node"
+            }
             steps {
-                environment {
-                    PLATFORMS = 'windows-amd64 darwin-amd64 linux-amd64'
-                    CMD       = "data-node"
-                }
                 retry(3) {
                     dir('data-node') {
                         withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
