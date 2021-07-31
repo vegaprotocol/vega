@@ -222,7 +222,7 @@ pipeline {
             steps {
                 retry(3) {
                     dir('data-node') {
-                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN')]) {
+                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
                             // Workaround for user input:
                             //  - global configuration: 'gh config set prompt disabled'
                             sh label: 'Log in to a Gihub with CI', script: '''
