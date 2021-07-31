@@ -215,6 +215,40 @@ pipeline {
             }
         }
 
+        stage('Upload artifacts') {
+            when {
+                tag "v*"
+            }
+            steps {
+                retry(3) {
+                    dir('data-node') {
+                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
+                            // Workaround for user input:
+                            //  - global configuration: 'gh config set prompt disabled'
+                            sh label: 'Log in to a Gihub with CI', script: '''
+                                echo ${TOKEN} | gh auth login --with-token -h github.com
+                            '''
+                            sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                gh release create $TAG_NAME $prerelease ./cmd/data-node/data-node-*
+                            '''
+                        }
+                    }
+                }
+            }
+            post {
+                always  {
+                    retry(3) {
+                        script {
+                            sh label: 'Log out from Github', script: '''
+                                gh auth logout -h github.com
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Run checks') {
             parallel {
                 stage('[TODO] markdown verification') {
