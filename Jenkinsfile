@@ -23,8 +23,10 @@ pipeline {
     }
 
     stages {
-        stage('Git clone data-node') {
+        stage('Git Clone') {
             steps {
+                sh 'printenv'
+                echo "${params}"
                 retry(3) {
                     dir('data-node') {
                         script {
@@ -37,12 +39,12 @@ pipeline {
             }
         }
 
-        stage('Compile data-node') {
+        stage('Build') {
             environment {
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
             parallel {
-                stage('Linux build') {
+                stage('Linux') {
                     environment {
                         GOOS         = 'linux'
                         GOARCH       = 'amd64'
@@ -59,7 +61,7 @@ pipeline {
                         }
                     }
                 }
-                stage('MacOS build') {
+                stage('MacOS') {
                     environment {
                         GOOS         = 'darwin'
                         GOARCH       = 'amd64'
@@ -75,7 +77,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Windows build') {
+                stage('Windows') {
                     environment {
                         GOOS         = 'windows'
                         GOARCH       = 'amd64'
@@ -94,7 +96,7 @@ pipeline {
             }
         }
 
-        stage('Run checks') {
+        stage('Run Checks') {
             parallel {
                 stage('[TODO] markdown verification') {
                     steps {
