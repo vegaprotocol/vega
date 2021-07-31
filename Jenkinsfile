@@ -340,11 +340,11 @@ pipeline {
                     when {
                         changeRequest()
                     }
+                    environment {
+                        DOCKER_IMAGE_TAG="fryd-test"
+                        DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG}"
+                    }
                     steps {
-                        environment {
-                            DOCKER_IMAGE_TAG="fryd-test"
-                            DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG}"
-                        }
                         retry(3) {
                             dir('data-node') {
                                 sh lablel: 'Build docker image', script: '''#!/bin/bash -e
