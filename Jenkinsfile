@@ -217,23 +217,20 @@ pipeline {
 
         stage('Upload artifacts') {
             when {
-                buildingTag()
-            }
-            environment {
-                PLATFORMS = 'windows-amd64 darwin-amd64 linux-amd64'
-                CMD       = "data-node"
+                tag "v*"
             }
             steps {
                 retry(3) {
                     dir('data-node') {
-                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN')]) {
+                            // Workaround for user input:
+                            //  - global configuration: 'gh config set prompt disabled'
                             sh label: 'Log in to a Gihub with CI', script: '''
-                                echo ${PASSWORD} | gh auth login --with-token -h github.com
+                                echo ${TOKEN} | gh auth login --with-token -h github.com
                             '''
                             sh label: 'Upload artifacts', script: '''
-                                for bin in ${PLATFORMS}; do
-                                    echo gh release upload $BRANCH_NAME ./cmd/${CMD}/${CMD}-$bin
-                                done
+                                [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                gh release create $TAG_NAME $prerelease ./cmd/data-node/data-node-*
                             '''
                         }
                     }
@@ -244,7 +241,7 @@ pipeline {
                     retry(3) {
                         script {
                             sh label: 'Log out from Github', script: '''
-                                echo "yes" | gh auth logout -h github.com
+                                gh auth logout -h github.com
                             '''
                         }
                     }
