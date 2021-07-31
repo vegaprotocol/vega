@@ -37,37 +37,56 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            matrix {
-                axes {
-                    axis {
-                        name 'PLATFORM'
-                        values 'linux', 'darwin', 'windows'
+        stage('Compile data-node') {
+            environment {
+                LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
+            }
+            parallel {
+                stage('Linux build') {
+                    environment {
+                        GOOS         = 'linux'
+                        GOARCH       = 'amd64'
+                        OUTPUT       = './cmd/data-node/data-node-linux-amd64'
                     }
-                    axis {
-                        name 'ARCHITECTURE'
-                        values 'amd64'
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
+                                // quick check
+                                sh 'file ${OUTPUT}'
+                                sh '${OUTPUT} version'
+                            }
+                        }
                     }
                 }
-                stages {
-                    stage("compile") {
-                        environment {
-                            LDFLAGS = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
-                            GOOS    = "${PLATFORM}"
-                            GOARCH  = "${ARCHITECTURE}"
-                            OUTPUT  = "./cmd/data-node/data-node-${PLATFORM}-${ARCHITECTURE}"
+                stage('MacOS build') {
+                    environment {
+                        GOOS         = 'darwin'
+                        GOARCH       = 'amd64'
+                        OUTPUT       = './cmd/data-node/data-node-darwin-amd64'
+                    }
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
+                                // quick check
+                                sh 'file ${OUTPUT}'
+                            }
                         }
-                        steps {
-                            retry(3) {
-                                dir('data-node') {
-                                    sh label: "Compile", script: '''
-                                        go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
-                                    '''
-                                    sh label: 'Quick binary check', script: '''#!/bin/bash -e
-                                        file ${OUTPUT}
-                                        [[ $PLATFORM == 'linux' ]] && ${OUTPUT} version
-                                    '''
-                                }
+                    }
+                }
+                stage('Windows build') {
+                    environment {
+                        GOOS         = 'windows'
+                        GOARCH       = 'amd64'
+                        OUTPUT       = './cmd/data-node/data-node-windows-amd64'
+                    }
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
+                                // quick check
+                                sh 'file ${OUTPUT}'
                             }
                         }
                     }
