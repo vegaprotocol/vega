@@ -336,44 +336,47 @@ pipeline {
                 }
 
                 // This one does not publish anything, and I don't see a use-case for this.
-                // stage('Build docker image on PR') {
-                //     when {
-                //         changeRequest()
-                //     }
-                //     steps {
-                //         retry(3) {
-                //             dir('data-node') {
-                //                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                //                     sh label: 'Log in to a Docker registry', script: '''
-                //                         echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
-                //                     '''
-                //                     sh label: 'Build docker image', script: '''
-                //                         mkdir -p docker/bin
-                //                         find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
-                //                             cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
-                //                             done
-                //                         tmptag="$(openssl rand -hex 10)"
-                //                         ls -al docker/bin
-                //                         docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
-                //                         rm -rf docker/bin
-                //                         docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag"
-                //                     '''
-                //                 }
-                //             }
-                //         }
-                //     }
-                //     post {
-                //         always  {
-                //             retry(3) {
-                //                 script {
-                //                     sh label: 'Log out from the Docker registry', script: '''
-                //                         docker logout docker.pkg.github.com
-                //                     '''
-                //                 }
-                //             }
-                //         }
-                //     }
-                // }
+                stage('Build docker image on PR') {
+                    when {
+                        changeRequest()
+                    }
+                    steps {
+                        environment {
+                            DOCKER_IMAGE_TAG="fryd-test"
+                            DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG}"
+                        }
+                        retry(3) {
+                            dir('data-node') {
+                                sh lablel: 'Build docker image', script: '''#!/bin/bash -e
+                                    mkdir -p docker/bin
+                                    cp -a "cmd/data-node/data-node-linux-amd64" "docker/bin/data-node"
+                                    docker build -t "${DOCKER_IMAGE_NAME}" docker/
+                                    rm -rf docker/bin
+                                '''
+                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                                    sh label: 'Log in to a Docker registry', script: '''
+                                        echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
+                                    '''
+                                    sh label: 'Push docker image', script: '''#!/bin/bash -e
+                                        docker push "${DOCKER_IMAGE_NAME}"
+                                        docker rmi "${DOCKER_IMAGE_NAME}"
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always  {
+                            retry(3) {
+                                script {
+                                    sh label: 'Log out from the Docker registry', script: '''
+                                        docker logout docker.pkg.github.com
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                }
 
                 stage('[version tag] release to GitHub') {
                     when {
