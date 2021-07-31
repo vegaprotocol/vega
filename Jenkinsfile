@@ -18,6 +18,7 @@ pipeline {
     }
     environment {
         GO111MODULE = 'on'
+        CGO_ENABLED  = 0
         SLACK_MESSAGE = "Data-Node CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
     }
 
@@ -38,7 +39,6 @@ pipeline {
 
         stage('Compile data-node') {
             environment {
-                CGO_ENABLED  = 0
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
             parallel {
