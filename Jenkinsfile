@@ -262,26 +262,16 @@ pipeline {
                         }
                     }
                     environment {
-                        DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node"
+                        DOCKER_IMAGE_TAG = env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME
+                        DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG}"
                     }
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh label: 'Decide label', script: '''#!/bin/bash -e
-                                    if [[ ! -z "${TAG_NAME}" ]]; then
-                                        export DOCKER_IMAGE_TAG="${TAG_NAME}"
-                                    elif [[ "${BRANCH_NAME}" == "develop" ]]; then
-                                        export DOCKER_IMAGE_TAG="${BRANCH_NAME}"
-                                    else
-                                        echo "ERROR: docker image should not be built for branch=${BRANCH_NAME}. Only tags and develop branch are supported."
-                                        #exit 1
-                                        DOCKER_IMAGE_TAG="${BRANCH_NAME}"
-                                    fi
-                                '''
                                 sh label: 'Build docker image', script: '''#!/bin/bash -e
                                     mkdir -p docker/bin
                                     cp -a "cmd/data-node/data-node-linux-amd64" "docker/bin/data-node"
-                                    docker build -t "${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" docker/
+                                    docker build -t "${DOCKER_IMAGE_NAME}" docker/
                                     rm -rf docker/bin
                                 '''
                                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
