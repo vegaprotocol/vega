@@ -18,12 +18,15 @@ pipeline {
     }
     environment {
         GO111MODULE = 'on'
+        CGO_ENABLED  = 0
         SLACK_MESSAGE = "Data-Node CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
     }
 
     stages {
-        stage('Git clone data-node') {
+        stage('Git Clone') {
             steps {
+                sh 'printenv'
+                echo "${params}"
                 retry(3) {
                     dir('data-node') {
                         script {
@@ -36,13 +39,12 @@ pipeline {
             }
         }
 
-        stage('Compile data-node') {
+        stage('Build') {
             environment {
-                CGO_ENABLED  = 0
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
             parallel {
-                stage('Linux build') {
+                stage('Linux') {
                     environment {
                         GOOS         = 'linux'
                         GOARCH       = 'amd64'
@@ -59,7 +61,7 @@ pipeline {
                         }
                     }
                 }
-                stage('MacOS build') {
+                stage('MacOS') {
                     environment {
                         GOOS         = 'darwin'
                         GOARCH       = 'amd64'
@@ -75,7 +77,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Windows build') {
+                stage('Windows') {
                     environment {
                         GOOS         = 'windows'
                         GOARCH       = 'amd64'
@@ -94,162 +96,7 @@ pipeline {
             }
         }
 
-        stage('Build docker image tag') {
-            when {
-                buildingTag()
-            }
-            steps {
-                retry(3) {
-                    dir('data-node') {
-                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                            sh label: 'Log in to a Docker registry', script: '''
-                                echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
-                            '''
-                            sh label: 'Build and push docker image', script: '''
-                                mkdir -p docker/bin
-                                find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
-                                    cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
-                                done
-                                tmptag="$(openssl rand -hex 10)"
-                                ls -al docker/bin
-                                docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
-                                rm -rf docker/bin
-                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
-                                docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
-                                docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$BRANCH_NAME"
-                            '''
-                        }
-                    }
-                }
-            }
-            post {
-                always  {
-                    retry(3) {
-                        script {
-                            sh label: 'Log out from the Docker registry', script: '''
-                                docker logout docker.pkg.github.com
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Build docker image develop') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                retry(3) {
-                    dir('data-node') {
-                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                            sh label: 'Log in to a Docker registry', script: '''
-                                echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
-                            '''
-                            sh label: 'Build and push docker image', script: '''
-                                mkdir -p docker/bin
-                                find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
-                                    cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
-                                done
-                                tmptag="$(openssl rand -hex 10)"
-                                ls -al docker/bin
-                                docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
-                                rm -rf docker/bin
-                                docker tag "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" "docker.pkg.github.com/vegaprotocol/data-node/data-node:edge"
-                                docker push "docker.pkg.github.com/vegaprotocol/data-node/data-node:edge"
-                                docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:edge"
-                            '''
-                        }
-                    }
-                }
-            }
-            post {
-                always  {
-                    retry(3) {
-                        script {
-                            sh label: 'Log out from the Docker registry', script: '''
-                                docker logout docker.pkg.github.com
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Build docker image on PR') {
-            when {
-                changeRequest()
-            }
-            steps {
-                retry(3) {
-                    dir('data-node') {
-                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                            sh label: 'Log in to a Docker registry', script: '''
-                                echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
-                            '''
-                            sh label: 'Build docker image', script: '''
-                                mkdir -p docker/bin
-                                find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
-                                    cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
-                                    done
-                                tmptag="$(openssl rand -hex 10)"
-                                ls -al docker/bin
-                                docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
-                                rm -rf docker/bin
-                                docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag"
-                            '''
-                        }
-                    }
-                }
-            }
-            post {
-                always  {
-                    retry(3) {
-                        script {
-                            sh label: 'Log out from the Docker registry', script: '''
-                                docker logout docker.pkg.github.com
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Upload artifacts') {
-            when {
-                tag "v*"
-            }
-            steps {
-                retry(3) {
-                    dir('data-node') {
-                        withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
-                            // Workaround for user input:
-                            //  - global configuration: 'gh config set prompt disabled'
-                            sh label: 'Log in to a Gihub with CI', script: '''
-                                echo ${TOKEN} | gh auth login --with-token -h github.com
-                            '''
-                            sh label: 'Upload artifacts', script: '''#!/bin/bash -e
-                                [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                gh release create $TAG_NAME $prerelease ./cmd/data-node/data-node-*
-                            '''
-                        }
-                    }
-                }
-            }
-            post {
-                always  {
-                    retry(3) {
-                        script {
-                            sh label: 'Log out from Github', script: '''
-                                gh auth logout -h github.com
-                            '''
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Run checks') {
+        stage('Run Checks') {
             parallel {
                 stage('[TODO] markdown verification') {
                     steps {
@@ -405,40 +252,101 @@ pipeline {
             }
         }
 
-        stage('[TODO] Deploy to Devnet') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                echo 'Deploying to Devnet....'
+        stage('Publish') {
+            parallel {
+
+                stage('docker image') {
+                    when {
+                        anyOf {
+                            buildingTag()
+                            branch 'develop'
+                            // changeRequest() // uncomment only for testing
+                        }
+                    }
+                    environment {
+                        DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
+                        DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG}"
+                    }
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                sh label: 'Build docker image', script: '''#!/bin/bash -e
+                                    mkdir -p docker/bin
+                                    cp -a "cmd/data-node/data-node-linux-amd64" "docker/bin/data-node"
+                                    docker build -t "${DOCKER_IMAGE_NAME}" docker/
+                                    rm -rf docker/bin
+                                '''
+                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                                    sh label: 'Log in to a Docker registry', script: '''
+                                        echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
+                                    '''
+                                    sh label: 'Push docker image', script: '''#!/bin/bash -e
+                                        docker push "${DOCKER_IMAGE_NAME}"
+                                        docker rmi "${DOCKER_IMAGE_NAME}"
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always  {
+                            retry(3) {
+                                script {
+                                    sh label: 'Log out from the Docker registry', script: '''
+                                        docker logout docker.pkg.github.com
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('release to GitHub') {
+                    when {
+                        buildingTag()
+                    }
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
+                                    // Workaround for user input:
+                                    //  - global configuration: 'gh config set prompt disabled'
+                                    sh label: 'Log in to a Gihub with CI', script: '''
+                                        echo ${TOKEN} | gh auth login --with-token -h github.com
+                                    '''
+                                    sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                        [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                        gh release create $TAG_NAME $prerelease ./cmd/data-node/data-node-*
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always  {
+                            retry(3) {
+                                script {
+                                    sh label: 'Log out from Github', script: '''
+                                        gh auth logout -h github.com
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('[TODO] deploy to Devnet') {
+                    when {
+                        branch 'develop'
+                    }
+                    steps {
+                        echo 'Deploying to Devnet....'
+                        echo 'Run basic tests on Devnet network ...'
+                    }
+                }
             }
         }
 
-        stage('[TODO] Basic tests Devnet') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                echo 'Run basic tests on Devnet network ...'
-            }
-        }
-
-        stage('[TODO] Do something on master') {
-            when {
-                branch 'master'
-            }
-            steps {
-                echo 'Do something on master....'
-            }
-        }
-
-        stage('[TODO] Build and publish version') {
-            when { tag "v*" }
-            steps {
-                echo 'Build version because this commit is tagged...'
-                echo 'and publish it'
-            }
-        }
     }
     post {
         success {
