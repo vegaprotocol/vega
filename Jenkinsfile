@@ -253,7 +253,7 @@ pipeline {
         stage('Publish') {
             parallel {
 
-                stage('Build docker image tag') {
+                stage('[tag] docker image') {
                     when {
                         buildingTag()
                     }
@@ -294,7 +294,7 @@ pipeline {
                     }
                 }
 
-                stage('Build docker image develop') {
+                stage('[develop] docker image') {
                     when {
                         branch 'develop'
                     }
@@ -335,46 +335,47 @@ pipeline {
                     }
                 }
 
-                stage('Build docker image on PR') {
-                    when {
-                        changeRequest()
-                    }
-                    steps {
-                        retry(3) {
-                            dir('data-node') {
-                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                    sh label: 'Log in to a Docker registry', script: '''
-                                        echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
-                                    '''
-                                    sh label: 'Build docker image', script: '''
-                                        mkdir -p docker/bin
-                                        find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
-                                            cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
-                                            done
-                                        tmptag="$(openssl rand -hex 10)"
-                                        ls -al docker/bin
-                                        docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
-                                        rm -rf docker/bin
-                                        docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag"
-                                    '''
-                                }
-                            }
-                        }
-                    }
-                    post {
-                        always  {
-                            retry(3) {
-                                script {
-                                    sh label: 'Log out from the Docker registry', script: '''
-                                        docker logout docker.pkg.github.com
-                                    '''
-                                }
-                            }
-                        }
-                    }
-                }
+                // This one does not publish anything, and I don't see a use-case for this.
+                // stage('Build docker image on PR') {
+                //     when {
+                //         changeRequest()
+                //     }
+                //     steps {
+                //         retry(3) {
+                //             dir('data-node') {
+                //                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                //                     sh label: 'Log in to a Docker registry', script: '''
+                //                         echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
+                //                     '''
+                //                     sh label: 'Build docker image', script: '''
+                //                         mkdir -p docker/bin
+                //                         find cmd -maxdepth 1 -and -not -name cmd | sed -e 's#^cmd/##' | while read -r app ; do
+                //                             cp -a "cmd/$app/$app-linux-amd64" "docker/bin/$app" || exit 1 ;
+                //                             done
+                //                         tmptag="$(openssl rand -hex 10)"
+                //                         ls -al docker/bin
+                //                         docker build -t "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag" docker/
+                //                         rm -rf docker/bin
+                //                         docker rmi "docker.pkg.github.com/vegaprotocol/data-node/data-node:$tmptag"
+                //                     '''
+                //                 }
+                //             }
+                //         }
+                //     }
+                //     post {
+                //         always  {
+                //             retry(3) {
+                //                 script {
+                //                     sh label: 'Log out from the Docker registry', script: '''
+                //                         docker logout docker.pkg.github.com
+                //                     '''
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
 
-                stage('Upload artifacts') {
+                stage('[version tag] release to GitHub') {
                     when {
                         tag "v*"
                     }
@@ -408,20 +409,12 @@ pipeline {
                     }
                 }
 
-                stage('[TODO] Deploy to Devnet') {
+                stage('[TODO] - [develop] deploy to Devnet') {
                     when {
                         branch 'develop'
                     }
                     steps {
                         echo 'Deploying to Devnet....'
-                    }
-                }
-
-                stage('[TODO] Basic tests Devnet') {
-                    when {
-                        branch 'develop'
-                    }
-                    steps {
                         echo 'Run basic tests on Devnet network ...'
                     }
                 }
