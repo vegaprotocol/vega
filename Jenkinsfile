@@ -262,7 +262,7 @@ pipeline {
                         }
                     }
                     environment {
-                        DOCKER_IMAGE_TAG = env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME
+                        DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
                         DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG}"
                     }
                     steps {
