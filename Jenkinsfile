@@ -347,7 +347,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh lablel: 'Build docker image', script: '''#!/bin/bash -e
+                                sh label: 'Build docker image', script: '''#!/bin/bash -e
                                     mkdir -p docker/bin
                                     cp -a "cmd/data-node/data-node-linux-amd64" "docker/bin/data-node"
                                     docker build -t "${DOCKER_IMAGE_NAME}" docker/
