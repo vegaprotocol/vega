@@ -42,21 +42,22 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets   Assets
-	banking  Banking
-	broker   Broker
-	cmd      Commander
-	witness  Witness
-	evtfwd   EvtForwarder
-	exec     ExecutionEngine
-	ghandler *genesis.Handler
-	gov      GovernanceEngine
-	notary   Notary
-	stats    Stats
-	time     TimeService
-	top      ValidatorTopology
-	netp     NetworkParameters
-	oracles  *Oracle
+	assets     Assets
+	banking    Banking
+	broker     Broker
+	cmd        Commander
+	witness    Witness
+	evtfwd     EvtForwarder
+	exec       ExecutionEngine
+	ghandler   *genesis.Handler
+	gov        GovernanceEngine
+	notary     Notary
+	stats      Stats
+	time       TimeService
+	top        ValidatorTopology
+	netp       NetworkParameters
+	oracles    *Oracle
+	delegation DelegationEngine
 }
 
 func NewApp(
@@ -78,6 +79,7 @@ func NewApp(
 	top ValidatorTopology,
 	netp NetworkParameters,
 	oracles *Oracle,
+	delegation DelegationEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -92,21 +94,22 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:   assets,
-		banking:  banking,
-		broker:   broker,
-		cmd:      cmd,
-		witness:  witness,
-		evtfwd:   evtfwd,
-		exec:     exec,
-		ghandler: ghandler,
-		gov:      gov,
-		notary:   notary,
-		stats:    stats,
-		time:     time,
-		top:      top,
-		netp:     netp,
-		oracles:  oracles,
+		assets:     assets,
+		banking:    banking,
+		broker:     broker,
+		cmd:        cmd,
+		witness:    witness,
+		evtfwd:     evtfwd,
+		exec:       exec,
+		ghandler:   ghandler,
+		gov:        gov,
+		notary:     notary,
+		stats:      stats,
+		time:       time,
+		top:        top,
+		netp:       netp,
+		oracles:    oracles,
+		delegation: delegation,
 	}
 
 	// setup handlers
@@ -136,7 +139,9 @@ func NewApp(
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
-		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData)
+		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
+		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
+		HandleDeliverTx(txn.UndelegateAtEpochEndCommand, app.DeliverUndelegateAtEpochEnd)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -687,4 +692,22 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	// just so we are sure all netparams updates are dispatches one by one
 	// in a deterministic order
 	app.netp.DispatchChanges(ctx)
+}
+
+func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.DelegateSubmission{}
+	if err := tx.Unmarshal(ce); err != nil {
+		return err
+	}
+
+	return app.delegation.Delegate(tx.Party(), ce.NodeId, ce.Amount)
+}
+
+func (app *App) DeliverUndelegateAtEpochEnd(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.UndelegateAtEpochEndSubmission{}
+	if err := tx.Unmarshal(ce); err != nil {
+		return err
+	}
+
+	return app.delegation.UndelegateAtEndOfEpoch(tx.Party(), ce.NodeId, ce.Amount)
 }

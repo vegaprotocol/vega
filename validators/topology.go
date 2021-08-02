@@ -107,6 +107,12 @@ func (t *Topology) UpdateValidatorSet(keys [][]byte) {
 	t.chainValidators = keys
 }
 
+//IsValidatorNode takes a nodeID and returns true if the node is a validator node
+func (t *Topology) IsValidatorNode(nodeID string) bool {
+	_, ok := t.validators[nodeID]
+	return ok
+}
+
 func (t *Topology) AddNodeRegistration(nr *commandspb.NodeRegistration) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()

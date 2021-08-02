@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
@@ -146,6 +147,7 @@ type NodeCommand struct {
 	oracle          *oracles.Engine
 	oracleAdaptors  *adaptors.Adaptors
 	netParams       *netparams.Store
+	delegation      *delegation.Engine
 
 	mktscfg []types.Market
 

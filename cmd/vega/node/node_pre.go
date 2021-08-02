@@ -364,6 +364,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 			Engine:   l.oracle,
 			Adaptors: l.oracleAdaptors,
 		},
+		l.delegation,
 	)
 
 	var abciApp tmtypes.Application

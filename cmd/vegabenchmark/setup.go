@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
@@ -121,6 +122,10 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		broker,
 	)
 
+	//TODO replace with actual implementation
+	stakingAccount := delegation.DummyStakingAccounts{}
+	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netparams)
+
 	bstats := stats.NewBlockchain()
 
 	app := processor.NewApp(
@@ -145,6 +150,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 			Engine:   oraclesM,
 			Adaptors: oraclesAdaptors,
 		},
+		delegationEngine,
 	)
 
 	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)

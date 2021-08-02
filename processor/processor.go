@@ -33,6 +33,13 @@ type TimeService interface {
 	SetTimeNow(context.Context, time.Time)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
+type DelegationEngine interface {
+	Delegate(party string, nodeID string, amount uint64) error
+	UndelegateAtEndOfEpoch(party string, nodeID string, amount uint64) error
+	OnEpochEnd(start, end time.Time) []*types.ValidatorData
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
 	// orders stuff
