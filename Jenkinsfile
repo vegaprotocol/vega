@@ -323,6 +323,9 @@ pipeline {
                     when {
                         buildingTag()
                     }
+                    environment {
+                        RELEASE_URL = "https://github.com/vegaprotocol/vega/releases/tag/${TAG_NAME}"
+                    }
                     steps {
                         retry(3) {
                             dir('data-node') {
@@ -332,11 +335,16 @@ pipeline {
                                     sh label: 'Log in to a Gihub with CI', script: '''
                                         echo ${TOKEN} | gh auth login --with-token -h github.com
                                     '''
-                                    sh label: 'Upload artifacts', script: '''#!/bin/bash -e
-                                        [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                        gh release create $TAG_NAME $prerelease ./cmd/data-node/data-node-*
-                                    '''
                                 }
+                                sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                    [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                    gh release create $TAG_NAME $prerelease ./cmd/data-node/data-node-*
+                                '''
+                                slackSend(
+                                    channel: "#tradingcore-notify",
+                                    color: "good",
+                                    message: ":rocket: Published new <${RELEASE_URL}|Release ${TAG_NAME}>",
+                                )
                             }
                         }
                     }
