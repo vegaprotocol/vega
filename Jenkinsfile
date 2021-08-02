@@ -285,15 +285,24 @@ pipeline {
                                     docker build -t "${DOCKER_IMAGE_NAME}" docker/
                                     rm -rf docker/bin
                                 '''
+                                sh label: 'Sanity check', script: '''
+                                    docker run -it --rm "${DOCKER_IMAGE_NAME}" version
+                                    docker run -it --rm "${DOCKER_IMAGE_NAME}" --help
+                                '''
                                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                     sh label: 'Log in to a Docker registry', script: '''
                                         echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
                                     '''
-                                    sh label: 'Push docker image', script: '''#!/bin/bash -e
-                                        docker push "${DOCKER_IMAGE_NAME}"
-                                        docker rmi "${DOCKER_IMAGE_NAME}"
-                                    '''
                                 }
+                                sh label: 'Push docker image', script: '''#!/bin/bash -e
+                                    docker push "${DOCKER_IMAGE_NAME}"
+                                    docker rmi "${DOCKER_IMAGE_NAME}"
+                                '''
+                                slackSend(
+                                    channel: "#tradingcore-notify",
+                                    color: "good",
+                                    message: ":docker: Published new docker image: `${DOCKER_IMAGE_NAME}`",
+                                )
                             }
                         }
                     }
