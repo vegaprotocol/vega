@@ -15,7 +15,7 @@ func TestOracleDataDeepClone(t *testing.T) {
 	od := &oraclespb.OracleData{
 		PubKeys: []string{"PK1", "PK2", "PK3"},
 		Data: []*oraclespb.Property{
-			&oraclespb.Property{
+			{
 				Name:  "Name",
 				Value: "Value",
 			},

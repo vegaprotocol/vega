@@ -5,8 +5,8 @@ import (
 
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/storage"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/stretchr/testify/assert"
 )

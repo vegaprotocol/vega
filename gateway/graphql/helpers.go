@@ -7,8 +7,8 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"google.golang.org/grpc/status"
 
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/vegatime"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 func safeStringUint64(input string) (uint64, error) {
@@ -16,15 +16,6 @@ func safeStringUint64(input string) (uint64, error) {
 	if err != nil {
 		// A conversion error occurred, return the error
 		return 0, fmt.Errorf("invalid input string for uint64 conversion %s", input)
-	}
-	return i, nil
-}
-
-func safeStringInt64(input string) (int64, error) {
-	i, err := strconv.ParseInt(input, 10, 64)
-	if err != nil {
-		// A conversion error occurred, return the error
-		return 0, fmt.Errorf("invalid input string for int64 conversion %s", input)
 	}
 	return i, nil
 }

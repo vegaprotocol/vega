@@ -139,13 +139,13 @@ type RiskService interface {
 	EstimateMargin(ctx context.Context, order *pbtypes.Order) (*pbtypes.MarginLevels, error)
 }
 
-// Notary ...
+// NotaryService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  NotaryService
 type NotaryService interface {
 	GetByID(id string) ([]commandspb.NodeSignature, error)
 }
 
-// Withdrawal ...
+// WithdrawalService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawal_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  WithdrawalService
 type WithdrawalService interface {
 	GetByID(id string) (pbtypes.Withdrawal, error)
@@ -160,7 +160,7 @@ type OracleService interface {
 	GetOracleDataBySpecID(string) ([]oraclespb.OracleData, error)
 }
 
-// Deposit ...
+// DepositService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/deposit_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  DepositService
 type DepositService interface {
 	GetByID(id string) (pbtypes.Deposit, error)
@@ -186,6 +186,7 @@ type NetParamsService interface {
 	GetAll() []pbtypes.NetworkParameter
 }
 
+// EventService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/data-node/api EventService
 type EventService interface {
 	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*eventspb.BusEvent, chan<- int)

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/logging"
-	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/risk/mocks"
+	ptypes "code.vegaprotocol.io/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

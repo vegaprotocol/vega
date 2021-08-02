@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -14,7 +14,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
 	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -33,7 +32,7 @@ type GraphServer struct {
 	gateway.Config
 
 	log                *logging.Logger
-	tradingProxyClient protoapiv1.TradingProxyServiceClient
+	tradingProxyClient protoapi.TradingProxyServiceClient
 	tradingDataClient  protoapi.TradingDataServiceClient
 	srv                *http.Server
 }
@@ -59,7 +58,7 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	tradingClient := protoapiv1.NewTradingProxyServiceClient(tconn)
+	tradingClient := protoapi.NewTradingProxyServiceClient(tconn)
 
 	return &GraphServer{
 		log:                log,

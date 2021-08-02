@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/trades/mocks"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"

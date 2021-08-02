@@ -29,6 +29,8 @@ type Svc struct {
 }
 
 func NewService(log *logging.Logger, cfg Config, mktStore MarketStore, mktDataStore MarketDataStore) *Svc {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 	return &Svc{
 		cfg:          cfg,
 		log:          log,
