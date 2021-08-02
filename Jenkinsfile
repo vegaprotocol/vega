@@ -39,6 +39,16 @@ pipeline {
             }
         }
 
+        stage('go mod download deps') {
+            steps {
+                retry(3) {
+                    dir('data-node') {
+                        sh 'go mod download -x'
+                    }
+                }
+            }
+        }
+
         stage('Build') {
             environment {
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
@@ -53,10 +63,13 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
-                                // quick check
-                                sh 'file ${OUTPUT}'
-                                sh '${OUTPUT} version'
+                                sh label: 'Compile', script: '''
+                                    go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                                '''
+                                sh label: 'Sanity check', script: '''
+                                    file ${OUTPUT}
+                                    ${OUTPUT} version
+                                '''
                             }
                         }
                     }
@@ -70,9 +83,12 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
-                                // quick check
-                                sh 'file ${OUTPUT}'
+                                sh label: 'Compile', script: '''
+                                    go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                                '''
+                                sh label: 'Sanity check', script: '''
+                                    file ${OUTPUT}
+                                '''
                             }
                         }
                     }
@@ -86,9 +102,12 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
-                                // quick check
-                                sh 'file ${OUTPUT}'
+                                sh label: 'Compile', script: '''
+                                    go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                                '''
+                                sh label: 'Sanity check', script: '''
+                                    file ${OUTPUT}
+                                '''
                             }
                         }
                     }
@@ -96,121 +115,41 @@ pipeline {
             }
         }
 
-        stage('Run Checks') {
+        stage('Run linters') {
             parallel {
-                stage('[TODO] markdown verification') {
+                stage('[FIXME] static check') {
                     steps {
                         retry(3) {
-                            dir('vega') {
-                                echo 'Run markdown verification'
+                            dir('data-node') {
+                                //sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
+                                echo "ERROR: staticcheck is failing"
                             }
                         }
                     }
                 }
-                stage('[TODO] unit tests') {
+                stage('go vet') {
                     steps {
                         retry(3) {
-                            dir('vega') {
-                                echo 'Run unit tests'
+                            dir('data-node') {
+                                sh 'go vet ./...'
                             }
                         }
                     }
                 }
-                stage('[TODO] integration tests') {
+                stage('check print') {
                     steps {
                         retry(3) {
-                            dir('vega') {
-                                echo 'Run integration tests'
+                            dir('data-node') {
+                                sh 'make print_check'
                             }
                         }
                     }
                 }
-                stage('[TODO] check gqlgen') {
+                stage('misspell') {
                     steps {
                         retry(3) {
-                            dir('vega') {
-                                echo 'Run check gqlgen'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] check print') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run check print'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] check proto') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run check proto'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] test again with a race flag') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run test again with a race flag'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] vet') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run vet'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] code owner') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run code owner'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] buf lint') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run buf lint'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] misspell') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run misspell'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] static check') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run static check'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] swagger diff verification') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run swagger diff verification'
+                            dir('data-node') {
+                                sh 'golangci-lint run --disable-all --enable misspell'
                             }
                         }
                     }
@@ -218,7 +157,7 @@ pipeline {
                 stage('[TODO] diff verification (no changes generated by the CI)') {
                     steps {
                         retry(3) {
-                            dir('vega') {
+                            dir('data-node') {
                                 echo 'Run diff verification (no changes generated by the CI)'
                             }
                         }
@@ -227,25 +166,43 @@ pipeline {
                 stage('[TODO] more linting on multiple file format (sh, py, yaml....)') {
                     steps {
                         retry(3) {
-                            dir('vega') {
+                            dir('data-node') {
                                 echo 'Run more linting on multiple file format (sh, py, yaml....)'
                             }
                         }
                     }
                 }
-                stage('[TODO] feature (integration) tests from specs-internal repo') {
+                stage('markdown spellcheck') {
                     steps {
                         retry(3) {
-                            dir('vega') {
-                                echo 'Run feature (integration) tests from specs-internal repo'
+                            dir('data-node') {
+                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
                             }
                         }
                     }
                 }
-                stage('[TODO] system-tests') {
+            }
+        }
+
+        stage('Run tests') {
+            parallel {
+                stage('unit tests') {
                     steps {
-                        dir('system-tests') {
-                            echo 'Run system-tests'
+                        retry(3) {
+                            dir('vega') {
+                                sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                                junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
+                            }
+                        }
+                    }
+                }
+                stage('unit tests with race') {
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+                                sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                                junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
+                            }
                         }
                     }
                 }
@@ -276,15 +233,23 @@ pipeline {
                                     docker build -t "${DOCKER_IMAGE_NAME}" docker/
                                     rm -rf docker/bin
                                 '''
+                                sh label: 'Sanity check', script: '''
+                                    docker run --rm "${DOCKER_IMAGE_NAME}" version
+                                '''
                                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                     sh label: 'Log in to a Docker registry', script: '''
                                         echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
                                     '''
-                                    sh label: 'Push docker image', script: '''#!/bin/bash -e
-                                        docker push "${DOCKER_IMAGE_NAME}"
-                                        docker rmi "${DOCKER_IMAGE_NAME}"
-                                    '''
                                 }
+                                sh label: 'Push docker image', script: '''#!/bin/bash -e
+                                    docker push "${DOCKER_IMAGE_NAME}"
+                                    docker rmi "${DOCKER_IMAGE_NAME}"
+                                '''
+                                slackSend(
+                                    channel: "#tradingcore-notify",
+                                    color: "good",
+                                    message: ":docker: Data-Node » Published new docker image `${DOCKER_IMAGE_NAME}`",
+                                )
                             }
                         }
                     }
@@ -305,6 +270,9 @@ pipeline {
                     when {
                         buildingTag()
                     }
+                    environment {
+                        RELEASE_URL = "https://github.com/vegaprotocol/vega/releases/tag/${TAG_NAME}"
+                    }
                     steps {
                         retry(3) {
                             dir('data-node') {
@@ -314,11 +282,16 @@ pipeline {
                                     sh label: 'Log in to a Gihub with CI', script: '''
                                         echo ${TOKEN} | gh auth login --with-token -h github.com
                                     '''
-                                    sh label: 'Upload artifacts', script: '''#!/bin/bash -e
-                                        [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                        gh release create $TAG_NAME $prerelease ./cmd/data-node/data-node-*
-                                    '''
                                 }
+                                sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                    [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                    gh release create $TAG_NAME $prerelease ./cmd/data-node/data-node-*
+                                '''
+                                slackSend(
+                                    channel: "#tradingcore-notify",
+                                    color: "good",
+                                    message: ":rocket: Data-Node » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
+                                )
                             }
                         }
                     }
