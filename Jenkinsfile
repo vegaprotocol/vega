@@ -105,121 +105,49 @@ pipeline {
             }
         }
 
-        stage('Run Checks') {
+        stage('Run linters') {
             parallel {
-                stage('[TODO] markdown verification') {
+                stage('buf lint') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run markdown verification'
+                                sh 'buf lint'
                             }
                         }
                     }
                 }
-                stage('[TODO] unit tests') {
+                stage('static check') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run unit tests'
+                                sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
                             }
                         }
                     }
                 }
-                stage('[TODO] integration tests') {
+                stage('go vet') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run integration tests'
+                                sh 'go vet ./...'
                             }
                         }
                     }
                 }
-                stage('[TODO] check gqlgen') {
+                stage('check print') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run check gqlgen'
+                                sh 'make print_check'
                             }
                         }
                     }
                 }
-                stage('[TODO] check print') {
+                stage('misspell') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run check print'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] check proto') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run check proto'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] test again with a race flag') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run test again with a race flag'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] vet') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run vet'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] code owner') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run code owner'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] buf lint') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run buf lint'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] misspell') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run misspell'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] static check') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run static check'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] swagger diff verification') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run swagger diff verification'
+                                sh 'golangci-lint run --disable-all --enable misspell'
                             }
                         }
                     }
@@ -242,19 +170,45 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] feature (integration) tests from specs-internal repo') {
+                stage('markdown spellcheck') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run feature (integration) tests from specs-internal repo'
+                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
                             }
                         }
                     }
                 }
-                stage('[TODO] system-tests') {
+            }
+        }
+
+
+        stage('Run Checks') {
+            parallel {
+                stage('[TODO] unit tests') {
                     steps {
-                        dir('system-tests') {
-                            echo 'Run system-tests'
+                        retry(3) {
+                            dir('vega') {
+                                echo 'Run unit tests'
+                            }
+                        }
+                    }
+                }
+                stage('[TODO] integration tests') {
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+                                echo 'Run integration tests'
+                            }
+                        }
+                    }
+                }
+                stage('[TODO] test again with a race flag') {
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+                                echo 'Run test again with a race flag'
+                            }
                         }
                     }
                 }
