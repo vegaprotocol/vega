@@ -14,7 +14,6 @@ pipeline {
     agent { label 'general' }
     options {
         skipDefaultCheckout true
-        parallelsAlwaysFailFast()
     }
     environment {
         GO111MODULE = 'on'
@@ -53,6 +52,7 @@ pipeline {
             environment {
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
+            failFast true
             parallel {
                 stage('Linux') {
                     environment {
@@ -154,11 +154,39 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] more linting on multiple file format (sh, py, yaml....)') {
+                stage('shellcheck') {
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                echo 'Run more linting on multiple file format (sh, py, yaml....)'
+                                sh "git ls-files '*.sh' | xargs shellcheck"
+                            }
+                        }
+                    }
+                }
+                stage('yamllint') {
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                sh "git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 160}}}'"
+                            }
+                        }
+                    }
+                }
+                stage('python files') {
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                sh "git ls-files '*.py' | xargs flake8"
+                                sh "git ls-files '*.py' | xargs black -l 79 --check --diff"
+                            }
+                        }
+                    }
+                }
+                stage('json format') {
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                sh "for f in \$(git ls-files '*.json'); do echo \"check \$f\"; jq empty \"\$f\"; done"
                             }
                         }
                     }
