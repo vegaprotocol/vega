@@ -235,7 +235,6 @@ pipeline {
                                 '''
                                 sh label: 'Sanity check', script: '''
                                     docker run --rm "${DOCKER_IMAGE_NAME}" version
-                                    docker run --rm "${DOCKER_IMAGE_NAME}" --help
                                 '''
                                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                     sh label: 'Log in to a Docker registry', script: '''
