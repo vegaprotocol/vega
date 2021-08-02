@@ -60,7 +60,7 @@ func NewSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 }
 
 func (s *socketClient) connect() error {
-	addr := fmt.Sprintf("tcp://%s:%d", "0.0.0.0", s.config.Port)
+	addr := fmt.Sprintf("tcp://%s:%d", s.config.IP, s.config.Port)
 
 	ticker := time.NewTicker(s.config.DialRetryInterval.Get())
 	defer ticker.Stop()
@@ -100,7 +100,7 @@ func (s *socketClient) reconnect() error {
 		s.reconnectMu.Unlock()
 	}()
 
-	addr := fmt.Sprintf("tcp://%s:%d", "0.0.0.0", s.config.Port)
+	addr := fmt.Sprintf("tcp://%s:%d", s.config.IP, s.config.Port)
 	s.log.Warningf("connection lost, will retry to connect", logging.String("peer", addr))
 
 	return s.connect()
@@ -135,6 +135,7 @@ func (s *socketClient) stream() {
 				msg, err := proto.Marshal(evt.StreamMessage())
 				if err != nil {
 					s.errCh <- fmt.Errorf("fail to marshal event: %w", err)
+					continue
 				}
 				s.socketCh <- msg
 			}

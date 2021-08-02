@@ -50,12 +50,13 @@ func (m MarketUpdated) MarketProto() eventspb.MarketEvent {
 }
 
 func (m MarketUpdated) StreamMessage() *eventspb.BusEvent {
+	market := m.Proto()
 	return &eventspb.BusEvent{
 		Id:    m.eventID(),
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
 		Event: &eventspb.BusEvent_MarketUpdated{
-			MarketUpdated: &m.pm,
+			MarketUpdated: &market,
 		},
 	}
 }
