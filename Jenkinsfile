@@ -39,6 +39,16 @@ pipeline {
             }
         }
 
+        stage('go mod download deps') {
+            steps {
+                retry(3) {
+                    dir('data-node') {
+                        sh 'go mod download -x'
+                    }
+                }
+            }
+        }
+
         stage('Build') {
             environment {
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
