@@ -117,15 +117,15 @@ pipeline {
 
         stage('Run linters') {
             parallel {
-                stage('static check') {
-                    steps {
-                        retry(3) {
-                            dir('data-node') {
-                                sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
-                            }
-                        }
-                    }
-                }
+                // stage('static check') {
+                //     steps {
+                //         retry(3) {
+                //             dir('data-node') {
+                //                 sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
+                //             }
+                //         }
+                //     }
+                // }
                 stage('go vet') {
                     steps {
                         retry(3) {
