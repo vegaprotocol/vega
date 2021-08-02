@@ -223,7 +223,6 @@ pipeline {
                     environment {
                         DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
                         DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG}"
-                        DOCKER_IMAGE_URL = "https://github.com/vegaprotocol/vega/pkgs/container/vega%2Fvega"
                     }
                     steps {
                         retry(3) {
@@ -235,8 +234,8 @@ pipeline {
                                     rm -rf docker/bin
                                 '''
                                 sh label: 'Sanity check', script: '''
-                                    docker run -it --rm "${DOCKER_IMAGE_NAME}" version
-                                    docker run -it --rm "${DOCKER_IMAGE_NAME}" --help
+                                    docker run --rm "${DOCKER_IMAGE_NAME}" version
+                                    docker run --rm "${DOCKER_IMAGE_NAME}" --help
                                 '''
                                 withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                                     sh label: 'Log in to a Docker registry', script: '''
@@ -250,7 +249,7 @@ pipeline {
                                 slackSend(
                                     channel: "#tradingcore-notify",
                                     color: "good",
-                                    message: ":docker: Published new `data-node` docker image <${DOCKER_IMAGE_URL}|${DOCKER_IMAGE_TAG}>",
+                                    message: ":docker: Data-Node » Published new docker image `${DOCKER_IMAGE_NAME}`",
                                 )
                             }
                         }
@@ -292,7 +291,7 @@ pipeline {
                                 slackSend(
                                     channel: "#tradingcore-notify",
                                     color: "good",
-                                    message: ":rocket: Published new <${RELEASE_URL}|Release ${TAG_NAME}>",
+                                    message: ":rocket: Data-Node » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
                                 )
                             }
                         }
