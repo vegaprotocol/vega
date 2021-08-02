@@ -15,7 +15,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -33,7 +32,7 @@ var (
 // TradingProxyServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingProxyServiceClient
 type TradingProxyServiceClient interface {
-	protoapiv1.TradingProxyServiceClient
+	protoapi.TradingProxyServiceClient
 }
 
 // TradingDataServiceClient ...
@@ -1594,13 +1593,13 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 type myMutationResolver VegaResolverRoot
 
 func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
-	pty := protoapiv1.SubmitTransactionRequest_TYPE_ASYNC
+	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
 	if ty != nil {
 		switch *ty {
 		case SubmitTransactionTypeSync:
-			pty = protoapiv1.SubmitTransactionRequest_TYPE_SYNC
+			pty = protoapi.SubmitTransactionRequest_TYPE_SYNC
 		case SubmitTransactionTypeCommit:
-			pty = protoapiv1.SubmitTransactionRequest_TYPE_COMMIT
+			pty = protoapi.SubmitTransactionRequest_TYPE_COMMIT
 		}
 	}
 
@@ -1613,7 +1612,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 		return nil, err
 	}
 
-	req := &protoapiv1.SubmitTransactionRequest{
+	req := &protoapi.SubmitTransactionRequest{
 		Tx: &commandspb.Transaction{
 			InputData: decodedData,
 			Signature: &commandspb.Signature{

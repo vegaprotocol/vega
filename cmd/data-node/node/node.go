@@ -127,8 +127,6 @@ type NodeCommand struct {
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
-	mktscfg []types.Market
-
 	// plugins
 	settlePlugin     *plugins.Positions
 	notaryPlugin     *plugins.Notary

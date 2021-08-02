@@ -25,11 +25,6 @@ type tradingProxyService struct {
 	tradingServiceClient TradingServiceClient
 }
 
-// no need for a mutext - we only access the config through a value receiver
-func (s *tradingProxyService) updateConfig(conf Config) {
-	s.conf = conf
-}
-
 func (s *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoapiv1.SubmitTransactionRequest) (*protoapiv1.SubmitTransactionResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()

@@ -5,8 +5,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 )
 
-const namedLogger = "netparams"
-
 type Config struct {
 	// logging level
 	Level encoding.LogLevel

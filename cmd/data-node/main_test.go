@@ -12,11 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	err error
-	out []byte
-)
-
 type CommandSuite struct {
 }
 

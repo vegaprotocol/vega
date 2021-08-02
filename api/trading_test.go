@@ -35,7 +35,6 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -313,8 +312,8 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 		defer tidy()
 
-		req := &protoapiv1.SubmitTransactionRequest{
-			Type: protoapiv1.SubmitTransactionRequest_TYPE_UNSPECIFIED,
+		req := &protoapi.SubmitTransactionRequest{
+			Type: protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED,
 			Tx: &commandspb.Transaction{
 				InputData: []byte("input data"),
 				Signature: &commandspb.Signature{
@@ -325,7 +324,7 @@ func TestSubmitTransaction(t *testing.T) {
 			},
 		}
 
-		expectedRes := &protoapiv1.SubmitTransactionResponse{Success: true}
+		expectedRes := &protoapi.SubmitTransactionResponse{Success: true}
 
 		vegaReq := &vegaprotoapi.SubmitTransactionV2Request{
 			Type: vegaprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED,
@@ -343,7 +342,7 @@ func TestSubmitTransaction(t *testing.T) {
 			SubmitTransactionV2(gomock.Any(), vegaReq).
 			Return(&vegaprotoapi.SubmitTransactionV2Response{Success: true}, nil)
 
-		proxyClient := protoapiv1.NewTradingProxyServiceClient(conn)
+		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
@@ -361,8 +360,8 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 		defer tidy()
 
-		req := &protoapiv1.SubmitTransactionRequest{
-			Type: protoapiv1.SubmitTransactionRequest_TYPE_COMMIT,
+		req := &protoapi.SubmitTransactionRequest{
+			Type: protoapi.SubmitTransactionRequest_TYPE_COMMIT,
 			Tx: &commandspb.Transaction{
 				InputData: []byte("input data"),
 				Signature: &commandspb.Signature{
@@ -389,7 +388,7 @@ func TestSubmitTransaction(t *testing.T) {
 			SubmitTransactionV2(gomock.Any(), vegaReq).
 			Return(nil, errors.New("Critical error"))
 
-		proxyClient := protoapiv1.NewTradingProxyServiceClient(conn)
+		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)

@@ -678,19 +678,6 @@ func convertTradeTypeFromProto(x types.Trade_Type) (TradeType, error) {
 	}
 }
 
-// convertVoteValueToProto converts a GraphQL enum to a Proto enum
-func convertVoteValueToProto(x VoteValue) (types.Vote_Value, error) {
-	switch x {
-	case VoteValueNo:
-		return types.Vote_VALUE_NO, nil
-	case VoteValueYes:
-		return types.Vote_VALUE_YES, nil
-	default:
-		err := fmt.Errorf("failed to convert VoteValue from GraphQL to Proto: %v", x)
-		return types.Vote_VALUE_UNSPECIFIED, err
-	}
-}
-
 // convertVoteValueFromProto converts a Proto enum to a GraphQL enum
 func convertVoteValueFromProto(x types.Vote_Value) (VoteValue, error) {
 	switch x {

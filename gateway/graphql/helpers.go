@@ -20,15 +20,6 @@ func safeStringUint64(input string) (uint64, error) {
 	return i, nil
 }
 
-func safeStringInt64(input string) (int64, error) {
-	i, err := strconv.ParseInt(input, 10, 64)
-	if err != nil {
-		// A conversion error occurred, return the error
-		return 0, fmt.Errorf("invalid input string for int64 conversion %s", input)
-	}
-	return i, nil
-}
-
 // customErrorFromStatus provides a richer error experience from grpc ErrorDetails
 // which is provided by the Vega grpc API. This helper takes in the error provided
 // by a grpc client and either returns a custom graphql error or the raw error string.

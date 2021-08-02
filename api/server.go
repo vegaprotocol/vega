@@ -28,7 +28,6 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -221,7 +220,7 @@ func (g *GRPCServer) Start() {
 		tradingServiceClient: g.vegaTradingServiceClient,
 	}
 	g.tradingProxySvc = tradingProxySvc
-	protoapiv1.RegisterTradingProxyServiceServer(g.srv, tradingProxySvc)
+	protoapi.RegisterTradingProxyServiceServer(g.srv, tradingProxySvc)
 
 	tradingDataSvc := &tradingDataService{
 		log:                     g.log,
