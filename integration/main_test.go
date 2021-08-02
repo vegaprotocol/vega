@@ -103,7 +103,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
-			marketInsuranceAccount, err := execsetup.collateralEngine.GetMarketInsurancePoolAccount(mkt.Id, asset)
+			marketInsuranceAccount, err := execsetup.collateralEngine.GetMarketInsurancePoolAccount(mkt.ID, asset)
 			if err != nil {
 				return err
 			}
@@ -159,6 +159,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties submit the following liquidity provision:$`, func(table *godog.Table) error {
 		return steps.PartiesSubmitLiquidityProvision(execsetup.executionEngine, table)
 	})
+
+	s.Step(`^the parties submit the following delegations:$`, func(table *godog.Table) error {
+		return steps.PartiesDelegateTheFollowingStake(execsetup.executionEngine, table)
+	})
+	s.Step(`^the parties submit the following undelegations:$`, func(table *godog.Table) error {
+		return steps.PartiesUndelegateTheFollowingStake(execsetup.executionEngine, table)
+	})
+
 	s.Step(`^the opening auction period ends for market "([^"]+)"$`, func(marketID string) error {
 		return steps.MarketOpeningAuctionPeriodEnds(execsetup.timeService, execsetup.markets, marketID)
 	})

@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -49,7 +49,7 @@ func (c *codec) decodeV1(payload []byte) (abci.Tx, error) {
 
 func verifyBundle(bundle *types.SignedBundle, pubkey []byte) error {
 	// build new signature algorithm using the algo from the sig
-	validator, err := crypto.NewSignatureAlgorithm(bundle.Sig.Algo)
+	validator, err := crypto.NewSignatureAlgorithm(bundle.Sig.Algo, bundle.Sig.Version)
 	if err != nil {
 		return fmt.Errorf("unable to instantiate new algorithm: %w", err)
 	}

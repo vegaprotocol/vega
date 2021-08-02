@@ -1,3 +1,5 @@
+// +build !race
+
 package nodewallet_test
 
 import (
@@ -53,33 +55,31 @@ func testIsSupportedSuccess(t *testing.T) {
 
 func testInitSuccess(t *testing.T) {
 	rootDir := rootDir()
-	filepath := filepath.Join(rootDir, "nodewalletstore")
+	filePath := filepath.Join(rootDir, "nodewalletstore")
 
-	err := nodewallet.Init(filepath, "somepassphrase")
+	err := nodewallet.Init(filePath, "somepassphrase")
 	assert.NoError(t, err)
 
 	assert.NoError(t, os.RemoveAll(rootDir))
 }
 
 func testInitFailure(t *testing.T) {
-	filepath := filepath.Join("/invalid/path/", "nodewalletstore")
+	filePath := filepath.Join("/invalid/path/", "nodewalletstore")
 
-	err := nodewallet.Init(filepath, "somepassphrase")
+	err := nodewallet.Init(filePath, "somepassphrase")
 	assert.EqualError(t, err, "open /invalid/path/nodewalletstore: no such file or directory")
 }
 
 func testDevInitSuccess(t *testing.T) {
 	rootDir := rootDir()
-	filepath := filepath.Join(rootDir, "nodewalletstore")
+	filePath := filepath.Join(rootDir, "nodewalletstore")
 
-	// no error to generate
-	err := nodewallet.DevInit(filepath, rootDir, "somepassphrase")
-	assert.NoError(t, err)
+	err := nodewallet.DevInit(filePath, rootDir, "somepassphrase")
+	require.NoError(t, err)
 
-	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
-		StorePath:      filepath,
+		StorePath:      filePath,
 		DevWalletsPath: rootDir,
 	}
 
@@ -90,17 +90,14 @@ func testDevInitSuccess(t *testing.T) {
 	ethclt.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, nw)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	// try to get the vega and eth wallet
 	w, ok := nw.Get(nodewallet.Ethereum)
 	assert.NotNil(t, w)
 	assert.True(t, ok)
 	assert.Equal(t, string(nodewallet.Ethereum), w.Chain())
+
 	w1, ok := nw.Get(nodewallet.Vega)
 	assert.NotNil(t, w1)
 	assert.True(t, ok)
@@ -111,16 +108,16 @@ func testDevInitSuccess(t *testing.T) {
 
 func testVerifySuccess(t *testing.T) {
 	rootDir := rootDir()
-	filepath := filepath.Join(rootDir, "nodewalletstore")
+	filePath := filepath.Join(rootDir, "nodewalletstore")
 
 	// no error to generate
-	err := nodewallet.DevInit(filepath, rootDir, "somepassphrase")
+	err := nodewallet.DevInit(filePath, rootDir, "somepassphrase")
 	assert.NoError(t, err)
 
 	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
-		StorePath:      filepath,
+		StorePath:      filePath,
 		DevWalletsPath: rootDir,
 	}
 
@@ -136,10 +133,10 @@ func testVerifySuccess(t *testing.T) {
 
 func testVerifyFailure(t *testing.T) {
 	// create a random non existing path
-	filepath := filepath.Join("/", crypto.RandomStr(10), "somewallet")
+	filePath := filepath.Join("/", crypto.RandomStr(10), "somewallet")
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
-		StorePath:      filepath,
+		StorePath:      filePath,
 		DevWalletsPath: "",
 	}
 
@@ -153,10 +150,10 @@ func testVerifyFailure(t *testing.T) {
 
 func testNewFailureInvalidStorePath(t *testing.T) {
 	// create a random non existing path
-	filepath := filepath.Join("/", crypto.RandomStr(10), "somewallet")
+	filePath := filepath.Join("/", crypto.RandomStr(10), "somewallet")
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
-		StorePath:      filepath,
+		StorePath:      filePath,
 		DevWalletsPath: "",
 	}
 
@@ -171,16 +168,16 @@ func testNewFailureInvalidStorePath(t *testing.T) {
 
 func testNewFailureMissingRequiredWallets(t *testing.T) {
 	rootDir := rootDir()
-	filepath := filepath.Join(rootDir, "nodewalletstore")
+	filePath := filepath.Join(rootDir, "nodewalletstore")
 
 	// no error to generate
-	err := nodewallet.Init(filepath, "somepassphrase")
+	err := nodewallet.Init(filePath, "somepassphrase")
 	assert.NoError(t, err)
 
 	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
-		StorePath:      filepath,
+		StorePath:      filePath,
 		DevWalletsPath: rootDir,
 	}
 
@@ -201,16 +198,16 @@ func testNewFailureMissingRequiredWallets(t *testing.T) {
 func testImportNewWallet(t *testing.T) {
 	ethDir := rootDir()
 	rootDir := rootDir()
-	filepath := filepath.Join(rootDir, "nodewalletstore")
+	filePath := filepath.Join(rootDir, "nodewalletstore")
 
 	// no error to generate
-	err := nodewallet.DevInit(filepath, rootDir, "somepassphrase")
+	err := nodewallet.DevInit(filePath, rootDir, "somepassphrase")
 	assert.NoError(t, err)
 
 	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
-		StorePath:      filepath,
+		StorePath:      filePath,
 		DevWalletsPath: rootDir,
 	}
 
@@ -220,36 +217,33 @@ func testImportNewWallet(t *testing.T) {
 	ethclt.EXPECT().ChainID(gomock.Any()).Times(2).Return(big.NewInt(42), nil)
 
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, nw)
-	if nw == nil {
-		t.Fatal(err)
-	}
 
 	// now generate an eth wallet
 	path, err := eth.DevInit(ethDir, "ethpassphrase")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, path)
 
 	// import this new wallet
 	err = nw.Import(string(nodewallet.Ethereum), "somepassphrase", "ethpassphrase", path)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.NoError(t, os.RemoveAll(rootDir))
 	assert.NoError(t, os.RemoveAll(ethDir))
 }
 func testNewFailureInvalidPassphrase(t *testing.T) {
 	rootDir := rootDir()
-	filepath := filepath.Join(rootDir, "nodewalletstore")
+	filePath := filepath.Join(rootDir, "nodewalletstore")
 
 	// no error to generate
-	err := nodewallet.Init(filepath, "somepassphrase")
+	err := nodewallet.Init(filePath, "somepassphrase")
 	assert.NoError(t, err)
 
 	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
 		Level:          encoding.LogLevel{},
-		StorePath:      filepath,
+		StorePath:      filePath,
 		DevWalletsPath: rootDir,
 	}
 

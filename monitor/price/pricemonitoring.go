@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -30,7 +30,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price AuctionState
 type AuctionState interface {
 	// What is the current trading mode of the market, is it in auction
-	Mode() types.Market_TradingMode
+	Mode() types.MarketTradingMode
 	InAuction() bool
 	// What type of auction are we dealing with
 	IsOpeningAuction() bool

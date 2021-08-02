@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -136,7 +136,9 @@ func NewApp(
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
-		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData)
+		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
+		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
+		HandleDeliverTx(txn.UndelegateAtEpochEndCommand, app.DeliverUndelegateAtEpochEnd)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -439,19 +441,19 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 		// TODO(): for now we are using a hash of the market ID to create
 		// the lp provision ID (well it's still deterministic...)
-		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().Id)))
+		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().ID)))
 		err := app.exec.SubmitMarketWithLiquidityProvision(
 			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid)
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
-				logging.ProposalID(nm.Market().Id),
+				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
 			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, err); err != nil {
 				// this should never happen
 				app.log.Panic("tried to reject an non-existing proposal",
-					logging.String("proposal-id", toSubmit.Proposal().Id),
+					logging.String("proposal-id", toSubmit.Proposal().ID),
 					logging.Error(err))
 			}
 			return err
@@ -566,15 +568,15 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			// anyway...
 			nm := voteClosed.NewMarket()
 			if nm.Rejected() {
-				if err := app.exec.RejectMarket(ctx, prop.Id); err != nil {
+				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
 					app.log.Panic("unable to reject market",
-						logging.String("market-id", prop.Id),
+						logging.String("market-id", prop.ID),
 						logging.Error(err))
 				}
 			} else if nm.StartAuction() {
-				if err := app.exec.StartOpeningAuction(ctx, prop.Id); err != nil {
+				if err := app.exec.StartOpeningAuction(ctx, prop.ID); err != nil {
 					app.log.Panic("unable to start market opening auction",
-						logging.String("market-id", prop.Id),
+						logging.String("market-id", prop.ID),
 						logging.Error(err))
 				}
 			}
@@ -593,8 +595,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		default:
-			prop.State = types.Proposal_STATE_FAILED
-			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.Id))
+			prop.State = types.ProposalStateFailed
+			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 		}
 		app.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
@@ -602,15 +604,15 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 }
 
 func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
-	prop.State = types.Proposal_STATE_ENACTED
+	prop.State = types.ProposalStateEnacted
 	// first check if this asset is real
-	asset, err := app.assets.Get(prop.Id)
+	asset, err := app.assets.Get(prop.ID)
 	if err != nil {
 		// this should not happen
 		app.log.Error("invalid asset is getting enacted",
-			logging.String("asset-id", prop.Id),
+			logging.String("asset-id", prop.ID),
 			logging.Error(err))
-		prop.State = types.Proposal_STATE_FAILED
+		prop.State = types.ProposalStateFailed
 		return
 	}
 
@@ -621,18 +623,18 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		if err != nil {
 			// this should not happen
 			app.log.Error("unable to get builtin asset enabled",
-				logging.String("asset-id", prop.Id),
+				logging.String("asset-id", prop.ID),
 				logging.Error(err))
-			prop.State = types.Proposal_STATE_FAILED
+			prop.State = types.ProposalStateFailed
 		}
 		return
 	}
 
 	// then instruct the notary to start getting signature from validators
-	if err := app.notary.StartAggregate(prop.Id, types.NodeSignatureKindAssetNew); err != nil {
-		prop.State = types.Proposal_STATE_FAILED
+	if err := app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew); err != nil {
+		prop.State = types.ProposalStateFailed
 		app.log.Error("unable to enact proposal",
-			logging.ProposalID(prop.Id),
+			logging.ProposalID(prop.ID),
 			logging.Error(err))
 		return
 	}
@@ -651,13 +653,13 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 	if err != nil {
 		app.log.Error("unable to sign allowlisting transaction",
-			logging.String("asset-id", prop.Id),
+			logging.String("asset-id", prop.ID),
 			logging.Error(err))
-		prop.State = types.Proposal_STATE_FAILED
+		prop.State = types.ProposalStateFailed
 		return
 	}
 	payload := &commandspb.NodeSignature{
-		Id:   prop.Id,
+		Id:   prop.ID,
 		Sig:  sig,
 		Kind: commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
@@ -668,17 +670,17 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 }
 
 func (app *App) enactMarket(ctx context.Context, prop *types.Proposal) {
-	prop.State = types.Proposal_STATE_ENACTED
+	prop.State = types.ProposalStateEnacted
 
 	// TODO: add checks for end of auction in here
 }
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {
-	prop.State = types.Proposal_STATE_ENACTED
+	prop.State = types.ProposalStateEnacted
 	if err := app.netp.Update(ctx, np.Key, np.Value); err != nil {
-		prop.State = types.Proposal_STATE_FAILED
+		prop.State = types.ProposalStateFailed
 		app.log.Error("failed to update network parameters",
-			logging.ProposalID(prop.Id),
+			logging.ProposalID(prop.ID),
 			logging.Error(err))
 		return
 	}
@@ -687,4 +689,22 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	// just so we are sure all netparams updates are dispatches one by one
 	// in a deterministic order
 	app.netp.DispatchChanges(ctx)
+}
+
+func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.DelegateSubmission{}
+	if err := tx.Unmarshal(ce); err != nil {
+		return err
+	}
+
+	return errors.New("unimplemented")
+}
+
+func (app *App) DeliverUndelegateAtEpochEnd(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.UndelegateAtEpochEndSubmission{}
+	if err := tx.Unmarshal(ce); err != nil {
+		return err
+	}
+
+	return errors.New("unimplemented")
 }

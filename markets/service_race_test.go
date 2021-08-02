@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

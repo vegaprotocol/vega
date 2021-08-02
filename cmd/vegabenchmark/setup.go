@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
@@ -19,7 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams/dispatch"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
-	ptypes "code.vegaprotocol.io/vega/proto"
+	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
@@ -374,7 +375,9 @@ type wallet struct {
 	pubKey []byte
 }
 
-func (w wallet) PubKeyOrAddress() []byte { return w.pubKey }
+func (w wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
+	return crypto.NewPublicKeyOrAddress(hex.EncodeToString(w.pubKey), w.pubKey)
+}
 
 type nopeTestReporter struct{ log *logging.Logger }
 

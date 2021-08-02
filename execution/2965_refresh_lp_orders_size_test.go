@@ -185,7 +185,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	})
 
 	md := tm.market.GetMarketData()
-	require.Equal(t, md.MarketTradingMode, types.Market_TRADING_MODE_CONTINUOUS, "not in continuous trading")
+	require.Equal(t, md.MarketTradingMode, types.MarketTradingModeContinuous, "not in continuous trading")
 	tm.events = nil
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
@@ -432,7 +432,7 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,
-		types.Market_TRADING_MODE_CONTINUOUS,
+		types.MarketTradingModeContinuous,
 	)
 
 	if setMarkPrice {
@@ -521,7 +521,7 @@ func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, set
 
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,
-		types.Market_TRADING_MODE_CONTINUOUS,
+		types.MarketTradingModeContinuous,
 	)
 
 	if setMarkPrice {

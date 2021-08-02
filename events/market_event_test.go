@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
+	proto "code.vegaprotocol.io/protos/vega"
+	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
-	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
@@ -175,8 +175,8 @@ func TestMarketDeepClone(t *testing.T) {
 	me2 := marketEvent.Market()
 
 	// Change the original and check we are not updating the wrapped event
-	me.Id = "Changed"
-	me.TradableInstrument.Instrument.Id = "Changed"
+	me.ID = "Changed"
+	me.TradableInstrument.Instrument.ID = "Changed"
 	me.TradableInstrument.Instrument.Code = "Changed"
 	me.TradableInstrument.Instrument.Name = "Changed"
 	me.TradableInstrument.Instrument.Metadata.Tags[0] = "Changed1"
@@ -209,7 +209,7 @@ func TestMarketDeepClone(t *testing.T) {
 	me.OpeningAuction.Duration = 999
 	me.OpeningAuction.Volume = 999
 
-	tmc := me.TradingModeConfig.(*types.Market_Continuous)
+	tmc := me.TradingModeConfig.(*types.MarketContinuous)
 	tmc.Continuous.TickSize = "999"
 
 	me.PriceMonitoringSettings.Parameters.Triggers[0].Horizon = 999
@@ -229,9 +229,9 @@ func TestMarketDeepClone(t *testing.T) {
 	me.MarketTimestamps.Open = 999
 	me.MarketTimestamps.Close = 999
 
-	assert.NotEqual(t, me.Id, me2.Id)
+	assert.NotEqual(t, me.ID, me2.Id)
 
-	assert.NotEqual(t, me.TradableInstrument.Instrument.Id, me2.TradableInstrument.Instrument.Id)
+	assert.NotEqual(t, me.TradableInstrument.Instrument.ID, me2.TradableInstrument.Instrument.Id)
 	assert.NotEqual(t, me.TradableInstrument.Instrument.Code, me2.TradableInstrument.Instrument.Code)
 	assert.NotEqual(t, me.TradableInstrument.Instrument.Name, me2.TradableInstrument.Instrument.Name)
 	assert.NotEqual(t, me.TradableInstrument.Instrument.Metadata.Tags[0], me2.TradableInstrument.Instrument.Metadata.Tags[0])

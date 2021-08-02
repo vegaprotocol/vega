@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strconv"
 
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	protoapi "code.vegaprotocol.io/protos/vega/api"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
 var (

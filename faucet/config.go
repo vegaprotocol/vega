@@ -124,11 +124,10 @@ func GenConfig(log *logging.Logger, path, passphrase string, rewrite bool) (stri
 
 	log.Info("faucet configuration generated successfully", logging.String("path", confPath))
 
-	// then we generate the wallet
-	pubkey, err := Init(walletPath, passphrase)
+	pubKey, err := initialiseWallet(walletPath, passphrase)
 	if err != nil {
 		return "", err
 	}
 
-	return pubkey, nil
+	return pubKey, nil
 }

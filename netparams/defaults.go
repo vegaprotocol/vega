@@ -3,8 +3,8 @@ package netparams
 import (
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/netparams/checks"
-	"code.vegaprotocol.io/vega/proto"
 )
 
 const (

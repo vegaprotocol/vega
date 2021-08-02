@@ -1,15 +1,15 @@
 package validators
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"sync"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators Wallet
 type Wallet interface {
-	PubKeyOrAddress() []byte
+	PubKeyOrAddress() crypto.PublicKeyOrAddress
 }
 
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey
@@ -96,7 +96,7 @@ func (t *Topology) AllPubKeys() [][]byte {
 }
 
 func (t *Topology) SelfVegaPubKey() []byte {
-	return t.wallet.PubKeyOrAddress()
+	return t.wallet.PubKeyOrAddress().Bytes()
 }
 
 // UpdateValidatorSet updates the chain validator set
@@ -142,7 +142,7 @@ func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) e
 		return err
 	}
 
-	pubkey := t.wallet.PubKeyOrAddress()
+	pubKey := t.wallet.PubKeyOrAddress().Hex()
 
 	// vals is a map of tm pubkey -> vega pubkey
 	// tm is base64 encoded, vega is hex
@@ -157,7 +157,7 @@ func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) e
 			return err
 		}
 
-		if bytes.Equal(pubkey, vegaBytes) {
+		if pubKey == vega {
 			t.isValidator = true
 		}
 

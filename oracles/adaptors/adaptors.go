@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/vega/oracles"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 )
 
 var (
