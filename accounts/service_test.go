@@ -6,8 +6,8 @@ import (
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/accounts/mocks"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/storage"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	uuid "github.com/satori/go.uuid"

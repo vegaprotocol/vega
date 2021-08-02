@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/vegatime"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 type myWithdrawalResolver VegaResolverRoot

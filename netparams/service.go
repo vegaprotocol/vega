@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/events"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/subscribers"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 type NetParamEvent interface {

@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"code.vegaprotocol.io/data-node/types/num"
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/data-node/types/num"
 )
 
 type WithdrawExt = proto.WithdrawExt

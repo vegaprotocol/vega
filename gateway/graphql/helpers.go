@@ -7,8 +7,8 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"google.golang.org/grpc/status"
 
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/vegatime"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 func safeStringUint64(input string) (uint64, error) {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/assets/common"
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/types"
+	proto "code.vegaprotocol.io/protos/vega"
 )
 
 type Builtin struct {

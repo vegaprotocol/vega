@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/data-node/types"
 	proto "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/data-node/types"
 )
 
 type MarketUpdated struct {

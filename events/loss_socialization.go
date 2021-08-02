@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/data-node/types/num"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 type LossSoc struct {

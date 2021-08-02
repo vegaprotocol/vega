@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/events"
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/types"
 	"code.vegaprotocol.io/data-node/types/num"
+	proto "code.vegaprotocol.io/protos/vega"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,9 +15,9 @@ func TestTransferResponseDeepClone(t *testing.T) {
 	ctx := context.Background()
 
 	tr := []*types.TransferResponse{
-		&types.TransferResponse{
+		{
 			Transfers: []*types.LedgerEntry{
-				&types.LedgerEntry{
+				{
 					FromAccount: "FromAccount",
 					ToAccount:   "ToAccount",
 					Amount:      num.NewUint(1000),
@@ -27,7 +27,7 @@ func TestTransferResponseDeepClone(t *testing.T) {
 				},
 			},
 			Balances: []*types.TransferBalance{
-				&types.TransferBalance{
+				{
 					Account: &types.Account{
 						Id:       "Id",
 						Owner:    "Owner",

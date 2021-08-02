@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/data-node/types/num"
+	proto "code.vegaprotocol.io/protos/vega"
 )
 
 type Order struct {

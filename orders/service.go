@@ -5,9 +5,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/protos/commands"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 
