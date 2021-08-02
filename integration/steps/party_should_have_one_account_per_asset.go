@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 func PartyShouldHaveOneAccountPerAsset(

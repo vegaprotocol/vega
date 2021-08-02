@@ -83,8 +83,6 @@ var (
 	ErrCannotStartOpeningAuctionForMarketNotInProposedState = errors.New("cannot start the opening auction for a market not in proposed state")
 	// ErrCannotRepriceDuringAuction
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
-
-	networkPartyID = types.NetworkParty
 )
 
 // PriceMonitor interface to handle price monitoring/auction triggers
@@ -133,7 +131,7 @@ type AuctionState interface {
 	AuctionStarted(ctx context.Context) *events.Auction
 	Left(ctx context.Context, now time.Time) *events.Auction
 	// get some data
-	Mode() types.Market_TradingMode
+	Mode() types.MarketTradingMode
 	Trigger() types.AuctionTrigger
 	ExtensionTrigger() types.AuctionTrigger
 	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
@@ -200,7 +198,7 @@ type Market struct {
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
 func SetMarketID(marketcfg *types.Market, seq uint64) error {
-	marketcfg.Id = ""
+	marketcfg.ID = ""
 	marketbytes, err := proto.Marshal(marketcfg.IntoProto())
 	if err != nil {
 		return err
@@ -218,7 +216,7 @@ func SetMarketID(marketcfg *types.Market, seq uint64) error {
 
 	d := h.Sum(nil)
 	d = d[:20]
-	marketcfg.Id = base32.StdEncoding.EncodeToString(d)
+	marketcfg.ID = base32.StdEncoding.EncodeToString(d)
 	return nil
 }
 
@@ -241,7 +239,7 @@ func NewMarket(
 	as *monitor.AuctionState,
 ) (*Market, error) {
 
-	if len(mkt.Id) == 0 {
+	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
 	}
 
@@ -258,7 +256,7 @@ func NewMarket(
 	// @TODO -> the raw auctionstate shouldn't be something exposed to the matching engine
 	// as far as matching goes: it's either an auction or not
 	book := matching.NewCachedOrderBook(
-		log, matchingConfig, mkt.Id, as.InAuction())
+		log, matchingConfig, mkt.ID, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
 	riskEngine := risk.NewEngine(
 		log,
@@ -269,14 +267,14 @@ func NewMarket(
 		as,
 		broker,
 		now.UnixNano(),
-		mkt.GetId(),
+		mkt.GetID(),
 		asset,
 	)
 	settleEngine := settlement.New(
 		log,
 		settlementConfig,
 		tradableInstrument.Instrument.Product,
-		mkt.Id,
+		mkt.ID,
 		broker,
 	)
 	positionEngine := positions.New(log, positionConfig)
@@ -295,14 +293,14 @@ func NewMarket(
 
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.Id)
+	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
 
 	// The market is initially create in a proposed state
-	mkt.State = types.Market_STATE_PROPOSED
-	mkt.TradingMode = types.Market_TRADING_MODE_CONTINUOUS
+	mkt.State = types.MarketStateProposed
+	mkt.TradingMode = types.MarketTradingModeContinuous
 
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
@@ -375,7 +373,7 @@ func (m *Market) Hash() []byte {
 	))
 }
 
-func (m *Market) GetMarketState() types.Market_State {
+func (m *Market) GetMarketState() types.MarketState {
 	return m.mkt.State
 }
 
@@ -466,32 +464,32 @@ func (m *Market) ReloadConf(
 }
 
 func (m *Market) Reject(ctx context.Context) error {
-	if m.mkt.State != types.Market_STATE_PROPOSED {
+	if m.mkt.State != types.MarketStateProposed {
 		return ErrCannotRejectMarketNotInProposedState
 	}
 
 	// we close all parties accounts
 	m.cleanupOnReject(ctx)
-	m.mkt.State = types.Market_STATE_REJECTED
+	m.mkt.State = types.MarketStateRejected
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil
 }
 
 func (m *Market) StartOpeningAuction(ctx context.Context) error {
-	if m.mkt.State != types.Market_STATE_PROPOSED {
+	if m.mkt.State != types.MarketStateProposed {
 		return ErrCannotStartOpeningAuctionForMarketNotInProposedState
 	}
 
 	// now we start the opening auction
 	if m.as.AuctionStart() {
 		// we are now in a pending state
-		m.mkt.State = types.Market_STATE_PENDING
+		m.mkt.State = types.MarketStatePending
 		m.mkt.MarketTimestamps.Pending = m.currentTime.UnixNano()
 		m.EnterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting
 		// without an opening auction
-		m.mkt.State = types.Market_STATE_ACTIVE
+		m.mkt.State = types.MarketStateActive
 	}
 
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -500,13 +498,13 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 
 // GetID returns the id of the given market
 func (m *Market) GetID() string {
-	return m.mkt.Id
+	return m.mkt.ID
 }
 
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "OnChainTimeUpdate")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnChainTimeUpdate")
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -525,7 +523,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// not even specced or implemented as of now...
 	// if the state of the market is just PROPOSED,
 	// we will just skip everything there as nothing apply.
-	if m.mkt.State == types.Market_STATE_PROPOSED {
+	if m.mkt.State == types.MarketStateProposed {
 		return false
 	}
 
@@ -534,12 +532,12 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// retry here
 	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
 
-	if m.mkt.State == types.Market_STATE_TRADING_TERMINATED {
+	if m.mkt.State == types.MarketStateTradingTerminated {
 		// if we now have settlement price - try to settle and close the market
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
 		}
-		m.closed = m.mkt.State == types.Market_STATE_SETTLED
+		m.closed = m.mkt.State == types.MarketStateSettled
 		return m.closed
 	}
 
@@ -564,16 +562,16 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 
 	closed := m.tradableInstrument.Instrument.Product.IsTradingTerminated()
 	if !closed {
-		m.broker.Send(events.NewMarketTick(ctx, m.mkt.Id, t))
+		m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	} else {
-		m.mkt.State = types.Market_STATE_TRADING_TERMINATED
+		m.mkt.State = types.MarketStateTradingTerminated
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
 		}
 	}
 
-	m.closed = m.mkt.State == types.Market_STATE_SETTLED
+	m.closed = m.mkt.State == types.MarketStateSettled
 	return m.closed
 }
 
@@ -593,6 +591,7 @@ func (m *Market) updateMarketValueProxy() {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
+
 	// market is closed, final settlement
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t)
@@ -631,7 +630,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	}
 
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
-	m.mkt.State = types.Market_STATE_SETTLED
+	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	return nil
 }
@@ -744,7 +743,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	m.broker.Send(event)
 
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
-		m.mkt.State = types.Market_STATE_SUSPENDED
+		m.mkt.State = types.MarketStateSuspended
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 	}
 }
@@ -752,8 +751,8 @@ func (m *Market) EnterAuction(ctx context.Context) {
 // LeaveAuction : Return the orderbook and market to continuous trading
 func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
-		if !m.as.InAuction() && m.mkt.State == types.Market_STATE_SUSPENDED {
-			m.mkt.State = types.Market_STATE_ACTIVE
+		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
+			m.mkt.State = types.MarketStateActive
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		}
 	}()
@@ -946,7 +945,7 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 	}
 
 	// Validate market
-	if order.MarketID != m.mkt.Id {
+	if order.MarketID != m.mkt.ID {
 		// adding order to the buffer first
 		order.Status = types.OrderStatusRejected
 		order.Reason = types.OrderErrorInvalidMarketID
@@ -955,7 +954,7 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Market ID mismatch",
 				logging.Order(*order),
-				logging.String("market", m.mkt.Id))
+				logging.String("market", m.mkt.ID))
 		}
 		return types.ErrInvalidMarketID
 	}
@@ -972,7 +971,7 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) error {
 			if m.log.GetLevel() == logging.DebugLevel {
 				m.log.Debug("Failed to validate pegged order details",
 					logging.Order(*order),
-					logging.String("market", m.mkt.Id))
+					logging.String("market", m.mkt.ID))
 			}
 			return reason
 		}
@@ -1074,11 +1073,11 @@ func (m *Market) SubmitOrder(
 }
 
 func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool) (*types.OrderConfirmation, []*types.Order, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "SubmitOrder")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
 		timer.EngineTimeCounterAdd()
-		metrics.OrderCounterInc(m.mkt.Id, orderValidity)
+		metrics.OrderCounterInc(m.mkt.ID, orderValidity)
 	}()
 
 	// set those at the beginning as even rejected order get through the buffers
@@ -1487,7 +1486,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	if len(distressedMarginEvts) == 0 {
 		return nil, nil
 	}
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "resolveClosedOutParties")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "resolveClosedOutParties")
 	defer timer.EngineTimeCounterAdd()
 
 	// this is going to be run after the the close out routines
@@ -1628,8 +1627,8 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		MarketID:    m.GetID(),
 		Remaining:   size,
 		Status:      types.OrderStatusActive,
-		Party:       networkPartyID, // network is not a party as such
-		Side:        types.SideSell, // assume sell, price is zero in that case anyway
+		Party:       types.NetworkParty, // network is not a party as such
+		Side:        types.SideSell,     // assume sell, price is zero in that case anyway
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   fmt.Sprintf("LS-%s", o.ID), // liquidity sourcing, reference the order which caused the problem
 		TimeInForce: types.OrderTimeInForceFOK,  // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
@@ -1780,7 +1779,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 	if err != nil {
 		return err
 	}
-	bacc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, m.mkt.Id, asset)
+	bacc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, partyID, m.mkt.ID, asset)
 	if err != nil {
 		return err
 	}
@@ -1799,7 +1798,7 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 		Type:      types.TransferTypeBondSlashing,
 		MinAmount: bacc.Balance.Clone(),
 	}
-	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.Id, transfer)
+	tresp, err := m.collateral.BondUpdate(ctx, m.mkt.ID, transfer)
 	if err != nil {
 		return err
 	}
@@ -1809,14 +1808,14 @@ func (m *Market) confiscateBondAccount(ctx context.Context, partyID string) erro
 }
 
 func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosition, settleOrder, initial *types.Order, fees map[string]*types.Fee) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "zeroOutNetwork")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
 	marketID := m.GetID()
 	order := types.Order{
 		MarketID:    marketID,
 		Status:      types.OrderStatusFilled,
-		Party:       networkPartyID,
+		Party:       types.NetworkParty,
 		Price:       settleOrder.Price.Clone(),
 		CreatedAt:   m.currentTime.UnixNano(),
 		Reference:   "close-out distressed",
@@ -1826,7 +1825,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 
 	asset, _ := m.mkt.GetAsset()
 	marginLevels := types.MarginLevels{
-		MarketID:  m.mkt.GetId(),
+		MarketID:  m.mkt.GetID(),
 		Asset:     asset,
 		Timestamp: m.currentTime.UnixNano(),
 	}
@@ -1939,7 +1938,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 // this function handles moving money after settle MTM + risk margin updates
 // but does not move the money between party accounts (ie not to/from margin accounts after risk)
 func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "collateralAndRisk")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "collateralAndRisk")
 	defer timer.EngineTimeCounterAdd()
 	asset, _ := m.mkt.GetAsset()
 	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
@@ -2056,7 +2055,7 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 // CancelOrder cancels the given order
 func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
 
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "CancelOrder")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	if m.closed {
@@ -2074,7 +2073,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 			m.log.Debug("Party ID mismatch",
 				logging.String("party-id", partyID),
 				logging.String("order-id", orderID),
-				logging.String("market", m.mkt.Id))
+				logging.String("market", m.mkt.ID))
 		}
 		return nil, types.ErrInvalidPartyID
 	}
@@ -2088,7 +2087,7 @@ func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*typ
 				m.log.Debug("Failure after cancel order from matching engine",
 					logging.String("party-id", partyID),
 					logging.String("order-id", orderID),
-					logging.String("market", m.mkt.Id),
+					logging.String("market", m.mkt.ID),
 					logging.Error(err))
 			}
 			return nil, err
@@ -2165,7 +2164,7 @@ func (m *Market) amendOrder(
 	orderAmendment *types.OrderAmendment,
 	party string,
 ) (cnf *types.OrderConfirmation, orderUpdates []*types.Order, returnedErr error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "AmendOrder")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "AmendOrder")
 	defer timer.EngineTimeCounterAdd()
 
 	// Verify that the market is not closed
@@ -2198,10 +2197,10 @@ func (m *Market) amendOrder(
 	}
 
 	// Validate Market
-	if existingOrder.MarketID != m.mkt.Id {
+	if existingOrder.MarketID != m.mkt.ID {
 		if m.log.GetLevel() == logging.DebugLevel {
 			m.log.Debug("Market ID mismatch",
-				logging.MarketID(m.mkt.Id),
+				logging.MarketID(m.mkt.ID),
 				logging.Order(*existingOrder))
 		}
 		return nil, nil, types.ErrInvalidMarketID
@@ -2305,7 +2304,7 @@ func (m *Market) amendOrder(
 				m.log.Panic("Failure to cancel order from matching engine",
 					logging.String("party-id", amendedOrder.Party),
 					logging.String("order-id", amendedOrder.ID),
-					logging.String("market", m.mkt.Id),
+					logging.String("market", m.mkt.ID),
 					logging.Error(err))
 				return nil, nil, err
 			}
@@ -2557,7 +2556,7 @@ func (m *Market) applyOrderAmendment(
 }
 
 func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderCancelReplace")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "orderCancelReplace")
 
 	cancellation, err := m.matching.CancelOrder(existingOrder)
 	if cancellation == nil {
@@ -2600,7 +2599,7 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 }
 
 func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "orderAmendInPlace")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "orderAmendInPlace")
 	defer timer.EngineTimeCounterAdd()
 
 	err := m.matching.AmendOrder(originalOrder, amendOrder)
@@ -2631,7 +2630,7 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 // and also any pegged orders that are parked
 func (m *Market) RemoveExpiredOrders(
 	ctx context.Context, timestamp int64) ([]*types.Order, error) {
-	timer := metrics.NewTimeCounter(m.mkt.Id, "market", "RemoveExpiredOrders")
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredOrders")
 	defer timer.EngineTimeCounterAdd()
 
 	if m.closed {
@@ -2854,13 +2853,13 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 }
 
 func (m *Market) canTrade() bool {
-	return m.mkt.State == types.Market_STATE_ACTIVE ||
-		m.mkt.State == types.Market_STATE_PENDING ||
-		m.mkt.State == types.Market_STATE_SUSPENDED
+	return m.mkt.State == types.MarketStateActive ||
+		m.mkt.State == types.MarketStatePending ||
+		m.mkt.State == types.MarketStateSuspended
 }
 
 func (m *Market) canSubmitCommitment() bool {
-	return m.canTrade() || m.mkt.State == types.Market_STATE_PROPOSED
+	return m.canTrade() || m.mkt.State == types.MarketStateProposed
 }
 
 // cleanupOnReject remove all resources created while the
@@ -2938,7 +2937,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return fmt.Errorf("failed to get asset: %w", err)
 	}
 
-	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetId(), asset)
+	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetID(), asset)
 	if err != nil {
 		return fmt.Errorf("failed to get market liquidity fee account: %w", err)
 	}

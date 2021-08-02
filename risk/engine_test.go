@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/risk/mocks"
 	"code.vegaprotocol.io/vega/types"

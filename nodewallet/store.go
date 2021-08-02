@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/wallet/crypto"
 )
 
 type WalletConfig struct {

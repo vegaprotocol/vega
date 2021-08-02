@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 type Auction struct {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/storage"
 	"github.com/stretchr/testify/assert"
 )

@@ -1,4 +1,4 @@
-/* properties of scmVars (example): 
+/* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
     - GIT_COMMIT:05a1c6fbe7d1ff87cfc40a011a63db574edad7e6
     - GIT_PREVIOUS_COMMIT:5d02b46fdb653f789e799ff6ad304baccc32cbf9
@@ -14,13 +14,16 @@ pipeline {
     agent { label 'general' }
     options {
         skipDefaultCheckout true
+        parallelsAlwaysFailFast()
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
         string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
     }
     environment {
+        CGO_ENABLED = 0
         GO111MODULE = 'on'
+        SLACK_MESSAGE = "Vega Core CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
     }
 
     stages {
@@ -63,12 +66,30 @@ pipeline {
                         }
                     }
                 }
+                stage('specs-internal') {
+                    steps {
+                        retry(3) {
+                            dir('specs-internal') {
+                                git branch: 'master', credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/specs-internal.git'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('go mod download deps') {
+            steps {
+                retry(3) {
+                    dir('vega') {
+                        sh 'go mod download -x'
+                    }
+                }
             }
         }
 
         stage('Compile vega core') {
             environment {
-                CGO_ENABLED  = 0
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
             parallel {
@@ -81,7 +102,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                                 sh '${OUTPUT} version'
@@ -98,7 +119,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                             }
@@ -114,7 +135,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
+                                sh 'go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega'
                                 // quick check
                                 sh 'file ${OUTPUT}'
                             }
@@ -124,121 +145,60 @@ pipeline {
             }
         }
 
-        stage('Run checks') {
+        // these stages are run in sequence as they delete and recreate files
+        stage('Run gqlgen codgen checks') {
+            steps {
+                retry(3) {
+                    dir('vega') {
+                        sh 'make gqlgen_check'
+                    }
+                }
+            }
+        }
+
+        stage('Run linters') {
             parallel {
-                stage('[TODO] markdown verification') {
+                stage('buf lint') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run markdown verification'
+                                sh 'buf lint'
                             }
                         }
                     }
                 }
-                stage('[TODO] unit tests') {
+                stage('static check') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run unit tests'
+                                sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
                             }
                         }
                     }
                 }
-                stage('[TODO] integration tests') {
+                stage('go vet') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run integration tests'
+                                sh 'go vet ./...'
                             }
                         }
                     }
                 }
-                stage('[TODO] check gqlgen') {
+                stage('check print') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run check gqlgen'
+                                sh 'make print_check'
                             }
                         }
                     }
                 }
-                stage('[TODO] check print') {
+                stage('misspell') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run check print'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] check proto') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run check proto'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] test again with a race flag') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run test again with a race flag'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] vet') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run vet'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] code owner') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run code owner'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] buf lint') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run buf lint'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] misspell') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run misspell'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] static check') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run static check'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] swagger diff verification') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run swagger diff verification'
+                                sh 'golangci-lint run --disable-all --enable misspell'
                             }
                         }
                     }
@@ -261,11 +221,56 @@ pipeline {
                         }
                     }
                 }
-                stage('[TODO] feature (integration) tests from specs-internal repo') {
+                stage('markdown spellcheck') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run feature (integration) tests from specs-internal repo'
+                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Run tests') {
+            parallel {
+                stage('unit tests with race') {
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+                                sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                                junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
+                            }
+                        }
+                    }
+                }
+                stage('unit tests') {
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+                                sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                                junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
+                            }
+                        }
+                    }
+                }
+                stage('vega/integration tests') {
+                    steps {
+                        retry(3) {
+                            dir('vega/integration') {
+                                sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
+                                junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
+                            }
+                        }
+                    }
+                }
+                stage('specs-internal qa-scenarios') {
+                    steps {
+                        retry(3) {
+                            dir('vega/integration') {
+                                sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
+                                junit checksName: 'Specs Tests (specs-internal)', testResults: 'specs-internal-qa-scenarios-report.xml'
                             }
                         }
                     }
@@ -312,6 +317,18 @@ pipeline {
             steps {
                 echo 'Build version because this commit is tagged...'
                 echo 'and publish it'
+            }
+        }
+    }
+    post {
+        success {
+            retry(3) {
+                slackSend(channel: "#tradingcore-notify", color: "good", message: ":white_check_mark: ${SLACK_MESSAGE}")
+            }
+        }
+        failure {
+            retry(3) {
+                slackSend(channel: "#tradingcore-notify", color: "danger", message: ":red_circle: ${SLACK_MESSAGE}")
             }
         }
     }

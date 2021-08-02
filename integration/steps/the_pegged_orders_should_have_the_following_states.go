@@ -1,8 +1,8 @@
 package steps
 
 import (
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/cucumber/godog"
 )

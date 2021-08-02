@@ -84,7 +84,7 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	// opening auction ended, mark-price set
 	mktData := mkt.market.GetMarketData()
 	require.NotNil(t, mktData)
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, mktData.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
 }
 
 func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
@@ -137,7 +137,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
 	require.NoError(t, err)
 
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.Equal(t, lp1.CommitmentAmount, bondAcc.Balance)
@@ -196,7 +196,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.Equal(t, num.Zero(), bondAcc.Balance)
@@ -209,7 +209,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 
 	//TODO: JEREMY: funds are staying in margin ACCOUNT, let's
 	// fix that latert.
-	marginAcc, err := tm.collateralEngine.GetPartyMarginAccount(tm.mktCfg.Id, mainParty, asset)
+	marginAcc, err := tm.collateralEngine.GetPartyMarginAccount(tm.mktCfg.ID, mainParty, asset)
 	require.NoError(t, err)
 	require.NotNil(t, marginAcc)
 
@@ -279,7 +279,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 
 	require.Equal(t, 1, tm.market.GetLPSCount())
 
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.Equal(t, lp.CommitmentAmount, bondAcc.Balance)
@@ -308,7 +308,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 	require.NotNil(t, genAcc)
 	require.Equal(t, num.Zero(), genAcc.Balance)
 
-	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.Equal(t, num.Zero(), bondAcc.Balance)
@@ -374,7 +374,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
 	require.NoError(t, err)
 
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.Equal(t, lp.CommitmentAmount, bondAcc.Balance)
@@ -396,7 +396,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 	require.NotNil(t, genAcc)
 	require.Equal(t, num.Zero(), genAcc.Balance)
 
-	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.Equal(t, lp.CommitmentAmount, bondAcc.Balance)
@@ -483,7 +483,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.NotNil(t, marginAcc)
 	marginAccBalanceBeforeMarketMove := marginAcc.Balance.Clone()
 
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	bondAccBalanceBeforeMarketMove := bondAcc.Balance.Clone()
@@ -512,7 +512,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	require.NotNil(t, marginAcc)
 	marginAccBalanceAfterMarketMove := marginAcc.Balance.Clone()
 
-	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	bondAccBalanceAfterMarketMove := bondAcc.Balance.Clone()
@@ -610,7 +610,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	require.NotNil(t, marginAcc)
 	require.False(t, marginAcc.Balance.IsZero())
 
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	bondAccBalanceBeforeMarketMove := bondAcc.Balance.Clone()
@@ -643,7 +643,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	require.NoError(t, err)
 	require.False(t, marginAccount.Balance.IsZero())
 
-	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.True(t, bondAcc.Balance.LT(bondAccBalanceBeforeMarketMove))
@@ -671,7 +671,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 
 	mktData := tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-	require.Equal(t, types.Market_TRADING_MODE_OPENING_AUCTION, mktData.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeOpeningAuction, mktData.MarketTradingMode)
 
 	initialMarkPrice := uint64(99)
 
@@ -722,7 +722,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	require.False(t, genAcc.Balance.IsZero())
 	require.Equal(t, genAcc.Balance, num.Zero().Sub(genAccBalanceBeforeLPSubmission, lp.CommitmentAmount))
 
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	bondAccBalanceDuringAuction := bondAcc.Balance.Clone()
@@ -739,14 +739,14 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 
 	mktData = tm.market.GetMarketData()
 	require.NotNil(t, mktData)
-	require.Equal(t, types.Market_TRADING_MODE_CONTINUOUS, mktData.MarketTradingMode)
+	require.Equal(t, types.MarketTradingModeContinuous, mktData.MarketTradingMode)
 
 	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.True(t, genAcc.Balance.IsZero())
 
-	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.Id, asset)
+	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.True(t, bondAcc.Balance.LT(bondAccBalanceDuringAuction))

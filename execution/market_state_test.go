@@ -31,7 +31,7 @@ func testInitialStateIsProposed(t *testing.T) {
 	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
-	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
+	assert.Equal(t, types.MarketStateProposed, tm.market.State())
 }
 
 func testCannotDoOrderStuffInProposedState(t *testing.T) {
@@ -44,7 +44,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 
 	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
-	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
+	assert.Equal(t, types.MarketStateProposed, tm.market.State())
 
 	addAccountWithAmount(tm, "someparty", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -110,11 +110,11 @@ func testCanMoveFromProposedToRejectedState(t *testing.T) {
 	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
-	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
+	assert.Equal(t, types.MarketStateProposed, tm.market.State())
 
 	err := tm.market.Reject(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, types.Market_STATE_REJECTED, tm.market.State())
+	assert.Equal(t, types.MarketStateRejected, tm.market.State())
 }
 
 func testCanMoveFromProposedToPendingState(t *testing.T) {
@@ -126,11 +126,11 @@ func testCanMoveFromProposedToPendingState(t *testing.T) {
 	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
-	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
+	assert.Equal(t, types.MarketStateProposed, tm.market.State())
 
 	err := tm.market.StartOpeningAuction(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, types.Market_STATE_PENDING, tm.market.State())
+	assert.Equal(t, types.MarketStatePending, tm.market.State())
 }
 
 func testCanMoveFromPendingToActiveState(t *testing.T) {
@@ -142,11 +142,11 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
-	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
+	assert.Equal(t, types.MarketStateProposed, tm.market.State())
 
 	err := tm.market.StartOpeningAuction(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, types.Market_STATE_PENDING, tm.market.State())
+	assert.Equal(t, types.MarketStatePending, tm.market.State())
 
 	addAccountWithAmount(tm, "party1", 100000000)
 	addAccountWithAmount(tm, "party2", 100000000)
@@ -165,7 +165,7 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 	}
 	// now move to after the opening auction time
 	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
-	assert.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
+	assert.Equal(t, types.MarketStateActive, tm.market.State())
 }
 
 func testCanPlaceOrderInActiveState(t *testing.T) {
@@ -177,11 +177,11 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	tm := getTestMarket2(t, now, closingAt, nil, auctionDuration, false)
 	defer tm.ctrl.Finish()
 
-	assert.Equal(t, types.Market_STATE_PROPOSED, tm.market.State())
+	assert.Equal(t, types.MarketStateProposed, tm.market.State())
 
 	err := tm.market.StartOpeningAuction(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, types.Market_STATE_PENDING, tm.market.State())
+	assert.Equal(t, types.MarketStatePending, tm.market.State())
 
 	addAccountWithAmount(tm, "party1", 100000000)
 	addAccountWithAmount(tm, "party2", 100000000)
@@ -200,7 +200,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	}
 	// now move to after the opening auction time
 	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
-	assert.Equal(t, types.Market_STATE_ACTIVE, tm.market.State())
+	assert.Equal(t, types.MarketStateActive, tm.market.State())
 
 	addAccountWithAmount(tm, "someparty", 100000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()

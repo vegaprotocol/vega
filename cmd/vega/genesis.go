@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -127,8 +126,8 @@ func loadVegaPubKey(log *logging.Logger, rootPath, pass string) (string, error) 
 		return "", errors.New("no vega wallet stored in node wallet")
 	}
 
-	vegaKey := w.PubKeyOrAddress()
-	return hex.EncodeToString(vegaKey), nil
+	vegaKey := w.PubKeyOrAddress().Hex()
+	return vegaKey, nil
 }
 
 func Genesis(ctx context.Context, parser *flags.Parser) error {

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 	"github.com/cucumber/godog"
 )
 

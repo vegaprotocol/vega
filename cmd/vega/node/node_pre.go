@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	proto "code.vegaprotocol.io/protos/vega"
+	oraclepb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -37,8 +39,6 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
-	"code.vegaprotocol.io/vega/proto"
-	oraclepb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"

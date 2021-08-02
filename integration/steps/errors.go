@@ -7,8 +7,8 @@ import (
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 )
 
 type ErroneousRow interface {

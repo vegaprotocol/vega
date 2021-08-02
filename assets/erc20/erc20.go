@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/nodewallet"
-	typespb "code.vegaprotocol.io/vega/proto"
+	typespb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
