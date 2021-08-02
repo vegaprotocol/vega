@@ -117,15 +117,16 @@ pipeline {
 
         stage('Run linters') {
             parallel {
-                // stage('static check') {
-                //     steps {
-                //         retry(3) {
-                //             dir('data-node') {
-                //                 sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
-                //             }
-                //         }
-                //     }
-                // }
+                stage('[FIXME] static check') {
+                    steps {
+                        retry(3) {
+                            dir('data-node') {
+                                //sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
+                                echo "ERROR: staticcheck is failing"
+                            }
+                        }
+                    }
+                }
                 stage('go vet') {
                     steps {
                         retry(3) {
