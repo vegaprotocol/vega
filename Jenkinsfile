@@ -275,6 +275,7 @@ pipeline {
                     environment {
                         DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
                         DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG}"
+                        DOCKER_IMAGE_URL = "https://github.com/vegaprotocol/vega/pkgs/container/vega%2Fvega"
                     }
                     steps {
                         retry(3) {
@@ -301,7 +302,7 @@ pipeline {
                                 slackSend(
                                     channel: "#tradingcore-notify",
                                     color: "good",
-                                    message: ":docker: Published new docker image: `${DOCKER_IMAGE_NAME}`",
+                                    message: ":docker: Published new `data-node` docker image <${DOCKER_IMAGE_URL}|${DOCKER_IMAGE_TAG}>",
                                 )
                             }
                         }
