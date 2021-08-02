@@ -183,32 +183,24 @@ pipeline {
             }
         }
 
-
-        stage('Run Checks') {
+        stage('Run tests') {
             parallel {
-                stage('[TODO] unit tests') {
+                stage('unit tests') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run unit tests'
+                                sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                                junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
                             }
                         }
                     }
                 }
-                stage('[TODO] integration tests') {
+                stage('unit tests with race') {
                     steps {
                         retry(3) {
                             dir('vega') {
-                                echo 'Run integration tests'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] test again with a race flag') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                echo 'Run test again with a race flag'
+                                sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                                junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                             }
                         }
                     }
