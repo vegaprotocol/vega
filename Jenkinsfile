@@ -271,7 +271,7 @@ pipeline {
                         buildingTag()
                     }
                     environment {
-                        RELEASE_URL = "https://github.com/vegaprotocol/vega/releases/tag/${TAG_NAME}"
+                        RELEASE_URL = "https://github.com/vegaprotocol/data-node/releases/tag/${TAG_NAME}"
                     }
                     steps {
                         retry(3) {
