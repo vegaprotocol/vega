@@ -153,53 +153,102 @@ func testDelegateInsufficientBalanceIncludingPendingDelegation(t *testing.T) {
 	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 }
 
-// party has committed delegations and is trying to exceed their stake account balance delegations i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
-func testDelegateInsufficientBalanceIncludingCommitted(t *testing.T) {
-	testEngine := getEngine(t)
+// setup committed deletations (delegations in effect in current epoch):
+// node1 -> 8
+// 		    party1 -> 6
+//			party2 -> 2
+// node 2 -> 7
+// 			party1 -> 4
+//			party2 -> 3
+func setupDefaultDelegationState(testEngine *testEngine, party1Balance uint64, party2Balance uint64) {
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(10)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
+	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(party1Balance)
+	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(party2Balance)
 
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
+	engine := testEngine.engine
+
+	engine.nodeDelegationState["node1"] = &validatorDelegation{
 		nodeID:         "node1",
 		totalDelegated: num.NewUint(8),
 		partyToAmount:  make(map[string]*num.Uint),
 	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
+	engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
+	engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
 
 	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
+	engine.nodeDelegationState["node2"] = &validatorDelegation{
 		nodeID:         "node2",
 		totalDelegated: num.NewUint(7),
 		partyToAmount:  make(map[string]*num.Uint),
 	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
+	engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
+	engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
 
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
+	engine.partyDelegationState["party1"] = &partyDelegation{
 		party:          "party1",
 		totalDelegated: num.NewUint(10),
 		nodeToAmount:   make(map[string]*num.Uint),
 	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
+	engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
+	engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
 
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
+	engine.partyDelegationState["party2"] = &partyDelegation{
 		party:          "party2",
 		totalDelegated: num.NewUint(5),
 		nodeToAmount:   make(map[string]*num.Uint),
 	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
+	engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+}
+
+// setup committed deletations (delegations in effect in current epoch):
+// node1 -> 6
+// 		    party1 -> 6
+// node 2 -> 3
+// 			party2 -> 3
+func defaultSimpleDelegationState(testEngine *testEngine, party1Balance, party2Balance uint64) {
+	testEngine.topology.nodeToIsValidator["node1"] = true
+	testEngine.topology.nodeToIsValidator["node2"] = true
+	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
+	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
+
+	engine := testEngine.engine
+	engine.nodeDelegationState["node1"] = &validatorDelegation{
+		nodeID:         "node1",
+		totalDelegated: num.NewUint(6),
+		partyToAmount:  make(map[string]*num.Uint),
+	}
+	engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
+
+	// setup delegation for node2
+	engine.nodeDelegationState["node2"] = &validatorDelegation{
+		nodeID:         "node2",
+		totalDelegated: num.NewUint(3),
+		partyToAmount:  make(map[string]*num.Uint),
+	}
+	engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
+
+	engine.partyDelegationState["party1"] = &partyDelegation{
+		party:          "party1",
+		totalDelegated: num.NewUint(6),
+		nodeToAmount:   make(map[string]*num.Uint),
+	}
+	engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
+
+	engine.partyDelegationState["party2"] = &partyDelegation{
+		party:          "party2",
+		totalDelegated: num.NewUint(3),
+		nodeToAmount:   make(map[string]*num.Uint),
+	}
+	engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+
+}
+
+// party has committed delegations and is trying to exceed their stake account balance delegations i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
+func testDelegateInsufficientBalanceIncludingCommitted(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 10, 7)
 
 	// by this point party1 has 10 tokens delegated which means they can't delegate anything more
 	err := testEngine.engine.Delegate("party1", "node1", 2)
@@ -220,50 +269,7 @@ func testDelegateInsufficientBalanceIncludingCommitted(t *testing.T) {
 func testDelegateInsufficientBalanceIncludingPendingAndCommitted(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// setup pending
 	// by this point party1 has 10 tokens delegated which means they can delegate 2 more
@@ -292,50 +298,7 @@ func testDelegateInsufficientBalanceIncludingPendingAndCommitted(t *testing.T) {
 func testDelegateInsufficientBalanceIncludingPendingUndelegations(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// setup pending
 	// by this point party1 has 10 tokens delegated which means they can delegate 2 more - with the undelegation they can delegate 4
@@ -418,44 +381,7 @@ func testDelegateSuccesNoCommitted(t *testing.T) {
 func testDelegateSuccessWithPreviousPendingUndelegateFullyCovered(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 6
-	// 		    party1 -> 6
-	// node 2 -> 3
-	// 			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(6),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(3),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(6),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(3),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	defaultSimpleDelegationState(testEngine, 12, 7)
 
 	// setup pending undelegation
 	err := testEngine.engine.UndelegateAtEndOfEpoch("party1", "node1", 2)
@@ -508,44 +434,7 @@ func testDelegateSuccessWithPreviousPendingUndelegateFullyCovered(t *testing.T) 
 func testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	// node 2 -> 7
-	// 			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(6),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(3),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(6),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(3),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	defaultSimpleDelegationState(testEngine, 12, 7)
 
 	// setup pending undelegation
 	err := testEngine.engine.UndelegateAtEndOfEpoch("party1", "node1", 4)
@@ -597,44 +486,7 @@ func testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered(t *testing
 func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	// node 2 -> 7
-	// 			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(6),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(3),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(6),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(3),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	defaultSimpleDelegationState(testEngine, 12, 7)
 
 	// setup pending undelegation
 	err := testEngine.engine.UndelegateAtEndOfEpoch("party1", "node1", 4)
@@ -704,44 +556,7 @@ func testUndelegateInvalidAmount(t *testing.T) {
 func testUndelegateSuccessNoPreviousPending(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 6
-	// 		    party1 -> 6
-	// node 2 -> 3
-	// 			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(6),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(3),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(6),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(3),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	defaultSimpleDelegationState(testEngine, 12, 7)
 
 	// setup pending undelegation
 	err := testEngine.engine.UndelegateAtEndOfEpoch("party1", "node1", 2)
@@ -871,50 +686,7 @@ func testUndelegateSuccessWithPreviousPendingDelegateExactlyCovered(t *testing.T
 // undelegate such that delegation for some party and node goes from delegate to undelegate
 func testUndelegateSuccessWithPreviousPendingDelegateFullyCovered(t *testing.T) {
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(15)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(10)
-
-	// setup delegation
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 15, 10)
 
 	err := testEngine.engine.Delegate("party1", "node1", 2)
 	require.Nil(t, err)
@@ -948,53 +720,13 @@ func testUndelegateSuccessWithPreviousPendingDelegateFullyCovered(t *testing.T) 
 // preprocess delegation state from last epoch for changes in stake balance - such that there were no changes so no forced undelegation is expected
 func testPreprocessForRewardingNoForcedUndelegationNeeded(t *testing.T) {
 	testEngine := getEngine(t)
+
+	setupDefaultDelegationState(testEngine, 12, 10)
 	epochStart := time.Now()
 	epochEnd := time.Now()
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(12)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(10)
-
-	// setup delegation
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
 
 	// call preprocess to update the state based on the changes in staking account
 	testEngine.engine.preprocessEpochForRewarding(epochStart, epochEnd)
@@ -1018,47 +750,12 @@ func testPreprocessForRewardingNoForcedUndelegationNeeded(t *testing.T) {
 // from a single available node
 func testPreprocessForRewardingWithForceUndelegateSingleValidator(t *testing.T) {
 	testEngine := getEngine(t)
+	defaultSimpleDelegationState(testEngine, 12, 10)
 	epochStart := time.Now()
 	epochEnd := time.Now()
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(2)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(0)
-
-	// setup delegation
-	// node1 -> 6
-	// 		    party1 -> 6
-	// node 2 -> 3
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(6),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(3),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(6),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(3),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
 
 	// call preprocess to update the state based on the changes in staking account
 	testEngine.engine.preprocessEpochForRewarding(epochStart, epochEnd)
@@ -1256,42 +953,7 @@ func testPreprocessForRewardingWithForceUndelegateMultiValidatorWithRemainder(t 
 func testPendingUndelegationEmpty(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
 		party:          "party2",
@@ -1323,50 +985,7 @@ func testPendingUndelegationEmpty(t *testing.T) {
 func testPendingUndelegationNothingToUndelegate(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// in this case party3 had delegate state which must have been cleared by the preprocessing step as the party withdrew from the staking account
 	// but it still has an undelegation pending for execution - which will have no impact when executed
@@ -1393,50 +1012,7 @@ func testPendingUndelegationNothingToUndelegate(t *testing.T) {
 func testPendingUndelegationGTDelegateddBalance(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// undelegate
 	testEngine.engine.UndelegateAtEndOfEpoch("party1", "node1", 6)
@@ -1497,50 +1073,7 @@ func testPendingUndelegationGTDelegateddBalance(t *testing.T) {
 func testPendingUndelegationLTDelegateddBalance(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// trying to undelegate more than the node has delegated from the party should just undelegate everything the party has on the node
 	testEngine.engine.UndelegateAtEndOfEpoch("party1", "node1", 3)
@@ -1571,50 +1104,7 @@ func testPendingUndelegationLTDelegateddBalance(t *testing.T) {
 func testPendingUndelegationAllBalanceForParty(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// trying to undelegate more than the node has delegated from the party should just undelegate everything the party has on the node
 	testEngine.engine.UndelegateAtEndOfEpoch("party1", "node1", 6)
@@ -1639,50 +1129,7 @@ func testPendingUndelegationAllBalanceForParty(t *testing.T) {
 func testPendingUndelegationAllBalanceForNode(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// trying to undelegate more than the node has delegated from the party should just undelegate everything the party has on the node
 	testEngine.engine.UndelegateAtEndOfEpoch("party1", "node1", 6)
@@ -1734,50 +1181,7 @@ func testPendingDelegationInsufficientBalance(t *testing.T) {
 func testPendingDelegationValidatorAllocationMaxedOut(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1 has sufficient balance in their staking account to delegate 2 more
 	testEngine.engine.Delegate("party1", "node1", 2)
@@ -1796,50 +1200,7 @@ func testPendingDelegationValidatorAllocationMaxedOut(t *testing.T) {
 func testPendingDelegationAmountAdjusted(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1 has sufficient balance in their staking account to delegate 2 more
 	testEngine.engine.Delegate("party1", "node1", 2)
@@ -1859,50 +1220,7 @@ func testPendingDelegationAmountAdjusted(t *testing.T) {
 func testPendingDelegationSuccess(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1 has sufficient balance in their staking account to delegate 2 more
 	testEngine.engine.Delegate("party1", "node1", 2)
@@ -1921,50 +1239,7 @@ func testPendingDelegationSuccess(t *testing.T) {
 func testProcessPending(t *testing.T) {
 	// setup committed delegated state
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-
-	// setup committed deletations (delegations in effect in current epoch):
-	// node1 -> 8
-	// 		    party1 -> 6
-	//			party2 -> 2
-	// node 2 -> 7
-	// 			party1 -> 4
-	//			party2 -> 3
-	testEngine.engine.nodeDelegationState["node1"] = &validatorDelegation{
-		nodeID:         "node1",
-		totalDelegated: num.NewUint(8),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"] = num.NewUint(6)
-	testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"] = num.NewUint(2)
-
-	// setup delegation for node2
-	testEngine.engine.nodeDelegationState["node2"] = &validatorDelegation{
-		nodeID:         "node2",
-		totalDelegated: num.NewUint(7),
-		partyToAmount:  make(map[string]*num.Uint),
-	}
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"] = num.NewUint(4)
-	testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"] = num.NewUint(3)
-
-	testEngine.engine.partyDelegationState["party1"] = &partyDelegation{
-		party:          "party1",
-		totalDelegated: num.NewUint(10),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"] = num.NewUint(6)
-	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"] = num.NewUint(4)
-
-	testEngine.engine.partyDelegationState["party2"] = &partyDelegation{
-		party:          "party2",
-		totalDelegated: num.NewUint(5),
-		nodeToAmount:   make(map[string]*num.Uint),
-	}
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
-	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
+	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1 has sufficient balance in their staking account to delegate 2 more
 	testEngine.engine.Delegate("party1", "node1", 2)
