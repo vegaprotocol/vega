@@ -13,6 +13,7 @@ import (
 type procTest struct {
 	eng     *mocks.MockExecutionEngine
 	ts      *mocks.MockTimeService
+	es      *mocks.MockEpochService
 	stat    *mocks.MockStats
 	tickCB  func(context.Context, time.Time)
 	ctrl    *gomock.Controller

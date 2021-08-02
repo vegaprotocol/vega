@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/protos/commands"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -75,6 +75,7 @@ func NewApp(
 	notary Notary,
 	stats Stats,
 	time TimeService,
+	epoch EpochService,
 	top ValidatorTopology,
 	netp NetworkParameters,
 	oracles *Oracle,

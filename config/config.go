@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
@@ -69,6 +70,7 @@ type Config struct {
 	Storage           storage.Config     `group:"Storage" namespace:"storage"`
 	Trades            trades.Config      `group:"Trades" namespace:"trades"`
 	Time              vegatime.Config    `group:"Time" namespace:"time"`
+	Epoch             epochtime.Config   `group:"Epoch" namespace:"epochtime"`
 	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
 	Gateway           gateway.Config     `group:"Gateway" namespace:"gateway"`
 	Metrics           metrics.Config     `group:"Metrics" namespace:"metrics"`
@@ -105,6 +107,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Orders:            orders.NewDefaultConfig(),
 		Liquidity:         liquidity.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
+		Epoch:             epochtime.NewDefaultConfig(),
 		Markets:           markets.NewDefaultConfig(),
 		Matching:          matching.NewDefaultConfig(),
 		Parties:           parties.NewDefaultConfig(),

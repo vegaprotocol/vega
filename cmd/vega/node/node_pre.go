@@ -358,6 +358,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.notary,
 		l.stats.Blockchain,
 		l.timeService,
+		l.epochService,
 		l.topology,
 		l.netParams,
 		&processor.Oracle{

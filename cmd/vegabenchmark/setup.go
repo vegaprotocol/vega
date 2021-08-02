@@ -7,11 +7,13 @@ import (
 	"strings"
 	"time"
 
+	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
@@ -20,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/netparams/dispatch"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
-	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
@@ -124,6 +125,8 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	bstats := stats.NewBlockchain()
 
+	epochService := epochtime.New(epochtime.NewDefaultConfig(), timeService, netparams)
+
 	app := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
@@ -140,6 +143,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		notary,
 		bstats,
 		timeService,
+		epochService,
 		topology,
 		netparams,
 		&processor.Oracle{
