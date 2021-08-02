@@ -158,6 +158,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
+                                sh "git ls-files '*.sh'"
                                 sh "git ls-files '*.sh' | xargs shellcheck"
                             }
                         }
@@ -167,6 +168,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
+                                sh "git ls-files '*.yml' '*.yaml'"
                                 sh "git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 160}}}'"
                             }
                         }
@@ -176,6 +178,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
+                                sh "git ls-files '*.py'"
                                 sh "git ls-files '*.py' | xargs flake8"
                                 sh "git ls-files '*.py' | xargs black -l 79 --check --diff"
                             }
@@ -186,6 +189,7 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
+                                sh "git ls-files '*.json'"
                                 sh "for f in \$(git ls-files '*.json'); do echo \"check \$f\"; jq empty \"\$f\"; done"
                             }
                         }
