@@ -49,7 +49,7 @@ func (s *Svc) ReloadConf(conf Config) {
 	// do nothing here, conf is not used for now
 }
 
-func (s *Svc) onTick(_ context.Context, t time.Time) {
+func (s *Svc) onTick(ctx context.Context, t time.Time) {
 	if t.IsZero() {
 		// We haven't got a blcok time yet, ignore
 		return
@@ -60,12 +60,15 @@ func (s *Svc) onTick(_ context.Context, t time.Time) {
 		s.epoch.UniqueID = 0
 		s.epoch.StartTime = t
 		s.epoch.ExpireTime = t // + epoch length
+
 		// Send out new epoch event
+		s.notify(ctx, s.epoch)
 	}
 
 	if s.epoch.ExpireTime.Before(t) {
 		s.epoch.EndTime = t
 		// We have expired, send event
+		s.notify(ctx, s.epoch)
 
 		s.epoch.UniqueID += 1
 
@@ -73,6 +76,7 @@ func (s *Svc) onTick(_ context.Context, t time.Time) {
 		s.epoch.StartTime = t
 		s.epoch.ExpireTime = t // + epoch length
 		s.epoch.EndTime = time.Time{}
+		s.notify(ctx, s.epoch)
 	}
 }
 
