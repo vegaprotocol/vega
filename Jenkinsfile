@@ -53,10 +53,13 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
-                                // quick check
-                                sh 'file ${OUTPUT}'
-                                sh '${OUTPUT} version'
+                                sh label: 'Compile', script: '''
+                                    go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                                '''
+                                sh label: 'Sanity check', script: '''
+                                    file ${OUTPUT}
+                                    ${OUTPUT} version
+                                '''
                             }
                         }
                     }
@@ -70,9 +73,12 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
-                                // quick check
-                                sh 'file ${OUTPUT}'
+                                sh label: 'Compile', script: '''
+                                    go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                                '''
+                                sh label: 'Sanity check', script: '''
+                                    file ${OUTPUT}
+                                '''
                             }
                         }
                     }
@@ -86,9 +92,12 @@ pipeline {
                     steps {
                         retry(3) {
                             dir('data-node') {
-                                sh 'go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node'
-                                // quick check
-                                sh 'file ${OUTPUT}'
+                                sh label: 'Compile', script: '''
+                                    go build -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/data-node
+                                '''
+                                sh label: 'Sanity check', script: '''
+                                    file ${OUTPUT}
+                                '''
                             }
                         }
                     }
