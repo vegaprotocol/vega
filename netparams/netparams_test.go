@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testNetParams struct {
@@ -45,6 +46,11 @@ func TestNetParams(t *testing.T) {
 	t.Run("get duration", testGetDuration)
 	t.Run("dispatch after update", testDispatchAfterUpdate)
 	t.Run("register dispatch function - failure", testRegisterDispatchFunctionFailure)
+}
+
+func TestCheckpoint(t *testing.T) {
+	t.Run("test get snapshot not empty", testNonEmptyCheckpoint)
+	t.Run("test get snapshot invalid", testInvalidCheckpoint)
 }
 
 func testRegisterDispatchFunctionFailure(t *testing.T) {
@@ -191,4 +197,61 @@ func testGetDuration(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = netp.GetDuration(netparams.GovernanceProposalAssetMinProposerBalance)
 	assert.EqualError(t, err, "not a time.Duration value")
+}
+
+func testNonEmptyCheckpoint(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+	ctx := context.Background()
+
+	// get the original default value
+	ov, err := netp.Get(netparams.GovernanceProposalMarketMinClose)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ov)
+	assert.NotEqual(t, ov, "10h")
+
+	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	err = netp.Update(ctx, netparams.GovernanceProposalMarketMinClose, "10h")
+	assert.NoError(t, err)
+
+	nv, err := netp.Get(netparams.GovernanceProposalMarketMinClose)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, nv)
+	assert.NotEqual(t, nv, ov)
+	assert.Equal(t, nv, "10h")
+
+	data := netp.Checkpoint()
+	require.NotEmpty(t, data)
+
+	// now try and load the checkpoint
+	netp2 := getTestNetParams(t)
+	defer netp2.ctrl.Finish()
+
+	// ensure the state != checkpoint we took
+	ov2, err := netp2.Get(netparams.GovernanceProposalMarketMinClose)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ov2)
+	assert.NotEqual(t, ov2, "10h")
+	require.Equal(t, ov, ov2)
+
+	netp2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	require.NoError(t, netp2.Load(data, nil))
+
+	nv2, err := netp2.Get(netparams.GovernanceProposalMarketMinClose)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, nv2)
+	assert.NotEqual(t, nv2, ov)
+	assert.Equal(t, nv, nv2)
+}
+
+func testInvalidCheckpoint(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+
+	data := netp.Checkpoint()
+	require.NotEmpty(t, data)
+
+	data = append(data, []byte("foobar")...) // corrupt the data
+	require.Error(t, netp.Load(data, nil))
 }
