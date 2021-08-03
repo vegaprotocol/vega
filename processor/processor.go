@@ -6,7 +6,6 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/oracles"
@@ -36,7 +35,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/processor EpochService
 type EpochService interface {
-	NotifyOnEpoch(f func(context.Context, epochtime.Epoch))
+	NotifyOnEpoch(f func(context.Context, types.Epoch))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine

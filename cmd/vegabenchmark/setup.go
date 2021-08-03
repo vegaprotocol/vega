@@ -125,7 +125,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	bstats := stats.NewBlockchain()
 
-	epochService := epochtime.New(epochtime.NewDefaultConfig(), timeService, netparams)
+	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, netparams, broker)
 
 	app := processor.NewApp(
 		log,

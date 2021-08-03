@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/contextutil"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/contextutil"
 
 	"github.com/pkg/errors"
 )
@@ -88,6 +88,7 @@ const (
 	TxErrEvent
 	OracleSpecEvent
 	OracleDataEvent
+	EpochUpdate
 )
 
 var (
@@ -130,6 +131,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:            TxErrEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:         OracleSpecEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA:         OracleDataEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE:        EpochUpdate,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -162,6 +164,7 @@ var (
 		TxErrEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR,
 		OracleSpecEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC,
 		OracleDataEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA,
+		EpochUpdate:             eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE,
 	}
 
 	eventStrings = map[Type]string{
@@ -195,6 +198,7 @@ var (
 		TxErrEvent:              "TxErrEvent",
 		OracleSpecEvent:         "OracleSpecEvent",
 		OracleDataEvent:         "OracleDataEvent",
+		EpochUpdate:             "EpochUpdate",
 	}
 )
 
