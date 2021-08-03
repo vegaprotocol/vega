@@ -141,7 +141,7 @@ func NewApp(
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
 		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
 		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
-		HandleDeliverTx(txn.UndelegateAtEpochEndCommand, app.DeliverUndelegateAtEpochEnd)
+		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -700,14 +700,21 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return app.delegation.Delegate(tx.Party(), ce.NodeId, ce.Amount)
+	return app.delegation.Delegate(ctx, tx.Party(), ce.NodeId, ce.Amount)
 }
 
-func (app *App) DeliverUndelegateAtEpochEnd(ctx context.Context, tx abci.Tx) error {
-	ce := &commandspb.UndelegateAtEpochEndSubmission{}
+func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.UndelegateSubmission{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
 
-	return app.delegation.UndelegateAtEndOfEpoch(tx.Party(), ce.NodeId, ce.Amount)
+	switch ce.Method {
+	case commandspb.UndelegateSubmission_METHOD_NOW:
+		return app.delegation.UndelegateNow(ctx, tx.Party(), ce.NodeId, ce.Amount)
+	case commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH:
+		return app.delegation.UndelegateAtEndOfEpoch(ctx, tx.Party(), ce.NodeId, ce.Amount)
+	default:
+		return errors.New("unimplemented")
+	}
 }

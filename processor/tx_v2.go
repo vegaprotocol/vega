@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/protos/commands"
-	"code.vegaprotocol.io/vega/crypto"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -64,8 +64,8 @@ func (t TxV2) Command() txn.Command {
 		return txn.SubmitOracleDataCommand
 	case *commandspb.InputData_DelegateSubmission:
 		return txn.DelegateCommand
-	case *commandspb.InputData_UndelegateAtEpochEndSubmission:
-		return txn.UndelegateAtEpochEndCommand
+	case *commandspb.InputData_UndelegateSubmission:
+		return txn.UndelegateCommand
 	default:
 		panic("unsupported command")
 	}
@@ -151,12 +151,12 @@ func (t TxV2) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to DelegateSubmission")
 		}
 		*underlyingCmd = *cmd.DelegateSubmission
-	case *commandspb.InputData_UndelegateAtEpochEndSubmission:
-		underlyingCmd, ok := i.(*commandspb.UndelegateAtEpochEndSubmission)
+	case *commandspb.InputData_UndelegateSubmission:
+		underlyingCmd, ok := i.(*commandspb.UndelegateSubmission)
 		if !ok {
-			return errors.New("failed to unmarshall to UndelegateAtEpochEndSubmission")
+			return errors.New("failed to unmarshall to UndelegateSubmission")
 		}
-		*underlyingCmd = *cmd.UndelegateAtEpochEndSubmission
+		*underlyingCmd = *cmd.UndelegateSubmission
 
 	default:
 		return errors.New("unsupported command")

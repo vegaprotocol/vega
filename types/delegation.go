@@ -28,26 +28,29 @@ func (d Delegate) String() string {
 	return d.IntoProto().String()
 }
 
-type UndelegateAtEpochEnd struct {
+type Undelegate struct {
 	NodeID string
 	Amount uint64
+	Method string
 }
 
-func NewUndelegateAtEpochEndFromProto(p *commandspb.UndelegateAtEpochEndSubmission) *UndelegateAtEpochEnd {
-	return &UndelegateAtEpochEnd{
+func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) *Undelegate {
+	return &Undelegate{
 		NodeID: p.NodeId,
 		Amount: p.Amount,
+		Method: p.Method.String(),
 	}
 }
 
-func (u UndelegateAtEpochEnd) IntoProto() *commandspb.UndelegateAtEpochEndSubmission {
-	return &commandspb.UndelegateAtEpochEndSubmission{
+func (u Undelegate) IntoProto() *commandspb.UndelegateSubmission {
+	return &commandspb.UndelegateSubmission{
 		NodeId: u.NodeID,
 		Amount: u.Amount,
+		Method: commandspb.UndelegateSubmission_Method(commandspb.UndelegateSubmission_Method_value[u.Method]),
 	}
 }
 
-func (u UndelegateAtEpochEnd) String() string {
+func (u Undelegate) String() string {
 	return u.IntoProto().String()
 }
 

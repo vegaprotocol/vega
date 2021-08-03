@@ -31,25 +31,25 @@ const (
 	SubmitOracleDataCommand Command = 0x51
 	// DelegateCommand ...
 	DelegateCommand Command = 0x52
-	// UndelegateAtApochEndCommand ...
-	UndelegateAtEpochEndCommand Command = 0x53
+	// UndelegateCommand ...
+	UndelegateCommand Command = 0x53
 )
 
 var commandName = map[Command]string{
-	SubmitOrderCommand:          "Submit Order",
-	CancelOrderCommand:          "Cancel Order",
-	AmendOrderCommand:           "Amend Order",
-	WithdrawCommand:             "Withdraw",
-	ProposeCommand:              "Proposal",
-	VoteCommand:                 "Vote on Proposal",
-	RegisterNodeCommand:         "Register new Node",
-	NodeVoteCommand:             "Node Vote",
-	NodeSignatureCommand:        "Node Signature",
-	LiquidityProvisionCommand:   "Liquidity Provision Order",
-	ChainEventCommand:           "Chain Event",
-	SubmitOracleDataCommand:     "Submit Oracle Data",
-	DelegateCommand:             "Delegatee",
-	UndelegateAtEpochEndCommand: "Undelegate at Epoch End",
+	SubmitOrderCommand:        "Submit Order",
+	CancelOrderCommand:        "Cancel Order",
+	AmendOrderCommand:         "Amend Order",
+	WithdrawCommand:           "Withdraw",
+	ProposeCommand:            "Proposal",
+	VoteCommand:               "Vote on Proposal",
+	RegisterNodeCommand:       "Register new Node",
+	NodeVoteCommand:           "Node Vote",
+	NodeSignatureCommand:      "Node Signature",
+	LiquidityProvisionCommand: "Liquidity Provision Order",
+	ChainEventCommand:         "Chain Event",
+	SubmitOracleDataCommand:   "Submit Oracle Data",
+	DelegateCommand:           "Delegatee",
+	UndelegateCommand:         "Undelegate",
 }
 
 // String return the
