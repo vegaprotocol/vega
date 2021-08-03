@@ -302,40 +302,118 @@ pipeline {
             }
         }
 
-        stage('[TODO] Deploy to Devnet') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                echo 'Deploying to Devnet....'
+
+        stage('Publish') {
+            parallel {
+
+                stage('docker image') {
+                    when {
+                        anyOf {
+                            buildingTag()
+                            branch 'develop'
+                            // changeRequest() // uncomment only for testing
+                        }
+                    }
+                    environment {
+                        DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
+                        DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG}"
+                    }
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+                                sh label: 'Build docker image', script: '''#!/bin/bash -e
+                                    mkdir -p docker/bin
+                                    cp -a "cmd/vega/vega-linux-amd64" "docker/bin/vega"
+                                    docker build -t "${DOCKER_IMAGE_NAME}" docker/
+                                    rm -rf docker/bin
+                                '''
+                                sh label: 'Sanity check', script: '''
+                                    docker run --rm "${DOCKER_IMAGE_NAME}" version
+                                '''
+                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                                    sh label: 'Log in to a Docker registry', script: '''
+                                        echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
+                                    '''
+                                }
+                                sh label: 'Push docker image', script: '''#!/bin/bash -e
+                                    docker push "${DOCKER_IMAGE_NAME}"
+                                    docker rmi "${DOCKER_IMAGE_NAME}"
+                                '''
+                                slackSend(
+                                    channel: "#tradingcore-notify",
+                                    color: "good",
+                                    message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}`",
+                                )
+                            }
+                        }
+                    }
+                    post {
+                        always  {
+                            retry(3) {
+                                script {
+                                    sh label: 'Log out from the Docker registry', script: '''
+                                        docker logout docker.pkg.github.com
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('release to GitHub') {
+                    when {
+                        buildingTag()
+                    }
+                    environment {
+                        RELEASE_URL = "https://github.com/vegaprotocol/vega/releases/tag/${TAG_NAME}"
+                    }
+                    steps {
+                        retry(3) {
+                            dir('vega') {
+                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
+                                    // Workaround for user input:
+                                    //  - global configuration: 'gh config set prompt disabled'
+                                    sh label: 'Log in to a Gihub with CI', script: '''
+                                        echo ${TOKEN} | gh auth login --with-token -h github.com
+                                    '''
+                                }
+                                sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                    [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                    gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+                                '''
+                                slackSend(
+                                    channel: "#tradingcore-notify",
+                                    color: "good",
+                                    message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
+                                )
+                            }
+                        }
+                    }
+                    post {
+                        always  {
+                            retry(3) {
+                                script {
+                                    sh label: 'Log out from Github', script: '''
+                                        gh auth logout -h github.com
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                }
+
+                stage('[TODO] deploy to Devnet') {
+                    when {
+                        branch 'develop'
+                    }
+                    steps {
+                        echo 'Deploying to Devnet....'
+                        echo 'Run basic tests on Devnet network ...'
+                    }
+                }
             }
         }
 
-        stage('[TODO] Basic tests Devnet') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                echo 'Run basic tests on Devnet network ...'
-            }
-        }
-
-        stage('[TODO] Do something on master') {
-            when {
-                branch 'master'
-            }
-            steps {
-                echo 'Do something on master....'
-            }
-        }
-
-        stage('[TODO] Build and publish version') {
-            when { tag "v*" }
-            steps {
-                echo 'Build version because this commit is tagged...'
-                echo 'and publish it'
-            }
-        }
     }
     post {
         success {
