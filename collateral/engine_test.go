@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
+	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -23,6 +23,7 @@ import (
 const (
 	testMarketID    = "7CPSHJB35AIQBTNMIE6NLFPZGHOYRQ3D"
 	testMarketAsset = "BTC"
+	rewardsID       = "0000000000000000000000000000000000000000000000000000000000000000"
 )
 
 type testEngine struct {
@@ -2161,6 +2162,59 @@ func TestClearMarketNoMargin(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, len(responses), 0)
+}
+
+func TestRewardDepositOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID)
+	defer eng.Finish()
+	ctx := context.Background()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Attempt to deposit collateral that should go into the global asset reward account
+	_, err := eng.Engine.Deposit(ctx, rewardsID, testMarketAsset, num.NewUint(100))
+	assert.NoError(t, err)
+
+	rewardAcct, err := eng.Engine.GetGlobalRewardAccount(testMarketAsset)
+	assert.NoError(t, err)
+	assert.Equal(t, num.NewUint(100), rewardAcct.Balance)
+
+	// Add 400 more to the reward account
+	_, err = eng.Engine.Deposit(ctx, rewardsID, testMarketAsset, num.NewUint(400))
+	assert.NoError(t, err)
+
+	rewardAcct, err = eng.Engine.GetGlobalRewardAccount(testMarketAsset)
+	assert.NoError(t, err)
+	assert.Equal(t, num.NewUint(500), rewardAcct.Balance)
+}
+
+func TestNonRewardDepositOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID)
+	defer eng.Finish()
+	ctx := context.Background()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Attempt to deposit collateral that should go into the global asset reward account
+	_, err := eng.Engine.Deposit(ctx, "OtherParty", testMarketAsset, num.NewUint(100))
+	assert.NoError(t, err)
+
+	rewardAcct, err := eng.Engine.GetGlobalRewardAccount(testMarketAsset)
+	assert.Nil(t, rewardAcct)
+	assert.Error(t, err)
+}
+
+func TestRewardDepositBadAssetOK(t *testing.T) {
+	eng := getTestEngine(t, testMarketID)
+	defer eng.Finish()
+	ctx := context.Background()
+	testAsset2 := "VEGA"
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Now try a different asset
+	_, err := eng.Engine.Deposit(ctx, rewardsID, testAsset2, num.NewUint(333))
+	assert.Error(t, err)
 }
 
 func TestWithdrawalOK(t *testing.T) {
