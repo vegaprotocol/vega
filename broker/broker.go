@@ -117,7 +117,12 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 		b.eChans[t] = ch                         // assign the newly created channel
 	}
 	b.mu.Unlock()
-	ch <- evts
+	select {
+	case <-b.ctx.Done():
+		return
+	default:
+		ch <- evts
+	}
 	if ok {
 		// we already started the routine to consume the channel
 		// we can return here
