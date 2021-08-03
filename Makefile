@@ -112,7 +112,6 @@ print_check: ## Check for fmt.Print functions in Go code
 gettools_develop:
 	@./script/gettools.sh develop
 
-# Make sure the mdspell command matches the one in .drone.yml.
 .PHONY: spellcheck
 spellcheck: ## Run markdown spellcheck container
 	@docker run --rm -ti \
