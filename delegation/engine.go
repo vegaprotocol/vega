@@ -242,7 +242,27 @@ func (e *Engine) Delegate(party string, nodeID string, amount uint64) error {
 
 //UndelegateAtEndOfEpoch increases the pending undelegation balance and potentially decreases the pending delegation balance for a given validator node and party
 func (e *Engine) UndelegateAtEndOfEpoch(party string, nodeID string, amount uint64) error {
-	amt := num.NewUint(amount)
+	amt := num.Zero()
+
+	if amount == 0 {
+		// calculate how much we have available for undelegation including pending and committed
+		availableForUndelegationInPending := num.Zero()
+		if pendingState, ok := e.pendingState[party]; ok {
+			if nodeDelegation, ok := pendingState.nodeToDelegateAmount[nodeID]; ok {
+				availableForUndelegationInPending = num.Zero().Add(availableForUndelegationInPending, nodeDelegation)
+			}
+		}
+		availableForUndelegationInActive := num.Zero()
+		if partyDelegation, ok := e.partyDelegationState[party]; ok {
+			if nodeDelegation, ok := partyDelegation.nodeToAmount[nodeID]; ok {
+				availableForUndelegationInActive = num.Zero().Add(availableForUndelegationInActive, nodeDelegation)
+			}
+		}
+		amt = num.Zero().Add(availableForUndelegationInPending, availableForUndelegationInActive)
+
+	} else {
+		amt = num.NewUint(amount)
+	}
 
 	// check if the node is a validator node
 	if e.topology == nil || !e.topology.IsValidatorNode(nodeID) {
@@ -328,6 +348,86 @@ func (e *Engine) UndelegateAtEndOfEpoch(party string, nodeID string, amount uint
 		e.pendingState[party] = currentPendingPartyDelegation
 	}
 
+	return nil
+}
+
+//UndelegateNow changes the balance of delegation immediately without waiting for the end of the epoch
+// if possible it removed balance from pending delegated, if not enough it removes balance from the current epoch delegated amount
+func (e *Engine) UndelegateNow(party string, nodeID string, amount uint64) error {
+	// first check available balance for undelegation and error if the requested amount is greater than
+	availableForUndelegationInPending := num.Zero()
+	if pendingState, ok := e.pendingState[party]; ok {
+		if nodeDelegation, ok := pendingState.nodeToDelegateAmount[nodeID]; ok {
+			availableForUndelegationInPending = num.Zero().Add(availableForUndelegationInPending, nodeDelegation)
+		}
+	}
+	availableForUndelegationInActive := num.Zero()
+	if partyDelegation, ok := e.partyDelegationState[party]; ok {
+		if nodeDelegation, ok := partyDelegation.nodeToAmount[nodeID]; ok {
+			availableForUndelegationInActive = num.Zero().Add(availableForUndelegationInActive, nodeDelegation)
+		}
+	}
+
+	totalAvailableForUndelegation := num.Zero().Add(availableForUndelegationInPending, availableForUndelegationInActive)
+
+	// if the party passes 0 they want to undelegate all
+	amt := num.Zero()
+	if amount > 0 {
+		amt = num.NewUint(amount)
+	} else {
+		amt = totalAvailableForUndelegation.Clone()
+	}
+
+	if amt.GT(totalAvailableForUndelegation) {
+		return ErrIncorrectTokenAmountForUndelegation
+	}
+
+	// strart with undelegating from pending, if not enough go to active
+	if availableForUndelegationInPending.GT(num.Zero()) {
+		pendingState := e.pendingState[party]
+		if amt.LTE(availableForUndelegationInPending) {
+			pendingState.nodeToDelegateAmount[nodeID] = num.Zero().Sub(availableForUndelegationInPending, amt)
+			pendingState.totalDelegation = num.Zero().Sub(pendingState.totalDelegation, amt)
+			if pendingState.nodeToDelegateAmount[nodeID].EQ(num.Zero()) {
+				delete(pendingState.nodeToDelegateAmount, nodeID)
+			}
+			amt = num.Zero()
+		} else {
+			// we don't have enough delegation to cover for the undelegate request
+			pendingState.totalDelegation = num.Zero().Sub(pendingState.totalDelegation, availableForUndelegationInPending)
+			delete(pendingState.nodeToDelegateAmount, nodeID)
+			amt = num.Zero().Sub(amt, availableForUndelegationInPending)
+		}
+
+		if pendingState.totalDelegation.EQ(num.Zero()) && pendingState.totalUndelegation.EQ(num.Zero()) {
+			delete(e.pendingState, party)
+		}
+
+	}
+	// if there's still some balance to undelegate we go to the delegated state
+	if amt.GT(num.Zero()) {
+		partyDelegation := e.partyDelegationState[party]
+		partyDelegation.totalDelegated = num.Zero().Sub(partyDelegation.totalDelegated, amt)
+		partyDelegation.nodeToAmount[nodeID] = num.Zero().Sub(partyDelegation.nodeToAmount[nodeID], amt)
+		if partyDelegation.nodeToAmount[nodeID].EQ(num.Zero()) {
+			delete(partyDelegation.nodeToAmount, nodeID)
+		}
+		if partyDelegation.totalDelegated.EQ(num.Zero()) {
+			delete(e.partyDelegationState, party)
+		}
+		nodeDelegation, ok := e.nodeDelegationState[nodeID]
+		if !ok {
+			e.log.Panic("party and node delegation state disagree")
+		}
+		nodeDelegation.totalDelegated = num.Zero().Sub(nodeDelegation.totalDelegated, amt)
+		nodeDelegation.partyToAmount[party] = num.Zero().Sub(nodeDelegation.partyToAmount[party], amt)
+		if nodeDelegation.partyToAmount[party].EQ(num.Zero()) {
+			delete(nodeDelegation.partyToAmount, party)
+		}
+		if nodeDelegation.totalDelegated.EQ(num.Zero()) {
+			delete(e.nodeDelegationState, nodeID)
+		}
+	}
 	return nil
 }
 
