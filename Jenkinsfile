@@ -228,17 +228,6 @@ pipeline {
                         }
                     }
                 }
-                stage('python files') {
-                    steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh "git ls-files '*.py'"
-                                sh "git ls-files '*.py' | xargs flake8"
-                                sh "git ls-files '*.py' | xargs black -l 79 --check --diff"
-                            }
-                        }
-                    }
-                }
                 stage('json format') {
                     steps {
                         retry(3) {
