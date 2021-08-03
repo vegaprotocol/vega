@@ -715,10 +715,12 @@ const (
 	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
 	// Liquidity fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
-	// LockWithdraw - and account use for party in the process of withdrawing funds
+	// LockWithdraw - and account used for party in the process of withdrawing funds
 	AccountTypeLockWithdraw AccountType = "LockWithdraw"
-	// Bond - an account use to maintain MM commitments
+	// Bond - an account used to maintain MM commitments
 	AccountTypeBond AccountType = "Bond"
+	// GlobalReward - an account used for per asset rewards schemes
+	AccountTypeGlobalReward AccountType = "GlobalReward"
 )
 
 var AllAccountType = []AccountType{
@@ -731,11 +733,12 @@ var AllAccountType = []AccountType{
 	AccountTypeFeeLiquidity,
 	AccountTypeLockWithdraw,
 	AccountTypeBond,
+	AccountTypeGlobalReward,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
+	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond, AccountTypeGlobalReward:
 		return true
 	}
 	return false

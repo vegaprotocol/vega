@@ -182,4 +182,6 @@ const (
 	AccountTypeExternal AccountType = proto.AccountType_ACCOUNT_TYPE_EXTERNAL
 	// Global insurance pool accounts contain insurance funds for a asset - one insurance pool per asset
 	AccountTypeGlobalInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE
+	// Global reward accounts contain rewards per asset
+	AccountTypeGlobalReward AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD
 )
