@@ -11,7 +11,7 @@ type ValidatorUpdate struct {
 	*Base
 	pubKey   string
 	tmPubKey string
-	infoUrl  string
+	infoURL  string
 	country  string
 }
 
@@ -26,7 +26,7 @@ func NewValidatorUpdateEvent(
 		Base:     newBase(ctx, ValidatorUpdateEvent),
 		pubKey:   pubKey,
 		tmPubKey: tmPubKey,
-		infoUrl:  infoURL,
+		infoURL:  infoURL,
 		country:  country,
 	}
 }
@@ -43,7 +43,7 @@ func (vu ValidatorUpdate) TendermintPublicKey() string {
 
 // InfoURL returns an url with information about validator node
 func (vu ValidatorUpdate) InfoURL() string {
-	return vu.infoUrl
+	return vu.infoURL
 }
 
 // Country returns country code of node's location
@@ -55,7 +55,7 @@ func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 	return eventspb.ValidatorUpdate{
 		PubKey:   vu.pubKey,
 		TmPubKey: vu.tmPubKey,
-		InfoUrl:  vu.infoUrl,
+		InfoUrl:  vu.infoURL,
 		Country:  vu.country,
 	}
 }
