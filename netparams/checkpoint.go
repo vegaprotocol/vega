@@ -5,10 +5,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/protos/vega"
-)
-
-const (
-	SnapshotName = "netparams"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type vidx struct {
@@ -16,8 +13,8 @@ type vidx struct {
 	idx int
 }
 
-func (s *Store) Name() string {
-	return SnapshotName
+func (s *Store) Name() types.CheckpointName {
+	return types.NetParamsCheckpoint
 }
 
 func (s *Store) Checkpoint() ([]byte, error) {

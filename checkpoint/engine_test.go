@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/checkpoint/mocks"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -45,18 +46,18 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	components := map[string]*mocks.MockState{
-		"foo": mocks.NewMockState(ctrl),
-		"bar": mocks.NewMockState(ctrl),
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(ctrl),
 	}
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components["foo"], components["bar"])
+	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
 	require.NoError(t, err)
-	data := map[string][]byte{
-		"foo": []byte("foodata"),
-		"bar": []byte("bardata"),
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
 	}
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
@@ -64,7 +65,7 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	checkpoints, err := eng.GetCheckpoints()
 	require.NoError(t, err)
 	for k, cp := range checkpoints {
-		require.EqualValues(t, data[k], cp.Data())
+		require.EqualValues(t, data[types.CheckpointName(k)], cp.Data())
 	}
 }
 
@@ -72,25 +73,25 @@ func testGetCheckpointsAdd(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-	components := map[string]*mocks.MockState{
-		"foo": mocks.NewMockState(eng.ctrl),
-		"bar": mocks.NewMockState(eng.ctrl),
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(eng.ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(eng.ctrl),
 	}
-	data := map[string][]byte{
-		"foo": []byte("foodata"),
-		"bar": []byte("bardata"),
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
 	}
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	require.NoError(t, eng.Add(components["foo"], components["bar"]))
+	require.NoError(t, eng.Add(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint]))
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
 	checkpoints, err := eng.GetCheckpoints()
 	require.NoError(t, err)
 	for k, cp := range checkpoints {
-		require.EqualValues(t, data[k], cp.Data())
+		require.EqualValues(t, data[types.CheckpointName(k)], cp.Data())
 	}
 }
 
@@ -99,10 +100,10 @@ func testAddDuplicate(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	comp := mocks.NewMockState(eng.ctrl)
-	comp.EXPECT().Name().Times(2).Return("duplicate")
+	comp.EXPECT().Name().Times(2).Return(types.GovernanceCheckpoint)
 	require.NoError(t, eng.Add(comp, comp)) // adding the exact same component (same ptr value)
 	comp2 := mocks.NewMockState(eng.ctrl)
-	comp2.EXPECT().Name().Times(1).Return("duplicate")
+	comp2.EXPECT().Name().Times(1).Return(types.GovernanceCheckpoint)
 	require.Error(t, eng.Add(comp2))
 }
 
@@ -111,9 +112,9 @@ func testDuplicateConstructor(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	comp := mocks.NewMockState(ctrl)
-	comp.EXPECT().Name().Times(3).Return("duplicate")
+	comp.EXPECT().Name().Times(3).Return(types.GovernanceCheckpoint)
 	comp2 := mocks.NewMockState(ctrl)
-	comp2.EXPECT().Name().Times(1).Return("duplicate")
+	comp2.EXPECT().Name().Times(1).Return(types.GovernanceCheckpoint)
 	// this is all good
 	eng, err := checkpoint.New(comp, comp)
 	require.NoError(t, err)
@@ -127,42 +128,42 @@ func testLoadCheckpoints(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-	components := map[string]*mocks.MockState{
-		"foo": mocks.NewMockState(eng.ctrl),
-		"bar": mocks.NewMockState(eng.ctrl),
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(eng.ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(eng.ctrl),
 	}
-	data := map[string][]byte{
-		"foo": []byte("foodata"),
-		"bar": []byte("bardata"),
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
 	}
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	require.NoError(t, eng.Add(components["foo"], components["bar"]))
+	require.NoError(t, eng.Add(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint]))
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
 	checkpoints, err := eng.GetCheckpoints()
 	require.NoError(t, err)
 	for k, cp := range checkpoints {
-		require.EqualValues(t, data[k], cp.Data())
+		require.EqualValues(t, data[types.CheckpointName(k)], cp.Data())
 	}
 	// create new components to load data in to
-	wComps := map[string]*wrappedMock{
-		"foo": wrapMock(mocks.NewMockState(eng.ctrl)),
-		"bar": wrapMock(mocks.NewMockState(eng.ctrl)),
+	wComps := map[types.CheckpointName]*wrappedMock{
+		types.GovernanceCheckpoint: wrapMock(mocks.NewMockState(eng.ctrl)),
+		types.AssetsCheckpoint:     wrapMock(mocks.NewMockState(eng.ctrl)),
 	}
 	for k, c := range wComps {
 		c.EXPECT().Name().Times(1).Return(k)
-		cp := checkpoints[k]
+		cp := checkpoints[string(k)]
 		c.EXPECT().Load(cp.Data()).Times(1).Return(nil)
 	}
-	newEng, err := checkpoint.New(wComps["foo"], wComps["bar"])
+	newEng, err := checkpoint.New(wComps[types.GovernanceCheckpoint], wComps[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	require.NotNil(t, newEng)
 	require.NoError(t, newEng.Load(checkpoints))
 	for k, cp := range checkpoints {
-		wc := wComps[k]
+		wc := wComps[types.CheckpointName(k)]
 		require.EqualValues(t, cp.Data(), wc.data)
 	}
 }
@@ -171,8 +172,9 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
+	k := string(types.AssetsCheckpoint)
 	checkpoints := map[string]checkpoint.Snapshot{
-		"foobar": {},
+		k: checkpoint.Snapshot{},
 	}
 	err := eng.Load(checkpoints)
 	require.Error(t, err)
@@ -183,25 +185,24 @@ func testLoadSparse(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	components := map[string]*mocks.MockState{
-		"foo": mocks.NewMockState(ctrl),
-		"bar": mocks.NewMockState(ctrl),
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(ctrl),
 	}
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components["foo"])
+	eng, err := checkpoint.New(components[types.GovernanceCheckpoint])
 	require.NoError(t, err)
-	data := map[string][]byte{
-		"foo": []byte("foodata"),
-		// "bar": []byte("bardata"),
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
 	}
-	c := components["foo"]
-	c.EXPECT().Checkpoint().Times(1).Return(data["foo"], nil)
+	c := components[types.GovernanceCheckpoint]
+	c.EXPECT().Checkpoint().Times(1).Return(data[types.GovernanceCheckpoint], nil)
 	checkpoints, err := eng.GetCheckpoints()
 	require.NoError(t, err)
-	require.NoError(t, eng.Add(components["bar"])) // load another component, not part of the checkpoints map
-	c.EXPECT().Load(data["foo"]).Times(1).Return(nil)
+	require.NoError(t, eng.Add(components[types.AssetsCheckpoint])) // load another component, not part of the checkpoints map
+	c.EXPECT().Load(data[types.GovernanceCheckpoint]).Times(1).Return(nil)
 	require.NoError(t, eng.Load(checkpoints))
 }
 
@@ -209,57 +210,58 @@ func testLoadError(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	components := map[string]*mocks.MockState{
-		"foo": mocks.NewMockState(ctrl),
-		"bar": mocks.NewMockState(ctrl),
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(ctrl),
 	}
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components["foo"], components["bar"])
+	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
 	require.NoError(t, err)
-	data := map[string][]byte{
-		"foo": []byte("foodata"),
-		"bar": []byte("bardata"),
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
 	}
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	ret := map[string]error{
-		"foo": errors.New("random error"),
-		"bar": nil, // we always load checkpoints in order, so bar will go first, and should not return an error
+	ret := map[types.CheckpointName]error{
+		types.GovernanceCheckpoint: errors.New("random error"),
+		types.AssetsCheckpoint:     nil, // we always load checkpoints in order, so bar will go first, and should not return an error
 	}
 	checkpoints, err := eng.GetCheckpoints()
 	require.NoError(t, err)
 	for k, cp := range checkpoints {
-		c := components[k]
-		c.EXPECT().Load(cp.Data()).Times(1).Return(ret[k])
+		name := types.CheckpointName(k)
+		c := components[name]
+		c.EXPECT().Load(cp.Data()).Times(1).Return(ret[name])
 	}
 	err = eng.Load(checkpoints)
 	require.Error(t, err)
-	require.Equal(t, ret["foo"], err)
+	require.Equal(t, ret[types.GovernanceCheckpoint], err)
 }
 
 func testGetCheckpointsErr(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	components := map[string]*mocks.MockState{
-		"foo": mocks.NewMockState(ctrl),
-		"bar": mocks.NewMockState(ctrl),
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(ctrl),
 	}
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components["foo"], components["bar"])
+	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
 	require.NoError(t, err)
-	data := map[string][]byte{
-		"foo": nil,
-		"bar": []byte("bardata"),
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: nil,
+		types.AssetsCheckpoint:     []byte("bardata"),
 	}
-	errs := map[string]error{
-		"foo": fmt.Errorf("random error"),
-		"bar": nil,
+	errs := map[types.CheckpointName]error{
+		types.GovernanceCheckpoint: fmt.Errorf("random error"),
+		types.AssetsCheckpoint:     nil,
 	}
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], errs[k])
@@ -267,7 +269,7 @@ func testGetCheckpointsErr(t *testing.T) {
 	checkpoints, err := eng.GetCheckpoints()
 	require.Nil(t, checkpoints)
 	require.Error(t, err)
-	require.Equal(t, errs["foo"], err)
+	require.Equal(t, errs[types.GovernanceCheckpoint], err)
 }
 
 type wrappedMock struct {

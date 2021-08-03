@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -62,10 +63,10 @@ func (mr *MockStateMockRecorder) Load(arg0 interface{}) *gomock.Call {
 }
 
 // Name mocks base method
-func (m *MockState) Name() string {
+func (m *MockState) Name() types.CheckpointName {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(types.CheckpointName)
 	return ret0
 }
 

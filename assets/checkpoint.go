@@ -7,12 +7,8 @@ import (
 	"code.vegaprotocol.io/vega/types"
 )
 
-const (
-	SnapshotName = "assets"
-)
-
-func (s Service) Name() string {
-	return SnapshotName
+func (s Service) Name() types.CheckpointName {
+	return types.AssetsCheckpoint
 }
 
 func (s *Service) Chekpoint() ([]byte, error) {

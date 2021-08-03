@@ -6,12 +6,8 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 )
 
-const (
-	SnapshotName = "governance"
-)
-
-func (e *Engine) Name() string {
-	return SnapshotName
+func (e *Engine) Name() types.CheckpointName {
+	return types.GovernanceCheckpoint
 }
 
 func (e *Engine) Checkpoint() ([]byte, error) {

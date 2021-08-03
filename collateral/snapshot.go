@@ -10,10 +10,8 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-const SnapshotName = "collateral"
-
-func (e *Engine) Name() string {
-	return SnapshotName
+func (e *Engine) Name() types.CheckpointName {
+	return types.CollateralCheckpoint
 }
 
 func (e *Engine) Checkpoint() ([]byte, error) {
