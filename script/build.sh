@@ -268,7 +268,7 @@ run() {
 		: # handled below
 		;;
 	integrationtest) ## Run integration tests (godog)
-		go test -v ./integration/... -godog.format=pretty
+		go test -v ./integration/... --godog.format=pretty
 		return "$?"
 		;;
 	spec_feature_test) ## Run qa integration tests (godog)
@@ -280,7 +280,7 @@ run() {
 		local features
 		features="${repo}/qa-scenarios"
 		echo "features = $features"
-		go test -v ./integration/... --features="$features" -godog.format=pretty
+		go test -v ./integration/... --features="$features" --godog.format=pretty
 		return "$?"
 		;;
 	mocks) ## Generate mocks
