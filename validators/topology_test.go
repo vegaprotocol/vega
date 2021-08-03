@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/validators/mocks"
@@ -27,11 +29,15 @@ type testTop struct {
 	*validators.Topology
 	ctrl   *gomock.Controller
 	wallet *mocks.MockWallet
+	broker *brokerMocks.MockBroker
 }
 
 func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	ctrl := gomock.NewController(t)
 	wallet := mocks.NewMockWallet(ctrl)
+	broker := brokerMocks.NewMockBroker(ctrl)
+
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	bytesKey, _ := hex.DecodeString(pubkey)
 	wallet.EXPECT().PubKeyOrAddress().Times(1).Return(crypto.NewPublicKeyOrAddress(pubkey, bytesKey))
@@ -39,7 +45,7 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	defaultTmPubKey := []byte("default-tm-public-key")
 	defaultTmPubKeyBase64 := base64.StdEncoding.EncodeToString([]byte(defaultTmPubKey))
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker)
 	// Add Tendermint public key to validator set
 	top.UpdateValidatorSet([][]byte{defaultTmPubKey})
 
@@ -68,12 +74,14 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 		Topology: top,
 		ctrl:     ctrl,
 		wallet:   wallet,
+		broker:   broker,
 	}
 }
 
 func TestValidatorTopology(t *testing.T) {
 	t.Run("add node registration - success", testAddNodeRegistrationSuccess)
 	t.Run("add node registration - failure", testAddNodeRegistrationFailure)
+	t.Run("test add node registration send event to broker", testAddNodeRegistrationSendsValidatorUpdateEventToBroker)
 	t.Run("topology validators length is equal to number of added validators", testGetLen)
 	t.Run("added validator exists in topology", testExists)
 	t.Run("test get by key", testGetByKey)
@@ -88,7 +96,8 @@ func testAddNodeRegistrationSuccess(t *testing.T) {
 		ChainPubKey: []byte(tmPubKey),
 		PubKey:      []byte("vega-key"),
 	}
-	err := top.AddNodeRegistration(&nr)
+	ctx := context.Background()
+	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 }
 
@@ -101,14 +110,15 @@ func testAddNodeRegistrationFailure(t *testing.T) {
 		ChainPubKey: []byte(tmPubKey),
 		PubKey:      []byte("vega-key"),
 	}
-	err := top.AddNodeRegistration(&nr)
+	ctx := context.Background()
+	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 
 	nr = commandspb.NodeRegistration{
 		ChainPubKey: []byte(tmPubKey),
 		PubKey:      []byte("vega-key-2"),
 	}
-	err = top.AddNodeRegistration(&nr)
+	err = top.AddNodeRegistration(ctx, &nr)
 	assert.Error(t, err)
 }
 
@@ -124,7 +134,8 @@ func testGetLen(t *testing.T) {
 		ChainPubKey: []byte(tmPubKey),
 		PubKey:      []byte("vega-key"),
 	}
-	err := top.AddNodeRegistration(&nr)
+	ctx := context.Background()
+	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, top.Len())
@@ -141,7 +152,8 @@ func testExists(t *testing.T) {
 		ChainPubKey: []byte(tmPubKey),
 		PubKey:      []byte("vega-key"),
 	}
-	err := top.AddNodeRegistration(&nr)
+	ctx := context.Background()
+	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 
 	assert.True(t, top.Exists([]byte("vega-key")))
@@ -160,7 +172,8 @@ func testGetByKey(t *testing.T) {
 		InfoUrl:     "n0.xyz.vega/node/url/random",
 		Country:     "CZ",
 	}
-	err := top.AddNodeRegistration(&nr)
+	ctx := context.Background()
+	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 
 	expectedData := &validators.ValidatorData{
@@ -173,4 +186,35 @@ func testGetByKey(t *testing.T) {
 	assert.NotNil(t, actualData)
 
 	assert.Equal(t, expectedData, actualData)
+}
+
+func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	wallet := mocks.NewMockWallet(ctrl)
+	broker := brokerMocks.NewMockBroker(ctrl)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker)
+	top.UpdateValidatorSet([][]byte{tmPubKey})
+
+	ctx := context.Background()
+	nr := commandspb.NodeRegistration{
+		ChainPubKey: []byte(tmPubKey),
+		PubKey:      []byte("vega-key"),
+		InfoUrl:     "n0.xyz.vega/node/url/random",
+		Country:     "CZ",
+	}
+
+	updateEvent := events.NewValidatorUpdateEvent(
+		ctx,
+		string(nr.PubKey),
+		string(nr.ChainPubKey),
+		nr.InfoUrl,
+		nr.Country,
+	)
+
+	broker.EXPECT().Send(updateEvent).Times(1)
+
+	err := top.AddNodeRegistration(ctx, &nr)
+	assert.NoError(t, err)
 }
