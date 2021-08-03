@@ -14,22 +14,17 @@ func (e *Engine) Name() string {
 	return SnapshotName
 }
 
-func (e *Engine) Hash() []byte {
-	return nil
-}
-
-func (e *Engine) Checkpoint() []byte {
+func (e *Engine) Checkpoint() ([]byte, error) {
 	if len(e.enactedProposals) == 0 {
-		return nil
+		return nil, nil
 	}
 	snap := &vega.Proposals{
 		Proposals: e.getSnapshotProposals(),
 	}
-	b, _ := vega.Marshal(snap)
-	return b
+	return vega.Marshal(snap)
 }
 
-func (e *Engine) Load(data, _ []byte) error {
+func (e *Engine) Load(data []byte) error {
 	snap := &vega.Proposals{}
 	if err := vega.Unmarshal(data, snap); err != nil {
 		return err

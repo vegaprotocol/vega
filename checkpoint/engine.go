@@ -17,9 +17,8 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_mock.go -package mocks code.vegaprotocol.io/vega/checkpoint State
 type State interface {
 	Name() string
-	Hash() []byte
-	Checkpoint() []byte
-	Load(checkpoint, hash []byte) error
+	Checkpoint() ([]byte, error)
+	Load(checkpoint []byte) error
 }
 
 type Engine struct {
@@ -70,18 +69,21 @@ func (e *Engine) addComponent(comp State) error {
 	return nil
 }
 
-func (e *Engine) GetCheckpoints() map[string]Snapshot {
+func (e *Engine) GetCheckpoints() (map[string]Snapshot, error) {
 	ret := make(map[string]Snapshot, len(e.components))
 	for _, k := range e.ordered {
 		// ensure we access components in the same order all the time
 		c := e.components[k]
+		data, err := c.Checkpoint()
+		if err != nil {
+			return nil, err
+		}
 		ret[k] = Snapshot{
 			name: k,
-			hash: c.Hash(),
-			data: c.Checkpoint(),
+			data: data,
 		}
 	}
-	return ret
+	return ret, nil
 }
 
 // Load - loads checkpoint data for all components by name
@@ -98,7 +100,7 @@ func (e *Engine) Load(checkpoints map[string]Snapshot) error {
 			continue // no checkpoint data
 		}
 		comp := e.components[k] // we know this exists
-		if err := comp.Load(snapshot.data, snapshot.hash); err != nil {
+		if err := comp.Load(snapshot.data); err != nil {
 			return err
 		}
 	}

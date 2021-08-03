@@ -15,19 +15,14 @@ func (s Service) Name() string {
 	return SnapshotName
 }
 
-func (s *Service) Hash() []byte {
-	return nil
-}
-
-func (s *Service) Chekpoint() []byte {
+func (s *Service) Chekpoint() ([]byte, error) {
 	t := &vega.Assets{
 		Assets: s.getEnabled(),
 	}
-	b, _ := vega.Marshal(t)
-	return b
+	return vega.Marshal(t)
 }
 
-func (s *Service) Load(checkpoint, _ []byte) error {
+func (s *Service) Load(checkpoint []byte) error {
 	data := &vega.Assets{}
 	if err := vega.Unmarshal(checkpoint, data); err != nil {
 		return err

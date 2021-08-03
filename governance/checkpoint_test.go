@@ -74,14 +74,16 @@ func testCheckpointSuccess(t *testing.T) {
 	})
 
 	// checkpoint should be empty at this point
-	data := eng.Checkpoint()
+	data, err := eng.Checkpoint()
+	require.NoError(t, err)
 	require.Empty(t, data)
 
 	// when
 	eng.OnChainTimeUpdate(ctx, afterClosing)
 
 	// the proposal should already be in the snapshot
-	data = eng.Checkpoint()
+	data, err = eng.Checkpoint()
+	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
 	// setup
@@ -110,20 +112,21 @@ func testCheckpointSuccess(t *testing.T) {
 	assert.Equal(t, proposal.ID, toBeEnacted[0].Proposal().ID)
 
 	// Now take the snapshot
-	data = eng.Checkpoint()
+	data, err = eng.Checkpoint()
+	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
 	eng2 := getTestEngine(t)
 	defer eng2.ctrl.Finish()
 
 	// Load checkpoint
-	require.NoError(t, eng2.Load(data, nil))
+	require.NoError(t, eng2.Load(data))
 
 	enact, noClose := eng2.OnChainTimeUpdate(ctx, afterEnactment)
 	require.Empty(t, noClose)
 	require.NotEmpty(t, enact)
 
 	data = append(data, []byte("foo")...)
-	require.Error(t, eng2.Load(data, nil))
+	require.Error(t, eng2.Load(data))
 
 }

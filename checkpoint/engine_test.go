@@ -2,6 +2,7 @@ package checkpoint_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/checkpoint"
@@ -30,6 +31,7 @@ func TestGetCheckpoints(t *testing.T) {
 	t.Run("test getting checkpoints loading in components using Add method - no duplicates", testGetCheckpointsAdd)
 	t.Run("test adding duplicate components using Add methods", testAddDuplicate)
 	t.Run("test adding duplicate component via constructor", testDuplicateConstructor)
+	t.Run("test getting checkpoints - error", testGetCheckpointsErr)
 }
 
 func TestLoadCheckpoints(t *testing.T) {
@@ -52,21 +54,16 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	}
 	eng, err := checkpoint.New(components["foo"], components["bar"])
 	require.NoError(t, err)
-	hashes := map[string][]byte{
-		"foo": []byte("foohash"),
-		"bar": []byte("barhash"),
-	}
 	data := map[string][]byte{
 		"foo": []byte("foodata"),
 		"bar": []byte("bardata"),
 	}
 	for k, c := range components {
-		c.EXPECT().Hash().Times(1).Return(hashes[k])
-		c.EXPECT().Checkpoint().Times(1).Return(data[k])
+		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	checkpoints := eng.GetCheckpoints()
+	checkpoints, err := eng.GetCheckpoints()
+	require.NoError(t, err)
 	for k, cp := range checkpoints {
-		require.EqualValues(t, hashes[k], cp.Hash())
 		require.EqualValues(t, data[k], cp.Data())
 	}
 }
@@ -79,10 +76,6 @@ func testGetCheckpointsAdd(t *testing.T) {
 		"foo": mocks.NewMockState(eng.ctrl),
 		"bar": mocks.NewMockState(eng.ctrl),
 	}
-	hashes := map[string][]byte{
-		"foo": []byte("foohash"),
-		"bar": []byte("barhash"),
-	}
 	data := map[string][]byte{
 		"foo": []byte("foodata"),
 		"bar": []byte("bardata"),
@@ -92,12 +85,11 @@ func testGetCheckpointsAdd(t *testing.T) {
 	}
 	require.NoError(t, eng.Add(components["foo"], components["bar"]))
 	for k, c := range components {
-		c.EXPECT().Hash().Times(1).Return(hashes[k])
-		c.EXPECT().Checkpoint().Times(1).Return(data[k])
+		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	checkpoints := eng.GetCheckpoints()
+	checkpoints, err := eng.GetCheckpoints()
+	require.NoError(t, err)
 	for k, cp := range checkpoints {
-		require.EqualValues(t, hashes[k], cp.Hash())
 		require.EqualValues(t, data[k], cp.Data())
 	}
 }
@@ -139,10 +131,6 @@ func testLoadCheckpoints(t *testing.T) {
 		"foo": mocks.NewMockState(eng.ctrl),
 		"bar": mocks.NewMockState(eng.ctrl),
 	}
-	hashes := map[string][]byte{
-		"foo": []byte("foohash"),
-		"bar": []byte("barhash"),
-	}
 	data := map[string][]byte{
 		"foo": []byte("foodata"),
 		"bar": []byte("bardata"),
@@ -152,12 +140,11 @@ func testLoadCheckpoints(t *testing.T) {
 	}
 	require.NoError(t, eng.Add(components["foo"], components["bar"]))
 	for k, c := range components {
-		c.EXPECT().Hash().Times(1).Return(hashes[k])
-		c.EXPECT().Checkpoint().Times(1).Return(data[k])
+		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	checkpoints := eng.GetCheckpoints()
+	checkpoints, err := eng.GetCheckpoints()
+	require.NoError(t, err)
 	for k, cp := range checkpoints {
-		require.EqualValues(t, hashes[k], cp.Hash())
 		require.EqualValues(t, data[k], cp.Data())
 	}
 	// create new components to load data in to
@@ -168,7 +155,7 @@ func testLoadCheckpoints(t *testing.T) {
 	for k, c := range wComps {
 		c.EXPECT().Name().Times(1).Return(k)
 		cp := checkpoints[k]
-		c.EXPECT().Load(cp.Data(), cp.Hash()).Times(1).Return(nil)
+		c.EXPECT().Load(cp.Data()).Times(1).Return(nil)
 	}
 	newEng, err := checkpoint.New(wComps["foo"], wComps["bar"])
 	require.NoError(t, err)
@@ -177,7 +164,6 @@ func testLoadCheckpoints(t *testing.T) {
 	for k, cp := range checkpoints {
 		wc := wComps[k]
 		require.EqualValues(t, cp.Data(), wc.data)
-		require.EqualValues(t, cp.Hash(), wc.hash)
 	}
 }
 
@@ -206,20 +192,16 @@ func testLoadSparse(t *testing.T) {
 	}
 	eng, err := checkpoint.New(components["foo"])
 	require.NoError(t, err)
-	hashes := map[string][]byte{
-		"foo": []byte("foohash"),
-		// "bar": []byte("barhash"),
-	}
 	data := map[string][]byte{
 		"foo": []byte("foodata"),
 		// "bar": []byte("bardata"),
 	}
 	c := components["foo"]
-	c.EXPECT().Hash().Times(1).Return(hashes["foo"])
-	c.EXPECT().Checkpoint().Times(1).Return(data["foo"])
-	checkpoints := eng.GetCheckpoints()
+	c.EXPECT().Checkpoint().Times(1).Return(data["foo"], nil)
+	checkpoints, err := eng.GetCheckpoints()
+	require.NoError(t, err)
 	require.NoError(t, eng.Add(components["bar"])) // load another component, not part of the checkpoints map
-	c.EXPECT().Load(data["foo"], hashes["foo"]).Times(1).Return(nil)
+	c.EXPECT().Load(data["foo"]).Times(1).Return(nil)
 	require.NoError(t, eng.Load(checkpoints))
 }
 
@@ -236,35 +218,61 @@ func testLoadError(t *testing.T) {
 	}
 	eng, err := checkpoint.New(components["foo"], components["bar"])
 	require.NoError(t, err)
-	hashes := map[string][]byte{
-		"foo": []byte("foohash"),
-		"bar": []byte("barhash"),
-	}
 	data := map[string][]byte{
 		"foo": []byte("foodata"),
 		"bar": []byte("bardata"),
 	}
 	for k, c := range components {
-		c.EXPECT().Hash().Times(1).Return(hashes[k])
-		c.EXPECT().Checkpoint().Times(1).Return(data[k])
+		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
 	ret := map[string]error{
 		"foo": errors.New("random error"),
 		"bar": nil, // we always load checkpoints in order, so bar will go first, and should not return an error
 	}
-	checkpoints := eng.GetCheckpoints()
+	checkpoints, err := eng.GetCheckpoints()
+	require.NoError(t, err)
 	for k, cp := range checkpoints {
 		c := components[k]
-		c.EXPECT().Load(cp.Data(), cp.Hash()).Times(1).Return(ret[k])
+		c.EXPECT().Load(cp.Data()).Times(1).Return(ret[k])
 	}
 	err = eng.Load(checkpoints)
 	require.Error(t, err)
 	require.Equal(t, ret["foo"], err)
 }
 
+func testGetCheckpointsErr(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	components := map[string]*mocks.MockState{
+		"foo": mocks.NewMockState(ctrl),
+		"bar": mocks.NewMockState(ctrl),
+	}
+	for k, c := range components {
+		c.EXPECT().Name().Times(1).Return(k)
+	}
+	eng, err := checkpoint.New(components["foo"], components["bar"])
+	require.NoError(t, err)
+	data := map[string][]byte{
+		"foo": nil,
+		"bar": []byte("bardata"),
+	}
+	errs := map[string]error{
+		"foo": fmt.Errorf("random error"),
+		"bar": nil,
+	}
+	for k, c := range components {
+		c.EXPECT().Checkpoint().Times(1).Return(data[k], errs[k])
+	}
+	checkpoints, err := eng.GetCheckpoints()
+	require.Nil(t, checkpoints)
+	require.Error(t, err)
+	require.Equal(t, errs["foo"], err)
+}
+
 type wrappedMock struct {
 	*mocks.MockState
-	hash, data []byte
+	data []byte
 }
 
 func wrapMock(m *mocks.MockState) *wrappedMock {
@@ -273,8 +281,7 @@ func wrapMock(m *mocks.MockState) *wrappedMock {
 	}
 }
 
-func (w *wrappedMock) Load(data, hash []byte) error {
+func (w *wrappedMock) Load(data []byte) error {
 	w.data = data
-	w.hash = hash
-	return w.MockState.Load(data, hash)
+	return w.MockState.Load(data)
 }

@@ -16,19 +16,18 @@ func (e *Engine) Name() string {
 	return SnapshotName
 }
 
-func (e *Engine) Checkpoint() []byte {
+func (e *Engine) Checkpoint() ([]byte, error) {
 	msg := &vpb.Collateral{
 		Balances: e.getSnapshotBalances(),
 	}
 	ret, err := vpb.Marshal(msg)
 	if err != nil {
-		e.log.Panic("Error marshalling snapshot data for collateral engine",
-			logging.Error(err))
+		return nil, err
 	}
-	return ret
+	return ret, nil
 }
 
-func (e *Engine) Load(checkpoint, _ []byte) error {
+func (e *Engine) Load(checkpoint []byte) error {
 	msg := vpb.Collateral{}
 	if err := vpb.Unmarshal(checkpoint, &msg); err != nil {
 		return err

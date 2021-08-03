@@ -30,7 +30,8 @@ func TestSnapshot(t *testing.T) {
 	err = eng.Engine.UpdateBalance(ctx, acc, bal)
 	assert.Nil(t, err)
 
-	snapshot := eng.Checkpoint()
+	snapshot, err := eng.Checkpoint()
+	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
 
 	conf := collateral.NewDefaultConfig()
@@ -47,7 +48,7 @@ func TestSnapshot(t *testing.T) {
 	}
 	// we need to enable the assets before being able to load the balances
 	loadEng.EnableAsset(ctx, asset)
-	err = loadEng.Load(snapshot, nil)
+	err = loadEng.Load(snapshot)
 	require.NoError(t, err)
 	require.True(t, loadEng.HasBalance(party))
 }

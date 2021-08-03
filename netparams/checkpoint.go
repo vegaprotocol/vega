@@ -11,20 +11,16 @@ const (
 	SnapshotName = "netparams"
 )
 
-func (s *Store) Name() string {
-	return SnapshotName
-}
-
-func (s *Store) Hash() []byte {
-	return nil
-}
-
 type vidx struct {
 	key string
 	idx int
 }
 
-func (s *Store) Checkpoint() []byte {
+func (s *Store) Name() string {
+	return SnapshotName
+}
+
+func (s *Store) Checkpoint() ([]byte, error) {
 	s.mu.RLock()
 	params := vega.NetParams{
 		Params: make([]*vega.NetworkParameter, 0, len(s.store)),
@@ -43,7 +39,7 @@ func (s *Store) Checkpoint() []byte {
 	s.mu.RUnlock()
 	// no net params, we can stop here
 	if len(vals) == 0 {
-		return nil
+		return nil, nil
 	}
 	// sort the keys
 	sort.Slice(keys, func(i, j int) bool {
@@ -55,11 +51,10 @@ func (s *Store) Checkpoint() []byte {
 			Value: vals[k.idx],
 		})
 	}
-	b, _ := vega.Marshal(&params)
-	return b
+	return vega.Marshal(&params)
 }
 
-func (s *Store) Load(data, _ []byte) error {
+func (s *Store) Load(data []byte) error {
 	params := &vega.NetParams{}
 	if err := vega.Unmarshal(data, params); err != nil {
 		return err
