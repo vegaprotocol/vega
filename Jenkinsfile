@@ -239,6 +239,7 @@ pipeline {
                         anyOf {
                             buildingTag()
                             branch 'develop'
+                            branch 'main'
                             // changeRequest() // uncomment only for testing
                         }
                     }
