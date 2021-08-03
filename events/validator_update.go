@@ -19,14 +19,14 @@ func NewValidatorUpdateEvent(
 	ctx context.Context,
 	pubKey string,
 	tmPubKey string,
-	infoUrl string,
+	infoURL string,
 	country string,
 ) *ValidatorUpdate {
 	return &ValidatorUpdate{
 		Base:     newBase(ctx, ValidatorUpdateEvent),
 		pubKey:   pubKey,
 		tmPubKey: tmPubKey,
-		infoUrl:  infoUrl,
+		infoUrl:  infoURL,
 		country:  country,
 	}
 }
@@ -41,7 +41,7 @@ func (vu ValidatorUpdate) TendermintPublicKey() string {
 	return vu.tmPubKey
 }
 
-// InfoURL returns an url with infomation about validator node
+// InfoURL returns an url with information about validator node
 func (vu ValidatorUpdate) InfoURL() string {
 	return vu.infoUrl
 }
