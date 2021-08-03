@@ -32,6 +32,16 @@ func (e *Engine) Load(checkpoint []byte) error {
 	}
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
+		if balance.Party == systemOwner {
+			accID := e.accountID(noMarket, systemOwner, balance.Asset, types.AccountTypeGlobalInsurance)
+			if _, err := e.GetAccountByID(accID); err != nil {
+				// this account is created when the asset is enabled. If we can't get this account,
+				// then the asset is not yet enabled and we have a problem...
+				return err
+			}
+			e.UpdateBalance(context.Background(), accID, ub)
+			continue
+		}
 		accID := e.accountID(noMarket, balance.Party, balance.Asset, types.AccountTypeGeneral)
 		if _, err := e.GetAccountByID(accID); err != nil {
 			accID, _ = e.CreatePartyGeneralAccount(context.Background(), balance.Party, balance.Asset)

@@ -1,6 +1,11 @@
 package types
 
-import "code.vegaprotocol.io/protos/vega"
+import (
+	"bytes"
+
+	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/crypto"
+)
 
 type CheckpointName string
 
@@ -11,11 +16,58 @@ const (
 	NetParamsCheckpoint  CheckpointName = "netparams"
 )
 
+type Snapshot struct {
+	State []byte
+	Hash  []byte
+}
+
 type Checkpoint struct {
 	Governance        []byte
 	Assets            []byte
 	Collateral        []byte
 	NetworkParameters []byte
+}
+
+func NewSnapshotFromProto(ps *vega.Snapshot) *Snapshot {
+	return &Snapshot{
+		State: ps.State,
+		Hash:  ps.Hash,
+	}
+}
+
+func (s Snapshot) IntoProto() *vega.Snapshot {
+	return &vega.Snapshot{
+		Hash:  s.Hash,
+		State: s.State,
+	}
+}
+
+func (s Snapshot) GetCheckpoint() (*Checkpoint, error) {
+	pc := &vega.Checkpoint{}
+	if err := vega.Unmarshal(s.State, pc); err != nil {
+		return nil, err
+	}
+	cp := NewCheckpointFromProto(pc)
+	return cp, nil
+}
+
+func (s *Snapshot) SetCheckpoint(cp *Checkpoint) error {
+	b, err := vega.Marshal(cp.IntoProto())
+	if err != nil {
+		return err
+	}
+	s.Hash = crypto.Hash(cp.HashBytes())
+	s.State = b
+	return nil
+}
+
+// IsValid checks the hash, returns false if the hash doesn't match
+func (s Snapshot) IsValid() bool {
+	cp, err := s.GetCheckpoint()
+	if err != nil {
+		return false
+	}
+	return bytes.Compare(crypto.Hash(cp.HashBytes()), s.Hash) == 0
 }
 
 func NewCheckpointFromProto(pc *vega.Checkpoint) *Checkpoint {

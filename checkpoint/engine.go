@@ -1,11 +1,8 @@
 package checkpoint
 
 import (
-	"bytes"
 	"errors"
 
-	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -77,7 +74,7 @@ func (e *Engine) addComponent(comp State) error {
 }
 
 // Checkpoint returns the overall checkpoint
-func (e *Engine) Checkpoint() ([]byte, error) {
+func (e *Engine) Checkpoint() (*types.Snapshot, error) {
 	cp := &types.Checkpoint{}
 	for _, k := range cpOrder {
 		comp, ok := e.components[k]
@@ -91,30 +88,23 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 		// set the correct field
 		cp.Set(k, data)
 	}
-	b, err := vega.Marshal(cp.IntoProto())
-	if err != nil {
+	snap := &types.Snapshot{}
+	// setCheckpoint hides the vega type mess
+	if err := snap.SetCheckpoint(cp); err != nil {
 		return nil, err
 	}
 
-	return vega.Marshal(&vega.Snapshot{
-		State: b,
-		Hash:  crypto.Hash(cp.HashBytes()),
-	})
+	return snap, nil
 }
 
 // Load - loads checkpoint data for all components by name
-func (e *Engine) Load(data []byte) error {
-	snap := &vega.Snapshot{}
-	if err := vega.Unmarshal(data, snap); err != nil {
+func (e *Engine) Load(snap *types.Snapshot) error {
+	cp, err := snap.GetCheckpoint()
+	if err != nil {
 		return err
 	}
-	vcp := &vega.Checkpoint{}
-	if err := vega.Unmarshal(snap.State, vcp); err != nil {
-		return err
-	}
-	cp := types.NewCheckpointFromProto(vcp)
 	// check the hash
-	if hash := crypto.Hash(cp.HashBytes()); bytes.Compare(hash, snap.Hash) != 0 {
+	if !snap.IsValid() {
 		return ErrSnapshotHashIncorrect
 	}
 	for _, k := range cpOrder {

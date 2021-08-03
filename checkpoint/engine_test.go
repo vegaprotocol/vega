@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/checkpoint/mocks"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
@@ -178,26 +177,20 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	defer eng.ctrl.Finish()
 
 	// create checkpoint data
-	cp := types.Checkpoint{
+	cp := &types.Checkpoint{
 		Assets: []byte("assets"),
 	}
-	b, err := vega.Marshal(cp.IntoProto())
-	require.NoError(t, err)
-	snap := &vega.Snapshot{
-		State: b,
-		Hash:  crypto.Hash(cp.HashBytes()),
-	}
-	data, err := vega.Marshal(snap)
-	err = eng.Load(data)
+	snap := &types.Snapshot{}
+	snap.SetCheckpoint(cp)
+	err := eng.Load(snap)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrUnknownCheckpointName, err)
 	// now try to tamper with the data itself in such a way that the has no longer matches:
 	cp.Assets = []byte("foobar")
-	b, err = vega.Marshal(cp.IntoProto())
+	b, err := vega.Marshal(cp.IntoProto())
 	require.NoError(t, err)
 	snap.State = b
-	data, err = vega.Marshal(snap)
-	err = eng.Load(data)
+	err = eng.Load(snap)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
 }
@@ -207,19 +200,17 @@ func testLoadInvalidHash(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	cp := types.Checkpoint{
+	cp := &types.Checkpoint{
 		Assets: []byte("assets"),
 	}
-	snap := &vega.Snapshot{
-		Hash: crypto.Hash(cp.HashBytes()),
-	}
+	snap := &types.Snapshot{}
+	snap.SetCheckpoint(cp)
 	// update data -> hash is invalid
 	cp.Assets = []byte("foobar")
 	b, err := vega.Marshal(cp.IntoProto())
 	require.NoError(t, err)
 	snap.State = b
-	data, err := vega.Marshal(snap)
-	err = eng.Load(data)
+	err = eng.Load(snap)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
 }
