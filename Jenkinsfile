@@ -317,10 +317,17 @@ pipeline {
                     environment {
                         DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
                         DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG}"
+                        DOCKER_IMAGE_TAG_2 = "${ env.TAG_NAME ? 'latest' : 'edge' }"
+                        DOCKER_IMAGE_NAME_2 = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_2}"
                     }
                     steps {
                         retry(3) {
                             dir('vega') {
+                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                                    sh label: 'Log in to a Docker registry', script: '''
+                                        echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
+                                    '''
+                                }
                                 sh label: 'Build docker image', script: '''#!/bin/bash -e
                                     mkdir -p docker/bin
                                     cp -a "cmd/vega/vega-linux-amd64" "docker/bin/vega"
@@ -328,21 +335,18 @@ pipeline {
                                     rm -rf docker/bin
                                 '''
                                 sh label: 'Sanity check', script: '''
-                                    docker run --rm "${DOCKER_IMAGE_NAME}" version
+                                    docker run --rm --entrypoint "" "${DOCKER_IMAGE_NAME}" vega version
                                 '''
-                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                    sh label: 'Log in to a Docker registry', script: '''
-                                        echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
-                                    '''
-                                }
                                 sh label: 'Push docker image', script: '''#!/bin/bash -e
+                                    docker image tag "${DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_2}"
                                     docker push "${DOCKER_IMAGE_NAME}"
+                                    docker push "${DOCKER_IMAGE_NAME_2}"
                                     docker rmi "${DOCKER_IMAGE_NAME}"
                                 '''
                                 slackSend(
                                     channel: "#tradingcore-notify",
                                     color: "good",
-                                    message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}`",
+                                    message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}` aka `${DOCKER_IMAGE_NAME_2}`",
                                 )
                             }
                         }
