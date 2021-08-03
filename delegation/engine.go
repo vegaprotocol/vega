@@ -15,15 +15,15 @@ import (
 
 var (
 	// ErrPartyHasNoStakingAccount is returned when the staking account for the party cannot be found
-	ErrPartyHasNoStakingAccount = errors.New("Cannot find staking account for the party")
+	ErrPartyHasNoStakingAccount = errors.New("cannot find staking account for the party")
 	// ErrInvalidNodeID is returned when the node id passed for delegation/undelegation is not a validator node identifier
-	ErrInvalidNodeID = errors.New("Invalid node ID")
+	ErrInvalidNodeID = errors.New("invalid node ID")
 	// ErrInsufficientBalanceForDelegation is returned when the balance in the staking account is insufficient to cover all committed and pending delegations
-	ErrInsufficientBalanceForDelegation = errors.New("Insufficient balance for delegation")
+	ErrInsufficientBalanceForDelegation = errors.New("insufficient balance for delegation")
 	// ErrIncorrectTokenAmountForUndelegation is returned when the amount to undelegation doesn't match the delegation balance (pending + committed) for the party and validator
-	ErrIncorrectTokenAmountForUndelegation = errors.New("Incorrect token amount for undelegation")
+	ErrIncorrectTokenAmountForUndelegation = errors.New("incorrect token amount for undelegation")
 	// ErrAmountLTMinAmountForDelegation is returned when the amount to delegate to a node is lower than the minimum allowed amount from network params
-	ErrAmountLTMinAmountForDelegation = errors.New("Delegation amount is lower than the minimum amount for delegation for a validator")
+	ErrAmountLTMinAmountForDelegation = errors.New("delegation amount is lower than the minimum amount for delegation for a validator")
 )
 
 // ValidatorTopology represents the topology of validators and can check if a given node is a validator
@@ -244,7 +244,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 
 //UndelegateAtEndOfEpoch increases the pending undelegation balance and potentially decreases the pending delegation balance for a given validator node and party
 func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount uint64) error {
-	amt := num.Zero()
+	var amt *num.Uint
 
 	if amount == 0 {
 		// calculate how much we have available for undelegation including pending and committed
@@ -374,7 +374,7 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 	totalAvailableForUndelegation := num.Zero().Add(availableForUndelegationInPending, availableForUndelegationInActive)
 
 	// if the party passes 0 they want to undelegate all
-	amt := num.Zero()
+	var amt *num.Uint
 	if amount > 0 {
 		amt = num.NewUint(amount)
 	} else {

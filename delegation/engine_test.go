@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/broker/mocks"
-	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	gmock "code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types/num"
@@ -43,7 +42,7 @@ func Test(t *testing.T) {
 	t.Run("Undelegation to an unknown node fails", testUndelegateInvalidNode)
 	t.Run("Undelegation more than the delegated balance succeeds", testUndelegateInvalidAmount)
 	t.Run("Undelegate incrememtntally the whole delegated balance succeeds", testUndelegateSuccessNoPreviousPending)
-	t.Run("Undelegate incrememtntally with pending excatly covered by undelegate succeeds", testUndelegateSuccessWithPreviousPendingDelegateExactlyCovered)
+	t.Run("Undelegate incrememtntally with pending exactly covered by undelegate succeeds", testUndelegateSuccessWithPreviousPendingDelegateExactlyCovered)
 	t.Run("Undelegate with pending delegated covered partly succeeds", testUndelegateSuccessWithPreviousPendingDelegatePartiallyCovered)
 	t.Run("Undelegate with pending delegated fully covered succeeds", testUndelegateSuccessWithPreviousPendingDelegateFullyCovered)
 
@@ -1532,7 +1531,7 @@ func testUndelegateNowAllCleared(t *testing.T) {
 func getEngine(t *testing.T) *testEngine {
 	conf := NewDefaultConfig()
 	ctrl := gomock.NewController(t)
-	broker := bmock.NewMockBroker(ctrl)
+	broker := mocks.NewMockBroker(ctrl)
 	logger := logging.NewTestLogger()
 	stakingAccounts := newTestStakingAccount()
 	netp := gmock.NewMockNetParams(ctrl)
