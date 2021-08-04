@@ -1,6 +1,7 @@
 package steps
 
 import (
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/cucumber/godog"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -17,7 +18,7 @@ func PartiesUndelegateTheFollowingStake(
 
 		undelegateStake := types.Undelegate{
 			NodeID: row.NodeID(),
-			Amount: row.Amount(),
+			Amount: num.NewUint(row.Amount()),
 			Method: commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH.String(),
 		}
 

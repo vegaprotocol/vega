@@ -7,20 +7,20 @@ import (
 
 type Delegate struct {
 	NodeID string
-	Amount uint64
+	Amount *num.Uint
 }
 
 func NewDelegateFromProto(p *commandspb.DelegateSubmission) *Delegate {
 	return &Delegate{
 		NodeID: p.NodeId,
-		Amount: p.Amount,
+		Amount: num.NewUint(p.Amount),
 	}
 }
 
 func (d Delegate) IntoProto() *commandspb.DelegateSubmission {
 	return &commandspb.DelegateSubmission{
 		NodeId: d.NodeID,
-		Amount: d.Amount,
+		Amount: d.Amount.Uint64(),
 	}
 }
 
@@ -30,14 +30,14 @@ func (d Delegate) String() string {
 
 type Undelegate struct {
 	NodeID string
-	Amount uint64
+	Amount *num.Uint
 	Method string
 }
 
 func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) *Undelegate {
 	return &Undelegate{
 		NodeID: p.NodeId,
-		Amount: p.Amount,
+		Amount: num.NewUint(p.Amount),
 		Method: p.Method.String(),
 	}
 }
@@ -45,7 +45,7 @@ func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) *Undelegate {
 func (u Undelegate) IntoProto() *commandspb.UndelegateSubmission {
 	return &commandspb.UndelegateSubmission{
 		NodeId: u.NodeID,
-		Amount: u.Amount,
+		Amount: u.Amount.Uint64(),
 		Method: commandspb.UndelegateSubmission_Method(commandspb.UndelegateSubmission_Method_value[u.Method]),
 	}
 }

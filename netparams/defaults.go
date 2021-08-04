@@ -74,8 +74,8 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamMinVoterBalance:       NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 
 		// Delegation default params
-		DelegationMinAmount:             NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
-		DelegationmMaxStakePerValidator: NewInt(IntGTE(0)).Mutable(true).MustUpdate("1000"),
+		DelegationMinAmount:            NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
+		DelegationMaxStakePerValidator: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.

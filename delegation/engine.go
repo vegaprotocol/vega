@@ -607,13 +607,13 @@ func (e *Engine) processPending(ctx context.Context) {
 	sort.Strings(parties)
 
 	// read the delegation min amount network param
-	maxStakePerValidatorStr, err := e.netp.Get(netparams.DelegationmMaxStakePerValidator)
+	maxStakePerValidatorStr, err := e.netp.Get(netparams.DelegationMaxStakePerValidator)
 	if err != nil {
 		e.log.Panic("Cannot find validators.delegation.maxStakePerValidator")
 	}
 	maxStakePerValidator, ok := num.UintFromString(maxStakePerValidatorStr, 10)
 	if ok {
-		e.log.Panic("unable to read", logging.String(netparams.DelegationmMaxStakePerValidator, maxStakePerValidatorStr))
+		e.log.Panic("unable to read", logging.String(netparams.DelegationMaxStakePerValidator, maxStakePerValidatorStr))
 	}
 
 	e.processPendingUndelegations(parties)
@@ -748,9 +748,11 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 			if ok {
 				currentNodeDelegationBalance = currentNodeDelegation.totalDelegated
 			}
-			availableBalanceOnNode := num.Zero().Sub(maxStakePerValidator, currentNodeDelegationBalance)
-			if amount.GT(availableBalanceOnNode) {
-				amount = availableBalanceOnNode
+			if !maxStakePerValidator.IsZero() {
+				availableBalanceOnNode := num.Zero().Sub(maxStakePerValidator, currentNodeDelegationBalance)
+				if amount.GT(availableBalanceOnNode) {
+					amount = availableBalanceOnNode
+				}
 			}
 
 			// check that the amount is not greater than the available for delegation
