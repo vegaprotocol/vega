@@ -130,7 +130,7 @@ pipeline {
             }
         }
 
-        stage('') {
+        stage(' ') {
             failFast true
             parallel {
                 // this task needs to run after builds
@@ -302,7 +302,7 @@ pipeline {
                         anyOf {
                             buildingTag()
                             branch 'develop'
-                            changeRequest() // uncomment only for testing
+                            // changeRequest() // uncomment only for testing
                         }
                     }
                     environment {
