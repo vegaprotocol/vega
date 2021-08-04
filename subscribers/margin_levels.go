@@ -72,7 +72,6 @@ func (m *MarginLevelSub) Push(evts ...events.Event) {
 }
 
 func (m *MarginLevelSub) flush() {
-	m.log.Error("Margin level flush")
 	m.mu.Lock()
 	buf := m.buf
 	m.buf = map[string]map[string]types.MarginLevels{}

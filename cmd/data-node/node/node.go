@@ -36,6 +36,7 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	"golang.org/x/sync/errgroup"
 )
 
 type AccountStore interface {
@@ -196,35 +197,44 @@ func (l *NodeCommand) runNode(args []string) error {
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 	)
 
+	eg, ctx := errgroup.WithContext(l.ctx)
+	ctx, cancel := context.WithCancel(ctx)
+
 	// start the grpc server
-	go grpcServer.Start()
-	metrics.Start(l.conf.Metrics)
+	eg.Go(func() error { return grpcServer.Start(ctx) })
 
 	// start gateway
-	var (
-		gty *server.Server
-	)
 	if l.conf.GatewayEnabled {
-		gty = server.New(l.conf.Gateway, l.Log)
-		if err := gty.Start(); err != nil {
-			return err
-		}
+		gty := server.New(l.conf.Gateway, l.Log)
+
+		eg.Go(func() error { return gty.Start(ctx) })
 	}
+
+	eg.Go(func() error {
+		return l.broker.Receive(ctx)
+	})
+
+	eg.Go(func() error {
+		var gracefulStop = make(chan os.Signal, 1)
+		signal.Notify(gracefulStop, syscall.SIGTERM)
+		signal.Notify(gracefulStop, syscall.SIGINT)
+
+		select {
+		case sig := <-gracefulStop:
+			l.Log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+			cancel()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
+		return nil
+	})
+
+	metrics.Start(l.conf.Metrics)
 
 	l.Log.Info("Vega startup complete")
-	waitSig(l.ctx, l.Log)
 
-	// Clean up and close resources
-	grpcServer.Stop()
-
-	// cleanup gateway
-	if l.conf.GatewayEnabled {
-		if gty != nil {
-			gty.Stop()
-		}
-	}
-
-	return nil
+	return eg.Wait()
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.

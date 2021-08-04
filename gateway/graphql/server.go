@@ -85,7 +85,7 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 }
 
 // Start start the server in order receive http request
-func (g *GraphServer) Start() {
+func (g *GraphServer) Start() error {
 	// <--- cors support - configure for production
 	corz := cors.AllowAll()
 	var up = websocket.Upgrader{
@@ -152,8 +152,10 @@ func (g *GraphServer) Start() {
 
 	err := g.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		g.log.Panic("Failed to listen and serve on graphQL server", logging.Error(err))
+		return fmt.Errorf("Failed to listen and serve on graphQL server: %w", err)
 	}
+
+	return nil
 }
 
 // Stop will close the http server gracefully

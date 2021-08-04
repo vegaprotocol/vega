@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	"golang.org/x/sync/errgroup"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 
@@ -199,7 +200,7 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 }
 
 // Start start the grpc server
-func (g *GRPCServer) Start() {
+func (g *GRPCServer) Start(ctx context.Context) error {
 
 	ip := g.IP
 	port := strconv.Itoa(g.Port)
@@ -250,14 +251,22 @@ func (g *GRPCServer) Start() {
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)
 
-	err = g.srv.Serve(lis)
-	if err != nil {
-		g.log.Panic("Failure serving gRPC API", logging.Error(err))
-	}
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		<-ctx.Done()
+		g.stop()
+		return ctx.Err()
+	})
+
+	eg.Go(func() error {
+		return g.srv.Serve(lis)
+	})
+
+	return eg.Wait()
 }
 
-// Stop stops the GRPC server
-func (g *GRPCServer) Stop() {
+func (g *GRPCServer) stop() {
 	if g.srv == nil {
 		return
 	}

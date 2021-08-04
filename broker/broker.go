@@ -10,8 +10,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 )
 
-const defaultEventChannelBufferSize = 256
-
 // Subscriber interface allows pushing values to subscribers, can be set to
 // a Skip state (temporarily not receiving any events), or closed. Otherwise events are pushed
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/subscriber_mock.go -package mocks code.vegaprotocol.io/data-node/broker Subscriber
@@ -67,15 +65,10 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	socketServer, err := NewSocketServer(ctx, log, &config.SocketConfig)
+	socketServer, err := NewSocketServer(log, &config.SocketConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
 	}
-	go func() {
-		if err := socketServer.Close(); err != nil {
-			log.Fatal("failed to close socket server", logging.Error(err))
-		}
-	}()
 
 	b := &Broker{
 		ctx:          ctx,
@@ -87,8 +80,6 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 		socketServer: socketServer,
 		quit:         make(chan struct{}),
 	}
-
-	go b.receiveSocket()
 
 	return b, nil
 }
@@ -336,19 +327,17 @@ func (b *Broker) rmSubs(keys ...int) {
 	}
 }
 
-func (b *Broker) receiveSocket() {
-	eventCh := make(chan events.Event, defaultEventChannelBufferSize)
-	go b.socketServer.Receive(b.ctx, eventCh)
-	for {
-		select {
-		case <-b.socketServer.Quit():
-			close(eventCh)
-			return
-		case <-b.ctx.Done():
-			return
-		case e := <-eventCh:
-			b.Send(e)
-		default:
-		}
+func (b *Broker) Receive(ctx context.Context) error {
+	if err := b.socketServer.Listen(); err != nil {
+		return err
 	}
+
+	receiveCh := b.socketServer.Receive(ctx)
+
+	for e := range receiveCh {
+		fmt.Printf("received event: %+v \n", e)
+		b.Send(e)
+	}
+
+	return nil
 }

@@ -49,10 +49,9 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 	}
 
 	srv := server.New(opts.Config, log)
-	if err := srv.Start(); err != nil {
+	if err := srv.Start(ctx); err != nil {
 		return err
 	}
-	defer srv.Stop()
 
 	waitSig(ctx, log)
 	return nil
