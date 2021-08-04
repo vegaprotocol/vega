@@ -26,6 +26,7 @@ pipeline {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
         SLACK_MESSAGE = "Vega Core CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
+        LOCAL_DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/vega/vega:${BRANCH_NAME}"
     }
 
     stages {
@@ -129,12 +130,44 @@ pipeline {
             }
         }
 
-        // these stages are run in sequence as they delete and recreate files
-        stage('Run gqlgen codgen checks') {
-            options { retry(3) }
-            steps {
-                dir('vega') {
-                    sh 'make gqlgen_check'
+        stage(' ') {
+            failFast true
+            parallel {
+                // this task needs to run after builds
+                stage('Build docker image') {
+                    environment {
+                        LINUX_BINARY = './cmd/vega/vega-linux-amd64'
+                    }
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh label: 'Copy binary', script: '''#!/bin/bash -e
+                                mkdir -p docker/bin
+                                cp -a "${LINUX_BINARY}" "docker/bin/vega"
+                            '''
+                            // Note: This docker image is used by system-tests and publish stage
+                            withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                                sh label: 'Build docker image', script: '''
+                                    docker build -t "${LOCAL_DOCKER_IMAGE_NAME}" docker/
+                                '''
+                            }
+                            sh label: 'Cleanup', script: '''#!/bin/bash -e
+                                rm -rf docker/bin
+                            '''
+                            sh label: 'Sanity check', script: '''
+                                docker run --rm --entrypoint "" "${LOCAL_DOCKER_IMAGE_NAME}" vega version
+                            '''
+                        }
+                    }
+                }
+                // this task needs to run before linters and tests
+                stage('Run gqlgen codgen checks') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh 'make gqlgen_check'
+                        }
+                    }
                 }
             }
         }
@@ -273,50 +306,30 @@ pipeline {
                         }
                     }
                     environment {
-                        DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
-                        DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG}"
-                        DOCKER_IMAGE_TAG_2 = "${ env.TAG_NAME ? 'latest' : 'edge' }"
-                        DOCKER_IMAGE_NAME_2 = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_2}"
+                        DOCKER_IMAGE_TAG_VERSIONED = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
+                        DOCKER_IMAGE_NAME_VERSIONED = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSIONED}"
+                        DOCKER_IMAGE_TAG_ALIAS = "${ env.TAG_NAME ? 'latest' : 'edge' }"
+                        DOCKER_IMAGE_NAME_ALIAS = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_ALIAS}"
                     }
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh label: 'Log in to a Docker registry', script: '''
-                                    echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
+                            sh label: 'Tag new images', script: '''#!/bin/bash -e
+                                docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_VERSIONED}"
+                                docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_ALIAS}"
+                            '''
+
+                            withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                                sh label: 'Push docker images', script: '''
+                                    docker push "${DOCKER_IMAGE_NAME_VERSIONED}"
+                                    docker push "${DOCKER_IMAGE_NAME_ALIAS}"
                                 '''
                             }
-                            sh label: 'Build docker image', script: '''#!/bin/bash -e
-                                mkdir -p docker/bin
-                                cp -a "cmd/vega/vega-linux-amd64" "docker/bin/vega"
-                                docker build -t "${DOCKER_IMAGE_NAME}" docker/
-                                rm -rf docker/bin
-                            '''
-                            sh label: 'Sanity check', script: '''
-                                docker run --rm --entrypoint "" "${DOCKER_IMAGE_NAME}" vega version
-                            '''
-                            sh label: 'Push docker image', script: '''#!/bin/bash -e
-                                docker image tag "${DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_2}"
-                                docker push "${DOCKER_IMAGE_NAME}"
-                                docker push "${DOCKER_IMAGE_NAME_2}"
-                                docker rmi "${DOCKER_IMAGE_NAME}"
-                            '''
                             slackSend(
                                 channel: "#tradingcore-notify",
                                 color: "good",
-                                message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}` aka `${DOCKER_IMAGE_NAME_2}`",
+                                message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME_VERSIONED}` aka `${DOCKER_IMAGE_NAME_ALIAS}`",
                             )
-                        }
-                    }
-                    post {
-                        always  {
-                            retry(3) {
-                                script {
-                                    sh label: 'Log out from the Docker registry', script: '''
-                                        docker logout docker.pkg.github.com
-                                    '''
-                                }
-                            }
                         }
                     }
                 }
@@ -385,6 +398,13 @@ pipeline {
         failure {
             retry(3) {
                 slackSend(channel: "#tradingcore-notify", color: "danger", message: ":red_circle: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
+            }
+        }
+        always {
+            retry(3) {
+                sh label: 'Clean docker images', script: '''
+                    docker rmi "${LOCAL_DOCKER_IMAGE_NAME}"
+                '''
             }
         }
     }
