@@ -26,6 +26,7 @@ pipeline {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
         SLACK_MESSAGE = "Vega Core CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
+        LOCAL_DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/vega/vega:${BRANCH_NAME}"
     }
 
     stages {
@@ -65,13 +66,13 @@ pipeline {
             }
         }
 
-        stage('Compile vega core') {
+        stage('Build vega core') {
             environment {
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
             failFast true
             parallel {
-                stage('Linux build') {
+                stage('Linux compile') {
                     environment {
                         GOOS         = 'linux'
                         GOARCH       = 'amd64'
@@ -90,7 +91,7 @@ pipeline {
                         }
                     }
                 }
-                stage('MacOS build') {
+                stage('MacOS compile') {
                     environment {
                         GOOS         = 'darwin'
                         GOARCH       = 'amd64'
@@ -108,7 +109,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Windows build') {
+                stage('Windows compile') {
                     environment {
                         GOOS         = 'windows'
                         GOARCH       = 'amd64'
@@ -122,6 +123,32 @@ pipeline {
                             '''
                             sh label: 'Sanity check', script: '''
                                 file ${OUTPUT}
+                            '''
+                        }
+                    }
+                }
+                stage('Build docker image') {
+                    environment {
+                        LINUX_BINARY = './cmd/vega/vega-linux-amd64'
+                    }
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            waitUntil { fileExists("${LINUX_BINARY}") }
+                            sh label: 'Copy binary', script: '''#!/bin/bash -e
+                                mkdir -p docker/bin
+                                cp -a "${LINUX_BINARY}" "docker/bin/vega"
+                            '''
+                            withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                                sh label: 'Build docker image', script: '''
+                                    docker build -t "${LOCAL_DOCKER_IMAGE_NAME}" docker/
+                                '''
+                            }
+                            sh label: 'Cleanup', script: '''#!/bin/bash -e
+                                rm -rf docker/bin
+                            '''
+                            sh label: 'Sanity check', script: '''
+                                docker run --rm --entrypoint "" "${LOCAL_DOCKER_IMAGE_NAME}" vega version
                             '''
                         }
                     }
@@ -269,7 +296,7 @@ pipeline {
                         anyOf {
                             buildingTag()
                             branch 'develop'
-                            // changeRequest() // uncomment only for testing
+                            changeRequest() // uncomment only for testing
                         }
                     }
                     environment {
@@ -281,42 +308,22 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                sh label: 'Log in to a Docker registry', script: '''
-                                    echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
+                            sh label: 'Tag new images', script: '''#!/bin/bash -e
+                                docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME}"
+                                docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_2}"
+                            '''
+
+                            withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                                sh label: 'Push docker images', script: '''
+                                    docker push "${DOCKER_IMAGE_NAME}"
+                                    docker push "${DOCKER_IMAGE_NAME_2}"
                                 '''
                             }
-                            sh label: 'Build docker image', script: '''#!/bin/bash -e
-                                mkdir -p docker/bin
-                                cp -a "cmd/vega/vega-linux-amd64" "docker/bin/vega"
-                                docker build -t "${DOCKER_IMAGE_NAME}" docker/
-                                rm -rf docker/bin
-                            '''
-                            sh label: 'Sanity check', script: '''
-                                docker run --rm --entrypoint "" "${DOCKER_IMAGE_NAME}" vega version
-                            '''
-                            sh label: 'Push docker image', script: '''#!/bin/bash -e
-                                docker image tag "${DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_2}"
-                                docker push "${DOCKER_IMAGE_NAME}"
-                                docker push "${DOCKER_IMAGE_NAME_2}"
-                                docker rmi "${DOCKER_IMAGE_NAME}"
-                            '''
                             slackSend(
                                 channel: "#tradingcore-notify",
                                 color: "good",
                                 message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}` aka `${DOCKER_IMAGE_NAME_2}`",
                             )
-                        }
-                    }
-                    post {
-                        always  {
-                            retry(3) {
-                                script {
-                                    sh label: 'Log out from the Docker registry', script: '''
-                                        docker logout docker.pkg.github.com
-                                    '''
-                                }
-                            }
                         }
                     }
                 }
@@ -385,6 +392,13 @@ pipeline {
         failure {
             retry(3) {
                 slackSend(channel: "#tradingcore-notify", color: "danger", message: ":red_circle: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
+            }
+        }
+        always {
+            retry(3) {
+                sh label: 'Clean docker images', script: '''
+                    docker rmi "${LOCAL_DOCKER_IMAGE_NAME}"
+                '''
             }
         }
     }
