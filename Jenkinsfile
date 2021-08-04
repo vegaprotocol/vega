@@ -54,6 +54,30 @@ pipeline {
                         }
                     }
                 }
+                stage('protos') {
+                    options { retry(3) }
+                    steps {
+                        dir('protos') {
+                            git branch: "${params.PROTOS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/protos.git'
+                        }
+                    }
+                }
+                stage('system-tests') {
+                    options { retry(3) }
+                    steps {
+                        dir('system-tests') {
+                            git branch: "${params.SYSTEM_TESTS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/system-tests.git'
+                        }
+                    }
+                }
+                stage('devops-infra') {
+                    options { retry(3) }
+                    steps {
+                        dir('devops-infra') {
+                            git branch: "${params.DEVOPS_INFRA_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/devops-infra.git'
+                        }
+                    }
+                }
             }
         }
 
@@ -287,6 +311,19 @@ pipeline {
                         dir('vega/integration') {
                             sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
                             junit checksName: 'Specs Tests (specs-internal)', testResults: 'specs-internal-qa-scenarios-report.xml'
+                        }
+                    }
+                }
+                stage('system-tests') {
+                    stages {
+                        stage('check') {
+                            steps {
+                                dir('system-tests/scripts') {
+                                    sh label: 'Check setup', script: '''
+                                        make check
+                                    '''
+                                }
+                            }
                         }
                     }
                 }
