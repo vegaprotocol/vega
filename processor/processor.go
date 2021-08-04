@@ -35,9 +35,9 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
 type DelegationEngine interface {
-	Delegate(ctx context.Context, party string, nodeID string, amount uint64) error
-	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount uint64) error
-	UndelegateNow(ctx context.Context, party string, nodeID string, amount uint64) error
+	Delegate(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	OnEpochEnd(ctx context.Context, start, end time.Time) []*types.ValidatorData
 }
 

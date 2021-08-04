@@ -5,11 +5,13 @@
 package mocks
 
 import (
-	types "code.vegaprotocol.io/vega/types"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	types "code.vegaprotocol.io/vega/types"
+	num "code.vegaprotocol.io/vega/types/num"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockDelegationEngine is a mock of DelegationEngine interface
@@ -36,7 +38,7 @@ func (m *MockDelegationEngine) EXPECT() *MockDelegationEngineMockRecorder {
 }
 
 // Delegate mocks base method
-func (m *MockDelegationEngine) Delegate(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+func (m *MockDelegationEngine) Delegate(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delegate", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -64,7 +66,7 @@ func (mr *MockDelegationEngineMockRecorder) OnEpochEnd(arg0, arg1, arg2 interfac
 }
 
 // UndelegateAtEndOfEpoch mocks base method
-func (m *MockDelegationEngine) UndelegateAtEndOfEpoch(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+func (m *MockDelegationEngine) UndelegateAtEndOfEpoch(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UndelegateAtEndOfEpoch", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
@@ -78,7 +80,7 @@ func (mr *MockDelegationEngineMockRecorder) UndelegateAtEndOfEpoch(arg0, arg1, a
 }
 
 // UndelegateNow mocks base method
-func (m *MockDelegationEngine) UndelegateNow(arg0 context.Context, arg1, arg2 string, arg3 uint64) error {
+func (m *MockDelegationEngine) UndelegateNow(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UndelegateNow", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)

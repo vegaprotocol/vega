@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/types/num"
+
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
@@ -700,7 +702,7 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return app.delegation.Delegate(ctx, tx.Party(), ce.NodeId, ce.Amount)
+	return app.delegation.Delegate(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
 }
 
 func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
@@ -711,9 +713,9 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
 
 	switch ce.Method {
 	case commandspb.UndelegateSubmission_METHOD_NOW:
-		return app.delegation.UndelegateNow(ctx, tx.Party(), ce.NodeId, ce.Amount)
+		return app.delegation.UndelegateNow(ctx, tx.Party(), ce.NodeId, num.Zero())
 	case commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH:
-		return app.delegation.UndelegateAtEndOfEpoch(ctx, tx.Party(), ce.NodeId, ce.Amount)
+		return app.delegation.UndelegateAtEndOfEpoch(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
 	default:
 		return errors.New("unimplemented")
 	}

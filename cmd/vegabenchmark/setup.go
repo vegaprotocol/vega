@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -32,6 +33,17 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
 )
+
+type DummyStakingAccounts struct {
+}
+
+func (DummyStakingAccounts) GetBalanceNow(party string) *num.Uint {
+	return num.Zero()
+}
+
+func (DummyStakingAccounts) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
+	return num.Zero()
+}
 
 func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -124,7 +136,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	)
 
 	//TODO replace with actual implementation
-	stakingAccount := delegation.DummyStakingAccounts{}
+	stakingAccount := DummyStakingAccounts{}
 	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netparams)
 
 	bstats := stats.NewBlockchain()

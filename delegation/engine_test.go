@@ -37,6 +37,8 @@ func Test(t *testing.T) {
 	t.Run("Delegation of an amount less than the available balance for delegation with previous pending undelegations covered by delegation succeeds", testDelegateSuccessWithPreviousPendingUndelegateFullyCovered)
 	t.Run("Delegation of an amount less than the available balance for delegation with previous pending undelegations covered partly by delegation succeeds", testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered)
 	t.Run("Delegation of an amount less than the available balance for delegation with previous pending undelegations countering exactly the undelegated amount succeeds", testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered)
+	t.Run("Delegation of an amount fails due to insufficient funds to cover existing committed delegations", testDelegateInsufficientBalanceCoveringExisting)
+	t.Run("Delegation of an amount fails due to insufficient funds to cover existing pending delegations", testDelegateInsufficientBalanceCoveringPending)
 
 	// undelegate tests
 	t.Run("Undelegation to an unknown node fails", testUndelegateInvalidNode)
@@ -90,7 +92,7 @@ func Test(t *testing.T) {
 // expect an ErrInvalidNodeID
 func testDelegateInvalidNode(t *testing.T) {
 	testEngine := getEngine(t)
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 10)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
 	assert.EqualError(t, err, ErrInvalidNodeID.Error())
 }
 
@@ -99,7 +101,7 @@ func testDelegateInvalidNode(t *testing.T) {
 func testDelegateNoStakingAccount(t *testing.T) {
 	testEngine := getEngine(t)
 	testEngine.topology.nodeToIsValidator["node1"] = true
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 10)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
 	assert.EqualError(t, err, ErrPartyHasNoStakingAccount.Error())
 }
 
@@ -110,7 +112,7 @@ func testDelegateLessThanMinDelegationAmount(t *testing.T) {
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(5)
 	testEngine.netp.EXPECT().Get("validators.delegation.minAmount").Return("2", nil)
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 1)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(1))
 	assert.EqualError(t, err, ErrAmountLTMinAmountForDelegation.Error())
 }
 
@@ -121,7 +123,49 @@ func testDelegateInsufficientBalanceNoPendingNoCommitted(t *testing.T) {
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(5)
 	testEngine.netp.EXPECT().Get("validators.delegation.minAmount").Return("2", nil)
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 10)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
+	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
+}
+
+func testDelegateInsufficientBalanceCoveringExisting(t *testing.T) {
+	// setup committed delegated state
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 12, 7)
+
+	// party1 has delegation of 10 by now
+	// party1 withraws from their staking account
+	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(5)
+
+	// now they don't have enough cover to their active delegations
+	// trying to delegate the min amount should error with insufficient balance
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
+
+	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
+}
+
+func testDelegateInsufficientBalanceCoveringPending(t *testing.T) {
+	// setup committed delegated state
+	testEngine := getEngine(t)
+	testEngine.topology.nodeToIsValidator["node1"] = true
+	testEngine.topology.nodeToIsValidator["node2"] = true
+	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(10)
+
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(5))
+	require.Nil(t, err)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(5))
+	require.Nil(t, err)
+
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node2", num.NewUint(2))
+	require.Nil(t, err)
+
+	// so party1 has 8 pending delegations in total and they withdraw 5 from their staking account
+	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(5)
+
+	// trying to delegate min amount should error with insufficient balance
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
+	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
+
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(2))
 	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 }
 
@@ -136,29 +180,29 @@ func testDelegateInsufficientBalanceIncludingPendingDelegation(t *testing.T) {
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 
 	// setup pending
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 5)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(5))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 6)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(6))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
 	// by this point party1 has delegated 10 and party2 has delegate 6 which means party1 cannot delegage anything anymore and party2 can deleagate no more than 1
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(2))
 	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(2))
 	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(2))
 	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 }
 
@@ -260,17 +304,17 @@ func testDelegateInsufficientBalanceIncludingCommitted(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 10, 7)
 
 	// by this point party1 has 10 tokens delegated which means they can't delegate anything more
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(2))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
 	// by this point party2 has 5 tokens delegated which means they can delegate 2 more
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(3))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(3))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 }
 
@@ -282,24 +326,24 @@ func testDelegateInsufficientBalanceIncludingPendingAndCommitted(t *testing.T) {
 
 	// setup pending
 	// by this point party1 has 10 tokens delegated which means they can delegate 2 more
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
 	// by this point party2 has 5 tokens delegated which means they can delegate 2 more
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
 	// both parties maxed out their delegation balance
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(2))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(2))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(2))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 }
 
@@ -311,37 +355,37 @@ func testDelegateInsufficientBalanceIncludingPendingUndelegations(t *testing.T) 
 
 	// setup pending
 	// by this point party1 has 10 tokens delegated which means they can delegate 2 more - with the undelegation they can delegate 4
-	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 2)
+	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
 	// by this point party2 has 5 tokens delegated which means they can delegate 2 more - with undelegation they can delegate 4
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", 2)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
 	// try to delegate 1 more than available balance for delegation should fall
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 5)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(5))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 5)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(5))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 5)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(5))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 5)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(5))
 	require.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 
 	// now delegate exacatly the balance available for delegation for success
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(2))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(2))
 	require.Nil(t, err)
 
 }
@@ -354,16 +398,16 @@ func testDelegateSuccesNoCommitted(t *testing.T) {
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(10)
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 5)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(5))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 6)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(6))
 	require.Nil(t, err)
 
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
 	// summary:
@@ -393,10 +437,10 @@ func testDelegateSuccessWithPreviousPendingUndelegateFullyCovered(t *testing.T) 
 	defaultSimpleDelegationState(testEngine, 12, 7)
 
 	// setup pending undelegation
-	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 2)
+	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 2)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(2))
 	require.Nil(t, err)
 
 	// show that the state before delegation matches expectation (i.e. that we have 2 for undelegation from party1 and party2 to node1 and node2 respectively)
@@ -415,11 +459,11 @@ func testDelegateSuccessWithPreviousPendingUndelegateFullyCovered(t *testing.T) 
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
 	// delegte 4 from party 1 to node 1
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 4)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
 	// delegate 5 from party 2 to node2
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 5)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(5))
 	require.Nil(t, err)
 
 	// summary:
@@ -446,10 +490,10 @@ func testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered(t *testing
 	defaultSimpleDelegationState(testEngine, 12, 7)
 
 	// setup pending undelegation
-	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 4)
+	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 3)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
 	// show that the state before delegation matches expectation (i.e. that we have 2 for undelegation from party1 and party2 to node1 and node2 respectively)
@@ -468,11 +512,11 @@ func testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered(t *testing
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
 	// delegte 3 (< the pending undelegation of 4) from party 1 to node 1
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(3))
 	require.Nil(t, err)
 
 	// delegate 2 (< the pending undelegation of 3) from party 2 to node2
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(2))
 	require.Nil(t, err)
 
 	// verify the state
@@ -498,10 +542,10 @@ func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T
 	defaultSimpleDelegationState(testEngine, 12, 7)
 
 	// setup pending undelegation
-	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 4)
+	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 3)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
 	// show that the state before delegation matches expectation (i.e. that we have 2 for undelegation from party1 and party2 to node1 and node2 respectively)
@@ -520,11 +564,11 @@ func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
 	// delegte 4 (= the pending undelegation of 4) from party 1 to node 1
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 4)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
 	// delegate 3 (= the pending undelegation of 3) from party 2 to node2
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
 	// verify the state
@@ -537,7 +581,7 @@ func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T
 /// undelegate
 func testUndelegateInvalidNode(t *testing.T) {
 	testEngine := getEngine(t)
-	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 10)
+	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(10))
 	assert.EqualError(t, err, ErrInvalidNodeID.Error())
 }
 
@@ -550,14 +594,14 @@ func testUndelegateInvalidAmount(t *testing.T) {
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 
 	// first try undelegate with no delegation at all
-	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 10)
+	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(10))
 	assert.Error(t, err, ErrIncorrectTokenAmountForUndelegation)
 
 	// now delegate some token to node1 and try to undelegate more than the balance
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 5)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(5))
 	assert.Nil(t, err)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 6)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(6))
 	assert.Error(t, err, ErrIncorrectTokenAmountForUndelegation)
 }
 
@@ -568,10 +612,10 @@ func testUndelegateSuccessNoPreviousPending(t *testing.T) {
 	defaultSimpleDelegationState(testEngine, 12, 7)
 
 	// setup pending undelegation
-	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 2)
+	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 2)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(2))
 	require.Nil(t, err)
 
 	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].totalUndelegation)
@@ -589,10 +633,10 @@ func testUndelegateSuccessNoPreviousPending(t *testing.T) {
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
 	// undelegate everything now
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 4)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 1)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(1))
 	require.Nil(t, err)
 
 	// check that the state has updated correctly
@@ -611,10 +655,10 @@ func testUndelegateSuccessNoPreviousPending(t *testing.T) {
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
 	// trying to further undelegate will get an error
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 1)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(1))
 	assert.Error(t, err, ErrIncorrectTokenAmountForUndelegation)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 1)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(1))
 	assert.Error(t, err, ErrIncorrectTokenAmountForUndelegation)
 }
 
@@ -627,20 +671,20 @@ func testUndelegateSuccessWithPreviousPendingDelegatePartiallyCovered(t *testing
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 10)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(2))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 4)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(4))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 6)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(6))
 	require.Nil(t, err)
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 4)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", 4)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
 	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalUndelegation)
@@ -668,24 +712,24 @@ func testUndelegateSuccessWithPreviousPendingDelegateExactlyCovered(t *testing.T
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 10)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(2))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 4)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(4))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 6)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(6))
 	require.Nil(t, err)
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 4)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node2", 2)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node2", num.NewUint(2))
 	require.Nil(t, err)
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", 4)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(4))
 	require.Nil(t, err)
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 3)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
 	require.Equal(t, 0, len(testEngine.engine.pendingState))
@@ -697,20 +741,20 @@ func testUndelegateSuccessWithPreviousPendingDelegateFullyCovered(t *testing.T) 
 	testEngine := getEngine(t)
 	setupDefaultDelegationState(testEngine, 15, 10)
 
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(3))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", 3)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(3))
 	require.Nil(t, err)
-	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(2))
 	require.Nil(t, err)
 
 	// now undelegate more than pending delegation so that all pending delegation for a node is removed and pending undelegation is added
 
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 7)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(7))
 	require.Nil(t, err)
-	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 4)
+	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(4))
 	require.Nil(t, err)
 
 	// party1 had pending delegation of 2 for node1 so now it should have pending undelegation of 5
@@ -1024,8 +1068,8 @@ func testPendingUndelegationGTDelegateddBalance(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// undelegate
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 6)
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 3)
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(6))
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(3))
 
 	// update the delegation state to reflect forced undelegation taking place due to party withdrawing from their staking account so that
 	// by the time the delegation command is executed the delegated balance is lower than the undelegated amount
@@ -1085,8 +1129,8 @@ func testPendingUndelegationLTDelegateddBalance(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// trying to undelegate more than the node has delegated from the party should just undelegate everything the party has on the node
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 3)
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 1)
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(3))
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(1))
 
 	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"})
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState["node1"].partyToAmount))
@@ -1116,8 +1160,8 @@ func testPendingUndelegationAllBalanceForParty(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// trying to undelegate more than the node has delegated from the party should just undelegate everything the party has on the node
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 6)
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 3)
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(6))
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(3))
 
 	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"})
 	require.Equal(t, 1, len(testEngine.engine.nodeDelegationState["node1"].partyToAmount))
@@ -1141,8 +1185,8 @@ func testPendingUndelegationAllBalanceForNode(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// trying to undelegate more than the node has delegated from the party should just undelegate everything the party has on the node
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", 6)
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", 2)
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(6))
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(2))
 
 	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"})
 	require.Equal(t, 1, len(testEngine.engine.nodeDelegationState))
@@ -1179,7 +1223,7 @@ func testPendingDelegationInsufficientBalance(t *testing.T) {
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", 10)
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(8)
 	testEngine.engine.processPendingDelegations([]string{}, num.NewUint(10))
 	require.Equal(t, 0, len(testEngine.engine.nodeDelegationState))
@@ -1193,7 +1237,7 @@ func testPendingDelegationValidatorAllocationMaxedOut(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1 has sufficient balance in their staking account to delegate 2 more
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 
 	// expect the state hasn't changed and the delegation request has been ignored
 	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(8))
@@ -1212,7 +1256,7 @@ func testPendingDelegationAmountAdjusted(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1 has sufficient balance in their staking account to delegate 2 more
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 
 	// the delegation amount has been adjusted to 1 and is added to the state
 	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(9))
@@ -1232,7 +1276,7 @@ func testPendingDelegationSuccess(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1 has sufficient balance in their staking account to delegate 2 more
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 
 	// the delegation has been applied on the state
 	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(10))
@@ -1251,8 +1295,8 @@ func testProcessPending(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1 has sufficient balance in their staking account to delegate 2 more
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", 1)
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(1))
 
 	// the delegation has been applied on the state
 	testEngine.netp.EXPECT().Get("validators.delegation.maxStakePerValidator").AnyTimes().Return("100", nil)
@@ -1285,8 +1329,8 @@ func testGetValidatorsSuccess(t *testing.T) {
 	testEngine.topology.nodeToIsValidator["node2"] = true
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
-	testEngine.engine.Delegate(context.Background(), "party2", "node2", 5)
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
+	testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(5))
 	testEngine.netp.EXPECT().Get("validators.delegation.maxStakePerValidator").AnyTimes().Return("100", nil)
 	testEngine.engine.processPending(context.Background())
 	validators := testEngine.engine.getValidatorData()
@@ -1306,26 +1350,26 @@ func testGetValidatorsSuccess(t *testing.T) {
 func testUndelegateNowIncorrectAmount(t *testing.T) {
 	testEngine := getEngine(t)
 
-	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 10)
+	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(10))
 	require.EqualError(t, err, ErrIncorrectTokenAmountForUndelegation.Error())
 
 	// setup delegation state
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// party1/node1 has 6 delegated, try to undelegate 8
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 8)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(8))
 	require.EqualError(t, err, ErrIncorrectTokenAmountForUndelegation.Error())
 
 	// add pending delegation of 2
-	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
 	// party1 have 8 delegated in total to node1 (6 committed 2 pending) - try to undelegate 10 should error
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 10)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(10))
 	require.EqualError(t, err, ErrIncorrectTokenAmountForUndelegation.Error())
 
 	// show that undelegating 8 doesn't error
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 8)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(8))
 	require.Nil(t, err)
 }
 
@@ -1335,10 +1379,10 @@ func testUndelegateNowAllWithPendingOnly(t *testing.T) {
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.topology.nodeToIsValidator["node2"] = true
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(30)
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", 10)
-	testEngine.engine.Delegate(context.Background(), "party1", "node2", 10)
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
+	testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(10))
 
-	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 0)
+	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
@@ -1355,7 +1399,7 @@ func testUndelegateNowAllWithCommittedOnly(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// undelegate now all for party1 node1
-	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 0)
+	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
 	require.Nil(t, err)
 
 	require.Equal(t, 0, len(testEngine.engine.pendingState))
@@ -1368,7 +1412,7 @@ func testUndelegateNowAllWithCommittedOnly(t *testing.T) {
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
 
 	// undelegate now all for party1 node2
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", 0)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.Zero())
 	require.Nil(t, err)
 	require.Equal(t, 0, len(testEngine.engine.pendingState))
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
@@ -1380,11 +1424,11 @@ func testUndelegateNowAll(t *testing.T) {
 	// setup delegation state
 	setupDefaultDelegationState(testEngine, 12, 7)
 
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 2)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
 
 	// undelegate now all for party1 node1 both committed and pending state should update
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 0)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
 	require.Nil(t, err)
 
 	require.Equal(t, 0, len(testEngine.engine.pendingState))
@@ -1397,7 +1441,7 @@ func testUndelegateNowAll(t *testing.T) {
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
 
 	// undelegate now all for party1 node2
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", 0)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.Zero())
 	require.Nil(t, err)
 	require.Equal(t, 0, len(testEngine.engine.pendingState))
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
@@ -1409,10 +1453,10 @@ func testUndelegateNowWithPendingOnly(t *testing.T) {
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.topology.nodeToIsValidator["node2"] = true
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(30)
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", 10)
-	testEngine.engine.Delegate(context.Background(), "party1", "node2", 10)
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
+	testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(10))
 
-	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 5)
+	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(5))
 	require.Nil(t, err)
 
 	require.Equal(t, 2, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
@@ -1429,7 +1473,7 @@ func testUndelegateNowWithCommittedOnly(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 12, 7)
 
 	// undelegate now all for party1 node1
-	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 4)
+	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
 	require.Equal(t, 0, len(testEngine.engine.pendingState))
@@ -1450,11 +1494,11 @@ func testUndelegateNowPendingCovers(t *testing.T) {
 	// setup delegation state
 	setupDefaultDelegationState(testEngine, 13, 7)
 
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 3)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(3))
 	require.Nil(t, err)
 
 	// undelegate now all for party1 node1
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 3)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
 	require.Nil(t, err)
 
 	// pending state should have cleared
@@ -1475,11 +1519,11 @@ func testUndelegateNowCommittedCovers(t *testing.T) {
 	// setup delegation state
 	setupDefaultDelegationState(testEngine, 13, 7)
 
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 3)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(3))
 	require.Nil(t, err)
 
 	// undelegate now for party1 node1
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 7)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(7))
 	require.Nil(t, err)
 
 	// pending state cleared
@@ -1503,11 +1547,11 @@ func testUndelegateNowAllCleared(t *testing.T) {
 	// setup delegation state
 	setupDefaultDelegationState(testEngine, 13, 7)
 
-	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", 3)
+	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(3))
 	require.Nil(t, err)
 
 	// undelegate now for party1 node1
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", 9)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(9))
 	require.Nil(t, err)
 
 	// pending state cleared
@@ -1521,7 +1565,7 @@ func testUndelegateNowAllCleared(t *testing.T) {
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
 
 	// undelegate now all for party1 node2
-	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", 4)
+	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.NewUint(4))
 	require.Nil(t, err)
 	require.Equal(t, 0, len(testEngine.engine.pendingState))
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
