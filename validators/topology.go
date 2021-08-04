@@ -26,7 +26,6 @@ type Wallet interface {
 // Broker needs no mocks
 type Broker interface {
 	Send(event events.Event)
-	SendBatch(events []events.Event)
 }
 
 type ValidatorData struct {
@@ -100,7 +99,8 @@ func (t *Topology) Exists(key []byte) bool {
 	return ok
 }
 
-func (t *Topology) GetByKey(key []byte) *ValidatorData {
+// Get returns validator data based on validator public key
+func (t *Topology) Get(key []byte) *ValidatorData {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	tmPubKey, ok := t.vegaValidatorRefs[string(key)]
@@ -108,8 +108,8 @@ func (t *Topology) GetByKey(key []byte) *ValidatorData {
 		return nil
 	}
 
-	tmPubKeyBase64 := hex.EncodeToString([]byte(tmPubKey))
-	if data, ok := t.validators[tmPubKeyBase64]; ok {
+	tmPubKey = hex.EncodeToString([]byte(tmPubKey))
+	if data, ok := t.validators[tmPubKey]; ok {
 		return &data
 	}
 

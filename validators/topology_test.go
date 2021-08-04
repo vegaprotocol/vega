@@ -182,7 +182,7 @@ func testGetByKey(t *testing.T) {
 		Country: nr.Country,
 	}
 
-	actualData := top.GetByKey(nr.PubKey)
+	actualData := top.Get(nr.PubKey)
 	assert.NotNil(t, actualData)
 
 	assert.Equal(t, expectedData, actualData)
