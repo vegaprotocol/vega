@@ -14,10 +14,13 @@ pipeline {
     agent { label 'general' }
     options {
         skipDefaultCheckout true
+        timestamps()
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
         string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
+        string(name: 'SPECS_INTERNAL_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/specs-internal repository')
+        string(name: 'PROTOS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/protos repository')
     }
     environment {
         CGO_ENABLED = 0
@@ -29,44 +32,24 @@ pipeline {
         stage('Git clone') {
             parallel {
                 stage('vega core') {
+                    options { retry(3) }
                     steps {
                         sh 'printenv'
                         echo "${params}"
-                        retry(3) {
-                            dir('vega') {
-                                script {
-                                    scmVars = checkout(scm)
-                                    versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
-                                    version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
-                                }
-                            }
-                        }
-                    }
-                }
-                stage('system-tests') {
-                    steps {
-                        retry(3) {
-                            dir('system-tests') {
-                                git branch: "${params.SYSTEM_TESTS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/system-tests.git'
-                            }
-                        }
-                    }
-                }
-                stage('devops-infra') {
-                    steps {
-                        retry(3) {
-                            dir('devops-infra') {
-                                git branch: "${params.DEVOPS_INFRA_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/devops-infra.git'
+                        dir('vega') {
+                            script {
+                                scmVars = checkout(scm)
+                                versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
+                                version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
                             }
                         }
                     }
                 }
                 stage('specs-internal') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('specs-internal') {
-                                git branch: 'master', credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/specs-internal.git'
-                            }
+                        dir('specs-internal') {
+                            git branch: "${params.SPECS_INTERNAL_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/specs-internal.git'
                         }
                     }
                 }
@@ -74,11 +57,10 @@ pipeline {
         }
 
         stage('go mod download deps') {
+            options { retry(3) }
             steps {
-                retry(3) {
-                    dir('vega') {
-                        sh 'go mod download -x'
-                    }
+                dir('vega') {
+                    sh 'go mod download -x'
                 }
             }
         }
@@ -95,17 +77,16 @@ pipeline {
                         GOARCH       = 'amd64'
                         OUTPUT       = './cmd/vega/vega-linux-amd64'
                     }
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh label: 'Compile', script: '''
-                                    go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
-                                '''
-                                sh label: 'Sanity check', script: '''
-                                    file ${OUTPUT}
-                                    ${OUTPUT} version
-                                '''
-                            }
+                        dir('vega') {
+                            sh label: 'Compile', script: '''
+                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                            '''
+                            sh label: 'Sanity check', script: '''
+                                file ${OUTPUT}
+                                ${OUTPUT} version
+                            '''
                         }
                     }
                 }
@@ -115,16 +96,15 @@ pipeline {
                         GOARCH       = 'amd64'
                         OUTPUT       = './cmd/vega/vega-darwin-amd64'
                     }
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh label: 'Compile', script: '''
-                                    go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
-                                '''
-                                sh label: 'Sanity check', script: '''
-                                    file ${OUTPUT}
-                                '''
-                            }
+                        dir('vega') {
+                            sh label: 'Compile', script: '''
+                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                            '''
+                            sh label: 'Sanity check', script: '''
+                                file ${OUTPUT}
+                            '''
                         }
                     }
                 }
@@ -134,16 +114,15 @@ pipeline {
                         GOARCH       = 'amd64'
                         OUTPUT       = './cmd/vega/vega-windows-amd64'
                     }
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh label: 'Compile', script: '''
-                                    go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
-                                '''
-                                sh label: 'Sanity check', script: '''
-                                    file ${OUTPUT}
-                                '''
-                            }
+                        dir('vega') {
+                            sh label: 'Compile', script: '''
+                                go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                            '''
+                            sh label: 'Sanity check', script: '''
+                                file ${OUTPUT}
+                            '''
                         }
                     }
                 }
@@ -152,11 +131,10 @@ pipeline {
 
         // these stages are run in sequence as they delete and recreate files
         stage('Run gqlgen codgen checks') {
+            options { retry(3) }
             steps {
-                retry(3) {
-                    dir('vega') {
-                        sh 'make gqlgen_check'
-                    }
+                dir('vega') {
+                    sh 'make gqlgen_check'
                 }
             }
         }
@@ -164,86 +142,77 @@ pipeline {
         stage('Run linters') {
             parallel {
                 stage('buf lint') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'buf lint'
-                            }
+                        dir('vega') {
+                            sh 'buf lint'
                         }
                     }
                 }
                 stage('static check') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
-                            }
+                        dir('vega') {
+                            sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
                         }
                     }
                 }
                 stage('go vet') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'go vet ./...'
-                            }
+                        dir('vega') {
+                            sh 'go vet ./...'
                         }
                     }
                 }
                 stage('check print') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'make print_check'
-                            }
+                        dir('vega') {
+                            sh 'make print_check'
                         }
                     }
                 }
                 stage('misspell') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'golangci-lint run --disable-all --enable misspell'
-                            }
+                        dir('vega') {
+                            sh 'golangci-lint run --disable-all --enable misspell'
                         }
                     }
                 }
                 stage('shellcheck') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh "git ls-files '*.sh'"
-                                sh "git ls-files '*.sh' | xargs shellcheck"
-                            }
+                        dir('vega') {
+                            sh "git ls-files '*.sh'"
+                            sh "git ls-files '*.sh' | xargs shellcheck"
                         }
                     }
                 }
                 stage('yamllint') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh "git ls-files '*.yml' '*.yaml'"
-                                sh "git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 160}}}'"
-                            }
+                        dir('vega') {
+                            sh "git ls-files '*.yml' '*.yaml'"
+                            sh "git ls-files '*.yml' '*.yaml' | xargs yamllint -s -d '{extends: default, rules: {line-length: {max: 160}}}'"
                         }
                     }
                 }
                 stage('json format') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh "git ls-files '*.json'"
-                                sh "for f in \$(git ls-files '*.json'); do echo \"check \$f\"; jq empty \"\$f\"; done"
-                            }
+                        dir('vega') {
+                            sh "git ls-files '*.json'"
+                            sh "for f in \$(git ls-files '*.json'); do echo \"check \$f\"; jq empty \"\$f\"; done"
                         }
                     }
                 }
                 stage('markdown spellcheck') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
-                            }
+                        dir('vega') {
+                            sh 'mdspell --en-gb --ignore-acronyms --ignore-numbers --no-suggestions --report "*.md" "docs/**/*.md"'
                         }
                     }
                 }
@@ -253,49 +222,38 @@ pipeline {
         stage('Run tests') {
             parallel {
                 stage('unit tests with race') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
-                                junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
-                            }
+                        dir('vega') {
+                            sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                            junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                         }
                     }
                 }
                 stage('unit tests') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
-                                junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
-                            }
+                        dir('vega') {
+                            sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                            junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
                         }
                     }
                 }
                 stage('vega/integration tests') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega/integration') {
-                                sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
-                                junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
-                            }
+                        dir('vega/integration') {
+                            sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
+                            junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
                         }
                     }
                 }
                 stage('specs-internal qa-scenarios') {
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega/integration') {
-                                sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
-                                junit checksName: 'Specs Tests (specs-internal)', testResults: 'specs-internal-qa-scenarios-report.xml'
-                            }
-                        }
-                    }
-                }
-                stage('[TODO] system-tests') {
-                    steps {
-                        dir('system-tests') {
-                            echo 'Run system-tests'
+                        dir('vega/integration') {
+                            sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
+                            junit checksName: 'Specs Tests (specs-internal)', testResults: 'specs-internal-qa-scenarios-report.xml'
                         }
                     }
                 }
@@ -320,35 +278,34 @@ pipeline {
                         DOCKER_IMAGE_TAG_2 = "${ env.TAG_NAME ? 'latest' : 'edge' }"
                         DOCKER_IMAGE_NAME_2 = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_2}"
                     }
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                    sh label: 'Log in to a Docker registry', script: '''
-                                        echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
-                                    '''
-                                }
-                                sh label: 'Build docker image', script: '''#!/bin/bash -e
-                                    mkdir -p docker/bin
-                                    cp -a "cmd/vega/vega-linux-amd64" "docker/bin/vega"
-                                    docker build -t "${DOCKER_IMAGE_NAME}" docker/
-                                    rm -rf docker/bin
+                        dir('vega') {
+                            withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                                sh label: 'Log in to a Docker registry', script: '''
+                                    echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin docker.pkg.github.com
                                 '''
-                                sh label: 'Sanity check', script: '''
-                                    docker run --rm --entrypoint "" "${DOCKER_IMAGE_NAME}" vega version
-                                '''
-                                sh label: 'Push docker image', script: '''#!/bin/bash -e
-                                    docker image tag "${DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_2}"
-                                    docker push "${DOCKER_IMAGE_NAME}"
-                                    docker push "${DOCKER_IMAGE_NAME_2}"
-                                    docker rmi "${DOCKER_IMAGE_NAME}"
-                                '''
-                                slackSend(
-                                    channel: "#tradingcore-notify",
-                                    color: "good",
-                                    message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}` aka `${DOCKER_IMAGE_NAME_2}`",
-                                )
                             }
+                            sh label: 'Build docker image', script: '''#!/bin/bash -e
+                                mkdir -p docker/bin
+                                cp -a "cmd/vega/vega-linux-amd64" "docker/bin/vega"
+                                docker build -t "${DOCKER_IMAGE_NAME}" docker/
+                                rm -rf docker/bin
+                            '''
+                            sh label: 'Sanity check', script: '''
+                                docker run --rm --entrypoint "" "${DOCKER_IMAGE_NAME}" vega version
+                            '''
+                            sh label: 'Push docker image', script: '''#!/bin/bash -e
+                                docker image tag "${DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_2}"
+                                docker push "${DOCKER_IMAGE_NAME}"
+                                docker push "${DOCKER_IMAGE_NAME_2}"
+                                docker rmi "${DOCKER_IMAGE_NAME}"
+                            '''
+                            slackSend(
+                                channel: "#tradingcore-notify",
+                                color: "good",
+                                message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}` aka `${DOCKER_IMAGE_NAME_2}`",
+                            )
                         }
                     }
                     post {
@@ -371,26 +328,25 @@ pipeline {
                     environment {
                         RELEASE_URL = "https://github.com/vegaprotocol/vega/releases/tag/${TAG_NAME}"
                     }
+                    options { retry(3) }
                     steps {
-                        retry(3) {
-                            dir('vega') {
-                                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
-                                    // Workaround for user input:
-                                    //  - global configuration: 'gh config set prompt disabled'
-                                    sh label: 'Log in to a Gihub with CI', script: '''
-                                        echo ${TOKEN} | gh auth login --with-token -h github.com
-                                    '''
-                                }
-                                sh label: 'Upload artifacts', script: '''#!/bin/bash -e
-                                    [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                    gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+                        dir('vega') {
+                            withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
+                                // Workaround for user input:
+                                //  - global configuration: 'gh config set prompt disabled'
+                                sh label: 'Log in to a Gihub with CI', script: '''
+                                    echo ${TOKEN} | gh auth login --with-token -h github.com
                                 '''
-                                slackSend(
-                                    channel: "#tradingcore-notify",
-                                    color: "good",
-                                    message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
-                                )
                             }
+                            sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+                            '''
+                            slackSend(
+                                channel: "#tradingcore-notify",
+                                color: "good",
+                                message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
+                            )
                         }
                     }
                     post {
@@ -410,6 +366,7 @@ pipeline {
                     when {
                         branch 'develop'
                     }
+                    options { retry(3) }
                     steps {
                         echo 'Deploying to Devnet....'
                         echo 'Run basic tests on Devnet network ...'
