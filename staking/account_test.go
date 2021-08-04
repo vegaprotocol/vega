@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/staking"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
@@ -25,13 +26,13 @@ func TestStakingAccount(t *testing.T) {
 func testGetAvailableBalanceInRange(t *testing.T) {
 	acc := staking.NewStakingAccount(testParty)
 	cases := []struct {
-		evt    staking.StakingEvent
+		evt    types.StakingEvent
 		expect error
 	}{
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid1",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -39,9 +40,9 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid2",
-				Kind:   staking.StakingEventKindRemoved,
+				Kind:   types.StakingEventKindRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -49,9 +50,9 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid3",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -59,9 +60,9 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid4",
-				Kind:   staking.StakingEventKindRemoved,
+				Kind:   types.StakingEventKindRemoved,
 				TS:     125,
 				Party:  testParty,
 				Amount: num.NewUint(6),
@@ -110,13 +111,13 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 func testGetAvailableBalanceAt(t *testing.T) {
 	acc := staking.NewStakingAccount(testParty)
 	cases := []struct {
-		evt    staking.StakingEvent
+		evt    types.StakingEvent
 		expect error
 	}{
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid1",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -124,9 +125,9 @@ func testGetAvailableBalanceAt(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid2",
-				Kind:   staking.StakingEventKindRemoved,
+				Kind:   types.StakingEventKindRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -134,9 +135,9 @@ func testGetAvailableBalanceAt(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid3",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -170,17 +171,17 @@ func testEventSorting(t *testing.T) {
 	// second one is a deposit
 	// so we would expect at the end for the events to
 	// be sorted and return the actual balance
-	evts := []staking.StakingEvent{
+	evts := []types.StakingEvent{
 		{
 			ID:     "someid2",
-			Kind:   staking.StakingEventKindRemoved,
+			Kind:   types.StakingEventKindRemoved,
 			TS:     100,
 			Party:  testParty,
 			Amount: num.NewUint(1),
 		},
 		{
 			ID:     "someid1",
-			Kind:   staking.StakingEventKindDeposited,
+			Kind:   types.StakingEventKindDeposited,
 			TS:     100,
 			Party:  testParty,
 			Amount: num.NewUint(100),
@@ -205,13 +206,13 @@ func testEventErrorValidation(t *testing.T) {
 	acc := staking.NewStakingAccount(testParty)
 
 	cases := []struct {
-		evt    staking.StakingEvent
+		evt    types.StakingEvent
 		expect error
 	}{
 		{ // invalid id
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -219,7 +220,7 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrMissingEventID,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid",
 				Kind:   10,
 				TS:     100,
@@ -229,9 +230,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrInvalidEventKind,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     0,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -239,9 +240,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrMissingTimestamp,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.Zero(),
@@ -249,9 +250,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrInvalidAmount,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     100,
 				Party:  "not-a-party",
 				Amount: num.NewUint(10),
@@ -259,9 +260,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrInvalidParty,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -269,9 +270,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: staking.StakingEvent{
+			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   staking.StakingEventKindDeposited,
+				Kind:   types.StakingEventKindDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),

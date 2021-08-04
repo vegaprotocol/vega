@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -21,22 +22,22 @@ var (
 type StakingAccount struct {
 	Party   string
 	Balance *num.Uint
-	Events  []*StakingEvent
+	Events  []*types.StakingEvent
 }
 
 func NewStakingAccount(party string) *StakingAccount {
 	return &StakingAccount{
 		Party:   party,
 		Balance: num.Zero(),
-		Events:  []*StakingEvent{},
+		Events:  []*types.StakingEvent{},
 	}
 }
 
-func (s *StakingAccount) validateEvent(evt *StakingEvent) error {
+func (s *StakingAccount) validateEvent(evt *types.StakingEvent) error {
 	if evt.Amount == nil || evt.Amount.IsZero() {
 		return ErrInvalidAmount
 	}
-	if evt.Kind != StakingEventKindDeposited && evt.Kind != StakingEventKindRemoved {
+	if evt.Kind != types.StakingEventKindDeposited && evt.Kind != types.StakingEventKindRemoved {
 		return ErrInvalidEventKind
 	}
 	if evt.TS <= 0 {
@@ -59,7 +60,7 @@ func (s *StakingAccount) validateEvent(evt *StakingEvent) error {
 }
 
 // AddEvent will add a new event to the account
-func (s *StakingAccount) AddEvent(evt *StakingEvent) error {
+func (s *StakingAccount) AddEvent(evt *types.StakingEvent) error {
 	if err := s.validateEvent(evt); err != nil {
 		return err
 	}
@@ -84,9 +85,9 @@ func (s *StakingAccount) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) 
 	for i := 0; i < len(s.Events) && s.Events[i].TS <= atUnix; i++ {
 		evt := s.Events[i]
 		switch evt.Kind {
-		case StakingEventKindDeposited:
+		case types.StakingEventKindDeposited:
 			balance.Add(balance, evt.Amount)
-		case StakingEventKindRemoved:
+		case types.StakingEventKindRemoved:
 			if balance.LT(evt.Amount) {
 				return num.Zero(), ErrNegativeBalance
 			}
@@ -109,9 +110,9 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 	for ; i < len(s.Events) && s.Events[i].TS <= fromUnix; i++ {
 		evt := s.Events[i]
 		switch evt.Kind {
-		case StakingEventKindDeposited:
+		case types.StakingEventKindDeposited:
 			balance.Add(balance, evt.Amount)
-		case StakingEventKindRemoved:
+		case types.StakingEventKindRemoved:
 			if balance.LT(evt.Amount) {
 				return num.Zero(), ErrNegativeBalance
 			}
@@ -131,9 +132,9 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 	for ; i < len(s.Events) && s.Events[i].TS <= toUnix; i++ {
 		evt := s.Events[i]
 		switch evt.Kind {
-		case StakingEventKindDeposited:
+		case types.StakingEventKindDeposited:
 			deposited.Add(deposited, evt.Amount)
-		case StakingEventKindRemoved:
+		case types.StakingEventKindRemoved:
 			withdrawn.Add(withdrawn, evt.Amount)
 		}
 	}
@@ -164,9 +165,9 @@ func (s *StakingAccount) computeOngoingBalance() error {
 	balance := num.Zero()
 	for _, v := range s.Events {
 		switch v.Kind {
-		case StakingEventKindDeposited:
+		case types.StakingEventKindDeposited:
 			balance.Add(balance, v.Amount)
-		case StakingEventKindRemoved:
+		case types.StakingEventKindRemoved:
 			if balance.LT(v.Amount) {
 				return ErrNegativeBalance
 			}
@@ -177,7 +178,7 @@ func (s *StakingAccount) computeOngoingBalance() error {
 	return nil
 }
 
-func (s *StakingAccount) insertSorted(evt *StakingEvent) {
+func (s *StakingAccount) insertSorted(evt *types.StakingEvent) {
 	s.Events = append(s.Events, evt)
 	// sort anyway, but we would expect the events to come in a sorted manner
 	sort.SliceStable(s.Events, func(i, j int) bool {
@@ -185,7 +186,7 @@ func (s *StakingAccount) insertSorted(evt *StakingEvent) {
 		if s.Events[i].TS == s.Events[j].TS {
 			// now we want to put deposit first to avoid any remove
 			// event before a withdraw
-			if s.Events[i].Kind == StakingEventKindRemoved && s.Events[j].Kind == StakingEventKindDeposited {
+			if s.Events[i].Kind == types.StakingEventKindRemoved && s.Events[j].Kind == types.StakingEventKindDeposited {
 				// we return false so they can switched
 				return false
 			}

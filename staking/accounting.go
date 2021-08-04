@@ -1,10 +1,12 @@
 package staking
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -24,7 +26,7 @@ func NewAccounting(log *logging.Logger) *Accounting {
 	}
 }
 
-func (a *Accounting) AddEvent(evt *StakingEvent) {
+func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakingEvent) {
 	acc, ok := a.accounts[evt.Party]
 	if !ok {
 		acc = NewStakingAccount(evt.Party)
@@ -37,10 +39,15 @@ func (a *Accounting) AddEvent(evt *StakingEvent) {
 	// or errors from event being received in the wrong order
 	// but that we cannot really prevent and that the account
 	// would recover from by itself later on.
-	if err := acc.AddEvent(evt); err != nil {
+	// Negative balance is possible when processing orders in disorder,
+	// not a big deal
+	if err := acc.AddEvent(evt); err != nil && err != ErrNegativeBalance {
 		a.log.Error("could not add event to staking account",
 			logging.Error(err))
+		return
 	}
+
+	// broker.Send(events.NewStakingEvent(ctx, evt))
 }
 
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {
