@@ -32,14 +32,15 @@ func New(cfg Config, log *logging.Logger) *Engine {
 func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) error {
 	e.log.Debug("loading genesis configuration")
 	state, err := LoadGenesisState(rawState)
-	if err != nil {
+	if err != nil && err != ErrNoLimitsGenesisState {
 		e.log.Error("unable to load genesis state",
 			logging.Error(err))
 		return err
 	}
 
-	if err != nil && err != ErrNoLimitsGenesisState {
-		return err
+	if err == ErrNoLimitsGenesisState {
+		defaultState := DefaultGenesisState()
+		state = &defaultState
 	}
 
 	// set enabled by default if not genesis state

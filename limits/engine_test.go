@@ -41,6 +41,7 @@ func (l *limitsTest) loadGenesisState(t *testing.T, lstate *limits.GenesisState)
 
 func TestLimits(t *testing.T) {
 	t.Run("test empty genesis", testEmptyGenesis)
+	t.Run("test nil genesis", testNilGenesis)
 	t.Run("test all disabled", testAllDisabled)
 	t.Run("test all enabled", testAllEnabled)
 	t.Run("test market enabled asset disabled", testMarketEnabledAssetDisabled)
@@ -57,9 +58,24 @@ func testEmptyGenesis(t *testing.T) {
 	assert.False(t, lmts.CanTrade())
 }
 
+func testNilGenesis(t *testing.T) {
+	lmts := getLimitsTest()
+	lmts.loadGenesisState(t, nil)
+
+	// need to call onTick
+	lmts.OnTick(context.Background(), time.Unix(1000, 0))
+
+	assert.True(t, lmts.CanProposeAsset())
+	assert.True(t, lmts.CanProposeMarket())
+	assert.True(t, lmts.CanTrade())
+}
+
 func testAllDisabled(t *testing.T) {
 	lmts := getLimitsTest()
 	lmts.loadGenesisState(t, &limits.GenesisState{})
+
+	// need to call onTick
+	lmts.OnTick(context.Background(), time.Unix(1000, 0))
 
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanProposeMarket())
