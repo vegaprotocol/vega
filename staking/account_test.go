@@ -32,7 +32,7 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid1",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -42,7 +42,7 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid2",
-				Kind:   types.StakingEventKindRemoved,
+				Type:   types.StakingEventTypeRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -52,7 +52,7 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid3",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -62,7 +62,7 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid4",
-				Kind:   types.StakingEventKindRemoved,
+				Type:   types.StakingEventTypeRemoved,
 				TS:     125,
 				Party:  testParty,
 				Amount: num.NewUint(6),
@@ -117,7 +117,7 @@ func testGetAvailableBalanceAt(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid1",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -127,7 +127,7 @@ func testGetAvailableBalanceAt(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid2",
-				Kind:   types.StakingEventKindRemoved,
+				Type:   types.StakingEventTypeRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -137,7 +137,7 @@ func testGetAvailableBalanceAt(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid3",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -174,14 +174,14 @@ func testEventSorting(t *testing.T) {
 	evts := []types.StakingEvent{
 		{
 			ID:     "someid2",
-			Kind:   types.StakingEventKindRemoved,
+			Type:   types.StakingEventTypeRemoved,
 			TS:     100,
 			Party:  testParty,
 			Amount: num.NewUint(1),
 		},
 		{
 			ID:     "someid1",
-			Kind:   types.StakingEventKindDeposited,
+			Type:   types.StakingEventTypeDeposited,
 			TS:     100,
 			Party:  testParty,
 			Amount: num.NewUint(100),
@@ -212,7 +212,7 @@ func testEventErrorValidation(t *testing.T) {
 		{ // invalid id
 			evt: types.StakingEvent{
 				ID:     "",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -222,7 +222,7 @@ func testEventErrorValidation(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   10,
+				Type:   10,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -232,7 +232,7 @@ func testEventErrorValidation(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     0,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -242,7 +242,7 @@ func testEventErrorValidation(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.Zero(),
@@ -252,7 +252,7 @@ func testEventErrorValidation(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  "not-a-party",
 				Amount: num.NewUint(10),
@@ -262,7 +262,7 @@ func testEventErrorValidation(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -272,7 +272,7 @@ func testEventErrorValidation(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),

@@ -37,7 +37,7 @@ func (s *StakingAccount) validateEvent(evt *types.StakingEvent) error {
 	if evt.Amount == nil || evt.Amount.IsZero() {
 		return ErrInvalidAmount
 	}
-	if evt.Kind != types.StakingEventKindDeposited && evt.Kind != types.StakingEventKindRemoved {
+	if evt.Type != types.StakingEventTypeDeposited && evt.Type != types.StakingEventTypeRemoved {
 		return ErrInvalidEventKind
 	}
 	if evt.TS <= 0 {
@@ -84,10 +84,10 @@ func (s *StakingAccount) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) 
 	)
 	for i := 0; i < len(s.Events) && s.Events[i].TS <= atUnix; i++ {
 		evt := s.Events[i]
-		switch evt.Kind {
-		case types.StakingEventKindDeposited:
+		switch evt.Type {
+		case types.StakingEventTypeDeposited:
 			balance.Add(balance, evt.Amount)
-		case types.StakingEventKindRemoved:
+		case types.StakingEventTypeRemoved:
 			if balance.LT(evt.Amount) {
 				return num.Zero(), ErrNegativeBalance
 			}
@@ -109,10 +109,10 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 	)
 	for ; i < len(s.Events) && s.Events[i].TS <= fromUnix; i++ {
 		evt := s.Events[i]
-		switch evt.Kind {
-		case types.StakingEventKindDeposited:
+		switch evt.Type {
+		case types.StakingEventTypeDeposited:
 			balance.Add(balance, evt.Amount)
-		case types.StakingEventKindRemoved:
+		case types.StakingEventTypeRemoved:
 			if balance.LT(evt.Amount) {
 				return num.Zero(), ErrNegativeBalance
 			}
@@ -131,10 +131,10 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 	)
 	for ; i < len(s.Events) && s.Events[i].TS <= toUnix; i++ {
 		evt := s.Events[i]
-		switch evt.Kind {
-		case types.StakingEventKindDeposited:
+		switch evt.Type {
+		case types.StakingEventTypeDeposited:
 			deposited.Add(deposited, evt.Amount)
-		case types.StakingEventKindRemoved:
+		case types.StakingEventTypeRemoved:
 			withdrawn.Add(withdrawn, evt.Amount)
 		}
 	}
@@ -164,10 +164,10 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 func (s *StakingAccount) computeOngoingBalance() error {
 	balance := num.Zero()
 	for _, v := range s.Events {
-		switch v.Kind {
-		case types.StakingEventKindDeposited:
+		switch v.Type {
+		case types.StakingEventTypeDeposited:
 			balance.Add(balance, v.Amount)
-		case types.StakingEventKindRemoved:
+		case types.StakingEventTypeRemoved:
 			if balance.LT(v.Amount) {
 				return ErrNegativeBalance
 			}
@@ -186,7 +186,7 @@ func (s *StakingAccount) insertSorted(evt *types.StakingEvent) {
 		if s.Events[i].TS == s.Events[j].TS {
 			// now we want to put deposit first to avoid any remove
 			// event before a withdraw
-			if s.Events[i].Kind == types.StakingEventKindRemoved && s.Events[j].Kind == types.StakingEventKindDeposited {
+			if s.Events[i].Type == types.StakingEventTypeRemoved && s.Events[j].Type == types.StakingEventTypeDeposited {
 				// we return false so they can switched
 				return false
 			}

@@ -55,7 +55,7 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid1",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -65,7 +65,7 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid2",
-				Kind:   types.StakingEventKindRemoved,
+				Type:   types.StakingEventTypeRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -75,7 +75,7 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid3",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -85,7 +85,7 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid4",
-				Kind:   types.StakingEventKindRemoved,
+				Type:   types.StakingEventTypeRemoved,
 				TS:     125,
 				Party:  testParty,
 				Amount: num.NewUint(6),
@@ -139,7 +139,7 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid1",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -149,7 +149,7 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid2",
-				Kind:   types.StakingEventKindRemoved,
+				Type:   types.StakingEventTypeRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -159,7 +159,7 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 		{
 			evt: types.StakingEvent{
 				ID:     "someid3",
-				Kind:   types.StakingEventKindDeposited,
+				Type:   types.StakingEventTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
