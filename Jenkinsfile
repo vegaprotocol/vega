@@ -296,7 +296,7 @@ pipeline {
                         anyOf {
                             buildingTag()
                             branch 'develop'
-                            changeRequest() // uncomment only for testing
+                            // changeRequest() // uncomment only for testing
                         }
                     }
                     environment {
