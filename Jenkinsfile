@@ -145,6 +145,7 @@ pipeline {
                                 mkdir -p docker/bin
                                 cp -a "${LINUX_BINARY}" "docker/bin/vega"
                             '''
+                            // Note: This docker image is used by system-tests and publish stage
                             withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
                                 sh label: 'Build docker image', script: '''
                                     docker build -t "${LOCAL_DOCKER_IMAGE_NAME}" docker/
@@ -307,27 +308,27 @@ pipeline {
                     environment {
                         DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
                         DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG}"
-                        DOCKER_IMAGE_TAG_2 = "${ env.TAG_NAME ? 'latest' : 'edge' }"
-                        DOCKER_IMAGE_NAME_2 = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_2}"
+                        DOCKER_IMAGE_TAG_ALIAS = "${ env.TAG_NAME ? 'latest' : 'edge' }"
+                        DOCKER_IMAGE_NAME_ALIAS = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_ALIAS}"
                     }
                     options { retry(3) }
                     steps {
                         dir('vega') {
                             sh label: 'Tag new images', script: '''#!/bin/bash -e
                                 docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME}"
-                                docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_2}"
+                                docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_ALIAS}"
                             '''
 
                             withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
                                 sh label: 'Push docker images', script: '''
                                     docker push "${DOCKER_IMAGE_NAME}"
-                                    docker push "${DOCKER_IMAGE_NAME_2}"
+                                    docker push "${DOCKER_IMAGE_NAME_ALIAS}"
                                 '''
                             }
                             slackSend(
                                 channel: "#tradingcore-notify",
                                 color: "good",
-                                message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}` aka `${DOCKER_IMAGE_NAME_2}`",
+                                message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME}` aka `${DOCKER_IMAGE_NAME_ALIAS}`",
                             )
                         }
                     }
