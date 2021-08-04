@@ -97,7 +97,6 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 	for _, c := range cases {
 		c := c
 		acc.AddEvent(context.Background(), &c.evt)
-		assert.Equal(t, c.expect, err)
 	}
 
 	balance, err := acc.GetAvailableBalanceInRange(
