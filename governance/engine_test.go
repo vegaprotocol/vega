@@ -66,7 +66,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a majority of no vote makes the proposal declined", testSubmittingMajorityOfNoVoteMakesProposalDeclined)
 	t.Run("Submitting a majority of yes votes below participation threshold marks proposal as declined", testSubmittingMajorityOfInsuccifientParticipationMakesProposalDeclined)
 	t.Run("Test multiple proposal lifecycle", testMultipleProposalsLifecycle)
-
+	t.Run("Test withdrawing asset before proposal end", testSubmittingVoteAndWithdrawingFundsDeclined)
 	t.Run("Validate market proposal commitment", testValidateProposalCommitment)
 }
 
@@ -945,6 +945,100 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		_, found := passed[toBeEnacted[i].Proposal().ID]
 		assert.True(t, found)
 	}
+}
+
+func testSubmittingVoteAndWithdrawingFundsDeclined(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	now := time.Now()
+	proposer := eng.newValidParty("proposer", 100)
+	voter := eng.newValidPartyTimes("voter", 100, 2)
+	proposal := eng.newOpenProposal(proposer.Id, now)
+
+	// setup
+	eng.expectAnyAsset()
+	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).
+		Return(num.NewUint(200), nil)
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, proposer.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// setup
+	eng.expectSendVoteEvent(t, voter, proposal)
+
+	// when
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_YES,
+		ProposalID: proposal.ID,
+	}, voter.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// setup
+	eng.expectSendVoteEvent(t, voter, proposal)
+
+	// when
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_NO,
+		ProposalID: proposal.ID,
+	}, voter.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, proto.Proposal_STATE_DECLINED, p.State)
+		assert.Equal(t, proposal.ID, p.Id)
+		assert.Equal(t, proto.ProposalError_PROPOSAL_ERROR_PARTICIPATION_THRESHOLD_NOT_REACHED.String(), p.Reason.String())
+	})
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		v, ok := evts[0].(*events.Vote)
+		assert.True(t, ok)
+		assert.Equal(t, "0", v.TotalGovernanceTokenWeight())
+		assert.Equal(t, uint64(0), v.TotalGovernanceTokenBalance())
+	})
+
+	// when
+
+	// we set the call to the balance to return 0
+	account := types.Account{
+		ID:      "voter" + "-account",
+		Owner:   "voter",
+		Balance: num.Zero(),
+		Asset:   "VOTE",
+	}
+	eng.accounts.EXPECT().GetPartyGeneralAccount("voter", "VOTE").Times(1).Return(&account, nil)
+
+	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+
+	// then
+	assert.Len(t, voteClosed, 1)
+	vc := voteClosed[0]
+	assert.NotNil(t, vc.NewMarket())
+	assert.True(t, vc.NewMarket().Rejected())
+
+	// given
+	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
+
+	// when
+	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+
+	// then
+	assert.Empty(t, toBeEnacted)
 }
 
 func getTestEngine(t *testing.T) *tstEngine {
