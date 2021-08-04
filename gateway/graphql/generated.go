@@ -4845,7 +4845,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema.graphql", Input: `## VEGA - GraphQL schema
+	&ast.Source{Name: "schema.graphql", Input: `## VEGA - GraphQL schema
 
 schema {
   query: Query
