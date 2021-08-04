@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/crypto"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/crypto"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

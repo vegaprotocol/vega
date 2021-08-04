@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	oracles "code.vegaprotocol.io/vega/oracles"
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
+	oracles "code.vegaprotocol.io/vega/oracles"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/vega/events"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/events"
 	"github.com/stretchr/testify/assert"
 )
 

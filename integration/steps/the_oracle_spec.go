@@ -3,9 +3,9 @@ package steps
 import (
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/integration/steps/market"
 	types "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/integration/steps/market"
 )
 
 func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {

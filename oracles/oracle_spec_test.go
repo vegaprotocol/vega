@@ -3,8 +3,8 @@ package oracles_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/oracles"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/oracles"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

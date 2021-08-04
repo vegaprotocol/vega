@@ -7,9 +7,9 @@ import (
 
 	"github.com/jinzhu/copier"
 
-	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
 	types "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
 )
 
 var (

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/pkg/errors"
 )

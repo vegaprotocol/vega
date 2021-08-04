@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/protos/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -174,10 +174,10 @@ func (mr *MockAuctionStateMockRecorder) IsPriceAuction() *gomock.Call {
 }
 
 // Mode mocks base method
-func (m *MockAuctionState) Mode() proto.Market_TradingMode {
+func (m *MockAuctionState) Mode() vega.Market_TradingMode {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Mode")
-	ret0, _ := ret[0].(proto.Market_TradingMode)
+	ret0, _ := ret[0].(vega.Market_TradingMode)
 	return ret0
 }
 

@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/validators/mocks"
 

@@ -10,12 +10,12 @@ import (
 	"time"
 
 	vegacrypto "code.vegaprotocol.io/go-wallet/crypto"
+	proto1 "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
-	proto1 "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 
@@ -41,9 +41,9 @@ func (s *AbciTestSuite) signedTx(t *testing.T, tx *types.Transaction, key crypto
 	stx := &types.SignedBundle{
 		Tx: txBytes,
 		Sig: &types.Signature{
-			Algo: s.sig.Name(),
+			Algo:    s.sig.Name(),
 			Version: s.sig.Version(),
-			Sig:  sig,
+			Sig:     sig,
 		},
 	}
 

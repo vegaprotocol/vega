@@ -3,8 +3,8 @@ package steps
 import (
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/integration/steps/market"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/integration/steps/market"
 )
 
 func TheFeesConfiguration(config *market.Config, name string, table *godog.Table) error {

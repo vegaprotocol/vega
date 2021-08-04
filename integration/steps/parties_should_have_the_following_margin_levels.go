@@ -5,8 +5,8 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
 func ThePartiesShouldHaveTheFollowingMarginLevels(

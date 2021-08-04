@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/go-wallet/crypto"
+	ptypes "code.vegaprotocol.io/protos/vega"
+	protoapi "code.vegaprotocol.io/protos/vega/api"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
-	ptypes "code.vegaprotocol.io/protos/vega"
-	protoapi "code.vegaprotocol.io/protos/vega/api"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 

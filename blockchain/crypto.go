@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/go-wallet/crypto"
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (

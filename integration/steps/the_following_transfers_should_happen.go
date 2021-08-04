@@ -5,9 +5,9 @@ import (
 
 	"github.com/cucumber/godog"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	types "code.vegaprotocol.io/protos/vega"
 )
 
 func TheFollowingTransfersShouldHappen(
