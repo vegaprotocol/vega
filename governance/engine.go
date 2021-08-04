@@ -357,9 +357,10 @@ func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 
 func (e *Engine) startProposal(p *types.Proposal) {
 	e.activeProposals = append(e.activeProposals, &proposal{
-		Proposal: p,
-		yes:      map[string]*types.Vote{},
-		no:       map[string]*types.Vote{},
+		Proposal:     p,
+		yes:          map[string]*types.Vote{},
+		no:           map[string]*types.Vote{},
+		invalidVotes: map[string]*types.Vote{},
 	})
 }
 
@@ -598,6 +599,9 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 	for _, n := range proposal.no {
 		evts = append(evts, events.NewVoteEvent(ctx, *n))
 	}
+	for _, n := range proposal.invalidVotes {
+		evts = append(evts, events.NewVoteEvent(ctx, *n))
+	}
 
 	return evts
 }
@@ -624,8 +628,9 @@ func (e *Engine) mustGetGovernanceVoteAsset() string {
 
 type proposal struct {
 	*types.Proposal
-	yes map[string]*types.Vote
-	no  map[string]*types.Vote
+	yes          map[string]*types.Vote
+	no           map[string]*types.Vote
+	invalidVotes map[string]*types.Vote
 }
 
 func (p *proposal) IsOpen() bool {
@@ -668,10 +673,18 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 
 func (p *proposal) countVotes(votes map[string]*types.Vote, accounts Accounts, voteAsset string) *num.Uint {
 	tally := num.Zero()
-	for _, v := range votes {
+	for k, v := range votes {
 		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID, voteAsset)
+		// the user may have withdrawn their governance token
+		// before the end of the vote. We will then remove them from the map if it's the case.
+		if v.TotalGovernanceTokenBalance.IsZero() {
+			p.invalidVotes[k] = v
+			delete(votes, k)
+			continue
+		}
 		tally.AddSum(v.TotalGovernanceTokenBalance)
 	}
+
 	return tally
 }
 
