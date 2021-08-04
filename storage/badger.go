@@ -3,9 +3,9 @@ package storage
 import (
 	"fmt"
 
+	types "code.vegaprotocol.io/protos/vega"
 	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"

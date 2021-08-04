@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/protos/commands"
-	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/subscribers"
 	uuid "github.com/satori/go.uuid"
 )

@@ -3,8 +3,8 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/integration/stubs"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
 func PartyShouldHaveOneMarginAccountPerMarket(

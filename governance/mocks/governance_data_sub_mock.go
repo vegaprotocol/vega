@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/protos/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	subscribers "code.vegaprotocol.io/vega/subscribers"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,14 +35,14 @@ func (m *MockGovernanceDataSub) EXPECT() *MockGovernanceDataSubMockRecorder {
 }
 
 // Filter mocks base method
-func (m *MockGovernanceDataSub) Filter(arg0 bool, arg1 ...subscribers.ProposalFilter) []*proto.GovernanceData {
+func (m *MockGovernanceDataSub) Filter(arg0 bool, arg1 ...subscribers.ProposalFilter) []*vega.GovernanceData {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Filter", varargs...)
-	ret0, _ := ret[0].([]*proto.GovernanceData)
+	ret0, _ := ret[0].([]*vega.GovernanceData)
 	return ret0
 }
 

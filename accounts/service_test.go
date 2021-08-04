@@ -3,10 +3,10 @@ package accounts_test
 import (
 	"testing"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/accounts/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/mock/gomock"

@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/types/num"
-
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
@@ -20,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/golang/mock/gomock"

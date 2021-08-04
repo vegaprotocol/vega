@@ -186,7 +186,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 	checkpoints := map[string]checkpoint.Snapshot{
-		"foobar": checkpoint.Snapshot{},
+		"foobar": {},
 	}
 	err := eng.Load(checkpoints)
 	require.Error(t, err)

@@ -34,12 +34,11 @@ func (m *MockVegaTime) EXPECT() *MockVegaTimeMockRecorder {
 }
 
 // GetTimeNow mocks base method
-func (m *MockVegaTime) GetTimeNow() (time.Time, error) {
+func (m *MockVegaTime) GetTimeNow() time.Time {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTimeNow")
 	ret0, _ := ret[0].(time.Time)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // GetTimeNow indicates an expected call of GetTimeNow

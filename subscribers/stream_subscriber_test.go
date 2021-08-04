@@ -5,9 +5,9 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/subscribers"
 	dtypes "code.vegaprotocol.io/vega/types"
 

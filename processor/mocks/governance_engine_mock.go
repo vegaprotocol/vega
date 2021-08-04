@@ -5,8 +5,8 @@
 package mocks
 
 import (
+	vega "code.vegaprotocol.io/protos/vega"
 	governance "code.vegaprotocol.io/vega/governance"
-	proto "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/vega/types"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -67,7 +67,7 @@ func (mr *MockGovernanceEngineMockRecorder) OnChainTimeUpdate(arg0, arg1 interfa
 }
 
 // RejectProposal mocks base method
-func (m *MockGovernanceEngine) RejectProposal(arg0 context.Context, arg1 *types.Proposal, arg2 proto.ProposalError, arg3 error) error {
+func (m *MockGovernanceEngine) RejectProposal(arg0 context.Context, arg1 *types.Proposal, arg2 vega.ProposalError, arg3 error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RejectProposal", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)

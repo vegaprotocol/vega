@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/protos/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
@@ -36,7 +36,7 @@ func (m *MockGovernanceService) EXPECT() *MockGovernanceServiceMockRecorder {
 }
 
 // PrepareProposal mocks base method
-func (m *MockGovernanceService) PrepareProposal(arg0 context.Context, arg1 string, arg2 *proto.ProposalTerms) (*v1.ProposalSubmission, error) {
+func (m *MockGovernanceService) PrepareProposal(arg0 context.Context, arg1 string, arg2 *vega.ProposalTerms) (*v1.ProposalSubmission, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PrepareProposal", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*v1.ProposalSubmission)
