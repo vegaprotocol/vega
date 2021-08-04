@@ -170,7 +170,7 @@ var (
 		OracleDataEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA,
 		DelegationBalanceEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE,
 		PendingDelegationBalanceEvent: eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
-		StakingEvent:                  eventsp.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT,
+		StakingEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT,
 	}
 
 	eventStrings = map[Type]string{
