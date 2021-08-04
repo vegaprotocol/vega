@@ -49,7 +49,7 @@ func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {
 		return num.Zero(), ErrNoBalanceForParty
 	}
 
-	return acc.GetAvailableBalance()
+	return acc.GetAvailableBalance(), nil
 }
 
 func (a *Accounting) GetAvailableBalanceAt(
@@ -62,7 +62,7 @@ func (a *Accounting) GetAvailableBalanceAt(
 	return acc.GetAvailableBalanceAt(at)
 }
 
-func (a *Accounting) GetAvailableBalance(
+func (a *Accounting) GetAvailableBalanceInRange(
 	party string, from, to time.Time) (*num.Uint, error) {
 	acc, ok := a.accounts[party]
 	if !ok {

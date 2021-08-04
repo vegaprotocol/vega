@@ -13,8 +13,9 @@ var (
 	ErrInvalidAmount      = errors.New("invalid amount")
 	ErrInvalidEventKind   = errors.New("invalid event kind")
 	ErrMissingEventID     = errors.New("missing event id")
-	ErrMissinTimestamp    = errors.New("missing timestamp")
+	ErrMissingTimestamp   = errors.New("missing timestamp")
 	ErrNegativeBalance    = errors.New("negative balance")
+	ErrInvalidParty       = errors.New("invalid party")
 )
 
 type StakingAccount struct {
@@ -39,10 +40,13 @@ func (s *StakingAccount) validateEvent(evt *StakingEvent) error {
 		return ErrInvalidEventKind
 	}
 	if evt.TS <= 0 {
-		return ErrMissinTimestamp
+		return ErrMissingTimestamp
 	}
 	if len(evt.ID) <= 0 {
 		return ErrMissingEventID
+	}
+	if evt.Party != s.Party {
+		return ErrInvalidParty
 	}
 
 	for _, v := range s.Events {
@@ -64,9 +68,7 @@ func (s *StakingAccount) AddEvent(evt *StakingEvent) error {
 	s.insertSorted(evt)
 
 	// now update the ongoing balance
-	s.computeOngoingBalance()
-
-	return nil
+	return s.computeOngoingBalance()
 }
 
 func (s *StakingAccount) GetAvailableBalance() *num.Uint {
@@ -79,7 +81,7 @@ func (s *StakingAccount) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) 
 		atUnix  = at.UnixNano()
 		balance = num.Zero() // this will be the maximum which can be valid at end of epoch.
 	)
-	for i := 0; i < len(s.Events) && s.Events[i].TS < atUnix; i++ {
+	for i := 0; i < len(s.Events) && s.Events[i].TS <= atUnix; i++ {
 		evt := s.Events[i]
 		switch evt.Kind {
 		case StakingEventKindDeposited:
@@ -95,7 +97,7 @@ func (s *StakingAccount) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) 
 	return balance, nil
 }
 
-// GetAvailableBalance could return a negative balance
+// GetAvailableBalanceInRange could return a negative balance
 // if some event are still expected to be received from the bridge
 func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Uint, error) {
 	// first compute the balance before the from time.
@@ -104,7 +106,7 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 		balance  = num.Zero() // this will be the maximum which can be valid at end of epoch.
 		i        int
 	)
-	for ; i < len(s.Events) && s.Events[i].TS < fromUnix; i++ {
+	for ; i < len(s.Events) && s.Events[i].TS <= fromUnix; i++ {
 		evt := s.Events[i]
 		switch evt.Kind {
 		case StakingEventKindDeposited:
@@ -126,13 +128,13 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 		deposited = num.Zero()
 		withdrawn = num.Zero()
 	)
-	for i < len(s.Events) && s.Events[i].TS < toUnix {
+	for ; i < len(s.Events) && s.Events[i].TS <= toUnix; i++ {
 		evt := s.Events[i]
 		switch evt.Kind {
 		case StakingEventKindDeposited:
-			deposited.Add(balance, evt.Amount)
+			deposited.Add(deposited, evt.Amount)
 		case StakingEventKindRemoved:
-			withdrawn.Sub(balance, evt.Amount)
+			withdrawn.Add(withdrawn, evt.Amount)
 		}
 	}
 
@@ -183,7 +185,7 @@ func (s *StakingAccount) insertSorted(evt *StakingEvent) {
 		if s.Events[i].TS == s.Events[j].TS {
 			// now we want to put deposit first to avoid any remove
 			// event before a withdraw
-			if s.Events[i].Kind == StakingEventKindRemoved && s.Events[i].Kind == StakingEventKindDeposited {
+			if s.Events[i].Kind == StakingEventKindRemoved && s.Events[j].Kind == StakingEventKindDeposited {
 				// we return false so they can switched
 				return false
 			}
