@@ -366,6 +366,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 			Adaptors: l.oracleAdaptors,
 		},
 		l.delegation,
+		l.limits,
 	)
 
 	var abciApp tmtypes.Application
@@ -477,7 +478,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.limits = limits.New(l.Log)
+	l.limits = limits.New(l.conf.Limits, l.Log)
 
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
 

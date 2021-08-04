@@ -9,6 +9,7 @@ import (
 
 type Engine struct {
 	log *logging.Logger
+	cfg Config
 
 	// are these action possible?
 	canProposeMarket, canProposeAsset bool
@@ -18,8 +19,13 @@ type Engine struct {
 	proposeMarketEnabledFrom, proposeAssetEnabledFrom time.Time
 }
 
-func New(log *logging.Logger) *Engine {
-	return &Engine{}
+func New(cfg Config, log *logging.Logger) *Engine {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
+	return &Engine{
+		log: log,
+		cfg: cfg,
+	}
 }
 
 // UponGenesis load the limits from the genersis state
@@ -38,8 +44,6 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) error {
 
 	// set enabled by default if not genesis state
 	if state == nil {
-		e.canProposeMarket = true
-		e.canProposeAsset = true
 		e.proposeAssetEnabled = true
 		e.proposeMarketEnabled = true
 		return nil

@@ -27,6 +27,7 @@ type procTest struct {
 	netp       *mocks.MockNetworkParameters
 	oracles    *stubOracles
 	delegation *mocks.MockDelegationEngine
+	limits     *mocks.MockLimits
 }
 
 type stubOracles struct {
@@ -53,11 +54,16 @@ func getTestProcessor(t *testing.T) *procTest {
 		Adaptors: mocks.NewMockOracleAdaptors(ctrl),
 	}
 	delegation := mocks.NewMockDelegationEngine(ctrl)
+	limits := mocks.NewMockLimits(ctrl)
 
 	var cb func(context.Context, time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(context.Context, time.Time)) {
 		cb = c
 	})
+
+	limits.EXPECT().CanTrade().AnyTimes().Return(true)
+	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
+	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
 	return &procTest{
 		eng:        eng,
@@ -76,5 +82,6 @@ func getTestProcessor(t *testing.T) *procTest {
 		netp:       netp,
 		oracles:    oracles,
 		delegation: delegation,
+		limits:     limits,
 	}
 }

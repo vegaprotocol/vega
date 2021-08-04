@@ -85,6 +85,7 @@ func NewApp(
 	netp NetworkParameters,
 	oracles *Oracle,
 	delegation DelegationEngine,
+	limits Limits,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -115,6 +116,7 @@ func NewApp(
 		netp:       netp,
 		oracles:    oracles,
 		delegation: delegation,
+		limits:     limits,
 	}
 
 	// setup handlers
@@ -322,6 +324,9 @@ func (app *App) canSubmitTx(tx abci.Tx) error {
 			return errors.New("invalid transaction")
 		}
 		p := types.NewProposalSubmissionFromProto(praw)
+		if p.Terms == nil {
+			return errors.New("invalid transaction")
+		}
 		switch p.Terms.Change.GetTermType() {
 		case types.ProposalTerms_NEW_MARKET:
 			if !app.limits.CanProposeMarket() {

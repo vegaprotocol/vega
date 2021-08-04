@@ -141,6 +141,11 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	bstats := stats.NewBlockchain()
 
+	limits := mocks.NewMockLimits(ctrl)
+	limits.EXPECT().CanTrade().AnyTimes().Return(true)
+	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
+	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
+
 	app := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
@@ -164,6 +169,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 			Adaptors: oraclesAdaptors,
 		},
 		delegationEngine,
+		limits,
 	)
 
 	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)
