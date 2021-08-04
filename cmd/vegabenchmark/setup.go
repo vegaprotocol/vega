@@ -35,14 +35,32 @@ import (
 )
 
 type DummyStakingAccounts struct {
+	collateralEngine *collateral.Engine
+	asset            string
 }
 
-func (DummyStakingAccounts) GetBalanceNow(party string) *num.Uint {
-	return num.Zero()
+//GetBalanceNow returns the current party's governance token balance
+func (d *DummyStakingAccounts) GetBalanceNow(party string) *num.Uint {
+	if generalAcc, err := d.collateralEngine.GetPartyGeneralAccount(party, d.asset); err == nil {
+		return generalAcc.Balance.Clone()
+	}
+	return nil
 }
 
-func (DummyStakingAccounts) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
-	return num.Zero()
+//GetBalanceForEpoch returns the current party's governance token balance
+func (d *DummyStakingAccounts) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
+	if generalAcc, err := d.collateralEngine.GetPartyGeneralAccount(party, d.asset); err == nil {
+		return generalAcc.Balance.Clone()
+	}
+	return nil
+}
+
+//NewDummyStakingAccount returns a new instance of a staking account backed by governance token account
+func NewDummyStakingAccount(collateralEngine *collateral.Engine, asset string) *DummyStakingAccounts {
+	return &DummyStakingAccounts{
+		collateralEngine: collateralEngine,
+		asset:            asset,
+	}
 }
 
 func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
@@ -129,15 +147,21 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
 
-	netparams := netparams.New(
+	netp := netparams.New(
 		log,
 		netparams.NewDefaultConfig(),
 		broker,
 	)
 
+	voteAsset, err := netp.Get(netparams.GovernanceVoteAsset)
+	if err != nil {
+		log.Panic("error trying to get the vote asset from network parameters",
+			logging.Error(err))
+	}
+
 	//TODO replace with actual implementation
-	stakingAccount := DummyStakingAccounts{}
-	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netparams)
+	stakingAccount := NewDummyStakingAccount(collateral, voteAsset)
+	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netp)
 
 	bstats := stats.NewBlockchain()
 
@@ -158,7 +182,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		bstats,
 		timeService,
 		topology,
-		netparams,
+		netp,
 		&processor.Oracle{
 			Engine:   oraclesM,
 			Adaptors: oraclesAdaptors,
@@ -166,7 +190,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		delegationEngine,
 	)
 
-	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)
+	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -187,7 +211,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		uponGenesisW,
 		genesisHandler,
 		timeService,
-		netparams,
+		netp,
 		topology,
 	)
 
