@@ -66,13 +66,13 @@ pipeline {
             }
         }
 
-        stage('Build vega core') {
+        stage('Compile vega core') {
             environment {
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
             failFast true
             parallel {
-                stage('Linux compile') {
+                stage('Linux build') {
                     environment {
                         GOOS         = 'linux'
                         GOARCH       = 'amd64'
@@ -91,7 +91,7 @@ pipeline {
                         }
                     }
                 }
-                stage('MacOS compile') {
+                stage('MacOS build') {
                     environment {
                         GOOS         = 'darwin'
                         GOARCH       = 'amd64'
@@ -109,7 +109,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Windows compile') {
+                stage('Windows build') {
                     environment {
                         GOOS         = 'windows'
                         GOARCH       = 'amd64'
@@ -127,6 +127,13 @@ pipeline {
                         }
                     }
                 }
+            }
+        }
+
+        stage('intermediate tasks') {
+            failFast true
+            parallel {
+                // this task needs to run after builds
                 stage('Build docker image') {
                     environment {
                         LINUX_BINARY = './cmd/vega/vega-linux-amd64'
@@ -134,7 +141,6 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            waitUntil { fileExists("${LINUX_BINARY}") }
                             sh label: 'Copy binary', script: '''#!/bin/bash -e
                                 mkdir -p docker/bin
                                 cp -a "${LINUX_BINARY}" "docker/bin/vega"
@@ -153,15 +159,14 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-
-        // these stages are run in sequence as they delete and recreate files
-        stage('Run gqlgen codgen checks') {
-            options { retry(3) }
-            steps {
-                dir('vega') {
-                    sh 'make gqlgen_check'
+                // this task needs to run before linters and tests
+                stage('Run gqlgen codgen checks') {
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh 'make gqlgen_check'
+                        }
+                    }
                 }
             }
         }
