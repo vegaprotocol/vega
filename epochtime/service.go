@@ -30,14 +30,17 @@ type Svc struct {
 	log *logging.Logger
 
 	broker Broker
+
+	readyToStartNewEpoch bool
 }
 
 // New instantiates a new epochtime service
 func NewService(l *logging.Logger, conf Config, vt *vegatime.Svc, params *netparams.Store, broker Broker) *Svc {
 	s := &Svc{config: conf,
-		netparams: params,
-		log:       l,
-		broker:    broker}
+		netparams:            params,
+		log:                  l,
+		broker:               broker,
+		readyToStartNewEpoch: false}
 
 	// Subscribe to the vegatime onblocktime event
 	vt.NotifyOnTick(s.onTick)
@@ -86,14 +89,13 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 
 		// Send out new epoch event
 		s.notify(ctx, s.epoch)
+		return
 	}
 
-	if s.epoch.ExpireTime.Before(t) {
-		s.epoch.EndTime = t
-		// We have expired, send event
-		s.notify(ctx, s.epoch)
-
+	if s.readyToStartNewEpoch == true {
+		// Move the epoch details forward
 		s.epoch.Seq += 1
+		s.readyToStartNewEpoch = false
 
 		// Create a new epoch
 		s.epoch.StartTime = t
@@ -103,9 +105,20 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 			// Something bad has happened, we should stop
 			s.log.Panic("Unable to get the epoch length", logging.Error(err))
 		}
-		s.epoch.ExpireTime = t.Add(*d) // + epoch length
+		s.epoch.ExpireTime = t.Add(*d) // now + epoch length
 		s.epoch.EndTime = time.Time{}
 		s.notify(ctx, s.epoch)
+		return
+	}
+
+	if s.epoch.ExpireTime.Before(t) {
+		s.epoch.EndTime = t
+		// We have expired, send event
+		s.notify(ctx, s.epoch)
+
+		// Set the flag to tell us to start a new epoch next block
+		s.readyToStartNewEpoch = true
+		return
 	}
 }
 
