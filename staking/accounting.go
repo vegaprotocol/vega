@@ -5,10 +5,16 @@ import (
 	"errors"
 	"time"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+// Broker - the event bus
+type Broker interface {
+	Send(events.Event)
+}
 
 var (
 	ErrNoBalanceForParty = errors.New("no balance for party")
@@ -16,12 +22,14 @@ var (
 
 type Accounting struct {
 	log      *logging.Logger
+	broker   Broker
 	accounts map[string]*StakingAccount
 }
 
-func NewAccounting(log *logging.Logger) *Accounting {
+func NewAccounting(log *logging.Logger, broker Broker) *Accounting {
 	return &Accounting{
 		log:      log,
+		broker:   broker,
 		accounts: map[string]*StakingAccount{},
 	}
 }
@@ -47,7 +55,7 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakingEvent) {
 		return
 	}
 
-	// broker.Send(events.NewStakingEvent(ctx, evt))
+	a.broker.Send(events.NewStakingEvent(ctx, *evt))
 }
 
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {

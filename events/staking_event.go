@@ -13,7 +13,7 @@ type StakingEvt struct {
 	evt eventspb.StakingEvent
 }
 
-func NewStakingEvtountEvent(ctx context.Context, evt types.StakingEvent) *StakingEvt {
+func NewStakingEvent(ctx context.Context, evt types.StakingEvent) *StakingEvt {
 	return &StakingEvt{
 		Base: newBase(ctx, StakingEvent),
 		evt:  *(evt.IntoProto()),

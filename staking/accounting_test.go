@@ -5,24 +5,33 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
 type accountingTest struct {
 	*staking.Accounting
-	log *logging.Logger
+	log    *logging.Logger
+	ctrl   *gomock.Controller
+	broker *mocks.MockBrokerI
 }
 
-func getAccountingTest() *accountingTest {
+func getAccountingTest(t *testing.T) *accountingTest {
 	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	broker := mocks.NewMockBrokerI(ctrl)
+
 	return &accountingTest{
-		Accounting: staking.NewAccounting(log),
+		Accounting: staking.NewAccounting(log, broker),
 		log:        log,
+		ctrl:       ctrl,
+		broker:     broker,
 	}
 }
 
@@ -33,7 +42,8 @@ func TestStakingAccounting(t *testing.T) {
 }
 
 func testPartyDontExists(t *testing.T) {
-	acc := getAccountingTest()
+	acc := getAccountingTest(t)
+	defer acc.ctrl.Finish()
 
 	balance, err := acc.GetAvailableBalance("nope")
 	assert.EqualError(t, err, staking.ErrNoBalanceForParty.Error())
@@ -47,7 +57,8 @@ func testPartyDontExists(t *testing.T) {
 }
 
 func testAccountingGetAvailableBalanceInRange(t *testing.T) {
-	acc := getAccountingTest()
+	acc := getAccountingTest(t)
+	defer acc.ctrl.Finish()
 	cases := []struct {
 		evt    types.StakingEvent
 		expect error
@@ -94,6 +105,8 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 		},
 	}
 
+	acc.broker.EXPECT().Send(gomock.Any()).Times(4)
+
 	for _, c := range cases {
 		c := c
 		acc.AddEvent(context.Background(), &c.evt)
@@ -131,7 +144,8 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 }
 
 func testAccountingGetAvailableBalanceAt(t *testing.T) {
-	acc := getAccountingTest()
+	acc := getAccountingTest(t)
+	defer acc.ctrl.Finish()
 	cases := []struct {
 		evt    types.StakingEvent
 		expect error
@@ -167,6 +181,8 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 			expect: nil,
 		},
 	}
+
+	acc.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	for _, c := range cases {
 		c := c
