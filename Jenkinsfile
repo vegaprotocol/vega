@@ -325,6 +325,15 @@ pipeline {
                                 }
                             }
                         }
+                        stage('docker pull') {
+                            steps {
+                                dir('system-tests/scripts') {
+                                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                                        sh 'make prepare-docker-pull'
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
