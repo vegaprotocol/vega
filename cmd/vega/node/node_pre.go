@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
@@ -483,6 +484,16 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
+
+	voteAsset, err := l.netParams.Get(netparams.GovernanceVoteAsset)
+	if err != nil {
+		l.Log.Panic("error trying to get the vote asset from network parameters",
+			logging.Error(err))
+	}
+
+	//TODO replace with actual implementation
+	stakingAccount := delegation.NewDummyStakingAccount(l.collateral, voteAsset)
+	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.netParams)
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.

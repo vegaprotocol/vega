@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -33,35 +32,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
 )
-
-type DummyStakingAccounts struct {
-	collateralEngine *collateral.Engine
-	asset            string
-}
-
-//GetBalanceNow returns the current party's governance token balance
-func (d *DummyStakingAccounts) GetBalanceNow(party string) *num.Uint {
-	if generalAcc, err := d.collateralEngine.GetPartyGeneralAccount(party, d.asset); err == nil {
-		return generalAcc.Balance.Clone()
-	}
-	return nil
-}
-
-//GetBalanceForEpoch returns the current party's governance token balance
-func (d *DummyStakingAccounts) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
-	if generalAcc, err := d.collateralEngine.GetPartyGeneralAccount(party, d.asset); err == nil {
-		return generalAcc.Balance.Clone()
-	}
-	return nil
-}
-
-//NewDummyStakingAccount returns a new instance of a staking account backed by governance token account
-func NewDummyStakingAccount(collateralEngine *collateral.Engine, asset string) *DummyStakingAccounts {
-	return &DummyStakingAccounts{
-		collateralEngine: collateralEngine,
-		asset:            asset,
-	}
-}
 
 func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -160,7 +130,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	}
 
 	//TODO replace with actual implementation
-	stakingAccount := NewDummyStakingAccount(collateral, voteAsset)
+	stakingAccount := delegation.NewDummyStakingAccount(collateral, voteAsset)
 	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netp)
 
 	bstats := stats.NewBlockchain()
