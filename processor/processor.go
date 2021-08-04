@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/oracles"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -31,6 +31,14 @@ type TimeService interface {
 	GetTimeLastBatch() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 	SetTimeNow(context.Context, time.Time)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
+type DelegationEngine interface {
+	Delegate(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	OnEpochEnd(ctx context.Context, start, end time.Time) []*types.ValidatorData
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
