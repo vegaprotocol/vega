@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	epochtime "code.vegaprotocol.io/vega/epochtime"
+	types "code.vegaprotocol.io/vega/types"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,7 +35,7 @@ func (m *MockEpochService) EXPECT() *MockEpochServiceMockRecorder {
 }
 
 // NotifyOnEpoch mocks base method
-func (m *MockEpochService) NotifyOnEpoch(arg0 func(context.Context, epochtime.Epoch)) {
+func (m *MockEpochService) NotifyOnEpoch(arg0 func(context.Context, types.Epoch)) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "NotifyOnEpoch", arg0)
 }
