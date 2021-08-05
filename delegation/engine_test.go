@@ -1580,10 +1580,11 @@ func getEngine(t *testing.T) *testEngine {
 	stakingAccounts := newTestStakingAccount()
 	netp := gmock.NewMockNetParams(ctrl)
 	topology := newTestTopology()
+	netp.EXPECT().Get("validators.delegation.minAmount").AnyTimes().Return("2", nil)
+	netp.EXPECT().Get("validators.delegation.maxStakePerValidator").AnyTimes().Return("100", nil)
 	engine := New(logger, conf, broker, topology, stakingAccounts, netp)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	netp.EXPECT().Get("validators.delegation.minAmount").AnyTimes().Return("2", nil)
 
 	return &testEngine{
 		engine:          engine,

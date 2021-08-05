@@ -12,6 +12,10 @@ type DummyStakingAccounts struct {
 	asset            string
 }
 
+func (d *DummyStakingAccounts) GovAssetUpdated(asset string) {
+	d.asset = asset
+}
+
 //GetBalanceNow returns the current party's governance token balance
 func (d *DummyStakingAccounts) GetBalanceNow(party string) *num.Uint {
 	if generalAcc, err := d.collateralEngine.GetPartyGeneralAccount(party, d.asset); err == nil {
@@ -29,9 +33,8 @@ func (d *DummyStakingAccounts) GetBalanceForEpoch(party string, from, to time.Ti
 }
 
 //NewDummyStakingAccount returns a new instance of a staking account backed by governance token account
-func NewDummyStakingAccount(collateralEngine *collateral.Engine, asset string) *DummyStakingAccounts {
+func NewDummyStakingAccount(collateralEngine *collateral.Engine) *DummyStakingAccounts {
 	return &DummyStakingAccounts{
 		collateralEngine: collateralEngine,
-		asset:            asset,
 	}
 }

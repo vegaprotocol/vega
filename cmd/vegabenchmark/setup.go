@@ -123,15 +123,22 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		broker,
 	)
 
-	voteAsset, err := netp.Get(netparams.GovernanceVoteAsset)
-	if err != nil {
-		log.Panic("error trying to get the vote asset from network parameters",
-			logging.Error(err))
-	}
-
 	//TODO replace with actual implementation
-	stakingAccount := delegation.NewDummyStakingAccount(collateral, voteAsset)
+	stakingAccount := delegation.NewDummyStakingAccount(collateral)
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.GovernanceVoteAsset,
+		Watcher: stakingAccount.GovAssetUpdated,
+	})
+
 	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netp)
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMinAmount,
+		Watcher: delegationEngine.OnMinAmountChanged,
+	})
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMaxStakePerValidator,
+		Watcher: delegationEngine.OnMaxDelegationPerNodeChanged,
+	})
 
 	bstats := stats.NewBlockchain()
 

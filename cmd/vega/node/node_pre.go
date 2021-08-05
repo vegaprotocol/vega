@@ -485,15 +485,22 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
 
-	voteAsset, err := l.netParams.Get(netparams.GovernanceVoteAsset)
-	if err != nil {
-		l.Log.Panic("error trying to get the vote asset from network parameters",
-			logging.Error(err))
-	}
-
 	//TODO replace with actual implementation
-	stakingAccount := delegation.NewDummyStakingAccount(l.collateral, voteAsset)
+	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.GovernanceVoteAsset,
+		Watcher: stakingAccount.GovAssetUpdated,
+	})
+
 	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.netParams)
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMinAmount,
+		Watcher: l.delegation.OnMinAmountChanged,
+	})
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMaxStakePerValidator,
+		Watcher: l.delegation.OnMaxDelegationPerNodeChanged,
+	})
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
