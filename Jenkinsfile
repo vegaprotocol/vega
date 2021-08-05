@@ -89,7 +89,7 @@ pipeline {
             }
         }
 
-        stage('go mod download deps') {
+        stage('Dependencies') {
             options { retry(3) }
             steps {
                 dir('vega') {
@@ -98,7 +98,7 @@ pipeline {
             }
         }
 
-        stage('Compile vega core') {
+        stage('Compile') {
             environment {
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
@@ -204,7 +204,7 @@ pipeline {
             }
         }
 
-        stage('Run linters') {
+        stage('Linters') {
             parallel {
                 stage('buf lint') {
                     options { retry(3) }
@@ -284,7 +284,7 @@ pipeline {
             }
         }
 
-        stage('Run tests') {
+        stage('Tests') {
             parallel {
                 stage('unit tests') {
                     options { retry(3) }
@@ -297,7 +297,7 @@ pipeline {
                 }
                 stage('unit tests with race') {
                     environment {
-                        CGO_ENABLED = 0
+                        CGO_ENABLED = 1
                     }
                     options { retry(3) }
                     steps {
