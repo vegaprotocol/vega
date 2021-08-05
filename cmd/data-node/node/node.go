@@ -214,6 +214,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		return l.broker.Receive(ctx)
 	})
 
+	// waitSig will wait for a sigterm or sigint interrupt.
 	eg.Go(func() error {
 		var gracefulStop = make(chan os.Signal, 1)
 		signal.Notify(gracefulStop, syscall.SIGTERM)
@@ -235,20 +236,6 @@ func (l *NodeCommand) runNode(args []string) error {
 	l.Log.Info("Vega startup complete")
 
 	return eg.Wait()
-}
-
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-
-	select {
-	case sig := <-gracefulStop:
-		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-	case <-ctx.Done():
-		// nothing to do
-	}
 }
 
 func flagProvided(flag string) bool {

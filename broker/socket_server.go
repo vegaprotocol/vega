@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/golang/protobuf/proto"
 	mangos "go.nanomsg.org/mangos/v3"
@@ -71,47 +72,64 @@ func (s SocketServer) Listen() error {
 	return nil
 }
 
-func (s SocketServer) Receive(ctx context.Context) <-chan events.Event {
+func (s SocketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
 	receiveCh := make(chan events.Event, defaultEventChannelBufferSize)
+	errCh := make(chan error, 1)
 
-	go func() {
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		<-ctx.Done()
+		if err := s.close(); err != nil {
+			return fmt.Errorf("failed to close socket: %w", err)
+		}
+		return nil
+	})
+
+	eg.Go(func() error {
 		defer close(receiveCh)
 
+		var recvTimeouts int
+
 		for {
-			select {
-			case <-ctx.Done():
-				if err := s.close(); err != nil {
-					s.log.Error("Failed to close socket", logging.Error(err))
-				}
-				return
-			default:
-				var be eventspb.BusEvent
+			var be eventspb.BusEvent
 
-				msg, err := s.sock.Recv()
-				if err != nil {
-					switch err {
-					case mangosErr.ErrBadVersion:
-						s.log.Panic("Bad protocol version", logging.Error(err))
-					case mangosErr.ErrClosed:
-						s.log.Panic("Socket is closed", logging.Error(err))
-					default:
-						s.log.Error("Failed to receive message", logging.Error(err))
-						continue
+			msg, err := s.sock.Recv()
+			if err != nil {
+				switch err {
+				case mangosErr.ErrRecvTimeout:
+					s.log.Warn("Receive socket timeout", logging.Error(err))
+					recvTimeouts++
+					if recvTimeouts > 3 {
+						return fmt.Errorf("more then a 3 socket timeouts occurred: %w", err)
 					}
-				}
-
-				if err := proto.Unmarshal(msg, &be); err != nil {
-					s.log.Fatal("Failed to unmarshal received event", logging.Error(err))
+				case mangosErr.ErrBadVersion:
+				case mangosErr.ErrClosed:
+					return fmt.Errorf("fatal error socket: %w", err)
+				default:
+					s.log.Error("Failed to receive message", logging.Error(err))
 					continue
 				}
-
-				evt := toEvent(ctx, &be)
-				receiveCh <- evt
 			}
+
+			if err := proto.Unmarshal(msg, &be); err != nil {
+				s.log.Error("Failed to unmarshal received event", logging.Error(err))
+				continue
+			}
+
+			evt := toEvent(ctx, &be)
+			receiveCh <- evt
+		}
+	})
+
+	go func() {
+		defer close(errCh)
+		if err := eg.Wait(); err != nil {
+			errCh <- err
 		}
 	}()
 
-	return receiveCh
+	return receiveCh, errCh
 }
 
 func (s SocketServer) close() error {

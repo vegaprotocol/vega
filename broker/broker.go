@@ -332,12 +332,17 @@ func (b *Broker) Receive(ctx context.Context) error {
 		return err
 	}
 
-	receiveCh := b.socketServer.Receive(ctx)
+	receiveCh, errCh := b.socketServer.Receive(ctx)
 
 	for e := range receiveCh {
 		fmt.Printf("received event: %+v \n", e)
 		b.Send(e)
 	}
 
-	return nil
+	select {
+	case err := <-errCh:
+		return err
+	default:
+		return nil
+	}
 }
