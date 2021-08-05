@@ -1,8 +1,6 @@
 package broker
 
 import (
-	"time"
-
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
 )
@@ -20,19 +18,17 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		SocketConfig: SocketConfig{
-			IP:            "0.0.0.0",
-			Port:          3005,
-			MaxRetries:    10,
-			RetryInternal: encoding.Duration{Duration: 50 * time.Millisecond},
-			TransportType: "tcp",
+			IP:                 "0.0.0.0",
+			Port:               3005,
+			MaxReceiveTimeouts: 3,
+			TransportType:      "tcp",
 		},
 	}
 }
 
 type SocketConfig struct {
-	IP            string            `long:"ip" description:" "`
-	Port          int               `long:"port" description:" "`
-	MaxRetries    int               `long:"max-retries"`
-	RetryInternal encoding.Duration `long:"retry-interval"`
-	TransportType string            `long:"transport-type"`
+	IP                 string `long:"ip" description:" "`
+	Port               int    `long:"port" description:" "`
+	MaxReceiveTimeouts int    `long:"max-receive-timeouts"`
+	TransportType      string `long:"transport-type"`
 }

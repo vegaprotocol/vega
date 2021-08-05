@@ -198,8 +198,8 @@ func (l *NodeCommand) runNode(args []string) error {
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 	)
 
-	eg, ctx := errgroup.WithContext(l.ctx)
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(l.ctx)
+	eg, ctx := errgroup.WithContext(ctx)
 
 	// start the grpc server
 	eg.Go(func() error { return grpcServer.Start(ctx) })
@@ -218,8 +218,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	// waitSig will wait for a sigterm or sigint interrupt.
 	eg.Go(func() error {
 		var gracefulStop = make(chan os.Signal, 1)
-		signal.Notify(gracefulStop, syscall.SIGTERM)
-		signal.Notify(gracefulStop, syscall.SIGINT)
+		signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
 		select {
 		case sig := <-gracefulStop:

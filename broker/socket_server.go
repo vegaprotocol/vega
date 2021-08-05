@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 
 	"code.vegaprotocol.io/data-node/events"
@@ -55,7 +56,12 @@ func newSocketServer(log *logging.Logger, config *SocketConfig) (*socketServer, 
 }
 
 func (s socketServer) listen() error {
-	addr := fmt.Sprintf("%s://%s:%d", strings.ToLower(s.config.TransportType), s.config.IP, s.config.Port)
+	addr := fmt.Sprintf(
+		"%s://%s",
+		strings.ToLower(s.config.TransportType),
+		net.JoinHostPort(s.config.IP, fmt.Sprintf("%d", s.config.Port)),
+	)
+
 	if err := s.sock.Listen(addr); err != nil {
 		return fmt.Errorf("failed to listen on %v: %w", addr, err)
 	}
@@ -102,11 +108,11 @@ func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan 
 				case mangosErr.ErrRecvTimeout:
 					s.log.Warn("Receive socket timeout", logging.Error(err))
 					recvTimeouts++
-					if recvTimeouts > 3 {
+					if recvTimeouts > s.config.MaxReceiveTimeouts {
 						return fmt.Errorf("more then a 3 socket timeouts occurred: %w", err)
 					}
 				case mangosErr.ErrBadVersion:
-					return fmt.Errorf("failed with bad socket error: %w", err)
+					return fmt.Errorf("failed with bad protocol version: %w", err)
 				case mangosErr.ErrClosed:
 					return nil
 				default:
@@ -122,6 +128,8 @@ func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan 
 
 			evt := toEvent(ctx, &be)
 			receiveCh <- evt
+
+			recvTimeouts = 0
 		}
 	})
 

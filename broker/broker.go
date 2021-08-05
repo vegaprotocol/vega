@@ -321,7 +321,6 @@ func (b *Broker) Receive(ctx context.Context) error {
 	receiveCh, errCh := b.socketServer.receive(ctx)
 
 	for e := range receiveCh {
-		fmt.Printf("received event: %+v \n", e)
 		b.Send(e)
 	}
 
