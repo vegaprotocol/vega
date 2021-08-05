@@ -68,13 +68,17 @@ func TestEpochService(t *testing.T) {
 	// Move time forward one day
 	now = now.Add((time.Hour * 24) + time.Second)
 	vt.SetTimeNow(ctx, now)
-	// We should have 2 new updates, one for end of epoch...
-	assert.Equal(t, 3, len(epochs))
+	// We should have 1 new updates, one for end of epoch.
+	assert.Equal(t, 2, len(epochs))
 	epoch = epochs[1]
 	assert.EqualValues(t, 0, epoch.Seq)
 	assert.Equal(t, now.String(), epoch.EndTime.String())
 
-	// ...and one for the new epoch
+	// Move time forward one block
+	now = now.Add(time.Second)
+	vt.SetTimeNow(ctx, now)
+	// One update for the new epoch
+	assert.Equal(t, 3, len(epochs))
 	epoch = epochs[2]
 	assert.EqualValues(t, 1, epoch.Seq)
 	assert.Equal(t, now.String(), epoch.StartTime.String())

@@ -34,7 +34,7 @@ type Svc struct {
 	readyToStartNewEpoch bool
 }
 
-// New instantiates a new epochtime service
+// NewService instantiates a new epochtime service
 func NewService(l *logging.Logger, conf Config, vt *vegatime.Svc, params *netparams.Store, broker Broker) *Svc {
 	s := &Svc{config: conf,
 		netparams:            params,
@@ -92,7 +92,7 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 		return
 	}
 
-	if s.readyToStartNewEpoch == true {
+	if s.readyToStartNewEpoch {
 		// Move the epoch details forward
 		s.epoch.Seq += 1
 		s.readyToStartNewEpoch = false
