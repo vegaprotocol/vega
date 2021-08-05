@@ -386,6 +386,7 @@ pipeline {
                                         make run-tests
                                     '''
                                 }
+                                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/*.xml'
                             }
                         }
                     }
