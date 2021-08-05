@@ -21,12 +21,20 @@ pipeline {
         string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
         string(name: 'SPECS_INTERNAL_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/specs-internal repository')
         string(name: 'PROTOS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/protos repository')
+        string(name: 'SYSTEM_TESTS_VALIDATOR_NODE_COUNT', defaultValue: '1', description: 'Number of validator nodes when running system-tests')
+        string(name: 'SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT', defaultValue: '0', description: 'Number of non-validator nodes when running system-tests')
+        string(name: 'SYSTEM_TESTS_TEST_FUNCTION', defaultValue: '', description: 'Run only a tests with a specified function name. This is actually a "pytest -k $TEST_FUNCTION_NAME" command-line argument, see more: https://docs.pytest.org/en/stable/usage.html')
+        string(name: 'SYSTEM_TESTS_TEST_DIRECTORY', defaultValue: 'CoreTesting/bvt', description: 'Run tests from files in this directory and all sub-directories')
     }
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
         SLACK_MESSAGE = "Vega Core CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
-        LOCAL_DOCKER_IMAGE_NAME = "docker.pkg.github.com/vegaprotocol/vega/vega:${BRANCH_NAME}"
+        // Note: make sure the tag name is not too long
+        // Reason: it is used by system-tests for hostnames in dockerised vega, and
+        //         there is a limit of 64 characters for hostname
+        DOCKER_IMAGE_TAG_LOCAL = "j-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
+        DOCKER_IMAGE_NAME_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
     }
 
     stages {
@@ -51,6 +59,30 @@ pipeline {
                     steps {
                         dir('specs-internal') {
                             git branch: "${params.SPECS_INTERNAL_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/specs-internal.git'
+                        }
+                    }
+                }
+                stage('protos') {
+                    options { retry(3) }
+                    steps {
+                        dir('protos') {
+                            git branch: "${params.PROTOS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/protos.git'
+                        }
+                    }
+                }
+                stage('system-tests') {
+                    options { retry(3) }
+                    steps {
+                        dir('system-tests') {
+                            git branch: "${params.SYSTEM_TESTS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/system-tests.git'
+                        }
+                    }
+                }
+                stage('devops-infra') {
+                    options { retry(3) }
+                    steps {
+                        dir('devops-infra') {
+                            git branch: "${params.DEVOPS_INFRA_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/devops-infra.git'
                         }
                     }
                 }
@@ -148,14 +180,14 @@ pipeline {
                             // Note: This docker image is used by system-tests and publish stage
                             withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
                                 sh label: 'Build docker image', script: '''
-                                    docker build -t "${LOCAL_DOCKER_IMAGE_NAME}" docker/
+                                    docker build -t "${DOCKER_IMAGE_NAME_LOCAL}" docker/
                                 '''
                             }
                             sh label: 'Cleanup', script: '''#!/bin/bash -e
                                 rm -rf docker/bin
                             '''
                             sh label: 'Sanity check', script: '''
-                                docker run --rm --entrypoint "" "${LOCAL_DOCKER_IMAGE_NAME}" vega version
+                                docker run --rm --entrypoint "" "${DOCKER_IMAGE_NAME_LOCAL}" vega version
                             '''
                         }
                     }
@@ -290,6 +322,88 @@ pipeline {
                         }
                     }
                 }
+                stage('system-tests') {
+                    environment {
+                        SYSTEM_TESTS_PORTBASE = "${ Integer.parseInt(env.EXECUTOR_NUMBER) * 1000 + 1000}"
+                        SYSTEM_TESTS_DOCKER_IMAGE_TAG = "${DOCKER_IMAGE_TAG_LOCAL}"
+                        VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_VALIDATOR_NODE_COUNT}"
+                        NON_VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT}"
+                        TEST_FUNCTION = "${params.SYSTEM_TESTS_TEST_FUNCTION}"
+                        TEST_DIRECTORY = "${params.SYSTEM_TESTS_TEST_DIRECTORY}"
+                    }
+                    stages {
+                        stage('check') {
+                            steps {
+                                dir('system-tests/scripts') {
+                                    sh label: 'Check setup', script: '''
+                                        make check
+                                    '''
+                                }
+                            }
+                        }
+                        stage('docker pull') {
+                            options { retry(3) }
+                            steps {
+                                dir('system-tests/scripts') {
+                                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                                        sh 'make prepare-docker-pull'
+                                    }
+                                }
+                            }
+                        }
+                        stage('Prepare tests') {
+                            options { retry(3) }
+                            steps {
+                                dir('system-tests/scripts') {
+                                    sh label: 'build test container', script: '''
+                                        make prepare-test-docker-image
+                                    '''
+                                    sh label: 'make proto', script: '''
+                                        make build-test-proto
+                                    '''
+                                }
+                            }
+                        }
+                        stage('Start dockerised-vega') {
+                            options { retry(2) }
+                            steps {
+                                dir('system-tests/scripts') {
+                                    sh label: 'make sure dockerised-vega is not running', script: '''
+                                        make stop-dockerised-vega
+                                    '''
+                                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                                        sh label: 'start dockerised-vega', script: '''
+                                            make start-dockerised-vega
+                                        '''
+                                    }
+                                }
+                            }
+                        }
+                        stage('Run system-tests') {
+                            steps {
+                                dir('system-tests/scripts') {
+                                    sh label: 'run system-tests', script: '''
+                                        make run-tests
+                                    '''
+                                }
+                                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/*.xml'
+                            }
+                        }
+                    }
+                    post {
+                        always  {
+                            retry(3) {
+                                script {
+                                    dir('system-tests/scripts') {
+                                        sh label: 'stop dockerised-vega', script: '''
+                                            make stop-dockerised-vega
+                                        '''
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -315,8 +429,8 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh label: 'Tag new images', script: '''#!/bin/bash -e
-                                docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_VERSIONED}"
-                                docker image tag "${LOCAL_DOCKER_IMAGE_NAME}" "${DOCKER_IMAGE_NAME_ALIAS}"
+                                docker image tag "${DOCKER_IMAGE_NAME_LOCAL}" "${DOCKER_IMAGE_NAME_VERSIONED}"
+                                docker image tag "${DOCKER_IMAGE_NAME_LOCAL}" "${DOCKER_IMAGE_NAME_ALIAS}"
                             '''
 
                             withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
@@ -403,7 +517,7 @@ pipeline {
         always {
             retry(3) {
                 sh label: 'Clean docker images', script: '''
-                    docker rmi "${LOCAL_DOCKER_IMAGE_NAME}"
+                    docker rmi "${DOCKER_IMAGE_NAME_LOCAL}"
                 '''
             }
         }
