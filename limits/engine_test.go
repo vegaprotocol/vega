@@ -48,6 +48,8 @@ func TestLimits(t *testing.T) {
 	t.Run("test market disabled asset enbled", testMarketdisabledAssetenabled)
 	t.Run("proposal enabled with time reach becomes enabled", testDisabledUntilTimeIsReach)
 	t.Run("proposals disabled with time reach stay disabled", testStayDisabledIfTimeIsReachedButEnabledIsFalse)
+	t.Run("bootstrap finished enabled proposals", testBootstrapFinishedEnabledProposals)
+	t.Run("bootstrap in progress enabled proposals", testBootstrapInProgressEnabledProposals)
 }
 
 func testEmptyGenesis(t *testing.T) {
@@ -56,6 +58,7 @@ func testEmptyGenesis(t *testing.T) {
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanProposeMarket())
 	assert.False(t, lmts.CanTrade())
+	assert.False(t, lmts.BootstrapFinished())
 }
 
 func testNilGenesis(t *testing.T) {
@@ -175,6 +178,30 @@ func testStayDisabledIfTimeIsReachedButEnabledIsFalse(t *testing.T) {
 	assert.False(t, lmts.CanProposeMarket())
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanTrade())
+}
+
+func testBootstrapFinishedEnabledProposals(t *testing.T) {
+	lmts := getLimitsTest()
+	lmts.loadGenesisState(t, &limits.GenesisState{
+		ProposeAssetEnabled:      true,
+		ProposeMarketEnabled:     true,
+		ProposeAssetEnabledFrom:  timePtr(time.Unix(2000, 0)),
+		ProposeMarketEnabledFrom: timePtr(time.Unix(2000, 0)),
+		BootstrapBlockCount:      2,
+	})
+
+	// block count is 0 call on Tick once, it's should still
+	// be impossible to do anything, both boolean are OK
+	// and the time is OK
+	lmts.OnTick(context.Background(), time.Unix(3000, 0))
+
+	assert.False(t, lmts.CanProposeMarket())
+	assert.False(t, lmts.CanProposeAsset())
+	assert.False(t, lmts.CanTrade())
+	assert.False(t, lmts.BootstrapFinished())
+}
+
+func testBootstrapInProgressEnabledProposals(t *testing.T) {
 
 }
 

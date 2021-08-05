@@ -150,4 +150,5 @@ var AllKeys = map[string]struct{}{
 	NetworkCheckpointNetworkEOLDate:                       {},
 	NetworkCheckpointTimeElapsedBetweenCheckpoints:        {},
 	NetworkCheckpointMarketFreezeDate:                     {},
+	MarketValueWindowLength:                               {},
 }
