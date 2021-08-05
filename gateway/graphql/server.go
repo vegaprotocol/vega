@@ -152,7 +152,7 @@ func (g *GraphServer) Start() error {
 
 	err := g.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("Failed to listen and serve on graphQL server: %w", err)
+		return fmt.Errorf("failed to listen and serve on graphQL server: %w", err)
 	}
 
 	return nil

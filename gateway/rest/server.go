@@ -112,7 +112,7 @@ func (s *ProxyServer) Start() error {
 	// Start http server on port specified
 	err := s.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("Failure serving REST proxy API %w", err)
+		return fmt.Errorf("failure serving REST proxy API %w", err)
 	}
 
 	return nil
