@@ -78,7 +78,9 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 		err = c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
 		if err != nil {
 			// this can happen as network dependent
-			c.log.Error("could not send transaction to tendermint", logging.Error(err))
+			c.log.Error("could not send transaction to tendermint",
+				logging.Error(err),
+				logging.String("tx", payload.String()))
 		}
 
 		if done != nil {

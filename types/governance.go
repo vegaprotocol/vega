@@ -170,9 +170,13 @@ func ProposalSubmissionFromProposal(p *Proposal) *ProposalSubmission {
 }
 
 func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalSubmission {
+	var pterms *ProposalTerms
+	if p.Terms != nil {
+		pterms = ProposalTermsFromProto(p.Terms)
+	}
 	return &ProposalSubmission{
 		Reference: p.Reference,
-		Terms:     ProposalTermsFromProto(p.Terms),
+		Terms:     pterms,
 	}
 }
 

@@ -16,6 +16,13 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination limits_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Limits
+type Limits interface {
+	CanProposeMarket() bool
+	CanProposeAsset() bool
+	CanTrade() bool
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination node_wallet_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks NodeWallet
 type NodeWallet interface {
 	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)

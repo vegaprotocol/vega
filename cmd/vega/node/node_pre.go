@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -365,6 +366,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 			Adaptors: l.oracleAdaptors,
 		},
 		l.delegation,
+		l.limits,
 	)
 
 	var abciApp tmtypes.Application
@@ -476,6 +478,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
+	l.limits = limits.New(l.conf.Limits, l.Log)
+	l.timeService.NotifyOnTick(l.limits.OnTick)
+
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
 
 	l.erc = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
@@ -496,6 +501,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		// panic at startup.
 		l.netParams.UponGenesis,
 		l.topology.LoadValidatorsOnGenesis,
+		l.limits.UponGenesis,
 	)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
