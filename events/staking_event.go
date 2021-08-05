@@ -20,7 +20,7 @@ func NewStakingEvent(ctx context.Context, evt types.StakingEvent) *StakingEvt {
 	}
 }
 
-func (s *StakingEvt) StakingEvtount() eventspb.StakingEvent {
+func (s StakingEvt) StakingEvt() eventspb.StakingEvent {
 	return s.evt
 }
 

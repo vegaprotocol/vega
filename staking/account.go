@@ -77,47 +77,19 @@ func (s *StakingAccount) GetAvailableBalance() *num.Uint {
 }
 
 func (s *StakingAccount) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) {
-	// first compute the balance before the from time.
-	var (
-		atUnix  = at.UnixNano()
-		balance = num.Zero() // this will be the maximum which can be valid at end of epoch.
-	)
-	for i := 0; i < len(s.Events) && s.Events[i].TS <= atUnix; i++ {
-		evt := s.Events[i]
-		switch evt.Type {
-		case types.StakingEventTypeDeposited:
-			balance.Add(balance, evt.Amount)
-		case types.StakingEventTypeRemoved:
-			if balance.LT(evt.Amount) {
-				return num.Zero(), ErrNegativeBalance
-			}
-			balance.Sub(balance, evt.Amount)
-		}
-	}
-
-	return balance, nil
+	atUnix := at.UnixNano()
+	return s.calculateBalance(func(evt *types.StakingEvent) bool {
+		return evt.TS <= atUnix
+	})
 }
 
 // GetAvailableBalanceInRange could return a negative balance
 // if some event are still expected to be received from the bridge
 func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Uint, error) {
 	// first compute the balance before the from time.
-	var (
-		fromUnix = from.UnixNano()
-		balance  = num.Zero() // this will be the maximum which can be valid at end of epoch.
-		i        int
-	)
-	for ; i < len(s.Events) && s.Events[i].TS <= fromUnix; i++ {
-		evt := s.Events[i]
-		switch evt.Type {
-		case types.StakingEventTypeDeposited:
-			balance.Add(balance, evt.Amount)
-		case types.StakingEventTypeRemoved:
-			if balance.LT(evt.Amount) {
-				return num.Zero(), ErrNegativeBalance
-			}
-			balance.Sub(balance, evt.Amount)
-		}
+	balance, err := s.GetAvailableBalanceAt(from)
+	if err != nil {
+		return num.Zero(), err
 	}
 
 	// now we have the balance at the from time.
@@ -125,17 +97,20 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 	// during the epoch, and make sure that the initial
 	// balance is still covered
 	var (
+		fromUnix  = from.UnixNano()
 		toUnix    = to.UnixNano()
 		deposited = num.Zero()
 		withdrawn = num.Zero()
 	)
-	for ; i < len(s.Events) && s.Events[i].TS <= toUnix; i++ {
-		evt := s.Events[i]
-		switch evt.Type {
-		case types.StakingEventTypeDeposited:
-			deposited.Add(deposited, evt.Amount)
-		case types.StakingEventTypeRemoved:
-			withdrawn.Add(withdrawn, evt.Amount)
+	for i := 0; i < len(s.Events) && s.Events[i].TS <= toUnix; i++ {
+		if s.Events[i].TS > fromUnix {
+			evt := s.Events[i]
+			switch evt.Type {
+			case types.StakingEventTypeDeposited:
+				deposited.Add(deposited, evt.Amount)
+			case types.StakingEventTypeRemoved:
+				withdrawn.Add(withdrawn, evt.Amount)
+			}
 		}
 	}
 
@@ -162,20 +137,11 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 // really prevent that, and would have to wait for the network
 // to have seen all events before getting a positive balance.
 func (s *StakingAccount) computeOngoingBalance() error {
-	balance := num.Zero()
-	for _, v := range s.Events {
-		switch v.Type {
-		case types.StakingEventTypeDeposited:
-			balance.Add(balance, v.Amount)
-		case types.StakingEventTypeRemoved:
-			if balance.LT(v.Amount) {
-				return ErrNegativeBalance
-			}
-			balance.Sub(balance, v.Amount)
-		}
-	}
+	balance, err := s.calculateBalance(func(evt *types.StakingEvent) bool {
+		return true
+	})
 	s.Balance.Set(balance)
-	return nil
+	return err
 }
 
 func (s *StakingAccount) insertSorted(evt *types.StakingEvent) {
@@ -196,4 +162,24 @@ func (s *StakingAccount) insertSorted(evt *types.StakingEvent) {
 
 		return s.Events[i].TS < s.Events[j].TS
 	})
+}
+
+type timeFilter func(*types.StakingEvent) bool
+
+func (s *StakingAccount) calculateBalance(f timeFilter) (*num.Uint, error) {
+	balance := num.Zero()
+	for _, evt := range s.Events {
+		if f(evt) {
+			switch evt.Type {
+			case types.StakingEventTypeDeposited:
+				balance.Add(balance, evt.Amount)
+			case types.StakingEventTypeRemoved:
+				if balance.LT(evt.Amount) {
+					return num.Zero(), ErrNegativeBalance
+				}
+				balance.Sub(balance, evt.Amount)
+			}
+		}
+	}
+	return balance, nil
 }
