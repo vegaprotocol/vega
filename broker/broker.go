@@ -30,10 +30,10 @@ type Subscriber interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/data-node/broker BrokerI
 type BrokerI interface {
 	Send(event events.Event)
-	SendBatch(events []events.Event)
 	Subscribe(s Subscriber) int
 	SubscribeBatch(subs ...Subscriber)
 	Unsubscribe(k int)
+	Receive(ctx context.Context) error
 }
 
 type subscription struct {
@@ -54,9 +54,7 @@ type Broker struct {
 	keys   []int
 	eChans map[events.Type]chan []events.Event
 
-	seqGen *gen
-
-	socketServer *SocketServer
+	socketServer *socketServer
 	quit         chan struct{}
 }
 
@@ -65,7 +63,7 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	socketServer, err := NewSocketServer(log, &config.SocketConfig)
+	socketServer, err := newSocketServer(log, &config.SocketConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
 	}
@@ -76,7 +74,6 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 		subs:         map[int]subscription{},
 		keys:         []int{},
 		eChans:       map[events.Type]chan []events.Event{},
-		seqGen:       newGen(),
 		socketServer: socketServer,
 		quit:         make(chan struct{}),
 	}
@@ -180,17 +177,6 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 			}
 		}
 	}(ch, t)
-}
-
-// SendBatch sends a slice of events to subscribers that can handle the events in the slice
-// the events don't have to be of the same type, and most subscribers will ignore unknown events
-// but this will slow down those subscribers, so avoid doing silly things
-func (b *Broker) SendBatch(events []events.Event) {
-	if len(events) == 0 {
-		return
-	}
-	evts := b.seqGen.setSequence(events...)
-	b.startSending(events[0].Type(), evts)
 }
 
 // Send sends an event to all subscribers
@@ -328,11 +314,11 @@ func (b *Broker) rmSubs(keys ...int) {
 }
 
 func (b *Broker) Receive(ctx context.Context) error {
-	if err := b.socketServer.Listen(); err != nil {
+	if err := b.socketServer.listen(); err != nil {
 		return err
 	}
 
-	receiveCh, errCh := b.socketServer.Receive(ctx)
+	receiveCh, errCh := b.socketServer.receive(ctx)
 
 	for e := range receiveCh {
 		fmt.Printf("received event: %+v \n", e)

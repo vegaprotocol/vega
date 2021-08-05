@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -235,7 +236,12 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	l.Log.Info("Vega startup complete")
 
-	return eg.Wait()
+	err := eg.Wait()
+	if errors.Is(err, context.Canceled) {
+		return nil
+	}
+
+	return err
 }
 
 func flagProvided(flag string) bool {

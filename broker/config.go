@@ -24,6 +24,7 @@ func NewDefaultConfig() Config {
 			Port:          3005,
 			MaxRetries:    10,
 			RetryInternal: encoding.Duration{Duration: 50 * time.Millisecond},
+			TransportType: "tcp",
 		},
 	}
 }
@@ -33,4 +34,5 @@ type SocketConfig struct {
 	Port          int               `long:"port" description:" "`
 	MaxRetries    int               `long:"max-retries"`
 	RetryInternal encoding.Duration `long:"retry-interval"`
+	TransportType string            `long:"transport-type"`
 }

@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
@@ -14,14 +15,15 @@ import (
 	mangosErr "go.nanomsg.org/mangos/v3/errors"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
+	_ "go.nanomsg.org/mangos/v3/transport/inproc"
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 )
 
 const defaultEventChannelBufferSize = 256
 
-// SocketServer receives events from a remote broker.
+// socketServer receives events from a remote broker.
 // This is used by the data node to receive events from a non-validating core node.
-type SocketServer struct {
+type socketServer struct {
 	log    *logging.Logger
 	config *SocketConfig
 
@@ -39,21 +41,21 @@ func pipeEventToString(pe mangos.PipeEvent) string {
 	}
 }
 
-func NewSocketServer(log *logging.Logger, config *SocketConfig) (*SocketServer, error) {
+func newSocketServer(log *logging.Logger, config *SocketConfig) (*socketServer, error) {
 	sock, err := pull.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
 	}
 
-	return &SocketServer{
+	return &socketServer{
 		log:    log,
 		config: config,
 		sock:   sock,
 	}, nil
 }
 
-func (s SocketServer) Listen() error {
-	addr := fmt.Sprintf("tcp://%s:%d", s.config.IP, s.config.Port)
+func (s socketServer) listen() error {
+	addr := fmt.Sprintf("%s://%s:%d", strings.ToLower(s.config.TransportType), s.config.IP, s.config.Port)
 	if err := s.sock.Listen(addr); err != nil {
 		return fmt.Errorf("failed to listen on %v: %w", addr, err)
 	}
@@ -72,7 +74,7 @@ func (s SocketServer) Listen() error {
 	return nil
 }
 
-func (s SocketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
+func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan error) {
 	receiveCh := make(chan events.Event, defaultEventChannelBufferSize)
 	errCh := make(chan error, 1)
 
@@ -104,8 +106,9 @@ func (s SocketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 						return fmt.Errorf("more then a 3 socket timeouts occurred: %w", err)
 					}
 				case mangosErr.ErrBadVersion:
+					return fmt.Errorf("failed with bad socket error: %w", err)
 				case mangosErr.ErrClosed:
-					return fmt.Errorf("fatal error socket: %w", err)
+					return nil
 				default:
 					s.log.Error("Failed to receive message", logging.Error(err))
 					continue
@@ -132,7 +135,7 @@ func (s SocketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 	return receiveCh, errCh
 }
 
-func (s SocketServer) close() error {
+func (s socketServer) close() error {
 	s.log.Info("Closing socket server")
 	return s.sock.Close()
 }

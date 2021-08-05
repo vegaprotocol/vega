@@ -12,6 +12,8 @@ import (
 	"code.vegaprotocol.io/data-node/subscribers/mocks"
 	types "code.vegaprotocol.io/protos/vega"
 
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -189,8 +191,16 @@ func (t trStub) TransferResponses() []*types.TransferResponse {
 	return t.r
 }
 
+func (t trStub) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{}
+}
+
 func (t trStub) SetSequenceID(s uint64) {}
 func (t trStub) Sequence() uint64       { return 0 }
 
 func (t timeStub) SetSequenceID(s uint64) {}
 func (t timeStub) Sequence() uint64       { return 0 }
+
+func (t timeStub) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{}
+}
