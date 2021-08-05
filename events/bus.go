@@ -91,6 +91,7 @@ const (
 	EpochUpdate
 	DelegationBalanceEvent
 	PendingDelegationBalanceEvent
+	StakingEvent
 )
 
 var (
@@ -137,6 +138,7 @@ var (
 
 		eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:         DelegationBalanceEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PENDING_DELEGATION_BALANCE: PendingDelegationBalanceEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT:              StakingEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -172,6 +174,7 @@ var (
 		EpochUpdate:                   eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE,
 		DelegationBalanceEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE,
 		PendingDelegationBalanceEvent: eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
+		StakingEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT,
 	}
 
 	eventStrings = map[Type]string{
@@ -208,6 +211,7 @@ var (
 		EpochUpdate:                   "EpochUpdate",
 		DelegationBalanceEvent:        "DelegationBalanceEvent",
 		PendingDelegationBalanceEvent: "PendingDelegationBalanceEvent",
+		StakingEvent:                  "StakingEvent",
 	}
 )
 

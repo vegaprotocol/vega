@@ -186,3 +186,10 @@ type OraclesEngine interface {
 type OracleAdaptors interface {
 	Normalise(commandspb.OracleDataSubmission) (*oracles.OracleData, error)
 }
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/limits_mock.go -package mocks code.vegaprotocol.io/vega/processor Limits
+type Limits interface {
+	CanProposeMarket() bool
+	CanProposeAsset() bool
+	CanTrade() bool
+}

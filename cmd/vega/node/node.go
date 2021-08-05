@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/gateway/server"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -150,6 +151,7 @@ type NodeCommand struct {
 	oracleAdaptors  *adaptors.Adaptors
 	netParams       *netparams.Store
 	delegation      *delegation.Engine
+	limits          *limits.Engine
 
 	mktscfg []types.Market
 

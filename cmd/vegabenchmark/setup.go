@@ -143,6 +143,10 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	bstats := stats.NewBlockchain()
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, netparams, broker)
+	limits := mocks.NewMockLimits(ctrl)
+	limits.EXPECT().CanTrade().AnyTimes().Return(true)
+	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
+	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
 	app := processor.NewApp(
 		log,
@@ -168,6 +172,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 			Adaptors: oraclesAdaptors,
 		},
 		delegationEngine,
+		limits,
 	)
 
 	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)

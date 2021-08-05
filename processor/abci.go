@@ -27,13 +27,15 @@ import (
 var (
 	ErrPublicKeyExceededRateLimit                    = errors.New("public key exceeded the rate limit")
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
+	ErrTradingDisabled                               = errors.New("trading disabled")
+	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
+	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
 )
 
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
-	size              uint64
 	txTotals          []uint64
 	txSizes           []int
 
@@ -59,6 +61,8 @@ type App struct {
 	netp       NetworkParameters
 	oracles    *Oracle
 	delegation DelegationEngine
+
+	limits Limits
 }
 
 func NewApp(
@@ -82,6 +86,7 @@ func NewApp(
 	netp NetworkParameters,
 	oracles *Oracle,
 	delegation DelegationEngine,
+	limits Limits,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -112,6 +117,7 @@ func NewApp(
 		netp:       netp,
 		oracles:    oracles,
 		delegation: delegation,
+		limits:     limits,
 	}
 
 	// setup handlers
@@ -258,6 +264,12 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
 
+	if err := app.canSubmitTx(tx); err != nil {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(err.Error())
+		return ctx, resp
+	}
+
 	// Check ratelimits
 	// FIXME(): temporary disable all rate limiting
 	_, isval := app.limitPubkey(tx.PubKey())
@@ -300,13 +312,52 @@ func (app *App) limitPubkey(pk []byte) (limit bool, isValidator bool) {
 	return false, false
 }
 
+func (app *App) canSubmitTx(tx abci.Tx) (err error) {
+	defer func() {
+		if err != nil {
+			app.log.Error("cannot submit transaction", logging.Error(err))
+		}
+	}()
+	switch tx.Command() {
+	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
+		if !app.limits.CanTrade() {
+			return ErrTradingDisabled
+		}
+	case txn.ProposeCommand:
+		praw := &commandspb.ProposalSubmission{}
+		if err := tx.Unmarshal(praw); err != nil {
+			return fmt.Errorf("could not unmarshal proposal submission: %w", err)
+		}
+		p := types.NewProposalSubmissionFromProto(praw)
+		if p.Terms == nil {
+			return errors.New("invalid proposal submission")
+		}
+		switch p.Terms.Change.GetTermType() {
+		case types.ProposalTerms_NEW_MARKET:
+			if !app.limits.CanProposeMarket() {
+				return ErrMarketProposalDisabled
+			}
+		case types.ProposalTerms_NEW_ASSET:
+			if !app.limits.CanProposeAsset() {
+				return ErrAssetProposalDisabled
+			}
+		}
+	}
+	return nil
+}
+
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
 func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
-	app.size++
 	app.setTxStats(len(req.Tx))
 
+	var resp tmtypes.ResponseDeliverTx
+	if err := app.canSubmitTx(tx); err != nil {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(err.Error())
+	}
+
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
-	return ctx, tmtypes.ResponseDeliverTx{}
+	return ctx, resp
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {

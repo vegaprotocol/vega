@@ -5,13 +5,12 @@
 package mocks
 
 import (
-	context "context"
-	reflect "reflect"
-	time "time"
-
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
+	time "time"
 )
 
 // MockDelegationEngine is a mock of DelegationEngine interface
