@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"

@@ -7,9 +7,9 @@ import (
 	"errors"
 	"sync"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 )
 
 var (
@@ -105,6 +105,12 @@ func (t *Topology) UpdateValidatorSet(keys [][]byte) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.chainValidators = keys
+}
+
+//IsValidatorNode takes a nodeID and returns true if the node is a validator node
+func (t *Topology) IsValidatorNode(nodeID string) bool {
+	_, ok := t.validators[nodeID]
+	return ok
 }
 
 func (t *Topology) AddNodeRegistration(nr *commandspb.NodeRegistration) error {

@@ -11,8 +11,8 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/oracles"
 
-	"code.vegaprotocol.io/vega/products"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/products"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"

@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
-	"code.vegaprotocol.io/vega/contextutil"
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/contextutil"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"

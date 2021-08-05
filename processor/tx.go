@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/crypto"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 

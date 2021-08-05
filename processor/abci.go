@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -42,21 +43,22 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets   Assets
-	banking  Banking
-	broker   Broker
-	cmd      Commander
-	witness  Witness
-	evtfwd   EvtForwarder
-	exec     ExecutionEngine
-	ghandler *genesis.Handler
-	gov      GovernanceEngine
-	notary   Notary
-	stats    Stats
-	time     TimeService
-	top      ValidatorTopology
-	netp     NetworkParameters
-	oracles  *Oracle
+	assets     Assets
+	banking    Banking
+	broker     Broker
+	cmd        Commander
+	witness    Witness
+	evtfwd     EvtForwarder
+	exec       ExecutionEngine
+	ghandler   *genesis.Handler
+	gov        GovernanceEngine
+	notary     Notary
+	stats      Stats
+	time       TimeService
+	top        ValidatorTopology
+	netp       NetworkParameters
+	oracles    *Oracle
+	delegation DelegationEngine
 }
 
 func NewApp(
@@ -79,6 +81,7 @@ func NewApp(
 	top ValidatorTopology,
 	netp NetworkParameters,
 	oracles *Oracle,
+	delegation DelegationEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -93,21 +96,22 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:   assets,
-		banking:  banking,
-		broker:   broker,
-		cmd:      cmd,
-		witness:  witness,
-		evtfwd:   evtfwd,
-		exec:     exec,
-		ghandler: ghandler,
-		gov:      gov,
-		notary:   notary,
-		stats:    stats,
-		time:     time,
-		top:      top,
-		netp:     netp,
-		oracles:  oracles,
+		assets:     assets,
+		banking:    banking,
+		broker:     broker,
+		cmd:        cmd,
+		witness:    witness,
+		evtfwd:     evtfwd,
+		exec:       exec,
+		ghandler:   ghandler,
+		gov:        gov,
+		notary:     notary,
+		stats:      stats,
+		time:       time,
+		top:        top,
+		netp:       netp,
+		oracles:    oracles,
+		delegation: delegation,
 	}
 
 	// setup handlers
@@ -139,7 +143,7 @@ func NewApp(
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
 		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
 		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
-		HandleDeliverTx(txn.UndelegateAtEpochEndCommand, app.DeliverUndelegateAtEpochEnd)
+		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -698,14 +702,21 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	return errors.New("unimplemented")
+	return app.delegation.Delegate(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
 }
 
-func (app *App) DeliverUndelegateAtEpochEnd(ctx context.Context, tx abci.Tx) error {
-	ce := &commandspb.UndelegateAtEpochEndSubmission{}
+func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.UndelegateSubmission{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
 
-	return errors.New("unimplemented")
+	switch ce.Method {
+	case commandspb.UndelegateSubmission_METHOD_NOW:
+		return app.delegation.UndelegateNow(ctx, tx.Party(), ce.NodeId, num.Zero())
+	case commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH:
+		return app.delegation.UndelegateAtEndOfEpoch(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
+	default:
+		return errors.New("unimplemented")
+	}
 }

@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/evtforward/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

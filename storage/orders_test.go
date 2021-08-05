@@ -7,8 +7,8 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/stretchr/testify/assert"

@@ -11,22 +11,23 @@ import (
 )
 
 type procTest struct {
-	eng     *mocks.MockExecutionEngine
-	ts      *mocks.MockTimeService
-	es      *mocks.MockEpochService
-	stat    *mocks.MockStats
-	tickCB  func(context.Context, time.Time)
-	ctrl    *gomock.Controller
-	cmd     *mocks.MockCommander
-	assets  *mocks.MockAssets
-	top     *mocks.MockValidatorTopology
-	gov     *mocks.MockGovernanceEngine
-	notary  *mocks.MockNotary
-	evtfwd  *mocks.MockEvtForwarder
-	witness *mocks.MockWitness
-	bank    *mocks.MockBanking
-	netp    *mocks.MockNetworkParameters
-	oracles *stubOracles
+	eng        *mocks.MockExecutionEngine
+	ts         *mocks.MockTimeService
+	es         *mocks.MockEpochService
+	stat       *mocks.MockStats
+	tickCB     func(context.Context, time.Time)
+	ctrl       *gomock.Controller
+	cmd        *mocks.MockCommander
+	assets     *mocks.MockAssets
+	top        *mocks.MockValidatorTopology
+	gov        *mocks.MockGovernanceEngine
+	notary     *mocks.MockNotary
+	evtfwd     *mocks.MockEvtForwarder
+	witness    *mocks.MockWitness
+	bank       *mocks.MockBanking
+	netp       *mocks.MockNetworkParameters
+	oracles    *stubOracles
+	delegation *mocks.MockDelegationEngine
 }
 
 type stubOracles struct {
@@ -52,6 +53,7 @@ func getTestProcessor(t *testing.T) *procTest {
 		Engine:   mocks.NewMockOraclesEngine(ctrl),
 		Adaptors: mocks.NewMockOracleAdaptors(ctrl),
 	}
+	delegation := mocks.NewMockDelegationEngine(ctrl)
 
 	var cb func(context.Context, time.Time)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(c func(context.Context, time.Time)) {
@@ -59,20 +61,21 @@ func getTestProcessor(t *testing.T) *procTest {
 	})
 
 	return &procTest{
-		eng:     eng,
-		ts:      ts,
-		stat:    stat,
-		tickCB:  cb,
-		ctrl:    ctrl,
-		cmd:     cmd,
-		assets:  assets,
-		top:     top,
-		gov:     gov,
-		notary:  notary,
-		evtfwd:  evtfwd,
-		witness: witness,
-		bank:    bank,
-		netp:    netp,
-		oracles: oracles,
+		eng:        eng,
+		ts:         ts,
+		stat:       stat,
+		tickCB:     cb,
+		ctrl:       ctrl,
+		cmd:        cmd,
+		assets:     assets,
+		top:        top,
+		gov:        gov,
+		notary:     notary,
+		evtfwd:     evtfwd,
+		witness:    witness,
+		bank:       bank,
+		netp:       netp,
+		oracles:    oracles,
+		delegation: delegation,
 	}
 }

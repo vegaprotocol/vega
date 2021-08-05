@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"code.vegaprotocol.io/vega/logging"
 	ptypes "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/risk/mocks"
 

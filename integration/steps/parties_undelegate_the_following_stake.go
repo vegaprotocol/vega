@@ -1,8 +1,10 @@
 package steps
 
 import (
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/cucumber/godog"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -14,17 +16,18 @@ func PartiesUndelegateTheFollowingStake(
 	for _, r := range parseUndelegationTable(table) {
 		row := newUndelegationRow(r)
 
-		undelegateStake := types.UndelegateAtEpochEnd{
+		undelegateStake := types.Undelegate{
 			NodeID: row.NodeID(),
-			Amount: row.Amount(),
+			Amount: num.NewUint(row.Amount()),
+			Method: commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH.String(),
 		}
 
 		_ = undelegateStake
 
-		/*		resp, err := exec.Undelegate(context.Background(), &undelegateStake)
-				if err := checkExpectedError(row, err); err != nil {
-					return err
-				}*/
+		/*resp, err := exec.Undelegate(context.Background(), &undelegateStake)
+		if err := checkExpectedError(row, err); err != nil {
+			return err
+		}*/
 	}
 	return nil
 }

@@ -38,6 +38,14 @@ type EpochService interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
+type DelegationEngine interface {
+	Delegate(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	OnEpochEnd(ctx context.Context, start, end time.Time) []*types.ValidatorData
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
 	// orders stuff

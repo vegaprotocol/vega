@@ -5,12 +5,12 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/protos/vega"
+	vega "code.vegaprotocol.io/protos/vega"
 	api "code.vegaprotocol.io/protos/vega/api"
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/tendermint/tendermint/rpc/core/types"
+	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	reflect "reflect"
 	time "time"
 )
@@ -69,10 +69,10 @@ func (mr *MockBlockchainClientMockRecorder) GetGenesisTime(arg0 interface{}) *go
 }
 
 // GetNetworkInfo mocks base method
-func (m *MockBlockchainClient) GetNetworkInfo(arg0 context.Context) (*types.ResultNetInfo, error) {
+func (m *MockBlockchainClient) GetNetworkInfo(arg0 context.Context) (*coretypes.ResultNetInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNetworkInfo", arg0)
-	ret0, _ := ret[0].(*types.ResultNetInfo)
+	ret0, _ := ret[0].(*coretypes.ResultNetInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -84,10 +84,10 @@ func (mr *MockBlockchainClientMockRecorder) GetNetworkInfo(arg0 interface{}) *go
 }
 
 // GetStatus mocks base method
-func (m *MockBlockchainClient) GetStatus(arg0 context.Context) (*types.ResultStatus, error) {
+func (m *MockBlockchainClient) GetStatus(arg0 context.Context) (*coretypes.ResultStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatus", arg0)
-	ret0, _ := ret[0].(*types.ResultStatus)
+	ret0, _ := ret[0].(*coretypes.ResultStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -114,10 +114,10 @@ func (mr *MockBlockchainClientMockRecorder) GetUnconfirmedTxCount(arg0 interface
 }
 
 // Health mocks base method
-func (m *MockBlockchainClient) Health() (*types.ResultHealth, error) {
+func (m *MockBlockchainClient) Health() (*coretypes.ResultHealth, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Health")
-	ret0, _ := ret[0].(*types.ResultHealth)
+	ret0, _ := ret[0].(*coretypes.ResultHealth)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -129,7 +129,7 @@ func (mr *MockBlockchainClientMockRecorder) Health() *gomock.Call {
 }
 
 // SubmitTransaction mocks base method
-func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle, arg2 api.SubmitTransactionRequest_Type) error {
+func (m *MockBlockchainClient) SubmitTransaction(arg0 context.Context, arg1 *vega.SignedBundle, arg2 api.SubmitTransactionRequest_Type) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

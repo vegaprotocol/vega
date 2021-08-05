@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/dgraph-io/badger/v2"

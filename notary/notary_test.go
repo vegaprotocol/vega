@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/notary/mocks"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"

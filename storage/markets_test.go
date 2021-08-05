@@ -3,9 +3,9 @@ package storage_test
 import (
 	"testing"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/stretchr/testify/assert"

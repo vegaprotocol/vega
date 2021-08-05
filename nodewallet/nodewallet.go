@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"path/filepath"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet/eth"
 	"code.vegaprotocol.io/vega/nodewallet/vega"
-	types "code.vegaprotocol.io/protos/vega"
 	"github.com/pkg/errors"
 )
 

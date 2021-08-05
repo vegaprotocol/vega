@@ -9,12 +9,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/crypto"
-	vhttp "code.vegaprotocol.io/vega/http"
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
+	vhttp "code.vegaprotocol.io/vega/http"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"

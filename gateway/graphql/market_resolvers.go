@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/protos/vega"
 	protoapi "code.vegaprotocol.io/protos/vega/api"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/vegatime"
 )
 

@@ -68,6 +68,9 @@ const (
 
 	// length of epoch in seconds
 	ValidatorsEpochLength = "validators.epoch.length"
+	// delegation params
+	DelegationMinAmount            = "validators.delegation.minAmount"
+	DelegationMaxStakePerValidator = "validators.delegation.maxStakePerValidator"
 )
 
 var AllKeys = map[string]struct{}{
@@ -123,4 +126,6 @@ var AllKeys = map[string]struct{}{
 	MarketProbabilityOfTradingTauScaling:                  {},
 	MarketMinProbabilityOfTradingForLPOrders:              {},
 	ValidatorsEpochLength:                                 {},
+	DelegationMinAmount:                                   {},
+	DelegationMaxStakePerValidator:                        {},
 }

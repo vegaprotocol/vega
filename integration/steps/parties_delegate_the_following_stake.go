@@ -1,6 +1,7 @@
 package steps
 
 import (
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/execution"
@@ -16,7 +17,7 @@ func PartiesDelegateTheFollowingStake(
 
 		delegateStake := types.Delegate{
 			NodeID: row.NodeID(),
-			Amount: row.Amount(),
+			Amount: num.NewUint(row.Amount()),
 		}
 
 		_ = delegateStake

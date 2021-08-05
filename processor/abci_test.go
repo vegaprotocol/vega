@@ -74,6 +74,7 @@ func (s *AbciTestSuite) newApp(proc *procTest) *processor.App {
 			Engine:   proc.oracles.Engine,
 			Adaptors: proc.oracles.Adaptors,
 		},
+		proc.delegation,
 	)
 }
 
