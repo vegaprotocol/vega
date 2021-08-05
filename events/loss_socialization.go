@@ -86,3 +86,22 @@ func (l LossSoc) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func LossSocializationEventFromStream(ctx context.Context, be *eventspb.BusEvent) *LossSoc {
+	lse := &LossSoc{
+		Base:     newBaseFromStream(ctx, LossSocializationEvent, be),
+		partyID:  be.GetLossSocialization().PartyId,
+		marketID: be.GetLossSocialization().MarketId,
+	}
+
+	amt := be.GetLossSocialization().Amount
+	if amt < 0 {
+		lse.neg = true
+		amt *= -1
+		lse.amount = num.NewUint(uint64(amt))
+		return lse
+	}
+
+	lse.amount = num.NewUint(uint64(amt))
+	return lse
+}

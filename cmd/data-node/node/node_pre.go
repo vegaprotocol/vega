@@ -192,7 +192,11 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 	l.oracleService = oracles.NewService(l.ctx)
 
-	l.broker = broker.New(l.ctx)
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
+	if err != nil {
+		l.Log.Error("unable to initialise broker", logging.Error(err))
+		return err
+	}
 	l.broker.SubscribeBatch(
 		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,

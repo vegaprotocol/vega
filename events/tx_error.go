@@ -99,3 +99,10 @@ func (t TxErr) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func TxErrEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TxErr {
+	return &TxErr{
+		Base: newBaseFromStream(ctx, TxErrEvent, be),
+		evt:  be.GetTxErrEvent(),
+	}
+}

@@ -3,6 +3,8 @@ package events
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"code.vegaprotocol.io/data-node/contextutil"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
@@ -53,6 +55,7 @@ type Event interface {
 	TraceID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
+	StreamMessage() *eventspb.BusEvent
 }
 
 const (
@@ -208,6 +211,27 @@ func newBase(ctx context.Context, t Type) *Base {
 		blockNr: h,
 		et:      t,
 	}
+}
+
+func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
+	evtCtx := contextutil.WithTraceID(ctx, be.Block)
+	blockNr, seq := decodeEventID(be.Id)
+	return &Base{
+		ctx:     evtCtx,
+		traceID: be.Block,
+		blockNr: blockNr,
+		seq:     seq,
+		et:      t,
+	}
+}
+
+func decodeEventID(id string) (blockNr int64, seq uint64) {
+	arr := strings.Split(id, "-")
+	s1, s2 := arr[0], arr[1]
+	blockNr, _ = strconv.ParseInt(s1, 10, 64)
+	n, _ := strconv.ParseInt(s2, 10, 64)
+	seq = uint64(n)
+	return
 }
 
 // TraceID returns the... traceID obviously

@@ -181,7 +181,10 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
 
-	eventBroker = broker.New(ctx)
+	eventBroker, err = broker.New(ctx, logger, conf.Broker)
+	if err != nil {
+		t.Fatalf("failed to create broker: %v", err)
+	}
 	eventBroker.SubscribeBatch(
 		accountSub,
 		transferSub,
@@ -224,10 +227,9 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatal("failed to create gRPC server")
 	}
 
-	go srv.Start()
+	go srv.Start(ctx)
 
 	t.Cleanup(func() {
-		srv.Stop()
 		cleanTempDir()
 		cancel()
 	})
@@ -286,8 +288,10 @@ func PublishEvents(
 		evts[e.Type()] = s
 	}
 	// we've grouped events per type, now send them all in batches
-	for _, e := range evts {
-		b.SendBatch(e)
+	for _, batch := range evts {
+		for _, e := range batch {
+			b.Send(e)
+		}
 	}
 
 	t.Logf("%d events sent", len(evts))

@@ -3,11 +3,16 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/gateway/server"
 	"code.vegaprotocol.io/data-node/logging"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -27,7 +32,8 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 		}
 	}
 
-	ctx, cancel := context.WithCancel(opts.ctx)
+	eg, ctx := errgroup.WithContext(opts.ctx)
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -48,14 +54,32 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 		return err
 	}
 
-	srv := server.New(opts.Config, log)
-	if err := srv.Start(); err != nil {
-		return err
-	}
-	defer srv.Stop()
+	// waitSig will wait for a sigterm or sigint interrupt.
+	eg.Go(func() error {
+		var gracefulStop = make(chan os.Signal, 1)
+		signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
-	waitSig(ctx, log)
-	return nil
+		select {
+		case sig := <-gracefulStop:
+			log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+			cancel()
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+
+		return nil
+	})
+
+	eg.Go(func() error {
+		srv := server.New(opts.Config, log)
+		if err := srv.Start(ctx); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return eg.Wait()
 }
 
 func Gateway(ctx context.Context, parser *flags.Parser) error {

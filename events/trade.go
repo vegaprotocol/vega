@@ -46,3 +46,10 @@ func (t Trade) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func TradeEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Trade {
+	return &Trade{
+		Base: newBaseFromStream(ctx, TradeEvent, be),
+		t:    *be.GetTrade(),
+	}
+}

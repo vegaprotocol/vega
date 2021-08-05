@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -57,7 +58,7 @@ func (s *ProxyServer) ReloadConf(cfg gateway.Config) {
 }
 
 // Start start the server
-func (s *ProxyServer) Start() {
+func (s *ProxyServer) Start() error {
 	logger := s.log
 
 	logger.Info("Starting REST<>GRPC based API",
@@ -111,9 +112,10 @@ func (s *ProxyServer) Start() {
 	// Start http server on port specified
 	err := s.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		logger.Panic("Failure serving REST proxy API", logging.Error(err))
+		return fmt.Errorf("failure serving REST proxy API %w", err)
 	}
 
+	return nil
 }
 
 // Stop stops the server

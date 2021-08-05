@@ -231,7 +231,11 @@ func getTestGRPCServer(
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
 	// stub...
 	gov, vote := govStub{}, voteStub{}
-	broker := broker.New(ctx)
+	broker, err := broker.New(ctx, logger, conf.Broker)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create broker")
+		return
+	}
 
 	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote)
 
@@ -280,14 +284,13 @@ func getTestGRPCServer(
 	}
 
 	tidy = func() {
-		g.Stop()
 		tidyTempDir()
 		cancel()
 	}
 
 	if startAndWait {
 		// Start the gRPC server, then wait for it to be ready.
-		go g.Start()
+		go g.Start(ctx)
 
 		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
 		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())

@@ -84,3 +84,14 @@ func (p PosRes) StreamMarketMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func PositionResolutionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *PosRes {
+	base := newBaseFromStream(ctx, PositionResolution, be)
+	return &PosRes{
+		Base:       base,
+		distressed: int(be.GetPositionResolution().Distressed),
+		closed:     int(be.GetPositionResolution().Closed),
+		markPrice:  be.GetPositionResolution().GetMarkPrice(),
+		marketID:   be.GetPositionResolution().MarketId,
+	}
+}

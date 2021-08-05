@@ -128,3 +128,17 @@ func (a Auction) StreamMarketMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func AuctionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Auction {
+	e := &Auction{
+		Base:           newBaseFromStream(ctx, AuctionEvent, be),
+		marketID:       be.GetAuction().MarketId,
+		auctionStart:   be.GetAuction().Start,
+		auctionStop:    be.GetAuction().End,
+		openingAuction: be.GetAuction().OpeningAuction,
+		leave:          be.GetAuction().Leave,
+		trigger:        be.GetAuction().Trigger,
+		extension:      be.GetAuction().ExtensionTrigger,
+	}
+	return e
+}

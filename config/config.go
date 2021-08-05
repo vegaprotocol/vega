@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/assets"
+	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/fee"
@@ -59,6 +60,7 @@ type Config struct {
 	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	Fee               fee.Config         `group:"Fee" namespace:"fee"`
+	Broker            broker.Config      `group:"Broker" namespace:"broker"`
 	NetworkParameters netparams.Config
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
@@ -95,6 +97,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Subscribers:       subscribers.NewDefaultConfig(),
 		Fee:               fee.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
+		Broker:            broker.NewDefaultConfig(),
 		GatewayEnabled:    true,
 		StoresEnabled:     true,
 		UlimitNOFile:      8192,
