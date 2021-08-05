@@ -311,7 +311,12 @@ func (app *App) limitPubkey(pk []byte) (limit bool, isValidator bool) {
 	return false, false
 }
 
-func (app *App) canSubmitTx(tx abci.Tx) error {
+func (app *App) canSubmitTx(tx abci.Tx) (err error) {
+	defer func() {
+		if err != nil {
+			app.log.Error("cannot submit transaction", logging.Error(err))
+		}
+	}()
 	switch tx.Command() {
 	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
 		if !app.limits.CanTrade() {
@@ -319,13 +324,12 @@ func (app *App) canSubmitTx(tx abci.Tx) error {
 		}
 	case txn.ProposeCommand:
 		praw := &commandspb.ProposalSubmission{}
-		err := tx.Unmarshal(&praw)
-		if err != nil {
-			return errors.New("invalid transaction")
+		if err := tx.Unmarshal(praw); err != nil {
+			return fmt.Errorf("could not unmarshal proposal submission: %w", err)
 		}
 		p := types.NewProposalSubmissionFromProto(praw)
 		if p.Terms == nil {
-			return errors.New("invalid transaction")
+			return errors.New("invalid proposal submission")
 		}
 		switch p.Terms.Change.GetTermType() {
 		case types.ProposalTerms_NEW_MARKET:

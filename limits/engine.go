@@ -2,6 +2,7 @@ package limits
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -54,6 +55,9 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) error {
 	e.proposeMarketEnabled = state.ProposeMarketEnabled
 	e.proposeAssetEnabledFrom = timeFromPtr(state.ProposeAssetEnabledFrom)
 	e.proposeMarketEnabledFrom = timeFromPtr(state.ProposeMarketEnabledFrom)
+
+	e.log.Info("loaded limits genesis state",
+		logging.String("state", fmt.Sprintf("%#v", *state)))
 
 	return nil
 }
