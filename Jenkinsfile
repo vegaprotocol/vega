@@ -371,9 +371,11 @@ pipeline {
                                     sh label: 'make sure dockerised-vega is not running', script: '''
                                         make stop-dockerised-vega
                                     '''
-                                    sh label: 'start dockerised-vega', script: '''
-                                        make start-dockerised-vega
-                                    '''
+                                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                                        sh label: 'start dockerised-vega', script: '''
+                                            make start-dockerised-vega
+                                        '''
+                                    }
                                 }
                             }
                         }
