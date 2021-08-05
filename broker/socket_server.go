@@ -33,9 +33,9 @@ type socketServer struct {
 
 func pipeEventToString(pe mangos.PipeEvent) string {
 	switch pe {
-	case 1:
+	case mangos.PipeEventAttached:
 		return "Attached"
-	case 2:
+	case mangos.PipeEventDetached:
 		return "Detached"
 	default:
 		return "Attaching"
