@@ -125,16 +125,12 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 // NotifyOnEpoch allows other services to register a callback function
 // which will be called once we enter a new epoch
 func (s *Svc) NotifyOnEpoch(f func(context.Context, types.Epoch)) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.listeners = append(s.listeners, f)
 }
 
 func (s *Svc) notify(ctx context.Context, e types.Epoch) {
 	// Push this updated epoch message onto the event bus
 	s.broker.Send(events.NewEpochEvent(ctx, &e))
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	for _, f := range s.listeners {
 		f(ctx, e)
 	}
