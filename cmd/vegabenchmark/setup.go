@@ -142,7 +142,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	bstats := stats.NewBlockchain()
 
-	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, netparams, broker)
+	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
