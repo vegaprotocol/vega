@@ -2,7 +2,6 @@ package epochtime
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -25,7 +24,6 @@ type Svc struct {
 	netparams *netparams.Store
 
 	listeners []func(context.Context, types.Epoch)
-	mu        sync.Mutex
 
 	log *logging.Logger
 
