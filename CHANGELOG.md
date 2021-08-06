@@ -11,20 +11,26 @@
 - [#3591](https://github.com/vegaprotocol/vega/pull/3591) - Implemented market terminated, settled and suspended states via the oracle trigger
 - [#3798](https://github.com/vegaprotocol/vega/pull/3798) - Update godog version to 11
 - [#3793](https://github.com/vegaprotocol/vega/pull/3793) - Send Commander.Command in a goroutine
-- [#3768](https://github.com/vegaprotocol/vega/pull/3768) - Checkpoint engine hash and checkpoint creation
+- [#3805](https://github.com/vegaprotocol/vega/pull/3805) - Checkpoint engine hash and checkpoint creation
 - [#3785](https://github.com/vegaprotocol/vega/pull/3785) - Implement delegation commands
 - [#3714](https://github.com/vegaprotocol/vega/pull/3714) - Move protos into an external repo
 - [#3719](https://github.com/vegaprotocol/vega/pull/3719) - Replace vega wallet with call to the go-wallet
 - [#3762](https://github.com/vegaprotocol/vega/pull/3762) - Refactor: Cleanup markets in domains types
-- [#3817](https://github.com/vegaprotocol/vega/pull/3817) - Testing: vega integration add subfolders for features
+- [#3822](https://github.com/vegaprotocol/vega/pull/3822) - Testing: vega integration add subfolders for features
+- [#3794](https://github.com/vegaprotocol/vega/pull/3794) - Implement rewards transfer
+- [#3839](https://github.com/vegaprotocol/vega/pull/3839) - Implement a delegation engine
+- [#3842](https://github.com/vegaprotocol/vega/pull/3842) - Imports need reformatting for core code base
+- [#3849](https://github.com/vegaprotocol/vega/pull/3849) - Add limits engine + genesis loading 
+- [#3836](https://github.com/vegaprotocol/vega/pull/3836) - Add a first version of the accounting engine
 
 
 ### Fixes
 - [#3751](https://github.com/vegaprotocol/vega/pull/3751) - Unparam linting fixes 
-- [#3776](https://github.com/vegaprotocol/vega/issues/3776) - Ensure expired/settled markets are correctly recorded in app state 
-- [#3774](https://github.com/vegaprotocol/vega/issues/3774) - Change liquidity fees distribution to general account and not margin account of liquidity provider
-- [#3801](https://github.com/vegaprotocol/vega/issues/3801) - Testing: Fixed setup of oracle spec step in integration
-- [#3828](https://github.com/vegaprotocol/vega/issues/3828) - Check if app ctx has been cancelled before writing to channel
+- [#3776](https://github.com/vegaprotocol/vega/pull/3776) - Ensure expired/settled markets are correctly recorded in app state 
+- [#3774](https://github.com/vegaprotocol/vega/pull/3774) - Change liquidity fees distribution to general account and not margin account of liquidity provider
+- [#3801](https://github.com/vegaprotocol/vega/pull/3801) - Testing: Fixed setup of oracle spec step in integration
+- [#3828](https://github.com/vegaprotocol/vega/pull/3828) - 🔥 Check if app ctx has been cancelled before writing to channel
+- [#3838](https://github.com/vegaprotocol/vega/pull/3838) - 🔥 Fix panic on division by 0 with party voting and withdrawing funds
 
 
 ## 0.40.0
