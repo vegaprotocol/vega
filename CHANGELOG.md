@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.41.0
+*2021-08-06*
+
+### Improvements
+- [#3743](https://github.com/vegaprotocol/vega/pull/3743) - Refactor: Rename traders to parties
+- [#3758](https://github.com/vegaprotocol/vega/pull/3758) - Refactor: Cleanup naming in the types package
+- [#3789](https://github.com/vegaprotocol/vega/pull/3789) - Update ed25519-voi 
+- [#3589](https://github.com/vegaprotocol/vega/pull/3589) - Update tendermint to a newer version
+- [#3591](https://github.com/vegaprotocol/vega/pull/3591) - Implemented market terminated, settled and suspended states via the oracle trigger
+- [#3798](https://github.com/vegaprotocol/vega/pull/3798) - Update godog version to 11
+- [#3793](https://github.com/vegaprotocol/vega/pull/3793) - Send Commander.Command in a goroutine
+- [#3768](https://github.com/vegaprotocol/vega/pull/3768) - Checkpoint engine hash and checkpoint creation
+- [#3785](https://github.com/vegaprotocol/vega/pull/3785) - Implement delegation commands
+- [#3714](https://github.com/vegaprotocol/vega/pull/3714) - Move protos into an external repo
+- [#3719](https://github.com/vegaprotocol/vega/pull/3719) - Replace vega wallet with call to the go-wallet
+- [#3762](https://github.com/vegaprotocol/vega/pull/3762) - Refactor: Cleanup markets in domains types
+- [#3817](https://github.com/vegaprotocol/vega/pull/3817) - Testing: vega integration add subfolders for features
+
+
+### Fixes
+- [#3751](https://github.com/vegaprotocol/vega/pull/3751) - Unparam linting fixes 
+- [#3776](https://github.com/vegaprotocol/vega/issues/3776) - Ensure expired/settled markets are correctly recorded in app state 
+- [#3774](https://github.com/vegaprotocol/vega/issues/3774) - Change liquidity fees distribution to general account and not margin account of liquidity provider
+- [#3801](https://github.com/vegaprotocol/vega/issues/3801) - Testing: Fixed setup of oracle spec step in integration
+- [#3828](https://github.com/vegaprotocol/vega/issues/3828) - Check if app ctx has been cancelled before writing to channel
+
+
 ## 0.40.0
 *2021-07-12*
 
