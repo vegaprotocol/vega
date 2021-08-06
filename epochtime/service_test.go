@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -26,15 +25,14 @@ func getEpochService(t *testing.T) *epochtime.Svc {
 	vt = vegatime.New(vegatime.NewDefaultConfig())
 	broker := broker.New(ctx)
 	log := logging.NewTestLogger()
-	np := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
 	et := epochtime.NewService(
 		log,
 		epochtime.NewDefaultConfig(),
 		vt,
-		np,
 		broker,
 	)
+	_ = et.OnEpochLengthUpdate(ctx, time.Hour*24) // set default epoch duration
 	return et
 }
 

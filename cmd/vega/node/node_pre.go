@@ -541,7 +541,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
-	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.netParams, l.broker)
+	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
@@ -634,6 +634,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: l.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorsEpochLength,
+			Watcher: l.epochService.OnEpochLengthUpdate,
 		},
 	)
 }
