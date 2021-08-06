@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 )
 
-func (s Service) Name() types.CheckpointName {
+func (*Service) Name() types.CheckpointName {
 	return types.AssetsCheckpoint
 }
 
