@@ -33,6 +33,8 @@ const (
 	DelegateCommand Command = 0x52
 	// UndelegateCommand ...
 	UndelegateCommand Command = 0x53
+	// CheckpointRestoreCommand ...
+	CheckpointRestoreCommand Command = 0x54
 )
 
 var commandName = map[Command]string{
@@ -50,6 +52,7 @@ var commandName = map[Command]string{
 	SubmitOracleDataCommand:   "Submit Oracle Data",
 	DelegateCommand:           "Delegatee",
 	UndelegateCommand:         "Undelegate",
+	CheckpointRestoreCommand:  "Checkpoint Restore",
 }
 
 // String return the
