@@ -1,9 +1,11 @@
 package verify
 
 import (
+	"context"
 	"encoding/json"
 
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -65,14 +67,18 @@ func verifyGenesis(r *reporter, bs []byte) string {
 	if g.AppState.NetworkParameters == nil {
 		r.Err("app_state.network_parameters is missing")
 	} else {
+		log := logging.NewTestLogger()
+
+		b, err := broker.New(context.Background(), log, broker.NewDefaultConfig())
 		if err != nil {
 			r.Err("unable to initialize broker, %v", err)
 			return ""
 		}
 		netp := netparams.New(
-			logging.NewTestLogger(),
+			log,
 			netparams.NewDefaultConfig(),
-			noopBroker{})
+			b,
+		)
 		// first check for no missing keys
 		for k := range netparams.AllKeys {
 			if _, ok := g.AppState.NetworkParameters[k]; !ok {

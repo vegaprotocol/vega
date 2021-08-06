@@ -39,8 +39,8 @@ type BrokerI interface {
 // SocketClient is an interface to send serialized events over a socket.
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_client_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketClient
 type SocketClient interface {
-	Send(events []events.Event)
-	Close() error
+	Send(event events.Event)
+	SendBatch(events []events.Event)
 }
 
 type subscription struct {
@@ -75,17 +75,13 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log.SetLevel(config.Level.Get())
 
 	var socketClient SocketClient
-	if config.SocketConfig.Enabled {
-		socketClient, err := NewSocketClient(ctx, log, &config.SocketConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialise underlying socket client: %w", err)
-		}
+	var err error
 
-		go func() {
-			if err := socketClient.Close(); err != nil {
-				log.Error("failed to close socket client", logging.Error(err))
-			}
-		}()
+	if config.Socket.Enabled {
+		socketClient, err = NewSocketClient(ctx, log, &config.Socket)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize socket client: %w", err)
+		}
 	}
 
 	return &Broker{
@@ -142,8 +138,9 @@ func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
 }
 
 func (b *Broker) startSending(t events.Type, evts []events.Event) {
-	if b.config.SocketConfig.Enabled {
-		b.streamSocket(evts)
+	if b.config.Socket.Enabled && b.socketClient != nil {
+		// SendBatch is non-blocking function
+		b.socketClient.SendBatch(evts)
 	}
 
 	b.mu.Lock()
@@ -351,8 +348,4 @@ func (b *Broker) rmSubs(keys ...int) {
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
 	}
-}
-
-func (b *Broker) streamSocket(evts []events.Event) {
-	b.socketClient.Send(evts)
 }
