@@ -11,7 +11,7 @@ func (s Service) Name() types.CheckpointName {
 	return types.AssetsCheckpoint
 }
 
-func (s *Service) Chekpoint() ([]byte, error) {
+func (s *Service) Checkpoint() ([]byte, error) {
 	t := &vega.Assets{
 		Assets: s.getEnabled(),
 	}
