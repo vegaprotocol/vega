@@ -20,9 +20,8 @@ type Epoch struct {
 	EndTime time.Time
 }
 
-func (e *Epoch) String() string {
-	return fmt.Sprintln("Seq", e.Seq, "StartTime", e.StartTime,
-		"ExpireTime", e.ExpireTime, "EndTime", e.EndTime)
+func (e Epoch) String() string {
+	return fmt.Sprintf("Seq %d StartTime %s ExpireTime %s EndTime %s", e.Seq, e.StartTime, e.ExpireTime, e.EndTime)
 }
 
 func NewEpochFromProto(p *eventspb.EpochEvent) *Epoch {
