@@ -89,7 +89,7 @@ pipeline {
             }
         }
 
-        stage('go mod download deps') {
+        stage('Dependencies') {
             options { retry(3) }
             steps {
                 dir('vega') {
@@ -98,7 +98,7 @@ pipeline {
             }
         }
 
-        stage('Compile vega core') {
+        stage('Compile') {
             environment {
                 LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
             }
@@ -204,7 +204,7 @@ pipeline {
             }
         }
 
-        stage('Run linters') {
+        stage('Linters') {
             parallel {
                 stage('buf lint') {
                     options { retry(3) }
@@ -284,23 +284,26 @@ pipeline {
             }
         }
 
-        stage('Run tests') {
+        stage('Tests') {
             parallel {
-                stage('unit tests with race') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
-                            junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
-                        }
-                    }
-                }
                 stage('unit tests') {
                     options { retry(3) }
                     steps {
                         dir('vega') {
                             sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
                             junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
+                        }
+                    }
+                }
+                stage('unit tests with race') {
+                    environment {
+                        CGO_ENABLED = 1
+                    }
+                    options { retry(3) }
+                    steps {
+                        dir('vega') {
+                            sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                            junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                         }
                     }
                 }
