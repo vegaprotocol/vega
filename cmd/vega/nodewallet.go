@@ -42,7 +42,7 @@ func NodeWallet(ctx context.Context, parser *flags.Parser) error {
 		long  = `The nodewallet is a wallet owned by the vega node, it contains all
 	the information to login to other wallets from external blockchain that
 	vega will need to run properly (e.g and ethereum wallet, which allow vega
-	to sign transaction  to be verified on the ethereum blockchain) available
+	to sign transaction to be verified on the ethereum blockchain) available
 	wallet: eth, vega`
 	)
 
@@ -95,13 +95,12 @@ func (opts *nodeWalletImport) Execute(_ []string) error {
 		return err
 	}
 
-	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(opts.Config.ETH.Address)
+	ethClient, err := ethclient.Dial(opts.Config.ETH.Address)
 	if err != nil {
 		return err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, nodePass, ethclt)
+	nw, err := nodewallet.New(log, conf.NodeWallet, nodePass, ethClient, nodeWalletCmd.RootPath)
 	if err != nil {
 		return err
 	}
@@ -135,6 +134,9 @@ func (opts *nodeWalletVerify) Execute(_ []string) error {
 		}
 	}
 
+	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
+	defer log.AtExit()
+
 	if ok, err := fsutil.PathExists(nodeWalletCmd.RootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %w", err)
 	}
@@ -154,13 +156,17 @@ func (opts *nodeWalletVerify) Execute(_ []string) error {
 		return err
 	}
 
-	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
+	ethClient, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return err
 	}
 
-	err = nodewallet.Verify(conf.NodeWallet, pass, ethclt)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, nodeWalletCmd.RootPath)
+	if err != nil {
+		return err
+	}
+
+	err = nw.Verify()
 	if err != nil {
 		return err
 	}
