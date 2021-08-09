@@ -10,6 +10,9 @@ barnabee
 base64
 blockchain
 Buf
+CGO
+CI
+Cleanup
 codegen
 cyclomatic
 datestamps
@@ -18,6 +21,7 @@ denylist
 DoD
 DoR
 Ed25519
+ed25519-voi
 enum
 enums
 ERC20
@@ -28,6 +32,7 @@ github
 GitLab
 godog
 Golang
+goroutine
 GraphQL
 gRPC
 hotfix

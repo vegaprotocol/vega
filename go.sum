@@ -21,8 +21,14 @@ code.vegaprotocol.io/go-wallet v0.7.1-0.20210727153739-42fba56d3110/go.mod h1:+O
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3 h1:/A09Q3EEiJF+/WiJfKiqzp1zvcWphiYR8lf2N/JSJBU=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
 code.vegaprotocol.io/protos v0.0.0-20210727151144-8e0c7307afea/go.mod h1:srlX/+IMBhrQlxy//o8r6TCZ92fuqFDLf9ttnypHpyI=
-code.vegaprotocol.io/protos v0.0.0-20210804141302-c1f1b4e98c00 h1:Y+jHYe2TTl48U4Pl86GsUH6l3pLWPzG3b3tz/AtStRw=
-code.vegaprotocol.io/protos v0.0.0-20210804141302-c1f1b4e98c00/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
+code.vegaprotocol.io/protos v0.0.0-20210804125822-63bf771dfbc1 h1:50/vES9LbEQHKd8+CDmPL7x/k4kaaNWZeCK76hHvhrM=
+code.vegaprotocol.io/protos v0.0.0-20210804125822-63bf771dfbc1/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
+code.vegaprotocol.io/protos v0.0.0-20210804132442-bac9564bd4d9 h1:iE8JAsQR88mrZ+myHLPHxtl2a1pnJO+umH0Y1VKwsEw=
+code.vegaprotocol.io/protos v0.0.0-20210804132442-bac9564bd4d9/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
+code.vegaprotocol.io/protos v0.0.0-20210804133003-bb5443ca8373 h1:G5F9iNsOb5HvJ1DTVNqF+6PYCuRWuioRzPDWT1npSic=
+code.vegaprotocol.io/protos v0.0.0-20210804133003-bb5443ca8373/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
+code.vegaprotocol.io/protos v0.41.0 h1:QM6+Tj0ragRlKilc2GWUmwP0RM68r7WvMixl6isMLgk=
+code.vegaprotocol.io/protos v0.41.0/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9 h1:VpgP7xuJadIUuKccphEpTJnWhS2jkQyMt6Y7pJCD7fY=
