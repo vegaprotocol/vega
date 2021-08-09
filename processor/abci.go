@@ -81,6 +81,7 @@ func NewApp(
 	notary Notary,
 	stats Stats,
 	time TimeService,
+	epoch EpochService,
 	top ValidatorTopology,
 	netp NetworkParameters,
 	oracles *Oracle,

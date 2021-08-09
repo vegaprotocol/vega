@@ -65,6 +65,7 @@ func (s *AbciTestSuite) newApp(proc *procTest) *processor.App {
 		proc.notary,
 		proc.stat,
 		proc.ts,
+		proc.es,
 		proc.top,
 		proc.netp,
 		&processor.Oracle{

@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
@@ -121,6 +122,7 @@ type NodeCommand struct {
 	liquidityService  *liquidity.Svc
 	partyService      *parties.Svc
 	timeService       *vegatime.Svc
+	epochService      *epochtime.Svc
 	accountsService   *accounts.Svc
 	transfersService  *transfers.Svc
 	riskService       *risk.Svc

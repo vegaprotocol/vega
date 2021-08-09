@@ -33,6 +33,11 @@ type TimeService interface {
 	SetTimeNow(context.Context, time.Time)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/processor EpochService
+type EpochService interface {
+	NotifyOnEpoch(f func(context.Context, types.Epoch))
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
 type DelegationEngine interface {
 	Delegate(ctx context.Context, party string, nodeID string, amount *num.Uint) error

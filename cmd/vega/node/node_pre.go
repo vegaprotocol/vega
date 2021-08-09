@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
@@ -359,6 +360,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.notary,
 		l.stats.Blockchain,
 		l.timeService,
+		l.epochService,
 		l.topology,
 		l.netParams,
 		&processor.Oracle{
@@ -539,6 +541,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
+	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
@@ -631,6 +634,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: l.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorsEpochLength,
+			Watcher: l.epochService.OnEpochLengthUpdate,
 		},
 	)
 }

@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
@@ -141,6 +142,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	bstats := stats.NewBlockchain()
 
+	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
@@ -162,6 +164,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		notary,
 		bstats,
 		timeService,
+		epochService,
 		topology,
 		netparams,
 		&processor.Oracle{
