@@ -52,3 +52,4 @@ require (
 )
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
+replace code.vegaprotocol.io/go-wallet => /Users/val/Projects/vega/go-wallet
