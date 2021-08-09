@@ -6,8 +6,10 @@ package mocks
 
 import (
 	types "code.vegaprotocol.io/vega/types"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+	time "time"
 )
 
 // MockCheckpoint is a mock of Checkpoint interface
@@ -34,30 +36,30 @@ func (m *MockCheckpoint) EXPECT() *MockCheckpointMockRecorder {
 }
 
 // Checkpoint mocks base method
-func (m *MockCheckpoint) Checkpoint() (*types.Snapshot, error) {
+func (m *MockCheckpoint) Checkpoint(arg0 time.Time) (*types.Snapshot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Checkpoint")
+	ret := m.ctrl.Call(m, "Checkpoint", arg0)
 	ret0, _ := ret[0].(*types.Snapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Checkpoint indicates an expected call of Checkpoint
-func (mr *MockCheckpointMockRecorder) Checkpoint() *gomock.Call {
+func (mr *MockCheckpointMockRecorder) Checkpoint(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockCheckpoint)(nil).Checkpoint))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockCheckpoint)(nil).Checkpoint), arg0)
 }
 
 // Load mocks base method
-func (m *MockCheckpoint) Load(arg0 *types.Snapshot) error {
+func (m *MockCheckpoint) Load(arg0 context.Context, arg1 *types.Snapshot) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Load", arg0)
+	ret := m.ctrl.Call(m, "Load", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Load indicates an expected call of Load
-func (mr *MockCheckpointMockRecorder) Load(arg0 interface{}) *gomock.Call {
+func (mr *MockCheckpointMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockCheckpoint)(nil).Load), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockCheckpoint)(nil).Load), arg0, arg1)
 }

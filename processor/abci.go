@@ -38,7 +38,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
 type Checkpoint interface {
 	Checkpoint(time.Time) (*types.Snapshot, error)
-	Load(snap *types.Snapshot) error
+	Load(ctx context.Context, snap *types.Snapshot) error
 }
 
 type App struct {
