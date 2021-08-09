@@ -92,7 +92,7 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 	require.NoError(t, eng.Load(ctx, raw))
 }
 
@@ -130,7 +130,7 @@ func testGetCheckpointsAdd(t *testing.T) {
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 	require.NoError(t, eng.Load(ctx, raw))
 }
 
@@ -206,7 +206,7 @@ func testLoadCheckpoints(t *testing.T) {
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, newEng.UponGenesis(gen))
+	require.NoError(t, newEng.UponGenesis(ctx, gen))
 	require.NoError(t, newEng.Load(ctx, snapshot))
 	for k, exp := range data {
 		wc := wComps[k]
@@ -234,7 +234,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 	err = eng.Load(ctx, snap)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrUnknownCheckpointName, err)
@@ -244,7 +244,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	require.NoError(t, err)
 	snap.State = b
 	// reset genesis hash
-	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 	err = eng.Load(ctx, snap)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
@@ -269,7 +269,7 @@ func testLoadInvalidHash(t *testing.T) {
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 	// update data -> hash is invalid
 	cp.Assets = []byte("foobar")
 	b, err := vega.Marshal(cp.IntoProto())
@@ -311,7 +311,7 @@ func testLoadSparse(t *testing.T) {
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 	require.NoError(t, eng.Load(ctx, snapshot))
 }
 
@@ -354,7 +354,7 @@ func testLoadError(t *testing.T) {
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
-	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 	err = eng.Load(ctx, checkpoints)
 	require.Error(t, err)
 	require.Equal(t, ret[types.GovernanceCheckpoint], err)
@@ -508,11 +508,11 @@ func testLoadGenesisHashOnlyOnce(t *testing.T) {
 	different, err := json.Marshal(set)
 	require.NoError(t, err)
 	// set up the engine to accept that hash
-	require.NoError(t, eng.UponGenesis(different))
+	require.NoError(t, eng.UponGenesis(ctx, different))
 	// this doesn´t  call "load" on the components
 	require.NoError(t, eng.Load(ctx, raw))
 	// now set the engine to accept the hash of the data we want to load
-	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.UponGenesis(ctx, gen))
 	// now we do expect the calls to be made, but only once
 	for k, c := range components {
 		c.EXPECT().Load(data[k]).Times(1).Return(nil)
