@@ -51,6 +51,17 @@ func (s Snapshot) GetCheckpoint() (*Checkpoint, error) {
 	return cp, nil
 }
 
+func (s *Snapshot) SetState(state []byte) error {
+	cp := &vega.Checkpoint{}
+	if err := vega.Unmarshal(state, cp); err != nil {
+		return err
+	}
+	c := NewCheckpointFromProto(cp)
+	s.State = state
+	s.Hash = crypto.Hash(c.HashBytes())
+	return nil
+}
+
 func (s *Snapshot) SetCheckpoint(cp *Checkpoint) error {
 	b, err := vega.Marshal(cp.IntoProto())
 	if err != nil {
@@ -67,7 +78,7 @@ func (s Snapshot) IsValid() bool {
 	if err != nil {
 		return false
 	}
-	return bytes.Compare(crypto.Hash(cp.HashBytes()), s.Hash) == 0
+	return bytes.Equal(crypto.Hash(cp.HashBytes()), s.Hash)
 }
 
 func NewCheckpointFromProto(pc *vega.Checkpoint) *Checkpoint {

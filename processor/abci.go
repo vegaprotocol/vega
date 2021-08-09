@@ -829,3 +829,19 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
 		return errors.New("unimplemented")
 	}
 }
+
+func (app *App) ReloadSnapshot(ctx context.Context, tx abci.Tx) error {
+	cmd := &commandspb.RestoreSnapshot{}
+	if err := tx.Unmarshal(cmd); err != nil {
+		return nil
+	}
+
+	// convert to snapshot type:
+	snap := &types.Snapshot{}
+	if err := snap.SetState(cmd.Data); err != nil {
+		return err
+	}
+	// @TODO handle stuff like assets being enabled during reload, or the collateral
+	// checkpoint will not work
+	return app.checkpoint.Load(ctx, snap)
+}
