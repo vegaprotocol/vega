@@ -22,6 +22,7 @@
 - [#3842](https://github.com/vegaprotocol/vega/pull/3842) - Imports need reformatting for core code base
 - [#3849](https://github.com/vegaprotocol/vega/pull/3849) - Add limits engine + genesis loading
 - [#3836](https://github.com/vegaprotocol/vega/pull/3836) - Add a first version of the accounting engine
+- [#3859](https://github.com/vegaprotocol/vega/pull/3859) - Enable CGO in CI
 
 
 ### Fixes

@@ -10,6 +10,8 @@ barnabee
 base64
 blockchain
 Buf
+CGO
+CI
 Cleanup
 codegen
 cyclomatic
