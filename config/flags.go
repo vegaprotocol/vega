@@ -39,9 +39,8 @@ func (p Passphrase) Get(prompt string) (string, error) {
 func (p Passphrase) getFromUser(prompt string) (string, error) {
 	fmt.Printf("please enter %s passphrase:", prompt)
 	password, err := terminal.ReadPassword(0)
+	fmt.Printf("\n")
 	if err != nil {
-		// just adding that to clean up output
-		fmt.Printf("\n")
 		return "", err
 	}
 
