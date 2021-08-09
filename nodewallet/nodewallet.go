@@ -136,6 +136,11 @@ func (s *Service) Generate(chain, passphrase string) error {
 		if err != nil {
 			return err
 		}
+	case Ethereum:
+		w, err = s.ethWalletLoader.Generate(passphrase)
+		if err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unsupported chain wallet %v", chain)
 	}
@@ -204,28 +209,6 @@ func (s *Service) Verify() error {
 func Initialise(rootPath, passphrase string) error {
 	storage := newStorage(rootPath)
 	return storage.Initialise(passphrase)
-}
-
-func DevInit(rootPath, passphrase string) error {
-	storage := newStorage(rootPath)
-	err := storage.Initialise(passphrase)
-	if err != nil {
-		return err
-	}
-
-	cfgs := []WalletConfig{}
-
-	ethWalletName, err := eth.DevInit(storage.WalletDirFor(Ethereum), passphrase)
-	if err != nil {
-		return err
-	}
-	cfgs = append(cfgs, WalletConfig{
-		Chain:      string(Ethereum),
-		Name:       ethWalletName,
-		Passphrase: passphrase,
-	})
-
-	return storage.Save(&store{Wallets: cfgs}, passphrase)
 }
 
 // loadWallets takes the wallets configs from the store and try to instantiate
