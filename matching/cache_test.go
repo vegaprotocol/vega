@@ -32,7 +32,7 @@ func TestCachingValues(t *testing.T) {
 
 	// setting all of them make them all valid
 	cache.SetIndicativePrice(num.NewUint(84))
-	cache.SetIndicativeUncrossingSide(types.Side_SIDE_BUY)
+	cache.SetIndicativeUncrossingSide(types.SideBuy)
 	price, priceOK := cache.GetIndicativePrice()
 	assert.True(t, priceOK)
 	assert.Equal(t, price.Uint64(), uint64(84))
@@ -41,7 +41,7 @@ func TestCachingValues(t *testing.T) {
 	assert.Equal(t, vol, uint64(42))
 	side, sideOK := cache.GetIndicativeUncrossingSide()
 	assert.True(t, sideOK)
-	assert.Equal(t, side, types.Side_SIDE_BUY)
+	assert.Equal(t, side, types.SideBuy)
 
 	// invalide affects all cache
 	cache.Invalidate()

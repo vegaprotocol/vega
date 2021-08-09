@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
 	"code.vegaprotocol.io/vega/oracles"
 )
@@ -12,7 +12,7 @@ import (
 func OraclesBroadcastDataSignedWithKeys(
 	oracleEngine *oracles.Engine,
 	rawPubKeys string,
-	rawProperties *gherkin.DataTable,
+	rawProperties *godog.Table,
 ) error {
 	pubKeys := parseOracleDataPubKeys(rawPubKeys)
 
@@ -31,7 +31,7 @@ func parseOracleDataPubKeys(rawPubKeys string) []string {
 	return StrSlice(rawPubKeys, ",")
 }
 
-func parseOracleDataProperties(table *gherkin.DataTable) (map[string]string, error) {
+func parseOracleDataProperties(table *godog.Table) (map[string]string, error) {
 	properties := map[string]string{}
 
 	for _, r := range parseOracleBroadcastTable(table) {
@@ -50,7 +50,7 @@ func errPropertyRedeclared(name string) error {
 	return fmt.Errorf("property %s has been declared multiple times", name)
 }
 
-func parseOracleBroadcastTable(table *gherkin.DataTable) []RowWrapper {
+func parseOracleBroadcastTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"name",
 		"value",

@@ -2,13 +2,14 @@ package market
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 
 	"github.com/jinzhu/copier"
 
+	types "code.vegaprotocol.io/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
-	types "code.vegaprotocol.io/vega/proto"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
 var (
@@ -21,7 +22,8 @@ var (
 )
 
 type oracleConfigs struct {
-	config map[string]*OracleConfig
+	configForSettlementPrice   map[string]*OracleConfig
+	configFoTradingTermination map[string]*OracleConfig
 }
 
 type OracleConfig struct {
@@ -31,7 +33,8 @@ type OracleConfig struct {
 
 func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 	specs := &oracleConfigs{
-		config: map[string]*OracleConfig{},
+		configForSettlementPrice:   map[string]*OracleConfig{},
+		configFoTradingTermination: map[string]*OracleConfig{},
 	}
 
 	contentReaders := defaults.ReadAll(defaultOracleConfigs, defaultOracleConfigFileNames)
@@ -40,7 +43,10 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 		if err != nil {
 			panic(fmt.Errorf("couldn't unmarshal default oracle config %s: %v", name, err))
 		}
-		if err := specs.Add(name, future.OracleSpec, future.OracleSpecBinding); err != nil {
+		if err := specs.Add(name, "settlement price", future.OracleSpecForSettlementPrice, future.OracleSpecBinding); err != nil {
+			panic(fmt.Errorf("failed to add default oracle config %s: %v", name, err))
+		}
+		if err := specs.Add(name, "trading termination", future.OracleSpecForTradingTermination, future.OracleSpecBinding); err != nil {
 			panic(fmt.Errorf("failed to add default oracle config %s: %v", name, err))
 		}
 	}
@@ -50,18 +56,39 @@ func newOracleSpecs(unmarshaler *defaults.Unmarshaler) *oracleConfigs {
 
 func (f *oracleConfigs) Add(
 	name string,
+	specType string,
 	spec *oraclesv1.OracleSpec,
 	binding *types.OracleSpecToFutureBinding,
 ) error {
-	f.config[name] = &OracleConfig{
-		Spec:    spec,
-		Binding: binding,
+	if specType == "settlement price" {
+		f.configForSettlementPrice[name] = &OracleConfig{
+			Spec:    spec,
+			Binding: binding,
+		}
+	} else if specType == "trading termination" {
+		f.configFoTradingTermination[name] = &OracleConfig{
+			Spec:    spec,
+			Binding: binding,
+		}
+	} else {
+		return errors.New("unknown oracle spec type definition - expecting settlement price or trading termination")
 	}
+
 	return nil
 }
 
-func (f *oracleConfigs) Get(name string) (*OracleConfig, error) {
-	config, ok := f.config[name]
+func (f *oracleConfigs) Get(name string, specType string) (*OracleConfig, error) {
+	var cfg map[string]*OracleConfig
+
+	if specType == "settlement price" {
+		cfg = f.configForSettlementPrice
+	} else if specType == "trading termination" {
+		cfg = f.configFoTradingTermination
+	} else {
+		return nil, errors.New("unknown oracle spec type definition - expecting settlement price or trading termination")
+	}
+
+	config, ok := cfg[name]
 	if !ok {
 		return config, fmt.Errorf("no oracle spec \"%s\" registered", name)
 	}

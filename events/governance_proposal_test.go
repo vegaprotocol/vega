@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,9 +14,9 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	ctx := context.Background()
 
 	p := types.Proposal{
-		Id:        "Id",
+		ID:        "Id",
 		Reference: "Reference",
-		PartyId:   "PartyId",
+		Party:     "PartyId",
 		State:     proto.Proposal_STATE_DECLINED,
 		Timestamp: 100000,
 		Terms: &types.ProposalTerms{
@@ -41,9 +41,9 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	p2 := proposalEvent.Proposal()
 
 	// Change the original and check we are not updating the wrapped event
-	p.Id = "Changed"
+	p.ID = "Changed"
 	p.Reference = "Changed"
-	p.PartyId = "Changed"
+	p.Party = "Changed"
 	p.State = proto.Proposal_STATE_ENACTED
 	p.Timestamp = 999
 	p.Terms.ClosingTimestamp = 999
@@ -54,9 +54,9 @@ func TestAssetProposalNewAssetDeepClone(t *testing.T) {
 	erc := na.NewAsset.Changes.Source.(*types.AssetDetailsErc20)
 	erc.Erc20.ContractAddress = "Changed"
 
-	assert.NotEqual(t, p.Id, p2.Id)
+	assert.NotEqual(t, p.ID, p2.Id)
 	assert.NotEqual(t, p.Reference, p2.Reference)
-	assert.NotEqual(t, p.PartyId, p2.PartyId)
+	assert.NotEqual(t, p.Party, p2.PartyId)
 	assert.NotEqual(t, p.State, p2.State)
 	assert.NotEqual(t, p.Timestamp, p2.Timestamp)
 

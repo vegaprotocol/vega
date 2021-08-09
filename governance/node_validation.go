@@ -43,7 +43,7 @@ type nodeProposal struct {
 }
 
 func (n *nodeProposal) GetID() string {
-	return fmt.Sprintf("proposal-node-validation-%v", n.Id)
+	return fmt.Sprintf("proposal-node-validation-%v", n.ID)
 }
 
 func (n *nodeProposal) Check() error {
@@ -55,14 +55,14 @@ func NewNodeValidation(
 	assets Assets,
 	now time.Time,
 	witness Witness,
-) (*NodeValidation, error) {
+) *NodeValidation {
 	return &NodeValidation{
 		log:              log,
 		nodeProposals:    []*nodeProposal{},
 		assets:           assets,
 		currentTimestamp: now,
 		witness:          witness,
-	}, nil
+	}
 }
 
 func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
@@ -81,7 +81,7 @@ func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 
 func (n *NodeValidation) getProposal(id string) (*nodeProposal, bool) {
 	for _, v := range n.nodeProposals {
-		if v.Id == id {
+		if v.ID == id {
 			return v, true
 		}
 	}
@@ -90,7 +90,7 @@ func (n *NodeValidation) getProposal(id string) (*nodeProposal, bool) {
 
 func (n *NodeValidation) removeProposal(id string) {
 	for i, p := range n.nodeProposals {
-		if p.Id == id {
+		if p.ID == id {
 			copy(n.nodeProposals[i:], n.nodeProposals[i+1:])
 			n.nodeProposals[len(n.nodeProposals)-1] = nil
 			n.nodeProposals = n.nodeProposals[:len(n.nodeProposals)-1]
@@ -120,7 +120,7 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 		case rejectedProposal:
 			rejected = append(rejected, prop.Proposal)
 		}
-		toRemove = append(toRemove, prop.Id)
+		toRemove = append(toRemove, prop.ID)
 	}
 
 	// now we iterate over all proposal ids to remove them from the list
@@ -144,11 +144,11 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 // Start the node validation of a proposal
 func (n *NodeValidation) Start(p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
-		n.log.Error("no node validation required", logging.String("ref", p.Id))
+		n.log.Error("no node validation required", logging.String("ref", p.ID))
 		return ErrNoNodeValidationRequired
 	}
 
-	_, ok := n.getProposal(p.Id)
+	_, ok := n.getProposal(p.ID)
 	if ok {
 		return ErrProposalReferenceDuplicate
 	}
@@ -175,7 +175,7 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewAsset:
-		assetID, err := n.assets.NewAsset(p.Id,
+		assetID, err := n.assets.NewAsset(p.ID,
 			change.NewAsset.GetChanges())
 		if err != nil {
 			n.log.Error("unable to instantiate asset",
@@ -184,7 +184,7 @@ func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 			return nil, err
 		}
 		return func() error {
-			return n.checkAsset(p.Id)
+			return n.checkAsset(p.ID)
 		}, nil
 	default: // this should have been check earlier but in case of.
 		return nil, ErrNoNodeValidationRequired

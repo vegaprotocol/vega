@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	proto "code.vegaprotocol.io/protos/vega"
+	oraclepb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -22,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -37,8 +40,6 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
-	"code.vegaprotocol.io/vega/proto"
-	oraclepb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
@@ -268,9 +269,14 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
 			mkt := mkt
 
 			// hot fix: attribute an ID to oracle spec to avoid blank ID
-			spec := mkt.TradableInstrument.Instrument.GetFuture().OracleSpec
-			specWithID := oraclepb.NewOracleSpec(spec.PubKeys, spec.Filters)
-			mkt.TradableInstrument.Instrument.GetFuture().OracleSpec = specWithID
+			specForSettlementPrice := mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice
+			specForSettlementPriceWithID := oraclepb.NewOracleSpec(specForSettlementPrice.PubKeys, specForSettlementPrice.Filters)
+
+			specForTradingTermination := mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination
+			specForTradingTerminationWithID := oraclepb.NewOracleSpec(specForTradingTermination.PubKeys, specForTradingTermination.Filters)
+
+			mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForSettlementPrice = specForSettlementPriceWithID
+			mkt.TradableInstrument.Instrument.GetFuture().OracleSpecForTradingTermination = specForTradingTerminationWithID
 			// end of hot fix
 
 			err = l.executionEngine.SubmitMarket(l.ctx, types.MarketFromProto(&mkt))
@@ -329,7 +335,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	for _, v := range l.mktscfg {
 		sym := v.TradableInstrument.Instrument.GetFuture().SettlementAsset
 		if sym == assetD.Details.Symbol {
-			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.Id
+			v.TradableInstrument.Instrument.GetFuture().SettlementAsset = assetD.ID
 		}
 	}
 
@@ -359,6 +365,8 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 			Engine:   l.oracle,
 			Adaptors: l.oracleAdaptors,
 		},
+		l.delegation,
+		l.limits,
 	)
 
 	var abciApp tmtypes.Application
@@ -446,13 +454,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService)
 
-	now, _ := l.timeService.GetTimeNow()
+	now := l.timeService.GetTimeNow()
 
-	l.assets, err = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
-	if err != nil {
-		return err
-	}
-
+	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
 	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker, l.timeService)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
@@ -469,10 +473,13 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	wal, _ := l.nodeWallet.Get(nodewallet.Vega)
-	commander, err := nodewallet.NewCommander(nil, wal, l.stats)
+	commander, err := nodewallet.NewCommander(l.Log, nil, wal, l.stats)
 	if err != nil {
 		return err
 	}
+
+	l.limits = limits.New(l.conf.Limits, l.Log)
+	l.timeService.NotifyOnTick(l.limits.OnTick)
 
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
 
@@ -480,11 +487,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
-	l.governance, err = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
-	if err != nil {
-		log.Error("unable to initialise governance", logging.Error(err))
-		return err
-	}
+	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
@@ -498,15 +501,11 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		// panic at startup.
 		l.netParams.UponGenesis,
 		l.topology.LoadValidatorsOnGenesis,
+		l.limits.UponGenesis,
 	)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
-
-	l.evtfwd, err = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
-	if err != nil {
-		return err
-	}
-
+	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
 
 	// now instantiate the blockchain layer

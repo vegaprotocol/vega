@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"code.vegaprotocol.io/vega/fsutil"
-	"code.vegaprotocol.io/vega/wallet"
-	"code.vegaprotocol.io/vega/wallet/crypto"
+	"code.vegaprotocol.io/go-wallet/wallet"
+	storev1 "code.vegaprotocol.io/go-wallet/wallet/store/v1"
+	"code.vegaprotocol.io/vega/crypto"
 )
 
 const (
@@ -15,56 +15,94 @@ const (
 )
 
 type Wallet struct {
-	kp     *wallet.Keypair
-	pubKey []byte
+	handler    *wallet.Handler
+	walletName string
+	keyPair    wallet.KeyPair
+	pubKey     crypto.PublicKeyOrAddress
 }
 
 func DevInit(path, passphrase string) (string, error) {
-	fullpath := filepath.Join(path, defaultVegaWalletOwner)
-	if ok, _ := fsutil.PathExists(fullpath); ok {
-		return "", fmt.Errorf("dev vega wallet already exists at path %v", path)
-	}
-
-	w, err := wallet.CreateWalletFile(fullpath, defaultVegaWalletOwner, passphrase)
+	store, err := storev1.NewStore(path)
 	if err != nil {
 		return "", err
 	}
 
-	// gen the keypair
-	algo := crypto.NewEd25519()
-	kp, err := wallet.GenKeypair(algo.Name())
-	if err != nil {
-		return "", fmt.Errorf("unable to generate new key pair: %v", err)
-	}
-
-	w.Keypairs = append(w.Keypairs, *kp)
-	_, err = wallet.WriteWalletFile(w, fullpath, passphrase)
+	err = store.Initialise()
 	if err != nil {
 		return "", err
 	}
 
-	return fullpath, err
+	handler := wallet.NewHandler(store)
+
+	// we ignore the mnemonic as this wallet is one-shot.
+	_, err = handler.CreateWallet(defaultVegaWalletOwner, passphrase)
+	if err != nil {
+		return "", err
+	}
+
+	meta := []wallet.Meta{{Key: "env", Value: "dev"}}
+	_, err = handler.GenerateKeyPair(defaultVegaWalletOwner, passphrase, meta)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(path, defaultVegaWalletOwner), nil
 }
 
-func New(path, passphrase string) (*Wallet, error) {
-	wal, err := wallet.ReadWalletFile(path, passphrase)
+func New(walletFilePath, passphrase string) (*Wallet, error) {
+	path, walletName := filepath.Split(walletFilePath)
+
+	store, err := storev1.NewStore(path)
 	if err != nil {
-		return nil, fmt.Errorf("unable to decrypt wallet: %v", err)
+		return nil, err
 	}
 
-	if len(wal.Keypairs) != 1 {
-		return nil, fmt.Errorf("vega wallet for node requires to have max 1 keypairs, found %v", len(wal.Keypairs))
+	err = store.Initialise()
+	if err != nil {
+		return nil, err
 	}
 
-	pubBytes, err := hex.DecodeString(wal.Keypairs[0].Pub)
+	handler := wallet.NewHandler(store)
+
+	err = handler.LoginWallet(walletName, passphrase)
+	if err != nil {
+		return nil, err
+	}
+
+	keyPairs, err := handler.ListKeyPairs(walletName)
+	if err != nil {
+		return nil, err
+	}
+
+	keyPairCount := len(keyPairs)
+	if keyPairCount == 0 {
+		return nil, fmt.Errorf("vega wallet for node requires to have 1 key pair, none found")
+	} else if keyPairCount != 1 {
+		return nil, fmt.Errorf("vega wallet for node requires to have max 1 key pair, found %v", keyPairCount)
+	}
+
+	keyPair := keyPairs[0]
+
+	pubKey, err := getPubKey(keyPair)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Wallet{
-		kp:     &wal.Keypairs[0],
-		pubKey: pubBytes,
+		handler:    handler,
+		walletName: walletName,
+		keyPair:    keyPair,
+		pubKey:     pubKey,
 	}, nil
+}
+
+func getPubKey(keyPair wallet.KeyPair) (crypto.PublicKeyOrAddress, error) {
+	decodedPubKey, err := hex.DecodeString(keyPair.PublicKey())
+	if err != nil {
+		return crypto.PublicKeyOrAddress{}, err
+	}
+
+	return crypto.NewPublicKeyOrAddress(keyPair.PublicKey(), decodedPubKey), nil
 }
 
 func (w *Wallet) Chain() string {
@@ -72,21 +110,17 @@ func (w *Wallet) Chain() string {
 }
 
 func (w *Wallet) Sign(data []byte) ([]byte, error) {
-	alg, err := crypto.NewSignatureAlgorithm(crypto.Ed25519)
-	if err != nil {
-		return nil, fmt.Errorf("unable to instantiate signature algorithm: %v", err)
-	}
-	return wallet.Sign(alg, w.kp, data)
+	return w.handler.SignAny(w.walletName, data, w.keyPair.PublicKey())
 }
 
 func (w *Wallet) Algo() string {
-	return w.kp.Algorithm.Name()
+	return w.keyPair.AlgorithmName()
 }
 
 func (w *Wallet) Version() uint32 {
-	return w.kp.Algorithm.Version()
+	return w.keyPair.AlgorithmVersion()
 }
 
-func (w *Wallet) PubKeyOrAddress() []byte {
+func (w *Wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
 	return w.pubKey
 }

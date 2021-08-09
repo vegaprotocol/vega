@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-	ptypes "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -360,7 +360,7 @@ func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) (
 			positions = []*types.Position{pos}
 		}
 	} else if party == "" {
-		// either trader or market == ""
+		// either party or market == ""
 		pos, err := s.positions.GetPositionsByMarket(marketID)
 		if err != nil {
 			s.log.Error("Error getting positions for market",

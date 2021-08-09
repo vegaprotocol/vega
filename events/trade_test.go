@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
@@ -15,8 +15,8 @@ func TestTradeDeepClone(t *testing.T) {
 	ctx := context.Background()
 
 	trade := &types.Trade{
-		Id:        "Id",
-		MarketId:  "MarketId",
+		ID:        "Id",
+		MarketID:  "MarketId",
 		Price:     num.NewUint(1000),
 		Size:      2000,
 		Buyer:     "Buyer",
@@ -44,8 +44,8 @@ func TestTradeDeepClone(t *testing.T) {
 	trade2 := tEvent.Trade()
 
 	// Change the original values
-	trade.Id = "Changed"
-	trade.MarketId = "Changed"
+	trade.ID = "Changed"
+	trade.MarketID = "Changed"
 	trade.Price = num.NewUint(999)
 	trade.Size = 999
 	trade.Buyer = "Changed"
@@ -65,8 +65,8 @@ func TestTradeDeepClone(t *testing.T) {
 	trade.SellerAuctionBatch = 999
 
 	// Check things have changed
-	assert.NotEqual(t, trade.Id, trade2.Id)
-	assert.NotEqual(t, trade.MarketId, trade2.MarketId)
+	assert.NotEqual(t, trade.ID, trade2.Id)
+	assert.NotEqual(t, trade.MarketID, trade2.MarketId)
 	assert.NotEqual(t, trade.Price, trade2.Price)
 	assert.NotEqual(t, trade.Size, trade2.Size)
 	assert.NotEqual(t, trade.Buyer, trade2.Buyer)

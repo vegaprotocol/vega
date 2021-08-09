@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 type VoteSub struct {

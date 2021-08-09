@@ -6,13 +6,13 @@ import (
 
 	"github.com/jinzhu/copier"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/steps/market/defaults"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 var (
 	//go:embed defaults/margin-calculator/*.json
-	defaultMarginCalculators          embed.FS
+	defaultMarginCalculators         embed.FS
 	defaultMarginCalculatorFileNames = []string{
 		"defaults/margin-calculator/default-margin-calculator.json",
 		"defaults/margin-calculator/default-overkill-margin-calculator.json",

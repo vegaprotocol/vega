@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/evtforward/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -48,15 +48,14 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 		cb = f
 	})
 
-	tim.EXPECT().GetTimeNow().Times(1).Return(initTime, nil)
+	tim.EXPECT().GetTimeNow().Times(1).Return(initTime)
 
 	cfg := evtforward.NewDefaultConfig()
 	// add the pubkeys
 	cfg.BlockchainQueueAllowlist = allowlist
-	evtfwd, err := evtforward.New(
+	evtfwd := evtforward.New(
 		logging.NewTestLogger(), cfg,
 		cmd, tim, top)
-	assert.NoError(t, err)
 
 	return &testEvtFwd{
 		EvtForwarder: evtfwd,
@@ -92,7 +91,7 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent()
-	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(9, 0))
@@ -104,7 +103,7 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent()
-	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(10, 0))

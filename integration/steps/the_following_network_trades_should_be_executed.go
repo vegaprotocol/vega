@@ -3,15 +3,15 @@ package steps
 import (
 	"fmt"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	types "code.vegaprotocol.io/vega/proto"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func TheFollowingNetworkTradesShouldBeExecuted(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheFollowingNetworkTradesShouldBeExecuted(broker *stubs.BrokerStub, table *godog.Table) error {
 	for _, row := range parseNetworkTradesTable(table) {
 		var (
-			trader        = row.MustStr("trader")
+			party         = row.MustStr("party")
 			aggressorSide = row.MustSide("aggressor side")
 			volume        = row.MustU64("volume")
 		)
@@ -19,14 +19,14 @@ func TheFollowingNetworkTradesShouldBeExecuted(broker *stubs.BrokerStub, table *
 		ok := false
 		data := broker.GetTrades()
 		for _, v := range data {
-			if (v.Buyer == trader || v.Seller == trader) && v.Aggressor == aggressorSide && v.Size == volume {
+			if (v.Buyer == party || v.Seller == party) && v.Aggressor == aggressorSide && v.Size == volume {
 				ok = true
 				break
 			}
 		}
 
 		if !ok {
-			return errTradeMissing(trader, aggressorSide, volume)
+			return errTradeMissing(party, aggressorSide, volume)
 		}
 	}
 
@@ -37,9 +37,9 @@ func errTradeMissing(party string, aggressorSide types.Side, volume uint64) erro
 	return fmt.Errorf("expecting trade was missing: %v, %v, %v", party, aggressorSide, volume)
 }
 
-func parseNetworkTradesTable(table *gherkin.DataTable) []RowWrapper {
+func parseNetworkTradesTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"aggressor side",
 		"volume",
 	}, []string{})

@@ -26,13 +26,13 @@ func (p *PeggedOrders) OnTimeUpdate(t time.Time) {
 
 func (p *PeggedOrders) Park(o *types.Order) {
 	o.UpdatedAt = p.currentTime
-	o.Status = types.Order_STATUS_PARKED
+	o.Status = types.OrderStatusParked
 	o.Price = num.Zero()
 }
 
 func (p *PeggedOrders) GetByID(id string) *types.Order {
 	for _, o := range p.orders {
-		if o.Id == id {
+		if o.ID == id {
 			return o
 		}
 	}
@@ -45,7 +45,7 @@ func (p *PeggedOrders) Add(o *types.Order) {
 
 func (p *PeggedOrders) Remove(o *types.Order) {
 	for i, po := range p.orders {
-		if po.Id == o.Id {
+		if po.ID == o.ID {
 			// Remove item from slice
 			copy(p.orders[i:], p.orders[i+1:])
 			p.orders[len(p.orders)-1] = nil
@@ -57,7 +57,7 @@ func (p *PeggedOrders) Remove(o *types.Order) {
 
 func (p *PeggedOrders) Amend(amended *types.Order) {
 	for i, o := range p.orders {
-		if o.Id == amended.Id {
+		if o.ID == amended.ID {
 			p.orders[i] = amended
 			return
 		}
@@ -65,11 +65,11 @@ func (p *PeggedOrders) Amend(amended *types.Order) {
 }
 
 func (p *PeggedOrders) RemoveAllForParty(
-	ctx context.Context, party string, status types.Order_Status,
+	ctx context.Context, party string, status types.OrderStatus,
 ) (orders []*types.Order, evts []events.Event) {
 	n := 0
 	for _, o := range p.orders {
-		if o.PartyId == party /* && o.Status == types.Order_STATUS_PARKED */ {
+		if o.Party == party /* && o.Status == types.Order_STATUS_PARKED */ {
 			o.UpdatedAt = p.currentTime
 			o.Status = status
 			orders = append(orders, o)
@@ -85,11 +85,11 @@ func (p *PeggedOrders) RemoveAllForParty(
 }
 
 func (p *PeggedOrders) RemoveAllParkedForParty(
-	ctx context.Context, party string, status types.Order_Status,
+	ctx context.Context, party string, status types.OrderStatus,
 ) (orders []*types.Order, evts []events.Event) {
 	n := 0
 	for _, o := range p.orders {
-		if o.PartyId == party && o.Status == types.Order_STATUS_PARKED {
+		if o.Party == party && o.Status == types.OrderStatusParked {
 			o.UpdatedAt = p.currentTime
 			o.Status = status
 			orders = append(orders, o)
@@ -106,7 +106,7 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 
 func (p *PeggedOrders) GetAllActiveOrders() (orders []*types.Order) {
 	for _, order := range p.orders {
-		if order.Status != types.Order_STATUS_PARKED {
+		if order.Status != types.OrderStatusParked {
 			orders = append(orders, order)
 		}
 	}
@@ -115,7 +115,7 @@ func (p *PeggedOrders) GetAllActiveOrders() (orders []*types.Order) {
 
 func (p *PeggedOrders) GetAllParkedForParty(party string) (orders []*types.Order) {
 	for _, order := range p.orders {
-		if order.PartyId == party && order.Status == types.Order_STATUS_PARKED {
+		if order.Party == party && order.Status == types.OrderStatusParked {
 			orders = append(orders, order)
 		}
 	}
@@ -124,7 +124,7 @@ func (p *PeggedOrders) GetAllParkedForParty(party string) (orders []*types.Order
 
 func (p *PeggedOrders) GetAllForParty(party string) (orders []*types.Order) {
 	for _, order := range p.orders {
-		if order.PartyId == party {
+		if order.Party == party {
 			orders = append(orders, order)
 		}
 	}

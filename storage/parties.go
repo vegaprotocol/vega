@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/metrics"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Party is used for memory/RAM based parties storage.

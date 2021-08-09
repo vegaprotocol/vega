@@ -9,21 +9,20 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/governance"
+	vegacrypto "code.vegaprotocol.io/go-wallet/crypto"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
-	proto1 "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
-	vegacrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	htypes "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 type AbciTestSuite struct {
@@ -40,8 +39,9 @@ func (s *AbciTestSuite) signedTx(t *testing.T, tx *types.Transaction, key crypto
 	stx := &types.SignedBundle{
 		Tx: txBytes,
 		Sig: &types.Signature{
-			Algo: s.sig.Name(),
-			Sig:  sig,
+			Algo:    s.sig.Name(),
+			Version: s.sig.Version(),
+			Sig:     sig,
 		},
 	}
 
@@ -71,6 +71,8 @@ func (s *AbciTestSuite) newApp(proc *procTest) *processor.App {
 			Engine:   proc.oracles.Engine,
 			Adaptors: proc.oracles.Adaptors,
 		},
+		proc.delegation,
+		proc.limits,
 	)
 }
 
@@ -81,9 +83,6 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	party := hex.EncodeToString(pub.([]byte))
 	data := map[txn.Command]proto.Message{
 		txn.SubmitOrderCommand: &commandspb.OrderSubmission{},
-		txn.ProposeCommand: &commandspb.ProposalSubmission{
-			Terms: &proto1.ProposalTerms{}, // avoid nil bit, shouldn't be asset
-		},
 		// FIXME(): This is not passing now because of the validations
 		// but this will not even be needed anyway once txv2 is the only
 		// tx format
@@ -106,9 +105,6 @@ func (s *AbciTestSuite) testProcessCommandSuccess(t *testing.T, app *processor.A
 	proc.eng.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), party).Times(1).Return(&types.OrderConfirmation{
 		Order: &types.Order{},
 	}, nil)
-	//	proc.gov.EXPECT().AddVote(
-	//		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
-	proc.gov.EXPECT().SubmitProposal(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(&governance.ToSubmit{}, nil)
 
 	for cmd, msg := range data {
 		tx := txEncode(t, cmd, msg)
@@ -143,10 +139,10 @@ func (s *AbciTestSuite) testBeginCommitSuccess(_ *testing.T, app *processor.App,
 	proc.stat.EXPECT().IncHeight()
 
 	proc.ts.EXPECT().SetTimeNow(gomock.Any(), now).Times(1)
-	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmtypes.Header{
+		Header: htypes.Header{
 			Time: now,
 		},
 	})
@@ -180,20 +176,20 @@ func (s *AbciTestSuite) testBeginCallsCommanderOnce(_ *testing.T, app *processor
 	now := time.Now()
 	prev := now.Add(-time.Second)
 	proc.ts.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(2)
-	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmtypes.Header{
+		Header: htypes.Header{
 			Time: now,
 		},
 	})
 
 	// next block times
 	prev, now = now, now.Add(time.Second)
-	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now, nil)
-	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev, nil)
+	proc.ts.EXPECT().GetTimeNow().Times(1).Return(now)
+	proc.ts.EXPECT().GetTimeLastBatch().Times(1).Return(prev)
 	app.OnBeginBlock(tmtypes.RequestBeginBlock{
-		Header: tmtypes.Header{
+		Header: htypes.Header{
 			Time: now,
 		},
 	})

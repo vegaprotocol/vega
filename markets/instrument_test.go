@@ -11,8 +11,8 @@ import (
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/oracles"
 
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/products"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
@@ -34,7 +34,7 @@ func TestInstrument(t *testing.T) {
 			Future: &types.Future{
 				Maturity:        "notavaliddate",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpec: &oraclesv1.OracleSpec{
+				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*oraclesv1.Filter{
 						{
@@ -46,8 +46,21 @@ func TestInstrument(t *testing.T) {
 						},
 					},
 				},
+				OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+					PubKeys: []string{"0xDEADBEEF"},
+					Filters: []*oraclesv1.Filter{
+						{
+							Key: &oraclesv1.PropertyKey{
+								Name: "trading.terminated",
+								Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*oraclesv1.Condition{},
+						},
+					},
+				},
 				OracleSpecBinding: &types.OracleSpecToFutureBinding{
-					SettlementPriceProperty: "prices.ETH.value",
+					SettlementPriceProperty:    "prices.ETH.value",
+					TradingTerminationProperty: "trading.terminated",
 				},
 			},
 		}
@@ -69,11 +82,13 @@ func TestInstrument(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Maturity:        "2019-12-31T00:00:00Z",
-				SettlementAsset: "Ethereum/Ether",
-				OracleSpec:      nil,
+				Maturity:                        "2019-12-31T00:00:00Z",
+				SettlementAsset:                 "Ethereum/Ether",
+				OracleSpecForSettlementPrice:    nil,
+				OracleSpecForTradingTermination: nil,
 				OracleSpecBinding: &types.OracleSpecToFutureBinding{
-					SettlementPriceProperty: "prices.ETH.value",
+					SettlementPriceProperty:    "prices.ETH.value",
+					TradingTerminationProperty: "trading.terminated",
 				},
 			},
 		}
@@ -89,13 +104,25 @@ func TestInstrument(t *testing.T) {
 			Future: &types.Future{
 				Maturity:        "2019-12-31T00:00:00Z",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpec: &oraclesv1.OracleSpec{
+				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*oraclesv1.Filter{
 						{
 							Key: &oraclesv1.PropertyKey{
 								Name: "prices.ETH.value",
 								Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*oraclesv1.Condition{},
+						},
+					},
+				},
+				OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+					PubKeys: []string{"0xDEADBEEF"},
+					Filters: []*oraclesv1.Filter{
+						{
+							Key: &oraclesv1.PropertyKey{
+								Name: "trading.terminated",
+								Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
 							},
 							Conditions: []*oraclesv1.Condition{},
 						},
@@ -114,7 +141,7 @@ func TestInstrument(t *testing.T) {
 func newOracleEngine(t *testing.T) products.OracleEngine {
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBroker(ctrl)
-	broker.EXPECT().Send(gomock.Any())
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	ts := emock.NewMockTimeService(ctrl)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
@@ -130,7 +157,7 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 
 func getValidInstrumentProto() *types.Instrument {
 	return &types.Instrument{
-		Id:   "Crypto/BTCUSD/Futures/Dec19",
+		ID:   "Crypto/BTCUSD/Futures/Dec19",
 		Code: "FX:BTCUSD/DEC19",
 		Name: "December 2019 BTC vs USD future",
 		Metadata: &types.InstrumentMetadata{
@@ -144,7 +171,7 @@ func getValidInstrumentProto() *types.Instrument {
 				QuoteName:       "USD",
 				Maturity:        "2019-12-31T00:00:00Z",
 				SettlementAsset: "Ethereum/Ether",
-				OracleSpec: &oraclesv1.OracleSpec{
+				OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 					PubKeys: []string{"0xDEADBEEF"},
 					Filters: []*oraclesv1.Filter{
 						{
@@ -156,8 +183,21 @@ func getValidInstrumentProto() *types.Instrument {
 						},
 					},
 				},
+				OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+					PubKeys: []string{"0xDEADBEEF"},
+					Filters: []*oraclesv1.Filter{
+						{
+							Key: &oraclesv1.PropertyKey{
+								Name: "trading.terminated",
+								Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+							},
+							Conditions: []*oraclesv1.Condition{},
+						},
+					},
+				},
 				OracleSpecBinding: &types.OracleSpecToFutureBinding{
-					SettlementPriceProperty: "prices.ETH.value",
+					SettlementPriceProperty:    "prices.ETH.value",
+					TradingTerminationProperty: "trading.terminated",
 				},
 			},
 		},

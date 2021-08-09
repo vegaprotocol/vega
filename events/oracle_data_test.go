@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ func TestOracleDataDeepClone(t *testing.T) {
 	od := &oraclespb.OracleData{
 		PubKeys: []string{"PK1", "PK2", "PK3"},
 		Data: []*oraclespb.Property{
-			&oraclespb.Property{
+			{
 				Name:  "Name",
 				Value: "Value",
 			},

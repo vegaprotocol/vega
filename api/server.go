@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	protoapi "code.vegaprotocol.io/protos/vega/api"
 	"code.vegaprotocol.io/vega/accounts"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/candles"
@@ -21,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/orders"
 	"code.vegaprotocol.io/vega/parties"
 	"code.vegaprotocol.io/vega/plugins"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"

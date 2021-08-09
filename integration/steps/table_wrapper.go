@@ -7,18 +7,19 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/proto"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	proto "code.vegaprotocol.io/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
+	"github.com/cucumber/messages-go/v10"
 )
 
 // StrictParseFirstRow parses and verifies, table integrity and returns only the
 // first row. This is suitable of table that act more as object than actual
 // table.
-func StrictParseFirstRow(table *gherkin.DataTable, required, optional []string) RowWrapper {
+func StrictParseFirstRow(table *godog.Table, required, optional []string) RowWrapper {
 	rows := StrictParseTable(table, required, optional)
 
 	if len(rows) > 1 {
@@ -29,7 +30,7 @@ func StrictParseFirstRow(table *gherkin.DataTable, required, optional []string) 
 }
 
 // StrictParseTable parses and verifies the table integrity.
-func StrictParseTable(dt *gherkin.DataTable, required, optional []string) []RowWrapper {
+func StrictParseTable(dt *godog.Table, required, optional []string) []RowWrapper {
 	tableLen := len(dt.Rows)
 	if tableLen < 1 {
 		panic("A table is required.")
@@ -61,11 +62,11 @@ func StrictParseTable(dt *gherkin.DataTable, required, optional []string) []RowW
 
 // ParseTable parses the table without verifying its integrity.
 // Prefer the use of StrictParseTable().
-func ParseTable(dt *gherkin.DataTable) []RowWrapper {
+func ParseTable(dt *godog.Table) []RowWrapper {
 	return StrictParseTable(dt, []string{}, []string{})
 }
 
-func verifyTableIntegrity(required, optional []string, header *gherkin.TableRow) error {
+func verifyTableIntegrity(required, optional []string, header *messages.PickleStepArgument_PickleTable_PickleTableRow) error {
 	cols, err := newColumns(required, optional)
 	if err != nil {
 		return err
@@ -419,60 +420,60 @@ func Time(rawTime string) (time.Time, error) {
 	return parsedTime, nil
 }
 
-func (r RowWrapper) MustOrderType(name string) types.Order_Type {
+func (r RowWrapper) MustOrderType(name string) types.OrderType {
 	orderType, err := OrderType(r.MustStr(name))
 	panicW(name, err)
 	return orderType
 }
 
-func OrderType(rawValue string) (types.Order_Type, error) {
+func OrderType(rawValue string) (types.OrderType, error) {
 	ty, ok := proto.Order_Type_value[rawValue]
 	if !ok {
-		return types.Order_Type(ty), fmt.Errorf("invalid order type: %v", rawValue)
+		return types.OrderType(ty), fmt.Errorf("invalid order type: %v", rawValue)
 	}
-	return types.Order_Type(ty), nil
+	return types.OrderType(ty), nil
 }
 
-func (r RowWrapper) MustOrderStatus(name string) types.Order_Status {
+func (r RowWrapper) MustOrderStatus(name string) types.OrderStatus {
 	s, err := OrderStatus(r.MustStr(name))
 	panicW(name, err)
 	return s
 }
 
-func OrderStatus(rawValue string) (types.Order_Status, error) {
+func OrderStatus(rawValue string) (types.OrderStatus, error) {
 	ty, ok := proto.Order_Status_value[rawValue]
 	if !ok {
-		return types.Order_Status(ty), fmt.Errorf("invalid order status: %v", rawValue)
+		return types.OrderStatus(ty), fmt.Errorf("invalid order status: %v", rawValue)
 	}
-	return types.Order_Status(ty), nil
+	return types.OrderStatus(ty), nil
 }
 
-func (r RowWrapper) MustLiquidityStatus(name string) types.LiquidityProvision_Status {
+func (r RowWrapper) MustLiquidityStatus(name string) types.LiquidityProvisionStatus {
 	s, err := LiquidityStatus(r.MustStr(name))
 	panicW(name, err)
 	return s
 }
 
-func LiquidityStatus(rawValue string) (types.LiquidityProvision_Status, error) {
+func LiquidityStatus(rawValue string) (types.LiquidityProvisionStatus, error) {
 	ty, ok := proto.LiquidityProvision_Status_value[rawValue]
 	if !ok {
-		return types.LiquidityProvision_Status(ty), fmt.Errorf("invalid liquidity provision status: %v", rawValue)
+		return types.LiquidityProvisionStatus(ty), fmt.Errorf("invalid liquidity provision status: %v", rawValue)
 	}
-	return types.LiquidityProvision_Status(ty), nil
+	return types.LiquidityProvisionStatus(ty), nil
 }
 
-func (r RowWrapper) MustTIF(name string) types.Order_TimeInForce {
+func (r RowWrapper) MustTIF(name string) types.OrderTimeInForce {
 	tif, err := TIF(r.MustStr(name))
 	panicW(name, err)
 	return tif
 }
 
-func TIF(rawValue string) (types.Order_TimeInForce, error) {
+func TIF(rawValue string) (types.OrderTimeInForce, error) {
 	tif, ok := proto.Order_TimeInForce_value[strings.ReplaceAll(rawValue, "TIF_", "TIME_IN_FORCE_")]
 	if !ok {
-		return types.Order_TimeInForce(tif), fmt.Errorf("invalid time in force: %v", rawValue)
+		return types.OrderTimeInForce(tif), fmt.Errorf("invalid time in force: %v", rawValue)
 	}
-	return types.Order_TimeInForce(tif), nil
+	return types.OrderTimeInForce(tif), nil
 }
 
 func (r RowWrapper) MustSide(name string) types.Side {
@@ -484,11 +485,11 @@ func (r RowWrapper) MustSide(name string) types.Side {
 func Side(rawValue string) (types.Side, error) {
 	switch rawValue {
 	case "sell":
-		return types.Side_SIDE_SELL, nil
+		return types.SideSell, nil
 	case "buy":
-		return types.Side_SIDE_BUY, nil
+		return types.SideBuy, nil
 	default:
-		return types.Side_SIDE_UNSPECIFIED, errors.New("invalid side")
+		return types.SideUnspecified, errors.New("invalid side")
 	}
 }
 
@@ -499,13 +500,13 @@ func (r RowWrapper) MustPeggedReference(name string) types.PeggedReference {
 func peggedReference(rawValue string) types.PeggedReference {
 	switch rawValue {
 	case "MID":
-		return types.PeggedReference_PEGGED_REFERENCE_MID
+		return types.PeggedReferenceMid
 	case "ASK":
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK
+		return types.PeggedReferenceBestAsk
 	case "BID":
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID
+		return types.PeggedReferenceBestBid
 	}
-	return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
+	return types.PeggedReferenceUnspecified
 }
 
 func (r RowWrapper) MustOracleSpecPropertyType(name string) oraclesv1.PropertyKey_Type {
@@ -532,24 +533,33 @@ func (r RowWrapper) MustAuctionTrigger(name string) types.AuctionTrigger {
 func AuctionTrigger(name string) (types.AuctionTrigger, error) {
 	at, ok := proto.AuctionTrigger_value[name]
 	if !ok {
-		return types.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED, fmt.Errorf("couldn't find %s as auction trigger", name)
+		return types.AuctionTriggerUnspecified, fmt.Errorf("couldn't find %s as auction trigger", name)
 	}
 	return types.AuctionTrigger(at), nil
 }
 
-func (r RowWrapper) MustTradingMode(name string) types.Market_TradingMode {
+func (r RowWrapper) MustTradingMode(name string) types.MarketTradingMode {
 	ty, err := TradingMode(r.MustStr(name))
 	panicW(name, err)
 	return ty
 }
 
-func TradingMode(name string) (types.Market_TradingMode, error) {
+func TradingMode(name string) (types.MarketTradingMode, error) {
 	ty, ok := proto.Market_TradingMode_value[name]
 
 	if !ok {
-		return types.Market_TRADING_MODE_UNSPECIFIED, fmt.Errorf("couldn't find %s as trading_mode", name)
+		return types.MarketTradingModeUnspecified, fmt.Errorf("couldn't find %s as trading_mode", name)
 	}
-	return types.Market_TradingMode(ty), nil
+	return types.MarketTradingMode(ty), nil
+}
+
+func MarketState(name string) (types.MarketState, error) {
+	ty, ok := proto.Market_State_value[name]
+
+	if !ok {
+		return types.MarketStateUnspecified, fmt.Errorf("couldn't find %s as market state", name)
+	}
+	return types.MarketState(ty), nil
 }
 
 func (r RowWrapper) MustAccount(name string) types.AccountType {
@@ -561,8 +571,8 @@ func (r RowWrapper) MustAccount(name string) types.AccountType {
 func Account(name string) (types.AccountType, error) {
 	value := types.AccountType(proto.AccountType_value[name])
 
-	if value == types.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
-		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("invalid account type %s", name)
+	if value == types.AccountTypeUnspecified {
+		return types.AccountTypeUnspecified, fmt.Errorf("invalid account type %s", name)
 	}
 	return value, nil
 }
@@ -570,7 +580,7 @@ func Account(name string) (types.AccountType, error) {
 func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 	idBuf := make([]byte, 256)
 
-	if ty == types.AccountType_ACCOUNT_TYPE_GENERAL {
+	if ty == types.AccountTypeGeneral {
 		marketID = ""
 	}
 

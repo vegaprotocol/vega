@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/monitoring/mocks"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +33,7 @@ func TestAppStatus(t *testing.T) {
 			CatchingUp: false,
 		},
 		NodeInfo: p2p.DefaultNodeInfo{
-			Version: "0.33.8",
+			Version: "0.34.11",
 		},
 	}
 

@@ -3,8 +3,8 @@ package gql_test
 import (
 	"testing"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
-	"code.vegaprotocol.io/vega/proto"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -62,7 +62,7 @@ func TestModelConverters(t *testing.T) {
 					Maturity:        "asdasdas",
 					SettlementAsset: "Ethereum/Ether",
 					QuoteName:       "Xyz",
-					OracleSpec: &gql.OracleSpecConfigurationInput{
+					OracleSpecForSettlementPrice: &gql.OracleSpecConfigurationInput{
 						PubKeys: []string{
 							"0xDEADBEEF",
 						},
@@ -81,8 +81,28 @@ func TestModelConverters(t *testing.T) {
 							},
 						},
 					},
+					OracleSpecForTradingTermination: &gql.OracleSpecConfigurationInput{
+						PubKeys: []string{
+							"0xDEADBEEF",
+						},
+						Filters: []*gql.FilterInput{
+							{
+								Key: &gql.PropertyKeyInput{
+									Name: "trading.terminated",
+									Type: gql.PropertyKeyTypeTypeBoolean,
+								},
+								Conditions: []*gql.ConditionInput{
+									{
+										Operator: gql.ConditionOperatorOperatorEquals,
+										Value:    "false",
+									},
+								},
+							},
+						},
+					},
 					OracleSpecBinding: &gql.OracleSpecToFutureBindingInput{
-						SettlementPriceProperty: "prices.BTC.value",
+						SettlementPriceProperty:    "prices.BTC.value",
+						TradingTerminationProperty: "trading.terminated",
 					},
 				},
 			},
@@ -125,7 +145,7 @@ func TestModelConverters(t *testing.T) {
 					Maturity:        "asdasdas",
 					SettlementAsset: "Ethereum/Ether",
 					QuoteName:       "Xyz",
-					OracleSpec: &gql.OracleSpecConfigurationInput{
+					OracleSpecForSettlementPrice: &gql.OracleSpecConfigurationInput{
 						PubKeys: []string{
 							"0xDEADBEEF",
 						},
@@ -144,8 +164,28 @@ func TestModelConverters(t *testing.T) {
 							},
 						},
 					},
+					OracleSpecForTradingTermination: &gql.OracleSpecConfigurationInput{
+						PubKeys: []string{
+							"0xDEADBEEF",
+						},
+						Filters: []*gql.FilterInput{
+							{
+								Key: &gql.PropertyKeyInput{
+									Name: "trading.terminated",
+									Type: gql.PropertyKeyTypeTypeBoolean,
+								},
+								Conditions: []*gql.ConditionInput{
+									{
+										Operator: gql.ConditionOperatorOperatorEquals,
+										Value:    "true",
+									},
+								},
+							},
+						},
+					},
 					OracleSpecBinding: &gql.OracleSpecToFutureBindingInput{
-						SettlementPriceProperty: "prices.BTC.value",
+						SettlementPriceProperty:    "prices.BTC.value",
+						TradingTerminationProperty: "trading.terminated",
 					},
 				},
 			},

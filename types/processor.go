@@ -3,8 +3,8 @@
 package types
 
 import (
-	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	proto "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -105,8 +105,8 @@ func (o OrderSubmission) String() string {
 
 func (o OrderSubmission) IntoOrder(party string) *Order {
 	return &Order{
-		MarketId:    o.MarketId,
-		PartyId:     party,
+		MarketID:    o.MarketId,
+		Party:       party,
 		Side:        o.Side,
 		Price:       o.Price,
 		Size:        o.Size,

@@ -15,7 +15,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 	asset, _ := m.mkt.GetAsset()
 	transfers := make([]*types.TransferResponse, 0, len(lps))
 	for _, lp := range lps {
-		party := lp.PartyId
+		party := lp.Party
 		bondAcc, err := m.collateral.GetPartyBondAccount(mID, party, asset)
 		if err != nil || bondAcc == nil {
 			continue
@@ -34,7 +34,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 		amt := num.Min(bondShort, gen.Balance)
 		t := &types.Transfer{
 			Owner: party,
-			Type:  types.TransferType_TRANSFER_TYPE_BOND_LOW,
+			Type:  types.TransferTypeBondLow,
 			Amount: &types.FinancialAmount{
 				Asset:  asset,
 				Amount: amt,

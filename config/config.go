@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -83,7 +84,8 @@ type Config struct {
 	Validators        validators.Config  `group:"Validators" namespace:"validators"`
 	Banking           banking.Config     `group:"Banking" namespace:"banking"`
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
-	NetworkParameters netparams.Config
+	NetworkParameters netparams.Config   `group:"NetworkParameters" namespace:"netparams"`
+	Limits            limits.Config      `group:"Limits" namespace:"limits"`
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
@@ -131,6 +133,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Stats:             stats.NewDefaultConfig(),
 		Subscribers:       subscribers.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
+		Limits:            limits.NewDefaultConfig(),
 		GatewayEnabled:    true,
 		StoresEnabled:     true,
 		UlimitNOFile:      8192,

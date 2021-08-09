@@ -101,10 +101,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 // The margins+risk engines need the updated position to determine whether the
 // order should be accepted.
 func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
-	pos, found := e.positions[order.PartyId]
+	pos, found := e.positions[order.Party]
 	if !found {
-		pos = NewMarketPosition(order.PartyId)
-		e.positions[order.PartyId] = pos
+		pos = NewMarketPosition(order.Party)
+		e.positions[order.Party] = pos
 		// append the pointer to the slice as well
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
@@ -115,7 +115,7 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 // UnregisterOrder undoes the actions of RegisterOrder. It is used when an order
 // has been rejected by the Risk Engine, or when an order is amended or canceled.
 func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
-	pos, found := e.positions[order.PartyId]
+	pos, found := e.positions[order.Party]
 	if !found {
 		e.log.Panic("could not find position in engine when unregistering order",
 			logging.Order(*order))
@@ -128,7 +128,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 // AmendOrder unregisters the original order and then registers the newly amended order
 // this method is a quicker way of handling separate unregister+register pairs
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
-	pos, found := e.positions[originalOrder.PartyId]
+	pos, found := e.positions[originalOrder.Party]
 	if !found {
 		e.log.Panic("could not find position in engine when amending order",
 			logging.Order(*originalOrder),
@@ -243,14 +243,14 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	return ret
 }
 
-// RemoveDistressed Removes positions for distressed traders, and returns the most up to date positions we have
-func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.MarketPosition {
-	ret := make([]events.MarketPosition, 0, len(traders))
-	for _, trader := range traders {
-		e.log.Warn("removing trader from positions engine",
-			logging.String("party-id", trader.Party()))
+// RemoveDistressed Removes positions for distressed parties, and returns the most up to date positions we have
+func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
+	ret := make([]events.MarketPosition, 0, len(parties))
+	for _, party := range parties {
+		e.log.Warn("removing party from positions engine",
+			logging.String("party-id", party.Party()))
 
-		party := trader.Party()
+		party := party.Party()
 		if current, ok := e.positions[party]; ok {
 			ret = append(ret, current)
 		}
@@ -258,9 +258,9 @@ func (e *Engine) RemoveDistressed(traders []events.MarketPosition) []events.Mark
 		delete(e.positions, party)
 		// remove from the slice
 		for i := range e.positionsCpy {
-			if e.positionsCpy[i].Party() == trader.Party() {
-				e.log.Warn("removing trader from positions engine (cpy slice)",
-					logging.String("party-id", trader.Party()))
+			if e.positionsCpy[i].Party() == party {
+				e.log.Warn("removing party from positions engine (cpy slice)",
+					logging.String("party-id", party))
 				e.positionsCpy = append(e.positionsCpy[:i], e.positionsCpy[i+1:]...)
 				break
 			}

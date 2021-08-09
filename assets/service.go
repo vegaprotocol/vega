@@ -1,8 +1,8 @@
 package assets
 
 import (
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 // Plugin Exports functions for fetching assets

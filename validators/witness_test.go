@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/logging"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/validators/mocks"
 
@@ -30,7 +30,7 @@ func getTestWitness(t *testing.T) *testWitness {
 	tsvc := mocks.NewMockTimeService(ctrl)
 
 	now := time.Now()
-	tsvc.EXPECT().GetTimeNow().Times(1).Return(now, nil)
+	tsvc.EXPECT().GetTimeNow().Times(1).Return(now)
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	w := validators.NewWitness(
 		logging.NewTestLogger(), validators.NewDefaultConfig(), top, cmd, tsvc)
@@ -222,7 +222,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 	<-ch
 
 	// first on chain time update, we send our own vote
-	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	newNow := erc.startTime.Add(1 * time.Second)
 	erc.OnTick(context.Background(), newNow)
 
@@ -266,7 +266,7 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 	assert.NoError(t, err)
 
 	// first on chain time update, we send our own vote
-	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(nil)
+	erc.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	newNow := erc.startTime.Add(1 * time.Second)
 	erc.OnTick(context.Background(), newNow)
 

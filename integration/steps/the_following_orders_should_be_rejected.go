@@ -3,23 +3,23 @@ package steps
 import (
 	"fmt"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	types "code.vegaprotocol.io/vega/proto"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func TheFollowingOrdersShouldBeRejected(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheFollowingOrdersShouldBeRejected(broker *stubs.BrokerStub, table *godog.Table) error {
 	var orderNotRejected []string
 	count := len(table.Rows) - 1
 	for _, row := range parseRejectedOrdersTable(table) {
-		trader := row.MustStr("trader")
+		party := row.MustStr("party")
 		marketID := row.MustStr("market id")
 		reason := row.MustStr("reason")
 
 		data := broker.GetOrderEvents()
 		for _, o := range data {
 			v := o.Order()
-			if v.PartyId == trader && v.MarketId == marketID {
+			if v.PartyId == party && v.MarketId == marketID {
 				if v.Status == types.Order_STATUS_REJECTED && v.Reason.String() == reason {
 					count -= 1
 					continue
@@ -40,9 +40,9 @@ func errOrderNotRejected(orderNotRejected []string) error {
 	return fmt.Errorf("orders with reference %v were not rejected", orderNotRejected)
 }
 
-func parseRejectedOrdersTable(table *gherkin.DataTable) []RowWrapper {
+func parseRejectedOrdersTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"market id",
 		"reason",
 	}, []string{})

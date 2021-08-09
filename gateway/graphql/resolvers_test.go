@@ -5,13 +5,13 @@ import (
 	"errors"
 	"testing"
 
+	types "code.vegaprotocol.io/protos/vega"
+	protoapi "code.vegaprotocol.io/protos/vega/api"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/gateway"
 	gql "code.vegaprotocol.io/vega/gateway/graphql"
 	"code.vegaprotocol.io/vega/gateway/graphql/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -84,7 +84,7 @@ func getTestMarket() *types.Market {
 					Future: &types.Future{
 						Maturity:        "2019-12-31",
 						SettlementAsset: "Ethereum/Ether",
-						OracleSpec: &oraclesv1.OracleSpec{
+						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
 							Filters: []*oraclesv1.Filter{
 								{
@@ -96,8 +96,21 @@ func getTestMarket() *types.Market {
 								},
 							},
 						},
+						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "trading.terminated",
+										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
+							},
+						},
 						OracleSpecBinding: &types.OracleSpecToFutureBinding{
-							SettlementPriceProperty: "prices.ETH.value",
+							SettlementPriceProperty:    "prices.ETH.value",
+							TradingTerminationProperty: "trading.terminated",
 						},
 					},
 				},

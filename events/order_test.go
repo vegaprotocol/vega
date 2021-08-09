@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/assert"
@@ -15,9 +15,9 @@ func TestOrderDeepClone(t *testing.T) {
 	ctx := context.Background()
 
 	o := &types.Order{
-		Id:          "Id",
-		MarketId:    "MarketId",
-		PartyId:     "PartyId",
+		ID:          "Id",
+		MarketID:    "MarketId",
+		Party:       "PartyId",
 		Side:        proto.Side_SIDE_BUY,
 		Price:       num.NewUint(1000),
 		Size:        2000,
@@ -31,21 +31,21 @@ func TestOrderDeepClone(t *testing.T) {
 		Reason:      proto.ErrEditNotAllowed,
 		UpdatedAt:   6000,
 		Version:     7000,
-		BatchId:     8000,
+		BatchID:     8000,
 		PeggedOrder: &types.PeggedOrder{
 			Reference: proto.PeggedReference_PEGGED_REFERENCE_MID,
 			Offset:    9000,
 		},
-		LiquidityProvisionId: "LiqProvId",
+		LiquidityProvisionID: "LiqProvId",
 	}
 
 	oEvent := events.NewOrderEvent(ctx, o)
 	o2 := oEvent.Order()
 
 	// Change the original values
-	o.Id = "Changed"
-	o.MarketId = "Changed"
-	o.PartyId = "Changed"
+	o.ID = "Changed"
+	o.MarketID = "Changed"
+	o.Party = "Changed"
 	o.Side = proto.Side_SIDE_UNSPECIFIED
 	o.Price = num.NewUint(999)
 	o.Size = 999
@@ -59,15 +59,15 @@ func TestOrderDeepClone(t *testing.T) {
 	o.Reason = proto.ErrInvalidMarketID
 	o.UpdatedAt = 999
 	o.Version = 999
-	o.BatchId = 999
+	o.BatchID = 999
 	o.PeggedOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
 	o.PeggedOrder.Offset = 999
-	o.LiquidityProvisionId = "Changed"
+	o.LiquidityProvisionID = "Changed"
 
 	// Check things have changed
-	assert.NotEqual(t, o.Id, o2.Id)
-	assert.NotEqual(t, o.MarketId, o2.MarketId)
-	assert.NotEqual(t, o.PartyId, o2.PartyId)
+	assert.NotEqual(t, o.ID, o2.Id)
+	assert.NotEqual(t, o.MarketID, o2.MarketId)
+	assert.NotEqual(t, o.Party, o2.PartyId)
 	assert.NotEqual(t, o.Side, o2.Side)
 	assert.NotEqual(t, o.Price, o2.Price)
 	assert.NotEqual(t, o.Size, o2.Size)
@@ -81,8 +81,8 @@ func TestOrderDeepClone(t *testing.T) {
 	assert.NotEqual(t, o.Reason, o2.Reason)
 	assert.NotEqual(t, o.UpdatedAt, o2.UpdatedAt)
 	assert.NotEqual(t, o.Version, o2.Version)
-	assert.NotEqual(t, o.BatchId, o2.BatchId)
+	assert.NotEqual(t, o.BatchID, o2.BatchId)
 	assert.NotEqual(t, o.PeggedOrder.Reference, o2.PeggedOrder.Reference)
 	assert.NotEqual(t, o.PeggedOrder.Offset, o2.PeggedOrder.Offset)
-	assert.NotEqual(t, o.LiquidityProvisionId, o2.LiquidityProvisionId)
+	assert.NotEqual(t, o.LiquidityProvisionID, o2.LiquidityProvisionId)
 }

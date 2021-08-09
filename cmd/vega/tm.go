@@ -26,7 +26,7 @@ func (opts *tmCmd) Execute(_ []string) error {
 		cmd.GenValidatorCmd,
 		cmd.InitFilesCmd,
 		cmd.ProbeUpnpCmd,
-		cmd.LiteCmd,
+		cmd.LightCmd,
 		cmd.ReplayCmd,
 		cmd.ReplayConsoleCmd,
 		cmd.ResetAllCmd,

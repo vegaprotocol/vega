@@ -1,13 +1,13 @@
 package steps
 
 import (
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/steps/market"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
-func TheLogNormalRiskModel(config *market.Config, name string, table *gherkin.DataTable) error {
+func TheLogNormalRiskModel(config *market.Config, name string, table *godog.Table) error {
 	row := logNormalRiskModelRow{row: parseLogNormalRiskModelTable(table)}
 
 	return config.RiskModels.AddLogNormal(name, &types.TradableInstrument_LogNormalRiskModel{
@@ -23,7 +23,7 @@ func TheLogNormalRiskModel(config *market.Config, name string, table *gherkin.Da
 	})
 }
 
-func parseLogNormalRiskModelTable(table *gherkin.DataTable) RowWrapper {
+func parseLogNormalRiskModelTable(table *godog.Table) RowWrapper {
 	return StrictParseFirstRow(table, []string{
 		"risk aversion",
 		"tau",

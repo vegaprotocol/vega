@@ -144,7 +144,7 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	p.data[mID][tID] = calc
 }
 
-// GetPositionsByMarketAndParty get the position of a single trader in a given market
+// GetPositionsByMarketAndParty get the position of a single party in a given market
 func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -159,14 +159,14 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	return &pos.Position, nil
 }
 
-// GetPositionsByParty get all positions for a given trader
+// GetPositionsByParty get all positions for a given party
 func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	// at most, trader is active in all markets
+	// at most, party is active in all markets
 	positions := make([]*types.Position, 0, len(p.data))
-	for _, traders := range p.data {
-		if pos, ok := traders[party]; ok {
+	for _, parties := range p.data {
+		if pos, ok := parties[party]; ok {
 			positions = append(positions, &pos.Position)
 		}
 	}
@@ -183,19 +183,19 @@ func (p *Positions) GetAllPositions() ([]*types.Position, error) {
 	defer p.mu.RUnlock()
 	var pos []*types.Position
 	for k := range p.data {
-		// guesstimate what the slice cap ought to be: number of markets * number of traders in 1 market
+		// guesstimate what the slice cap ought to be: number of markets * number of parties in 1 market
 		pos = make([]*types.Position, 0, len(p.data)*len(p.data[k]))
 		break
 	}
-	for _, traders := range p.data {
-		for _, tp := range traders {
+	for _, parties := range p.data {
+		for _, tp := range parties {
 			pos = append(pos, &tp.Position)
 		}
 	}
 	return pos, nil
 }
 
-// GetPositionsByMarket get all trader positions in a given market
+// GetPositionsByMarket get all party positions in a given market
 func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()

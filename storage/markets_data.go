@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/proto"
 	"github.com/pkg/errors"
 )
 

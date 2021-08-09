@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	vega "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
 	context "context"
@@ -107,7 +107,7 @@ func (mr *MockBankingMockRecorder) HasBalance(arg0 interface{}) *gomock.Call {
 }
 
 // LockWithdrawalERC20 mocks base method
-func (m *MockBanking) LockWithdrawalERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint, arg5 *proto.Erc20WithdrawExt) error {
+func (m *MockBanking) LockWithdrawalERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint, arg5 *vega.Erc20WithdrawExt) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LockWithdrawalERC20", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)

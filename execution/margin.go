@@ -88,13 +88,13 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	// 1. Get the price
 	price := m.getMarkPrice(order)
 	// m.log.Infof("calculating margins at %d for order at price %d", price, order.Price)
-	// 2. Get all positions - we have to update margins for all traders on the book so nobody can get distressed when we eventually do uncross
+	// 2. Get all positions - we have to update margins for all parties on the book so nobody can get distressed when we eventually do uncross
 	allPos := m.position.Positions()
 	// 3. get the asset and ID for this market
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	// 3-b. Get position for the trader placing this order, if exists
-	if cPos, ok := m.position.GetPositionByPartyID(order.PartyId); ok {
+	if cPos, ok := m.position.GetPositionByPartyID(order.Party); ok {
 		e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
 		if err != nil {
 			return nil, nil, err
@@ -104,8 +104,8 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 			// this order would take party below maintenance -> stop here
 			return nil, nil, ErrMarginCheckInsufficient
 		}
-		// we could transfer the funds for this trader here, but we're handling all positions lower down, including this one
-		// this is just to stop all margins being updated based on a price that the trader can't even manage
+		// we could transfer the funds for this party here, but we're handling all positions lower down, including this one
+		// this is just to stop all margins being updated based on a price that the party can't even manage
 	}
 	// 4. construct the events for all positions + margin balances
 	// at this point, we have established the order is going through
@@ -129,7 +129,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	// 6. Attempt margin updates where possible. If position is to be closed, append it to the closed slice we already have
 	riskTransfers := make([]events.Risk, 0, len(risk))
 	for _, ru := range risk {
-		// skip the traders with a shortfall/distressed
+		// skip the parties with a shortfall/distressed
 		if _, ok := distressed[ru.Party()]; ok {
 			continue
 		}
@@ -154,7 +154,7 @@ func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, or
 		return nil, nil, nil
 	}
 	if evt != nil {
-		if m.liquidity.IsPending(order.PartyId) {
+		if m.liquidity.IsPending(order.Party) {
 			return nil, nil, ErrBondSlashing
 		}
 		return []events.Risk{risk}, []events.MarketPosition{evt}, nil

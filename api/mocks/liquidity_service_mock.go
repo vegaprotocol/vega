@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
-	types "code.vegaprotocol.io/vega/types"
+	vega "code.vegaprotocol.io/protos/vega"
+	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -36,10 +36,10 @@ func (m *MockLiquidityService) EXPECT() *MockLiquidityServiceMockRecorder {
 }
 
 // Get mocks base method
-func (m *MockLiquidityService) Get(arg0, arg1 string) ([]types.LiquidityProvision, error) {
+func (m *MockLiquidityService) Get(arg0, arg1 string) ([]vega.LiquidityProvision, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0, arg1)
-	ret0, _ := ret[0].([]types.LiquidityProvision)
+	ret0, _ := ret[0].([]vega.LiquidityProvision)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

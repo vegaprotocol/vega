@@ -9,15 +9,15 @@ import (
 	"sync/atomic"
 	"time"
 
+	types "code.vegaprotocol.io/protos/vega"
+	protoapi "code.vegaprotocol.io/protos/vega/api"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -36,7 +36,7 @@ var defaultPagination = protoapi.Pagination{
 // VegaTime ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/vega_time_mock.go -package mocks code.vegaprotocol.io/vega/api VegaTime
 type VegaTime interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 }
 
 // OrderService ...
@@ -818,10 +818,7 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 	defer metrics.StartAPIRequestAndTimeGRPC("Statistics")()
 	// Call tendermint and related services to get information for statistics
 	// We load read-only internal statistics through each package level statistics structs
-	epochTime, err := t.TimeService.GetTimeNow()
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrTimeServiceGetTimeNow, err)
-	}
+	epochTime := t.TimeService.GetTimeNow()
 
 	// Call tendermint via rpc client
 	var (
@@ -830,7 +827,7 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 		chainID                 string
 	)
 
-	backlogLength, numPeers, gt, chainID, err = t.getTendermintStats(ctx)
+	backlogLength, numPeers, gt, chainID, err := t.getTendermintStats(ctx)
 	if err != nil {
 		// do not return an error, let just eventually log it
 		t.log.Debug("could not load tendermint stats", logging.Error(err))
@@ -890,13 +887,8 @@ func (t *tradingDataService) Statistics(ctx context.Context, _ *protoapi.Statist
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
 func (t *tradingDataService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime")()
-	ts, err := t.TimeService.GetTimeNow()
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrTimeServiceGetTimeNow, err)
-	}
-
 	return &protoapi.GetVegaTimeResponse{
-		Timestamp: ts.UnixNano(),
+		Timestamp: t.TimeService.GetTimeNow().UnixNano(),
 	}, nil
 
 }

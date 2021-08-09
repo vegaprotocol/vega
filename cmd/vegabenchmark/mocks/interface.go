@@ -4,17 +4,24 @@ import (
 	"context"
 	"time"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/golang/protobuf/proto"
 )
+
+//go:generate go run github.com/golang/mock/mockgen -destination limits_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Limits
+type Limits interface {
+	CanProposeMarket() bool
+	CanProposeAsset() bool
+	CanTrade() bool
+}
 
 //go:generate go run github.com/golang/mock/mockgen -destination node_wallet_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks NodeWallet
 type NodeWallet interface {
@@ -60,7 +67,7 @@ type OracleAdaptors interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination commander_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message) error
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks GovernanceEngine

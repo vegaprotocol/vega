@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"code.vegaprotocol.io/vega/proto"
+	"code.vegaprotocol.io/protos/vega"
 )
 
 // One of the possible asset sources
@@ -194,8 +194,10 @@ type FutureProductInput struct {
 	SettlementAsset string `json:"settlementAsset"`
 	// String representing the quote (e.g. BTCUSD -> USD is quote)
 	QuoteName string `json:"quoteName"`
-	// The oracle spec describing the oracle data of interest.
-	OracleSpec *OracleSpecConfigurationInput `json:"oracleSpec"`
+	// The oracle spec describing the oracle data of interest for settlement price.
+	OracleSpecForSettlementPrice *OracleSpecConfigurationInput `json:"oracleSpecForSettlementPrice"`
+	// The oracle spec describing the oracle data of interest for trading termination.
+	OracleSpecForTradingTermination *OracleSpecConfigurationInput `json:"oracleSpecForTradingTermination"`
 	// The binding between the oracle spec and the settlement price
 	OracleSpecBinding *OracleSpecToFutureBindingInput `json:"oracleSpecBinding"`
 }
@@ -245,7 +247,7 @@ type LiquidityOrderInput struct {
 // The equity like share of liquidity fee for each liquidity provider
 type LiquidityProviderFeeShare struct {
 	// The liquidity provider party id
-	Party *proto.Party `json:"party"`
+	Party *vega.Party `json:"party"`
 	// The share own by this liquidity provider (float)
 	EquityLikeShare string `json:"equityLikeShare"`
 	// the average entry valuation of the liqidity provider for the market
@@ -284,9 +286,9 @@ func (LossSocialization) IsEvent() {}
 // The MM commitments for this market
 type MarketDataCommitments struct {
 	// a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec.
-	Sells []*proto.LiquidityOrderReference `json:"sells"`
+	Sells []*vega.LiquidityOrderReference `json:"sells"`
 	// a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec.
-	Buys []*proto.LiquidityOrderReference `json:"buys"`
+	Buys []*vega.LiquidityOrderReference `json:"buys"`
 }
 
 type MarketEvent struct {
@@ -383,7 +385,8 @@ type OracleSpecConfigurationInput struct {
 // OracleSpecToFutureBindingInput tells on which property oracle data should be
 // used as settlement price.
 type OracleSpecToFutureBindingInput struct {
-	SettlementPriceProperty string `json:"settlementPriceProperty"`
+	SettlementPriceProperty    string `json:"settlementPriceProperty"`
+	TradingTerminationProperty string `json:"tradingTerminationProperty"`
 }
 
 // An estimate of the fee to be paid by the order
@@ -393,7 +396,7 @@ type OrderEstimate struct {
 	// The total estimated amount of fee if the order was to trade
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
-	MarginLevels *proto.MarginLevels `json:"marginLevels"`
+	MarginLevels *vega.MarginLevels `json:"marginLevels"`
 }
 
 // Create an order linked to an index rather than a price
@@ -407,11 +410,11 @@ type PeggedOrderInput struct {
 type PositionResolution struct {
 	// the market ID where position resolution happened
 	MarketID string `json:"marketId"`
-	// number of distressed traders on market
+	// number of distressed partys on market
 	Distressed int `json:"distressed"`
-	// number of traders closed out
+	// number of partys closed out
 	Closed int `json:"closed"`
-	// the mark price at which traders were distressed/closed out
+	// the mark price at which partys were distressed/closed out
 	MarkPrice int `json:"markPrice"`
 }
 
@@ -437,7 +440,7 @@ type PreparedProposal struct {
 	// Raw transaction data to sign & submit
 	Blob string `json:"blob"`
 	// The pending proposal
-	PendingProposal *proto.GovernanceData `json:"pendingProposal"`
+	PendingProposal *vega.GovernanceData `json:"pendingProposal"`
 }
 
 type PreparedSubmitOrder struct {
@@ -555,14 +558,14 @@ type ProposalTermsInput struct {
 
 type ProposalVote struct {
 	// Cast vote
-	Vote *proto.Vote `json:"vote"`
+	Vote *vega.Vote `json:"vote"`
 	// Proposal casting the vote on
 	ProposalID string `json:"proposalId"`
 }
 
 type ProposalVoteSide struct {
 	// All votes casted for this side
-	Votes []*proto.Vote `json:"votes"`
+	Votes []*vega.Vote `json:"votes"`
 	// Total number of votes casted for this side
 	TotalNumber string `json:"totalNumber"`
 	// Total weight of governance token from the votes casted for this side
@@ -590,7 +593,7 @@ type SettleDistressed struct {
 	MarketID string `json:"marketId"`
 	// the party who closed out
 	PartyID string `json:"partyId"`
-	// the margin taken from distressed trader
+	// the margin taken from distressed party
 	Margin int `json:"margin"`
 	// the price at which position was closed out
 	Price int `json:"price"`
@@ -666,7 +669,7 @@ type TransactionSubmitted struct {
 
 type TransferBalance struct {
 	// Account involved in transfer
-	Account *proto.Account `json:"account"`
+	Account *vega.Account `json:"account"`
 	// The new balance of the account
 	Balance int `json:"balance"`
 }
@@ -704,18 +707,20 @@ const (
 	AccountTypeGlobalInsurance AccountType = "GlobalInsurance"
 	// Settlement - only for 'system' party
 	AccountTypeSettlement AccountType = "Settlement"
-	// Margin - The leverage account for traders
+	// Margin - The leverage account for partys
 	AccountTypeMargin AccountType = "Margin"
-	// General account - the account containing 'unused' collateral for traders
+	// General account - the account containing 'unused' collateral for partys
 	AccountTypeGeneral AccountType = "General"
 	// Infrastructure fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
 	// Liquidity fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeLiquidity AccountType = "FeeLiquidity"
-	// LockWithdraw - and account use for party in the process of withdrawing funds
+	// LockWithdraw - and account used for party in the process of withdrawing funds
 	AccountTypeLockWithdraw AccountType = "LockWithdraw"
-	// Bond - an account use to maintain MM commitments
+	// Bond - an account used to maintain MM commitments
 	AccountTypeBond AccountType = "Bond"
+	// GlobalReward - an account used for per asset rewards schemes
+	AccountTypeGlobalReward AccountType = "GlobalReward"
 )
 
 var AllAccountType = []AccountType{
@@ -728,11 +733,12 @@ var AllAccountType = []AccountType{
 	AccountTypeFeeLiquidity,
 	AccountTypeLockWithdraw,
 	AccountTypeBond,
+	AccountTypeGlobalReward,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
+	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond, AccountTypeGlobalReward:
 		return true
 	}
 	return false
@@ -1654,7 +1660,7 @@ const (
 	OrderTypeMarket OrderType = "Market"
 	// mentioned in ticket, but as yet unused order type
 	OrderTypeLimit OrderType = "Limit"
-	// Used for distressed traders, an order placed by the network to close out distressed traders
+	// Used for distressed partys, an order placed by the network to close out distressed partys
 	// similar to Market order, only no party is attached to the order.
 	OrderTypeNetwork OrderType = "Network"
 )

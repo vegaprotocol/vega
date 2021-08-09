@@ -5,9 +5,9 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
-	api "code.vegaprotocol.io/vega/proto/api"
-	v1 "code.vegaprotocol.io/vega/proto/commands/v1"
+	vega "code.vegaprotocol.io/protos/vega"
+	api "code.vegaprotocol.io/protos/vega/api"
+	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -37,7 +37,7 @@ func (m *MockBlockchain) EXPECT() *MockBlockchainMockRecorder {
 }
 
 // SubmitTransaction mocks base method
-func (m *MockBlockchain) SubmitTransaction(arg0 context.Context, arg1 *proto.SignedBundle, arg2 api.SubmitTransactionRequest_Type) error {
+func (m *MockBlockchain) SubmitTransaction(arg0 context.Context, arg1 *vega.SignedBundle, arg2 api.SubmitTransactionRequest_Type) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

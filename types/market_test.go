@@ -3,14 +3,14 @@ package types_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/proto"
-	v1 "code.vegaprotocol.io/vega/proto/oracles/v1"
+	proto "code.vegaprotocol.io/protos/vega"
+	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMarketFromIntoProto(t *testing.T) {
-	filter := &v1.Filter{
+	filter1 := &v1.Filter{
 		Key: &v1.PropertyKey{
 			Name: "filter1",
 			Type: v1.PropertyKey_TYPE_STRING,
@@ -37,12 +37,20 @@ func TestMarketFromIntoProto(t *testing.T) {
 						Maturity:        "very",
 						SettlementAsset: "GBP",
 						QuoteName:       "USD",
-						OracleSpec: &v1.OracleSpec{
+						OracleSpecForSettlementPrice: &v1.OracleSpec{
 							Id:        "os1",
 							CreatedAt: 0,
 							UpdatedAt: 1,
 							PubKeys:   []string{"pubkey"},
-							Filters:   []*v1.Filter{filter},
+							Filters:   []*v1.Filter{filter1},
+							Status:    v1.OracleSpec_STATUS_ACTIVE,
+						},
+						OracleSpecForTradingTermination: &v1.OracleSpec{
+							Id:        "os1",
+							CreatedAt: 0,
+							UpdatedAt: 1,
+							PubKeys:   []string{"pubkey"},
+							Filters:   []*v1.Filter{},
 							Status:    v1.OracleSpec_STATUS_ACTIVE,
 						},
 						OracleSpecBinding: &proto.OracleSpecToFutureBinding{

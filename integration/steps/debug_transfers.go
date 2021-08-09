@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-func DebugTransfers(broker *stubs.BrokerStub, log *logging.Logger) error {
+func DebugTransfers(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DUMPING TRANSFERS")
 	transferEvents := broker.GetTransferResponses()
 	for _, e := range transferEvents {
@@ -17,5 +17,4 @@ func DebugTransfers(broker *stubs.BrokerStub, log *logging.Logger) error {
 			}
 		}
 	}
-	return nil
 }

@@ -11,7 +11,8 @@ import (
 	"sync"
 	"time"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/crypto"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -43,6 +44,7 @@ type Wallet struct {
 	mu                  sync.Mutex
 	curHeightLastUpdate time.Time
 	curHeight           uint64
+	address             crypto.PublicKeyOrAddress
 }
 
 func DevInit(path, passphrase string) (string, error) {
@@ -88,12 +90,15 @@ func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error)
 		return nil, errors.Wrap(err, "unable to unlock wallet")
 	}
 
+	address := crypto.NewPublicKeyOrAddress(acc.Address.Hex(), acc.Address.Bytes())
+
 	return &Wallet{
 		cfg:        cfg,
 		acc:        acc,
 		ks:         ks,
 		clt:        ethclt,
 		passphrase: passphrase,
+		address:    address,
 	}, nil
 }
 
@@ -137,8 +142,8 @@ func (w *Wallet) Version() uint32 {
 	return 0
 }
 
-func (w *Wallet) PubKeyOrAddress() []byte {
-	return w.acc.Address.Bytes()
+func (w *Wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
+	return w.address
 }
 
 func (w *Wallet) Client() ETHClient {

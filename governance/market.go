@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -39,8 +39,10 @@ var (
 
 	// ErrMissingOracleSpecBinding is returned when the oracle spec binding is absent.
 	ErrMissingOracleSpecBinding = errors.New("missing oracle spec binding")
-	// ErrMissingOracleSpec is returned when the oracle spec is absent.
-	ErrMissingOracleSpec = errors.New("missing oracle spec")
+	// ErrMissingOracleSpecForSettlementPrice is returned when the oracle spec for settlement price is absent.
+	ErrMissingOracleSpecForSettlementPrice = errors.New("missing oracle spec for settlement price")
+	// ErrMissingOracleSpecForTradingTermination is returned when the oracle spec for trading termination is absent.
+	ErrMissingOracleSpecForTradingTermination = errors.New("missing oracle spec for trading termination")
 	// ErrMissingFutureProduct is returned when future product is absent from the instrument.
 	ErrMissingFutureProduct = errors.New("missing future product")
 	// ErrInvalidOracleSpecBinding ...
@@ -58,8 +60,11 @@ func assignProduct(
 		if product.Future == nil {
 			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingFutureProduct
 		}
-		if product.Future.OracleSpec == nil {
-			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpec
+		if product.Future.OracleSpecForSettlementPrice == nil {
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecForSettlementPrice
+		}
+		if product.Future.OracleSpecForTradingTermination == nil {
+			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecForTradingTermination
 		}
 		if product.Future.OracleSpecBinding == nil {
 			return proto.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecBinding
@@ -67,10 +72,12 @@ func assignProduct(
 
 		target.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Maturity:          product.Future.Maturity,
-				SettlementAsset:   product.Future.SettlementAsset,
-				QuoteName:         product.Future.QuoteName,
-				OracleSpec:        product.Future.OracleSpec.ToOracleSpec(),
+				Maturity:                        product.Future.Maturity,
+				SettlementAsset:                 product.Future.SettlementAsset,
+				QuoteName:                       product.Future.QuoteName,
+				OracleSpecForSettlementPrice:    product.Future.OracleSpecForSettlementPrice.ToOracleSpec(),
+				OracleSpecForTradingTermination: product.Future.OracleSpecForTradingTermination.ToOracleSpec(),
+
 				OracleSpecBinding: product.Future.OracleSpecBinding,
 			},
 		}
@@ -83,11 +90,11 @@ func assignProduct(
 func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
 	switch mode := definition.TradingMode.(type) {
 	case *types.NewMarketConfiguration_Continuous:
-		target.TradingModeConfig = &types.Market_Continuous{
+		target.TradingModeConfig = &types.MarketContinuous{
 			Continuous: mode.Continuous,
 		}
 	case *types.NewMarketConfiguration_Discrete:
-		target.TradingModeConfig = &types.Market_Discrete{
+		target.TradingModeConfig = &types.MarketDiscrete{
 			Discrete: mode.Discrete,
 		}
 	default:
@@ -117,13 +124,13 @@ func createInstrument(
 func assignRiskModel(definition *types.NewMarketConfiguration, target *types.TradableInstrument) error {
 	switch parameters := definition.RiskParameters.(type) {
 	case *types.NewMarketConfiguration_Simple:
-		target.RiskModel = &types.TradableInstrument_SimpleRiskModel{
+		target.RiskModel = &types.TradableInstrumentSimpleRiskModel{
 			SimpleRiskModel: &types.SimpleRiskModel{
 				Params: parameters.Simple,
 			},
 		}
 	case *types.NewMarketConfiguration_LogNormal:
-		target.RiskModel = &types.TradableInstrument_LogNormalRiskModel{
+		target.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 			LogNormalRiskModel: parameters.LogNormal,
 		}
 	default:
@@ -189,7 +196,7 @@ func createMarket(
 	makerFeeDec, _ := num.DecimalFromString(makerFee)
 	infraFeeDec, _ := num.DecimalFromString(infraFee)
 	market := &types.Market{
-		Id:            marketID,
+		ID:            marketID,
 		DecimalPlaces: definition.Changes.DecimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
@@ -253,18 +260,34 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
 	}
 
-	if future.OracleSpec == nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpec
+	if future.OracleSpecForSettlementPrice == nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecForSettlementPrice
 	}
-	// ensure the oracle spec can be constructed
-	ospec, err := oracles.NewOracleSpec(*future.OracleSpec.ToOracleSpec())
-	if err != nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, err
+
+	if future.OracleSpecForTradingTermination == nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecForTradingTermination
 	}
+
 	if future.OracleSpecBinding == nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecBinding
 	}
+
+	// ensure the oracle spec for settlement price can be constructed
+	ospec, err := oracles.NewOracleSpec(*future.OracleSpecForSettlementPrice.ToOracleSpec())
+	if err != nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, err
+	}
 	if !ospec.CanBindProperty(future.OracleSpecBinding.SettlementPriceProperty) {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT,
+			ErrInvalidOracleSpecBinding
+	}
+
+	ospec, err = oracles.NewOracleSpec(*future.OracleSpecForTradingTermination.ToOracleSpec())
+	if err != nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, err
+	}
+
+	if !ospec.CanBindProperty(future.OracleSpecBinding.TradingTerminationProperty) {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT,
 			ErrInvalidOracleSpecBinding
 	}
@@ -372,7 +395,7 @@ func validateShape(
 			return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in shape without a proportion")
 		}
 
-		if side == types.Side_SIDE_BUY {
+		if side == types.SideBuy {
 			switch lo.Reference {
 			case proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
 				return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")

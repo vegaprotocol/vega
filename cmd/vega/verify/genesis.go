@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"github.com/jessevdk/go-flags"
 
-	types "code.vegaprotocol.io/vega/proto"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 type GenesisCmd struct {

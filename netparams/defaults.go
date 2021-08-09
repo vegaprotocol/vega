@@ -3,8 +3,8 @@ package netparams
 import (
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/netparams/checks"
-	"code.vegaprotocol.io/vega/proto"
 )
 
 const (
@@ -72,6 +72,10 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
 		GovernanceProposalUpdateNetParamMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 		GovernanceProposalUpdateNetParamMinVoterBalance:       NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+
+		// Delegation default params
+		DelegationMinAmount:            NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
+		DelegationMaxStakePerValidator: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/liquidity"
-	"code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
@@ -78,12 +78,12 @@ func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
 		Fee:              "0.5",
 		Reference:        "ref-lp-submission-1",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 7, Offset: -10},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 3, Offset: -15},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 7, Offset: -10},
+			{Reference: types.PeggedReferenceMid, Proportion: 3, Offset: -15},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 8, Offset: 10},
-			{Reference: types.PeggedReference_PEGGED_REFERENCE_MID, Proportion: 2, Offset: 15},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 8, Offset: 10},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: 15},
 		},
 	}
 	t, _ := types.LiquidityProvisionSubmissionFromProto(pb)

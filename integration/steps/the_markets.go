@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/steps/market"
@@ -17,7 +18,7 @@ func TheMarkets(
 	config *market.Config,
 	executionEngine *execution.Engine,
 	collateralEngine *collateral.Engine,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) ([]types.Market, error) {
 	var markets []types.Market
 	for _, row := range parseMarketsTable(table) {
@@ -44,7 +45,7 @@ func submitMarkets(markets []types.Market, executionEngine *execution.Engine) er
 	for i := range markets {
 		err := executionEngine.SubmitMarket(context.Background(), &markets[i])
 		if err != nil {
-			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].Id, err)
+			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
 		}
 	}
 	return nil
@@ -58,7 +59,7 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 	}
 	for assetToEnable := range assetsToEnable {
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
-			Id: assetToEnable,
+			ID: assetToEnable,
 			Details: &types.AssetDetails{
 				Symbol: assetToEnable,
 			},
@@ -72,7 +73,7 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 
 func enableVoteAsset(collateralEngine *collateral.Engine) error {
 	voteAsset := types.Asset{
-		Id: "VOTE",
+		ID: "VOTE",
 		Details: &types.AssetDetails{
 			Name:        "VOTE",
 			Symbol:      "VOTE",
@@ -88,7 +89,7 @@ func enableVoteAsset(collateralEngine *collateral.Engine) error {
 
 	err := collateralEngine.EnableAsset(context.Background(), voteAsset)
 	if err != nil {
-		return fmt.Errorf("couldn't enable asset(%s): %v", voteAsset.Id, err)
+		return fmt.Errorf("couldn't enable asset(%s): %v", voteAsset.ID, err)
 	}
 	return nil
 }
@@ -99,10 +100,19 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		panic(err)
 	}
 
-	oracleConfig, err := config.OracleConfigs.Get(row.oracleConfig())
+	oracleConfigForSettlement, err := config.OracleConfigs.Get(row.oracleConfig(), "settlement price")
 	if err != nil {
 		panic(err)
 	}
+
+	oracleConfigForTradingTermination, err := config.OracleConfigs.Get(row.oracleConfig(), "trading termination")
+	if err != nil {
+		panic(err)
+	}
+
+	var binding proto.OracleSpecToFutureBinding
+	binding.SettlementPriceProperty = oracleConfigForSettlement.Binding.SettlementPriceProperty
+	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
 
 	priceMonitoring, err := config.PriceMonitoring.Get(row.priceMonitoring())
 	if err != nil {
@@ -115,14 +125,14 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	}
 
 	m := types.Market{
-		TradingMode:   types.Market_TRADING_MODE_CONTINUOUS,
-		State:         types.Market_STATE_ACTIVE,
-		Id:            row.id(),
+		TradingMode:   types.MarketTradingModeContinuous,
+		State:         types.MarketStateActive,
+		ID:            row.id(),
 		DecimalPlaces: 2,
 		Fees:          types.FeesFromProto(fees),
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
-				Id:   fmt.Sprintf("Crypto/%s/Futures", row.id()),
+				ID:   fmt.Sprintf("Crypto/%s/Futures", row.id()),
 				Code: fmt.Sprintf("CRYPTO/%v", row.id()),
 				Name: fmt.Sprintf("%s future", row.id()),
 				Metadata: &types.InstrumentMetadata{
@@ -133,18 +143,19 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:          row.maturityDate(),
-						SettlementAsset:   row.asset(),
-						QuoteName:         row.quoteName(),
-						OracleSpec:        oracleConfig.Spec,
-						OracleSpecBinding: types.OracleSpecToFutureBindingFromProto(oracleConfig.Binding),
+						Maturity:                        row.maturityDate(),
+						SettlementAsset:                 row.asset(),
+						QuoteName:                       row.quoteName(),
+						OracleSpecForSettlementPrice:    oracleConfigForSettlement.Spec,
+						OracleSpecForTradingTermination: oracleConfigForTradingTermination.Spec,
+						OracleSpecBinding:               types.OracleSpecToFutureBindingFromProto(&binding),
 					},
 				},
 			},
 			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
 		},
 		OpeningAuction: openingAuction(row),
-		TradingModeConfig: &types.Market_Continuous{
+		TradingModeConfig: &types.MarketContinuous{
 			Continuous: &types.ContinuousTrading{},
 		},
 		PriceMonitoringSettings: types.PriceMonitoringSettingsFromProto(priceMonitoring),
@@ -179,7 +190,7 @@ func openingAuction(row marketRow) *types.AuctionDuration {
 	return auction
 }
 
-func parseMarketsTable(table *gherkin.DataTable) []RowWrapper {
+func parseMarketsTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
 		"quote name",

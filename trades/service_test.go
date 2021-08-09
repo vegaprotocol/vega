@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/trades"
 	"code.vegaprotocol.io/vega/trades/mocks"
 

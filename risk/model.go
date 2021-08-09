@@ -34,9 +34,9 @@ func NewModel(prm interface{}, asset string) (Model, error) {
 	}
 
 	switch rm := prm.(type) {
-	case *types.TradableInstrument_LogNormalRiskModel:
+	case *types.TradableInstrumentLogNormalRiskModel:
 		return models.NewBuiltinFutures(rm.LogNormalRiskModel, asset)
-	case *types.TradableInstrument_SimpleRiskModel:
+	case *types.TradableInstrumentSimpleRiskModel:
 		return models.NewSimple(rm.SimpleRiskModel, asset)
 	default:
 		return nil, ErrUnimplementedRiskModel

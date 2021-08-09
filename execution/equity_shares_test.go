@@ -131,13 +131,13 @@ func (esm *equityShareMarket) TestMarket() *testMarket { return esm.tm }
 
 func (esm *equityShareMarket) BuildOrder(id, party string, side types.Side, price uint64) *types.Order {
 	return &types.Order{
-		Type:        types.Order_TYPE_LIMIT,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-		Status:      types.Order_STATUS_ACTIVE,
-		Id:          id,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTT,
+		Status:      types.OrderStatusActive,
+		ID:          id,
 		Side:        side,
-		PartyId:     party,
-		MarketId:    esm.tm.market.GetID(),
+		Party:       party,
+		MarketID:    esm.tm.market.GetID(),
 		Size:        1,
 		Price:       num.NewUint(price),
 		Remaining:   1,
@@ -154,7 +154,7 @@ func (esm *equityShareMarket) createPartyIfMissing(party string) {
 }
 
 func (esm *equityShareMarket) SubmitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, error) {
-	esm.createPartyIfMissing(order.PartyId)
+	esm.createPartyIfMissing(order.Party)
 	return esm.tm.market.SubmitOrder(ctx, order)
 }
 
@@ -210,24 +210,24 @@ func testWithinMarket(t *testing.T) {
 	// Setup a market with a set of non-matching orders and Liquidity Provision
 	// Submissions from 2 parties.
 	esm := newEquityShareMarket(t).
-		WithSubmittedOrder("some-id-1", "party1", types.Side_SIDE_SELL, matchingPrice+one).
-		WithSubmittedOrder("some-id-2", "party2", types.Side_SIDE_BUY, matchingPrice-one).
+		WithSubmittedOrder("some-id-1", "party1", types.SideSell, matchingPrice+one).
+		WithSubmittedOrder("some-id-2", "party2", types.SideBuy, matchingPrice-one).
 		// party1 (commitment: 2000) should get 2/3 of the fee
 		WithSubmittedLiquidityProvision("party1", "lp-id-1", 2000, "0.5",
 			[]*types.LiquidityOrder{
-				{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -11},
+				{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: -11},
 			},
 			[]*types.LiquidityOrder{
-				{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 10},
+				{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 10},
 			},
 		).
 		// party2 (commitment: 1000) should get 1/3 of the fee
 		WithSubmittedLiquidityProvision("party2", "lp-id-2", 1000, "0.5",
 			[]*types.LiquidityOrder{
-				{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -10},
+				{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: -10},
 			},
 			[]*types.LiquidityOrder{
-				{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 11},
+				{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 11},
 			},
 		)
 
@@ -257,10 +257,10 @@ func testWithinMarket(t *testing.T) {
 
 	// Match a pair of orders (same price) to trigger a fee distribution.
 	conf, err := esm.
-		WithSubmittedOrder("some-id-3", "party1", types.Side_SIDE_SELL, matchingPrice).
+		WithSubmittedOrder("some-id-3", "party1", types.SideSell, matchingPrice).
 		SubmitOrder(
 			context.Background(),
-			esm.BuildOrder("some-id-4", "party2", types.Side_SIDE_BUY, matchingPrice),
+			esm.BuildOrder("some-id-4", "party2", types.SideBuy, matchingPrice),
 		)
 	require.NoError(t, err)
 	require.Len(t, conf.Trades, 1)
@@ -269,8 +269,8 @@ func testWithinMarket(t *testing.T) {
 	// before the fee distribution.
 	var (
 		originalBalance = esm.LiquidityFeeAccount().Balance.Clone()
-		party1Balance   = esm.PartyMarginAccount("party1").Balance.Clone()
-		party2Balance   = esm.PartyMarginAccount("party2").Balance.Clone()
+		party1Balance   = esm.PartyGeneralAccount("party1").Balance.Clone()
+		party2Balance   = esm.PartyGeneralAccount("party2").Balance.Clone()
 	)
 
 	curTime = curTime.Add(1 * time.Second)
@@ -282,7 +282,7 @@ func testWithinMarket(t *testing.T) {
 	// exp = originalBalance*(2/3)
 	exp := num.Zero().Mul(num.NewUint(2), originalBalance)
 	exp = exp.Div(exp, num.NewUint(3))
-	actual := num.Zero().Sub(esm.PartyMarginAccount("party1").Balance, party1Balance)
+	actual := num.Zero().Sub(esm.PartyGeneralAccount("party1").Balance, party1Balance)
 	assert.True(t,
 		exp.EQ(actual),
 		"party1 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
@@ -290,7 +290,7 @@ func testWithinMarket(t *testing.T) {
 
 	// exp = originalBalance*(1/3)
 	exp = num.Zero().Div(originalBalance, num.NewUint(3))
-	actual = num.Zero().Sub(esm.PartyMarginAccount("party2").Balance, party2Balance)
+	actual = num.Zero().Sub(esm.PartyGeneralAccount("party2").Balance, party2Balance)
 	assert.True(t,
 		exp.EQ(actual),
 		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),

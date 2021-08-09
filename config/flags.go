@@ -23,7 +23,7 @@ func NewRootPathFlag() RootPathFlag {
 }
 
 type PassphraseFlag struct {
-	Passphrase Passphrase `short:"p" long:"passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
+	PassphraseFile Passphrase `short:"p" long:"passphrase-file" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 }
 
 type Passphrase string
@@ -40,6 +40,8 @@ func (p Passphrase) getFromUser(prompt string) (string, error) {
 	fmt.Printf("please enter %s passphrase:", prompt)
 	password, err := terminal.ReadPassword(0)
 	if err != nil {
+		// just adding that to clean up output
+		fmt.Printf("\n")
 		return "", err
 	}
 

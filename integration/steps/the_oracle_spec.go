@@ -1,14 +1,14 @@
 package steps
 
 import (
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
+	types "code.vegaprotocol.io/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/integration/steps/market"
-	types "code.vegaprotocol.io/vega/proto"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
-func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table *gherkin.DataTable) error {
+func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {
 	pubKeys := StrSlice(rawPubKeys, ",")
 
 	binding := &types.OracleSpecToFutureBinding{}
@@ -28,10 +28,14 @@ func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table 
 		if row.destination() == "settlement price" {
 			binding.SettlementPriceProperty = row.propertyName()
 		}
+		if row.destination() == "trading termination" {
+			binding.TradingTerminationProperty = row.propertyName()
+		}
 	}
 
 	return config.OracleConfigs.Add(
 		name,
+		specType,
 		&oraclesv1.OracleSpec{
 			PubKeys: pubKeys,
 			Filters: filters,
@@ -40,7 +44,7 @@ func TheOracleSpec(config *market.Config, name string, rawPubKeys string, table 
 	)
 }
 
-func parseOracleSpecTable(table *gherkin.DataTable) []RowWrapper {
+func parseOracleSpecTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"property",
 		"type",

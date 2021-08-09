@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmok "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

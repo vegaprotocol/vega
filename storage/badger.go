@@ -3,9 +3,9 @@ package storage
 import (
 	"fmt"
 
+	types "code.vegaprotocol.io/protos/vega"
 	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"
@@ -170,11 +170,9 @@ func getOptionsFromConfig(cfg ConfigOptions, dir string, log *logging.Logger) ba
 		Logger:                  log.Named(badgerNamedLogger),
 
 		Compression:              cfg.Compression,
-		EventLogging:             cfg.EventLogging,
 		BlockSize:                cfg.BlockSize,
 		BloomFalsePositive:       cfg.BloomFalsePositive,
 		KeepL0InMemory:           cfg.KeepL0InMemory,
-		MaxCacheSize:             cfg.MaxCacheSize,
 		VerifyValueChecksum:      cfg.VerifyValueChecksum,
 		ChecksumVerificationMode: cfg.ChecksumVerificationMode,
 	}

@@ -52,11 +52,11 @@ func (b *CachedOrderBook) maybeInvalidateDuringAuction(order *types.Order) {
 	// only invalidate cache if it gets in the
 	// uncrossing range
 	switch order.Side {
-	case types.Side_SIDE_BUY:
+	case types.SideBuy:
 		if order.Price.GTE(bestAsk) {
 			b.cache.Invalidate()
 		}
-	case types.Side_SIDE_SELL:
+	case types.SideSell:
 		if order.Price.LTE(bestBid) {
 			b.cache.Invalidate()
 		}

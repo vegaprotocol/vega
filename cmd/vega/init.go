@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/faucet"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/proto"
-	oraclesv1 "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -258,7 +258,7 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 							QuoteName:       skel.quoteName,
 							Maturity:        skel.maturity.Format("2006-01-02T15:04:05Z"),
 							SettlementAsset: skel.settlementAsset,
-							OracleSpec: &oraclesv1.OracleSpec{
+							OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 								PubKeys: []string{"0xDEADBEEF"},
 								Filters: []*oraclesv1.Filter{
 									{
@@ -270,8 +270,21 @@ func createDefaultMarkets(confpath string) ([]string, error) {
 									},
 								},
 							},
+							OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+								PubKeys: []string{"0xDEADBEEF"},
+								Filters: []*oraclesv1.Filter{
+									{
+										Key: &oraclesv1.PropertyKey{
+											Name: "trading.terminated",
+											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+										},
+										Conditions: []*oraclesv1.Condition{},
+									},
+								},
+							},
 							OracleSpecBinding: &proto.OracleSpecToFutureBinding{
-								SettlementPriceProperty: "prices.ETH.value",
+								SettlementPriceProperty:    "prices.ETH.value",
+								TradingTerminationProperty: "trading.terminated",
 							},
 						},
 					},

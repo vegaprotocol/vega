@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
@@ -28,13 +28,13 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/evtforward TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message) error
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
@@ -76,12 +76,7 @@ type nodeHash struct {
 }
 
 // New creates a new instance of the event forwarder
-func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) (*EvtForwarder, error) {
-	now, err := time.GetTimeNow()
-	if err != nil {
-		return nil, err
-	}
-
+func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) *EvtForwarder {
 	var allowlist atomic.Value
 	allowlist.Store(buildAllowlist(cfg))
 	evtf := &EvtForwarder{
@@ -90,7 +85,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		cmd:              cmd,
 		nodes:            []nodeHash{},
 		self:             string(top.SelfVegaPubKey()),
-		currentTime:      now,
+		currentTime:      time.GetTimeNow(),
 		ackedEvts:        map[string]*commandspb.ChainEvent{},
 		evts:             map[string]tsEvt{},
 		top:              top,
@@ -98,7 +93,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 	}
 	evtf.updateValidatorsList()
 	time.NotifyOnTick(evtf.onTick)
-	return evtf, nil
+	return evtf
 }
 
 func buildAllowlist(cfg Config) map[string]struct{} {
@@ -188,7 +183,7 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 	e.evts[key] = tsEvt{ts: e.currentTime, evt: evt}
 	if e.isSender(evt) {
 		// we are selected to send the event, let's do it.
-		return e.send(ctx, evt)
+		e.send(ctx, evt)
 	}
 	return nil
 }
@@ -222,8 +217,9 @@ func (e *EvtForwarder) getEvt(key string) (evt *commandspb.ChainEvent, ok bool, 
 	return nil, false, false
 }
 
-func (e *EvtForwarder) send(ctx context.Context, evt *commandspb.ChainEvent) error {
-	return e.cmd.Command(ctx, txn.ChainEventCommand, evt)
+func (e *EvtForwarder) send(ctx context.Context, evt *commandspb.ChainEvent) {
+	// error doesn't matter here
+	e.cmd.Command(ctx, txn.ChainEventCommand, evt, nil)
 }
 
 func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
@@ -260,9 +256,7 @@ func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
 			e.evts[k] = tsEvt{ts: t, evt: evt.evt}
 			if e.isSender(evt.evt) {
 				// we are selected to send the event, let's do it.
-				if err := e.send(ctx, evt.evt); err != nil {
-					e.log.Error("unable to send event", logging.Error(err))
-				}
+				e.send(ctx, evt.evt)
 			}
 		}
 	}

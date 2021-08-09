@@ -6,7 +6,7 @@ package mocks
 
 import (
 	context "context"
-	go_ethereum "github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	common "github.com/ethereum/go-ethereum/common"
 	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
@@ -38,7 +38,7 @@ func (m *MockETHClient) EXPECT() *MockETHClientMockRecorder {
 }
 
 // CallContract mocks base method
-func (m *MockETHClient) CallContract(arg0 context.Context, arg1 go_ethereum.CallMsg, arg2 *big.Int) ([]byte, error) {
+func (m *MockETHClient) CallContract(arg0 context.Context, arg1 ethereum.CallMsg, arg2 *big.Int) ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CallContract", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]byte)
@@ -83,7 +83,7 @@ func (mr *MockETHClientMockRecorder) CodeAt(arg0, arg1, arg2 interface{}) *gomoc
 }
 
 // EstimateGas mocks base method
-func (m *MockETHClient) EstimateGas(arg0 context.Context, arg1 go_ethereum.CallMsg) (uint64, error) {
+func (m *MockETHClient) EstimateGas(arg0 context.Context, arg1 ethereum.CallMsg) (uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EstimateGas", arg0, arg1)
 	ret0, _ := ret[0].(uint64)
@@ -98,7 +98,7 @@ func (mr *MockETHClientMockRecorder) EstimateGas(arg0, arg1 interface{}) *gomock
 }
 
 // FilterLogs mocks base method
-func (m *MockETHClient) FilterLogs(arg0 context.Context, arg1 go_ethereum.FilterQuery) ([]types.Log, error) {
+func (m *MockETHClient) FilterLogs(arg0 context.Context, arg1 ethereum.FilterQuery) ([]types.Log, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FilterLogs", arg0, arg1)
 	ret0, _ := ret[0].([]types.Log)
@@ -187,10 +187,10 @@ func (mr *MockETHClientMockRecorder) SendTransaction(arg0, arg1 interface{}) *go
 }
 
 // SubscribeFilterLogs mocks base method
-func (m *MockETHClient) SubscribeFilterLogs(arg0 context.Context, arg1 go_ethereum.FilterQuery, arg2 chan<- types.Log) (go_ethereum.Subscription, error) {
+func (m *MockETHClient) SubscribeFilterLogs(arg0 context.Context, arg1 ethereum.FilterQuery, arg2 chan<- types.Log) (ethereum.Subscription, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubscribeFilterLogs", arg0, arg1, arg2)
-	ret0, _ := ret[0].(go_ethereum.Subscription)
+	ret0, _ := ret[0].(ethereum.Subscription)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

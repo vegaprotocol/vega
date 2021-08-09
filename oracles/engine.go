@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 )
 
 // Broker no need to mock (use broker package mock)

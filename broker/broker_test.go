@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -76,6 +76,7 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Skip optional subscribers in a batch send", testSendBatchChannel)
 	t.Run("Send batch to ack subscriber", testSendBatch)
 	t.Run("Stop sending if context is cancelled", testStopCtx)
+	t.Run("Stop sending if context is cancelled, even new events", testStopCtxSendAgain)
 	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
 	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
 }
@@ -445,6 +446,27 @@ func testStopCtx(t *testing.T) {
 	sub.EXPECT().Ack().AnyTimes().Return(true)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
+	broker.Send(broker.randomEvt())
+	// calling unsubscribe acquires lock, so we can ensure the Send call has returned
+	broker.Unsubscribe(k1)
+	close(ch)
+}
+
+func testStopCtxSendAgain(t *testing.T) {
+	broker := getBroker(t)
+	defer broker.Finish()
+	sub := mocks.NewMockSubscriber(broker.ctrl)
+	ch := make(chan struct{})
+	sub.EXPECT().Closed().AnyTimes().Return(ch)
+	sub.EXPECT().Skip().AnyTimes().Return(ch)
+	// no calls sub are expected, we cancelled the context
+	broker.cfunc()
+	sub.EXPECT().Types().Times(2).Return(nil)
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+	k1 := broker.Subscribe(sub) // required sub
+	assert.NotZero(t, k1)
+	broker.Send(broker.randomEvt())
+	broker.cfunc()
 	broker.Send(broker.randomEvt())
 	// calling unsubscribe acquires lock, so we can ensure the Send call has returned
 	broker.Unsubscribe(k1)

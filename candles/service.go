@@ -5,9 +5,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/pkg/errors"

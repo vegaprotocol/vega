@@ -37,9 +37,9 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/vegatime"
 
-	types "code.vegaprotocol.io/vega/proto"
-	protoapi "code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	protoapi "code.vegaprotocol.io/protos/vega/api"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -126,7 +126,7 @@ func getTestGRPCServer(
 	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
 	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
 	blockchainClient.EXPECT().GetStatus(gomock.Any()).AnyTimes().Return(&tmctypes.ResultStatus{
-		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.8"},
+		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.34.11"},
 		SyncInfo:      tmctypes.SyncInfo{},
 		ValidatorInfo: tmctypes.ValidatorInfo{},
 	}, nil)

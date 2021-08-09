@@ -25,10 +25,9 @@ func getTestNodeValidation(t *testing.T) *testNodeValidation {
 	assets := mocks.NewMockAssets(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
 
-	nv, err := governance.NewNodeValidation(
+	nv := governance.NewNodeValidation(
 		logging.NewTestLogger(), assets, time.Now(), witness)
 	assert.NotNil(t, nv)
-	assert.Nil(t, err)
 
 	return &testNodeValidation{
 		NodeValidation: nv,

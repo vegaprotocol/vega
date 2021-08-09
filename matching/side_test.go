@@ -19,30 +19,30 @@ func getTestSide(side types.Side) *OrderBookSide {
 }
 
 func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
-	side := getTestSide(types.Side_SIDE_SELL)
+	side := getTestSide(types.SideSell)
 	o := &types.Order{
-		Id:          "order1",
-		MarketId:    "testmarket",
-		PartyId:     "A",
-		Side:        types.Side_SIDE_SELL,
+		ID:          "order1",
+		MarketID:    "testmarket",
+		Party:       "A",
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		TimeInForce: types.OrderTimeInForceGTC,
 	}
 	// add the order to the side
 	side.addOrder(o)
 	assert.Len(t, side.levels, 1)
 
 	o2 := &types.Order{
-		Id:          "order2",
-		MarketId:    "testmarket",
-		PartyId:     "C",
-		Side:        types.Side_SIDE_SELL,
+		ID:          "order2",
+		MarketID:    "testmarket",
+		Party:       "C",
+		Side:        types.SideSell,
 		Price:       num.NewUint(101),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		TimeInForce: types.OrderTimeInForceGTC,
 	}
 
 	// add the order to the side
@@ -57,7 +57,7 @@ func TestMemoryAllocationPriceLevelRemoveOrder(t *testing.T) {
 
 func TestMemoryAllocationGetPriceLevelReturnAPriceLevelIfItAlreadyExists(t *testing.T) {
 	// test for a sell side
-	side := getTestSide(types.Side_SIDE_SELL)
+	side := getTestSide(types.SideSell)
 	assert.Len(t, side.levels, 0)
 	pl := side.getPriceLevel(num.NewUint(100))
 	assert.Len(t, side.levels, 1)
@@ -87,7 +87,7 @@ func TestMemoryAllocationGetPriceLevelReturnAPriceLevelIfItAlreadyExists(t *test
 	assert.NotNil(t, pl)
 
 	// test for a buy side
-	side = getTestSide(types.Side_SIDE_BUY)
+	side = getTestSide(types.SideBuy)
 	assert.Len(t, side.levels, 0)
 	pl = side.getPriceLevel(num.NewUint(100))
 	assert.Len(t, side.levels, 1)
@@ -118,30 +118,30 @@ func TestMemoryAllocationGetPriceLevelReturnAPriceLevelIfItAlreadyExists(t *test
 }
 
 func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
-	side := getTestSide(types.Side_SIDE_SELL)
+	side := getTestSide(types.SideSell)
 	o := &types.Order{
-		Id:          "order1",
-		MarketId:    "testmarket",
-		PartyId:     "A",
-		Side:        types.Side_SIDE_SELL,
+		ID:          "order1",
+		MarketID:    "testmarket",
+		Party:       "A",
+		Side:        types.SideSell,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		TimeInForce: types.OrderTimeInForceGTC,
 	}
 	// add the order to the side
 	side.addOrder(o)
 	assert.Len(t, side.levels, 1)
 
 	o2 := &types.Order{
-		Id:          "order2",
-		MarketId:    "testmarket",
-		PartyId:     "C",
-		Side:        types.Side_SIDE_SELL,
+		ID:          "order2",
+		MarketID:    "testmarket",
+		Party:       "C",
+		Side:        types.SideSell,
 		Price:       num.NewUint(101),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		TimeInForce: types.OrderTimeInForceGTC,
 	}
 
 	// add the order to the side
@@ -149,14 +149,14 @@ func TestMemoryAllocationPriceLevelUncrossSide(t *testing.T) {
 	assert.Len(t, side.levels, 2)
 
 	aggressiveOrder := &types.Order{
-		Id:          "order3",
-		MarketId:    "testmarket",
-		PartyId:     "X",
-		Side:        types.Side_SIDE_BUY,
+		ID:          "order3",
+		MarketID:    "testmarket",
+		Party:       "X",
+		Side:        types.SideBuy,
 		Price:       num.NewUint(100),
 		Size:        1,
 		Remaining:   1,
-		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+		TimeInForce: types.OrderTimeInForceGTC,
 	}
 	side.uncross(aggressiveOrder, true)
 	assert.Len(t, side.levels, 1)
@@ -182,14 +182,14 @@ func getPopulatedTestSide(side types.Side) *OrderBookSide {
 
 	for _, order := range testOrders {
 		o := &types.Order{
-			Id:          order.ID,
-			MarketId:    "testmarket",
-			PartyId:     "A",
+			ID:          order.ID,
+			MarketID:    "testmarket",
+			Party:       "A",
 			Side:        side,
 			Price:       num.NewUint(order.Price),
 			Size:        order.Size,
 			Remaining:   order.Size,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			TimeInForce: types.OrderTimeInForceGTC,
 		}
 		// add the order to the side
 		obs.addOrder(o)
@@ -218,18 +218,18 @@ func getPopulatedTestSideWithPegs(side types.Side) *OrderBookSide {
 
 	for _, order := range testOrders {
 		o := &types.Order{
-			Id:          order.ID,
-			MarketId:    "testmarket",
-			PartyId:     "A",
+			ID:          order.ID,
+			MarketID:    "testmarket",
+			Party:       "A",
 			Side:        side,
 			Price:       num.NewUint(order.Price),
 			Size:        order.Size,
 			Remaining:   order.Size,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			TimeInForce: types.OrderTimeInForceGTC,
 		}
 		if order.Offset != 0 {
 			o.PeggedOrder = &types.PeggedOrder{
-				Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
+				Reference: types.PeggedReferenceMid,
 				Offset:    order.Offset,
 			}
 		}
@@ -258,16 +258,16 @@ func getPopulatedTestSideWithOnlyPegs(side types.Side) *OrderBookSide {
 
 	for _, order := range testOrders {
 		o := &types.Order{
-			Id:          order.ID,
-			MarketId:    "testmarket",
-			PartyId:     "A",
+			ID:          order.ID,
+			MarketID:    "testmarket",
+			Party:       "A",
 			Side:        side,
 			Price:       num.NewUint(order.Price),
 			Size:        order.Size,
 			Remaining:   order.Size,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+			TimeInForce: types.OrderTimeInForceGTC,
 			PeggedOrder: &types.PeggedOrder{
-				Reference: types.PeggedReference_PEGGED_REFERENCE_MID,
+				Reference: types.PeggedReferenceMid,
 				Offset:    order.Offset,
 			},
 		}
@@ -278,12 +278,12 @@ func getPopulatedTestSideWithOnlyPegs(side types.Side) *OrderBookSide {
 }
 
 func getEmptyTestSide(side types.Side) *OrderBookSide {
-	obs := getTestSide(types.Side_SIDE_SELL)
+	obs := getTestSide(types.SideSell)
 	return obs
 }
 
 func TestExtractOrdersFullLevel(t *testing.T) {
-	side := getPopulatedTestSide(types.Side_SIDE_SELL)
+	side := getPopulatedTestSide(types.SideSell)
 
 	assert.Len(t, side.levels, 2)
 
@@ -294,7 +294,7 @@ func TestExtractOrdersFullLevel(t *testing.T) {
 }
 
 func TestExtractOrdersPartialLevel(t *testing.T) {
-	side := getPopulatedTestSide(types.Side_SIDE_SELL)
+	side := getPopulatedTestSide(types.SideSell)
 
 	assert.Len(t, side.levels, 2)
 
@@ -305,7 +305,7 @@ func TestExtractOrdersPartialLevel(t *testing.T) {
 }
 
 func TestExtractOrdersCrossLevel(t *testing.T) {
-	side := getPopulatedTestSide(types.Side_SIDE_SELL)
+	side := getPopulatedTestSide(types.SideSell)
 
 	assert.Len(t, side.levels, 2)
 
@@ -317,17 +317,17 @@ func TestExtractOrdersCrossLevel(t *testing.T) {
 
 func TestExtractOrdersWrongVolume(t *testing.T) {
 	// Attempt to extract more volume than we have on the book
-	side := getPopulatedTestSide(types.Side_SIDE_SELL)
+	side := getPopulatedTestSide(types.SideSell)
 	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(101), 30) })
 
 	// Attempt to extract more than we have at this price level
-	side = getPopulatedTestSide(types.Side_SIDE_SELL)
+	side = getPopulatedTestSide(types.SideSell)
 	assert.Panics(t, func() { side.ExtractOrders(num.NewUint(100), 4) })
 }
 
 func TestBestStatic(t *testing.T) {
 	// Empty book
-	emptySide := getEmptyTestSide(types.Side_SIDE_SELL)
+	emptySide := getEmptyTestSide(types.SideSell)
 	_, err := emptySide.BestStaticPrice()
 	assert.Error(t, err)
 
@@ -335,7 +335,7 @@ func TestBestStatic(t *testing.T) {
 	assert.Error(t, err)
 
 	// Book with normal and pegs
-	side := getPopulatedTestSideWithPegs(types.Side_SIDE_SELL)
+	side := getPopulatedTestSideWithPegs(types.SideSell)
 
 	price, err := side.BestStaticPrice()
 	assert.NoError(t, err)
@@ -347,7 +347,7 @@ func TestBestStatic(t *testing.T) {
 	assert.EqualValues(t, 1, volume)
 
 	// Book with only pegs
-	pegsSide := getPopulatedTestSideWithOnlyPegs(types.Side_SIDE_SELL)
+	pegsSide := getPopulatedTestSideWithOnlyPegs(types.SideSell)
 	_, err = pegsSide.BestStaticPrice()
 	assert.Error(t, err)
 
@@ -356,8 +356,8 @@ func TestBestStatic(t *testing.T) {
 }
 
 func TestGetPriceLevelIfExists(t *testing.T) {
-	buySide := getPopulatedTestSideWithPegs(types.Side_SIDE_BUY)
-	sellSide := getPopulatedTestSideWithPegs(types.Side_SIDE_SELL)
+	buySide := getPopulatedTestSideWithPegs(types.SideBuy)
+	sellSide := getPopulatedTestSideWithPegs(types.SideSell)
 
 	// Check we can get valid price levels
 	bpl := buySide.getPriceLevelIfExists(num.NewUint(100))
@@ -373,8 +373,8 @@ func TestGetPriceLevelIfExists(t *testing.T) {
 }
 
 func TestGetVolume(t *testing.T) {
-	buySide := getPopulatedTestSideWithPegs(types.Side_SIDE_BUY)
-	sellSide := getPopulatedTestSideWithPegs(types.Side_SIDE_SELL)
+	buySide := getPopulatedTestSideWithPegs(types.SideBuy)
+	sellSide := getPopulatedTestSideWithPegs(types.SideSell)
 
 	// Actual levels
 	volume, err := buySide.GetVolume(num.NewUint(101))
@@ -403,16 +403,16 @@ func TestGetVolume(t *testing.T) {
 }
 
 func TestFakeUncrossNormal(t *testing.T) {
-	buySide := getPopulatedTestSideWithPegs(types.Side_SIDE_BUY)
+	buySide := getPopulatedTestSideWithPegs(types.SideBuy)
 
 	order := types.Order{
-		Id:          "Id",
+		ID:          "Id",
 		Price:       num.Zero(),
-		Side:        types.Side_SIDE_SELL,
+		Side:        types.SideSell,
 		Size:        5,
 		Remaining:   5,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
-		Type:        types.Order_TYPE_MARKET,
+		TimeInForce: types.OrderTimeInForceFOK,
+		Type:        types.OrderTypeMarket,
 	}
 
 	trades, err := buySide.fakeUncross(&order)
@@ -421,17 +421,17 @@ func TestFakeUncrossNormal(t *testing.T) {
 }
 
 func TestFakeUncrossSelfTrade(t *testing.T) {
-	buySide := getPopulatedTestSideWithPegs(types.Side_SIDE_BUY)
+	buySide := getPopulatedTestSideWithPegs(types.SideBuy)
 
 	order := types.Order{
-		Id:          "Id",
-		PartyId:     "A",
+		ID:          "Id",
+		Party:       "A",
 		Price:       num.Zero(),
-		Side:        types.Side_SIDE_SELL,
+		Side:        types.SideSell,
 		Size:        5,
 		Remaining:   5,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
-		Type:        types.Order_TYPE_MARKET,
+		TimeInForce: types.OrderTimeInForceFOK,
+		Type:        types.OrderTypeMarket,
 	}
 
 	trades, err := buySide.fakeUncross(&order)
@@ -440,16 +440,16 @@ func TestFakeUncrossSelfTrade(t *testing.T) {
 }
 
 func TestFakeUncrossNotEnoughVolume(t *testing.T) {
-	buySide := getPopulatedTestSideWithPegs(types.Side_SIDE_BUY)
+	buySide := getPopulatedTestSideWithPegs(types.SideBuy)
 
 	order := types.Order{
-		Id:          "Id",
+		ID:          "Id",
 		Price:       num.Zero(),
-		Side:        types.Side_SIDE_SELL,
+		Side:        types.SideSell,
 		Size:        7,
 		Remaining:   7,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
-		Type:        types.Order_TYPE_MARKET,
+		TimeInForce: types.OrderTimeInForceFOK,
+		Type:        types.OrderTypeMarket,
 	}
 
 	trades, err := buySide.fakeUncross(&order)

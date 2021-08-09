@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 )
 
 type ErroneousRow interface {
@@ -17,24 +17,22 @@ type ErroneousRow interface {
 	Reference() string
 }
 
-func DebugTxErrors(broker *stubs.BrokerStub, log *logging.Logger) error {
+func DebugTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DEBUGGING ALL TRANSACTION ERRORS")
 	data := broker.GetTxErrors()
 	for _, e := range data {
 		p := e.Proto()
 		log.Infof("TxError: %s\n", p.String())
 	}
-	return nil
 }
 
-func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) error {
+func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 	log.Info("DEBUGGING LP SUBMISSION ERRORS")
 	data := broker.GetLPSErrors()
 	for _, e := range data {
 		p := e.Proto()
 		log.Infof("LP Submission error: %s - LP: %#v\n", p.String(), p.GetLiquidityProvisionSubmission)
 	}
-	return nil
 }
 
 func checkExpectedError(row ErroneousRow, returnedErr error) error {
@@ -93,8 +91,8 @@ func i64ToS(n int64) string {
 	return strconv.FormatInt(n, 10)
 }
 
-func errOrderNotFound(reference string, trader string, err error) error {
-	return fmt.Errorf("order not found for trader(%s) with reference(%s): %v", trader, reference, err)
+func errOrderNotFound(reference string, party string, err error) error {
+	return fmt.Errorf("order not found for party(%s) with reference(%s): %v", party, reference, err)
 }
 
 func errMarketDataNotFound(marketID string, err error) error {
@@ -125,6 +123,6 @@ func (s SubmitOrderError) Error() string {
 
 func (s *SubmitOrderError) Unwrap() error { return s.Err }
 
-func errOrderEventsNotFound(trader, marketID string, side types.Side, size, price uint64) error {
-	return fmt.Errorf("no matching order event found %v, %v, %v, %v, %v", trader, marketID, side.String(), size, price)
+func errOrderEventsNotFound(party, marketID string, side types.Side, size, price uint64) error {
+	return fmt.Errorf("no matching order event found %v, %v, %v, %v, %v", party, marketID, side.String(), size, price)
 }

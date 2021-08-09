@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
-	types "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/subscribers"
 
 	"github.com/pkg/errors"

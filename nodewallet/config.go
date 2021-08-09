@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	namedLogger      = "nodewallet"
-	defaultStoreFile = "nodewalletstore"
-	devWalletsFolder = "node_wallets_dev"
+	namedLogger          = "nodewallet"
+	commanderNamedLogger = "commander"
+	defaultStoreFile     = "nodewalletstore"
+	devWalletsFolder     = "node_wallets_dev"
 )
 
 type Config struct {

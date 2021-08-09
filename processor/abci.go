@@ -7,17 +7,18 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/protos/commands"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -26,13 +27,15 @@ import (
 var (
 	ErrPublicKeyExceededRateLimit                    = errors.New("public key exceeded the rate limit")
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
+	ErrTradingDisabled                               = errors.New("trading disabled")
+	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
+	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
 )
 
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
-	size              uint64
 	txTotals          []uint64
 	txSizes           []int
 
@@ -42,21 +45,24 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets   Assets
-	banking  Banking
-	broker   Broker
-	cmd      Commander
-	witness  Witness
-	evtfwd   EvtForwarder
-	exec     ExecutionEngine
-	ghandler *genesis.Handler
-	gov      GovernanceEngine
-	notary   Notary
-	stats    Stats
-	time     TimeService
-	top      ValidatorTopology
-	netp     NetworkParameters
-	oracles  *Oracle
+	assets     Assets
+	banking    Banking
+	broker     Broker
+	cmd        Commander
+	witness    Witness
+	evtfwd     EvtForwarder
+	exec       ExecutionEngine
+	ghandler   *genesis.Handler
+	gov        GovernanceEngine
+	notary     Notary
+	stats      Stats
+	time       TimeService
+	top        ValidatorTopology
+	netp       NetworkParameters
+	oracles    *Oracle
+	delegation DelegationEngine
+
+	limits Limits
 }
 
 func NewApp(
@@ -78,6 +84,8 @@ func NewApp(
 	top ValidatorTopology,
 	netp NetworkParameters,
 	oracles *Oracle,
+	delegation DelegationEngine,
+	limits Limits,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -92,21 +100,23 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:   assets,
-		banking:  banking,
-		broker:   broker,
-		cmd:      cmd,
-		witness:  witness,
-		evtfwd:   evtfwd,
-		exec:     exec,
-		ghandler: ghandler,
-		gov:      gov,
-		notary:   notary,
-		stats:    stats,
-		time:     time,
-		top:      top,
-		netp:     netp,
-		oracles:  oracles,
+		assets:     assets,
+		banking:    banking,
+		broker:     broker,
+		cmd:        cmd,
+		witness:    witness,
+		evtfwd:     evtfwd,
+		exec:       exec,
+		ghandler:   ghandler,
+		gov:        gov,
+		notary:     notary,
+		stats:      stats,
+		time:       time,
+		top:        top,
+		netp:       netp,
+		oracles:    oracles,
+		delegation: delegation,
+		limits:     limits,
 	}
 
 	// setup handlers
@@ -136,7 +146,9 @@ func NewApp(
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
-		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData)
+		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
+		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
+		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -199,8 +211,8 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	vators := make([][]byte, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
-		if len(v.PubKey.Data) > 0 {
-			vators = append(vators, v.PubKey.Data)
+		if len(v.PubKey.GetEd25519()) > 0 {
+			vators = append(vators, v.PubKey.GetEd25519())
 		}
 	}
 
@@ -219,20 +231,11 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	ctx = contextutil.WithBlockHeight(contextutil.WithTraceID(context.Background(), hash), req.Header.Height)
 
 	now := req.Header.Time
+
 	app.time.SetTimeNow(ctx, now)
-
 	app.rates.NextBlock()
-
-	var err error
-	if app.currentTimestamp, err = app.time.GetTimeNow(); err != nil {
-		app.cancel()
-		return
-	}
-
-	if app.previousTimestamp, err = app.time.GetTimeLastBatch(); err != nil {
-		app.cancel()
-		return
-	}
+	app.currentTimestamp = app.time.GetTimeNow()
+	app.previousTimestamp = app.time.GetTimeLastBatch()
 
 	app.log.Debug("ABCI service BEGIN completed",
 		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
@@ -259,6 +262,12 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 // OnCheckTx performs soft validations.
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
+
+	if err := app.canSubmitTx(tx); err != nil {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(err.Error())
+		return ctx, resp
+	}
 
 	// Check ratelimits
 	// FIXME(): temporary disable all rate limiting
@@ -302,13 +311,52 @@ func (app *App) limitPubkey(pk []byte) (limit bool, isValidator bool) {
 	return false, false
 }
 
+func (app *App) canSubmitTx(tx abci.Tx) (err error) {
+	defer func() {
+		if err != nil {
+			app.log.Error("cannot submit transaction", logging.Error(err))
+		}
+	}()
+	switch tx.Command() {
+	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
+		if !app.limits.CanTrade() {
+			return ErrTradingDisabled
+		}
+	case txn.ProposeCommand:
+		praw := &commandspb.ProposalSubmission{}
+		if err := tx.Unmarshal(praw); err != nil {
+			return fmt.Errorf("could not unmarshal proposal submission: %w", err)
+		}
+		p := types.NewProposalSubmissionFromProto(praw)
+		if p.Terms == nil {
+			return errors.New("invalid proposal submission")
+		}
+		switch p.Terms.Change.GetTermType() {
+		case types.ProposalTerms_NEW_MARKET:
+			if !app.limits.CanProposeMarket() {
+				return ErrMarketProposalDisabled
+			}
+		case types.ProposalTerms_NEW_ASSET:
+			if !app.limits.CanProposeAsset() {
+				return ErrAssetProposalDisabled
+			}
+		}
+	}
+	return nil
+}
+
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
 func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
-	app.size++
 	app.setTxStats(len(req.Tx))
 
+	var resp tmtypes.ResponseDeliverTx
+	if err := app.canSubmitTx(tx); err != nil {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(err.Error())
+	}
+
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
-	return ctx, tmtypes.ResponseDeliverTx{}
+	return ctx, resp
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
@@ -448,19 +496,19 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 		// TODO(): for now we are using a hash of the market ID to create
 		// the lp provision ID (well it's still deterministic...)
-		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().Id)))
+		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().ID)))
 		err := app.exec.SubmitMarketWithLiquidityProvision(
 			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid)
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
-				logging.ProposalID(nm.Market().Id),
+				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))
 			// an error happened when submitting the market + liquidity
 			// we should cancel this proposal now
 			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET, err); err != nil {
 				// this should never happen
 				app.log.Panic("tried to reject an non-existing proposal",
-					logging.String("proposal-id", toSubmit.Proposal().Id),
+					logging.String("proposal-id", toSubmit.Proposal().ID),
 					logging.Error(err))
 			}
 			return err
@@ -575,15 +623,15 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			// anyway...
 			nm := voteClosed.NewMarket()
 			if nm.Rejected() {
-				if err := app.exec.RejectMarket(ctx, prop.Id); err != nil {
+				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
 					app.log.Panic("unable to reject market",
-						logging.String("market-id", prop.Id),
+						logging.String("market-id", prop.ID),
 						logging.Error(err))
 				}
 			} else if nm.StartAuction() {
-				if err := app.exec.StartOpeningAuction(ctx, prop.Id); err != nil {
+				if err := app.exec.StartOpeningAuction(ctx, prop.ID); err != nil {
 					app.log.Panic("unable to start market opening auction",
-						logging.String("market-id", prop.Id),
+						logging.String("market-id", prop.ID),
 						logging.Error(err))
 				}
 			}
@@ -602,8 +650,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		default:
-			prop.State = types.Proposal_STATE_FAILED
-			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.Id))
+			prop.State = types.ProposalStateFailed
+			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 		}
 		app.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
@@ -611,37 +659,37 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 }
 
 func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {
-	prop.State = types.Proposal_STATE_ENACTED
+	prop.State = types.ProposalStateEnacted
 	// first check if this asset is real
-	asset, err := app.assets.Get(prop.Id)
+	asset, err := app.assets.Get(prop.ID)
 	if err != nil {
 		// this should not happen
 		app.log.Error("invalid asset is getting enacted",
-			logging.String("asset-id", prop.Id),
+			logging.String("asset-id", prop.ID),
 			logging.Error(err))
-		prop.State = types.Proposal_STATE_FAILED
+		prop.State = types.ProposalStateFailed
 		return
 	}
 
 	// if this is a builtin asset nothing needs to be done, just start the asset
 	// straight away
 	if asset.IsBuiltinAsset() {
-		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().Id)
+		err = app.banking.EnableBuiltinAsset(ctx, asset.Type().ID)
 		if err != nil {
 			// this should not happen
 			app.log.Error("unable to get builtin asset enabled",
-				logging.String("asset-id", prop.Id),
+				logging.String("asset-id", prop.ID),
 				logging.Error(err))
-			prop.State = types.Proposal_STATE_FAILED
+			prop.State = types.ProposalStateFailed
 		}
 		return
 	}
 
 	// then instruct the notary to start getting signature from validators
-	if err := app.notary.StartAggregate(prop.Id, commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW); err != nil {
-		prop.State = types.Proposal_STATE_FAILED
+	if err := app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew); err != nil {
+		prop.State = types.ProposalStateFailed
 		app.log.Error("unable to enact proposal",
-			logging.ProposalID(prop.Id),
+			logging.ProposalID(prop.ID),
 			logging.Error(err))
 		return
 	}
@@ -660,35 +708,34 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 	if err != nil {
 		app.log.Error("unable to sign allowlisting transaction",
-			logging.String("asset-id", prop.Id),
+			logging.String("asset-id", prop.ID),
 			logging.Error(err))
-		prop.State = types.Proposal_STATE_FAILED
+		prop.State = types.ProposalStateFailed
 		return
 	}
 	payload := &commandspb.NodeSignature{
-		Id:   prop.Id,
+		Id:   prop.ID,
 		Sig:  sig,
 		Kind: commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
 	}
-	if err := app.cmd.Command(ctx, txn.NodeSignatureCommand, payload); err != nil {
-		// do nothing for now, we'll need a retry mechanism for this and all command soon
-		app.log.Error("unable to send command for notary",
-			logging.Error(err))
-	}
+
+	// no callbacks needed there, core should retry if nothging
+	// is received back at some point
+	app.cmd.Command(ctx, txn.NodeSignatureCommand, payload, nil)
 }
 
 func (app *App) enactMarket(ctx context.Context, prop *types.Proposal) {
-	prop.State = types.Proposal_STATE_ENACTED
+	prop.State = types.ProposalStateEnacted
 
 	// TODO: add checks for end of auction in here
 }
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {
-	prop.State = types.Proposal_STATE_ENACTED
+	prop.State = types.ProposalStateEnacted
 	if err := app.netp.Update(ctx, np.Key, np.Value); err != nil {
-		prop.State = types.Proposal_STATE_FAILED
+		prop.State = types.ProposalStateFailed
 		app.log.Error("failed to update network parameters",
-			logging.ProposalID(prop.Id),
+			logging.ProposalID(prop.ID),
 			logging.Error(err))
 		return
 	}
@@ -697,4 +744,29 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	// just so we are sure all netparams updates are dispatches one by one
 	// in a deterministic order
 	app.netp.DispatchChanges(ctx)
+}
+
+func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.DelegateSubmission{}
+	if err := tx.Unmarshal(ce); err != nil {
+		return err
+	}
+
+	return app.delegation.Delegate(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
+}
+
+func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
+	ce := &commandspb.UndelegateSubmission{}
+	if err := tx.Unmarshal(ce); err != nil {
+		return err
+	}
+
+	switch ce.Method {
+	case commandspb.UndelegateSubmission_METHOD_NOW:
+		return app.delegation.UndelegateNow(ctx, tx.Party(), ce.NodeId, num.Zero())
+	case commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH:
+		return app.delegation.UndelegateAtEndOfEpoch(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
+	default:
+		return errors.New("unimplemented")
+	}
 }

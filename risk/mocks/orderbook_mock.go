@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/vega/proto"
+	vega "code.vegaprotocol.io/protos/vega"
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,7 +35,7 @@ func (m *MockOrderbook) EXPECT() *MockOrderbookMockRecorder {
 }
 
 // GetCloseoutPrice mocks base method
-func (m *MockOrderbook) GetCloseoutPrice(arg0 uint64, arg1 proto.Side) (*num.Uint, error) {
+func (m *MockOrderbook) GetCloseoutPrice(arg0 uint64, arg1 vega.Side) (*num.Uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCloseoutPrice", arg0, arg1)
 	ret0, _ := ret[0].(*num.Uint)

@@ -5,11 +5,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/commands"
+	"code.vegaprotocol.io/protos/commands"
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -23,7 +23,7 @@ var (
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/orders TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
+	GetTimeNow() time.Time
 }
 
 // OrderStore ...

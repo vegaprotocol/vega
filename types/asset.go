@@ -1,11 +1,9 @@
-//lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
-
 package types
 
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -17,7 +15,7 @@ var (
 
 type Asset struct {
 	// Internal identifier of the asset
-	Id string
+	ID string
 	// Name of the asset (e.g: Great British Pound)
 	Details *AssetDetails
 }
@@ -64,7 +62,7 @@ func (a Asset) IntoProto() *proto.Asset {
 		details = a.Details.IntoProto()
 	}
 	return &proto.Asset{
-		Id:      a.Id,
+		Id:      a.ID,
 		Details: details,
 	}
 }
@@ -75,7 +73,7 @@ func AssetFromProto(p *proto.Asset) *Asset {
 		details = AssetDetailsFromProto(p.Details)
 	}
 	return &Asset{
-		Id:      p.Id,
+		ID:      p.Id,
 		Details: details,
 	}
 }

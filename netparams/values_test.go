@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/netparams"
-	types "code.vegaprotocol.io/vega/proto"
 	"github.com/stretchr/testify/assert"
 )
 

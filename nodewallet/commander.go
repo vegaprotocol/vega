@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/protos/commands"
+	"code.vegaprotocol.io/protos/vega/api"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
@@ -23,6 +26,7 @@ type BlockchainStats interface {
 }
 
 type Commander struct {
+	log    *logging.Logger
 	bc     Chain
 	wal    Wallet
 	bstats BlockchainStats
@@ -35,11 +39,13 @@ var (
 // NewCommander - used to sign and send transaction from core
 // e.g. NodeRegistration, NodeVote
 // chain argument can't be passed in in cmd package, but is used for tests
-func NewCommander(bc Chain, wal Wallet, bstats BlockchainStats) (*Commander, error) {
+func NewCommander(log *logging.Logger, bc Chain, wal Wallet, bstats BlockchainStats) (*Commander, error) {
+	log = log.Named(commanderNamedLogger)
 	if Blockchain(wal.Chain()) != Vega {
 		return nil, ErrVegaWalletRequired
 	}
 	return &Commander{
+		log:    log,
 		bc:     bc,
 		wal:    wal,
 		bstats: bstats,
@@ -52,22 +58,35 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain
-func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message) error {
-	inputData := commandspb.NewInputData(c.bstats.Height())
-	wrapPayloadIntoInputData(inputData, cmd, payload)
-	marshalledData, err := proto.Marshal(inputData)
-	if err != nil {
-		return err
-	}
+func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
+	go func() {
+		inputData := commandspb.NewInputData(c.bstats.Height())
+		wrapPayloadIntoInputData(inputData, cmd, payload)
+		marshalledData, err := proto.Marshal(inputData)
+		if err != nil {
+			// this should never be possible
+			c.log.Panic("could not marshal core transaction", logging.Error(err))
+		}
 
-	signature, err := c.sign(marshalledData)
-	if err != nil {
-		return err
-	}
+		signature, err := c.sign(marshalledData)
+		if err != nil {
+			// this should never be possible too
+			c.log.Panic("could not sign command", logging.Error(err))
+		}
 
-	tx := commandspb.NewTransaction(c.wal.PubKeyOrAddress(), marshalledData, signature)
+		tx := commands.NewTransaction(c.wal.PubKeyOrAddress().Hex(), marshalledData, signature)
+		err = c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
+		if err != nil {
+			// this can happen as network dependent
+			c.log.Error("could not send transaction to tendermint",
+				logging.Error(err),
+				logging.String("tx", payload.String()))
+		}
 
-	return c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
+		if done != nil {
+			done(err == nil)
+		}
+	}()
 }
 
 func (c *Commander) sign(marshalledData []byte) (*commandspb.Signature, error) {

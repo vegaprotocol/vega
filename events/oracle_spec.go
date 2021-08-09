@@ -3,8 +3,8 @@ package events
 import (
 	"context"
 
-	eventspb "code.vegaprotocol.io/vega/proto/events/v1"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
 type OracleSpec struct {

@@ -2,14 +2,14 @@ package steps
 
 import (
 	"code.vegaprotocol.io/vega/integration/stubs"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 )
 
-func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *gherkin.DataTable) error {
+func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godog.Table) error {
 	data := broker.GetOrderEvents()
 
 	for _, row := range parseOrdersStatesTable(table) {
-		trader := row.MustStr("trader")
+		party := row.MustStr("party")
 		marketID := row.MustStr("market id")
 		side := row.MustSide("side")
 		size := row.MustU64("volume")
@@ -19,22 +19,22 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *gher
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.PartyId != trader || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || o.Price != price {
+			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || o.Price != price {
 				continue
 			}
 			match = true
 			break
 		}
 		if !match {
-			return errOrderEventsNotFound(trader, marketID, side, size, price)
+			return errOrderEventsNotFound(party, marketID, side, size, price)
 		}
 	}
 	return nil
 }
 
-func parseOrdersStatesTable(table *gherkin.DataTable) []RowWrapper {
+func parseOrdersStatesTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
-		"trader",
+		"party",
 		"market id",
 		"side",
 		"volume",

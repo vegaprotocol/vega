@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/oracles"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -27,10 +27,18 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
 type TimeService interface {
-	GetTimeNow() (time.Time, error)
-	GetTimeLastBatch() (time.Time, error)
+	GetTimeNow() time.Time
+	GetTimeLastBatch() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 	SetTimeNow(context.Context, time.Time)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
+type DelegationEngine interface {
+	Delegate(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
+	OnEpochEnd(ctx context.Context, start, end time.Time) []*types.ValidatorData
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
@@ -101,7 +109,7 @@ type Assets interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message) error
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
@@ -172,4 +180,11 @@ type OraclesEngine interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors
 type OracleAdaptors interface {
 	Normalise(commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/limits_mock.go -package mocks code.vegaprotocol.io/vega/processor Limits
+type Limits interface {
+	CanProposeMarket() bool
+	CanProposeAsset() bool
+	CanTrade() bool
 }

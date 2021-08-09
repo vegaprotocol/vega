@@ -5,8 +5,8 @@ import (
 	"math"
 	"strconv"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 // MarketStore ...

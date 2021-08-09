@@ -3,8 +3,8 @@ package steps
 import (
 	"fmt"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/execution"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 func TheTradingModeShouldBeForMarket(

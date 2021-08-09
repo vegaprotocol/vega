@@ -3,16 +3,16 @@ package steps
 import (
 	"fmt"
 
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/godog"
 
+	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/integration/stubs"
-	types "code.vegaprotocol.io/vega/proto"
 )
 
 func TheFollowingTransfersShouldHappen(
 	broker *stubs.BrokerStub,
-	table *gherkin.DataTable,
+	table *godog.Table,
 ) error {
 	transfers := getTransfers(broker)
 
@@ -79,7 +79,7 @@ func getTransfers(broker *stubs.BrokerStub) []*types.LedgerEntry {
 	return transfers
 }
 
-func parseTransferTable(table *gherkin.DataTable) []RowWrapper {
+func parseTransferTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"from",
 		"from account",

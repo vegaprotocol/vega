@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
-	oraclespb "code.vegaprotocol.io/vega/proto/oracles/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,13 +20,13 @@ func TestOracleSpecDeepClone(t *testing.T) {
 			"PubKey1", "PubKey2",
 		},
 		Filters: []*oraclespb.Filter{
-			&oraclespb.Filter{
+			{
 				Key: &oraclespb.PropertyKey{
 					Name: "Name",
 					Type: oraclespb.PropertyKey_TYPE_BOOLEAN,
 				},
 				Conditions: []*oraclespb.Condition{
-					&oraclespb.Condition{
+					{
 						Operator: oraclespb.Condition_OPERATOR_EQUALS,
 						Value:    "Value",
 					},

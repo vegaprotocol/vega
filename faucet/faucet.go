@@ -9,25 +9,18 @@ import (
 	"net/http"
 	"strconv"
 
+	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/protos/vega/api"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/fsutil"
 	vhttp "code.vegaprotocol.io/vega/http"
 	"code.vegaprotocol.io/vega/logging"
-	types "code.vegaprotocol.io/vega/proto"
-	"code.vegaprotocol.io/vega/proto/api"
-	commandspb "code.vegaprotocol.io/vega/proto/commands/v1"
-	"code.vegaprotocol.io/vega/wallet"
-	wcrypto "code.vegaprotocol.io/vega/wallet/crypto"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
-)
-
-const (
-	defaultVegaFaucetOwner = "vega-faucet"
 )
 
 var (
@@ -43,7 +36,7 @@ type Faucet struct {
 
 	log    *logging.Logger
 	cfg    Config
-	wal    *wallet.Wallet
+	wallet *faucetWallet
 	s      *http.Server
 	rl     *vhttp.RateLimit
 	cfunc  context.CancelFunc
@@ -68,10 +61,12 @@ type MintResponse struct {
 func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
-	wal, err := wallet.ReadWalletFile(cfg.WalletPath, passphrase)
+
+	wallet, err := loadWallet(cfg.WalletPath, passphrase)
 	if err != nil {
 		return nil, err
 	}
+
 	nodeAddr := fmt.Sprintf("%v:%v", cfg.Node.IP, cfg.Node.Port)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
 	if err != nil {
@@ -88,11 +83,12 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		cfunc()
 		return nil, fmt.Errorf("failed to create RateLimit: %v", err)
 	}
+
 	f := &Faucet{
 		Router:  httprouter.New(),
 		log:     log,
 		cfg:     cfg,
-		wal:     wal,
+		wallet:  wallet,
 		clt:     client,
 		cltdata: clientData,
 		conn:    conn,
@@ -173,14 +169,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
-	alg, err := wcrypto.NewSignatureAlgorithm(wcrypto.Ed25519)
-	if err != nil {
-		f.log.Error("unable to instantiate new algorithm", logging.Error(err))
-		writeError(w, newError("unable to instantiate crypto"), http.StatusInternalServerError)
-		return
-	}
-
-	sig, err := wallet.Sign(alg, &f.wal.Keypairs[0], msg)
+	sig, pubKey, err := f.wallet.Sign(msg)
 	if err != nil {
 		f.log.Error("unable to sign", logging.Error(err))
 		writeError(w, newError("unable to sign crypto"), http.StatusInternalServerError)
@@ -188,7 +177,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 
 	preq := &api.PropagateChainEventRequest{
 		Evt:       ce,
-		PubKey:    f.wal.Keypairs[0].Pub,
+		PubKey:    pubKey,
 		Signature: sig,
 	}
 
@@ -270,32 +259,6 @@ func (f *Faucet) Start() error {
 func (f *Faucet) Stop() error {
 	f.stopCh <- struct{}{}
 	return nil
-}
-
-func Init(path, passphrase string) (string, error) {
-	if ok, _ := fsutil.PathExists(path); ok {
-		return "", fmt.Errorf("faucet file already exists %v", path)
-	}
-
-	w, err := wallet.CreateWalletFile(path, defaultVegaFaucetOwner, passphrase)
-	if err != nil {
-		return "", err
-	}
-
-	// gen the keypair
-	algo := wcrypto.NewEd25519()
-	kp, err := wallet.GenKeypair(algo.Name())
-	if err != nil {
-		return "", fmt.Errorf("unable to generate new key pair: %v", err)
-	}
-
-	w.Keypairs = append(w.Keypairs, *kp)
-	_, err = wallet.WriteWalletFile(w, path, passphrase)
-	if err != nil {
-		return "", err
-	}
-
-	return kp.Pub, nil
 }
 
 func unmarshalBody(r *http.Request, into interface{}) error {

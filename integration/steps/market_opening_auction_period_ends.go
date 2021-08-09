@@ -11,7 +11,7 @@ import (
 func MarketOpeningAuctionPeriodEnds(timeStub *stubs.TimeStub, markets []types.Market, marketID string) error {
 	var mkt *types.Market
 	for _, m := range markets {
-		if m.Id == marketID {
+		if m.ID == marketID {
 			mkt = &m
 			break
 		}
@@ -20,11 +20,7 @@ func MarketOpeningAuctionPeriodEnds(timeStub *stubs.TimeStub, markets []types.Ma
 		return errMarketNotFound(marketID)
 	}
 	// double the time, so it's definitely past opening auction time
-	now, err := timeStub.GetTimeNow()
-	if err != nil {
-		return err
-
-	}
+	now := timeStub.GetTimeNow()
 	timeStub.SetTime(now.Add(time.Duration(mkt.OpeningAuction.Duration*2) * time.Second))
 	return nil
 }

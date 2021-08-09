@@ -1,9 +1,7 @@
-//lint:file-ignore ST1003 Ignore underscores in names, this is straigh copied from the proto package to ease introducing the domain types
-
 package types
 
 import (
-	"code.vegaprotocol.io/vega/proto"
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -47,45 +45,47 @@ type TransferType = proto.TransferType
 
 const (
 	// Default value, always invalid
-	TransferType_TRANSFER_TYPE_UNSPECIFIED TransferType = 0
+	TransferTypeUnspecified TransferType = proto.TransferType_TRANSFER_TYPE_UNSPECIFIED
 	// Loss
-	TransferType_TRANSFER_TYPE_LOSS TransferType = 1
+	TransferTypeLoss TransferType = proto.TransferType_TRANSFER_TYPE_LOSS
 	// Win
-	TransferType_TRANSFER_TYPE_WIN TransferType = 2
+	TransferTypeWin TransferType = proto.TransferType_TRANSFER_TYPE_WIN
 	// Close
-	TransferType_TRANSFER_TYPE_CLOSE TransferType = 3
+	TransferTypeClose TransferType = proto.TransferType_TRANSFER_TYPE_CLOSE
 	// Mark to market loss
-	TransferType_TRANSFER_TYPE_MTM_LOSS TransferType = 4
+	TransferTypeMTMLoss TransferType = proto.TransferType_TRANSFER_TYPE_MTM_LOSS
 	// Mark to market win
-	TransferType_TRANSFER_TYPE_MTM_WIN TransferType = 5
+	TransferTypeMTMWin TransferType = proto.TransferType_TRANSFER_TYPE_MTM_WIN
 	// Margin too low
-	TransferType_TRANSFER_TYPE_MARGIN_LOW TransferType = 6
+	TransferTypeMarginLow TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_LOW
 	// Margin too high
-	TransferType_TRANSFER_TYPE_MARGIN_HIGH TransferType = 7
+	TransferTypeMarginHigh TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_HIGH
 	// Margin was confiscated
-	TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED TransferType = 8
+	TransferTypeMarginConfiscated TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED
 	// Pay maker fee
-	TransferType_TRANSFER_TYPE_MAKER_FEE_PAY TransferType = 9
+	TransferTypeMakerFeePay TransferType = proto.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY
 	// Receive maker fee
-	TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE TransferType = 10
+	TransferTypeMakerFeeReceive TransferType = proto.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE
 	// Pay infrastructure fee
-	TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY TransferType = 11
+	TransferTypeInfrastructureFeePay TransferType = proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY
 	// Receive infrastructure fee
-	TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE TransferType = 12
+	TransferTypeInfrastructureFeeDistribute TransferType = proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE
 	// Pay liquidity fee
-	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY TransferType = 13
+	TransferTypeLiquidityFeePay TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY
 	// Receive liquidity fee
-	TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE TransferType = 14
+	TransferTypeLiquidityFeeDistribute TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE
 	// Bond too low
-	TransferType_TRANSFER_TYPE_BOND_LOW TransferType = 15
+	TransferTypeBondLow TransferType = proto.TransferType_TRANSFER_TYPE_BOND_LOW
 	// Bond too high
-	TransferType_TRANSFER_TYPE_BOND_HIGH TransferType = 16
+	TransferTypeBondHigh TransferType = proto.TransferType_TRANSFER_TYPE_BOND_HIGH
 	// Lock amount for withdraw
-	TransferType_TRANSFER_TYPE_WITHDRAW_LOCK TransferType = 17
+	TransferTypeWithdrawLock TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK
 	// Actual withdraw from system
-	TransferType_TRANSFER_TYPE_WITHDRAW TransferType = 18
+	TransferTypeWithdraw TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW
 	// Deposit funds
-	TransferType_TRANSFER_TYPE_DEPOSIT TransferType = 19
+	TransferTypeDeposit TransferType = proto.TransferType_TRANSFER_TYPE_DEPOSIT
 	// Bond slashing
-	TransferType_TRANSFER_TYPE_BOND_SLASHING TransferType = 20
+	TransferTypeBondSlashing TransferType = proto.TransferType_TRANSFER_TYPE_BOND_SLASHING
+	// Stake reward
+	TransferTypeRewardPayout TransferType = proto.TransferType_TRANSFER_TYPE_STAKE_REWARD
 )

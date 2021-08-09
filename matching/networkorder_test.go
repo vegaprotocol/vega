@@ -17,28 +17,28 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 
 	orders := []types.Order{
 		{
-			MarketId:    market,
-			Status:      types.Order_STATUS_ACTIVE,
-			PartyId:     "A",
-			Side:        types.Side_SIDE_BUY,
+			MarketID:    market,
+			Status:      types.OrderStatusActive,
+			Party:       "A",
+			Side:        types.SideBuy,
 			Price:       num.NewUint(100),
 			Size:        4,
 			Remaining:   4,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-			Type:        types.Order_TYPE_LIMIT,
-			Id:          "v0000000000000-0000001",
+			TimeInForce: types.OrderTimeInForceGTC,
+			Type:        types.OrderTypeLimit,
+			ID:          "v0000000000000-0000001",
 		},
 		{
-			MarketId:    market,
-			Status:      types.Order_STATUS_ACTIVE,
-			PartyId:     "B",
-			Side:        types.Side_SIDE_BUY,
+			MarketID:    market,
+			Status:      types.OrderStatusActive,
+			Party:       "B",
+			Side:        types.SideBuy,
 			Price:       num.NewUint(75),
 			Size:        4,
 			Remaining:   4,
-			TimeInForce: types.Order_TIME_IN_FORCE_GTC,
-			Type:        types.Order_TYPE_LIMIT,
-			Id:          "v0000000000000-0000002",
+			TimeInForce: types.OrderTimeInForceGTC,
+			Type:        types.OrderTypeLimit,
+			ID:          "v0000000000000-0000002",
 		},
 	}
 
@@ -62,16 +62,16 @@ func TestNetworkOrder_ValidAveragedPrice(t *testing.T) {
 
 	// now let's place the network order and validate it's price
 	netorder := types.Order{
-		MarketId:    market,
+		MarketID:    market,
 		Size:        8,
 		Remaining:   8,
-		Status:      types.Order_STATUS_ACTIVE,
-		PartyId:     "network",
-		Side:        types.Side_SIDE_SELL,
+		Status:      types.OrderStatusActive,
+		Party:       "network",
+		Side:        types.SideSell,
 		Price:       num.Zero(),
 		CreatedAt:   0,
-		TimeInForce: types.Order_TIME_IN_FORCE_FOK,
-		Type:        types.Order_TYPE_NETWORK,
+		TimeInForce: types.OrderTimeInForceFOK,
+		Type:        types.OrderTypeNetwork,
 	}
 
 	_, err := book.ob.SubmitOrder(&netorder)
