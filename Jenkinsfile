@@ -124,7 +124,6 @@ pipeline {
                         mkdir -p docker/bin
                         cp -a "${LINUX_BINARY}" "docker/bin/data-node"
                     '''
-                    // Note: This docker image is used by system-tests and publish stage
                     withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
                         sh label: 'Build docker image', script: '''
                             docker build -t "${DOCKER_IMAGE_NAME_LOCAL}" docker/
