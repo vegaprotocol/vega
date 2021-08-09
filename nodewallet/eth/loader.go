@@ -31,16 +31,6 @@ type WalletLoader struct {
 	ethClient      ETHClient
 }
 
-func DevInit(walletRootPath, passphrase string) (string, error) {
-	ks := keystore.NewKeyStore(walletRootPath, keystore.StandardScryptN, keystore.StandardScryptP)
-	acc, err := ks.NewAccount(passphrase)
-	if err != nil {
-		return "", err
-	}
-	_, fileName := filepath.Split(acc.URL.Path)
-	return fileName, nil
-}
-
 func NewWalletLoader(walletRootPath string, ethClient ETHClient) *WalletLoader {
 	return &WalletLoader{
 		walletRootPath: walletRootPath,
@@ -58,6 +48,23 @@ func (l *WalletLoader) Initialise() error {
 	return fsutil.EnsureDir(l.walletRootPath)
 }
 
+func (l *WalletLoader) Generate(passphrase string) (*Wallet, error) {
+	ks := keystore.NewKeyStore(l.walletRootPath, keystore.StandardScryptN, keystore.StandardScryptP)
+	acc, err := ks.NewAccount(passphrase)
+	if err != nil {
+		return nil, err
+	}
+
+	_, fileName := filepath.Split(acc.URL.Path)
+
+	data, err := fsutil.ReadFile(acc.URL.Path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read store file: %v", err)
+	}
+
+	return l.newWallet(fileName, passphrase, data)
+}
+
 func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
 	data, err := fs.ReadFile(os.DirFS(l.walletRootPath), walletName)
 	if err != nil {
@@ -70,7 +77,7 @@ func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
 func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, error) {
 	data, err := fsutil.ReadFile(sourceFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read store file (%v)", err)
+		return nil, fmt.Errorf("unable to read store file: %v", err)
 	}
 
 	_, fileName := filepath.Split(sourceFilePath)
