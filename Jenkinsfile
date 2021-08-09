@@ -350,5 +350,12 @@ pipeline {
                 slackSend(channel: "#tradingcore-notify", color: "danger", message: ":red_circle: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
             }
         }
+        always {
+            retry(3) {
+                sh label: 'Clean docker images', script: '''
+                    docker rmi "${DOCKER_IMAGE_NAME_LOCAL}"
+                '''
+            }
+        }
     }
 }
