@@ -54,7 +54,7 @@ func New(components ...State) (*Engine, error) {
 	return e, nil
 }
 
-func (e *Engine) UponGenesis(data []byte) error {
+func (e *Engine) UponGenesis(_ context.Context, data []byte) error {
 	state, err := LoadGenesisState(data)
 	if err != nil {
 		return err
