@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
@@ -59,7 +60,7 @@ func Main(ctx context.Context) error {
 		Genesis,
 		Init,
 		Node,
-		NodeWallet,
+		nodewallet.NodeWallet,
 		Verify,
 		Version,
 		Wallet,
