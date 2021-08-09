@@ -2,7 +2,6 @@ package nodewallet
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 
@@ -185,15 +184,6 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, sourceFilePath str
 	})
 	s.wallets[Blockchain(chain)] = w
 	return s.storage.Save(s.store, passphrase)
-}
-
-func (s *Service) Dump() (string, error) {
-	buf, err := json.MarshalIndent(s.store.Wallets, " ", " ")
-	if err != nil {
-		return "", fmt.Errorf("unable to indent message: %v", err)
-	}
-
-	return string(buf), nil
 }
 
 func (s *Service) Verify() error {
