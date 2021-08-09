@@ -125,6 +125,30 @@ func (s *Service) Get(chain Blockchain) (Wallet, bool) {
 	return w, ok
 }
 
+func (s *Service) Generate(chain, passphrase string) error {
+	var (
+		err error
+		w   Wallet
+	)
+	switch Blockchain(chain) {
+	case Vega:
+		w, err = s.vegaWalletLoader.Generate(passphrase)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported chain wallet %v", chain)
+	}
+
+	s.store.AddWallet(WalletConfig{
+		Chain:      chain,
+		Passphrase: passphrase,
+		Name:       w.Name(),
+	})
+	s.wallets[Blockchain(chain)] = w
+	return s.storage.Save(s.store, passphrase)
+}
+
 func (s *Service) Import(chain, passphrase, walletPassphrase, sourceFilePath string) error {
 	if !filepath.IsAbs(sourceFilePath) {
 		return fmt.Errorf("path to the wallet file need to be absolute")
@@ -198,16 +222,6 @@ func DevInit(rootPath, passphrase string) error {
 	cfgs = append(cfgs, WalletConfig{
 		Chain:      string(Ethereum),
 		Name:       ethWalletName,
-		Passphrase: passphrase,
-	})
-
-	vegaWalletName, err := vega.DevInit(storage.WalletDirFor(Vega), passphrase)
-	if err != nil {
-		return err
-	}
-	cfgs = append(cfgs, WalletConfig{
-		Chain:      string(Vega),
-		Name:       vegaWalletName,
 		Passphrase: passphrase,
 	})
 

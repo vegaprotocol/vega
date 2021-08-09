@@ -16,35 +16,6 @@ type WalletLoader struct {
 	walletRootPath string
 }
 
-func DevInit(walletRootPath, passphrase string) (string, error) {
-	store, err := storev1.NewStore(walletRootPath)
-	if err != nil {
-		return "", err
-	}
-
-	err = store.Initialise()
-	if err != nil {
-		return "", err
-	}
-
-	handler := wallet.NewHandler(store)
-
-	// we ignore the mnemonic as this wallet is one-shot.
-	walletName := fmt.Sprintf("vega.%v", time.Now().UnixNano())
-	_, err = handler.CreateWallet(walletName, passphrase)
-	if err != nil {
-		return "", err
-	}
-
-	meta := []wallet.Meta{{Key: "env", Value: "dev"}}
-	_, err = handler.GenerateKeyPair(walletName, passphrase, meta)
-	if err != nil {
-		return "", err
-	}
-
-	return walletName, nil
-}
-
 func NewWalletLoader(walletRootPath string) *WalletLoader {
 	return &WalletLoader{
 		walletRootPath: walletRootPath,
@@ -53,6 +24,34 @@ func NewWalletLoader(walletRootPath string) *WalletLoader {
 
 func (l *WalletLoader) Initialise() error {
 	return fsutil.EnsureDir(l.walletRootPath)
+}
+
+func (l *WalletLoader) Generate(passphrase string) (*Wallet, error) {
+	store, err := storev1.NewStore(l.walletRootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = store.Initialise()
+	if err != nil {
+		return nil, err
+	}
+
+	handler := wallet.NewHandler(store)
+
+	// we ignore the mnemonic as this wallet is one-shot.
+	walletName := fmt.Sprintf("vega.%v", time.Now().UnixNano())
+	_, err = handler.CreateWallet(walletName, passphrase)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = handler.GenerateKeyPair(walletName, passphrase, []wallet.Meta{})
+	if err != nil {
+		return nil, err
+	}
+
+	return newWallet(store, walletName, passphrase)
 }
 
 func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
