@@ -36,7 +36,7 @@ func (opts *importCmd) Execute(_ []string) error {
 		return fmt.Errorf("invalid root directory path: %w", err)
 	}
 
-	nodePass, err := rootCmd.PassphraseFile.Get("node wallet")
+	pass, err := rootCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (opts *importCmd) Execute(_ []string) error {
 		return err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, nodePass, ethClient, rootCmd.RootPath)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, rootCmd.RootPath)
 	if err != nil {
 		return err
 	}
@@ -73,11 +73,11 @@ func (opts *importCmd) Execute(_ []string) error {
 		return fmt.Errorf("a wallet is already imported for the chain %v, please rerun with option --force to overwrite it", opts.Chain)
 	}
 
-	err = nw.Import(opts.Chain, nodePass, walletPass, opts.WalletPath)
+	err = nw.Import(opts.Chain, pass, walletPass, opts.WalletPath)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("import success")
+	fmt.Println("import successful")
 	return nil
 }

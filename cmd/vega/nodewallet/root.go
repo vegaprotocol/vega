@@ -14,9 +14,10 @@ type RootCmd struct {
 	config.PassphraseFlag
 
 	// Subcommands
-	Import importCmd `command:"import" description:"Import the configuration of a wallet required by the vega node"`
-	Verify verifyCmd `command:"verify" description:"Verify the configuration imported in the nodewallet"`
-	Help   bool      `short:"h" long:"help" description:"Show this help message"`
+	Generate generateCmd `command:"generate" description:"Generate and register a wallet into the nodewallet"`
+	Import   importCmd   `command:"import" description:"Import the configuration of a wallet required by the vega node"`
+	Verify   verifyCmd   `command:"verify" description:"Verify the configuration imported in the nodewallet"`
+	Help     bool        `short:"h" long:"help" description:"Show this help message"`
 }
 
 var rootCmd RootCmd
@@ -25,11 +26,14 @@ func NodeWallet(ctx context.Context, parser *flags.Parser) error {
 	root := config.NewRootPathFlag()
 	rootCmd = RootCmd{
 		RootPathFlag: root,
+		Generate: generateCmd{
+			Config: nodewallet.NewDefaultConfig(),
+		},
 		Import: importCmd{
-			Config: nodewallet.NewDefaultConfig(root.RootPath),
+			Config: nodewallet.NewDefaultConfig(),
 		},
 		Verify: verifyCmd{
-			Config: nodewallet.NewDefaultConfig(root.RootPath),
+			Config: nodewallet.NewDefaultConfig(),
 		},
 	}
 

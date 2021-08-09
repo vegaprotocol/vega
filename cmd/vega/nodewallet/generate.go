@@ -7,24 +7,25 @@ import (
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
-
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
 )
 
-type verifyCmd struct {
+type generateCmd struct {
 	Config nodewallet.Config
-	Help   bool `short:"h" long:"help" description:"Show this help message"`
+
+	Chain      string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
+	Force      bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
+	Help       bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
-func (opts *verifyCmd) Execute(_ []string) error {
+func (opts *generateCmd) Execute(_ []string) error {
 	if opts.Help {
 		return &flags.Error{
 			Type:    flags.ErrHelp,
-			Message: "vega nodewallet verify subcommand help",
+			Message: "vega nodewallet generate subcommand help",
 		}
 	}
-
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
@@ -47,7 +48,7 @@ func (opts *verifyCmd) Execute(_ []string) error {
 		return err
 	}
 
-	ethClient, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
+	ethClient, err := ethclient.Dial(opts.Config.ETH.Address)
 	if err != nil {
 		return err
 	}
@@ -57,11 +58,18 @@ func (opts *verifyCmd) Execute(_ []string) error {
 		return err
 	}
 
-	err = nw.Verify()
+	_, ok := nw.Get(nodewallet.Blockchain(opts.Chain))
+	if ok && opts.Force {
+		log.Warn("a wallet is already present for the current chain, this action will create a new one", logging.String("chain", opts.Chain))
+	} else if ok {
+		return fmt.Errorf("a wallet is already imported for the chain %v, please rerun with option --force to overwrite it", opts.Chain)
+	}
+
+	err = nw.Generate(opts.Chain, pass)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("ok")
+	fmt.Println("generation successful")
 	return nil
 }
