@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -26,6 +27,10 @@ type socketClient struct {
 	sock   protocol.Socket
 
 	eventsCh chan events.Event
+
+	closed bool
+
+	mut sync.RWMutex
 }
 
 func pipeEventToString(pe mangos.PipeEvent) string {
@@ -39,7 +44,7 @@ func pipeEventToString(pe mangos.PipeEvent) string {
 	}
 }
 
-func NewSocketClient(ctx context.Context, log *logging.Logger, config *SocketConfig) (SocketClient, error) {
+func newSocketClient(ctx context.Context, log *logging.Logger, config *SocketConfig) (*socketClient, error) {
 	sock, err := push.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new push socket: %w", err)
@@ -65,7 +70,7 @@ func NewSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 		)
 	})
 
-	s := socketClient{
+	s := &socketClient{
 		log: log,
 
 		config: config,
@@ -78,28 +83,59 @@ func NewSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 		return nil, fmt.Errorf("failed to connect: %w", err)
 	}
 
-	go s.stream(ctx)
+	go func() {
+		if err := s.stream(ctx); err != nil {
+			fmt.Println("inside if error function", err)
+			s.log.Fatal("socket streaming has failed", logging.Error(err))
+		}
+		fmt.Println("after error function")
+	}()
 
-	return &s, nil
+	return s, nil
 }
 
-func (s *socketClient) SendBatch(evts []events.Event) {
+func (s *socketClient) SendBatch(evts []events.Event) error {
 	for _, evt := range evts {
-		s.Send(evt)
+		if err := s.Send(evt); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func (s *socketClient) Send(evts events.Event) {
+// Send sends events on the events queue.
+// Panics if socket is closed or is not streaming.
+// Returns an error if events queue is full.
+func (s *socketClient) Send(evt events.Event) error {
+	s.mut.RLock()
+	defer s.mut.RUnlock()
+
+	if s.closed {
+		s.log.Panic("Failed to send event - socket is closed closed socket")
+	}
+
 	select {
-	case s.eventsCh <- evts:
+	case s.eventsCh <- evt:
 		break
+	case <-time.After(2 * time.Second):
 	default:
-		s.log.Error("Fucked up man - channel is closed")
+		return fmt.Errorf("event queue is full")
 	}
+
+	return nil
 }
 
-func (s *socketClient) close() error {
-	return s.sock.Close()
+func (s *socketClient) close() {
+	s.mut.Lock()
+	defer s.mut.Unlock()
+
+	s.closed = true
+	close(s.eventsCh)
+
+	if err := s.sock.Close(); err != nil {
+		s.log.Error("failed to close socket", logging.Error(err))
+	}
 }
 
 func (s *socketClient) getDialAddr() string {
@@ -134,16 +170,22 @@ func (s *socketClient) connect(ctx context.Context) error {
 	}
 }
 
-func (s *socketClient) stream(ctx context.Context) {
+func (s *socketClient) stream(ctx context.Context) error {
+	s.mut.RLock()
+	if s.closed {
+		s.mut.RUnlock()
+		return fmt.Errorf("socket is closed")
+	}
+	s.mut.RUnlock()
+
+	defer s.close()
+
 	var sendTimeouts int
 
 	for {
 		select {
 		case <-ctx.Done():
-			if err := s.close(); err != nil {
-				s.log.Error("failed to close socket", logging.Error(err))
-			}
-			return
+			return nil
 		case evt := <-s.eventsCh:
 			msg, err := proto.Marshal(evt.StreamMessage())
 			if err != nil {
@@ -155,20 +197,27 @@ func (s *socketClient) stream(ctx context.Context) {
 			if err != nil {
 				switch err {
 				case protocol.ErrClosed:
-					return
+					return fmt.Errorf("socket is closed: %w", err)
 				case protocol.ErrSendTimeout:
 					sendTimeouts++
-					s.log.Error("failed to queue message on socket", logging.Error(err))
+					s.log.Error("Failed to queue message on socket", logging.Error(err))
 
 					if sendTimeouts > s.config.MaxSendTimeouts {
-						msg := fmt.Sprintf("maximum number '%d' of send timeouts exceeded", s.config.MaxSendTimeouts)
-						s.log.Error(msg, logging.Error(err))
-						return
+						msg := fmt.Sprintf("maximum number of '%d' send timeouts exceeded", s.config.MaxSendTimeouts)
+						return fmt.Errorf(msg, err)
 					}
-				}
 
-				s.log.Error("failed to send to socket", logging.Error(err))
+					// Try to put the timed out message back on internal events queue
+					if err := s.Send(evt); err != nil {
+						return err
+					}
+				default:
+					s.log.Error("Failed to send to socket", logging.Error(err))
+				}
+				continue
 			}
+
+			sendTimeouts = 0
 		}
 	}
 }

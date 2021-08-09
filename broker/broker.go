@@ -39,8 +39,7 @@ type BrokerI interface {
 // SocketClient is an interface to send serialized events over a socket.
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_client_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketClient
 type SocketClient interface {
-	Send(event events.Event)
-	SendBatch(events []events.Event)
+	SendBatch(events []events.Event) error
 }
 
 type subscription struct {
@@ -51,7 +50,8 @@ type subscription struct {
 // Broker - the base broker type
 // perhaps we can extend this to embed into type-specific brokers
 type Broker struct {
-	ctx   context.Context
+	ctx context.Context
+
 	mu    sync.Mutex
 	tSubs map[events.Type]map[int]*subscription
 	// these fields ensure a unique ID for all subscribers, regardless of what event types they subscribe to
@@ -74,27 +74,27 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	var socketClient SocketClient
-	var err error
+	b := &Broker{
+		ctx:    ctx,
+		log:    log,
+		tSubs:  map[events.Type]map[int]*subscription{},
+		subs:   map[int]subscription{},
+		keys:   []int{},
+		eChans: map[events.Type]chan []events.Event{},
+		seqGen: newGen(),
+		config: config,
+	}
 
 	if config.Socket.Enabled {
-		socketClient, err = NewSocketClient(ctx, log, &config.Socket)
+		sc, err := newSocketClient(ctx, log, &config.Socket)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize socket client: %w", err)
 		}
+
+		b.socketClient = sc
 	}
 
-	return &Broker{
-		ctx:          ctx,
-		log:          log,
-		tSubs:        map[events.Type]map[int]*subscription{},
-		subs:         map[int]subscription{},
-		keys:         []int{},
-		eChans:       map[events.Type]chan []events.Event{},
-		seqGen:       newGen(),
-		config:       config,
-		socketClient: socketClient,
-	}, nil
+	return b, nil
 }
 
 func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
@@ -138,9 +138,10 @@ func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
 }
 
 func (b *Broker) startSending(t events.Type, evts []events.Event) {
-	if b.config.Socket.Enabled && b.socketClient != nil {
-		// SendBatch is non-blocking function
-		b.socketClient.SendBatch(evts)
+	if b.streamingEnabled() {
+		if err := b.socketClient.SendBatch(evts); err != nil {
+			b.log.Fatal("Failed to send to socket client", logging.Error(err))
+		}
 	}
 
 	b.mu.Lock()
@@ -348,4 +349,8 @@ func (b *Broker) rmSubs(keys ...int) {
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
 	}
+}
+
+func (b *Broker) streamingEnabled() bool {
+	return bool(b.config.Socket.Enabled) && b.socketClient != nil
 }
