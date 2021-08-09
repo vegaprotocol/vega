@@ -417,6 +417,7 @@ func testCheckpointBeforeInterval(t *testing.T) {
 	now := time.Now()
 	raw, err := eng.Checkpoint(now)
 	require.NoError(t, err)
+	require.NotNil(t, raw)
 
 	halfHour := time.Duration(int64(hour) / 2)
 	now = now.Add(halfHour)
@@ -455,6 +456,7 @@ func testCheckpointUpdatedInterval(t *testing.T) {
 	now := time.Now()
 	raw, err := eng.Checkpoint(now)
 	require.NoError(t, err)
+	require.NotNil(t, raw)
 
 	// this is before we ought to create a checkpoint, and should return nil
 	halfHour := time.Duration(int64(hour) / 2)

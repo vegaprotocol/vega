@@ -35,7 +35,6 @@ type State interface {
 
 type Engine struct {
 	components map[types.CheckpointName]State
-	ordered    []string
 	loadHash   []byte
 	nextCP     time.Time
 	delta      time.Duration
@@ -121,7 +120,7 @@ func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
 // Load - loads checkpoint data for all components by name
 func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
-	if e.loadHash == nil || bytes.Compare(e.loadHash, snap.Hash) != 0 {
+	if e.loadHash == nil || !bytes.Equal(e.loadHash, snap.Hash) {
 		return nil
 	}
 	// we found the checkpoint we need to load, set value to nil
