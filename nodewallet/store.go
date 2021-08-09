@@ -3,16 +3,21 @@ package nodewallet
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
+	"path/filepath"
+	"strings"
 
 	"code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/vega/fsutil"
 )
 
+const (
+	defaultStoreFile = "store"
+	nodeWalletFolder = "nodewallet"
+)
+
 type WalletConfig struct {
 	Chain      string `json:"chain"`
-	Path       string `json:"wallet_path"`
+	Name       string `json:"name"`
 	Passphrase string `json:"passphrase"`
 }
 
@@ -30,32 +35,61 @@ func (s *store) AddWallet(w WalletConfig) {
 	s.Wallets = append(s.Wallets, w)
 }
 
-func loadStore(path string, passphrase string) (*store, error) {
-	// make sure this do not exists already
-	if ok, err := fsutil.PathExists(path); !ok {
+type storage struct {
+	storePath   string
+	walletsPath string
+}
+
+func newStorage(rootPath string) *storage {
+	return &storage{
+		storePath:   filepath.Join(rootPath, nodeWalletFolder, defaultStoreFile),
+		walletsPath: filepath.Join(rootPath, nodeWalletFolder),
+	}
+}
+
+func (s *storage) Initialise(passphrase string) error {
+	err := fsutil.EnsureDir(s.walletsPath)
+	if err != nil {
+		return err
+	}
+
+	exists, err := fsutil.FileExists(s.storePath)
+	if err != nil {
+		if _, ok := err.(*fsutil.PathNotFound); !ok {
+			return err
+		}
+	}
+	if !exists {
+		return s.Save(&store{Wallets: []WalletConfig{}}, passphrase)
+	}
+	return nil
+}
+
+func (s *storage) WalletDirFor(name Blockchain) string {
+	return filepath.Join(s.walletsPath, strings.ToLower(string(name)))
+}
+
+func (s *storage) Load(passphrase string) (*store, error) {
+	if ok, err := fsutil.PathExists(s.storePath); !ok {
 		return nil, fmt.Errorf("unable to load store (%v)", err)
 	}
 
-	// read file
-	buf, err := ioutil.ReadFile(path)
+	data, err := fsutil.ReadFile(s.storePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read store file (%v)", err)
 	}
 
-	// decrypt the buffer
-	decBuf, err := crypto.Decrypt(buf, passphrase)
+	decBuf, err := crypto.Decrypt(data, passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decrypt store file (%v)", err)
 	}
 
-	// unmarshal the wallet now an return
-	stor := &store{}
-	return stor, json.Unmarshal(decBuf, stor)
+	store := &store{}
+	return store, json.Unmarshal(decBuf, store)
 }
 
-func saveStore(stor *store, path, passphrase string) error {
-	// marshal our wallet
-	buf, err := json.Marshal(stor)
+func (s *storage) Save(store *store, passphrase string) error {
+	buf, err := json.Marshal(store)
 	if err != nil {
 		return err
 	}
@@ -65,12 +99,5 @@ func saveStore(stor *store, path, passphrase string) error {
 		return fmt.Errorf("unable to encrypt store file (%v)", err)
 	}
 
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	f.Write(encBuf)
-	f.Close()
-
-	return nil
+	return fsutil.WriteFile(s.storePath, encBuf)
 }

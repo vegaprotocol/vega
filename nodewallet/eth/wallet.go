@@ -3,35 +3,17 @@ package eth
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"math/big"
-	"math/rand"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/crypto"
-
 	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/pkg/errors"
 )
 
-// ETHClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet/eth ETHClient
-type ETHClient interface {
-	bind.ContractBackend
-	ChainID(context.Context) (*big.Int, error)
-	NetworkID(context.Context) (*big.Int, error)
-	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
-}
-
 type Wallet struct {
-	cfg        Config
+	name       string
 	acc        accounts.Account
 	ks         *keystore.KeyStore
 	clt        ETHClient
@@ -45,61 +27,6 @@ type Wallet struct {
 	curHeightLastUpdate time.Time
 	curHeight           uint64
 	address             crypto.PublicKeyOrAddress
-}
-
-func DevInit(path, passphrase string) (string, error) {
-	ks := keystore.NewKeyStore(path, keystore.StandardScryptN, keystore.StandardScryptP)
-	acc, err := ks.NewAccount(passphrase)
-	if err != nil {
-		return "", err
-	}
-	return acc.URL.Path, nil
-}
-
-func randomFolder() string {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	b := make([]byte, 10)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
-}
-
-func New(cfg Config, path, passphrase string, ethclt ETHClient) (*Wallet, error) {
-	// NewKeyStore always create a new wallet key store file
-	// we create this in tmp as we do not want to impact the original one.
-	ks := keystore.NewKeyStore(
-		filepath.Join(os.TempDir(), randomFolder()), keystore.StandardScryptN, keystore.StandardScryptP)
-	jsonBytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	// just trying to call to make sure there's not issue
-	_, err = ethclt.ChainID(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	acc, err := ks.Import(jsonBytes, passphrase, passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := ks.Unlock(acc, passphrase); err != nil {
-		return nil, errors.Wrap(err, "unable to unlock wallet")
-	}
-
-	address := crypto.NewPublicKeyOrAddress(acc.Address.Hex(), acc.Address.Bytes())
-
-	return &Wallet{
-		cfg:        cfg,
-		acc:        acc,
-		ks:         ks,
-		clt:        ethclt,
-		passphrase: passphrase,
-		address:    address,
-	}, nil
 }
 
 func (w *Wallet) SetEthereumConfig(pcfg *types.EthereumConfig) error {
@@ -124,6 +51,10 @@ func (w *Wallet) SetEthereumConfig(pcfg *types.EthereumConfig) error {
 func (w *Wallet) Cleanup() error {
 	// just remove the wallet from the tmp file
 	return w.ks.Delete(w.acc, w.passphrase)
+}
+
+func (w *Wallet) Name() string {
+	return w.name
 }
 
 func (w *Wallet) Chain() string {

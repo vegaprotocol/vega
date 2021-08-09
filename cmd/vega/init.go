@@ -143,7 +143,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 	}
 
 	// init the nodewallet
-	if err := nodeWalletInit(cfg, pass, opts.GenDev); err != nil {
+	if err := nodeWalletInit(opts.RootPath, pass, opts.GenDev); err != nil {
 		return err
 	}
 
@@ -152,18 +152,11 @@ func (opts *InitCmd) Execute(_ []string) error {
 	return nil
 }
 
-func nodeWalletInit(cfg config.Config, nodeWalletPassphrase string, genDevNodeWallet bool) error {
+func nodeWalletInit(rootPath string, nodeWalletPassphrase string, genDevNodeWallet bool) error {
 	if genDevNodeWallet {
-		return nodewallet.DevInit(
-			cfg.NodeWallet.StorePath,
-			cfg.NodeWallet.DevWalletsPath,
-			nodeWalletPassphrase,
-		)
+		return nodewallet.DevInit(rootPath, nodeWalletPassphrase)
 	}
-	return nodewallet.Init(
-		cfg.NodeWallet.StorePath,
-		nodeWalletPassphrase,
-	)
+	return nodewallet.Initialise(rootPath, nodeWalletPassphrase)
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {

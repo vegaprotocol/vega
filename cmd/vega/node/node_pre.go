@@ -133,18 +133,17 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}
 
 	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
+	ethClient, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return err
 	}
 
 	// nodewallet
-	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethclt); err != nil {
+	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethClient, l.configPath); err != nil {
 		return err
 	}
 
-	// ensure all require wallet are available
-	return l.nodeWallet.EnsureRequireWallets()
+	return l.nodeWallet.Verify()
 }
 
 func (l *NodeCommand) loadMarketsConfig() error {

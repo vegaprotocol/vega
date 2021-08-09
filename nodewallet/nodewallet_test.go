@@ -19,21 +19,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	rootDirPath = "/tmp/vegatests/nodewallet/"
-)
-
 func rootDir() string {
-	path := filepath.Join(rootDirPath, crypto.RandomStr(10))
-	os.MkdirAll(path, os.ModePerm)
+	path := filepath.Join("/tmp", "vegatests", "nodewallet", crypto.RandomStr(10))
+	err := os.MkdirAll(path, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
 	return path
 }
 
 func TestNodeWallet(t *testing.T) {
-	t.Run("is supported fail", testIsSupportedFail)
-	t.Run("is supported success", testIsSupportedSuccess)
 	t.Run("test init success as new node wallet", testInitSuccess)
-	t.Run("test init failure as new node wallet", testInitFailure)
 	t.Run("test devInit success", testDevInitSuccess)
 	t.Run("verify success", testVerifySuccess)
 	t.Run("verify failure", testVerifyFailure)
@@ -43,53 +39,30 @@ func TestNodeWallet(t *testing.T) {
 	t.Run("import new wallet", testImportNewWallet)
 }
 
-func testIsSupportedFail(t *testing.T) {
-	err := nodewallet.IsSupported("yolocoin")
-	assert.EqualError(t, err, "unsupported chain wallet yolocoin")
-}
-
-func testIsSupportedSuccess(t *testing.T) {
-	err := nodewallet.IsSupported("vega")
-	assert.NoError(t, err)
-}
-
 func testInitSuccess(t *testing.T) {
 	rootDir := rootDir()
-	filePath := filepath.Join(rootDir, "nodewalletstore")
 
-	err := nodewallet.Init(filePath, "somepassphrase")
+	err := nodewallet.Initialise(rootDir, "somepassphrase")
 	assert.NoError(t, err)
 
 	assert.NoError(t, os.RemoveAll(rootDir))
 }
 
-func testInitFailure(t *testing.T) {
-	filePath := filepath.Join("/invalid/path/", "nodewalletstore")
-
-	err := nodewallet.Init(filePath, "somepassphrase")
-	assert.EqualError(t, err, "open /invalid/path/nodewalletstore: no such file or directory")
-}
-
 func testDevInitSuccess(t *testing.T) {
 	rootDir := rootDir()
-	filePath := filepath.Join(rootDir, "nodewalletstore")
-
-	err := nodewallet.DevInit(filePath, rootDir, "somepassphrase")
-	require.NoError(t, err)
-
 	cfg := nodewallet.Config{
-		Level:          encoding.LogLevel{},
-		StorePath:      filePath,
-		DevWalletsPath: rootDir,
+		Level: encoding.LogLevel{},
 	}
 
+	err := nodewallet.DevInit(rootDir, "somepassphrase")
+	require.NoError(t, err)
+
 	ctrl := gomock.NewController(t)
-	ethclt := mocks.NewMockETHClient(ctrl)
+	ethClient := mocks.NewMockETHClient(ctrl)
 	defer ctrl.Finish()
 
-	ethclt.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
-	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
-
+	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
 	require.NoError(t, err)
 	assert.NotNil(t, nw)
 
@@ -108,151 +81,115 @@ func testDevInitSuccess(t *testing.T) {
 
 func testVerifySuccess(t *testing.T) {
 	rootDir := rootDir()
-	filePath := filepath.Join(rootDir, "nodewalletstore")
-
-	// no error to generate
-	err := nodewallet.DevInit(filePath, rootDir, "somepassphrase")
-	assert.NoError(t, err)
-
-	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
-		Level:          encoding.LogLevel{},
-		StorePath:      filePath,
-		DevWalletsPath: rootDir,
+		Level: encoding.LogLevel{},
 	}
 
-	ctrl := gomock.NewController(t)
-	ethclt := mocks.NewMockETHClient(ctrl)
-	defer ctrl.Finish()
-	ethclt.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	err := nodewallet.DevInit(rootDir, "somepassphrase")
+	assert.NoError(t, err)
 
-	err = nodewallet.Verify(cfg, "somepassphrase", ethclt)
+	ctrl := gomock.NewController(t)
+	ethClient := mocks.NewMockETHClient(ctrl)
+	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	defer ctrl.Finish()
+
+	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
+	require.NoError(t, err)
+
+	err = nw.Verify()
 	assert.NoError(t, err)
 	assert.NoError(t, os.RemoveAll(rootDir))
 }
 
 func testVerifyFailure(t *testing.T) {
-	// create a random non existing path
-	filePath := filepath.Join("/", crypto.RandomStr(10), "somewallet")
-	cfg := nodewallet.Config{
-		Level:          encoding.LogLevel{},
-		StorePath:      filePath,
-		DevWalletsPath: "",
-	}
+	nw := &nodewallet.Service{}
 
-	ctrl := gomock.NewController(t)
-	ethclt := mocks.NewMockETHClient(ctrl)
-	defer ctrl.Finish()
-
-	err := nodewallet.Verify(cfg, "somepassphrase", ethclt)
+	err := nw.Verify()
 	assert.Error(t, err)
 }
 
 func testNewFailureInvalidStorePath(t *testing.T) {
-	// create a random non existing path
-	filePath := filepath.Join("/", crypto.RandomStr(10), "somewallet")
+	rootDir := rootDir()
 	cfg := nodewallet.Config{
-		Level:          encoding.LogLevel{},
-		StorePath:      filePath,
-		DevWalletsPath: "",
+		Level: encoding.LogLevel{},
 	}
 
 	ctrl := gomock.NewController(t)
-	ethclt := mocks.NewMockETHClient(ctrl)
+	ethClient := mocks.NewMockETHClient(ctrl)
 	defer ctrl.Finish()
 
-	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
+	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
 	assert.Error(t, err)
 	assert.Nil(t, nw)
 }
 
 func testNewFailureMissingRequiredWallets(t *testing.T) {
 	rootDir := rootDir()
-	filePath := filepath.Join(rootDir, "nodewalletstore")
-
-	// no error to generate
-	err := nodewallet.Init(filePath, "somepassphrase")
-	assert.NoError(t, err)
-
-	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
-		Level:          encoding.LogLevel{},
-		StorePath:      filePath,
-		DevWalletsPath: rootDir,
+		Level: encoding.LogLevel{},
 	}
 
-	ctrl := gomock.NewController(t)
-	ethclt := mocks.NewMockETHClient(ctrl)
-	defer ctrl.Finish()
-
-	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
+	err := nodewallet.Initialise(rootDir, "somepassphrase")
 	require.NoError(t, err)
 
-	assert.EqualError(t, nw.EnsureRequireWallets(),
-		"missing required wallet for vega chain",
-	)
-	assert.NoError(t, os.RemoveAll(rootDir))
+	ctrl := gomock.NewController(t)
+	ethClient := mocks.NewMockETHClient(ctrl)
+	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	defer ctrl.Finish()
 
+	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
+	require.NoError(t, err)
+
+	assert.EqualError(t, nw.Verify(), "missing required wallet for vega chain")
+	assert.NoError(t, os.RemoveAll(rootDir))
 }
 
 func testImportNewWallet(t *testing.T) {
-	ethDir := rootDir()
 	rootDir := rootDir()
-	filePath := filepath.Join(rootDir, "nodewalletstore")
-
-	// no error to generate
-	err := nodewallet.DevInit(filePath, rootDir, "somepassphrase")
-	assert.NoError(t, err)
-
-	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
-		Level:          encoding.LogLevel{},
-		StorePath:      filePath,
-		DevWalletsPath: rootDir,
+		Level: encoding.LogLevel{},
 	}
 
-	ctrl := gomock.NewController(t)
-	ethclt := mocks.NewMockETHClient(ctrl)
-	defer ctrl.Finish()
-	ethclt.EXPECT().ChainID(gomock.Any()).Times(2).Return(big.NewInt(42), nil)
+	err := nodewallet.Initialise(rootDir, "somepassphrase")
+	require.NoError(t, err)
 
-	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethclt)
+	ctrl := gomock.NewController(t)
+	ethClient := mocks.NewMockETHClient(ctrl)
+	defer ctrl.Finish()
+	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+
+	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
 	require.NoError(t, err)
 	assert.NotNil(t, nw)
 
 	// now generate an eth wallet
-	path, err := eth.DevInit(ethDir, "ethpassphrase")
+	fileName, err := eth.DevInit(rootDir, "ethpassphrase")
 	require.NoError(t, err)
-	assert.NotEmpty(t, path)
+	assert.NotEmpty(t, fileName)
 
 	// import this new wallet
-	err = nw.Import(string(nodewallet.Ethereum), "somepassphrase", "ethpassphrase", path)
+	filePath := filepath.Join(rootDir, fileName)
+	err = nw.Import(string(nodewallet.Ethereum), "somepassphrase", "ethpassphrase", filePath)
 	require.NoError(t, err)
 
 	assert.NoError(t, os.RemoveAll(rootDir))
-	assert.NoError(t, os.RemoveAll(ethDir))
 }
+
 func testNewFailureInvalidPassphrase(t *testing.T) {
 	rootDir := rootDir()
-	filePath := filepath.Join(rootDir, "nodewalletstore")
-
-	// no error to generate
-	err := nodewallet.Init(filePath, "somepassphrase")
-	assert.NoError(t, err)
-
-	// try to instantiate a wallet from that
 	cfg := nodewallet.Config{
-		Level:          encoding.LogLevel{},
-		StorePath:      filePath,
-		DevWalletsPath: rootDir,
+		Level: encoding.LogLevel{},
 	}
 
+	err := nodewallet.Initialise(rootDir, "somepassphrase")
+	assert.NoError(t, err)
+
 	ctrl := gomock.NewController(t)
-	ethclt := mocks.NewMockETHClient(ctrl)
+	ethClient := mocks.NewMockETHClient(ctrl)
 	defer ctrl.Finish()
 
-	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "notthesamepassphrase", ethclt)
-	assert.EqualError(t, err, "unable to load nodewalletsore: unable to decrypt store file (cipher: message authentication failed)")
+	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "notthesamepassphrase", ethClient, rootDir)
+	assert.EqualError(t, err, "unable to load store: unable to decrypt store file (cipher: message authentication failed)")
 	assert.Nil(t, nw)
 	assert.NoError(t, os.RemoveAll(rootDir))
 }
