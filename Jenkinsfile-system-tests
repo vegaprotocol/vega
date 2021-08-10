@@ -1,0 +1,235 @@
+/* properties of scmVars (example):
+    - GIT_BRANCH:PR-40-head
+    - GIT_COMMIT:05a1c6fbe7d1ff87cfc40a011a63db574edad7e6
+    - GIT_PREVIOUS_COMMIT:5d02b46fdb653f789e799ff6ad304baccc32cbf9
+    - GIT_PREVIOUS_SUCCESSFUL_COMMIT:5d02b46fdb653f789e799ff6ad304baccc32cbf9
+    - GIT_URL:https://github.com/vegaprotocol/vega.git
+*/
+def scmVars = null
+def version = 'UNKNOWN'
+def versionHash = 'UNKNOWN'
+
+
+pipeline {
+    agent { label 'system-tests' }
+    options {
+        skipDefaultCheckout true
+        timestamps()
+    }
+    parameters {
+        string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
+        string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
+        string(name: 'PROTOS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/protos repository')
+        string(name: 'SYSTEM_TESTS_VALIDATOR_NODE_COUNT', defaultValue: '7', description: 'Number of validator nodes when running system-tests')
+        string(name: 'SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT', defaultValue: '7', description: 'Number of non-validator nodes when running system-tests')
+        string(name: 'SYSTEM_TESTS_TEST_FUNCTION', defaultValue: '', description: 'Run only a tests with a specified function name. This is actually a "pytest -k $TEST_FUNCTION_NAME" command-line argument, see more: https://docs.pytest.org/en/stable/usage.html')
+        string(name: 'SYSTEM_TESTS_TEST_DIRECTORY', defaultValue: 'CoreTesting/bvt', description: 'Run tests from files in this directory and all sub-directories')
+    }
+    environment {
+        CGO_ENABLED = 0
+        GO111MODULE = 'on'
+        SLACK_MESSAGE = "Full System Tests » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
+        // Note: make sure the tag name is not too long
+        // Reason: it is used by system-tests for hostnames in dockerised vega, and
+        //         there is a limit of 64 characters for hostname
+        DOCKER_IMAGE_TAG_LOCAL = "v-st-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
+        DOCKER_IMAGE_NAME_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
+
+        // Used by system-tests/scripts/Makefile
+        SYSTEM_TESTS_PORTBASE = "${ Integer.parseInt(env.EXECUTOR_NUMBER) * 1000 + 1000}"
+        SYSTEM_TESTS_DOCKER_IMAGE_TAG = "${DOCKER_IMAGE_TAG_LOCAL}"
+        VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_VALIDATOR_NODE_COUNT}"
+        NON_VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT}"
+        TEST_FUNCTION = "${params.SYSTEM_TESTS_TEST_FUNCTION}"
+        TEST_DIRECTORY = "${params.SYSTEM_TESTS_TEST_DIRECTORY}"
+        DOCKER_GOCACHE = "${env.GOCACHE}"
+    }
+
+    stages {
+        stage('Git Clone') {
+            parallel {
+                stage('vega core') {
+                    options { retry(3) }
+                    steps {
+                        sh 'printenv'
+                        echo "${params}"
+                        dir('vega') {
+                            script {
+                                scmVars = checkout(scm)
+                                versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
+                                version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
+                            }
+                        }
+                    }
+                }
+                stage('protos') {
+                    options { retry(3) }
+                    steps {
+                        dir('protos') {
+                            git branch: "${params.PROTOS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/protos.git'
+                        }
+                    }
+                }
+                stage('system-tests') {
+                    options { retry(3) }
+                    steps {
+                        dir('system-tests') {
+                            git branch: "${params.SYSTEM_TESTS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/system-tests.git'
+                        }
+                    }
+                }
+                stage('devops-infra') {
+                    options { retry(3) }
+                    steps {
+                        dir('devops-infra') {
+                            git branch: "${params.DEVOPS_INFRA_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/devops-infra.git'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Dependencies') {
+            options { retry(3) }
+            steps {
+                dir('vega') {
+                    sh 'go mod download -x'
+                }
+            }
+        }
+
+        stage('Compile Linux Build') {
+            environment {
+                GOOS         = 'linux'
+                GOARCH       = 'amd64'
+                OUTPUT       = './cmd/vega/vega-linux-amd64'
+                LDFLAGS      = "-X main.CLIVersion=${version} -X main.CLIVersionHash=${versionHash}"
+            }
+            options { retry(3) }
+            steps {
+                dir('vega') {
+                    sh label: 'Compile', script: '''
+                        go build -v -o "${OUTPUT}" -ldflags "${LDFLAGS}" ./cmd/vega
+                    '''
+                    sh label: 'Sanity check', script: '''
+                        file ${OUTPUT}
+                        ${OUTPUT} version
+                    '''
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            environment {
+                LINUX_BINARY = './cmd/vega/vega-linux-amd64'
+            }
+            options { retry(3) }
+            steps {
+                dir('vega') {
+                    sh label: 'Copy binary', script: '''#!/bin/bash -e
+                        mkdir -p docker/bin
+                        cp -a "${LINUX_BINARY}" "docker/bin/vega"
+                    '''
+                    // Note: This docker image is used by system-tests
+                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                        sh label: 'Build docker image', script: '''
+                            docker build -t "${DOCKER_IMAGE_NAME_LOCAL}" docker/
+                        '''
+                    }
+                    sh label: 'Cleanup', script: '''#!/bin/bash -e
+                        rm -rf docker/bin
+                    '''
+                    sh label: 'Sanity check', script: '''
+                        docker run --rm --entrypoint "" "${DOCKER_IMAGE_NAME_LOCAL}" vega version
+                    '''
+                }
+            }
+        }
+
+        stage('Check') {
+            steps {
+                dir('system-tests/scripts') {
+                    sh label: 'Check setup', script: '''
+                        make check
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Pull') {
+            options { retry(3) }
+            steps {
+                dir('system-tests/scripts') {
+                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                        sh 'make prepare-docker-pull'
+                    }
+                }
+            }
+        }
+
+        stage('Prepare Tests') {
+            options { retry(3) }
+            steps {
+                dir('system-tests/scripts') {
+                    sh label: 'build test container', script: '''
+                        make prepare-test-docker-image
+                    '''
+                    sh label: 'make proto', script: '''
+                        make build-test-proto
+                    '''
+                }
+            }
+        }
+
+        stage('Start Dockerised Vega') {
+            options { retry(2) }
+            steps {
+                dir('system-tests/scripts') {
+                    sh label: 'make sure dockerised-vega is not running', script: '''
+                        make stop-dockerised-vega
+                    '''
+                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                        sh label: 'start dockerised-vega', script: '''
+                            make start-dockerised-vega
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Run System Tests') {
+            steps {
+                dir('system-tests/scripts') {
+                    sh label: 'run system-tests', script: '''
+                        make run-tests
+                    '''
+                }
+                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/*.xml'
+            }
+        }
+    }
+    post {
+        success {
+            retry(3) {
+                slackSend(channel: "#qa-notify", color: "good", message: ":white_check_mark: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
+            }
+        }
+        failure {
+            retry(3) {
+                slackSend(channel: "#qa-notify", color: "danger", message: ":red_circle: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
+            }
+        }
+        always {
+            retry(3) {
+                dir('system-tests/scripts') {
+                    sh label: 'stop dockerised-vega', script: '''
+                        make stop-dockerised-vega
+                    '''
+                }
+                sh label: 'Clean docker images', script: '''
+                    docker rmi "${DOCKER_IMAGE_NAME_LOCAL}"
+                '''
+            }
+        }
+    }
+}

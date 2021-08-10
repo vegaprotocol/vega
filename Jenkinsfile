@@ -33,7 +33,7 @@ pipeline {
         // Note: make sure the tag name is not too long
         // Reason: it is used by system-tests for hostnames in dockerised vega, and
         //         there is a limit of 64 characters for hostname
-        DOCKER_IMAGE_TAG_LOCAL = "j-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
+        DOCKER_IMAGE_TAG_LOCAL = "v-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
         DOCKER_IMAGE_NAME_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
     }
 
