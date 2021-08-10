@@ -3,6 +3,10 @@ package broker_test
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net"
+	"os"
+	"os/exec"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -15,8 +19,10 @@ import (
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"go.nanomsg.org/mangos/v3/protocol/pull"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,6 +78,11 @@ func TestSubscribe(t *testing.T) {
 	t.Run("Subscribe and unsubscribe required - success", testSubUnsubSuccess)
 	t.Run("Subscribe reuses keys", testSubReuseKey)
 	t.Run("Unsubscribe automatically if subscriber is closed", testAutoUnsubscribe)
+}
+
+func TestStream(t *testing.T) {
+	t.Run("Streams events over socket", testStreamsOverSocket)
+	t.Run("Stops process if can not send to socket", testStopsProcessOnStreamError)
 }
 
 func TestSendEvent(t *testing.T) {
@@ -638,6 +649,91 @@ func testTxErrNotAll(t *testing.T) {
 	broker.Unsubscribe(k2)
 	close(skipCh)
 	close(closeCh)
+}
+
+func testStreamsOverSocket(t *testing.T) {
+	ctx, cfunc := context.WithCancel(context.Background())
+	ctrl := gomock.NewController(t)
+	config := broker.NewDefaultConfig()
+	config.Socket.Enabled = true
+	config.Socket.Transport = "inproc"
+
+	sock, err := pull.NewSocket()
+	assert.NoError(t, err)
+
+	addr := fmt.Sprintf(
+		"inproc://%s",
+		net.JoinHostPort(config.Socket.IP, fmt.Sprintf("%d", config.Socket.Port)),
+	)
+	err = sock.Listen(addr)
+	assert.NoError(t, err)
+
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+
+	defer func() {
+		cfunc()
+		ctrl.Finish()
+		sock.Close()
+	}()
+
+	sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 00, 01, 01, 0, time.UTC))
+
+	broker.Send(sentEvent)
+
+	receivedBytes, err := sock.Recv()
+	assert.NoError(t, err)
+
+	var receivedEvent eventspb.BusEvent
+	err = proto.Unmarshal(receivedBytes, &receivedEvent)
+	assert.NoError(t, err)
+	assert.Equal(t, *sentEvent.StreamMessage(), receivedEvent)
+}
+
+func testStopsProcessOnStreamError(t *testing.T) {
+	if os.Getenv("RUN_TEST") == "1" {
+		ctx, cfunc := context.WithCancel(context.Background())
+		ctrl := gomock.NewController(t)
+		config := broker.NewDefaultConfig()
+		config.Socket.Enabled = true
+		config.Socket.Transport = "inproc"
+
+		// Having such a small buffers will make the process fail
+		config.Socket.SocketChannelBufferSize = 0
+		config.Socket.EventChannelBufferSize = 1
+
+		sock, err := pull.NewSocket()
+		assert.NoError(t, err)
+
+		addr := fmt.Sprintf(
+			"inproc://%s",
+			net.JoinHostPort(config.Socket.IP, fmt.Sprintf("%d", config.Socket.Port)),
+		)
+		err = sock.Listen(addr)
+		assert.NoError(t, err)
+
+		broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+
+		defer func() {
+			cfunc()
+			ctrl.Finish()
+			sock.Close()
+		}()
+
+		sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 00, 01, 01, 0, time.UTC))
+
+		broker.Send(sentEvent)
+		// Second call to send should exit the process
+		broker.Send(sentEvent)
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestStream/Stops_process_if_can_not_send_to_socket")
+	cmd.Env = append(os.Environ(), "RUN_TEST=1")
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		return
+	}
+	t.Fatalf("process ran with err %v, want exit status 1", err)
 }
 
 func (e evt) Type() events.Type {

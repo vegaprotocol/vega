@@ -12,6 +12,7 @@ import (
 	mangos "go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol"
 	"go.nanomsg.org/mangos/v3/protocol/push"
+	_ "go.nanomsg.org/mangos/v3/transport/inproc"
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 
 	"code.vegaprotocol.io/vega/events"
@@ -88,7 +89,6 @@ func newSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 			fmt.Println("inside if error function", err)
 			s.log.Fatal("socket streaming has failed", logging.Error(err))
 		}
-		fmt.Println("after error function")
 	}()
 
 	return s, nil
@@ -189,7 +189,7 @@ func (s *socketClient) stream(ctx context.Context) error {
 		case evt := <-s.eventsCh:
 			msg, err := proto.Marshal(evt.StreamMessage())
 			if err != nil {
-				s.log.Error("fail to marshal event", logging.Error(err))
+				s.log.Error("Failed to marshal event", logging.Error(err))
 				continue
 			}
 
