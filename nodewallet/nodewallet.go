@@ -2,7 +2,6 @@ package nodewallet
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 
@@ -136,6 +135,11 @@ func (s *Service) Generate(chain, passphrase string) error {
 		if err != nil {
 			return err
 		}
+	case Ethereum:
+		w, err = s.ethWalletLoader.Generate(passphrase)
+		if err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unsupported chain wallet %v", chain)
 	}
@@ -182,15 +186,6 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, sourceFilePath str
 	return s.storage.Save(s.store, passphrase)
 }
 
-func (s *Service) Dump() (string, error) {
-	buf, err := json.MarshalIndent(s.store.Wallets, " ", " ")
-	if err != nil {
-		return "", fmt.Errorf("unable to indent message: %v", err)
-	}
-
-	return string(buf), nil
-}
-
 func (s *Service) Verify() error {
 	for _, v := range requiredWallets {
 		_, ok := s.wallets[v]
@@ -201,31 +196,17 @@ func (s *Service) Verify() error {
 	return nil
 }
 
+func (s *Service) Show() map[string]WalletConfig {
+	configs := map[string]WalletConfig{}
+	for _, config := range s.store.Wallets {
+		configs[config.Chain] = config
+	}
+	return configs
+}
+
 func Initialise(rootPath, passphrase string) error {
 	storage := newStorage(rootPath)
 	return storage.Initialise(passphrase)
-}
-
-func DevInit(rootPath, passphrase string) error {
-	storage := newStorage(rootPath)
-	err := storage.Initialise(passphrase)
-	if err != nil {
-		return err
-	}
-
-	cfgs := []WalletConfig{}
-
-	ethWalletName, err := eth.DevInit(storage.WalletDirFor(Ethereum), passphrase)
-	if err != nil {
-		return err
-	}
-	cfgs = append(cfgs, WalletConfig{
-		Chain:      string(Ethereum),
-		Name:       ethWalletName,
-		Passphrase: passphrase,
-	})
-
-	return storage.Save(&store{Wallets: cfgs}, passphrase)
 }
 
 // loadWallets takes the wallets configs from the store and try to instantiate

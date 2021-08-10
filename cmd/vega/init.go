@@ -35,7 +35,6 @@ type InitCmd struct {
 	Passphrase config.Passphrase `short:"p" long:"nodewallet-passphrase" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 
 	Force      bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
-	GenDev     bool `short:"g" long:"gen-dev-nodewallet" description:"Generate dev wallet for all vega supported chains (not for production)"`
 	GenBuiltin bool `short:"b" long:"gen-builtinasset-faucet" description:"Generate the builtin asset configuration (not for production)"`
 
 	Help bool `short:"h" long:"help" description:"Show this help message"`
@@ -142,21 +141,13 @@ func (opts *InitCmd) Execute(_ []string) error {
 		return err
 	}
 
-	// init the nodewallet
-	if err := nodeWalletInit(opts.RootPath, pass, opts.GenDev); err != nil {
+	if err := nodewallet.Initialise(opts.RootPath, pass); err != nil {
 		return err
 	}
 
 	logger.Info("configuration generated successfully", logging.String("path", opts.RootPath))
 
 	return nil
-}
-
-func nodeWalletInit(rootPath string, nodeWalletPassphrase string, genDevNodeWallet bool) error {
-	if genDevNodeWallet {
-		return nodewallet.DevInit(rootPath, nodeWalletPassphrase)
-	}
-	return nodewallet.Initialise(rootPath, nodeWalletPassphrase)
 }
 
 func createDefaultMarkets(confpath string) ([]string, error) {
