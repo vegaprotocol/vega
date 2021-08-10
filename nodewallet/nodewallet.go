@@ -196,6 +196,14 @@ func (s *Service) Verify() error {
 	return nil
 }
 
+func (s *Service) Show() map[string]WalletConfig {
+	configs := map[string]WalletConfig{}
+	for _, config := range s.store.Wallets {
+		configs[config.Chain] = config
+	}
+	return configs
+}
+
 func Initialise(rootPath, passphrase string) error {
 	storage := newStorage(rootPath)
 	return storage.Initialise(passphrase)
