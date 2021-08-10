@@ -40,6 +40,11 @@ type storage struct {
 	walletsPath string
 }
 
+func Initialise(rootPath, passphrase string) error {
+	storage := newStorage(rootPath)
+	return storage.Initialise(passphrase)
+}
+
 func newStorage(rootPath string) *storage {
 	return &storage{
 		storePath:   filepath.Join(rootPath, nodeWalletFolder, defaultStoreFile),

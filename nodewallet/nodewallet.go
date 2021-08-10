@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet/eth"
 	"code.vegaprotocol.io/vega/nodewallet/vega"
+
 	"github.com/pkg/errors"
 )
 
@@ -107,7 +108,7 @@ func (s *Service) Cleanup() error {
 }
 
 // ReloadConf is used in order to reload the internal configuration of
-// the of the fee engine
+// the fee engine
 func (s *Service) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -124,33 +125,33 @@ func (s *Service) Get(chain Blockchain) (Wallet, bool) {
 	return w, ok
 }
 
-func (s *Service) Generate(chain, passphrase,  walletPassphrase string) error {
+func (s *Service) Generate(chain, passphrase, walletPassphrase string) (map[string]string, error) {
 	var (
-		err error
-		w   Wallet
+		err  error
+		w    Wallet
+		data map[string]string
 	)
 	switch Blockchain(chain) {
 	case Vega:
-		w, err = s.vegaWalletLoader.Generate(walletPassphrase)
+		w, data, err = s.vegaWalletLoader.Generate(walletPassphrase)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	case Ethereum:
 		w, err = s.ethWalletLoader.Generate(walletPassphrase)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	default:
-		return fmt.Errorf("unsupported chain wallet %v", chain)
+		return nil, fmt.Errorf("unsupported chain wallet %v", chain)
 	}
 
-	s.store.AddWallet(WalletConfig{
-		Chain:      chain,
-		Passphrase: walletPassphrase,
-		Name:       w.Name(),
-	})
-	s.wallets[Blockchain(chain)] = w
-	return s.storage.Save(s.store, passphrase)
+	err = s.saveWallet(chain, passphrase, walletPassphrase, w)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, err
 }
 
 func (s *Service) Import(chain, passphrase, walletPassphrase, sourceFilePath string) error {
@@ -177,13 +178,7 @@ func (s *Service) Import(chain, passphrase, walletPassphrase, sourceFilePath str
 		return fmt.Errorf("unsupported chain wallet %v", chain)
 	}
 
-	s.store.AddWallet(WalletConfig{
-		Chain:      chain,
-		Passphrase: walletPassphrase,
-		Name:       w.Name(),
-	})
-	s.wallets[Blockchain(chain)] = w
-	return s.storage.Save(s.store, passphrase)
+	return s.saveWallet(chain, passphrase, walletPassphrase, w)
 }
 
 func (s *Service) Verify() error {
@@ -204,9 +199,14 @@ func (s *Service) Show() map[string]WalletConfig {
 	return configs
 }
 
-func Initialise(rootPath, passphrase string) error {
-	storage := newStorage(rootPath)
-	return storage.Initialise(passphrase)
+func (s *Service) saveWallet(chain string, passphrase string, walletPassphrase string, w Wallet) error {
+	s.store.AddWallet(WalletConfig{
+		Chain:      chain,
+		Passphrase: walletPassphrase,
+		Name:       w.Name(),
+	})
+	s.wallets[Blockchain(chain)] = w
+	return s.storage.Save(s.store, passphrase)
 }
 
 // loadWallets takes the wallets configs from the store and try to instantiate

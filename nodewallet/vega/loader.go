@@ -26,32 +26,37 @@ func (l *WalletLoader) Initialise() error {
 	return fsutil.EnsureDir(l.walletRootPath)
 }
 
-func (l *WalletLoader) Generate(passphrase string) (*Wallet, error) {
+func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, error) {
+	data := map[string]string{}
 	store, err := storev1.NewStore(l.walletRootPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = store.Initialise()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	handler := wallet.NewHandler(store)
 
-	// we ignore the mnemonic as this wallet is one-shot.
 	walletName := fmt.Sprintf("vega.%v", time.Now().UnixNano())
-	_, err = handler.CreateWallet(walletName, passphrase)
+	mnemonic, err := handler.CreateWallet(walletName, passphrase)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	data["mnemonic"] = mnemonic
 
 	_, err = handler.GenerateKeyPair(walletName, passphrase, []wallet.Meta{})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return newWallet(store, walletName, passphrase)
+	w, err := newWallet(store, walletName, passphrase)
+	if err != nil {
+		return nil, nil, err
+	}
+	return w, data, err
 }
 
 func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {

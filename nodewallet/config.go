@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	Level    encoding.LogLevel `long:"log-level"`
-	ETH      eth.Config        `group:"ETH" namespace:"eth"`
+	Level encoding.LogLevel `long:"log-level"`
+	ETH   eth.Config        `group:"ETH" namespace:"eth"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration,

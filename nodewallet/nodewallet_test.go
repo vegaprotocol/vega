@@ -81,13 +81,13 @@ func testGenerationSuccess(t *testing.T) {
 			require.NoError(tt, err)
 			assert.NotNil(tt, nw)
 
-			err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase", "eth-passphrase")
+			_, err = nw.Generate(c.chain, "somepassphrase", "eth-passphrase")
 			require.NoError(tt, err)
 
-			w, ok := nw.Get(nodewallet.Ethereum)
+			w, ok := nw.Get(nodewallet.Blockchain(c.chain))
 			assert.NotNil(tt, w)
 			assert.True(tt, ok)
-			assert.Equal(tt, string(nodewallet.Ethereum), w.Chain())
+			assert.Equal(tt, c.chain, w.Chain())
 
 			assert.NoError(tt, os.RemoveAll(rootDir))
 		})
@@ -112,11 +112,13 @@ func testVerifySuccess(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, nw)
 
-	err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase", "eth-passphrase")
+	data, err := nw.Generate(string(nodewallet.Ethereum), "somepassphrase", "eth-passphrase")
 	require.NoError(t, err)
+	assert.Empty(t, data)
 
-	err = nw.Generate(string(nodewallet.Vega), "somepassphrase", "vega-somepassphrase")
+	data, err = nw.Generate(string(nodewallet.Vega), "somepassphrase", "vega-somepassphrase")
 	require.NoError(t, err)
+	assert.NotEmpty(t, data["mnemonic"])
 
 	err = nw.Verify()
 	assert.NoError(t, err)
@@ -235,11 +237,13 @@ func testShowSuccess(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, nw)
 
-	err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase", "eth-passphrase")
+	data, err := nw.Generate(string(nodewallet.Ethereum), "somepassphrase", "eth-passphrase")
 	require.NoError(t, err)
+	assert.Empty(t, data)
 
-	err = nw.Generate(string(nodewallet.Vega), "somepassphrase", "vega-passphrase")
+	data, err = nw.Generate(string(nodewallet.Vega), "somepassphrase", "vega-passphrase")
 	require.NoError(t, err)
+	assert.NotEmpty(t, data["mnemonic"])
 
 	configs := nw.Show()
 

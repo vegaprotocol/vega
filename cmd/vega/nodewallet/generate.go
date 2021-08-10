@@ -1,6 +1,7 @@
 package nodewallet
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/config"
@@ -16,9 +17,9 @@ type generateCmd struct {
 
 	WalletPassphrase config.Passphrase `short:"w" long:"wallet-passphrase"`
 
-	Chain      string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
-	Force      bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
-	Help       bool   `short:"h" long:"help" description:"Show this help message"`
+	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
+	Force bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
+	Help  bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *generateCmd) Execute(_ []string) error {
@@ -72,11 +73,20 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return fmt.Errorf("a wallet is already imported for the chain %v, please rerun with option --force to overwrite it", opts.Chain)
 	}
 
-	err = nw.Generate(opts.Chain, pass, walletPass)
+	data, err := nw.Generate(opts.Chain, pass, walletPass)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("generation successful")
+	if len(data) != 0 {
+		fmt.Println("additional data:")
+		buf, err := json.MarshalIndent(data, " ", " ")
+		if err != nil {
+			return fmt.Errorf("unable to marshal store: %v", err)
+		}
+		fmt.Printf("%v\n", string(buf))
+	}
+
 	return nil
 }
