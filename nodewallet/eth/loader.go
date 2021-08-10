@@ -77,7 +77,7 @@ func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
 func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, error) {
 	data, err := fsutil.ReadFile(sourceFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read store file: %v", err)
+		return nil, fmt.Errorf("unable to read store file: %w, err)
 	}
 
 	_, fileName := filepath.Split(sourceFilePath)
