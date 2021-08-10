@@ -59,7 +59,7 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, error) {
 
 	data, err := fsutil.ReadFile(acc.URL.Path)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read store file: %v", err)
+		return nil, fmt.Errorf("unable to read store file: %w", err)
 	}
 
 	return l.newWallet(fileName, passphrase, data)
