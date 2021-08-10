@@ -180,7 +180,7 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 		return nil, apiError(codes.InvalidArgument, err)
 	}
 
-	if err := s.blockchain.SubmitTransaction(ctx, req.Tx, ty); err != nil {
+	if err := s.blockchain.SubmitTransaction(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC); err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
 			Code() uint32
@@ -207,7 +207,7 @@ func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	if err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, req.Type); err != nil {
+	if err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionV2Request_TYPE_ASYNC); err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
 			Code() uint32
