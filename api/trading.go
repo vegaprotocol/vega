@@ -175,7 +175,7 @@ func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	ty, err := s.validateSubmitTx(req.Type)
+	_, err := s.validateSubmitTx(req.Type)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, err)
 	}
