@@ -37,6 +37,7 @@ func TestNodeWallet(t *testing.T) {
 	t.Run("new failure missing required wallets", testNewFailureMissingRequiredWallets)
 	t.Run("new failure invalidPassphrase", testNewFailureInvalidPassphrase)
 	t.Run("import new wallet", testImportNewWallet)
+	t.Run("show success", testShowSuccess)
 }
 
 func testInitSuccess(t *testing.T) {
@@ -214,4 +215,38 @@ func testNewFailureInvalidPassphrase(t *testing.T) {
 	assert.EqualError(t, err, "unable to load store: unable to decrypt store file (cipher: message authentication failed)")
 	assert.Nil(t, nw)
 	assert.NoError(t, os.RemoveAll(rootDir))
+}
+
+func testShowSuccess(t *testing.T) {
+	rootDir := rootDir()
+	cfg := nodewallet.Config{
+		Level: encoding.LogLevel{},
+	}
+
+	err := nodewallet.Initialise(rootDir, "somepassphrase")
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	ethClient := mocks.NewMockETHClient(ctrl)
+	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	defer ctrl.Finish()
+
+	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
+	require.NoError(t, err)
+	assert.NotNil(t, nw)
+
+	err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase")
+	require.NoError(t, err)
+
+	err = nw.Generate(string(nodewallet.Vega), "somepassphrase")
+	require.NoError(t, err)
+
+	configs := nw.Show()
+
+	assert.Equal(t, "vega", configs["vega"].Chain)
+	assert.NotEmpty(t, configs["vega"].Name)
+	assert.NotEmpty(t, configs["vega"].Passphrase)
+	assert.Equal(t, "ethereum", configs["ethereum"].Chain)
+	assert.NotEmpty(t, configs["ethereum"].Name)
+	assert.NotEmpty(t, configs["ethereum"].Passphrase)
 }
