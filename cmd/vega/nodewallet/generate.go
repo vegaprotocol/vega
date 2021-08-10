@@ -14,6 +14,8 @@ import (
 type generateCmd struct {
 	Config nodewallet.Config
 
+	WalletPassphrase config.Passphrase `short:"w" long:"wallet-passphrase"`
+
 	Chain      string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
 	Force      bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
 	Help       bool   `short:"h" long:"help" description:"Show this help message"`
@@ -34,6 +36,11 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	pass, err := rootCmd.PassphraseFile.Get("node wallet")
+	if err != nil {
+		return err
+	}
+
+	walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
 	if err != nil {
 		return err
 	}
@@ -65,7 +72,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return fmt.Errorf("a wallet is already imported for the chain %v, please rerun with option --force to overwrite it", opts.Chain)
 	}
 
-	err = nw.Generate(opts.Chain, pass)
+	err = nw.Generate(opts.Chain, pass, walletPass)
 	if err != nil {
 		return err
 	}

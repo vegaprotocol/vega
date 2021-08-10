@@ -81,7 +81,7 @@ func testGenerationSuccess(t *testing.T) {
 			require.NoError(tt, err)
 			assert.NotNil(tt, nw)
 
-			err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase")
+			err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase", "eth-passphrase")
 			require.NoError(tt, err)
 
 			w, ok := nw.Get(nodewallet.Ethereum)
@@ -112,10 +112,10 @@ func testVerifySuccess(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, nw)
 
-	err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase")
+	err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase", "eth-passphrase")
 	require.NoError(t, err)
 
-	err = nw.Generate(string(nodewallet.Vega), "somepassphrase")
+	err = nw.Generate(string(nodewallet.Vega), "somepassphrase", "vega-somepassphrase")
 	require.NoError(t, err)
 
 	err = nw.Verify()
@@ -235,18 +235,18 @@ func testShowSuccess(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, nw)
 
-	err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase")
+	err = nw.Generate(string(nodewallet.Ethereum), "somepassphrase", "eth-passphrase")
 	require.NoError(t, err)
 
-	err = nw.Generate(string(nodewallet.Vega), "somepassphrase")
+	err = nw.Generate(string(nodewallet.Vega), "somepassphrase", "vega-passphrase")
 	require.NoError(t, err)
 
 	configs := nw.Show()
 
 	assert.Equal(t, "vega", configs["vega"].Chain)
 	assert.NotEmpty(t, configs["vega"].Name)
-	assert.NotEmpty(t, configs["vega"].Passphrase)
+	assert.Equal(t, "vega-passphrase", configs["vega"].Passphrase)
 	assert.Equal(t, "ethereum", configs["ethereum"].Chain)
 	assert.NotEmpty(t, configs["ethereum"].Name)
-	assert.NotEmpty(t, configs["ethereum"].Passphrase)
+	assert.Equal(t, "eth-passphrase", configs["ethereum"].Passphrase)
 }

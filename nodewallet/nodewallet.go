@@ -124,19 +124,19 @@ func (s *Service) Get(chain Blockchain) (Wallet, bool) {
 	return w, ok
 }
 
-func (s *Service) Generate(chain, passphrase string) error {
+func (s *Service) Generate(chain, passphrase,  walletPassphrase string) error {
 	var (
 		err error
 		w   Wallet
 	)
 	switch Blockchain(chain) {
 	case Vega:
-		w, err = s.vegaWalletLoader.Generate(passphrase)
+		w, err = s.vegaWalletLoader.Generate(walletPassphrase)
 		if err != nil {
 			return err
 		}
 	case Ethereum:
-		w, err = s.ethWalletLoader.Generate(passphrase)
+		w, err = s.ethWalletLoader.Generate(walletPassphrase)
 		if err != nil {
 			return err
 		}
@@ -146,7 +146,7 @@ func (s *Service) Generate(chain, passphrase string) error {
 
 	s.store.AddWallet(WalletConfig{
 		Chain:      chain,
-		Passphrase: passphrase,
+		Passphrase: walletPassphrase,
 		Name:       w.Name(),
 	})
 	s.wallets[Blockchain(chain)] = w
