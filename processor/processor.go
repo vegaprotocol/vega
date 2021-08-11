@@ -19,7 +19,6 @@ import (
 
 var (
 	ErrInvalidSignature              = errors.New("invalid signature")
-	ErrVegaWalletRequired            = errors.New("vega wallet required")
 	ErrChainEventFromNonValidator    = errors.New("chain event emitted from a non-validator node")
 	ErrUnsupportedChainEvent         = errors.New("unsupported chain event")
 	ErrNodeSignatureFromNonValidator = errors.New("node signature not sent by validator")
