@@ -248,7 +248,11 @@ func getTestGRPCServer(
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
 	// stub...
 	gov, vote := govStub{}, voteStub{}
-	broker := broker.New(ctx)
+	broker, err := broker.New(ctx, logger, conf.Broker)
+	if err != nil {
+		err = fmt.Errorf("failed to create broker: %w", err)
+		return
+	}
 
 	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote, mockgov.NewMockNetParams(mockCtrl))
 
