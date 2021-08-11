@@ -33,6 +33,20 @@ type State interface {
 	Load(checkpoint []byte) error
 }
 
+// AssetsState is a bit of a hacky way to get the assets that were enabled when checkpoint was reloaded, so we can enable them in the collateral engine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_state_mock.go -package mocks code.vegaprotocol.io/vega/checkpoint AssetsState
+type AssetsState interface {
+	State
+	GetEnabledAssets() []*types.Asset
+}
+
+// CollateralState is part 2 of the hacky way to enable the assets required to load the collateral state
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_state_mock.go -package mocks code.vegaprotocol.io/vega/checkpoint CollateralState
+type CollateralState interface {
+	State
+	EnableAsset(ctx context.Context, asset types.Asset) error
+}
+
 type Engine struct {
 	components map[types.CheckpointName]State
 	loadHash   []byte
@@ -135,6 +149,7 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 	if !snap.IsValid() {
 		return ErrSnapshotHashIncorrect
 	}
+	var assets []*types.Asset
 	for _, k := range cpOrder {
 		cpData := cp.Get(k)
 		if len(cpData) == 0 {
@@ -143,6 +158,21 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 		c, ok := e.components[k]
 		if !ok {
 			return ErrUnknownCheckpointName // data cannot be restored
+		}
+		if ac, ok := c.(AssetsState); ok {
+			if err := c.Load(cpData); err != nil {
+				return err
+			}
+			assets = ac.GetEnabledAssets()
+			continue
+		}
+		// first enable assets, then load the state
+		if cc, ok := c.(CollateralState); ok {
+			for _, a := range assets {
+				if err := cc.EnableAsset(ctx, *a); err != nil {
+					return err
+				}
+			}
 		}
 		if err := c.Load(cpData); err != nil {
 			return err

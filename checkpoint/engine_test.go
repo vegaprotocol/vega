@@ -53,6 +53,10 @@ func TestLoadCheckpoints(t *testing.T) {
 	t.Run("a checkpoint can only be loaded once if configured", testLoadGenesisHashOnlyOnce)
 }
 
+func TestLoadAssets(t *testing.T) {
+	t.Run("test loading assets first, enables assets in collateral", testLoadAssets)
+}
+
 type genesis struct {
 	CP *checkpoint.GenesisState `json:"checkpoint"`
 }
@@ -519,6 +523,61 @@ func testLoadGenesisHashOnlyOnce(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Load(data[k]).Times(1).Return(nil)
 	}
+	require.NoError(t, eng.Load(ctx, raw))
+	// subsequent calls to load this checkpoint do nothing
+	require.NoError(t, eng.Load(ctx, raw))
+}
+
+func testLoadAssets(t *testing.T) {
+	t.Parallel()
+	eng := getTestEngine(t)
+	ctx := context.Background()
+	defer eng.ctrl.Finish()
+	// set up mocks
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
+		types.CollateralCheckpoint: []byte("collateraldata"),
+	}
+	assets := mocks.NewMockAssetsState(eng.ctrl)
+	assets.EXPECT().Name().Times(1).Return(types.AssetsCheckpoint)
+	assets.EXPECT().Checkpoint().Times(1).Return(data[types.AssetsCheckpoint], nil)
+	collateral := mocks.NewMockCollateralState(eng.ctrl)
+	collateral.EXPECT().Name().Times(1).Return(types.CollateralCheckpoint)
+	collateral.EXPECT().Checkpoint().Times(1).Return(data[types.CollateralCheckpoint], nil)
+	governance := mocks.NewMockState(eng.ctrl)
+	governance.EXPECT().Name().Times(1).Return(types.GovernanceCheckpoint)
+	governance.EXPECT().Checkpoint().Times(1).Return(data[types.GovernanceCheckpoint], nil)
+	// add the mocks to the engine
+	require.NoError(t, eng.Add(governance, assets, collateral))
+	// get the checkpoint data
+	raw, err := eng.Checkpoint(time.Now())
+	require.NoError(t, err)
+	// calling load with this checkpoint now is a noop
+	require.NoError(t, eng.Load(ctx, raw))
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: raw.Hash,
+		},
+	}
+	// now set the engine to accept the hash of the data we want to load
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, eng.UponGenesis(ctx, gen))
+	// now we do expect the calls to be made, but only once
+	governance.EXPECT().Load(data[types.GovernanceCheckpoint]).Times(1).Return(nil)
+	assets.EXPECT().Load(data[types.AssetsCheckpoint]).Times(1).Return(nil)
+	collateral.EXPECT().Load(data[types.CollateralCheckpoint]).Times(1).Return(nil)
+	// but assets ought to receive an additional call
+	// return this stubbed asset, we only care about the ID anyway
+	enabled := types.Asset{
+		ID: "asset",
+	}
+	assets.EXPECT().GetEnabledAssets().Times(1).Return([]*types.Asset{
+		&enabled,
+	})
+	collateral.EXPECT().EnableAsset(ctx, enabled).Times(1).Return(nil)
 	require.NoError(t, eng.Load(ctx, raw))
 	// subsequent calls to load this checkpoint do nothing
 	require.NoError(t, eng.Load(ctx, raw))
