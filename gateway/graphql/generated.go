@@ -410,14 +410,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		PrepareLiquidityProvision func(childComplexity int, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, reference *string) int
-		PrepareOrderAmend         func(childComplexity int, id string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) int
-		PrepareOrderCancel        func(childComplexity int, id *string, marketID *string) int
-		PrepareOrderSubmit        func(childComplexity int, marketID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) int
-		PrepareProposal           func(childComplexity int, partyID string, reference *string, proposalTerms ProposalTermsInput) int
-		PrepareVote               func(childComplexity int, value VoteValue, partyID string, proposalID string) int
-		PrepareWithdrawal         func(childComplexity int, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) int
-		SubmitTransaction         func(childComplexity int, data string, sig SignatureInput, typeArg *SubmitTransactionType) int
+		SubmitTransaction func(childComplexity int, data string, sig SignatureInput, typeArg *SubmitTransactionType) int
 	}
 
 	NetworkParameter struct {
@@ -545,36 +538,6 @@ type ComplexityRoot struct {
 		Distressed func(childComplexity int) int
 		MarkPrice  func(childComplexity int) int
 		MarketID   func(childComplexity int) int
-	}
-
-	PreparedAmendOrder struct {
-		Blob func(childComplexity int) int
-	}
-
-	PreparedCancelOrder struct {
-		Blob func(childComplexity int) int
-	}
-
-	PreparedLiquidityProvision struct {
-		Blob func(childComplexity int) int
-	}
-
-	PreparedProposal struct {
-		Blob            func(childComplexity int) int
-		PendingProposal func(childComplexity int) int
-	}
-
-	PreparedSubmitOrder struct {
-		Blob func(childComplexity int) int
-	}
-
-	PreparedVote struct {
-		Blob func(childComplexity int) int
-		Vote func(childComplexity int) int
-	}
-
-	PreparedWithdrawal struct {
-		Blob func(childComplexity int) int
 	}
 
 	PriceLevel struct {
@@ -1000,14 +963,7 @@ type MarketTimestampsResolver interface {
 	Close(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
 }
 type MutationResolver interface {
-	PrepareOrderSubmit(ctx context.Context, marketID string, price *string, size string, side Side, timeInForce OrderTimeInForce, expiration *string, typeArg OrderType, reference *string, peggedOrder *PeggedOrderInput) (*PreparedSubmitOrder, error)
-	PrepareOrderCancel(ctx context.Context, id *string, marketID *string) (*PreparedCancelOrder, error)
-	PrepareOrderAmend(ctx context.Context, id string, price string, sizeDelta string, expiration *string, timeInForce OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error)
-	PrepareProposal(ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error)
-	PrepareVote(ctx context.Context, value VoteValue, partyID string, proposalID string) (*PreparedVote, error)
-	PrepareWithdrawal(ctx context.Context, amount string, asset string, erc20details *Erc20WithdrawalDetailsInput) (*PreparedWithdrawal, error)
 	SubmitTransaction(ctx context.Context, data string, sig SignatureInput, typeArg *SubmitTransactionType) (*TransactionSubmitted, error)
-	PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, reference *string) (*PreparedLiquidityProvision, error)
 }
 type NewAssetResolver interface {
 	Name(ctx context.Context, obj *vega.NewAsset) (string, error)
@@ -2632,90 +2588,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MarketTimestamps.Proposed(childComplexity), true
 
-	case "Mutation.prepareLiquidityProvision":
-		if e.complexity.Mutation.PrepareLiquidityProvision == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_prepareLiquidityProvision_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.PrepareLiquidityProvision(childComplexity, args["marketId"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput), args["reference"].(*string)), true
-
-	case "Mutation.prepareOrderAmend":
-		if e.complexity.Mutation.PrepareOrderAmend == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_prepareOrderAmend_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.PrepareOrderAmend(childComplexity, args["id"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(*PeggedReference), args["peggedOffset"].(*string)), true
-
-	case "Mutation.prepareOrderCancel":
-		if e.complexity.Mutation.PrepareOrderCancel == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_prepareOrderCancel_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.PrepareOrderCancel(childComplexity, args["id"].(*string), args["marketId"].(*string)), true
-
-	case "Mutation.prepareOrderSubmit":
-		if e.complexity.Mutation.PrepareOrderSubmit == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_prepareOrderSubmit_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.PrepareOrderSubmit(childComplexity, args["marketId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrderInput)), true
-
-	case "Mutation.prepareProposal":
-		if e.complexity.Mutation.PrepareProposal == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_prepareProposal_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.PrepareProposal(childComplexity, args["partyId"].(string), args["reference"].(*string), args["proposalTerms"].(ProposalTermsInput)), true
-
-	case "Mutation.prepareVote":
-		if e.complexity.Mutation.PrepareVote == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_prepareVote_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.PrepareVote(childComplexity, args["value"].(VoteValue), args["partyId"].(string), args["proposalId"].(string)), true
-
-	case "Mutation.prepareWithdrawal":
-		if e.complexity.Mutation.PrepareWithdrawal == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_prepareWithdrawal_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.PrepareWithdrawal(childComplexity, args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput)), true
-
 	case "Mutation.submitTransaction":
 		if e.complexity.Mutation.SubmitTransaction == nil {
 			break
@@ -3331,69 +3203,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PositionResolution.MarketID(childComplexity), true
-
-	case "PreparedAmendOrder.blob":
-		if e.complexity.PreparedAmendOrder.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedAmendOrder.Blob(childComplexity), true
-
-	case "PreparedCancelOrder.blob":
-		if e.complexity.PreparedCancelOrder.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedCancelOrder.Blob(childComplexity), true
-
-	case "PreparedLiquidityProvision.blob":
-		if e.complexity.PreparedLiquidityProvision.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedLiquidityProvision.Blob(childComplexity), true
-
-	case "PreparedProposal.blob":
-		if e.complexity.PreparedProposal.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedProposal.Blob(childComplexity), true
-
-	case "PreparedProposal.pendingProposal":
-		if e.complexity.PreparedProposal.PendingProposal == nil {
-			break
-		}
-
-		return e.complexity.PreparedProposal.PendingProposal(childComplexity), true
-
-	case "PreparedSubmitOrder.blob":
-		if e.complexity.PreparedSubmitOrder.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedSubmitOrder.Blob(childComplexity), true
-
-	case "PreparedVote.blob":
-		if e.complexity.PreparedVote.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedVote.Blob(childComplexity), true
-
-	case "PreparedVote.vote":
-		if e.complexity.PreparedVote.Vote == nil {
-			break
-		}
-
-		return e.complexity.PreparedVote.Vote(childComplexity), true
-
-	case "PreparedWithdrawal.blob":
-		if e.complexity.PreparedWithdrawal.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedWithdrawal.Blob(childComplexity), true
 
 	case "PriceLevel.numberOfOrders":
 		if e.complexity.PriceLevel.NumberOfOrders == nil {
@@ -4856,108 +4665,6 @@ schema {
 "Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data."
 type Mutation {
   """
-  Send a submit order request to be prepared, and returns a blob of the transaction to submit.
-  The OrderSubmit data is validated. Price and expiration will be converted to uint64 internally.
-  """
-  prepareOrderSubmit(
-    "ID of the market to place the order"
-    marketId: ID!
-    "Price of the asset"
-    price: String
-    "Size of the order"
-    size: String!
-    "Side of the order (Buy or Sell)"
-    side: Side!
-    "TimeInForce of the order"
-    timeInForce: OrderTimeInForce!
-    "expiration of the the order"
-    expiration: String
-    "type of the order"
-    type: OrderType!
-    "client reference for the order"
-    reference: String
-    "pegged order details"
-    peggedOrder: PeggedOrderInput
-  ): PreparedSubmitOrder!
-
-  """
-  Send a cancel order request to be prepared. Returns a pending order + blob of the transaction to submit.
-  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
-  """
-  prepareOrderCancel(
-    "ID of the order to cancel"
-    id: ID
-    "ID of the market where to find the order"
-    marketId: ID
-  ): PreparedCancelOrder!
-
-  """
-  Send an amend order request to be prepared. Returns a pending order + blob of the transaction to submit.
-  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
-  """
-  prepareOrderAmend(
-    "ID of the order to amend"
-    id: ID!
-    "New price for this order"
-    price: String!
-    "New size for this order"
-    sizeDelta: String!
-    "New expiration time"
-    expiration: String
-    "Time in force"
-    timeInForce: OrderTimeInForce!
-    "The reference point for pegged orders"
-    peggedReference: PeggedReference
-    "The offset from the reference price for pegged orders"
-    peggedOffset: String
-  ): PreparedAmendOrder!
-
-  """
-  Prepare a proposal so it can be sent into the network.
-  Returns a pending proposal along with a transaction blob ready for submission.
-  The data is verified. The response can be signed and submitted through the submitTransaction mutation.
-  """
-  prepareProposal(
-    "ID of the party which created this proposal"
-    partyId: ID!
-    "A UUID reference for the caller to aid in tracking operations on VEGA"
-    reference: String
-    "Terms of the proposal"
-    proposalTerms: ProposalTermsInput!
-  ): PreparedProposal!
-
-  """
-  Prepare a vote so it can be signed and submitted.
-  Returns a pending vote with a transaction blob for signing.
-  No validation other than the vote value being correct is done.
-  """
-  prepareVote(
-    "vote value"
-    value: VoteValue!
-    "the party casting the vote"
-    partyId: ID!
-    "the proposal voted on"
-    proposalId: ID!
-  ): PreparedVote!
-
-  """
-  Prepare a withdrawal so it can be signed and submitted.
-  Returns a pending withdrawSubmission with a transaction blob for signing.
-  """
-  prepareWithdrawal(
-    "The amount to be withdrawn"
-    amount: String!
-    "The asset from which we want to withdraw funds"
-    asset: String!
-
-    """
-    ERC20 specific details to process the withdrawal
-    nullable as not required by all kind of withdrawals
-    """
-    erc20Details: Erc20WithdrawalDetailsInput
-  ): PreparedWithdrawal!
-
-  """
   Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
   It validates the signature, and sends the transaction out for consensus
   """
@@ -4969,22 +4676,16 @@ type Mutation {
     "The way to send the transaction"
     type: SubmitTransactionType
   ): TransactionSubmitted!
+}
 
-  "Prepare a Liquidity provision order so it can be signed and submitted"
-  prepareLiquidityProvision(
-    "Market identifier for the order"
-    marketId: ID!
-    "Specified as a unitless number that represents the amount of settlement asset of the market."
-    commitmentAmount: Int!
-    "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
-    fee: String!
-    "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
-    sells: [LiquidityOrderInput!]!
-    "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
-    buys: [LiquidityOrderInput!]!
-    "A reference for the order created from this liquidity provision"
-    reference: String
-  ): PreparedLiquidityProvision!
+"A signature to be bundled with a transaction"
+input SignatureInput {
+  "The signature, base64 encoded"
+  sig: String!
+  "The algorithm used to produice the signature"
+  algo: String!
+  "The version of the signature"
+  version: Int!
 }
 
 "The way the transaction is sent to the blockchain"
@@ -4998,35 +4699,11 @@ enum SubmitTransactionType {
 }
 
 "Create an order linked to an index rather than a price"
-input PeggedOrderInput {
-  "Index to link this order to"
-  reference: PeggedReference!
-  "Price offset from the peg"
-  offset: String!
-}
-
-"Create an order linked to an index rather than a price"
 type PeggedOrder {
   "Index to link this order to"
   reference: PeggedReference!
   "Price offset from the peg"
   offset: String!
-}
-
-"ERC20 specific details to start a withdrawal"
-input Erc20WithdrawalDetailsInput {
-  "The ethereum address to which the withdrawn funds will be send to"
-  receiverAddress: String!
-}
-
-"A signature to be bundled with a transaction"
-input SignatureInput {
-  "The signature, base64 encoded"
-  sig: String!
-  "The algorithm used to produice the signature"
-  algo: String!
-  "The version of the signature"
-  version: Int!
 }
 
 "Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
@@ -5240,26 +4917,6 @@ type MarketDataCommitments {
   sells: [LiquidityOrderReference!]
   "a set of liquidity buy orders to meet the liquidity provision obligation, see MM orders spec."
   buys: [LiquidityOrderReference!]
-}
-
-type PreparedWithdrawal {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedSubmitOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedCancelOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
-}
-
-type PreparedAmendOrder {
-  "the raw transaction to sign & submit"
-  blob: String!
 }
 
 type TransactionSubmitted {
@@ -6855,114 +6512,6 @@ enum AccountType {
   GlobalReward
 }
 
-input SimpleRiskModelParamsInput {
-  "Risk factor for long"
-  factorLong: Float!
-  "Risk factor for short"
-  factorShort: Float!
-}
-
-input LogNormalModelParamsInput {
-  "mu parameter"
-  mu: Float!
-  "r parameter"
-  r: Float!
-  "sigma parameter"
-  sigma: Float!
-}
-
-input LogNormalRiskModelInput {
-  "Lambda parameter of the risk model"
-  riskAversionParameter: Float!
-  "Tau parameter of the risk model"
-  tau: Float!
-  "Params for the log normal risk model"
-  params: LogNormalModelParamsInput!
-}
-
-input RiskParametersInput {
-  "Simple risk model parameters. Set only if risk model is Simple"
-  simple: SimpleRiskModelParamsInput
-  "Log normal risk model parameters. Set only if risk model is LogNormal"
-  logNormal: LogNormalRiskModelInput
-}
-
-"Future product configuration"
-input FutureProductInput {
-  "Future product maturity (ISO8601/RFC3339 timestamp)"
-  maturity: String!
-  "Product asset name"
-  settlementAsset: String!
-  "String representing the quote (e.g. BTCUSD -> USD is quote)"
-  quoteName: String!
-  "The oracle spec describing the oracle data of interest for settlement price."
-  oracleSpecForSettlementPrice: OracleSpecConfigurationInput!
-  "The oracle spec describing the oracle data of interest for trading termination."
-  oracleSpecForTradingTermination: OracleSpecConfigurationInput!
-  "The binding between the oracle spec and the settlement price"
-  oracleSpecBinding: OracleSpecToFutureBindingInput!
-}
-
-"""
-OracleSpecToFutureBindingInput tells on which property oracle data should be
-used as settlement price.
-"""
-input OracleSpecToFutureBindingInput {
-  settlementPriceProperty: String!
-  tradingTerminationProperty: String!
-}
-
-"""
-An oracle spec describe the oracle data that a product (or a risk model)
-wants to get from the oracle engine.
-"""
-input OracleSpecConfigurationInput {
-  """
-  pubKeys is the list of authorized public keys that signed the data for this
-  oracle. All the public keys in the oracle data should be contained in these
-  public keys.
-  """
-  pubKeys: [String!]
-  """
-  filters describes which oracle data are considered of interest or not for
-  the product (or the risk model).
-  """
-  filters: [FilterInput!]
-}
-
-"""
-Filter describes the conditions under which an oracle data is considered of
-interest or not.
-"""
-input FilterInput {
-  "key is the oracle data property key targeted by the filter."
-  key: PropertyKeyInput!
-  """
-  conditions are the conditions that should be matched by the data to be
-  considered of interest.
-  """
-  conditions: [ConditionInput!]
-}
-
-
-"PropertyKey describes the property key contained in an oracle data."
-input PropertyKeyInput {
-  "name is the name of the property."
-  name: String!
-  "type is the type of the property."
-  type: PropertyKeyType!
-}
-
-"""
-Condition describes the condition that must be validated by the
-"""
-input ConditionInput {
-  "comparator is the type of comparison to make on the value."
-  operator: ConditionOperator!
-  "value is used by the comparator."
-  value: String!
-}
-
 type FutureProduct {
   "RFC3339Nano time when the future products matures"
   maturity: String!
@@ -7003,15 +6552,6 @@ type OracleSpecConfiguration {
   filters: [Filter!]
 }
 
-input InstrumentConfigurationInput {
-  "Full and fairly descriptive name for the instrument"
-  name: String!
-  "A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)"
-  code: String!
-  "Future product specification"
-  futureProduct: FutureProductInput
-}
-
 type InstrumentConfiguration {
   "Full and fairly descriptive name for the instrument"
   name: String!
@@ -7019,93 +6559,6 @@ type InstrumentConfiguration {
   code: String!
   "Future product specification"
   futureProduct: FutureProduct
-}
-
-"A mode where Vega try to execute order as soon as they are received"
-input ContinuousTradingInput {
-  "Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored"
-  tickSize: String
-}
-
-"Frequent batch auctions trading mode"
-input DiscreteTradingInput {
-  "Duration of the discrete trading batch in nanoseconds. Maximum 1 month."
-  duration: Int!
-  "Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored"
-  tickSize: String
-}
-
-"""
-PriceMonitoringParameters holds a list of triggers
-"""
-input PriceMonitoringParametersInput {
-  "The list of triggers for this price monitoring"
-  triggers: [PriceMonitoringTriggerInput!]
-}
-
-"""
-PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
-"""
-input PriceMonitoringTriggerInput {
-  "Price monitoring projection horizon τ in seconds (> 0)."
-  horizonSecs: Int!
-  "Price monitoring probability level p. (>0 and < 1)"
-  probability: Float!
-  """
-  Price monitoring auction extension duration in seconds should the price
-  breach it's theoretical level over the specified horizon at the specified
-  probability level (> 0)
-  """
-  auctionExtensionSecs: Int!
-}
-
-"Configuration of a market price monitorings auctions triggers"
-input PriceMonitoringSettingsInput {
-  "Specified a set of PriceMonitoringParameters to be use for price monitoring purposes"
-  parameters: PriceMonitoringParametersInput
-  "How often (in seconds) the price monitoring bounds should be updated"
-  updateFrequencySecs: Int
-}
-
-"""
-Allows creating new markets on the network
-"""
-input NewMarketInput {
-  "New market instrument configuration"
-  instrument: InstrumentConfigurationInput!
-  "Decimal places used for the new market"
-  decimalPlaces: Int!
-  "New market risk configuration"
-  riskParameters: RiskParametersInput!
-  "Metadata for this instrument, tags"
-  metadata: [String!]
-  "Price monitoring configuration"
-  priceMonitoringParameters: PriceMonitoringParametersInput
-
-  "A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set"
-  continuousTrading: ContinuousTradingInput
-  "Frequent batch auctions trading mode. Valid only if continuousTrading is not set"
-  discreteTrading: DiscreteTradingInput
-
-  "The liquidity commitment submitted with the new market"
-  commitment: NewMarketCommitmentInput
-}
-
-"A commitment of liquidity to be made by the party which proposes a market"
-input NewMarketCommitmentInput {
-  "Specified as a unitless number that represents the amount of settlement asset of the market"
-  commitmentAmount: String!
-  """
-  Nominated liquidity fee factor, which is an input to the calculation of
-  taker fees on the market, as per setting fees and rewarding liquidity provider
-  """
-  fee: String!
-  "A set of liquidity sell orders to meet the liquidity provision obligation"
-  sells: [LiquidityOrderInput!]
-  "A set of liquidity buy orders to meet the liquidity provision obligation"
-  buys: [LiquidityOrderInput!]
-  "A reference to be associated to all orders created from this commitment"
-  reference: String
 }
 
 type NewMarket {
@@ -7147,9 +6600,6 @@ TODO: complete the type
 type UpdateMarket {
   marketId: ID!
 }
-input UpdateMarketInput {
-  marketId: ID!
-}
 
 "A new asset proposal change"
 type NewAsset {
@@ -7177,21 +6627,8 @@ type UpdateNetworkParameter {
   networkParameter: NetworkParameter!
 }
 
-"Allows submitting a proposal for changing network parameters"
-input UpdateNetworkParameterInput {
-  networkParameter: NetworkParameterInput!
-}
-
 "Representation of a network parameter"
 type NetworkParameter {
-  "The name of the network parameter"
-  key: String!
-  "The value of the network parameter"
-  value: String!
-}
-
-"Representation of a network parameter"
-input NetworkParameterInput {
   "The name of the network parameter"
   key: String!
   "The value of the network parameter"
@@ -7219,80 +6656,6 @@ type ProposalTerms {
 
   "Actual change being introduced by the proposal - action the proposal triggers if passed and enacted."
   change: ProposalChange!
-}
-
-# there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
-"Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted."
-input ProposalTermsInput {
-  """
-  RFC3339Nano/ISO-8601 time and date when voting closes for this proposal.
-  Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
-  """
-  closingDatetime: String!
-  """
-  RFC3339Nano/ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
-  Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
-  """
-  enactmentDatetime: String!
-
-  """
-  Field defining new market change - the proposal will create new market if passed and enacted.
-  It can only be set if "updateMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
-  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
-  """
-  newMarket: NewMarketInput
-  """
-  Field defining update market change - the proposal will update existing market if passed and enacted.
-  It can only be set if "newMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
-  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
-  """
-  updateMarket: UpdateMarketInput
-
-  """
-  Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
-  It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
-  One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
-  """
-  updateNetworkParameter: UpdateNetworkParameterInput
-
-  "a new Asset proposal, this will create a new asset to be used in the vega network"
-  newAsset: NewAssetInput
-}
-
-"A new asset to be added into vega"
-input NewAssetInput {
-  "The full name of the asset (e.g: Great British Pound)"
-  name: String!
-
-  "The symbol of the asset (e.g: GBP)"
-  symbol: String!
-
-  "The total supply of the market"
-  totalSupply: String!
-
-  "The precision of the asset"
-  decimals: Int!
-
-  "The min stake to become an lp for any market using this asset for settlement"
-  minLpStake: String!
-
-  "A new builtin assed to be created"
-  builtinAsset: BuiltinAssetInput
-
-  "A new ERC20 asset to be created"
-  erc20: ERC20Input
-}
-
-"An asset originated from an Ethereum ERC20 Token"
-input ERC20Input {
-  "The address of the erc20 contract"
-  contractAddress: String!
-}
-
-"A vega builtin asset, mostly for testing purpose"
-input BuiltinAssetInput {
-  "Maximum amount that can be requested by a party through the built-in asset faucet at a time"
-  maxFaucetAmountMint: String!
 }
 
 """
@@ -7358,13 +6721,6 @@ type ProposalVoteSide {
   totalTokens: String!
 }
 
-type PreparedProposal {
-  "Raw transaction data to sign & submit"
-  blob: String!
-  "The pending proposal"
-  pendingProposal: Proposal!
-}
-
 enum VoteValue {
   "No reject a proposal"
   No
@@ -7398,13 +6754,6 @@ type ProposalVote {
 
   "Proposal casting the vote on"
   proposalId: ID!
-}
-
-type PreparedVote {
-  "Raw, serialised vote to be signed"
-  blob: String!
-  "The vote serialised in the blob field"
-  vote: ProposalVote!
 }
 
 type TimeUpdate {
@@ -7653,15 +7002,6 @@ type LiquidityOrder {
   offset: Int!
 }
 
-"A special order type for liquidity providers"
-input LiquidityOrderInput {
-  "The value to which this order is tied"
-  reference: PeggedReference!
-  "The proportion of the commitment allocted to this order"
-  proportion: Int!
-  "Offset from the pegged reference"
-  offset: Int!
-}
 
 "Status of a liquidity provision order"
 enum LiquidityProvisionStatus {
@@ -7716,12 +7056,6 @@ type LiquidityProvision {
   status: LiquidityProvisionStatus!
   "A reference for the orders created out of this Liquidity provision"
   reference: String
-}
-
-"A prepared LiquidityProvision command"
-type PreparedLiquidityProvision {
-  "The blob to be send to the wallet and to be signed"
-  blob: String!
 }
 `, BuiltIn: false},
 }
@@ -7852,312 +7186,6 @@ func (ec *executionContext) field_Market_trades_args(ctx context.Context, rawArg
 		}
 	}
 	args["last"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_prepareLiquidityProvision_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["commitmentAmount"]; ok {
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["commitmentAmount"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["fee"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["fee"] = arg2
-	var arg3 []*LiquidityOrderInput
-	if tmp, ok := rawArgs["sells"]; ok {
-		arg3, err = ec.unmarshalNLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sells"] = arg3
-	var arg4 []*LiquidityOrderInput
-	if tmp, ok := rawArgs["buys"]; ok {
-		arg4, err = ec.unmarshalNLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["buys"] = arg4
-	var arg5 *string
-	if tmp, ok := rawArgs["reference"]; ok {
-		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["reference"] = arg5
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_prepareOrderAmend_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["price"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["price"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["sizeDelta"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sizeDelta"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["expiration"]; ok {
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["expiration"] = arg3
-	var arg4 OrderTimeInForce
-	if tmp, ok := rawArgs["timeInForce"]; ok {
-		arg4, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["timeInForce"] = arg4
-	var arg5 *PeggedReference
-	if tmp, ok := rawArgs["peggedReference"]; ok {
-		arg5, err = ec.unmarshalOPeggedReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["peggedReference"] = arg5
-	var arg6 *string
-	if tmp, ok := rawArgs["peggedOffset"]; ok {
-		arg6, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["peggedOffset"] = arg6
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_prepareOrderCancel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_prepareOrderSubmit_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["price"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["price"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["size"]; ok {
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["size"] = arg2
-	var arg3 Side
-	if tmp, ok := rawArgs["side"]; ok {
-		arg3, err = ec.unmarshalNSide2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSide(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["side"] = arg3
-	var arg4 OrderTimeInForce
-	if tmp, ok := rawArgs["timeInForce"]; ok {
-		arg4, err = ec.unmarshalNOrderTimeInForce2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderTimeInForce(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["timeInForce"] = arg4
-	var arg5 *string
-	if tmp, ok := rawArgs["expiration"]; ok {
-		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["expiration"] = arg5
-	var arg6 OrderType
-	if tmp, ok := rawArgs["type"]; ok {
-		arg6, err = ec.unmarshalNOrderType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOrderType(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["type"] = arg6
-	var arg7 *string
-	if tmp, ok := rawArgs["reference"]; ok {
-		arg7, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["reference"] = arg7
-	var arg8 *PeggedOrderInput
-	if tmp, ok := rawArgs["peggedOrder"]; ok {
-		arg8, err = ec.unmarshalOPeggedOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["peggedOrder"] = arg8
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_prepareProposal_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["reference"]; ok {
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["reference"] = arg1
-	var arg2 ProposalTermsInput
-	if tmp, ok := rawArgs["proposalTerms"]; ok {
-		arg2, err = ec.unmarshalNProposalTermsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalTermsInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["proposalTerms"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_prepareVote_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 VoteValue
-	if tmp, ok := rawArgs["value"]; ok {
-		arg0, err = ec.unmarshalNVoteValue2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐVoteValue(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["value"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		arg1, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["proposalId"]; ok {
-		arg2, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["proposalId"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_prepareWithdrawal_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["amount"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["amount"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["asset"]; ok {
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["asset"] = arg1
-	var arg2 *Erc20WithdrawalDetailsInput
-	if tmp, ok := rawArgs["erc20Details"]; ok {
-		arg2, err = ec.unmarshalOErc20WithdrawalDetailsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["erc20Details"] = arg2
 	return args, nil
 }
 
@@ -15615,252 +14643,6 @@ func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field g
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_prepareOrderSubmit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_prepareOrderSubmit_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderSubmit(rctx, args["marketId"].(string), args["price"].(*string), args["size"].(string), args["side"].(Side), args["timeInForce"].(OrderTimeInForce), args["expiration"].(*string), args["type"].(OrderType), args["reference"].(*string), args["peggedOrder"].(*PeggedOrderInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PreparedSubmitOrder)
-	fc.Result = res
-	return ec.marshalNPreparedSubmitOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedSubmitOrder(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_prepareOrderCancel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_prepareOrderCancel_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderCancel(rctx, args["id"].(*string), args["marketId"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PreparedCancelOrder)
-	fc.Result = res
-	return ec.marshalNPreparedCancelOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedCancelOrder(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_prepareOrderAmend(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_prepareOrderAmend_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareOrderAmend(rctx, args["id"].(string), args["price"].(string), args["sizeDelta"].(string), args["expiration"].(*string), args["timeInForce"].(OrderTimeInForce), args["peggedReference"].(*PeggedReference), args["peggedOffset"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PreparedAmendOrder)
-	fc.Result = res
-	return ec.marshalNPreparedAmendOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedAmendOrder(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_prepareProposal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_prepareProposal_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareProposal(rctx, args["partyId"].(string), args["reference"].(*string), args["proposalTerms"].(ProposalTermsInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PreparedProposal)
-	fc.Result = res
-	return ec.marshalNPreparedProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedProposal(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_prepareVote(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_prepareVote_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareVote(rctx, args["value"].(VoteValue), args["partyId"].(string), args["proposalId"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PreparedVote)
-	fc.Result = res
-	return ec.marshalNPreparedVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedVote(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_prepareWithdrawal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_prepareWithdrawal_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareWithdrawal(rctx, args["amount"].(string), args["asset"].(string), args["erc20Details"].(*Erc20WithdrawalDetailsInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PreparedWithdrawal)
-	fc.Result = res
-	return ec.marshalNPreparedWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedWithdrawal(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -15900,47 +14682,6 @@ func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, fie
 	res := resTmp.(*TransactionSubmitted)
 	fc.Result = res
 	return ec.marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_prepareLiquidityProvision(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_prepareLiquidityProvision_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PrepareLiquidityProvision(rctx, args["marketId"].(string), args["commitmentAmount"].(int), args["fee"].(string), args["sells"].([]*LiquidityOrderInput), args["buys"].([]*LiquidityOrderInput), args["reference"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*PreparedLiquidityProvision)
-	fc.Result = res
-	return ec.marshalNPreparedLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedLiquidityProvision(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NetworkParameter_key(ctx context.Context, field graphql.CollectedField, obj *vega.NetworkParameter) (ret graphql.Marshaler) {
@@ -18666,312 +17407,6 @@ func (ec *executionContext) _PositionResolution_markPrice(ctx context.Context, f
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedAmendOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedAmendOrder) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedAmendOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedCancelOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedCancelOrder) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedCancelOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedLiquidityProvision_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedLiquidityProvision) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedLiquidityProvision",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedProposal_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedProposal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedProposal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedProposal_pendingProposal(ctx context.Context, field graphql.CollectedField, obj *PreparedProposal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedProposal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PendingProposal, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*vega.GovernanceData)
-	fc.Result = res
-	return ec.marshalNProposal2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedSubmitOrder_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedSubmitOrder) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedSubmitOrder",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedVote_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedVote) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedVote",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedVote_vote(ctx context.Context, field graphql.CollectedField, obj *PreparedVote) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedVote",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Vote, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ProposalVote)
-	fc.Result = res
-	return ec.marshalNProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedWithdrawal_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedWithdrawal) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PreparedWithdrawal",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *vega.PriceLevel) (ret graphql.Marshaler) {
@@ -26177,738 +24612,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputBuiltinAssetInput(ctx context.Context, obj interface{}) (BuiltinAssetInput, error) {
-	var it BuiltinAssetInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "maxFaucetAmountMint":
-			var err error
-			it.MaxFaucetAmountMint, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputConditionInput(ctx context.Context, obj interface{}) (ConditionInput, error) {
-	var it ConditionInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "operator":
-			var err error
-			it.Operator, err = ec.unmarshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐConditionOperator(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "value":
-			var err error
-			it.Value, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputContinuousTradingInput(ctx context.Context, obj interface{}) (ContinuousTradingInput, error) {
-	var it ContinuousTradingInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "tickSize":
-			var err error
-			it.TickSize, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputDiscreteTradingInput(ctx context.Context, obj interface{}) (DiscreteTradingInput, error) {
-	var it DiscreteTradingInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "duration":
-			var err error
-			it.Duration, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "tickSize":
-			var err error
-			it.TickSize, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputERC20Input(ctx context.Context, obj interface{}) (ERC20Input, error) {
-	var it ERC20Input
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "contractAddress":
-			var err error
-			it.ContractAddress, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputErc20WithdrawalDetailsInput(ctx context.Context, obj interface{}) (Erc20WithdrawalDetailsInput, error) {
-	var it Erc20WithdrawalDetailsInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "receiverAddress":
-			var err error
-			it.ReceiverAddress, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputFilterInput(ctx context.Context, obj interface{}) (FilterInput, error) {
-	var it FilterInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "key":
-			var err error
-			it.Key, err = ec.unmarshalNPropertyKeyInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPropertyKeyInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "conditions":
-			var err error
-			it.Conditions, err = ec.unmarshalOConditionInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐConditionInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputFutureProductInput(ctx context.Context, obj interface{}) (FutureProductInput, error) {
-	var it FutureProductInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "maturity":
-			var err error
-			it.Maturity, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "settlementAsset":
-			var err error
-			it.SettlementAsset, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "quoteName":
-			var err error
-			it.QuoteName, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "oracleSpecForSettlementPrice":
-			var err error
-			it.OracleSpecForSettlementPrice, err = ec.unmarshalNOracleSpecConfigurationInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "oracleSpecForTradingTermination":
-			var err error
-			it.OracleSpecForTradingTermination, err = ec.unmarshalNOracleSpecConfigurationInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "oracleSpecBinding":
-			var err error
-			it.OracleSpecBinding, err = ec.unmarshalNOracleSpecToFutureBindingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecToFutureBindingInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputInstrumentConfigurationInput(ctx context.Context, obj interface{}) (InstrumentConfigurationInput, error) {
-	var it InstrumentConfigurationInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "code":
-			var err error
-			it.Code, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "futureProduct":
-			var err error
-			it.FutureProduct, err = ec.unmarshalOFutureProductInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureProductInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputLiquidityOrderInput(ctx context.Context, obj interface{}) (LiquidityOrderInput, error) {
-	var it LiquidityOrderInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "reference":
-			var err error
-			it.Reference, err = ec.unmarshalNPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "proportion":
-			var err error
-			it.Proportion, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "offset":
-			var err error
-			it.Offset, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputLogNormalModelParamsInput(ctx context.Context, obj interface{}) (LogNormalModelParamsInput, error) {
-	var it LogNormalModelParamsInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "mu":
-			var err error
-			it.Mu, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "r":
-			var err error
-			it.R, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "sigma":
-			var err error
-			it.Sigma, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputLogNormalRiskModelInput(ctx context.Context, obj interface{}) (LogNormalRiskModelInput, error) {
-	var it LogNormalRiskModelInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "riskAversionParameter":
-			var err error
-			it.RiskAversionParameter, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "tau":
-			var err error
-			it.Tau, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "params":
-			var err error
-			it.Params, err = ec.unmarshalNLogNormalModelParamsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParamsInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputNetworkParameterInput(ctx context.Context, obj interface{}) (NetworkParameterInput, error) {
-	var it NetworkParameterInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "key":
-			var err error
-			it.Key, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "value":
-			var err error
-			it.Value, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputNewAssetInput(ctx context.Context, obj interface{}) (NewAssetInput, error) {
-	var it NewAssetInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "symbol":
-			var err error
-			it.Symbol, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "totalSupply":
-			var err error
-			it.TotalSupply, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "decimals":
-			var err error
-			it.Decimals, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "minLpStake":
-			var err error
-			it.MinLpStake, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "builtinAsset":
-			var err error
-			it.BuiltinAsset, err = ec.unmarshalOBuiltinAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "erc20":
-			var err error
-			it.Erc20, err = ec.unmarshalOERC20Input2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputNewMarketCommitmentInput(ctx context.Context, obj interface{}) (NewMarketCommitmentInput, error) {
-	var it NewMarketCommitmentInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "commitmentAmount":
-			var err error
-			it.CommitmentAmount, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "fee":
-			var err error
-			it.Fee, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "sells":
-			var err error
-			it.Sells, err = ec.unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "buys":
-			var err error
-			it.Buys, err = ec.unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "reference":
-			var err error
-			it.Reference, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputNewMarketInput(ctx context.Context, obj interface{}) (NewMarketInput, error) {
-	var it NewMarketInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "instrument":
-			var err error
-			it.Instrument, err = ec.unmarshalNInstrumentConfigurationInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentConfigurationInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "decimalPlaces":
-			var err error
-			it.DecimalPlaces, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "riskParameters":
-			var err error
-			it.RiskParameters, err = ec.unmarshalNRiskParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskParametersInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "metadata":
-			var err error
-			it.Metadata, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "priceMonitoringParameters":
-			var err error
-			it.PriceMonitoringParameters, err = ec.unmarshalOPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "continuousTrading":
-			var err error
-			it.ContinuousTrading, err = ec.unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "discreteTrading":
-			var err error
-			it.DiscreteTrading, err = ec.unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "commitment":
-			var err error
-			it.Commitment, err = ec.unmarshalONewMarketCommitmentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputOracleSpecConfigurationInput(ctx context.Context, obj interface{}) (OracleSpecConfigurationInput, error) {
-	var it OracleSpecConfigurationInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "pubKeys":
-			var err error
-			it.PubKeys, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "filters":
-			var err error
-			it.Filters, err = ec.unmarshalOFilterInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFilterInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputOracleSpecToFutureBindingInput(ctx context.Context, obj interface{}) (OracleSpecToFutureBindingInput, error) {
-	var it OracleSpecToFutureBindingInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "settlementPriceProperty":
-			var err error
-			it.SettlementPriceProperty, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "tradingTerminationProperty":
-			var err error
-			it.TradingTerminationProperty, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputPeggedOrderInput(ctx context.Context, obj interface{}) (PeggedOrderInput, error) {
-	var it PeggedOrderInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "reference":
-			var err error
-			it.Reference, err = ec.unmarshalNPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "offset":
-			var err error
-			it.Offset, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputPriceMonitoringParametersInput(ctx context.Context, obj interface{}) (PriceMonitoringParametersInput, error) {
-	var it PriceMonitoringParametersInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "triggers":
-			var err error
-			it.Triggers, err = ec.unmarshalOPriceMonitoringTriggerInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputPriceMonitoringSettingsInput(ctx context.Context, obj interface{}) (PriceMonitoringSettingsInput, error) {
-	var it PriceMonitoringSettingsInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "parameters":
-			var err error
-			it.Parameters, err = ec.unmarshalOPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "updateFrequencySecs":
-			var err error
-			it.UpdateFrequencySecs, err = ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputPriceMonitoringTriggerInput(ctx context.Context, obj interface{}) (PriceMonitoringTriggerInput, error) {
-	var it PriceMonitoringTriggerInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "horizonSecs":
-			var err error
-			it.HorizonSecs, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "probability":
-			var err error
-			it.Probability, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "auctionExtensionSecs":
-			var err error
-			it.AuctionExtensionSecs, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputPropertyKeyInput(ctx context.Context, obj interface{}) (PropertyKeyInput, error) {
-	var it PropertyKeyInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "type":
-			var err error
-			it.Type, err = ec.unmarshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPropertyKeyType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputProposalTermsInput(ctx context.Context, obj interface{}) (ProposalTermsInput, error) {
-	var it ProposalTermsInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "closingDatetime":
-			var err error
-			it.ClosingDatetime, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "enactmentDatetime":
-			var err error
-			it.EnactmentDatetime, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "newMarket":
-			var err error
-			it.NewMarket, err = ec.unmarshalONewMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "updateMarket":
-			var err error
-			it.UpdateMarket, err = ec.unmarshalOUpdateMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateMarketInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "updateNetworkParameter":
-			var err error
-			it.UpdateNetworkParameter, err = ec.unmarshalOUpdateNetworkParameterInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateNetworkParameterInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "newAsset":
-			var err error
-			it.NewAsset, err = ec.unmarshalONewAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputRiskParametersInput(ctx context.Context, obj interface{}) (RiskParametersInput, error) {
-	var it RiskParametersInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "simple":
-			var err error
-			it.Simple, err = ec.unmarshalOSimpleRiskModelParamsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "logNormal":
-			var err error
-			it.LogNormal, err = ec.unmarshalOLogNormalRiskModelInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputSignatureInput(ctx context.Context, obj interface{}) (SignatureInput, error) {
 	var it SignatureInput
 	var asMap = obj.(map[string]interface{})
@@ -26930,66 +24633,6 @@ func (ec *executionContext) unmarshalInputSignatureInput(ctx context.Context, ob
 		case "version":
 			var err error
 			it.Version, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputSimpleRiskModelParamsInput(ctx context.Context, obj interface{}) (SimpleRiskModelParamsInput, error) {
-	var it SimpleRiskModelParamsInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "factorLong":
-			var err error
-			it.FactorLong, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "factorShort":
-			var err error
-			it.FactorShort, err = ec.unmarshalNFloat2float64(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputUpdateMarketInput(ctx context.Context, obj interface{}) (UpdateMarketInput, error) {
-	var it UpdateMarketInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "marketId":
-			var err error
-			it.MarketID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputUpdateNetworkParameterInput(ctx context.Context, obj interface{}) (UpdateNetworkParameterInput, error) {
-	var it UpdateNetworkParameterInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "networkParameter":
-			var err error
-			it.NetworkParameter, err = ec.unmarshalNNetworkParameterInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNetworkParameterInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -30033,43 +27676,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "prepareOrderSubmit":
-			out.Values[i] = ec._Mutation_prepareOrderSubmit(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "prepareOrderCancel":
-			out.Values[i] = ec._Mutation_prepareOrderCancel(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "prepareOrderAmend":
-			out.Values[i] = ec._Mutation_prepareOrderAmend(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "prepareProposal":
-			out.Values[i] = ec._Mutation_prepareProposal(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "prepareVote":
-			out.Values[i] = ec._Mutation_prepareVote(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "prepareWithdrawal":
-			out.Values[i] = ec._Mutation_prepareWithdrawal(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "submitTransaction":
 			out.Values[i] = ec._Mutation_submitTransaction(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "prepareLiquidityProvision":
-			out.Values[i] = ec._Mutation_prepareLiquidityProvision(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -31200,205 +28808,6 @@ func (ec *executionContext) _PositionResolution(ctx context.Context, sel ast.Sel
 			}
 		case "markPrice":
 			out.Values[i] = ec._PositionResolution_markPrice(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedAmendOrderImplementors = []string{"PreparedAmendOrder"}
-
-func (ec *executionContext) _PreparedAmendOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedAmendOrder) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedAmendOrderImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedAmendOrder")
-		case "blob":
-			out.Values[i] = ec._PreparedAmendOrder_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedCancelOrderImplementors = []string{"PreparedCancelOrder"}
-
-func (ec *executionContext) _PreparedCancelOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedCancelOrder) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedCancelOrderImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedCancelOrder")
-		case "blob":
-			out.Values[i] = ec._PreparedCancelOrder_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedLiquidityProvisionImplementors = []string{"PreparedLiquidityProvision"}
-
-func (ec *executionContext) _PreparedLiquidityProvision(ctx context.Context, sel ast.SelectionSet, obj *PreparedLiquidityProvision) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedLiquidityProvisionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedLiquidityProvision")
-		case "blob":
-			out.Values[i] = ec._PreparedLiquidityProvision_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedProposalImplementors = []string{"PreparedProposal"}
-
-func (ec *executionContext) _PreparedProposal(ctx context.Context, sel ast.SelectionSet, obj *PreparedProposal) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedProposalImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedProposal")
-		case "blob":
-			out.Values[i] = ec._PreparedProposal_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "pendingProposal":
-			out.Values[i] = ec._PreparedProposal_pendingProposal(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedSubmitOrderImplementors = []string{"PreparedSubmitOrder"}
-
-func (ec *executionContext) _PreparedSubmitOrder(ctx context.Context, sel ast.SelectionSet, obj *PreparedSubmitOrder) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedSubmitOrderImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedSubmitOrder")
-		case "blob":
-			out.Values[i] = ec._PreparedSubmitOrder_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedVoteImplementors = []string{"PreparedVote"}
-
-func (ec *executionContext) _PreparedVote(ctx context.Context, sel ast.SelectionSet, obj *PreparedVote) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedVoteImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedVote")
-		case "blob":
-			out.Values[i] = ec._PreparedVote_blob(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "vote":
-			out.Values[i] = ec._PreparedVote_vote(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedWithdrawalImplementors = []string{"PreparedWithdrawal"}
-
-func (ec *executionContext) _PreparedWithdrawal(ctx context.Context, sel ast.SelectionSet, obj *PreparedWithdrawal) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedWithdrawalImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedWithdrawal")
-		case "blob":
-			out.Values[i] = ec._PreparedWithdrawal_blob(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -34174,18 +31583,6 @@ func (ec *executionContext) marshalNCondition2ᚖcodeᚗvegaprotocolᚗioᚋprot
 	return ec._Condition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNConditionInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐConditionInput(ctx context.Context, v interface{}) (ConditionInput, error) {
-	return ec.unmarshalInputConditionInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNConditionInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐConditionInput(ctx context.Context, v interface{}) (*ConditionInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNConditionInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐConditionInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNConditionOperator2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐConditionOperator(ctx context.Context, v interface{}) (ConditionOperator, error) {
 	var res ConditionOperator
 	return res, res.UnmarshalGQL(v)
@@ -34270,18 +31667,6 @@ func (ec *executionContext) marshalNFilter2ᚖcodeᚗvegaprotocolᚗioᚋprotos�
 	return ec._Filter(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNFilterInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFilterInput(ctx context.Context, v interface{}) (FilterInput, error) {
-	return ec.unmarshalInputFilterInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNFilterInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFilterInput(ctx context.Context, v interface{}) (*FilterInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNFilterInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFilterInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	return graphql.UnmarshalFloat(v)
 }
@@ -34336,18 +31721,6 @@ func (ec *executionContext) marshalNInstrumentConfiguration2ᚖcodeᚗvegaprotoc
 		return graphql.Null
 	}
 	return ec._InstrumentConfiguration(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNInstrumentConfigurationInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentConfigurationInput(ctx context.Context, v interface{}) (InstrumentConfigurationInput, error) {
-	return ec.unmarshalInputInstrumentConfigurationInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNInstrumentConfigurationInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentConfigurationInput(ctx context.Context, v interface{}) (*InstrumentConfigurationInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNInstrumentConfigurationInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐInstrumentConfigurationInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNInstrumentMetadata2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐInstrumentMetadata(ctx context.Context, sel ast.SelectionSet, v vega.InstrumentMetadata) graphql.Marshaler {
@@ -34441,38 +31814,6 @@ func (ec *executionContext) marshalNLiquidityOrder2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._LiquidityOrder(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNLiquidityOrderInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx context.Context, v interface{}) (LiquidityOrderInput, error) {
-	return ec.unmarshalInputLiquidityOrderInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx context.Context, v interface{}) ([]*LiquidityOrderInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*LiquidityOrderInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNLiquidityOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalNLiquidityOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx context.Context, v interface{}) (*LiquidityOrderInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNLiquidityOrderInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNLiquidityOrderReference2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReference(ctx context.Context, sel ast.SelectionSet, v vega.LiquidityOrderReference) graphql.Marshaler {
@@ -34575,18 +31916,6 @@ func (ec *executionContext) marshalNLogNormalModelParams2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._LogNormalModelParams(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNLogNormalModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParamsInput(ctx context.Context, v interface{}) (LogNormalModelParamsInput, error) {
-	return ec.unmarshalInputLogNormalModelParamsInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNLogNormalModelParamsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParamsInput(ctx context.Context, v interface{}) (*LogNormalModelParamsInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNLogNormalModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalModelParamsInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNMarginLevels2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginLevels(ctx context.Context, sel ast.SelectionSet, v vega.MarginLevels) graphql.Marshaler {
@@ -34719,18 +32048,6 @@ func (ec *executionContext) marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗio
 	return ec._NetworkParameter(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNNetworkParameterInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNetworkParameterInput(ctx context.Context, v interface{}) (NetworkParameterInput, error) {
-	return ec.unmarshalInputNetworkParameterInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNNetworkParameterInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNetworkParameterInput(ctx context.Context, v interface{}) (*NetworkParameterInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNNetworkParameterInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNetworkParameterInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalNNodeSignature2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx context.Context, sel ast.SelectionSet, v v12.NodeSignature) graphql.Marshaler {
 	return ec._NodeSignature(ctx, sel, &v)
 }
@@ -34787,18 +32104,6 @@ func (ec *executionContext) marshalNOracleSpecConfiguration2ᚖcodeᚗvegaprotoc
 	return ec._OracleSpecConfiguration(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNOracleSpecConfigurationInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx context.Context, v interface{}) (OracleSpecConfigurationInput, error) {
-	return ec.unmarshalInputOracleSpecConfigurationInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNOracleSpecConfigurationInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx context.Context, v interface{}) (*OracleSpecConfigurationInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNOracleSpecConfigurationInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecConfigurationInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalNOracleSpecStatus2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecStatus(ctx context.Context, v interface{}) (OracleSpecStatus, error) {
 	var res OracleSpecStatus
 	return res, res.UnmarshalGQL(v)
@@ -34820,18 +32125,6 @@ func (ec *executionContext) marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprot
 		return graphql.Null
 	}
 	return ec._OracleSpecToFutureBinding(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNOracleSpecToFutureBindingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecToFutureBindingInput(ctx context.Context, v interface{}) (OracleSpecToFutureBindingInput, error) {
-	return ec.unmarshalInputOracleSpecToFutureBindingInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNOracleSpecToFutureBindingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecToFutureBindingInput(ctx context.Context, v interface{}) (*OracleSpecToFutureBindingInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNOracleSpecToFutureBindingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐOracleSpecToFutureBindingInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNOrder2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOrder(ctx context.Context, sel ast.SelectionSet, v vega.Order) graphql.Marshaler {
@@ -34926,104 +32219,6 @@ func (ec *executionContext) marshalNPosition2ᚖcodeᚗvegaprotocolᚗioᚋproto
 	return ec._Position(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPreparedAmendOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedAmendOrder(ctx context.Context, sel ast.SelectionSet, v PreparedAmendOrder) graphql.Marshaler {
-	return ec._PreparedAmendOrder(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPreparedAmendOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedAmendOrder(ctx context.Context, sel ast.SelectionSet, v *PreparedAmendOrder) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PreparedAmendOrder(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPreparedCancelOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedCancelOrder(ctx context.Context, sel ast.SelectionSet, v PreparedCancelOrder) graphql.Marshaler {
-	return ec._PreparedCancelOrder(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPreparedCancelOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedCancelOrder(ctx context.Context, sel ast.SelectionSet, v *PreparedCancelOrder) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PreparedCancelOrder(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPreparedLiquidityProvision2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v PreparedLiquidityProvision) graphql.Marshaler {
-	return ec._PreparedLiquidityProvision(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPreparedLiquidityProvision2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedLiquidityProvision(ctx context.Context, sel ast.SelectionSet, v *PreparedLiquidityProvision) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PreparedLiquidityProvision(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPreparedProposal2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedProposal(ctx context.Context, sel ast.SelectionSet, v PreparedProposal) graphql.Marshaler {
-	return ec._PreparedProposal(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPreparedProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedProposal(ctx context.Context, sel ast.SelectionSet, v *PreparedProposal) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PreparedProposal(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPreparedSubmitOrder2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedSubmitOrder(ctx context.Context, sel ast.SelectionSet, v PreparedSubmitOrder) graphql.Marshaler {
-	return ec._PreparedSubmitOrder(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPreparedSubmitOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedSubmitOrder(ctx context.Context, sel ast.SelectionSet, v *PreparedSubmitOrder) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PreparedSubmitOrder(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPreparedVote2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedVote(ctx context.Context, sel ast.SelectionSet, v PreparedVote) graphql.Marshaler {
-	return ec._PreparedVote(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPreparedVote2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedVote(ctx context.Context, sel ast.SelectionSet, v *PreparedVote) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PreparedVote(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPreparedWithdrawal2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedWithdrawal(ctx context.Context, sel ast.SelectionSet, v PreparedWithdrawal) graphql.Marshaler {
-	return ec._PreparedWithdrawal(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPreparedWithdrawal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPreparedWithdrawal(ctx context.Context, sel ast.SelectionSet, v *PreparedWithdrawal) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PreparedWithdrawal(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNPriceLevel2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPriceLevel(ctx context.Context, sel ast.SelectionSet, v vega.PriceLevel) graphql.Marshaler {
 	return ec._PriceLevel(ctx, sel, &v)
 }
@@ -35080,18 +32275,6 @@ func (ec *executionContext) marshalNPriceMonitoringTrigger2ᚖcodeᚗvegaprotoco
 	return ec._PriceMonitoringTrigger(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPriceMonitoringTriggerInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInput(ctx context.Context, v interface{}) (PriceMonitoringTriggerInput, error) {
-	return ec.unmarshalInputPriceMonitoringTriggerInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNPriceMonitoringTriggerInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInput(ctx context.Context, v interface{}) (*PriceMonitoringTriggerInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNPriceMonitoringTriggerInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalNProduct2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProduct(ctx context.Context, sel ast.SelectionSet, v Product) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -35128,18 +32311,6 @@ func (ec *executionContext) marshalNPropertyKey2ᚖcodeᚗvegaprotocolᚗioᚋpr
 		return graphql.Null
 	}
 	return ec._PropertyKey(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNPropertyKeyInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPropertyKeyInput(ctx context.Context, v interface{}) (PropertyKeyInput, error) {
-	return ec.unmarshalInputPropertyKeyInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNPropertyKeyInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPropertyKeyInput(ctx context.Context, v interface{}) (*PropertyKeyInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNPropertyKeyInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPropertyKeyInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) unmarshalNPropertyKeyType2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPropertyKeyType(ctx context.Context, v interface{}) (PropertyKeyType, error) {
@@ -35198,10 +32369,6 @@ func (ec *executionContext) marshalNProposalTerms2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return ec._ProposalTerms(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNProposalTermsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalTermsInput(ctx context.Context, v interface{}) (ProposalTermsInput, error) {
-	return ec.unmarshalInputProposalTermsInput(ctx, v)
-}
-
 func (ec *executionContext) marshalNProposalVote2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐProposalVote(ctx context.Context, sel ast.SelectionSet, v ProposalVote) graphql.Marshaler {
 	return ec._ProposalVote(ctx, sel, &v)
 }
@@ -35252,18 +32419,6 @@ func (ec *executionContext) marshalNRiskModel2codeᚗvegaprotocolᚗioᚋvegaᚋ
 		return graphql.Null
 	}
 	return ec._RiskModel(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNRiskParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskParametersInput(ctx context.Context, v interface{}) (RiskParametersInput, error) {
-	return ec.unmarshalInputRiskParametersInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNRiskParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskParametersInput(ctx context.Context, v interface{}) (*RiskParametersInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNRiskParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐRiskParametersInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalNScalingFactors2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐScalingFactors(ctx context.Context, sel ast.SelectionSet, v vega.ScalingFactors) graphql.Marshaler {
@@ -35900,18 +33055,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOBuiltinAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx context.Context, v interface{}) (BuiltinAssetInput, error) {
-	return ec.unmarshalInputBuiltinAssetInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOBuiltinAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx context.Context, v interface{}) (*BuiltinAssetInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOBuiltinAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBuiltinAssetInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalOBusEvent2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐBusEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*BusEvent) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -36043,38 +33186,6 @@ func (ec *executionContext) marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋp
 	return ret
 }
 
-func (ec *executionContext) unmarshalOConditionInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐConditionInputᚄ(ctx context.Context, v interface{}) ([]*ConditionInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*ConditionInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNConditionInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐConditionInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalOContinuousTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx context.Context, v interface{}) (ContinuousTradingInput, error) {
-	return ec.unmarshalInputContinuousTradingInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOContinuousTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx context.Context, v interface{}) (*ContinuousTradingInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOContinuousTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐContinuousTradingInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalODeposit2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDeposit(ctx context.Context, sel ast.SelectionSet, v vega.Deposit) graphql.Marshaler {
 	return ec._Deposit(ctx, sel, &v)
 }
@@ -36126,30 +33237,6 @@ func (ec *executionContext) marshalODeposit2ᚖcodeᚗvegaprotocolᚗioᚋprotos
 	return ec._Deposit(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx context.Context, v interface{}) (DiscreteTradingInput, error) {
-	return ec.unmarshalInputDiscreteTradingInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalODiscreteTradingInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx context.Context, v interface{}) (*DiscreteTradingInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalODiscreteTradingInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐDiscreteTradingInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOERC20Input2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx context.Context, v interface{}) (ERC20Input, error) {
-	return ec.unmarshalInputERC20Input(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOERC20Input2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx context.Context, v interface{}) (*ERC20Input, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOERC20Input2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐERC20Input(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalOErc20WithdrawalApproval2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalApproval(ctx context.Context, sel ast.SelectionSet, v Erc20WithdrawalApproval) graphql.Marshaler {
 	return ec._Erc20WithdrawalApproval(ctx, sel, &v)
 }
@@ -36159,18 +33246,6 @@ func (ec *executionContext) marshalOErc20WithdrawalApproval2ᚖcodeᚗvegaprotoc
 		return graphql.Null
 	}
 	return ec._Erc20WithdrawalApproval(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOErc20WithdrawalDetailsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx context.Context, v interface{}) (Erc20WithdrawalDetailsInput, error) {
-	return ec.unmarshalInputErc20WithdrawalDetailsInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOErc20WithdrawalDetailsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx context.Context, v interface{}) (*Erc20WithdrawalDetailsInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOErc20WithdrawalDetailsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐErc20WithdrawalDetailsInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐFilterᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Filter) graphql.Marshaler {
@@ -36213,26 +33288,6 @@ func (ec *executionContext) marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋprot
 	return ret
 }
 
-func (ec *executionContext) unmarshalOFilterInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFilterInputᚄ(ctx context.Context, v interface{}) ([]*FilterInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*FilterInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNFilterInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFilterInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
 func (ec *executionContext) marshalOFutureProduct2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐFutureProduct(ctx context.Context, sel ast.SelectionSet, v vega.FutureProduct) graphql.Marshaler {
 	return ec._FutureProduct(ctx, sel, &v)
 }
@@ -36242,18 +33297,6 @@ func (ec *executionContext) marshalOFutureProduct2ᚖcodeᚗvegaprotocolᚗioᚋ
 		return graphql.Null
 	}
 	return ec._FutureProduct(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOFutureProductInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureProductInput(ctx context.Context, v interface{}) (FutureProductInput, error) {
-	return ec.unmarshalInputFutureProductInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOFutureProductInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureProductInput(ctx context.Context, v interface{}) (*FutureProductInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOFutureProductInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐFutureProductInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
@@ -36380,26 +33423,6 @@ func (ec *executionContext) marshalOLiquidityOrder2ᚕᚖcodeᚗvegaprotocolᚗi
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) unmarshalOLiquidityOrderInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInputᚄ(ctx context.Context, v interface{}) ([]*LiquidityOrderInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*LiquidityOrderInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNLiquidityOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLiquidityOrderInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) marshalOLiquidityOrderReference2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐLiquidityOrderReferenceᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.LiquidityOrderReference) graphql.Marshaler {
@@ -36531,18 +33554,6 @@ func (ec *executionContext) marshalOLiquidityProvision2ᚖcodeᚗvegaprotocolᚗ
 		return graphql.Null
 	}
 	return ec._LiquidityProvision(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOLogNormalRiskModelInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx context.Context, v interface{}) (LogNormalRiskModelInput, error) {
-	return ec.unmarshalInputLogNormalRiskModelInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOLogNormalRiskModelInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx context.Context, v interface{}) (*LogNormalRiskModelInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOLogNormalRiskModelInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐLogNormalRiskModelInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalOMarginCalculator2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐMarginCalculator(ctx context.Context, sel ast.SelectionSet, v vega.MarginCalculator) graphql.Marshaler {
@@ -36698,18 +33709,6 @@ func (ec *executionContext) marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocol�
 	return ret
 }
 
-func (ec *executionContext) unmarshalONewAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx context.Context, v interface{}) (NewAssetInput, error) {
-	return ec.unmarshalInputNewAssetInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalONewAssetInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx context.Context, v interface{}) (*NewAssetInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalONewAssetInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewAssetInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalONewMarketCommitment2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNewMarketCommitment(ctx context.Context, sel ast.SelectionSet, v vega.NewMarketCommitment) graphql.Marshaler {
 	return ec._NewMarketCommitment(ctx, sel, &v)
 }
@@ -36719,30 +33718,6 @@ func (ec *executionContext) marshalONewMarketCommitment2ᚖcodeᚗvegaprotocol�
 		return graphql.Null
 	}
 	return ec._NewMarketCommitment(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalONewMarketCommitmentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx context.Context, v interface{}) (NewMarketCommitmentInput, error) {
-	return ec.unmarshalInputNewMarketCommitmentInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalONewMarketCommitmentInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx context.Context, v interface{}) (*NewMarketCommitmentInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalONewMarketCommitmentInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketCommitmentInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalONewMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx context.Context, v interface{}) (NewMarketInput, error) {
-	return ec.unmarshalInputNewMarketInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalONewMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx context.Context, v interface{}) (*NewMarketInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalONewMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐNewMarketInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignatureᚄ(ctx context.Context, sel ast.SelectionSet, v []*v12.NodeSignature) graphql.Marshaler {
@@ -37061,42 +34036,6 @@ func (ec *executionContext) marshalOPeggedOrder2ᚖcodeᚗvegaprotocolᚗioᚋpr
 	return ec._PeggedOrder(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOPeggedOrderInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx context.Context, v interface{}) (PeggedOrderInput, error) {
-	return ec.unmarshalInputPeggedOrderInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOPeggedOrderInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx context.Context, v interface{}) (*PeggedOrderInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOPeggedOrderInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedOrderInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx context.Context, v interface{}) (PeggedReference, error) {
-	var res PeggedReference
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx context.Context, sel ast.SelectionSet, v PeggedReference) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOPeggedReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx context.Context, v interface{}) (*PeggedReference, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOPeggedReference2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOPeggedReference2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPeggedReference(ctx context.Context, sel ast.SelectionSet, v *PeggedReference) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
-}
-
 func (ec *executionContext) marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐPositionᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Position) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -37228,18 +34167,6 @@ func (ec *executionContext) marshalOPriceMonitoringParameters2ᚖcodeᚗvegaprot
 	return ec._PriceMonitoringParameters(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOPriceMonitoringParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx context.Context, v interface{}) (PriceMonitoringParametersInput, error) {
-	return ec.unmarshalInputPriceMonitoringParametersInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOPriceMonitoringParametersInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx context.Context, v interface{}) (*PriceMonitoringParametersInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOPriceMonitoringParametersInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringParametersInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerᚄ(ctx context.Context, sel ast.SelectionSet, v []*PriceMonitoringTrigger) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -37278,26 +34205,6 @@ func (ec *executionContext) marshalOPriceMonitoringTrigger2ᚕᚖcodeᚗvegaprot
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) unmarshalOPriceMonitoringTriggerInput2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInputᚄ(ctx context.Context, v interface{}) ([]*PriceMonitoringTriggerInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*PriceMonitoringTriggerInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalNPriceMonitoringTriggerInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐPriceMonitoringTriggerInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
 }
 
 func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐPropertyᚄ(ctx context.Context, sel ast.SelectionSet, v []*v11.Property) graphql.Marshaler {
@@ -37528,18 +34435,6 @@ func (ec *executionContext) marshalOProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋv
 		return graphql.Null
 	}
 	return ec._ProposalVote(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOSimpleRiskModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx context.Context, v interface{}) (SimpleRiskModelParamsInput, error) {
-	return ec.unmarshalInputSimpleRiskModelParamsInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOSimpleRiskModelParamsInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx context.Context, v interface{}) (*SimpleRiskModelParamsInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOSimpleRiskModelParamsInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐSimpleRiskModelParamsInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
@@ -37790,30 +34685,6 @@ func (ec *executionContext) marshalOTransferResponse2ᚕᚖcodeᚗvegaprotocol�
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) unmarshalOUpdateMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateMarketInput(ctx context.Context, v interface{}) (UpdateMarketInput, error) {
-	return ec.unmarshalInputUpdateMarketInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOUpdateMarketInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateMarketInput(ctx context.Context, v interface{}) (*UpdateMarketInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOUpdateMarketInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateMarketInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOUpdateNetworkParameterInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateNetworkParameterInput(ctx context.Context, v interface{}) (UpdateNetworkParameterInput, error) {
-	return ec.unmarshalInputUpdateNetworkParameterInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOUpdateNetworkParameterInput2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateNetworkParameterInput(ctx context.Context, v interface{}) (*UpdateNetworkParameterInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOUpdateNetworkParameterInput2codeᚗvegaprotocolᚗioᚋvegaᚋgatewayᚋgraphqlᚐUpdateNetworkParameterInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐVoteᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Vote) graphql.Marshaler {

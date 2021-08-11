@@ -66,12 +66,6 @@ type BuiltinAsset struct {
 
 func (BuiltinAsset) IsAssetSource() {}
 
-// A vega builtin asset, mostly for testing purpose
-type BuiltinAssetInput struct {
-	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
-	MaxFaucetAmountMint string `json:"maxFaucetAmountMint"`
-}
-
 type BusEvent struct {
 	// the id for this event
 	EventID string `json:"eventId"`
@@ -83,14 +77,6 @@ type BusEvent struct {
 	Event Event `json:"event"`
 }
 
-// Condition describes the condition that must be validated by the
-type ConditionInput struct {
-	// comparator is the type of comparison to make on the value.
-	Operator ConditionOperator `json:"operator"`
-	// value is used by the comparator.
-	Value string `json:"value"`
-}
-
 // A mode where Vega tries to execute orders as soon as they are received
 type ContinuousTrading struct {
 	// Size of an increment in price in terms of the quote currency
@@ -98,12 +84,6 @@ type ContinuousTrading struct {
 }
 
 func (ContinuousTrading) IsTradingMode() {}
-
-// A mode where Vega try to execute order as soon as they are received
-type ContinuousTradingInput struct {
-	// Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored
-	TickSize *string `json:"tickSize"`
-}
 
 // Frequent batch auctions trading mode
 type DiscreteTrading struct {
@@ -115,14 +95,6 @@ type DiscreteTrading struct {
 
 func (DiscreteTrading) IsTradingMode() {}
 
-// Frequent batch auctions trading mode
-type DiscreteTradingInput struct {
-	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
-	Duration int `json:"duration"`
-	// Size of an increment in price in terms of the quote currency. Note this field should not be used and will be ignored
-	TickSize *string `json:"tickSize"`
-}
-
 // An asset originated from an Ethereum ERC20 Token
 type Erc20 struct {
 	// The address of the erc20 contract
@@ -130,12 +102,6 @@ type Erc20 struct {
 }
 
 func (Erc20) IsAssetSource() {}
-
-// An asset originated from an Ethereum ERC20 Token
-type ERC20Input struct {
-	// The address of the erc20 contract
-	ContractAddress string `json:"contractAddress"`
-}
 
 // All the data related to the approval of a withdrawal from the network
 type Erc20WithdrawalApproval struct {
@@ -160,12 +126,6 @@ type Erc20WithdrawalDetails struct {
 
 func (Erc20WithdrawalDetails) IsWithdrawalDetails() {}
 
-// ERC20 specific details to start a withdrawal
-type Erc20WithdrawalDetailsInput struct {
-	// The ethereum address to which the withdrawn funds will be send to
-	ReceiverAddress string `json:"receiverAddress"`
-}
-
 // An Ethereum oracle
 type EthereumEvent struct {
 	// The ID of the ethereum contract to use (string)
@@ -175,41 +135,6 @@ type EthereumEvent struct {
 }
 
 func (EthereumEvent) IsOracle() {}
-
-// Filter describes the conditions under which an oracle data is considered of
-// interest or not.
-type FilterInput struct {
-	// key is the oracle data property key targeted by the filter.
-	Key *PropertyKeyInput `json:"key"`
-	// conditions are the conditions that should be matched by the data to be
-	// considered of interest.
-	Conditions []*ConditionInput `json:"conditions"`
-}
-
-// Future product configuration
-type FutureProductInput struct {
-	// Future product maturity (ISO8601/RFC3339 timestamp)
-	Maturity string `json:"maturity"`
-	// Product asset name
-	SettlementAsset string `json:"settlementAsset"`
-	// String representing the quote (e.g. BTCUSD -> USD is quote)
-	QuoteName string `json:"quoteName"`
-	// The oracle spec describing the oracle data of interest for settlement price.
-	OracleSpecForSettlementPrice *OracleSpecConfigurationInput `json:"oracleSpecForSettlementPrice"`
-	// The oracle spec describing the oracle data of interest for trading termination.
-	OracleSpecForTradingTermination *OracleSpecConfigurationInput `json:"oracleSpecForTradingTermination"`
-	// The binding between the oracle spec and the settlement price
-	OracleSpecBinding *OracleSpecToFutureBindingInput `json:"oracleSpecBinding"`
-}
-
-type InstrumentConfigurationInput struct {
-	// Full and fairly descriptive name for the instrument
-	Name string `json:"name"`
-	// A short non necessarily unique code used to easily describe the instrument (e.g: FX:BTCUSD/DEC18)
-	Code string `json:"code"`
-	// Future product specification
-	FutureProduct *FutureProductInput `json:"futureProduct"`
-}
 
 type LedgerEntry struct {
 	// account from which the asset was taken
@@ -234,16 +159,6 @@ type LiquidityMonitoringParameters struct {
 	TriggeringRatio float64 `json:"triggeringRatio"`
 }
 
-// A special order type for liquidity providers
-type LiquidityOrderInput struct {
-	// The value to which this order is tied
-	Reference PeggedReference `json:"reference"`
-	// The proportion of the commitment allocted to this order
-	Proportion int `json:"proportion"`
-	// Offset from the pegged reference
-	Offset int `json:"offset"`
-}
-
 // The equity like share of liquidity fee for each liquidity provider
 type LiquidityProviderFeeShare struct {
 	// The liquidity provider party id
@@ -252,24 +167,6 @@ type LiquidityProviderFeeShare struct {
 	EquityLikeShare string `json:"equityLikeShare"`
 	// the average entry valuation of the liqidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
-}
-
-type LogNormalModelParamsInput struct {
-	// mu parameter
-	Mu float64 `json:"mu"`
-	// r parameter
-	R float64 `json:"r"`
-	// sigma parameter
-	Sigma float64 `json:"sigma"`
-}
-
-type LogNormalRiskModelInput struct {
-	// Lambda parameter of the risk model
-	RiskAversionParameter float64 `json:"riskAversionParameter"`
-	// Tau parameter of the risk model
-	Tau float64 `json:"tau"`
-	// Params for the log normal risk model
-	Params *LogNormalModelParamsInput `json:"params"`
 }
 
 type LossSocialization struct {
@@ -309,86 +206,6 @@ type MarketTick struct {
 
 func (MarketTick) IsEvent() {}
 
-// Representation of a network parameter
-type NetworkParameterInput struct {
-	// The name of the network parameter
-	Key string `json:"key"`
-	// The value of the network parameter
-	Value string `json:"value"`
-}
-
-// A new asset to be added into vega
-type NewAssetInput struct {
-	// The full name of the asset (e.g: Great British Pound)
-	Name string `json:"name"`
-	// The symbol of the asset (e.g: GBP)
-	Symbol string `json:"symbol"`
-	// The total supply of the market
-	TotalSupply string `json:"totalSupply"`
-	// The precision of the asset
-	Decimals int `json:"decimals"`
-	// The min stake to become an lp for any market using this asset for settlement
-	MinLpStake string `json:"minLpStake"`
-	// A new builtin assed to be created
-	BuiltinAsset *BuiltinAssetInput `json:"builtinAsset"`
-	// A new ERC20 asset to be created
-	Erc20 *ERC20Input `json:"erc20"`
-}
-
-// A commitment of liquidity to be made by the party which proposes a market
-type NewMarketCommitmentInput struct {
-	// Specified as a unitless number that represents the amount of settlement asset of the market
-	CommitmentAmount string `json:"commitmentAmount"`
-	// Nominated liquidity fee factor, which is an input to the calculation of
-	// taker fees on the market, as per setting fees and rewarding liquidity provider
-	Fee string `json:"fee"`
-	// A set of liquidity sell orders to meet the liquidity provision obligation
-	Sells []*LiquidityOrderInput `json:"sells"`
-	// A set of liquidity buy orders to meet the liquidity provision obligation
-	Buys []*LiquidityOrderInput `json:"buys"`
-	// A reference to be associated to all orders created from this commitment
-	Reference *string `json:"reference"`
-}
-
-// Allows creating new markets on the network
-type NewMarketInput struct {
-	// New market instrument configuration
-	Instrument *InstrumentConfigurationInput `json:"instrument"`
-	// Decimal places used for the new market
-	DecimalPlaces int `json:"decimalPlaces"`
-	// New market risk configuration
-	RiskParameters *RiskParametersInput `json:"riskParameters"`
-	// Metadata for this instrument, tags
-	Metadata []string `json:"metadata"`
-	// Price monitoring configuration
-	PriceMonitoringParameters *PriceMonitoringParametersInput `json:"priceMonitoringParameters"`
-	// A mode where Vega try to execute order as soon as they are received. Valid only if discreteTrading is not set
-	ContinuousTrading *ContinuousTradingInput `json:"continuousTrading"`
-	// Frequent batch auctions trading mode. Valid only if continuousTrading is not set
-	DiscreteTrading *DiscreteTradingInput `json:"discreteTrading"`
-	// The liquidity commitment submitted with the new market
-	Commitment *NewMarketCommitmentInput `json:"commitment"`
-}
-
-// An oracle spec describe the oracle data that a product (or a risk model)
-// wants to get from the oracle engine.
-type OracleSpecConfigurationInput struct {
-	// pubKeys is the list of authorized public keys that signed the data for this
-	// oracle. All the public keys in the oracle data should be contained in these
-	// public keys.
-	PubKeys []string `json:"pubKeys"`
-	// filters describes which oracle data are considered of interest or not for
-	// the product (or the risk model).
-	Filters []*FilterInput `json:"filters"`
-}
-
-// OracleSpecToFutureBindingInput tells on which property oracle data should be
-// used as settlement price.
-type OracleSpecToFutureBindingInput struct {
-	SettlementPriceProperty    string `json:"settlementPriceProperty"`
-	TradingTerminationProperty string `json:"tradingTerminationProperty"`
-}
-
 // An estimate of the fee to be paid by the order
 type OrderEstimate struct {
 	// The estimated fee if the order was to trade
@@ -397,14 +214,6 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
-}
-
-// Create an order linked to an index rather than a price
-type PeggedOrderInput struct {
-	// Index to link this order to
-	Reference PeggedReference `json:"reference"`
-	// Price offset from the peg
-	Offset string `json:"offset"`
 }
 
 type PositionResolution struct {
@@ -419,46 +228,6 @@ type PositionResolution struct {
 }
 
 func (PositionResolution) IsEvent() {}
-
-type PreparedAmendOrder struct {
-	// the raw transaction to sign & submit
-	Blob string `json:"blob"`
-}
-
-type PreparedCancelOrder struct {
-	// the raw transaction to sign & submit
-	Blob string `json:"blob"`
-}
-
-// A prepared LiquidityProvision command
-type PreparedLiquidityProvision struct {
-	// The blob to be send to the wallet and to be signed
-	Blob string `json:"blob"`
-}
-
-type PreparedProposal struct {
-	// Raw transaction data to sign & submit
-	Blob string `json:"blob"`
-	// The pending proposal
-	PendingProposal *vega.GovernanceData `json:"pendingProposal"`
-}
-
-type PreparedSubmitOrder struct {
-	// the raw transaction to sign & submit
-	Blob string `json:"blob"`
-}
-
-type PreparedVote struct {
-	// Raw, serialised vote to be signed
-	Blob string `json:"blob"`
-	// The vote serialised in the blob field
-	Vote *ProposalVote `json:"vote"`
-}
-
-type PreparedWithdrawal struct {
-	// the raw transaction to sign & submit
-	Blob string `json:"blob"`
-}
 
 // Range of valid prices and the associated price monitoring trigger
 type PriceMonitoringBounds struct {
@@ -478,26 +247,12 @@ type PriceMonitoringParameters struct {
 	Triggers []*PriceMonitoringTrigger `json:"triggers"`
 }
 
-// PriceMonitoringParameters holds a list of triggers
-type PriceMonitoringParametersInput struct {
-	// The list of triggers for this price monitoring
-	Triggers []*PriceMonitoringTriggerInput `json:"triggers"`
-}
-
 // Configuration of a market price monitorings auctions triggers
 type PriceMonitoringSettings struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
 	Parameters *PriceMonitoringParameters `json:"parameters"`
 	// How often (in seconds) the price monitoring bounds should be updated
 	UpdateFrequencySecs int `json:"updateFrequencySecs"`
-}
-
-// Configuration of a market price monitorings auctions triggers
-type PriceMonitoringSettingsInput struct {
-	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
-	Parameters *PriceMonitoringParametersInput `json:"parameters"`
-	// How often (in seconds) the price monitoring bounds should be updated
-	UpdateFrequencySecs *int `json:"updateFrequencySecs"`
 }
 
 // PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
@@ -510,50 +265,6 @@ type PriceMonitoringTrigger struct {
 	// breach it's theoretical level over the specified horizon at the specified
 	// probability level (> 0)
 	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
-}
-
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
-type PriceMonitoringTriggerInput struct {
-	// Price monitoring projection horizon τ in seconds (> 0).
-	HorizonSecs int `json:"horizonSecs"`
-	// Price monitoring probability level p. (>0 and < 1)
-	Probability float64 `json:"probability"`
-	// Price monitoring auction extension duration in seconds should the price
-	// breach it's theoretical level over the specified horizon at the specified
-	// probability level (> 0)
-	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
-}
-
-// PropertyKey describes the property key contained in an oracle data.
-type PropertyKeyInput struct {
-	// name is the name of the property.
-	Name string `json:"name"`
-	// type is the type of the property.
-	Type PropertyKeyType `json:"type"`
-}
-
-// Proposal terms input. Only one kind of change is expected. Proposals with no changes or more than one will not be accepted.
-type ProposalTermsInput struct {
-	// RFC3339Nano/ISO-8601 time and date when voting closes for this proposal.
-	// Constrained by "minCloseInSeconds" and "maxCloseInSeconds" network parameters.
-	ClosingDatetime string `json:"closingDatetime"`
-	// RFC3339Nano/ISO-8601 time and date when this proposal is executed (if passed). Note that it has to be after closing date time.
-	// Constrained by "minEnactInSeconds" and "maxEnactInSeconds" network parameters.
-	EnactmentDatetime string `json:"enactmentDatetime"`
-	// Field defining new market change - the proposal will create new market if passed and enacted.
-	// It can only be set if "updateMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
-	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
-	NewMarket *NewMarketInput `json:"newMarket"`
-	// Field defining update market change - the proposal will update existing market if passed and enacted.
-	// It can only be set if "newMarket" and "updateNetwork" are not set (the proposal will be rejected otherwise).
-	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
-	UpdateMarket *UpdateMarketInput `json:"updateMarket"`
-	// Field defining update network change - the proposal will update Vega network parameters if passed and enacted.
-	// It can only be set if "newMarket" and "updateMarket" are not set (the proposal will be rejected otherwise).
-	// One of "newMarket", "updateMarket", "updateNetwork" must be set (the proposal will be rejected otherwise).
-	UpdateNetworkParameter *UpdateNetworkParameterInput `json:"updateNetworkParameter"`
-	// a new Asset proposal, this will create a new asset to be used in the vega network
-	NewAsset *NewAssetInput `json:"newAsset"`
 }
 
 type ProposalVote struct {
@@ -579,13 +290,6 @@ type ProposalVotes struct {
 	Yes *ProposalVoteSide `json:"yes"`
 	// No votes cast for this proposal
 	No *ProposalVoteSide `json:"no"`
-}
-
-type RiskParametersInput struct {
-	// Simple risk model parameters. Set only if risk model is Simple
-	Simple *SimpleRiskModelParamsInput `json:"simple"`
-	// Log normal risk model parameters. Set only if risk model is LogNormal
-	LogNormal *LogNormalRiskModelInput `json:"logNormal"`
 }
 
 type SettleDistressed struct {
@@ -622,13 +326,6 @@ type SignatureInput struct {
 	Algo string `json:"algo"`
 	// The version of the signature
 	Version int `json:"version"`
-}
-
-type SimpleRiskModelParamsInput struct {
-	// Risk factor for long
-	FactorLong float64 `json:"factorLong"`
-	// Risk factor for short
-	FactorShort float64 `json:"factorShort"`
 }
 
 // TargetStakeParameters contains parameters used in target stake calculation
@@ -687,15 +384,6 @@ type TransferResponses struct {
 }
 
 func (TransferResponses) IsEvent() {}
-
-type UpdateMarketInput struct {
-	MarketID string `json:"marketId"`
-}
-
-// Allows submitting a proposal for changing network parameters
-type UpdateNetworkParameterInput struct {
-	NetworkParameter *NetworkParameterInput `json:"networkParameter"`
-}
 
 // The various account types we have (used by collateral)
 type AccountType string
