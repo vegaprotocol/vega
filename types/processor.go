@@ -11,12 +11,7 @@ import (
 type OracleDataSubmission = commandspb.OracleDataSubmission
 type NodeRegistration = commandspb.NodeRegistration
 type NodeVote = commandspb.NodeVote
-type Transaction = proto.Transaction
-
 type ChainEvent = commandspb.ChainEvent
-type SignedBundle = proto.SignedBundle
-type Signature = proto.Signature
-type Transaction_PubKey = proto.Transaction_PubKey
 
 type OrderCancellation struct {
 	OrderId  string

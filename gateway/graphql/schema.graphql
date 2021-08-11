@@ -3,43 +3,6 @@
 schema {
   query: Query
   subscription: Subscription
-  mutation: Mutation
-}
-
-"Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data."
-type Mutation {
-  """
-  Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
-  It validates the signature, and sends the transaction out for consensus
-  """
-  submitTransaction(
-    "The signed transaction"
-    data: String!
-    "The signature"
-    sig: SignatureInput!
-    "The way to send the transaction"
-    type: SubmitTransactionType
-  ): TransactionSubmitted!
-}
-
-"A signature to be bundled with a transaction"
-input SignatureInput {
-  "The signature, base64 encoded"
-  sig: String!
-  "The algorithm used to produice the signature"
-  algo: String!
-  "The version of the signature"
-  version: Int!
-}
-
-"The way the transaction is sent to the blockchain"
-enum SubmitTransactionType {
-  "The call will return as soon as submitted"
-  Async
-  "The call will return once the mempool has run CheckTx on the transaction"
-  Sync
-  "The call will return once the transaction has been processed by the core"
-  Commit
 }
 
 "Create an order linked to an index rather than a price"

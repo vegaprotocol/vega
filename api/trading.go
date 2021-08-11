@@ -12,7 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
-	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -34,7 +33,6 @@ type EvtForwarder interface {
 // Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/api  Blockchain
 type Blockchain interface {
-	SubmitTransaction(ctx context.Context, bundle *types.SignedBundle, ty protoapi.SubmitTransactionRequest_Type) error
 	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty protoapi.SubmitTransactionV2Request_Type) error
 }
 
@@ -52,59 +50,6 @@ type tradingService struct {
 // no need for a mutext - we only access the config through a value receiver
 func (s *tradingService) updateConfig(conf Config) {
 	s.conf = conf
-}
-
-// value receiver is important, config can be updated, this avoids data race
-func (s tradingService) validateSubmitTx(ty protoapi.SubmitTransactionRequest_Type) (protoapi.SubmitTransactionRequest_Type, error) {
-	// ensure this is a known value for the type
-	if _, ok := protoapi.SubmitTransactionRequest_Type_name[int32(ty)]; !ok {
-		return protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED, ErrUnknownSubmitTxRequestType
-	}
-
-	switch ty {
-	// FIXME(jeremy): in order to keep compatibility with existing clients
-	// we allow no submiting the Type field, and default to old behaviour
-	case protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED:
-		ty = protoapi.SubmitTransactionRequest_TYPE_ASYNC
-	case protoapi.SubmitTransactionRequest_TYPE_COMMIT:
-		// commit is disabled?
-		if s.conf.DisableTxCommit {
-			return protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED, ErrSubmitTxCommitDisabled
-		}
-	}
-	// ty is a known type, and not disabled, all good
-	return ty, nil
-}
-
-func (s *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
-	if req == nil || req.Tx == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-	}
-
-	_, err := s.validateSubmitTx(req.Type)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
-	}
-
-	if err := s.blockchain.SubmitTransaction(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC); err != nil {
-		// This is Tendermint's specific error signature
-		if _, ok := err.(interface {
-			Code() uint32
-			Details() string
-			Error() string
-		}); ok {
-			s.log.Debug("unable to submit transaction", logging.Error(err))
-			return nil, apiError(codes.InvalidArgument, err)
-		}
-		s.log.Debug("unable to submit transaction", logging.Error(err))
-		return nil, apiError(codes.Internal, err)
-	}
-
-	return &protoapi.SubmitTransactionResponse{
-		Success: true,
-	}, nil
 }
 
 func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.SubmitTransactionV2Request) (*protoapi.SubmitTransactionV2Response, error) {
