@@ -86,7 +86,6 @@ func newSocketClient(ctx context.Context, log *logging.Logger, config *SocketCon
 
 	go func() {
 		if err := s.stream(ctx); err != nil {
-			fmt.Println("inside if error function", err)
 			s.log.Fatal("socket streaming has failed", logging.Error(err))
 		}
 	}()
@@ -160,7 +159,7 @@ func (s *socketClient) connect(ctx context.Context) error {
 			return nil
 		}
 
-		s.log.Error(fmt.Sprintf("failed to connect to %v, retrying", addr), logging.Error(err))
+		s.log.Error("failed to connect, retrying"), logging.Error(err), logging.String("peer", addr))
 
 		select {
 		case <-ctx.Done():
@@ -203,8 +202,11 @@ func (s *socketClient) stream(ctx context.Context) error {
 					s.log.Error("Failed to queue message on socket", logging.Error(err))
 
 					if sendTimeouts > s.config.MaxSendTimeouts {
-						msg := fmt.Sprintf("maximum number of '%d' send timeouts exceeded", s.config.MaxSendTimeouts)
-						return fmt.Errorf(msg, err)
+						return fmt.Errorf(
+							"maximum number of '%d' send timeouts exceeded: %w",
+							s.config.MaxSendTimeouts,
+							err,
+						)
 					}
 
 					// Try to put the timed out message back on internal events queue
