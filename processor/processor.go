@@ -19,7 +19,6 @@ import (
 
 var (
 	ErrInvalidSignature              = errors.New("invalid signature")
-	ErrVegaWalletRequired            = errors.New("vega wallet required")
 	ErrChainEventFromNonValidator    = errors.New("chain event emitted from a non-validator node")
 	ErrUnsupportedChainEvent         = errors.New("unsupported chain event")
 	ErrNodeSignatureFromNonValidator = errors.New("node signature not sent by validator")
@@ -119,7 +118,7 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(nr *commandspb.NodeRegistration) error
+	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
 	UpdateValidatorSet(keys [][]byte)
 	Exists(key []byte) bool
 	Len() int

@@ -53,6 +53,7 @@ type Event interface {
 	TraceID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
+	StreamMessage() *eventspb.BusEvent
 }
 
 const (
@@ -92,6 +93,7 @@ const (
 	DelegationBalanceEvent
 	PendingDelegationBalanceEvent
 	StakingEvent
+	ValidatorUpdateEvent
 )
 
 var (
@@ -139,6 +141,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:         DelegationBalanceEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PENDING_DELEGATION_BALANCE: PendingDelegationBalanceEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT:              StakingEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:           ValidatorUpdateEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -175,6 +178,7 @@ var (
 		DelegationBalanceEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE,
 		PendingDelegationBalanceEvent: eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
 		StakingEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT,
+		ValidatorUpdateEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE,
 	}
 
 	eventStrings = map[Type]string{
@@ -212,6 +216,7 @@ var (
 		DelegationBalanceEvent:        "DelegationBalanceEvent",
 		PendingDelegationBalanceEvent: "PendingDelegationBalanceEvent",
 		StakingEvent:                  "StakingEvent",
+		ValidatorUpdateEvent:          "ValidatorUpdateEvent",
 	}
 )
 

@@ -23,8 +23,9 @@ var (
 func getEpochService(t *testing.T) *epochtime.Svc {
 	ctx := context.Background()
 	vt = vegatime.New(vegatime.NewDefaultConfig())
-	broker := broker.New(ctx)
 	log := logging.NewTestLogger()
+	broker, err := broker.New(ctx, log, broker.NewDefaultConfig())
+	assert.NoError(t, err)
 
 	et := epochtime.NewService(
 		log,

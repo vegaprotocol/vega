@@ -5,12 +5,17 @@ import (
 	"errors"
 	"fmt"
 
+	wcrypto "code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
+)
+
+var (
+	ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
 )
 
 type TxV2 struct {
@@ -27,6 +32,14 @@ func DecodeTxV2(payload []byte) (*TxV2, error) {
 	}
 
 	inputData, err := commands.CheckTransaction(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = checkSignature(tx)
+	if err != nil {
+		return nil, err
+	}
 
 	return &TxV2{
 		originalTx: payload,
@@ -34,6 +47,37 @@ func DecodeTxV2(payload []byte) (*TxV2, error) {
 		inputData:  inputData,
 		err:        err,
 	}, nil
+}
+
+func checkSignature(tx *commandspb.Transaction) error {
+	algo, err := wcrypto.NewSignatureAlgorithm(tx.Signature.Algo, tx.Signature.Version)
+	if err != nil {
+		return err
+	}
+
+	decodedSig, err := hex.DecodeString(tx.Signature.Value)
+	if err != nil {
+		return err
+	}
+
+	if len(tx.GetPubKey()) == 0 {
+		return ErrUnsupportedFromValueInTransaction
+	} 
+	pubKeyOrAddress, err := hex.DecodeString(tx.GetPubKey())
+	if err != nil {
+		return fmt.Errorf("invalid public key, %w", err)
+	}
+
+	verified, err := algo.Verify(pubKeyOrAddress, tx.InputData, decodedSig)
+	if err != nil {
+		return err
+	}
+
+	if !verified {
+		return ErrInvalidSignature
+	}
+
+	return nil
 }
 
 func (t TxV2) Command() txn.Command {

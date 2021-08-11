@@ -446,7 +446,12 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
 
-	l.broker = broker.New(l.ctx)
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
+	if err != nil {
+		log.Error("unable to initialise broker", logging.Error(err))
+		return err
+	}
+
 	l.broker.SubscribeBatch(
 		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
@@ -482,7 +487,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.limits = limits.New(l.conf.Limits, l.Log)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
 
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
 
 	l.erc = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
