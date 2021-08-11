@@ -29,9 +29,9 @@ type Broker interface {
 }
 
 type ValidatorData struct {
-	PubKey  string `json:"pub_key"`
-	InfoURL string `json:"info_url"`
-	Country string `json:"country"`
+	VegaPubKey string `json:"pub_key"`
+	InfoURL    string `json:"info_url"`
+	Country    string `json:"country"`
 }
 
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey
@@ -121,7 +121,7 @@ func (t *Topology) AllPubKeys() [][]byte {
 	defer t.mu.RUnlock()
 	keys := make([][]byte, 0, len(t.validators))
 	for _, data := range t.validators {
-		keys = append(keys, []byte(data.PubKey))
+		keys = append(keys, []byte(data.VegaPubKey))
 	}
 	return keys
 }
@@ -166,9 +166,9 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 
 	// then add it to the topology
 	t.validators[key] = ValidatorData{
-		PubKey:  string(nr.PubKey),
-		InfoURL: nr.InfoUrl,
-		Country: nr.Country,
+		VegaPubKey: string(nr.PubKey),
+		InfoURL:    nr.InfoUrl,
+		Country:    nr.Country,
 	}
 	t.vegaValidatorRefs[string(nr.PubKey)] = string(nr.ChainPubKey)
 
@@ -206,12 +206,12 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 			return err
 		}
 
-		vegaBytes, err := hex.DecodeString(data.PubKey)
+		vegaBytes, err := hex.DecodeString(data.VegaPubKey)
 		if err != nil {
 			return err
 		}
 
-		if pubKey == data.PubKey {
+		if pubKey == data.VegaPubKey {
 			t.isValidator = true
 		}
 

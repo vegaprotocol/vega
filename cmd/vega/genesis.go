@@ -70,7 +70,7 @@ func (opts *genesisCmd) Execute(_ []string) error {
 
 	// Update the default state with the validators info
 	gs := genesis.DefaultGenesisState()
-	gs.Validators[tmKey] = validators.ValidatorData{PubKey: vegaKey}
+	gs.Validators[tmKey] = validators.ValidatorData{VegaPubKey: vegaKey}
 
 	// dump or write
 	if opts.InPlace {

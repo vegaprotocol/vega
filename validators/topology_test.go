@@ -54,9 +54,9 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	}{
 		Validators: map[string]validators.ValidatorData{
 			defaultTmPubKeyBase64: {
-				PubKey:  pubkey,
-				InfoURL: "n0.xyz.vege/node/123",
-				Country: "GB",
+				VegaPubKey: pubkey,
+				InfoURL:    "n0.xyz.vege/node/123",
+				Country:    "GB",
 			},
 		},
 	}
@@ -177,9 +177,9 @@ func testGetByKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedData := &validators.ValidatorData{
-		PubKey:  string(nr.PubKey),
-		InfoURL: nr.InfoUrl,
-		Country: nr.Country,
+		VegaPubKey: string(nr.PubKey),
+		InfoURL:    nr.InfoUrl,
+		Country:    nr.Country,
 	}
 
 	actualData := top.Get(nr.PubKey)
