@@ -60,13 +60,12 @@ func checkSignature(tx *commandspb.Transaction) error {
 		return err
 	}
 
-	var pubKeyOrAddress string
-	if len(tx.GetPubKey()) != 0 {
-		pubKeyOrAddress = tx.GetPubKey()
-	} else if len(tx.GetAddress()) != 0 {
-		pubKeyOrAddress = tx.GetAddress()
-	} else {
+	if len(tx.GetPubKey()) == 0 {
 		return ErrUnsupportedFromValueInTransaction
+	} 
+	pubKeyOrAddress, err := hex.DecodeString(tx.GetPubKey())
+	if err != nil {
+		return fmt.Errorf("invalid public key, %w", err)
 	}
 
 	verified, err := algo.Verify(pubKeyOrAddress, tx.InputData, decodedSig)
