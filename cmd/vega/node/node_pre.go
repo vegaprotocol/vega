@@ -483,7 +483,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.limits = limits.New(l.conf.Limits, l.Log)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
 
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
 
 	l.erc = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 

@@ -118,7 +118,7 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(nr *commandspb.NodeRegistration) error
+	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
 	UpdateValidatorSet(keys [][]byte)
 	Exists(key []byte) bool
 	Len() int

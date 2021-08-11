@@ -9,6 +9,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -22,26 +23,38 @@ type Wallet interface {
 	PubKeyOrAddress() crypto.PublicKeyOrAddress
 }
 
+// Broker needs no mocks
+type Broker interface {
+	Send(event events.Event)
+}
+
+type ValidatorData struct {
+	VegaPubKey string `json:"pub_key"`
+	InfoURL    string `json:"info_url"`
+	Country    string `json:"country"`
+}
+
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey
-type ValidatorMapping map[string]string
+type ValidatorMapping map[string]ValidatorData
 
 type Topology struct {
 	log    *logging.Logger
 	cfg    Config
 	wallet Wallet
+	broker Broker
 
 	// tendermint validator pubkey to vega pubkey
 	validators ValidatorMapping
-	// just pubkeys of vega node for easy lookup
-	vegaValidatorRefs map[string]struct{}
+	// vega pubkeys to tendermint pub keys for easy lookup
+	vegaValidatorRefs map[string]string
 	chainValidators   [][]byte
 
 	isValidator bool
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
-func NewTopology(log *logging.Logger, cfg Config, wallet Wallet) *Topology {
+func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -49,9 +62,10 @@ func NewTopology(log *logging.Logger, cfg Config, wallet Wallet) *Topology {
 		log:               log,
 		cfg:               cfg,
 		wallet:            wallet,
+		broker:            broker,
 		validators:        ValidatorMapping{},
 		chainValidators:   [][]byte{},
-		vegaValidatorRefs: map[string]struct{}{},
+		vegaValidatorRefs: map[string]string{},
 	}
 
 	return t
@@ -85,12 +99,29 @@ func (t *Topology) Exists(key []byte) bool {
 	return ok
 }
 
+// Get returns validator data based on validator public key
+func (t *Topology) Get(key []byte) *ValidatorData {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	tmPubKey, ok := t.vegaValidatorRefs[string(key)]
+	if !ok {
+		return nil
+	}
+
+	tmPubKey = hex.EncodeToString([]byte(tmPubKey))
+	if data, ok := t.validators[tmPubKey]; ok {
+		return &data
+	}
+
+	return nil
+}
+
 func (t *Topology) AllPubKeys() [][]byte {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	keys := make([][]byte, 0, len(t.validators))
-	for _, key := range t.validators {
-		keys = append(keys, []byte(key))
+	for _, data := range t.validators {
+		keys = append(keys, []byte(data.VegaPubKey))
 	}
 	return keys
 }
@@ -113,7 +144,7 @@ func (t *Topology) IsValidatorNode(nodeID string) bool {
 	return ok
 }
 
-func (t *Topology) AddNodeRegistration(nr *commandspb.NodeRegistration) error {
+func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -134,15 +165,33 @@ func (t *Topology) AddNodeRegistration(nr *commandspb.NodeRegistration) error {
 	}
 
 	// then add it to the topology
-	t.validators[key] = string(nr.PubKey)
-	t.vegaValidatorRefs[string(nr.PubKey)] = struct{}{}
+	t.validators[key] = ValidatorData{
+		VegaPubKey: string(nr.PubKey),
+		InfoURL:    nr.InfoUrl,
+		Country:    nr.Country,
+	}
+	t.vegaValidatorRefs[string(nr.PubKey)] = string(nr.ChainPubKey)
+
+	// Send event to notify core about new validator
+	t.sendValidatorUpdateEvent(ctx, nr)
+
 	t.log.Info("new node registration successful",
 		logging.String("node-key", hex.EncodeToString(nr.PubKey)),
 		logging.String("tm-key", hex.EncodeToString(nr.ChainPubKey)))
 	return nil
 }
 
-func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) error {
+func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.NodeRegistration) {
+	t.broker.Send(events.NewValidatorUpdateEvent(
+		ctx,
+		string(nr.PubKey),
+		string(nr.ChainPubKey),
+		nr.InfoUrl,
+		nr.Country,
+	))
+}
+
+func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte) error {
 	state, err := LoadGenesisState(rawstate)
 	if err != nil {
 		return err
@@ -150,28 +199,29 @@ func (t *Topology) LoadValidatorsOnGenesis(_ context.Context, rawstate []byte) e
 
 	pubKey := t.wallet.PubKeyOrAddress().Hex()
 
-	// vals is a map of tm pubkey -> vega pubkey
 	// tm is base64 encoded, vega is hex
-	for tm, vega := range state {
+	for tm, data := range state {
 		tmBytes, err := base64.StdEncoding.DecodeString(tm)
 		if err != nil {
 			return err
 		}
 
-		vegaBytes, err := hex.DecodeString(vega)
+		vegaBytes, err := hex.DecodeString(data.VegaPubKey)
 		if err != nil {
 			return err
 		}
 
-		if pubKey == vega {
+		if pubKey == data.VegaPubKey {
 			t.isValidator = true
 		}
 
 		nr := &commandspb.NodeRegistration{
 			PubKey:      vegaBytes,
 			ChainPubKey: tmBytes,
+			InfoUrl:     data.InfoURL,
+			Country:     data.Country,
 		}
-		if err := t.AddNodeRegistration(nr); err != nil {
+		if err := t.AddNodeRegistration(ctx, nr); err != nil {
 			return err
 		}
 	}
