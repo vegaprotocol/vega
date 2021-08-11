@@ -39,6 +39,12 @@ type VegaTime interface {
 	GetTimeNow() time.Time
 }
 
+// LiquidityService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
+type LiquidityService interface {
+	Get(party, market string) ([]types.LiquidityProvision, error)
+}
+
 // OrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/api OrderService
 type OrderService interface {
@@ -116,7 +122,6 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
-	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // TransferResponseService ...

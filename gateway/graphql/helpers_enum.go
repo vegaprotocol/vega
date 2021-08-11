@@ -601,20 +601,6 @@ func convertSideFromProto(x types.Side) (Side, error) {
 	}
 }
 
-func convertPeggedReferenceToProto(x PeggedReference) (types.PeggedReference, error) {
-	switch x {
-	case PeggedReferenceMid:
-		return types.PeggedReference_PEGGED_REFERENCE_MID, nil
-	case PeggedReferenceBestBid:
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID, nil
-	case PeggedReferenceBestAsk:
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, nil
-	default:
-		err := fmt.Errorf("failed to convert PeggedReference from GraphQL to Proto: %v", x)
-		return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED, err
-	}
-}
-
 func convertPeggedReferenceFromProto(x types.PeggedReference) (PeggedReference, error) {
 	switch x {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
@@ -683,19 +669,6 @@ func convertTradeTypeFromProto(x types.Trade_Type) (TradeType, error) {
 	default:
 		err := fmt.Errorf("failed to convert TradeType from Proto to GraphQL: %v", x)
 		return TradeTypeDefault, err
-	}
-}
-
-// convertVoteValueToProto converts a GraphQL enum to a Proto enum
-func convertVoteValueToProto(x VoteValue) (types.Vote_Value, error) {
-	switch x {
-	case VoteValueNo:
-		return types.Vote_VALUE_NO, nil
-	case VoteValueYes:
-		return types.Vote_VALUE_YES, nil
-	default:
-		err := fmt.Errorf("failed to convert VoteValue from GraphQL to Proto: %v", x)
-		return types.Vote_VALUE_UNSPECIFIED, err
 	}
 }
 

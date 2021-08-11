@@ -6,14 +6,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/go-wallet/crypto"
-	ptypes "code.vegaprotocol.io/protos/vega"
 	protoapi "code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
-	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -26,34 +24,6 @@ var (
 	ErrSubmitTxCommitDisabled     = errors.New("broadcast_tx_commit is disabled")
 	ErrUnknownSubmitTxRequestType = errors.New("invalid broadcast_tx type")
 )
-
-// TradeOrderService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trade_order_service_mock.go -package mocks code.vegaprotocol.io/vega/api TradeOrderService
-type TradeOrderService interface {
-	PrepareSubmitOrder(ctx context.Context, submission *commandspb.OrderSubmission) error
-	PrepareCancelOrder(ctx context.Context, cancellation *commandspb.OrderCancellation) error
-	PrepareAmendOrder(ctx context.Context, amendment *commandspb.OrderAmendment) error
-}
-
-// LiquidityService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
-type LiquidityService interface {
-	PrepareLiquidityProvisionSubmission(context.Context, *commandspb.LiquidityProvisionSubmission) error
-	Get(party, market string) ([]ptypes.LiquidityProvision, error)
-}
-
-// AccountService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/account_service_mock.go -package mocks code.vegaprotocol.io/vega/api  AccountService
-type AccountService interface {
-	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
-}
-
-// GovernanceService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_service_mock.go -package mocks code.vegaprotocol.io/vega/api  GovernanceService
-type GovernanceService interface {
-	PrepareProposal(ctx context.Context, reference string, terms *ptypes.ProposalTerms) (*commandspb.ProposalSubmission, error)
-	PrepareVote(vote *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error)
-}
 
 // EvtForwarder
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/api  EvtForwarder
@@ -72,13 +42,9 @@ type tradingService struct {
 	log  *logging.Logger
 	conf Config
 
-	blockchain        Blockchain
-	tradeOrderService TradeOrderService
-	liquidityService  LiquidityService
-	accountService    AccountService
-	marketService     MarketService
-	governanceService GovernanceService
-	evtForwarder      EvtForwarder
+	blockchain    Blockchain
+	marketService MarketService
+	evtForwarder  EvtForwarder
 
 	statusChecker *monitoring.Status
 }
@@ -86,64 +52,6 @@ type tradingService struct {
 // no need for a mutext - we only access the config through a value receiver
 func (s *tradingService) updateConfig(conf Config) {
 	s.conf = conf
-}
-
-func (s *tradingService) PrepareSubmitOrder(ctx context.Context, req *protoapi.PrepareSubmitOrderRequest) (*protoapi.PrepareSubmitOrderResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("PrepareSubmitOrder", startTime)
-	err := s.tradeOrderService.PrepareSubmitOrder(ctx, req.Submission)
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-	raw, err := proto.Marshal(req.Submission)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
-	}
-	if raw, err = txn.Encode(raw, txn.SubmitOrderCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrSubmitOrder, err)
-	}
-	return &protoapi.PrepareSubmitOrderResponse{
-		Blob:     raw,
-		SubmitId: req.Submission.Reference,
-	}, nil
-}
-
-func (s *tradingService) PrepareCancelOrder(ctx context.Context, req *protoapi.PrepareCancelOrderRequest) (*protoapi.PrepareCancelOrderResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("PrepareCancelOrder", startTime)
-	err := s.tradeOrderService.PrepareCancelOrder(ctx, req.Cancellation)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrCancelOrder, err)
-	}
-	raw, err := proto.Marshal(req.Cancellation)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrCancelOrder, err)
-	}
-	if raw, err = txn.Encode(raw, txn.CancelOrderCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrCancelOrder, err)
-	}
-	return &protoapi.PrepareCancelOrderResponse{
-		Blob: raw,
-	}, nil
-}
-
-func (s *tradingService) PrepareAmendOrder(ctx context.Context, req *protoapi.PrepareAmendOrderRequest) (*protoapi.PrepareAmendOrderResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("PrepareAmendOrder", startTime)
-	err := s.tradeOrderService.PrepareAmendOrder(ctx, req.Amendment)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	raw, err := proto.Marshal(req.Amendment)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	if raw, err = txn.Encode(raw, txn.AmendOrderCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrAmendOrder, err)
-	}
-	return &protoapi.PrepareAmendOrderResponse{
-		Blob: raw,
-	}, nil
 }
 
 // value receiver is important, config can be updated, this avoids data race
@@ -223,113 +131,6 @@ func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 
 	return &protoapi.SubmitTransactionV2Response{
 		Success: true,
-	}, nil
-}
-
-func (s *tradingService) PrepareWithdraw(
-	ctx context.Context, req *protoapi.PrepareWithdrawRequest,
-) (*protoapi.PrepareWithdrawResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("Withdraw", startTime)
-	err := s.accountService.PrepareWithdraw(ctx, req.Withdraw)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-	raw, err := proto.Marshal(req.Withdraw)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
-	}
-	if raw, err = txn.Encode(raw, txn.WithdrawCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareWithdraw, err)
-	}
-	return &protoapi.PrepareWithdrawResponse{
-		Blob: raw,
-	}, nil
-}
-
-func (s *tradingService) PrepareProposalSubmission(
-	ctx context.Context, req *protoapi.PrepareProposalSubmissionRequest,
-) (*protoapi.PrepareProposalSubmissionResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("PrepareProposal", startTime)
-
-	if err := req.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-	if req.Submission == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing submission"))
-	}
-
-	proposal, err := s.governanceService.PrepareProposal(ctx, req.Submission.Reference, req.Submission.Terms)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
-	}
-	raw, err := proto.Marshal(proposal) // marshal whole proposal
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
-	}
-
-	if raw, err = txn.Encode(raw, txn.ProposeCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareProposal, err)
-	}
-	return &protoapi.PrepareProposalSubmissionResponse{
-		Blob:       raw,
-		Submission: proposal,
-	}, nil
-}
-
-func (s *tradingService) PrepareVoteSubmission(ctx context.Context, req *protoapi.PrepareVoteSubmissionRequest) (*protoapi.PrepareVoteSubmissionResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("PrepareVote", startTime)
-
-	if err := req.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-
-	if req.Submission.Value == types.VoteValueUnspecified {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-	}
-
-	vote, err := s.governanceService.PrepareVote(req.Submission)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareVote, err)
-	}
-	raw, err := proto.Marshal(vote)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareVote, err)
-	}
-	if raw, err = txn.Encode(raw, txn.VoteCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareVote, err)
-	}
-	return &protoapi.PrepareVoteSubmissionResponse{
-		Blob:       raw,
-		Submission: vote,
-	}, nil
-}
-
-func (s *tradingService) PrepareLiquidityProvision(ctx context.Context, req *protoapi.PrepareLiquidityProvisionRequest) (*protoapi.PrepareLiquidityProvisionResponse, error) {
-	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("PrepareLiquidity", startTime)
-
-	if err := req.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-
-	if err := s.liquidityService.PrepareLiquidityProvisionSubmission(ctx, req.Submission); err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareVote, err)
-	}
-
-	raw, err := proto.Marshal(req.Submission)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareVote, err)
-	}
-
-	if raw, err = txn.Encode(raw, txn.LiquidityProvisionCommand); err != nil {
-		return nil, apiError(codes.Internal, ErrPrepareVote, err)
-	}
-
-	return &protoapi.PrepareLiquidityProvisionResponse{
-		Blob: raw,
 	}, nil
 }
 
