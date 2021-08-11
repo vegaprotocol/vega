@@ -3,14 +3,11 @@ package blockchain
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
-	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/txn"
 	"github.com/golang/protobuf/proto"
 
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -45,46 +42,6 @@ func NewClient(clt chainClientImpl) *Client {
 	}
 }
 
-func (c *Client) SubmitTransaction(ctx context.Context, bundle *types.SignedBundle, ty api.SubmitTransactionRequest_Type) error {
-	// unmarshal the transaction
-	tx := &types.Transaction{}
-	err := proto.Unmarshal(bundle.Tx, tx)
-	if err != nil {
-		return err
-	}
-
-	// first verify the transaction in the bundle is valid + signature is OK
-	_, command, err := txn.Decode(tx.InputData)
-	if err != nil {
-		return err
-	}
-
-	// if the command is invalid, the String() func will return an empty string
-	if command.String() == "" {
-		// @TODO create err variable
-		return fmt.Errorf("invalid command: %v", int(command))
-	}
-
-	// check sig
-	if err := verifyBundle(nil, tx, bundle); err != nil {
-		return err
-	}
-
-	// marshal the bundle then
-	bundleBytes, err := proto.Marshal(bundle)
-	if err != nil {
-		return err
-	}
-	if len(bundleBytes) == 0 {
-		return errors.New("order message empty after marshal")
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
-	return c.sendTx(ctx, bundleBytes, ty)
-}
-
 func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error {
 	_, err := commands.CheckTransaction(tx)
 	if err != nil {
@@ -100,19 +57,6 @@ func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transac
 	defer cancel()
 
 	return c.sendTxV2(ctx, marshalledTx, ty)
-}
-
-func (c *Client) sendTx(ctx context.Context, bytes []byte, ty api.SubmitTransactionRequest_Type) error {
-	switch ty {
-	case api.SubmitTransactionRequest_TYPE_ASYNC:
-		return c.clt.SendTransactionAsync(ctx, bytes)
-	case api.SubmitTransactionRequest_TYPE_SYNC:
-		return c.clt.SendTransactionSync(ctx, bytes)
-	case api.SubmitTransactionRequest_TYPE_COMMIT:
-		return c.clt.SendTransactionCommit(ctx, bytes)
-	default:
-		return errors.New("invalid submit transaction request type")
-	}
 }
 
 func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionV2Request_Type) error {

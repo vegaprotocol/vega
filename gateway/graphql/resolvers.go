@@ -73,11 +73,6 @@ func (r *VegaResolverRoot) Query() QueryResolver {
 	return (*myQueryResolver)(r)
 }
 
-// Mutation returns the mutations resolver
-func (r *VegaResolverRoot) Mutation() MutationResolver {
-	return (*myMutationResolver)(r)
-}
-
 // Candle returns the candles resolver
 func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
@@ -1596,54 +1591,6 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 }
 
 // END: Position Resolver
-
-// BEGIN: Mutation Resolver
-
-type myMutationResolver VegaResolverRoot
-
-func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
-
-	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
-	if ty != nil {
-		switch *ty {
-		case SubmitTransactionTypeSync:
-			pty = protoapi.SubmitTransactionRequest_TYPE_SYNC
-		case SubmitTransactionTypeCommit:
-			pty = protoapi.SubmitTransactionRequest_TYPE_COMMIT
-		}
-	}
-
-	decodedData, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return nil, err
-	}
-	decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
-	if err != nil {
-		return nil, err
-	}
-	req := &protoapi.SubmitTransactionRequest{
-		Tx: &types.SignedBundle{
-			Tx: decodedData,
-			Sig: &types.Signature{
-				Sig:     decodedSig,
-				Version: uint32(sig.Version),
-				Algo:    sig.Algo,
-			},
-		},
-		Type: pty,
-	}
-	res, err := r.tradingClient.SubmitTransaction(ctx, req)
-	if err != nil {
-		r.log.Error("Failed to submit transaction", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-
-	return &TransactionSubmitted{
-		Success: res.Success,
-	}, nil
-}
-
-// END: Mutation Resolver
 
 // BEGIN: Subscription Resolver
 
