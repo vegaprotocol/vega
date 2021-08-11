@@ -20,9 +20,13 @@ but also the boolean value is false, then the given setting will never be enable
 Example settings:
 ```json
 {
-	"propose_market_enabled": true, // market proposal enabled
-	"popose_asset_enabled": false, // asset proposal disabled forever
-	"propose_market_enabled_from": "2021-12-31T23:59:59Z" // this is in UTC timezone, market proposal will be enabled at this date
-	// propose_asset_enabled_from is omitted
+	"app_state": {
+		"network_limits": {
+			"propose_market_enabled": true, // market proposal enabled
+			"popose_asset_enabled": false, // asset proposal disabled forever
+			"propose_market_enabled_from": "2021-12-31T23:59:59Z" // this is in UTC timezone, market proposal will be enabled at this date
+			// propose_asset_enabled_from is omitted
+		}
+	}
 }
 ```
