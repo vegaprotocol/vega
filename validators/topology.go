@@ -2,8 +2,6 @@ package validators
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"sync"
 
@@ -29,9 +27,10 @@ type Broker interface {
 }
 
 type ValidatorData struct {
-	VegaPubKey string `json:"pub_key"`
-	InfoURL    string `json:"info_url"`
-	Country    string `json:"country"`
+	VegaPubKey      string `json:"vega_pub_key"`
+	EthereumAddress string `json:"ethereum_address"`
+	InfoURL         string `json:"info_url"`
+	Country         string `json:"country"`
 }
 
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey
@@ -47,7 +46,7 @@ type Topology struct {
 	validators ValidatorMapping
 	// vega pubkeys to tendermint pub keys for easy lookup
 	vegaValidatorRefs map[string]string
-	chainValidators   [][]byte
+	chainValidators   []string
 
 	isValidator bool
 
@@ -64,7 +63,7 @@ func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) 
 		wallet:            wallet,
 		broker:            broker,
 		validators:        ValidatorMapping{},
-		chainValidators:   [][]byte{},
+		chainValidators:   []string{},
 		vegaValidatorRefs: map[string]string{},
 	}
 
@@ -94,21 +93,20 @@ func (t *Topology) Len() int {
 }
 
 // Exists check if a vega public key is part of the validator set
-func (t *Topology) Exists(key []byte) bool {
-	_, ok := t.vegaValidatorRefs[string(key)]
+func (t *Topology) Exists(key string) bool {
+	_, ok := t.vegaValidatorRefs[key]
 	return ok
 }
 
 // Get returns validator data based on validator public key
-func (t *Topology) Get(key []byte) *ValidatorData {
+func (t *Topology) Get(key string) *ValidatorData {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	tmPubKey, ok := t.vegaValidatorRefs[string(key)]
+	tmPubKey, ok := t.vegaValidatorRefs[key]
 	if !ok {
 		return nil
 	}
 
-	tmPubKey = hex.EncodeToString([]byte(tmPubKey))
 	if data, ok := t.validators[tmPubKey]; ok {
 		return &data
 	}
@@ -116,29 +114,29 @@ func (t *Topology) Get(key []byte) *ValidatorData {
 	return nil
 }
 
-func (t *Topology) AllPubKeys() [][]byte {
+func (t *Topology) AllPubKeys() []string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-	keys := make([][]byte, 0, len(t.validators))
+	keys := make([]string, 0, len(t.validators))
 	for _, data := range t.validators {
-		keys = append(keys, []byte(data.VegaPubKey))
+		keys = append(keys, data.VegaPubKey)
 	}
 	return keys
 }
 
-func (t *Topology) SelfVegaPubKey() []byte {
-	return t.wallet.PubKeyOrAddress().Bytes()
+func (t *Topology) SelfVegaPubKey() string {
+	return t.wallet.PubKeyOrAddress().Hex()
 }
 
 // UpdateValidatorSet updates the chain validator set
 // It overwrites the previous set.
-func (t *Topology) UpdateValidatorSet(keys [][]byte) {
+func (t *Topology) UpdateValidatorSet(keys []string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.chainValidators = keys
 }
 
-//IsValidatorNode takes a nodeID and returns true if the node is a validator node
+// IsValidatorNode takes a nodeID and returns true if the node is a validator node
 func (t *Topology) IsValidatorNode(nodeID string) bool {
 	_, ok := t.validators[nodeID]
 	return ok
@@ -148,14 +146,13 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	key := hex.EncodeToString(nr.ChainPubKey)
-	if _, ok := t.validators[key]; ok {
+	if _, ok := t.validators[nr.ChainPubKey]; ok {
 		return ErrVegaNodeAlreadyRegisterForChain
 	}
 	// check if this tm pubkey exists in the network
 	var ok bool
 	for _, k := range t.chainValidators {
-		if string(k) == string(nr.ChainPubKey) {
+		if k == nr.ChainPubKey {
 			ok = true
 			break
 		}
@@ -165,33 +162,37 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 	}
 
 	// then add it to the topology
-	t.validators[key] = ValidatorData{
-		VegaPubKey: string(nr.PubKey),
-		InfoURL:    nr.InfoUrl,
-		Country:    nr.Country,
+	t.validators[nr.ChainPubKey] = ValidatorData{
+		VegaPubKey:      nr.VegaPubKey,
+		EthereumAddress: nr.EthereumAddress,
+		InfoURL:         nr.InfoUrl,
+		Country:         nr.Country,
 	}
-	t.vegaValidatorRefs[string(nr.PubKey)] = string(nr.ChainPubKey)
+	t.vegaValidatorRefs[nr.VegaPubKey] = nr.ChainPubKey
 
 	// Send event to notify core about new validator
 	t.sendValidatorUpdateEvent(ctx, nr)
 
 	t.log.Info("new node registration successful",
-		logging.String("node-key", hex.EncodeToString(nr.PubKey)),
-		logging.String("tm-key", hex.EncodeToString(nr.ChainPubKey)))
+		logging.String("vega-key", nr.VegaPubKey),
+		logging.String("eth-addr", nr.EthereumAddress),
+		logging.String("tm-key", nr.ChainPubKey))
 	return nil
 }
 
 func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.NodeRegistration) {
 	t.broker.Send(events.NewValidatorUpdateEvent(
 		ctx,
-		string(nr.PubKey),
-		string(nr.ChainPubKey),
+		nr.VegaPubKey,
+		nr.EthereumAddress,
+		nr.ChainPubKey,
 		nr.InfoUrl,
 		nr.Country,
 	))
 }
 
 func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte) error {
+
 	state, err := LoadGenesisState(rawstate)
 	if err != nil {
 		return err
@@ -201,25 +202,16 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 
 	// tm is base64 encoded, vega is hex
 	for tm, data := range state {
-		tmBytes, err := base64.StdEncoding.DecodeString(tm)
-		if err != nil {
-			return err
-		}
-
-		vegaBytes, err := hex.DecodeString(data.VegaPubKey)
-		if err != nil {
-			return err
-		}
-
 		if pubKey == data.VegaPubKey {
 			t.isValidator = true
 		}
 
 		nr := &commandspb.NodeRegistration{
-			PubKey:      vegaBytes,
-			ChainPubKey: tmBytes,
-			InfoUrl:     data.InfoURL,
-			Country:     data.Country,
+			VegaPubKey:      data.VegaPubKey,
+			EthereumAddress: data.EthereumAddress,
+			ChainPubKey:     tm,
+			InfoUrl:         data.InfoURL,
+			Country:         data.Country,
 		}
 		if err := t.AddNodeRegistration(ctx, nr); err != nil {
 			return err

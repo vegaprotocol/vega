@@ -22,7 +22,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/notary ValidatorTopology
 type ValidatorTopology interface {
 	IsValidator() bool
-	Exists([]byte) bool
+	Exists(string) bool
 	Len() int
 }
 
@@ -56,7 +56,7 @@ type idKind struct {
 	kind commandspb.NodeSignatureKind
 }
 
-/// nodeSig is a pair of a node and it signature
+// / nodeSig is a pair of a node and it signature
 type nodeSig struct {
 	node string
 	sig  string
@@ -96,7 +96,7 @@ func (n *Notary) StartAggregate(resID string, kind commandspb.NodeSignatureKind)
 	return nil
 }
 
-func (n *Notary) AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error) {
+func (n *Notary) AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error) {
 	sigs, ok := n.sigs[idKind{ns.Id, ns.Kind}]
 	if !ok {
 		return nil, false, ErrUnknownResourceID
@@ -136,7 +136,7 @@ func (n *Notary) IsSigned(ctx context.Context, resID string, kind commandspb.Nod
 		// add it to the map
 		// we may have a node which have been unregistered there, hence
 		// us checkung
-		if n.top.Exists([]byte(k.node)) {
+		if n.top.Exists(k.node) {
 			sig[k.node] = struct{}{}
 			out = append(out, commandspb.NodeSignature{
 				Id:   resID,

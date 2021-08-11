@@ -119,10 +119,10 @@ type Commander interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
 	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
-	UpdateValidatorSet(keys [][]byte)
-	Exists(key []byte) bool
+	UpdateValidatorSet(keys []string)
+	Exists(key string) bool
 	Len() int
-	AllPubKeys() [][]byte
+	AllPubKeys() []string
 	IsValidator() bool
 }
 
@@ -135,7 +135,7 @@ type Broker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
 type Notary interface {
 	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
-	AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
+	AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
 	IsSigned(context.Context, string, commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 }
 

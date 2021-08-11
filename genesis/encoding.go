@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/validators"
@@ -29,24 +30,6 @@ func DefaultGenesisState() GenesisState {
 	}
 }
 
-func DumpDefault() (string, error) {
-	gstate := DefaultGenesisState()
-	return Dump(&gstate)
-}
-
-func Dump(s *GenesisState) (string, error) {
-	bytes, err := json.MarshalIndent(s, "  ", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(bytes), nil
-}
-
-func UpdateInPlaceDefault(tmCfgPath string) error {
-	gs := DefaultGenesisState()
-	return UpdateInPlace(&gs, tmCfgPath)
-}
-
 func UpdateInPlace(gs *GenesisState, tmCfgPath string) error {
 	tmCfgBytes, err := ioutil.ReadFile(tmCfgPath)
 	if err != nil {
@@ -65,7 +48,7 @@ func UpdateInPlace(gs *GenesisState, tmCfgPath string) error {
 	}
 
 	tmGenesis["app_state"] = json.RawMessage(rawState)
-	tmCfgBytes, err = json.MarshalIndent(&tmGenesis, "  ", "  ")
+	tmCfgBytes, err = vgjson.Prettify(&tmGenesis)
 	if err != nil {
 		return err
 	}

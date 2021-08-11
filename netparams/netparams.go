@@ -90,7 +90,7 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
 		s.broker.Send(events.NewNetworkParameterEvent(ctx, k, v.String()))
 	}
 
-	// now iterate overal parameters and update the existing ones
+	// now iterate over all parameters and update the existing ones
 	for k, v := range state {
 		if err := s.Update(ctx, k, v); err != nil {
 			return fmt.Errorf("%v: %v", k, err)

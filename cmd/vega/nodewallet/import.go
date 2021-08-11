@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
 )

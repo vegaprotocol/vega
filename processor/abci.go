@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
+	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 	"code.vegaprotocol.io/vega/txn"
@@ -25,7 +26,6 @@ import (
 )
 
 var (
-	ErrPublicKeyExceededRateLimit                    = errors.New("public key exceeded the rate limit")
 	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
 	ErrTradingDisabled                               = errors.New("trading disabled")
 	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
@@ -209,16 +209,16 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	ctx := contextutil.WithBlockHeight(context.Background(), 0)
 	ctx = contextutil.WithTraceID(ctx, hash)
 
-	vators := make([][]byte, 0, len(req.Validators))
+	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
 		if len(v.PubKey.GetEd25519()) > 0 {
-			vators = append(vators, v.PubKey.GetEd25519())
+			vators = append(vators, vgtm.PubKeyToString(v.PubKey))
 		}
 	}
 
 	app.top.UpdateValidatorSet(vators)
-	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes, vators); err != nil {
+	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
 		app.log.Panic("something happened when initializing vega with the genesis block", logging.Error(err))
 	}
@@ -272,7 +272,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 
 	// Check ratelimits
 	// FIXME(): temporary disable all rate limiting
-	_, isval := app.limitPubkey(tx.PubKey())
+	_, isval := app.limitPubkey(tx.PubKeyHex())
 	if isval {
 		return ctx, resp
 	}
@@ -296,7 +296,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 }
 
 // limitPubkey returns whether a request should be rate limited or not
-func (app *App) limitPubkey(pk []byte) (limit bool, isValidator bool) {
+func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
 	// Do not rate limit validators nodes.
 	if app.top.Exists(pk) {
 		return false, true
@@ -361,7 +361,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
-	if !app.top.Exists(tx.PubKey()) {
+	if !app.top.Exists(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
 	return nil
@@ -546,7 +546,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(ns); err != nil {
 		return err
 	}
-	_, _, err := app.notary.AddSig(ctx, tx.PubKey(), *ns)
+	_, _, err := app.notary.AddSig(ctx, tx.PubKeyHex(), *ns)
 	return err
 }
 
@@ -585,7 +585,7 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 		return err
 	}
 
-	return app.processChainEvent(ctx, ce, tx.PubKey(), id)
+	return app.processChainEvent(ctx, ce, tx.PubKeyHex(), id)
 }
 
 func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {

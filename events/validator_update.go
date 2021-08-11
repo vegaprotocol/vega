@@ -9,31 +9,39 @@ import (
 // ValidatorUpdate ...
 type ValidatorUpdate struct {
 	*Base
-	pubKey   string
-	tmPubKey string
-	infoURL  string
-	country  string
+	vegaPubKey string
+	ethAddress string
+	tmPubKey   string
+	infoURL    string
+	country    string
 }
 
 func NewValidatorUpdateEvent(
 	ctx context.Context,
-	pubKey string,
+	vegaPubKey string,
+	ethAddress string,
 	tmPubKey string,
 	infoURL string,
 	country string,
 ) *ValidatorUpdate {
 	return &ValidatorUpdate{
-		Base:     newBase(ctx, ValidatorUpdateEvent),
-		pubKey:   pubKey,
-		tmPubKey: tmPubKey,
-		infoURL:  infoURL,
-		country:  country,
+		Base:       newBase(ctx, ValidatorUpdateEvent),
+		vegaPubKey: vegaPubKey,
+		ethAddress: ethAddress,
+		tmPubKey:   tmPubKey,
+		infoURL:    infoURL,
+		country:    country,
 	}
 }
 
-// PublicKey returns validator's public key
-func (vu ValidatorUpdate) PublicKey() string {
-	return vu.pubKey
+// VegaPublicKey returns validator's vega public key
+func (vu ValidatorUpdate) VegaPublicKey() string {
+	return vu.vegaPubKey
+}
+
+// EthereumAddress returns validator's ethereum address
+func (vu ValidatorUpdate) EthereumAddress() string {
+	return vu.ethAddress
 }
 
 // TendermintPublicKey returns Tendermint nodes public key
@@ -53,10 +61,11 @@ func (vu ValidatorUpdate) Country() string {
 
 func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 	return eventspb.ValidatorUpdate{
-		PubKey:   vu.pubKey,
-		TmPubKey: vu.tmPubKey,
-		InfoUrl:  vu.infoURL,
-		Country:  vu.country,
+		VegaPubKey:      vu.vegaPubKey,
+		EthereumAddress: vu.ethAddress,
+		TmPubKey:        vu.tmPubKey,
+		InfoUrl:         vu.infoURL,
+		Country:         vu.country,
 	}
 }
 
@@ -80,10 +89,11 @@ func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) 
 	}
 
 	return &ValidatorUpdate{
-		Base:     newBaseFromStream(ctx, ValidatorUpdateEvent, be),
-		pubKey:   event.GetPubKey(),
-		tmPubKey: event.GetTmPubKey(),
-		infoURL:  event.GetInfoUrl(),
-		country:  event.GetCountry(),
+		Base:       newBaseFromStream(ctx, ValidatorUpdateEvent, be),
+		vegaPubKey: event.GetVegaPubKey(),
+		ethAddress: event.GetEthereumAddress(),
+		tmPubKey:   event.GetTmPubKey(),
+		infoURL:    event.GetInfoUrl(),
+		country:    event.GetCountry(),
 	}
 }

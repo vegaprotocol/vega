@@ -39,9 +39,7 @@ func (h *Handler) ReloadConf(cfg Config) {
 	h.cfg = cfg
 }
 
-func (h *Handler) OnGenesis(
-	ctx context.Context, t time.Time, state []byte, validatorsPubkey [][]byte,
-) error {
+func (h *Handler) OnGenesis(ctx context.Context, t time.Time, state []byte) error {
 	h.log.Debug("vega time at genesis",
 		logging.String("time", t.String()))
 	for _, f := range h.onGenesisTimeLoadedCB {

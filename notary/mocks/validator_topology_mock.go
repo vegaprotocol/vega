@@ -33,7 +33,7 @@ func (m *MockValidatorTopology) EXPECT() *MockValidatorTopologyMockRecorder {
 }
 
 // Exists mocks base method
-func (m *MockValidatorTopology) Exists(arg0 []byte) bool {
+func (m *MockValidatorTopology) Exists(arg0 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Exists", arg0)
 	ret0, _ := ret[0].(bool)

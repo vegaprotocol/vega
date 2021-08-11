@@ -1,11 +1,11 @@
 package nodewallet
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/fsutil"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 
@@ -60,11 +60,9 @@ func (opts *showCmd) Execute(_ []string) error {
 
 	wallets := nw.Show()
 
-	buf, err := json.MarshalIndent(wallets, " ", " ")
+	err = vgjson.PrettyPrint(wallets)
 	if err != nil {
-		return fmt.Errorf("unable to marshal store: %v", err)
+		return err
 	}
-
-	fmt.Printf("%v\n", string(buf))
 	return nil
 }

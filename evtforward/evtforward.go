@@ -39,9 +39,9 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
 type ValidatorTopology interface {
-	SelfVegaPubKey() []byte
-	Exists(key []byte) bool
-	AllPubKeys() [][]byte
+	SelfVegaPubKey() string
+	Exists(key string) bool
+	AllPubKeys() []string
 }
 
 // EvtForwarder receive events from the blockchain queue
@@ -164,6 +164,7 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 	defer func() {
 		metrics.EvtForwardInc("forward", res)
 	}()
+
 	// check if the sender of the event is whitelisted
 	if !e.isAllowlisted(pubkey) {
 		res = "pubkeynotallowed"
@@ -192,15 +193,15 @@ func (e *EvtForwarder) updateValidatorsList() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	e.self = string(e.top.SelfVegaPubKey())
+	e.self = e.top.SelfVegaPubKey()
 	// reset slice
 	// preemptive alloc, we can expect to have most likely
 	// as much validator
 	e.nodes = make([]nodeHash, 0, len(e.nodes))
 	// get all keys
 	for _, key := range e.top.AllPubKeys() {
-		h := e.hash(key)
-		e.nodes = append(e.nodes, nodeHash{string(key), h})
+		h := e.hash([]byte(key))
+		e.nodes = append(e.nodes, nodeHash{key, h})
 	}
 	sort.SliceStable(e.nodes, func(i, j int) bool { return e.nodes[i].hash < e.nodes[j].hash })
 }
@@ -232,6 +233,7 @@ func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
 	}
 	node := e.nodes[h%uint64(len(e.nodes))]
 	e.mu.RUnlock()
+
 	return node.node == e.self
 }
 

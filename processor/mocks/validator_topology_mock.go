@@ -49,10 +49,10 @@ func (mr *MockValidatorTopologyMockRecorder) AddNodeRegistration(arg0, arg1 inte
 }
 
 // AllPubKeys mocks base method
-func (m *MockValidatorTopology) AllPubKeys() [][]byte {
+func (m *MockValidatorTopology) AllPubKeys() []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllPubKeys")
-	ret0, _ := ret[0].([][]byte)
+	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
@@ -63,7 +63,7 @@ func (mr *MockValidatorTopologyMockRecorder) AllPubKeys() *gomock.Call {
 }
 
 // Exists mocks base method
-func (m *MockValidatorTopology) Exists(arg0 []byte) bool {
+func (m *MockValidatorTopology) Exists(arg0 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Exists", arg0)
 	ret0, _ := ret[0].(bool)
@@ -105,7 +105,7 @@ func (mr *MockValidatorTopologyMockRecorder) Len() *gomock.Call {
 }
 
 // UpdateValidatorSet mocks base method
-func (m *MockValidatorTopology) UpdateValidatorSet(arg0 [][]byte) {
+func (m *MockValidatorTopology) UpdateValidatorSet(arg0 []string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateValidatorSet", arg0)
 }

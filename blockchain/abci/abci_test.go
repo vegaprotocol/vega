@@ -30,6 +30,7 @@ func (tx *testTx) Unmarshal(interface{}) error { return nil }
 func (tx *testTx) Signature() []byte    { return tx.signature }
 func (tx *testTx) Payload() []byte      { return tx.payload }
 func (tx *testTx) PubKey() []byte       { return tx.pubkey }
+func (tx *testTx) PubKeyHex() string    { return hex.EncodeToString(tx.pubkey) }
 func (tx *testTx) Party() string        { return hex.EncodeToString(tx.pubkey) }
 func (tx *testTx) Hash() []byte         { return tx.hash }
 func (tx *testTx) Command() txn.Command { return tx.command }

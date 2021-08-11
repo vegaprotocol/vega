@@ -97,6 +97,7 @@ print_check: ## Check for fmt.Print functions in Go code
 	@f="$$(mktemp)" && \
 	find -name vendor -prune -o \
 		-name cmd -prune -o \
+		-name 'json.go' -prune -o \
 		-name '*_test.go' -prune -o \
 		-name 'flags.go' -prune -o \
 		-name '*.go' -print0 | \

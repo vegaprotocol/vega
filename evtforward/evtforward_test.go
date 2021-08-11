@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	testSelfVegaPubKey = []byte("self-pubkey")
-	testAllPubKeys     = [][]byte{
+	testSelfVegaPubKey = "self-pubkey"
+	testAllPubKeys     = []string{
 		testSelfVegaPubKey,
-		[]byte("another-pubkey1"),
-		[]byte("another-pubkey2"),
+		"another-pubkey1",
+		"another-pubkey2",
 	}
 	okEventEmitter = "somechaineventpubkey"
 	allowlist      = []string{okEventEmitter}
