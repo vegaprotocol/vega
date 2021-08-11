@@ -117,7 +117,7 @@ func loadVegaPubKey(log *logging.Logger, rootPath, pass string) (string, error) 
 		return "", err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethclt)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethclt, rootPath)
 	if err != nil {
 		return "", err
 	}
