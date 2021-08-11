@@ -159,7 +159,7 @@ func (s *socketClient) connect(ctx context.Context) error {
 			return nil
 		}
 
-		s.log.Error("failed to connect, retrying"), logging.Error(err), logging.String("peer", addr))
+		s.log.Error("failed to connect, retrying", logging.Error(err), logging.String("peer", addr))
 
 		select {
 		case <-ctx.Done():

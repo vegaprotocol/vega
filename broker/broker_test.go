@@ -699,7 +699,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 
 		// Having such a small buffers will make the process fail
 		config.Socket.SocketChannelBufferSize = 0
-		config.Socket.EventChannelBufferSize = 1
+		config.Socket.EventChannelBufferSize = 0
 
 		sock, err := pull.NewSocket()
 		assert.NoError(t, err)
@@ -722,7 +722,9 @@ func testStopsProcessOnStreamError(t *testing.T) {
 		sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 00, 01, 01, 0, time.UTC))
 
 		broker.Send(sentEvent)
-		// Second call to send should exit the process
+		// One of the next call should terminate the process
+		broker.Send(sentEvent)
+		broker.Send(sentEvent)
 		broker.Send(sentEvent)
 		return
 	}

@@ -1,11 +1,9 @@
 package verify
 
 import (
-	"context"
 	"encoding/json"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -69,15 +67,10 @@ func verifyGenesis(r *reporter, bs []byte) string {
 	} else {
 		log := logging.NewTestLogger()
 
-		b, err := broker.New(context.Background(), log, broker.NewDefaultConfig())
-		if err != nil {
-			r.Err("unable to initialize broker, %v", err)
-			return ""
-		}
 		netp := netparams.New(
 			log,
 			netparams.NewDefaultConfig(),
-			b,
+			noopBroker{},
 		)
 		// first check for no missing keys
 		for k := range netparams.AllKeys {
