@@ -77,6 +77,13 @@ func defaultNetParams() map[string]value {
 		DelegationMinAmount:            NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
 		DelegationMaxStakePerValidator: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 
+		// staking and delegation
+		StakingAndDelegationRewardPayoutFraction: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("1.0"),
+		//TODO what should the default for this be?
+		StakingAndDelegationRewardMaxPayoutPerParticipant: NewInt(IntGTE(0)).Mutable(true).MustUpdate("1000000000000"),
+		StakingAndDelegationRewardPayoutDelay:             NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		StakingAndDelegationRewardDelegatorShare:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.3"),
+
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
 		// validation will be added at node startup, so we can use dynamic stuff

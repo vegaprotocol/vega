@@ -805,13 +805,19 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 	for _, nodeID := range nodeIDs {
 		validatorState := e.nodeDelegationState[nodeID]
 		validator := &types.ValidatorData{
-			NodeID:            nodeID,
-			StakeByDelegators: validatorState.totalDelegated.Clone(),
-			Delegators:        map[string]*num.Uint{},
+			NodeID:     nodeID,
+			Delegators: map[string]*num.Uint{},
 		}
+		selfStake := num.Zero()
 		for delegatingParties, amt := range validatorState.partyToAmount {
-			validator.Delegators[delegatingParties] = amt.Clone()
+			if delegatingParties == nodeID {
+				selfStake = amt.Clone()
+			} else {
+				validator.Delegators[delegatingParties] = amt.Clone()
+			}
 		}
+		validator.SelfStake = selfStake
+		validator.StakeByDelegators = num.Zero().Sub(validatorState.totalDelegated, selfStake)
 		validators = append(validators, validator)
 	}
 

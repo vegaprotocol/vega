@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
@@ -36,6 +37,7 @@ import (
 	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/stats"
@@ -88,6 +90,8 @@ type Config struct {
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	NetworkParameters netparams.Config   `group:"NetworkParameters" namespace:"netparams"`
 	Limits            limits.Config      `group:"Limits" namespace:"limits"`
+	Rewards           rewards.Config     `group:"Rewards" namespace:"rewards"`
+	Delegation        delegation.Config  `group:"Delegation" namespace:"delegation"`
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
