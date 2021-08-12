@@ -15,7 +15,7 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: 1, unit: 'HOURS')
+        timeout(time: 30, unit: 'MINUTES')
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
@@ -369,7 +369,10 @@ pipeline {
                             }
                         }
                         stage('Start dockerised-vega') {
-                            options { retry(2) }
+                            options {
+                                retry(2)
+                                timeout(time: 10, unit: 'MINUTES')
+                            }
                             steps {
                                 dir('system-tests/scripts') {
                                     sh label: 'make sure dockerised-vega is not running', script: '''
@@ -520,8 +523,8 @@ pipeline {
         }
         always {
             retry(3) {
-                sh label: 'Clean docker images', script: '''
-                    docker rmi "${DOCKER_IMAGE_NAME_LOCAL}"
+                sh label: 'Clean docker images', script: '''#!/bin/bash -e
+                    [ -z "$(docker images -q "${DOCKER_IMAGE_NAME_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_NAME_LOCAL}"
                 '''
             }
         }
