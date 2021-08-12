@@ -205,7 +205,7 @@ pipeline {
                         make run-tests || touch ../build/test-reports/system-test-results.xml
                     '''
                 }
-                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/system-test-results.xml'
+                junit checksName: 'All System Tests', testResults: 'system-tests/build/test-reports/system-test-results.xml'
             }
         }
     }
