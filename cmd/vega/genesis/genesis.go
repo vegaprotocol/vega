@@ -7,7 +7,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type RootCmd struct {
+type Cmd struct {
 	// Global options
 	config.RootPathFlag
 	config.PassphraseFlag
@@ -18,11 +18,11 @@ type RootCmd struct {
 	Help     bool        `short:"h" long:"help" description:"Show this help message"`
 }
 
-var rootCmd RootCmd
+var genesisCmd Cmd
 
 func Genesis(ctx context.Context, parser *flags.Parser) error {
 	rootPath := config.NewRootPathFlag()
-	rootCmd = RootCmd{
+	genesisCmd = Cmd{
 		RootPathFlag: rootPath,
 		Generate: generateCmd{
 			TmRoot: "$HOME/.tendermint",
@@ -33,6 +33,9 @@ func Genesis(ctx context.Context, parser *flags.Parser) error {
 	}
 
 	desc := "Manage the genesis file"
-	_, err := parser.AddCommand("genesis", desc, desc, &rootCmd)
-	return err
+	cmd, err := parser.AddCommand("genesis", desc, desc, &genesisCmd)
+	if err != nil {
+		return err
+	}
+	return initNewCmd(ctx, cmd)
 }
