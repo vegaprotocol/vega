@@ -8,7 +8,6 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -96,24 +95,6 @@ type NetParams interface {
 
 //New instantiate a new delegation engine
 func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, netp NetParams) *Engine {
-	// read the delegation min amount network param
-	validatorsDelegationMinAmount, err := netp.Get(netparams.DelegationMinAmount)
-	if err != nil {
-		log.Panic("unable to read", logging.String(netparams.DelegationMinAmount, validatorsDelegationMinAmount))
-	}
-	minAmount, ok := num.UintFromString(validatorsDelegationMinAmount, 10)
-	if ok {
-		log.Panic("unable to read", logging.String(netparams.DelegationMinAmount, validatorsDelegationMinAmount))
-	}
-
-	maxStakePerValidatorStr, err := netp.Get(netparams.DelegationMaxStakePerValidator)
-	if err != nil {
-		log.Panic("Cannot find validators.delegation.maxStakePerValidator")
-	}
-	maxStakePerValidator, ok := num.UintFromString(maxStakePerValidatorStr, 10)
-	if ok {
-		log.Panic("unable to read", logging.String(netparams.DelegationMaxStakePerValidator, maxStakePerValidatorStr))
-	}
 
 	e := &Engine{
 		config:               config,
@@ -124,18 +105,16 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		nodeDelegationState:  map[string]*validatorDelegation{},
 		partyDelegationState: map[string]*partyDelegation{},
 		pendingState:         map[string]*pendingPartyDelegation{},
-		minDelegationAmount:  minAmount,
-		maxStakePerValidator: maxStakePerValidator,
 	}
 	return e
 }
 
-func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount int64) {
-	e.minDelegationAmount = num.NewUint(uint64(minAmount))
+func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount *num.Uint) {
+	e.minDelegationAmount = minAmount
 }
 
-func (e *Engine) OnMaxDelegationPerNodeChanged(ctx context.Context, maxStake int64) {
-	e.maxStakePerValidator = num.NewUint(uint64(maxStake))
+func (e *Engine) OnMaxDelegationPerNodeChanged(ctx context.Context, maxStake *num.Uint) {
+	e.maxStakePerValidator = maxStake
 }
 
 //OnEpochEnd updates the delegation engine state at the end of an epoch and returns the last epoch's validation-delegation data for rewarding
