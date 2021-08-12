@@ -50,7 +50,7 @@ pipeline {
 
         stage('Build') {
             environment {
-                LDFLAGS      = "-X main.CLIVersion=\"${version}\" -X main.CLIVersionHash=\"${versionHash}\""
+                LDFLAGS      = "-X main.CLIVersion=${version} -X main.CLIVersionHash=${versionHash}"
             }
             failFast true
             parallel {
