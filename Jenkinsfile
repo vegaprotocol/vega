@@ -15,6 +15,7 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
+        timeout(time: 1, unit: 'HOURS')
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
@@ -33,7 +34,7 @@ pipeline {
         // Note: make sure the tag name is not too long
         // Reason: it is used by system-tests for hostnames in dockerised vega, and
         //         there is a limit of 64 characters for hostname
-        DOCKER_IMAGE_TAG_LOCAL = "j-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
+        DOCKER_IMAGE_TAG_LOCAL = "v-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
         DOCKER_IMAGE_NAME_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
     }
 
@@ -386,10 +387,10 @@ pipeline {
                             steps {
                                 dir('system-tests/scripts') {
                                     sh label: 'run system-tests', script: '''
-                                        make run-tests
+                                        make run-tests || touch ../build/test-reports/system-test-results.xml
                                     '''
                                 }
-                                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/*.xml'
+                                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/system-test-results.xml'
                             }
                         }
                     }
@@ -512,7 +513,7 @@ pipeline {
                 slackSend(channel: "#tradingcore-notify", color: "good", message: ":white_check_mark: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
             }
         }
-        failure {
+        unsuccessful {
             retry(3) {
                 slackSend(channel: "#tradingcore-notify", color: "danger", message: ":red_circle: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
             }
