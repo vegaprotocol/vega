@@ -98,6 +98,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		log,
 		validators.NewDefaultConfig(),
 		wallet{pubKey},
+		broker,
 	)
 
 	witness := validators.NewWitness(

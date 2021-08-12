@@ -39,6 +39,12 @@ type VegaTime interface {
 	GetTimeNow() time.Time
 }
 
+// LiquidityService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/vega/api LiquidityService
+type LiquidityService interface {
+	Get(party, market string) ([]types.LiquidityProvision, error)
+}
+
 // OrderService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/order_service_mock.go -package mocks code.vegaprotocol.io/vega/api OrderService
 type OrderService interface {
@@ -98,7 +104,6 @@ type PartyService interface {
 // BlockchainClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_client_mock.go -package mocks code.vegaprotocol.io/vega/api BlockchainClient
 type BlockchainClient interface {
-	SubmitTransaction(ctx context.Context, tx *types.SignedBundle, ty protoapi.SubmitTransactionRequest_Type) error
 	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty protoapi.SubmitTransactionV2Request_Type) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
@@ -116,7 +121,6 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty types.AccountType) (candleCh <-chan []*types.Account, ref uint64)
 	GetAccountSubscribersCount() int32
-	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // TransferResponseService ...

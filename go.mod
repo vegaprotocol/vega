@@ -3,9 +3,9 @@ module code.vegaprotocol.io/vega
 go 1.16
 
 require (
-	code.vegaprotocol.io/go-wallet v0.7.1-0.20210727153739-42fba56d3110
+	code.vegaprotocol.io/go-wallet v0.7.1-0.20210811152350-80715dbe0f7c
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.41.0
+	code.vegaprotocol.io/protos v0.41.1-0.20210811160213-9567aa364f79
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/99designs/gqlgen v0.11.3
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
@@ -44,6 +44,7 @@ require (
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/apm/module/apmhttp v1.8.0
+	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	google.golang.org/genproto v0.0.0-20210611144927-798beca9d670 // indirect

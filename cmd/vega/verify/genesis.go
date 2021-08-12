@@ -1,15 +1,14 @@
 package verify
 
 import (
-	"context"
 	"encoding/json"
 
-	"code.vegaprotocol.io/vega/broker"
+	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	"github.com/jessevdk/go-flags"
 
-	types "code.vegaprotocol.io/protos/vega"
+	"github.com/jessevdk/go-flags"
 )
 
 type GenesisCmd struct {
@@ -25,6 +24,10 @@ func (opts *GenesisCmd) Execute(params []string) error {
 	}
 	return verifier(params, verifyGenesis)
 }
+
+type noopBroker struct{}
+
+func (n noopBroker) Send(e events.Event) {}
 
 func verifyGenesis(r *reporter, bs []byte) string {
 	var g = &struct {
@@ -62,10 +65,12 @@ func verifyGenesis(r *reporter, bs []byte) string {
 	if g.AppState.NetworkParameters == nil {
 		r.Err("app_state.network_parameters is missing")
 	} else {
+		log := logging.NewTestLogger()
+
 		netp := netparams.New(
-			logging.NewTestLogger(),
+			log,
 			netparams.NewDefaultConfig(),
-			broker.New(context.Background()),
+			noopBroker{},
 		)
 		// first check for no missing keys
 		for k := range netparams.AllKeys {

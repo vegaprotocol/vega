@@ -43,9 +43,6 @@ func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
 	priceLevelResolver := root.PriceLevel()
 	assert.NotNil(t, priceLevelResolver)
 
-	mutationResolver := root.Mutation()
-	assert.NotNil(t, mutationResolver)
-
 	positionResolver := root.Position()
 	assert.NotNil(t, positionResolver)
 
@@ -221,7 +218,6 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 
 type resolverRoot interface {
 	Query() gql.QueryResolver
-	Mutation() gql.MutationResolver
 	Candle() gql.CandleResolver
 	MarketDepth() gql.MarketDepthResolver
 	MarketDepthUpdate() gql.MarketDepthUpdateResolver

@@ -33,6 +33,7 @@ type stubWallet struct {
 	chain  string
 	signed []byte
 	err    error
+	name   string
 }
 
 func getTestCommander(t *testing.T) *testCommander {
@@ -40,7 +41,7 @@ func getTestCommander(t *testing.T) *testCommander {
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)
 	bstats := mocks.NewMockBlockchainStats(ctrl)
-	wal := &stubWallet{chain: string(nodewallet.Vega)}
+	wal := &stubWallet{name: "some_name.1234", chain: string(nodewallet.Vega)}
 	cmd, err := nodewallet.NewCommander(logging.NewTestLogger(), chain, wal, bstats)
 	assert.NoError(t, err)
 	return &testCommander{
@@ -113,6 +114,10 @@ func testSignedCommandFailure(t *testing.T) {
 func (t *testCommander) Finish() {
 	t.cfunc()
 	t.ctrl.Finish()
+}
+
+func (s stubWallet) Name() string {
+	return s.name
 }
 
 func (s stubWallet) Chain() string {

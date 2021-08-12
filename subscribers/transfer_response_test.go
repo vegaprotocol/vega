@@ -7,6 +7,7 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -189,8 +190,10 @@ func (t trStub) TransferResponses() []*types.TransferResponse {
 	return t.r
 }
 
-func (t trStub) SetSequenceID(s uint64) {}
-func (t trStub) Sequence() uint64       { return 0 }
+func (t trStub) SetSequenceID(s uint64)            {}
+func (t trStub) Sequence() uint64                  { return 0 }
+func (t trStub) StreamMessage() *eventspb.BusEvent { return nil }
 
-func (t timeStub) SetSequenceID(s uint64) {}
-func (t timeStub) Sequence() uint64       { return 0 }
+func (t timeStub) SetSequenceID(s uint64)            {}
+func (t timeStub) Sequence() uint64                  { return 0 }
+func (t timeStub) StreamMessage() *eventspb.BusEvent { return nil }

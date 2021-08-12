@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
@@ -69,7 +70,7 @@ func (opts *genesisCmd) Execute(_ []string) error {
 
 	// Update the default state with the validators info
 	gs := genesis.DefaultGenesisState()
-	gs.Validators[tmKey] = vegaKey
+	gs.Validators[tmKey] = validators.ValidatorData{VegaPubKey: vegaKey}
 
 	// dump or write
 	if opts.InPlace {
@@ -116,7 +117,7 @@ func loadVegaPubKey(log *logging.Logger, rootPath, pass string) (string, error) 
 		return "", err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethclt)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethclt, rootPath)
 	if err != nil {
 		return "", err
 	}
