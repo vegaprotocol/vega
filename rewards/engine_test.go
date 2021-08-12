@@ -147,7 +147,7 @@ func testUpdateDelegatorShareForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, "0.123456", rs.Parameters["delegatorShare"].Value)
 }
 
-// test calcualtion of reward payout
+// test calculation of reward payout
 func testCalculateRewards(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -569,10 +569,4 @@ type TestEpochEngine struct {
 
 func (e *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch)) {
 	e.callbacks = append(e.callbacks, f)
-}
-
-func (e *TestEpochEngine) epochEnded(ctx context.Context, epoch types.Epoch) {
-	for _, c := range e.callbacks {
-		c(ctx, epoch)
-	}
 }

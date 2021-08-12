@@ -159,7 +159,7 @@ func testTransferRewardsNoGeneralAccount(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 
-	rewardAccID, err := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "asset1")
+	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "asset1")
 
 	rewardAccount := &types.Account{
 		ID:       rewardAccID,
@@ -199,10 +199,10 @@ func testTransferRewardsSuccess(t *testing.T) {
 	defer eng.Finish()
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-	rewardAccID, err := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
+	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
-	partyAccountID, err := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
+	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
 
 	rewardAccount := &types.Account{
 		ID:       rewardAccID,
@@ -234,12 +234,12 @@ func testTransferRewardsSuccess(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	_, err = eng.Engine.TransferRewards(context.Background(), transferReq)
+	_, err := eng.Engine.TransferRewards(context.Background(), transferReq)
 	require.Nil(t, err)
-	partyAccount, err = eng.Engine.GetAccountByID(partyAccountID)
+	partyAccount, _ = eng.Engine.GetAccountByID(partyAccountID)
 	require.Equal(t, num.NewUint(1000), partyAccount.Balance)
 
-	rewardAccount, err = eng.Engine.GetGlobalRewardAccount("ETH")
+	rewardAccount, _ = eng.Engine.GetGlobalRewardAccount("ETH")
 	require.Equal(t, num.Zero(), rewardAccount.Balance)
 }
 

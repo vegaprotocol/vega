@@ -20,9 +20,9 @@ func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID str
 	}
 
 	// max payout is not mandatory, if it's not defined, pass nil so that max payout is not enforced for the asset
-	maxPayoutPerParticipant, _ := rewardScheme.MaxPayoutPerAssetPerParty[asset]
+	maxPayoutPerParticipant := rewardScheme.MaxPayoutPerAssetPerParty[asset]
 
-	// calcualte the validator score for each validator and the total score for all
+	// calculate the validator score for each validator and the total score for all
 	validatorNormalisedScores := calcValidatorsNormalisedScore(validatorData, minVal, compLevel)
 
 	return calculateRewards(asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant)
@@ -214,8 +214,8 @@ func iSqrt(x int) (r int) {
 // Calculate the square root with 4 digits
 // Use only integer manipualtions to do so.
 func foursqrt(x float64) float64 {
-	var y int = int(x * 10000 * 10000)
-	var s int = iSqrt(y)
+	y := int(x * 10000 * 10000)
+	s := iSqrt(y)
 	return (float64(s) / 10000)
 }
 

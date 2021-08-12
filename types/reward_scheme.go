@@ -95,13 +95,13 @@ func (rs *RewardScheme) IsActive(now time.Time) bool {
 	return !now.Before(rs.StartTime) && (rs.EndTime == nil || !now.After(*rs.EndTime))
 }
 
-// calculates the reward given the pool balance and the reward scheme parameters
+//GetReward calculates the reward given the pool balance and the reward scheme parameters
 func (rs *RewardScheme) GetReward(rewardPoolBalance *num.Uint, epoch Epoch) (*num.Uint, error) {
 	if rewardPoolBalance.IsZero() {
 		return num.Zero(), nil
 	}
 
-	rewardBalance := num.Zero()
+	var rewardBalance *num.Uint
 	if rs.PayoutType == PayoutFractional {
 		rewardBalance, _ = num.UintFromDecimal(num.NewDecimalFromFloat(rs.PayoutFraction * rewardPoolBalance.Float64()))
 	} else {

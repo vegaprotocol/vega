@@ -125,7 +125,7 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 	e.rewardSchemes[rs.SchemeID] = rs
 }
 
-//when the asset for staking and delegation is available, get the reward pool account and attach it to the scheme
+//UpdateAssetForStakingAndDelegationRewardScheme is called when the asset for staking and delegation is available, get the reward pool account and attach it to the scheme
 func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Context, asset string) {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
@@ -205,7 +205,10 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 		if t.After(payTime) {
 			for _, payout := range payouts {
 				// distribute the reward
-				e.distributePayout(ctx, payout)
+				if payout != nil {
+					e.distributePayout(ctx, payout)
+				}
+
 				// subtract the reward from the pending balance
 				pendingBalanceForRewardAccount := e.rewardPoolToPendingPayoutBalance[payout.fromAccount]
 				e.rewardPoolToPendingPayoutBalance[payout.fromAccount] = num.Zero().Sub(pendingBalanceForRewardAccount, payout.totalReward)
@@ -289,10 +292,6 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 
 // make the required transfers for distributing reward payout
 func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
-	if payout == nil {
-		e.log.Panic("payout cannot be nil during payout distribution")
-	}
-
 	rewardsTR := make([]*types.TransferRequest, 0, len(payout.partyToAmount))
 	rewardAccount, err := e.collateral.GetAccountByID(payout.fromAccount)
 	if err != nil {
@@ -316,6 +315,9 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 	}
 
 	resp, err := e.collateral.TransferRewards(ctx, rewardsTR)
+	if err != nil {
+		e.log.Error("error in transfer rewards", logging.Error(err))
+	}
 
 	// emit events
 	payoutEvents := map[string]*events.RewardPayout{}
