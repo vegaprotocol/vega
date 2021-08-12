@@ -15,6 +15,7 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
+        timeout(time: 1, unit: 'HOURS')
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
@@ -386,10 +387,10 @@ pipeline {
                             steps {
                                 dir('system-tests/scripts') {
                                     sh label: 'run system-tests', script: '''
-                                        make run-tests
+                                        make run-tests || touch ../build/test-reports/system-test-results.xml
                                     '''
                                 }
-                                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/*.xml'
+                                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/system-test-results.xml'
                             }
                         }
                     }
