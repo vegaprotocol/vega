@@ -6,7 +6,10 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/subscribers"
+<<<<<<< HEAD
 	v1 "code.vegaprotocol.io/protos/vega/events/v1"
+=======
+>>>>>>> First go at rewards subscriber
 
 	"github.com/stretchr/testify/assert"
 )

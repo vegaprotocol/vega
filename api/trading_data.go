@@ -198,7 +198,6 @@ type LiquidityService interface {
 	Get(party, market string) ([]pbtypes.LiquidityProvision, error)
 }
 
-<<<<<<< HEAD
 // NodeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_service_mock.go -package mocks code.vegaprotocol.io/data-node/api NodeService
 type NodeService interface {
@@ -224,12 +223,12 @@ type DelegationService interface {
 	GetPartyNodeDelegationsOnEpoch(party string, node string, epochSeq string) ([]*pbtypes.Delegation, error)
 	GetNodeDelegations(nodeID string) ([]*pbtypes.Delegation, error)
 	GetNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pbtypes.Delegation, error)
-=======
+}
+
 // RewardsService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/rewards_service_mock.go -package mocks code.vegaprotocol.io/data-node/api RewardsService
 type RewardsService interface {
 	GetRewardDetails(ctx context.Context, party string) (pbtypes.RewardDetails, error)
->>>>>>> Added more tests and futher work
 }
 
 type tradingDataService struct {
