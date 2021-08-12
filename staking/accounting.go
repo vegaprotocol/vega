@@ -22,11 +22,14 @@ var (
 
 type Accounting struct {
 	log      *logging.Logger
+	cfg      Config
 	broker   Broker
 	accounts map[string]*StakingAccount
 }
 
-func NewAccounting(log *logging.Logger, broker Broker) *Accounting {
+func NewAccounting(log *logging.Logger, cfg Config, broker Broker) *Accounting {
+	log := log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 	return &Accounting{
 		log:      log,
 		broker:   broker,
