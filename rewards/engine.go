@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/types/num"
@@ -79,6 +80,7 @@ type pendingPayout struct {
 	asset         string
 	partyToAmount map[string]*num.Uint
 	totalReward   *num.Uint
+	epochSeq      string
 }
 
 //New instantiate a new rewards engine
@@ -313,13 +315,24 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 		})
 	}
 
-	_, err = e.collateral.TransferRewards(ctx, rewardsTR)
+	resp, err := e.collateral.TransferRewards(ctx, rewardsTR)
 
-	//TODO add event firing
-	// for _, response := range resp {
-	// 	// send an event with the reward amount transferred to the party
+	// emit events
+	payoutEvents := map[string]*events.RewardPayout{}
+	parties := []string{}
+	for _, response := range resp {
+		// send an event with the reward amount transferred to the party
+		if len(response.Transfers) > 0 {
+			ledgerEntry := response.Transfers[0]
+			payoutEvents[ledgerEntry.ToAccount] = events.NewRewardPayout(ctx, ledgerEntry.FromAccount, ledgerEntry.ToAccount, payout.epochSeq, payout.asset, ledgerEntry.Amount, ledgerEntry.Amount.Float64()/payout.totalReward.Float64())
+			parties = append(parties, ledgerEntry.ToAccount)
 
-	// }
+		}
+	}
+	sort.Strings(parties)
+	for _, p := range parties {
+		e.broker.Send(payoutEvents[p])
+	}
 }
 
 // delegates the reward calculation to the reward scheme
