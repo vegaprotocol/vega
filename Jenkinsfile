@@ -243,7 +243,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            sh 'golangci-lint run --disable-all --enable misspell'
+                            sh 'golangci-lint run --allow-parallel-runners --disable-all --enable misspell'
                         }
                     }
                 }
